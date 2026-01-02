@@ -86,74 +86,75 @@ export function Services() {
           </div>
         </div>
 
-        {/* Services grid - Mobile-first: heading, description, chips, image */}
-        <div className="space-y-10 sm:space-y-12 lg:space-y-16">
+        {/* Services grid - asymmetric editorial layout */}
+        <div className="space-y-12 sm:space-y-16">
           {services.map((service, index) => (
             <div
               key={index}
-              className={`grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start ${
+              className={`grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start ${
                 index % 2 === 0 ? "" : "lg:grid-flow-dense"
               }`}
             >
-              {/* Text content - Mobile order: heading, description, chips */}
-              <div className={`lg:col-span-7 space-y-4 ${index % 2 === 0 ? "" : "lg:col-start-6"}`}>
-                {/* Heading with reduced section number */}
-                <div className="relative">
-                  <div className="font-serif text-3xl sm:text-4xl lg:text-5xl text-primary/10 sm:text-primary/15 font-bold leading-none absolute -left-2 sm:-left-4 top-0">
+              {/* Text content - alternating 6/7 columns */}
+              <div className={`lg:col-span-7 space-y-6 order-2 lg:order-1 ${index % 2 === 0 ? "" : "lg:col-start-6"}`}>
+                <div className="flex items-start gap-6">
+                  <div className="font-serif text-6xl lg:text-7xl text-primary/30 font-bold leading-none">
                     {service.number}
                   </div>
-                  <div className="pl-8 sm:pl-12">
-                    <h3 className="font-serif font-bold text-xl sm:text-2xl lg:text-3xl xl:text-4xl text-secondary leading-tight mb-2">
+                  <div className="pt-2 flex-1">
+                    <h3 className="font-serif font-bold text-2xl sm:text-3xl lg:text-4xl xl:text-5xl text-secondary leading-tight mb-2">
                       {service.title}
-                      {service.subtitle && (
-                        <span className="text-muted-foreground font-serif italic"> {service.subtitle}</span>
-                      )}
                     </h3>
+                    {service.subtitle && (
+                      <div className="text-lg sm:text-xl lg:text-2xl text-muted-foreground font-serif italic mb-4 sm:mb-6">
+                        {service.subtitle}
+                      </div>
+                    )}
+                    <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 sm:mb-8">{service.description}</p>
+
+                    {/* Qualifying line for service 05 */}
+                    {service.qualifying && (
+                      <p className="text-sm text-muted-foreground/80 italic mb-6">
+                        {service.qualifying}
+                      </p>
+                    )}
+
+                    {/* Features list */}
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      {service.features.map((feature, i) => (
+                        <div key={i} className="px-4 py-2 bg-background border border-border text-sm font-medium">
+                          {feature}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Availability line for service 03 */}
+                    {service.availability && (
+                      <p className="text-sm text-muted-foreground/80 italic mt-2">
+                        {service.availability}
+                      </p>
+                    )}
+
+                    {/* Service radius for service 03 */}
+                    {service.serviceRadius && (
+                      <p className="text-sm text-muted-foreground/80 italic mt-1">
+                        {service.serviceRadius}
+                      </p>
+                    )}
+
+                    {/* Spec authority for service 05 */}
+                    {service.specAuthority && (
+                      <p className="text-sm text-muted-foreground/80 italic mt-2">
+                        {service.specAuthority}
+                      </p>
+                    )}
                   </div>
                 </div>
-
-                {/* Description - 2-3 lines max */}
-                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl">
-                  {service.description}
-                </p>
-
-                {/* Chips - 2-column grid, label style */}
-                {service.features && service.features.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                    {service.features.map((feature, i) => (
-                      <div key={i} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-muted/50 text-xs sm:text-sm text-muted-foreground rounded-md">
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Additional info - compact */}
-                {service.qualifying && (
-                  <p className="text-xs sm:text-sm text-muted-foreground/70 italic">
-                    {service.qualifying}
-                  </p>
-                )}
-                {service.availability && (
-                  <p className="text-xs sm:text-sm text-muted-foreground/70 italic">
-                    {service.availability}
-                  </p>
-                )}
-                {service.serviceRadius && (
-                  <p className="text-xs sm:text-sm text-muted-foreground/70 italic">
-                    {service.serviceRadius}
-                  </p>
-                )}
-                {service.specAuthority && (
-                  <p className="text-xs sm:text-sm text-muted-foreground/70 italic">
-                    {service.specAuthority}
-                  </p>
-                )}
               </div>
 
-              {/* Image - optional on mobile, max 45vh */}
-              <div className={`lg:col-span-5 ${index % 2 === 0 ? "" : "lg:col-start-1 lg:row-start-1"}`}>
-                <div className="relative max-h-[45vh] lg:max-h-none lg:aspect-auto lg:h-96 rounded-lg overflow-hidden">
+              {/* Image - alternating 5 columns */}
+              <div className={`lg:col-span-5 order-1 lg:order-2 ${index % 2 === 0 ? "" : "lg:col-start-1 lg:row-start-1"}`}>
+                <div className="relative aspect-[4/3] lg:aspect-auto lg:h-96">
                   <img 
                     src={
                       index === 0 ? "/images/welding_staircase.png" :
@@ -163,24 +164,43 @@ export function Services() {
                       "/images/image.jpeg"
                     } 
                     alt={service.title} 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover shadow-xl" 
                     loading="lazy"
                   />
+                  {/* Number overlay on image */}
+                  <div className="absolute top-6 right-6 bg-primary text-white w-16 h-16 flex items-center justify-center">
+                    <span className="font-serif text-2xl font-bold">{service.number}</span>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Single CTA at end of services section */}
-        <div className="mt-10 sm:mt-12 lg:mt-16 text-center max-w-2xl mx-auto">
-          <Button
-            onClick={scrollToContact}
-            size="lg"
-            className="bg-primary hover:bg-primary/90 text-white h-14 px-8 text-base font-semibold shadow-lg w-full sm:w-auto"
-          >
-            Request a Quote
-          </Button>
+        {/* CTA at end of services section */}
+        <div className="mt-12 sm:mt-16 lg:mt-20 xl:mt-32 text-center max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6">
+            Have a project or repair need?
+            <br />
+            Get a quote or talk through your scope.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              onClick={scrollToContact}
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-white h-14 px-8 sm:px-10 text-base font-medium shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
+            >
+              Request a Quote
+            </Button>
+            <Button
+              onClick={scrollToContact}
+              size="lg"
+              variant="outline"
+              className="h-14 px-8 sm:px-10 text-base font-medium bg-transparent hover:bg-muted transition-all duration-300 w-full sm:w-auto"
+            >
+              Discuss Your Project
+            </Button>
+          </div>
         </div>
       </div>
     </section>
