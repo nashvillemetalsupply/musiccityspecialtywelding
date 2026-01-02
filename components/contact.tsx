@@ -71,7 +71,7 @@ export function Contact() {
   }
 
   return (
-    <section id="contact" className="py-24 sm:py-32 bg-background relative overflow-x-hidden">
+    <section id="contact" className="py-16 sm:py-24 lg:py-32 bg-background relative overflow-x-hidden">
       {/* Background Elements */}
       <div className="absolute top-1/4 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
@@ -79,61 +79,61 @@ export function Contact() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
-          <div className="max-w-3xl mb-20 text-center mx-auto">
-            <div className="inline-block px-4 py-2 bg-primary/10 rounded-full border border-primary/20 mb-6">
-              <span className="text-sm font-medium text-primary">Get Started</span>
+          <div className="max-w-3xl mb-12 sm:mb-16 lg:mb-20 text-center mx-auto">
+            <div className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 rounded-full border border-primary/20 mb-4 sm:mb-6">
+              <span className="text-xs sm:text-sm font-medium text-primary">Get Started</span>
             </div>
-            <h2 className="font-serif font-semibold text-secondary mb-6 leading-tight tracking-tight max-w-4xl mx-auto" style={{ fontSize: 'clamp(2rem, 4vw + 1rem, 4.5rem)' }}>
+            <h2 className="font-serif font-semibold text-secondary mb-4 sm:mb-6 leading-[1.1] tracking-tight max-w-4xl mx-auto px-4" style={{ fontSize: 'clamp(1.75rem, 4vw + 0.75rem, 3.5rem)' }}>
               Let's discuss your project
             </h2>
-            <p className="text-xl text-muted-foreground leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4">
               Tell us about your project and get a fast, no-obligation quote.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
             {/* Contact Info */}
-            <div className="space-y-8">
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Phone className="h-6 w-6 text-primary" />
+            <div className="space-y-6 sm:space-y-8">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div>
-                    <div className="font-semibold text-lg text-secondary mb-1">Phone</div>
+                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Phone</div>
                     <a
                       href="tel:6158104910"
-                      className="text-muted-foreground hover:text-primary transition-colors text-lg"
+                      className="text-muted-foreground hover:text-primary transition-colors text-base sm:text-lg break-all"
                     >
                       (615) 810-4910
                     </a>
-                    <div className="text-sm text-muted-foreground mt-1">Available 24/7 for emergencies</div>
-                    <div className="text-sm text-muted-foreground mt-1">Same-day or next-day response available</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground mt-1">Available 24/7 for emergencies</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground mt-1">Same-day or next-day response available</div>
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Mail className="h-6 w-6 text-primary" />
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div>
-                    <div className="font-semibold text-lg text-secondary mb-1">Email</div>
+                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Email</div>
                     <a
                       href="mailto:Sales@musiccityspecialtywelding.com"
-                      className="text-muted-foreground hover:text-primary transition-colors text-lg break-all"
+                      className="text-muted-foreground hover:text-primary transition-colors text-sm sm:text-base lg:text-lg break-all"
                     >
                       Sales@musiccityspecialtywelding.com
                     </a>
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <MapPin className="h-6 w-6 text-primary" />
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div>
-                    <div className="font-semibold text-lg text-secondary mb-1">Location</div>
-                    <div className="text-muted-foreground text-lg">
+                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Location</div>
+                    <div className="text-muted-foreground text-sm sm:text-base lg:text-lg">
                       533 W Baddour Pkwy
                       <br />
                       Lebanon, TN 37087
@@ -141,13 +141,13 @@ export function Contact() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-primary" />
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div>
-                    <div className="font-semibold text-lg text-secondary mb-1">Hours</div>
-                    <div className="text-muted-foreground text-lg">Mon - Fri: 7:00 AM - 6:00 PM (CT)</div>
+                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Hours</div>
+                    <div className="text-muted-foreground text-sm sm:text-base lg:text-lg">Mon - Fri: 7:00 AM - 6:00 PM (CT)</div>
                   </div>
                 </div>
               </div>
@@ -172,10 +172,10 @@ export function Contact() {
             </div>
 
             {/* Contact Form */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl border border-border">
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 lg:p-8 xl:p-10 shadow-2xl border border-border">
               {/* How it works section */}
-              <div className="mb-10 pb-10 border-b border-border">
-                <h3 className="text-2xl font-serif font-semibold text-secondary mb-6">How it works</h3>
+              <div className="mb-6 sm:mb-8 lg:mb-10 pb-6 sm:pb-8 lg:pb-10 border-b border-border">
+                <h3 className="text-xl sm:text-2xl font-serif font-semibold text-secondary mb-4 sm:mb-6">How it works</h3>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">1</div>

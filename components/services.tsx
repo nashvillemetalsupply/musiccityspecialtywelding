@@ -59,36 +59,35 @@ export function Services() {
     <section id="services" className="py-24 lg:py-32 bg-muted overflow-x-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-12">
         {/* Section header - editorial style */}
-        <div className="max-w-4xl mb-20 lg:mb-32">
-          <div className="text-sm uppercase tracking-[0.3em] text-muted-foreground font-medium mb-6">Our Expertise</div>
-          <h2 className="font-serif font-bold text-secondary leading-[0.95] tracking-tight mb-8 max-w-5xl" style={{ fontSize: 'clamp(2.5rem, 5vw + 1rem, 6rem)' }}>
-            Complete Welding Solutions
-            <br className="hidden sm:block" />
-            <span className="font-medium text-muted-foreground block sm:inline" style={{ fontSize: 'clamp(1.5rem, 3vw + 0.5rem, 3.5rem)' }}>for Commercial & Industrial Work</span>
+        <div className="max-w-4xl mb-12 sm:mb-16 lg:mb-20 xl:mb-32">
+          <div className="text-xs sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground font-medium mb-4 sm:mb-6">Our Expertise</div>
+          <h2 className="font-serif font-bold text-secondary leading-[1.1] tracking-tight mb-6 sm:mb-8 max-w-5xl" style={{ fontSize: 'clamp(1.75rem, 4vw + 0.75rem, 4rem)' }}>
+            <span className="block">Complete Welding Solutions</span>
+            <span className="block font-medium text-muted-foreground mt-1" style={{ fontSize: 'clamp(1.25rem, 2.5vw + 0.5rem, 2.5rem)' }}>for Commercial & Industrial Work</span>
           </h2>
-          <p className="text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-2xl border-l-2 border-primary pl-8 mb-6">
+          <p className="text-base sm:text-lg lg:text-xl xl:text-2xl text-muted-foreground leading-relaxed max-w-2xl border-l-2 border-primary pl-4 sm:pl-6 lg:pl-8 mb-4 sm:mb-6">
           From initial planning to final weld, we handle repairs, fabrication, and on-site work with a focus on durability and clean execution.
           </p>
           
           {/* Proof Strip */}
-          <div className="mb-8 space-y-3">
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-muted-foreground">
+          <div className="mb-6 sm:mb-8 space-y-2 sm:space-y-3">
+            <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <span>Licensed & Insured</span>
               <span className="hidden sm:inline">•</span>
               <span>Commercial-Grade Work</span>
               <span className="hidden sm:inline">•</span>
-              <span>Serving Greater Nashville</span>
+              <span className="break-words">Serving Greater Nashville</span>
               <span className="hidden sm:inline">•</span>
-              <span>Same/Next-Day Response (when available)</span>
+              <span className="break-words">Same/Next-Day Response (when available)</span>
             </div>
-            <div className="text-xs text-muted-foreground/70">
+            <div className="text-[10px] sm:text-xs text-muted-foreground/70">
               Contractors • Facilities • Utilities • Municipalities
             </div>
           </div>
         </div>
 
         {/* Services grid - asymmetric editorial layout */}
-        <div className="space-y-16">
+        <div className="space-y-12 sm:space-y-16">
           {services.map((service, index) => (
             <div
               key={index}
@@ -103,15 +102,15 @@ export function Services() {
                     {service.number}
                   </div>
                   <div className="pt-2 flex-1">
-                    <h3 className="font-serif font-bold text-3xl lg:text-4xl xl:text-5xl text-secondary leading-tight mb-2">
+                    <h3 className="font-serif font-bold text-2xl sm:text-3xl lg:text-4xl xl:text-5xl text-secondary leading-tight mb-2">
                       {service.title}
                     </h3>
                     {service.subtitle && (
-                      <div className="text-xl lg:text-2xl text-muted-foreground font-serif italic mb-6">
+                      <div className="text-lg sm:text-xl lg:text-2xl text-muted-foreground font-serif italic mb-4 sm:mb-6">
                         {service.subtitle}
                       </div>
                     )}
-                    <p className="text-lg text-muted-foreground leading-relaxed mb-8">{service.description}</p>
+                    <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 sm:mb-8">{service.description}</p>
 
                     {/* Qualifying line for service 05 */}
                     {service.qualifying && (
@@ -179,8 +178,8 @@ export function Services() {
         </div>
 
         {/* CTA at end of services section */}
-        <div className="mt-20 lg:mt-32 text-center max-w-2xl mx-auto">
-          <p className="text-lg text-muted-foreground mb-6">
+        <div className="mt-12 sm:mt-16 lg:mt-20 xl:mt-32 text-center max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6">
             Have a project or repair need?
             <br />
             Get a quote or talk through your scope.
