@@ -78,121 +78,43 @@ export function Contact() {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">
         <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <div className="max-w-3xl mb-12 sm:mb-16 lg:mb-20 text-center mx-auto">
-            <div className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 rounded-full border border-primary/20 mb-4 sm:mb-6">
-              <span className="text-xs sm:text-sm font-medium text-primary">Get Started</span>
-            </div>
-            <h2 className="font-serif font-semibold text-secondary mb-4 sm:mb-6 leading-[1.1] tracking-tight max-w-4xl mx-auto px-4" style={{ fontSize: 'clamp(1.75rem, 4vw + 0.75rem, 3.5rem)' }}>
+          {/* Section Header - Simplified */}
+          <div className="max-w-3xl mb-8 sm:mb-12 text-center mx-auto">
+            <h2 className="font-serif font-semibold text-secondary mb-3 sm:mb-4 leading-[1.1] tracking-tight" style={{ fontSize: 'clamp(1.5rem, 3vw + 0.5rem, 2.5rem)' }}>
               Let's discuss your project
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed px-4">
-              Tell us about your project and get a fast, no-obligation quote.
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Get a fast, no-obligation quote.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
-            {/* Contact Info */}
-            <div className="space-y-6 sm:space-y-8">
-              <div className="space-y-4 sm:space-y-6">
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Phone</div>
-                    <a
-                      href="tel:6158104910"
-                      className="text-muted-foreground hover:text-primary transition-colors text-base sm:text-lg break-all"
-                    >
-                      (615) 810-4910
-                    </a>
-                    <div className="text-xs sm:text-sm text-muted-foreground mt-1">Available 24/7 for emergencies</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground mt-1">Same-day or next-day response available</div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Email</div>
-                    <a
-                      href="mailto:Sales@musiccityspecialtywelding.com"
-                      className="text-muted-foreground hover:text-primary transition-colors text-sm sm:text-base lg:text-lg break-all"
-                    >
-                      Sales@musiccityspecialtywelding.com
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Location</div>
-                    <div className="text-muted-foreground text-sm sm:text-base lg:text-lg">
-                      533 W Baddour Pkwy
-                      <br />
-                      Lebanon, TN 37087
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-base sm:text-lg text-secondary mb-1">Hours</div>
-                    <div className="text-muted-foreground text-sm sm:text-base lg:text-lg">Mon - Fri: 7:00 AM - 6:00 PM (CT)</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Image Grid */}
-              <div className="grid grid-cols-2 gap-4 pt-8">
-                <button
-                  onClick={() => setLightboxImage("/images/contact_hero_1.png")}
-                  className="aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary"
-                  aria-label="View larger image"
-                >
-                  <img src="/images/contact_hero_1.png" alt="Welding work" className="w-full h-full object-cover" loading="lazy" />
-                </button>
-                <button
-                  onClick={() => setLightboxImage("/images/contact_heo_2.png")}
-                  className="aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary"
-                  aria-label="View larger image"
-                >
-                  <img src="/images/contact_heo_2.png" alt="Welding work" className="w-full h-full object-cover" loading="lazy" />
-                </button>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
+            {/* Contact Info - Compact list */}
+            <div className="space-y-4">
+              <ul className="space-y-3 text-sm sm:text-base">
+                <li>
+                  <a href="tel:6158104910" className="text-secondary hover:text-primary font-medium">
+                    (615) 810-4910
+                  </a>
+                  <span className="text-muted-foreground text-xs ml-2">24/7 emergencies</span>
+                </li>
+                <li>
+                  <a href="mailto:Sales@musiccityspecialtywelding.com" className="text-secondary hover:text-primary break-all">
+                    Sales@musiccityspecialtywelding.com
+                  </a>
+                </li>
+                <li className="text-muted-foreground">
+                  533 W Baddour Pkwy, Lebanon, TN 37087
+                </li>
+                <li className="text-muted-foreground">
+                  Mon - Fri: 7:00 AM - 6:00 PM (CT)
+                </li>
+              </ul>
             </div>
 
             {/* Contact Form */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 lg:p-8 xl:p-10 shadow-2xl border border-border">
-              {/* How it works section */}
-              <div className="mb-6 sm:mb-8 lg:mb-10 pb-6 sm:pb-8 lg:pb-10 border-b border-border">
-                <h3 className="text-xl sm:text-2xl font-serif font-semibold text-secondary mb-4 sm:mb-6">How it works</h3>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">1</div>
-                    <div className="text-muted-foreground">Share details + photos</div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">2</div>
-                    <div className="text-muted-foreground">We confirm scope + timeline</div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">3</div>
-                    <div className="text-muted-foreground">You get a quote (and we schedule)</div>
-                  </div>
-                </div>
-              </div>
-
-              <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-border">
+              <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-secondary mb-2">First Name <span className="text-muted-foreground font-normal">*</span></label>
@@ -203,7 +125,7 @@ export function Contact() {
                       value={formData.firstName}
                       onChange={handleChange}
                       autoComplete="given-name"
-                      className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                      className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
                       required
                     />
                   </div>
@@ -215,7 +137,7 @@ export function Contact() {
                       value={formData.lastName}
                       onChange={handleChange}
                       autoComplete="family-name"
-                      className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                      className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
                     />
                   </div>
                 </div>
@@ -228,7 +150,7 @@ export function Contact() {
                     value={formData.email}
                     onChange={handleChange}
                     autoComplete="email"
-                    className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
                   />
                 </div>
 
@@ -240,7 +162,7 @@ export function Contact() {
                     value={formData.phone}
                     onChange={handleChange}
                     autoComplete="tel"
-                    className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
                     required
                   />
                 </div>
@@ -251,7 +173,7 @@ export function Contact() {
                     name="service"
                     value={formData.service}
                     onChange={handleChange}
-                    className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
                   >
                     <option value="">Select a service</option>
                     <option>Architectural Welding & Fabrication</option>
@@ -268,9 +190,9 @@ export function Contact() {
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    rows={5}
+                    rows={4}
                     placeholder="Briefly describe your project, location, and timeline (if known)."
-                    className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none text-base"
+                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none text-base"
                   />
                 </div>
 
@@ -280,7 +202,7 @@ export function Contact() {
                     name="preferredContact"
                     value={formData.preferredContact}
                     onChange={handleChange}
-                    className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
                   >
                     <option value="">Select preferred method</option>
                     <option value="text">Text</option>
@@ -291,21 +213,30 @@ export function Contact() {
 
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-2">Upload photos <span className="text-muted-foreground font-normal">(optional)</span></label>
-                  <input
-                    type="file"
-                    name="photos"
-                    onChange={handleChange}
-                    multiple
-                    accept="image/*"
-                    className="w-full px-4 py-3.5 sm:py-3 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 text-base"
-                  />
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-xl cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-8 h-8 mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG, GIF (optional)</p>
+                    </div>
+                    <input
+                      type="file"
+                      name="photos"
+                      onChange={handleChange}
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
                 </div>
 
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 space-y-1">
                   <p className="text-sm font-medium text-secondary text-center">
                     Most quotes sent within 1 business day.
                   </p>
-                  <p className="text-sm text-muted-foreground text-center">
+                  <p className="text-xs sm:text-sm text-muted-foreground text-center">
                     Emergency requests handled immediately.
                   </p>
                 </div>
@@ -313,14 +244,10 @@ export function Contact() {
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 group text-base"
+                  className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl shadow-lg text-base font-semibold"
                 >
-                  <span>Request a Quote</span>
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  Request a Quote
                 </Button>
-                <p className="text-xs text-muted-foreground text-center mt-4">
-                  Commercial-grade work · Licensed & insured
-                </p>
               </form>
             </div>
           </div>
