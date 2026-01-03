@@ -71,53 +71,33 @@ export function Contact() {
   }
 
   return (
-    <section id="contact" className="py-16 sm:py-24 lg:py-32 bg-background relative overflow-x-hidden">
-      {/* Background Elements */}
-      <div className="absolute top-1/4 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+    <section id="contact" className="py-12 sm:py-16 md:py-20 lg:py-24 xl:py-32 bg-background relative overflow-x-hidden">
+      {/* Background Elements - Optimized for mobile */}
+      <div className="absolute top-1/4 right-0 w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 left-0 w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl"></div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">
+      <div className="container mx-auto px-4 sm:px-5 md:px-6 lg:px-8 xl:px-12 relative">
         <div className="max-w-7xl mx-auto">
-          {/* Section Header - Simplified */}
-          <div className="max-w-3xl mb-8 sm:mb-12 text-center mx-auto">
-            <h2 className="font-serif font-semibold text-secondary mb-3 sm:mb-4 leading-[1.1] tracking-tight" style={{ fontSize: 'clamp(1.5rem, 3vw + 0.5rem, 2.5rem)' }}>
-              Let's discuss your project
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Get a fast, no-obligation quote.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
-            {/* Contact Info - Compact list */}
-            <div className="space-y-4">
-              <ul className="space-y-3 text-sm sm:text-base">
-                <li>
-                  <a href="tel:6158104910" className="text-secondary hover:text-primary font-medium">
-                    (615) 810-4910
-                  </a>
-                  <span className="text-muted-foreground text-xs ml-2">24/7 emergencies</span>
-                </li>
-                <li>
-                  <a href="mailto:Sales@musiccityspecialtywelding.com" className="text-secondary hover:text-primary break-all">
-                    Sales@musiccityspecialtywelding.com
-                  </a>
-                </li>
-                <li className="text-muted-foreground">
-                  533 W Baddour Pkwy, Lebanon, TN 37087
-                </li>
-                <li className="text-muted-foreground">
-                  Mon - Fri: 7:00 AM - 6:00 PM (CT)
-                </li>
-              </ul>
+          {/* MOBILE LAYOUT - Clean hierarchy */}
+          <div className="lg:hidden space-y-6">
+            {/* Headline */}
+            <div className="text-center">
+              <h2 className="font-serif font-semibold text-secondary mb-2 leading-[1.1] tracking-tight text-2xl">
+                Let's discuss your project
+              </h2>
+              {/* One reassurance line */}
+              <p className="text-sm text-muted-foreground">
+                Get a fast, no-obligation quote.
+              </p>
             </div>
 
-            {/* Contact Form */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-border">
-              <form ref={formRef} onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
+            {/* Form */}
+            <div className="bg-white rounded-xl p-5 shadow-xl border border-border">
+              <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
+                {/* Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">First Name <span className="text-muted-foreground font-normal">*</span></label>
+                    <label className="block text-sm font-medium text-secondary mb-1.5">First Name <span className="text-muted-foreground font-normal">*</span></label>
                     <input
                       ref={firstNameInputRef}
                       type="text"
@@ -125,55 +105,50 @@ export function Contact() {
                       value={formData.firstName}
                       onChange={handleChange}
                       autoComplete="given-name"
-                      className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base touch-manipulation"
+                      style={{ minHeight: '44px' }}
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Last Name <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <label className="block text-sm font-medium text-secondary mb-1.5">Last Name <span className="text-muted-foreground font-normal">(optional)</span></label>
                     <input
                       type="text"
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
                       autoComplete="family-name"
-                      className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base touch-manipulation"
+                      style={{ minHeight: '44px' }}
                     />
                   </div>
                 </div>
 
+                {/* Phone - Required, early in form */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">Email <span className="text-muted-foreground font-normal">(optional)</span></label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    autoComplete="email"
-                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">Phone <span className="text-muted-foreground font-normal">*</span></label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Phone <span className="text-muted-foreground font-normal">*</span></label>
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     autoComplete="tel"
-                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    className="w-full px-4 py-3 bg-muted/50 border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base touch-manipulation"
+                    style={{ minHeight: '44px' }}
+                    inputMode="tel"
                     required
                   />
                 </div>
 
+                {/* Service Needed */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">Service Needed</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Service Needed</label>
                   <select
                     name="service"
                     value={formData.service}
                     onChange={handleChange}
-                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    className="w-full px-4 py-3 bg-muted/50 border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base touch-manipulation appearance-none"
+                    style={{ minHeight: '44px' }}
                   >
                     <option value="">Select a service</option>
                     <option>Architectural Welding & Fabrication</option>
@@ -184,42 +159,29 @@ export function Contact() {
                   </select>
                 </div>
 
+                {/* Project Details */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">Project Details <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Project Details <span className="text-muted-foreground font-normal">(optional)</span></label>
                   <textarea
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    rows={4}
+                    rows={3}
                     placeholder="Briefly describe your project, location, and timeline (if known)."
-                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none text-base"
+                    className="w-full px-4 py-3 bg-muted/50 border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none text-base touch-manipulation"
+                    style={{ minHeight: '80px' }}
                   />
                 </div>
 
+                {/* Upload Photos */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">Preferred contact method</label>
-                  <select
-                    name="preferredContact"
-                    value={formData.preferredContact}
-                    onChange={handleChange}
-                    className="w-full px-4 py-4 sm:py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
-                  >
-                    <option value="">Select preferred method</option>
-                    <option value="text">Text</option>
-                    <option value="call">Call</option>
-                    <option value="email">Email</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">Upload photos <span className="text-muted-foreground font-normal">(optional)</span></label>
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-xl cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg className="w-8 h-8 mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Upload photos <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 active:bg-muted/60 transition-colors touch-manipulation">
+                    <div className="flex flex-col items-center justify-center pt-3 pb-3 px-2">
+                      <svg className="w-5 h-5 mb-1.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG, GIF (optional)</p>
+                      <p className="text-xs text-muted-foreground text-center"><span className="font-semibold">Click to upload</span></p>
                     </div>
                     <input
                       type="file"
@@ -232,46 +194,259 @@ export function Contact() {
                   </label>
                 </div>
 
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 sm:p-4 space-y-1">
-                  <p className="text-sm font-medium text-secondary text-center">
+                {/* Email - Moved to end, optional */}
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Email <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    autoComplete="email"
+                    className="w-full px-4 py-3 bg-muted/50 border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base touch-manipulation"
+                    style={{ minHeight: '44px' }}
+                    inputMode="email"
+                  />
+                </div>
+
+                {/* Reassurance text above submit button */}
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                  <p className="text-xs font-medium text-secondary text-center">
                     Most quotes sent within 1 business day.
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground text-center">
-                    Emergency requests handled immediately.
                   </p>
                 </div>
 
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl shadow-lg text-base font-semibold"
+                  className="w-full bg-primary hover:bg-primary/90 active:bg-primary/95 text-white h-12 rounded-lg shadow-lg text-base font-semibold touch-manipulation transition-all"
+                  style={{ minHeight: '48px' }}
                 >
                   Request a Quote
                 </Button>
+
+                {/* Micro-trust line */}
+                <p className="text-xs text-muted-foreground text-center">
+                  Emergency requests handled immediately.
+                </p>
               </form>
+            </div>
+          </div>
+
+          {/* DESKTOP LAYOUT - Original structure */}
+          <div className="hidden lg:block">
+            <div className="max-w-3xl mb-12 text-center mx-auto">
+              <h2 className="font-serif font-semibold text-secondary mb-4 leading-[1.1] tracking-tight" style={{ fontSize: 'clamp(1.75rem, 4vw + 0.5rem, 2.5rem)' }}>
+                Let's discuss your project
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Get a fast, no-obligation quote.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-12">
+              {/* Contact Info */}
+              <div className="space-y-5">
+                <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-border shadow-sm">
+                  <ul className="space-y-4 text-base">
+                    <li className="flex items-center gap-2">
+                      <a 
+                        href="tel:6158104910" 
+                        className="text-secondary hover:text-primary font-medium text-lg transition-colors"
+                      >
+                        (615) 810-4910
+                      </a>
+                      <span className="text-muted-foreground text-sm">24/7 emergencies</span>
+                    </li>
+                    <li>
+                      <a 
+                        href="mailto:Sales@musiccityspecialtywelding.com" 
+                        className="text-secondary hover:text-primary break-all transition-colors"
+                      >
+                        Sales@musiccityspecialtywelding.com
+                      </a>
+                    </li>
+                    <li className="text-muted-foreground flex items-start gap-2">
+                      <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>533 W Baddour Pkwy, Lebanon, TN 37087</span>
+                    </li>
+                    <li className="text-muted-foreground flex items-start gap-2">
+                      <Clock className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      <span>Mon - Fri: 7:00 AM - 6:00 PM (CT)</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Contact Form */}
+              <div className="bg-white rounded-3xl p-8 shadow-xl border border-border">
+                <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-secondary mb-2">First Name <span className="text-muted-foreground font-normal">*</span></label>
+                      <input
+                        ref={firstNameInputRef}
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        autoComplete="given-name"
+                        className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary mb-2">Last Name <span className="text-muted-foreground font-normal">(optional)</span></label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        autoComplete="family-name"
+                        className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-2">Email <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      autoComplete="email"
+                      className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-2">Phone <span className="text-muted-foreground font-normal">*</span></label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      autoComplete="tel"
+                      className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-2">Service Needed</label>
+                    <select
+                      name="service"
+                      value={formData.service}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base appearance-none"
+                    >
+                      <option value="">Select a service</option>
+                      <option>Architectural Welding & Fabrication</option>
+                      <option>Mobile Welding (On-Site)</option>
+                      <option>Equipment Repair & Maintenance</option>
+                      <option>Specialty Fabrication</option>
+                      <option>Not Sure / Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-2">Project Details <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      rows={4}
+                      placeholder="Briefly describe your project, location, and timeline (if known)."
+                      className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none text-base"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-2">Preferred contact method</label>
+                    <select
+                      name="preferredContact"
+                      value={formData.preferredContact}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base appearance-none"
+                    >
+                      <option value="">Select preferred method</option>
+                      <option value="text">Text</option>
+                      <option value="call">Call</option>
+                      <option value="email">Email</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-2">Upload photos <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-xl cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-2">
+                        <svg className="w-8 h-8 mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p className="mb-2 text-sm text-muted-foreground text-center"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                        <p className="text-xs text-muted-foreground text-center">PNG, JPG, GIF (optional)</p>
+                      </div>
+                      <input
+                        type="file"
+                        name="photos"
+                        onChange={handleChange}
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Expectation-setting line above button - Desktop only */}
+                  <p className="text-xs text-muted-foreground/70 text-center">
+                    Most quotes sent within 1 business day. Emergency requests handled immediately.
+                  </p>
+
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl shadow-lg text-base font-semibold transition-all"
+                  >
+                    Request a Quote
+                  </Button>
+
+                  {/* Reassurance box below button - Desktop only */}
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1">
+                    <p className="text-sm font-medium text-secondary text-center">
+                      Most quotes sent within 1 business day.
+                    </p>
+                    <p className="text-sm text-muted-foreground text-center">
+                      Emergency requests handled immediately.
+                    </p>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal - Optimized for mobile */}
       {lightboxImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/95 sm:bg-black/90 flex items-center justify-center p-2 sm:p-4 touch-manipulation"
           onClick={() => setLightboxImage(null)}
         >
           <button
             onClick={() => setLightboxImage(null)}
-            className="absolute top-4 right-4 text-white hover:text-primary transition-colors p-2"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white hover:text-primary active:text-primary/80 transition-colors p-2 sm:p-3 touch-manipulation z-10"
+            style={{ minHeight: '44px', minWidth: '44px' }}
             aria-label="Close lightbox"
           >
-            <X className="h-6 w-6" />
+            <X className="h-6 w-6 sm:h-8 sm:w-8" />
           </button>
           <img
             src={lightboxImage}
             alt="Welding work - enlarged view"
-            className="max-w-full max-h-[90vh] object-contain"
+            className="max-w-full max-h-[95vh] sm:max-h-[90vh] object-contain"
             onClick={(e) => e.stopPropagation()}
+            style={{ touchAction: 'none' }}
           />
         </div>
       )}

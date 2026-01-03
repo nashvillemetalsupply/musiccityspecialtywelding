@@ -131,7 +131,15 @@ html {
 #home,
 #services,
 #contact {
-  scroll-margin-top: 100px;
+  scroll-margin-top: 80px;
+}
+
+@media (min-width: 640px) {
+  #home,
+  #services,
+  #contact {
+    scroll-margin-top: 100px;
+  }
 }
 
 /* Prevent horizontal scrolling */

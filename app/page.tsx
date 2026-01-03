@@ -8,7 +8,7 @@ import { StickyMobileCTA } from "@/components/sticky-mobile-cta"
 
 export default function Page() {
   return (
-    <main className="min-h-screen pb-20 lg:pb-0">
+    <main className="min-h-screen pb-20 sm:pb-24 lg:pb-0 overflow-x-hidden">
       <Navbar />
       <Hero />
       <Services />

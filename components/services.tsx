@@ -56,22 +56,22 @@ export function Services() {
   ]
 
   return (
-    <section id="services" className="py-24 lg:py-32 bg-muted overflow-x-hidden">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+    <section id="services" className="py-12 sm:py-16 md:py-20 lg:py-24 xl:py-32 bg-muted overflow-x-hidden">
+      <div className="container mx-auto px-4 sm:px-5 md:px-6 lg:px-8 xl:px-12">
         {/* Section header - editorial style */}
-        <div className="max-w-4xl mb-12 sm:mb-16 lg:mb-20 xl:mb-32">
-          <div className="text-xs sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground font-medium mb-4 sm:mb-6">Our Expertise</div>
-          <h2 className="font-serif font-bold text-secondary leading-[1.1] tracking-tight mb-6 sm:mb-8 max-w-5xl" style={{ fontSize: 'clamp(1.75rem, 4vw + 0.75rem, 4rem)' }}>
+        <div className="max-w-4xl mb-8 sm:mb-12 md:mb-16 lg:mb-20 xl:mb-32">
+          <div className="text-xs sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.3em] text-muted-foreground font-medium mb-3 sm:mb-4 md:mb-6">Our Expertise</div>
+          <h2 className="font-serif font-bold text-secondary leading-[1.1] tracking-tight mb-4 sm:mb-6 md:mb-8 max-w-5xl" style={{ fontSize: 'clamp(1.75rem, 5vw + 0.75rem, 4rem)' }}>
             <span className="block">Complete Welding Solutions</span>
-            <span className="block font-medium text-muted-foreground mt-1" style={{ fontSize: 'clamp(1.25rem, 2.5vw + 0.5rem, 2.5rem)' }}>for Commercial & Industrial Work</span>
+            <span className="block font-medium text-muted-foreground mt-1 sm:mt-2" style={{ fontSize: 'clamp(1.25rem, 3vw + 0.5rem, 2.5rem)' }}>for Commercial & Industrial Work</span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl xl:text-2xl text-muted-foreground leading-relaxed max-w-2xl border-l-2 border-primary pl-4 sm:pl-6 lg:pl-8 mb-4 sm:mb-6">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-muted-foreground leading-relaxed max-w-2xl border-l-2 border-primary pl-3 sm:pl-4 md:pl-6 lg:pl-8 mb-4 sm:mb-6">
           From initial planning to final weld, we handle repairs, fabrication, and on-site work with a focus on durability and clean execution.
           </p>
           
           {/* Proof Strip */}
-          <div className="mb-6 sm:mb-8 space-y-2 sm:space-y-3">
-            <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-2 text-xs sm:text-sm font-medium text-muted-foreground">
+          <div className="mb-4 sm:mb-6 md:mb-8 space-y-2 sm:space-y-3">
+            <div className="flex flex-wrap gap-x-2 sm:gap-x-3 md:gap-x-4 gap-y-1.5 sm:gap-y-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <span>Licensed & Insured</span>
               <span className="hidden sm:inline">•</span>
               <span>Commercial-Grade Work</span>
@@ -86,40 +86,114 @@ export function Services() {
           </div>
         </div>
 
-        {/* Services grid - asymmetric editorial layout */}
-        <div className="space-y-12 sm:space-y-16">
+        {/* MOBILE LAYOUT - Card structure */}
+        <div className="lg:hidden space-y-6">
+          {services.map((service, index) => (
+            <div key={index} className="bg-white rounded-lg p-5 space-y-4 shadow-sm border border-border">
+              {/* Service Name */}
+              <div className="relative">
+                <h3 className="font-serif font-bold text-xl text-secondary leading-tight pr-12">
+                  {service.title}
+                  {service.subtitle && (
+                    <span className="block text-base text-muted-foreground font-serif italic mt-1">
+                      {service.subtitle}
+                    </span>
+                  )}
+                </h3>
+                {/* Number watermark - hidden on mobile, desktop only */}
+                <div className="hidden lg:block absolute top-0 right-0 font-serif text-4xl text-primary/10 font-bold leading-none">
+                  {service.number}
+                </div>
+              </div>
+
+              {/* 1-2 line value statement */}
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                {service.description}
+              </p>
+
+              {/* Bullet points - Max 3, short, verb-led */}
+              <ul className="space-y-1">
+                {service.features.slice(0, 3).map((feature, i) => (
+                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                    <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                    <span className="leading-tight">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Optional image - AFTER text, locked sizing for consistency */}
+              <div className="w-full overflow-hidden rounded-lg mt-4" style={{ maxHeight: '35vh', aspectRatio: '4/3' }}>
+                <img 
+                  src={
+                    index === 0 ? "/images/welding_staircase.png" :
+                    index === 1 ? "/images/welding_hero_2.png" :
+                    index === 2 ? "/images/04_equipment_repair.png" :
+                    index === 3 ? "/images/05_specialty_fabrication.png" :
+                    "/images/image.jpeg"
+                  } 
+                  alt={service.title} 
+                  className="w-full h-full object-cover" 
+                  style={{ maxHeight: '35vh', objectFit: 'cover', aspectRatio: '4/3' }}
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Additional info if exists */}
+              {service.availability && (
+                <p className="text-xs text-muted-foreground/80 italic">
+                  {service.availability}
+                </p>
+              )}
+              {service.serviceRadius && (
+                <p className="text-xs text-muted-foreground/80 italic">
+                  {service.serviceRadius}
+                </p>
+              )}
+              {service.qualifying && (
+                <p className="text-xs text-muted-foreground/80 italic">
+                  {service.qualifying}
+                </p>
+              )}
+              {service.specAuthority && (
+                <p className="text-xs text-muted-foreground/80 italic">
+                  {service.specAuthority}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* DESKTOP LAYOUT - Original asymmetric editorial layout with strict visual rhythm */}
+        <div className="hidden lg:block space-y-20">
           {services.map((service, index) => (
             <div
               key={index}
-              className={`grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start ${
-                index % 2 === 0 ? "" : "lg:grid-flow-dense"
+              className={`grid grid-cols-12 gap-12 items-start ${
+                index % 2 === 0 ? "" : "grid-flow-dense"
               }`}
             >
-              {/* Text content - alternating 6/7 columns */}
-              <div className={`lg:col-span-7 space-y-6 order-2 lg:order-1 ${index % 2 === 0 ? "" : "lg:col-start-6"}`}>
+              <div className={`col-span-7 space-y-6 ${index % 2 === 0 ? "" : "col-start-6"}`}>
                 <div className="flex items-start gap-6">
-                  <div className="font-serif text-6xl lg:text-7xl text-primary/30 font-bold leading-none">
+                  <div className="font-serif text-7xl text-primary/30 font-bold leading-none flex-shrink-0">
                     {service.number}
                   </div>
                   <div className="pt-2 flex-1">
-                    <h3 className="font-serif font-bold text-2xl sm:text-3xl lg:text-4xl xl:text-5xl text-secondary leading-tight mb-2">
+                    <h3 className="font-serif font-bold text-5xl text-secondary leading-tight mb-2">
                       {service.title}
                     </h3>
                     {service.subtitle && (
-                      <div className="text-lg sm:text-xl lg:text-2xl text-muted-foreground font-serif italic mb-4 sm:mb-6">
+                      <div className="text-2xl text-muted-foreground font-serif italic mb-6">
                         {service.subtitle}
                       </div>
                     )}
-                    <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-6 sm:mb-8">{service.description}</p>
+                    <p className="text-lg text-muted-foreground leading-relaxed mb-8">{service.description}</p>
 
-                    {/* Qualifying line for service 05 */}
                     {service.qualifying && (
                       <p className="text-sm text-muted-foreground/80 italic mb-6">
                         {service.qualifying}
                       </p>
                     )}
 
-                    {/* Features list */}
                     <div className="flex flex-wrap gap-3 mb-4">
                       {service.features.map((feature, i) => (
                         <div key={i} className="px-4 py-2 bg-background border border-border text-sm font-medium">
@@ -128,21 +202,16 @@ export function Services() {
                       ))}
                     </div>
 
-                    {/* Availability line for service 03 */}
                     {service.availability && (
                       <p className="text-sm text-muted-foreground/80 italic mt-2">
                         {service.availability}
                       </p>
                     )}
-
-                    {/* Service radius for service 03 */}
                     {service.serviceRadius && (
                       <p className="text-sm text-muted-foreground/80 italic mt-1">
                         {service.serviceRadius}
                       </p>
                     )}
-
-                    {/* Spec authority for service 05 */}
                     {service.specAuthority && (
                       <p className="text-sm text-muted-foreground/80 italic mt-2">
                         {service.specAuthority}
@@ -152,9 +221,8 @@ export function Services() {
                 </div>
               </div>
 
-              {/* Image - alternating 5 columns */}
-              <div className={`lg:col-span-5 order-1 lg:order-2 ${index % 2 === 0 ? "" : "lg:col-start-1 lg:row-start-1"}`}>
-                <div className="relative aspect-[4/3] lg:aspect-auto lg:h-96">
+              <div className={`col-span-5 ${index % 2 === 0 ? "" : "col-start-1 row-start-1"}`}>
+                <div className="relative h-96 rounded-xl overflow-hidden">
                   <img 
                     src={
                       index === 0 ? "/images/welding_staircase.png" :
@@ -167,8 +235,7 @@ export function Services() {
                     className="w-full h-full object-cover shadow-xl" 
                     loading="lazy"
                   />
-                  {/* Number overlay on image */}
-                  <div className="absolute top-6 right-6 bg-primary text-white w-16 h-16 flex items-center justify-center">
+                  <div className="absolute top-6 right-6 bg-primary text-white w-16 h-16 flex items-center justify-center rounded">
                     <span className="font-serif text-2xl font-bold">{service.number}</span>
                   </div>
                 </div>
@@ -177,31 +244,7 @@ export function Services() {
           ))}
         </div>
 
-        {/* CTA at end of services section */}
-        <div className="mt-12 sm:mt-16 lg:mt-20 xl:mt-32 text-center max-w-2xl mx-auto">
-          <p className="text-base sm:text-lg text-muted-foreground mb-4 sm:mb-6">
-            Have a project or repair need?
-            <br />
-            Get a quote or talk through your scope.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              onClick={scrollToContact}
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-white h-14 px-8 sm:px-10 text-base font-medium shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
-            >
-              Request a Quote
-            </Button>
-            <Button
-              onClick={scrollToContact}
-              size="lg"
-              variant="outline"
-              className="h-14 px-8 sm:px-10 text-base font-medium bg-transparent hover:bg-muted transition-all duration-300 w-full sm:w-auto"
-            >
-              Discuss Your Project
-            </Button>
-          </div>
-        </div>
+        {/* CTA removed - only hero, form, and sticky CTAs on mobile */}
       </div>
     </section>
   )
