@@ -2,8 +2,6 @@ import { Resend } from "resend";
 
 export const runtime = "nodejs"; // important for email libs
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function isValidEmail(email?: string) {
   if (!email) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -16,6 +14,16 @@ function sanitize(s: unknown) {
 
 export async function POST(req: Request) {
   try {
+    // Initialize Resend inside the function to avoid build-time errors
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return Response.json(
+        { ok: false, error: "Email service not configured." },
+        { status: 500 }
+      );
+    }
+    const resend = new Resend(apiKey);
+
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
@@ -56,9 +64,16 @@ export async function POST(req: Request) {
     // For now: lightweight friction-free.
     const now = new Date().toISOString();
 
-    const to = process.env.QUOTE_TO_EMAIL!;
-    const from = process.env.QUOTE_FROM_EMAIL!;
+    const to = process.env.QUOTE_TO_EMAIL;
+    const from = process.env.QUOTE_FROM_EMAIL;
     const subjectPrefix = process.env.QUOTE_EMAIL_SUBJECT_PREFIX || "New Quote Request";
+
+    if (!to || !from) {
+      return Response.json(
+        { ok: false, error: "Email configuration missing." },
+        { status: 500 }
+      );
+    }
 
     const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} — ${serviceNeeded}`;
 
