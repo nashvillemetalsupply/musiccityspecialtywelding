@@ -14,8 +14,12 @@ export function Contact() {
     service: "",
     message: "",
     preferredContact: "",
+    company: "", // Honeypot field
     photos: null as FileList | null,
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
+  const [errorMessage, setErrorMessage] = useState("")
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const firstNameInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -44,15 +48,68 @@ export function Contact() {
     return () => observer.disconnect()
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
     // Progressive completion: only require firstName and phone
     if (!formData.firstName || !formData.phone) {
-      alert("Please provide at least your first name and phone number.")
+      setSubmitStatus("error")
+      setErrorMessage("Please provide at least your first name and phone number.")
       return
     }
-    console.log("Form submitted:", formData)
-    // Here you would typically send to your backend
+
+    // Require service selection
+    if (!formData.service) {
+      setSubmitStatus("error")
+      setErrorMessage("Please select a service needed.")
+      return
+    }
+
+    setIsSubmitting(true)
+    setSubmitStatus("idle")
+    setErrorMessage("")
+
+    try {
+      const res = await fetch("/api/quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          service: formData.service,
+          message: formData.message,
+          preferredContact: formData.preferredContact,
+          company: formData.company, // Honeypot
+        }),
+      })
+
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to submit quote request")
+      }
+
+      setSubmitStatus("success")
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        service: "",
+        message: "",
+        preferredContact: "",
+        company: "",
+        photos: null,
+      })
+    } catch (err) {
+      setSubmitStatus("error")
+      setErrorMessage(err instanceof Error ? err.message : "Failed to submit quote request. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -142,13 +199,14 @@ export function Contact() {
 
                 {/* Service Needed */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Service Needed</label>
+                  <label className="block text-sm font-medium text-secondary mb-1.5">Service Needed <span className="text-muted-foreground font-normal">*</span></label>
                   <select
                     name="service"
                     value={formData.service}
                     onChange={handleChange}
                     className="w-full px-4 py-3 bg-muted/50 border border-border rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base touch-manipulation appearance-none"
                     style={{ minHeight: '44px' }}
+                    required
                   >
                     <option value="">Select a service</option>
                     <option>Architectural Welding & Fabrication</option>
@@ -209,6 +267,18 @@ export function Contact() {
                   />
                 </div>
 
+                {/* Honeypot field - hidden from users */}
+                <input
+                  type="text"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleChange}
+                  autoComplete="off"
+                  tabIndex={-1}
+                  style={{ position: "absolute", left: "-9999px", height: 0, width: 0 }}
+                  aria-hidden="true"
+                />
+
                 {/* Reassurance text above submit button */}
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
                   <p className="text-xs font-medium text-secondary text-center">
@@ -216,13 +286,30 @@ export function Contact() {
                   </p>
                 </div>
 
+                {/* Success/Error Messages */}
+                {submitStatus === "success" && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-800 text-center font-medium">
+                      Thank you! Your quote request has been submitted. We'll get back to you soon.
+                    </p>
+                  </div>
+                )}
+                {submitStatus === "error" && errorMessage && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-sm text-red-800 text-center font-medium">
+                      {errorMessage}
+                    </p>
+                  </div>
+                )}
+
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 active:bg-primary/95 text-white h-12 rounded-lg shadow-lg text-base font-semibold touch-manipulation transition-all"
+                  disabled={isSubmitting}
+                  className="w-full bg-primary hover:bg-primary/90 active:bg-primary/95 text-white h-12 rounded-lg shadow-lg text-base font-semibold touch-manipulation transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ minHeight: '48px' }}
                 >
-                  Request a Quote
+                  {isSubmitting ? "Submitting..." : "Request a Quote"}
                 </Button>
 
                 {/* Micro-trust line */}
@@ -334,12 +421,13 @@ export function Contact() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Service Needed</label>
+                    <label className="block text-sm font-medium text-secondary mb-2">Service Needed <span className="text-muted-foreground font-normal">*</span></label>
                     <select
                       name="service"
                       value={formData.service}
                       onChange={handleChange}
                       className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base appearance-none"
+                      required
                     >
                       <option value="">Select a service</option>
                       <option>Architectural Welding & Fabrication</option>
@@ -398,17 +486,46 @@ export function Contact() {
                     </label>
                   </div>
 
+                  {/* Honeypot field - hidden from users */}
+                  <input
+                    type="text"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    autoComplete="off"
+                    tabIndex={-1}
+                    style={{ position: "absolute", left: "-9999px", height: 0, width: 0 }}
+                    aria-hidden="true"
+                  />
+
                   {/* Expectation-setting line above button - Desktop only */}
                   <p className="text-xs text-muted-foreground/70 text-center">
                     Most quotes sent within 1 business day. Emergency requests handled immediately.
                   </p>
 
+                  {/* Success/Error Messages */}
+                  {submitStatus === "success" && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                      <p className="text-sm text-green-800 text-center font-medium">
+                        Thank you! Your quote request has been submitted. We'll get back to you soon.
+                      </p>
+                    </div>
+                  )}
+                  {submitStatus === "error" && errorMessage && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                      <p className="text-sm text-red-800 text-center font-medium">
+                        {errorMessage}
+                      </p>
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl shadow-lg text-base font-semibold transition-all"
+                    disabled={isSubmitting}
+                    className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl shadow-lg text-base font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Request a Quote
+                    {isSubmitting ? "Submitting..." : "Request a Quote"}
                   </Button>
 
                   {/* Reassurance box below button - Desktop only */}
