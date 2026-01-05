@@ -176,7 +176,7 @@ export function Hero() {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}>
                 <div className="w-full h-full">
-                  <img src="/images/mobile_hero_2.png" alt="Welding detail work" className="w-full h-full object-cover rounded-sm" loading="lazy" />
+                  <img src="/images/wecometoyou.png" alt="Welding detail work" className="w-full h-full object-cover rounded-sm" loading="lazy" />
                 </div>
                 <div className="absolute bottom-4 left-4 right-4 bg-primary text-white p-4">
                   <div className="text-xs uppercase tracking-wider mb-1">Mobile Service</div>

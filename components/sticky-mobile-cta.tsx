@@ -2,12 +2,22 @@
 
 import { Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { usePathname, useRouter } from "next/navigation"
 
 export function StickyMobileCTA() {
+  const pathname = usePathname()
+  const router = useRouter()
+
   const scrollToContact = () => {
-    const element = document.getElementById("contact")
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
+    if (pathname === "/") {
+      // We're on the home page, just scroll
+      const element = document.getElementById("contact")
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" })
+      }
+    } else {
+      // We're on another page, navigate to home with hash
+      router.push("/#contact")
     }
   }
 

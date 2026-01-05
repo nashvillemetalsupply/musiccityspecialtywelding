@@ -1,6 +1,24 @@
+"use client"
+
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 
 export function Footer() {
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const scrollToContact = () => {
+    if (pathname === "/") {
+      // We're on the home page, just scroll
+      const element = document.getElementById("contact")
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" })
+      }
+    } else {
+      // We're on another page, navigate to home with hash
+      router.push("/#contact")
+    }
+  }
   return (
     <footer className="bg-secondary text-white py-4 lg:py-16 relative overflow-hidden">
       {/* Background Pattern */}
@@ -59,15 +77,17 @@ export function Footer() {
                   <div className="text-white/60">Licensed • Insured • Commercial-grade work</div>
                 </div>
 
-                <a
-                  href="#contact"
+                <button
+                  onClick={scrollToContact}
                   className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium
                              bg-primary/80 text-white hover:bg-primary
                              transition-all shadow-lg shadow-primary/20
-                             focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                             focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30
+                             touch-manipulation"
+                  style={{ minHeight: '44px' }}
                 >
                   Request a Quote
-                </a>
+                </button>
               </div>
 
               {/* Contact */}
