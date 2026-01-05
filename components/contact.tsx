@@ -20,6 +20,7 @@ export function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [lightboxImage, setLightboxImage] = useState<string | null>(null)
   const firstNameInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -92,6 +93,9 @@ export function Contact() {
       }
 
       setSubmitStatus("success")
+      // Clean up image preview URLs
+      imagePreviews.forEach(url => URL.revokeObjectURL(url))
+      setImagePreviews([])
       // Reset form
       setFormData({
         firstName: "",
@@ -104,6 +108,11 @@ export function Contact() {
         company: "",
         photos: null,
       })
+      // Reset file input
+      const fileInput = document.querySelector('input[name="photos"]') as HTMLInputElement
+      if (fileInput) {
+        fileInput.value = ''
+      }
     } catch (err) {
       setSubmitStatus("error")
       setErrorMessage(err instanceof Error ? err.message : "Failed to submit quote request. Please try again.")
@@ -115,14 +124,54 @@ export function Contact() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (e.target.type === 'file') {
       const fileInput = e.target as HTMLInputElement
+      const files = fileInput.files
+      
+      if (files && files.length > 0) {
+        // Create preview URLs for selected images
+        const previews: string[] = []
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i]
+          if (file.type.startsWith('image/')) {
+            previews.push(URL.createObjectURL(file))
+          }
+        }
+        setImagePreviews(prev => [...prev, ...previews])
       setFormData({
         ...formData,
-        photos: fileInput.files,
+          photos: files,
       })
+      }
     } else {
       setFormData({
         ...formData,
         [e.target.name]: e.target.value,
+      })
+    }
+  }
+
+  // Clean up preview URLs when component unmounts or form resets
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [imagePreviews])
+
+  const removeImagePreview = (indexToRemove: number) => {
+    // Revoke the URL to free memory
+    URL.revokeObjectURL(imagePreviews[indexToRemove])
+    // Remove from previews
+    const newPreviews = imagePreviews.filter((_, index) => index !== indexToRemove)
+    setImagePreviews(newPreviews)
+    
+    // If all previews are removed, clear the file input
+    if (newPreviews.length === 0) {
+      const fileInput = document.querySelector('input[name="photos"]') as HTMLInputElement
+      if (fileInput) {
+        fileInput.value = ''
+      }
+      setFormData({
+        ...formData,
+        photos: null,
       })
     }
   }
@@ -140,13 +189,13 @@ export function Contact() {
             {/* Headline */}
             <div className="text-center">
               <h2 className="font-serif font-semibold text-secondary mb-2 leading-[1.1] tracking-tight text-2xl">
-                Let's discuss your project
-              </h2>
+              Let's discuss your project
+            </h2>
               {/* One reassurance line */}
               <p className="text-sm text-muted-foreground">
-                Get a fast, no-obligation quote.
-              </p>
-            </div>
+              Get a fast, no-obligation quote.
+            </p>
+          </div>
 
             {/* Form */}
             <div className="bg-white rounded-xl p-5 shadow-xl border border-border">
@@ -250,6 +299,33 @@ export function Contact() {
                       className="hidden"
                     />
                   </label>
+                  
+                  {/* Image Previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-20 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setLightboxImage(preview)}
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeImagePreview(index)
+                            }}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                            aria-label="Remove image"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Email - Moved to end, optional */}
@@ -447,23 +523,23 @@ export function Contact() {
                       rows={4}
                       placeholder="Briefly describe your project, location, and timeline (if known)."
                       className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none text-base"
-                    />
-                  </div>
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Preferred contact method</label>
-                    <select
-                      name="preferredContact"
-                      value={formData.preferredContact}
-                      onChange={handleChange}
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-2">Preferred contact method</label>
+                  <select
+                    name="preferredContact"
+                    value={formData.preferredContact}
+                    onChange={handleChange}
                       className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-xl focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-base appearance-none"
-                    >
-                      <option value="">Select preferred method</option>
-                      <option value="text">Text</option>
-                      <option value="call">Call</option>
-                      <option value="email">Email</option>
-                    </select>
-                  </div>
+                  >
+                    <option value="">Select preferred method</option>
+                    <option value="text">Text</option>
+                    <option value="call">Call</option>
+                    <option value="email">Email</option>
+                  </select>
+                </div>
 
                   <div>
                     <label className="block text-sm font-medium text-secondary mb-2">Upload photos <span className="text-muted-foreground font-normal">(optional)</span></label>
@@ -484,6 +560,33 @@ export function Contact() {
                         className="hidden"
                       />
                     </label>
+                    
+                    {/* Image Previews - Desktop */}
+                    {imagePreviews.length > 0 && (
+                      <div className="mt-4 grid grid-cols-4 gap-3">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={preview}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setLightboxImage(preview)}
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                removeImagePreview(index)
+                              }}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                              aria-label="Remove image"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Honeypot field - hidden from users */}
@@ -515,18 +618,18 @@ export function Contact() {
                     <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                       <p className="text-sm text-red-800 text-center font-medium">
                         {errorMessage}
-                      </p>
-                    </div>
+                  </p>
+                </div>
                   )}
 
-                  <Button
-                    type="submit"
-                    size="lg"
+                <Button
+                  type="submit"
+                  size="lg"
                     disabled={isSubmitting}
                     className="w-full bg-primary hover:bg-primary/90 text-white h-14 rounded-xl shadow-lg text-base font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                >
                     {isSubmitting ? "Submitting..." : "Request a Quote"}
-                  </Button>
+                </Button>
 
                   {/* Reassurance box below button - Desktop only */}
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1">
@@ -537,7 +640,7 @@ export function Contact() {
                       Emergency requests handled immediately.
                     </p>
                   </div>
-                </form>
+              </form>
               </div>
             </div>
           </div>
