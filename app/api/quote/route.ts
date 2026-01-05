@@ -47,11 +47,28 @@ export async function POST(req: Request) {
     const projectDetails = sanitize(formData.get("message") as string);
     const preferredContact = sanitize(formData.get("preferredContact") as string);
     
-    // Get uploaded photos
+    // Get uploaded photos with size validation
     const photoFiles: File[] = [];
     const photos = formData.getAll("photos");
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+    const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25MB total
+    
+    let totalSize = 0;
     for (const photo of photos) {
       if (photo instanceof File && photo.type.startsWith("image/")) {
+        if (photo.size > MAX_FILE_SIZE) {
+          return Response.json(
+            { ok: false, error: `File "${photo.name}" is too large. Maximum size is 10MB per file.` },
+            { status: 400 }
+          );
+        }
+        totalSize += photo.size;
+        if (totalSize > MAX_TOTAL_SIZE) {
+          return Response.json(
+            { ok: false, error: "Total file size exceeds 25MB. Please reduce the number or size of images." },
+            { status: 400 }
+          );
+        }
         photoFiles.push(photo);
       }
     }
@@ -129,8 +146,10 @@ export async function POST(req: Request) {
 
     return Response.json({ ok: true }, { status: 200 });
   } catch (err) {
+    console.error("Quote API error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Server error.";
     return Response.json(
-      { ok: false, error: "Server error." },
+      { ok: false, error: errorMessage },
       { status: 500 }
     );
   }

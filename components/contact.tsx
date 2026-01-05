@@ -94,6 +94,13 @@ export function Contact() {
         body: formDataToSend, // Don't set Content-Type header - browser will set it with boundary
       })
 
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text()
+        throw new Error(text || "Server returned an invalid response")
+      }
+
       const data = await res.json()
       
       if (!res.ok) {
