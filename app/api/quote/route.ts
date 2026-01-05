@@ -29,22 +29,32 @@ export async function POST(req: Request) {
       req.headers.get("x-real-ip") ||
       "unknown";
 
-    const body = await req.json();
+    // Handle FormData (for file uploads)
+    const formData = await req.formData();
 
     // Honeypot field: add <input name="company" ... hidden> to your form
-    const honeypot = sanitize(body.company);
+    const honeypot = sanitize(formData.get("company") as string);
     if (honeypot) {
       // Pretend success to bots; do not send email.
       return Response.json({ ok: true }, { status: 200 });
     }
 
-    const firstName = sanitize(body.firstName);
-    const lastName = sanitize(body.lastName);
-    const email = sanitize(body.email);
-    const phone = sanitize(body.phone);
-    const serviceNeeded = sanitize(body.service);
-    const projectDetails = sanitize(body.message);
-    const preferredContact = sanitize(body.preferredContact);
+    const firstName = sanitize(formData.get("firstName") as string);
+    const lastName = sanitize(formData.get("lastName") as string);
+    const email = sanitize(formData.get("email") as string);
+    const phone = sanitize(formData.get("phone") as string);
+    const serviceNeeded = sanitize(formData.get("service") as string);
+    const projectDetails = sanitize(formData.get("message") as string);
+    const preferredContact = sanitize(formData.get("preferredContact") as string);
+    
+    // Get uploaded photos
+    const photoFiles: File[] = [];
+    const photos = formData.getAll("photos");
+    for (const photo of photos) {
+      if (photo instanceof File && photo.type.startsWith("image/")) {
+        photoFiles.push(photo);
+      }
+    }
 
     // Minimal required fields
     if (!firstName || !phone || !serviceNeeded) {
@@ -89,10 +99,24 @@ export async function POST(req: Request) {
       `Project Details:`,
       projectDetails || "(none provided)",
       ``,
+      photoFiles.length > 0 ? `${photoFiles.length} photo(s) attached.` : "No photos attached.",
+      ``,
       `Meta:`,
       `IP: ${ip}`,
       `Time: ${now}`,
     ].join("\n");
+
+    // Prepare email attachments
+    const attachments = await Promise.all(
+      photoFiles.map(async (file) => {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        return {
+          filename: file.name,
+          content: buffer,
+        };
+      })
+    );
 
     await resend.emails.send({
       from,
@@ -100,6 +124,7 @@ export async function POST(req: Request) {
       subject,
       text,
       replyTo: email ? email : undefined,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     return Response.json({ ok: true }, { status: 200 });

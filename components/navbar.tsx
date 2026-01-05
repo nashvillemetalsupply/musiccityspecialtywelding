@@ -53,12 +53,10 @@ export function Navbar() {
           >
             <div className="relative">
               <img 
-                src="/images/music_city_logo.png" 
+                src="/images/mcs welding logo.png" 
                 alt="Music City Specialty Welding Logo" 
                 className="h-7 sm:h-8 md:h-10 lg:h-12 w-auto translate-y-1"
               />
-              {/* Underline at 70-75% width, left-aligned to "SPECIALTY WELDING" */}
-              <div className="absolute bottom-0 left-0 h-0.5 bg-primary w-[72%]"></div>
             </div>
           </Link>
 

@@ -71,19 +71,27 @@ export function Contact() {
     setErrorMessage("")
 
     try {
+      // Create FormData to include file uploads
+      const formDataToSend = new FormData()
+      formDataToSend.append("firstName", formData.firstName)
+      formDataToSend.append("lastName", formData.lastName)
+      formDataToSend.append("email", formData.email)
+      formDataToSend.append("phone", formData.phone)
+      formDataToSend.append("service", formData.service)
+      formDataToSend.append("message", formData.message)
+      formDataToSend.append("preferredContact", formData.preferredContact)
+      formDataToSend.append("company", formData.company) // Honeypot
+      
+      // Append photos if they exist
+      if (formData.photos && formData.photos.length > 0) {
+        for (let i = 0; i < formData.photos.length; i++) {
+          formDataToSend.append("photos", formData.photos[i])
+        }
+      }
+
       const res = await fetch("/api/quote", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          service: formData.service,
-          message: formData.message,
-          preferredContact: formData.preferredContact,
-          company: formData.company, // Honeypot
-        }),
+        body: formDataToSend, // Don't set Content-Type header - browser will set it with boundary
       })
 
       const data = await res.json()
