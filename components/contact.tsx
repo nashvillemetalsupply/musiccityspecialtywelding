@@ -15,8 +15,8 @@ export function Contact() {
     message: "",
     preferredContact: "",
     company: "", // Honeypot field
-    photos: null as FileList | null,
   })
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]) // Store files as array
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
@@ -82,11 +82,11 @@ export function Contact() {
       formDataToSend.append("preferredContact", formData.preferredContact)
       formDataToSend.append("company", formData.company) // Honeypot
       
-      // Append photos if they exist
-      if (formData.photos && formData.photos.length > 0) {
-        for (let i = 0; i < formData.photos.length; i++) {
-          formDataToSend.append("photos", formData.photos[i])
-        }
+      // Append all photo files
+      if (photoFiles.length > 0) {
+        photoFiles.forEach(file => {
+          formDataToSend.append("photos", file)
+        })
       }
 
       const res = await fetch("/api/quote", {
@@ -104,6 +104,7 @@ export function Contact() {
       // Clean up image preview URLs
       imagePreviews.forEach(url => URL.revokeObjectURL(url))
       setImagePreviews([])
+      setPhotoFiles([])
       // Reset form
       setFormData({
         firstName: "",
@@ -114,7 +115,6 @@ export function Contact() {
         message: "",
         preferredContact: "",
         company: "",
-        photos: null,
       })
       // Reset file input
       const fileInput = document.querySelector('input[name="photos"]') as HTMLInputElement
@@ -132,22 +132,29 @@ export function Contact() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (e.target.type === 'file') {
       const fileInput = e.target as HTMLInputElement
-      const files = fileInput.files
+      const newFiles = fileInput.files
       
-      if (files && files.length > 0) {
-        // Create preview URLs for selected images
-        const previews: string[] = []
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i]
+      if (newFiles && newFiles.length > 0) {
+        // Create preview URLs for newly selected images
+        const newPreviews: string[] = []
+        const filesToAdd: File[] = []
+        
+        for (let i = 0; i < newFiles.length; i++) {
+          const file = newFiles[i]
           if (file.type.startsWith('image/')) {
-            previews.push(URL.createObjectURL(file))
+            newPreviews.push(URL.createObjectURL(file))
+            filesToAdd.push(file)
           }
         }
-        setImagePreviews(prev => [...prev, ...previews])
-      setFormData({
-        ...formData,
-          photos: files,
-      })
+        
+        // Append new previews to existing ones
+        setImagePreviews(prev => [...prev, ...newPreviews])
+        
+        // Append new files to existing files array
+        setPhotoFiles(prev => [...prev, ...filesToAdd])
+        
+        // Reset the file input so user can select more files if needed
+        fileInput.value = ''
       }
     } else {
       setFormData({
@@ -171,16 +178,16 @@ export function Contact() {
     const newPreviews = imagePreviews.filter((_, index) => index !== indexToRemove)
     setImagePreviews(newPreviews)
     
-    // If all previews are removed, clear the file input
-    if (newPreviews.length === 0) {
+    // Remove corresponding file from files array
+    const newFiles = photoFiles.filter((_, index) => index !== indexToRemove)
+    setPhotoFiles(newFiles)
+    
+    // If all files are removed, clear the file input
+    if (newFiles.length === 0) {
       const fileInput = document.querySelector('input[name="photos"]') as HTMLInputElement
       if (fileInput) {
         fileInput.value = ''
       }
-      setFormData({
-        ...formData,
-        photos: null,
-      })
     }
   }
 
