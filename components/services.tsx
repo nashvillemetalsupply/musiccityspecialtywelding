@@ -126,7 +126,7 @@ export function Services() {
                 <img 
                   src={
                     index === 0 ? "/images/welding_staircase.png" :
-                    index === 1 ? "/images/mobile_hero_v2.png" :
+                    index === 1 ? "/images/mobile_repair.png" :
                     index === 2 ? "/images/04_equipment.png" :
                     index === 3 ? "/images/05_specialty_fabrication.png" :
                     "/images/image.jpeg"
@@ -226,7 +226,7 @@ export function Services() {
                   <img 
                     src={
                       index === 0 ? "/images/welding_staircase.png" :
-                      index === 1 ? "/images/mobile_hero_v2.png" :
+                      index === 1 ? "/images/mobile_repair.png" :
                       index === 2 ? "/images/04_equipment.png" :
                       index === 3 ? "/images/05_specialty_fabrication.png" :
                       "/images/image.jpeg"
