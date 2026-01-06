@@ -125,10 +125,10 @@ export function Services() {
               <div className="w-full overflow-hidden rounded-lg mt-4" style={{ maxHeight: '35vh', aspectRatio: '4/3' }}>
                 <img 
                   src={
-                    index === 0 ? "/images/welding_staircase.png" :
-                    index === 1 ? "/images/mobile_repair.png" :
-                    index === 2 ? "/images/04_equipment.png" :
-                    index === 3 ? "/images/05_specialty_fabrication.png" :
+                    index === 0 ? "/images/Service 02.jpg" :
+                    index === 1 ? "/images/Service 03.jpg" :
+                    index === 2 ? "/images/Service 04.jpg" :
+                    index === 3 ? "/images/Service 05.jpg" :
                     "/images/image.jpeg"
                   } 
                   alt={service.title} 
@@ -225,10 +225,10 @@ export function Services() {
                 <div className="relative h-96 rounded-xl overflow-hidden">
                   <img 
                     src={
-                      index === 0 ? "/images/welding_staircase.png" :
-                      index === 1 ? "/images/mobile_repair.png" :
-                      index === 2 ? "/images/04_equipment.png" :
-                      index === 3 ? "/images/05_specialty_fabrication.png" :
+                      index === 0 ? "/images/Service 02.jpg" :
+                      index === 1 ? "/images/Service 03.jpg" :
+                      index === 2 ? "/images/Service 04.jpg" :
+                      index === 3 ? "/images/Service 05.jpg" :
                       "/images/image.jpeg"
                     } 
                     alt={service.title} 

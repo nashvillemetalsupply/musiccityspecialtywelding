@@ -223,6 +223,16 @@ export function Contact() {
             </p>
           </div>
 
+            {/* Owner-Operated Trust Signal */}
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
+              <p className="text-sm font-semibold text-secondary mb-1">
+                Owner-Operated.
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+              You’ll speak directly with the person doing the work — no dispatcher, no sales rep.
+              </p>
+            </div>
+
             {/* Form */}
             <div className="bg-white rounded-xl p-5 shadow-xl border border-border">
               <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
@@ -469,6 +479,16 @@ export function Contact() {
 
               {/* Contact Form */}
               <div className="bg-white rounded-3xl p-8 shadow-xl border border-border">
+                {/* Owner-Operated Trust Signal */}
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-6 text-center">
+                  <p className="text-base font-semibold text-secondary mb-1.5">
+                    Owner-Operated.
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  You’ll speak directly with the person doing the work — no dispatcher, no sales rep.
+                  </p>
+                </div>
+                
                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -567,25 +587,25 @@ export function Contact() {
                   </select>
                 </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Upload photos <span className="text-muted-foreground font-normal">(optional)</span></label>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-2">Upload photos <span className="text-muted-foreground font-normal">(optional)</span></label>
                     <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-xl cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6 px-2">
-                        <svg className="w-8 h-8 mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
+                      <svg className="w-8 h-8 mb-2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
                         <p className="mb-2 text-sm text-muted-foreground text-center"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                         <p className="text-xs text-muted-foreground text-center">PNG, JPG, GIF (optional)</p>
-                      </div>
-                      <input
-                        type="file"
-                        name="photos"
-                        onChange={handleChange}
-                        multiple
-                        accept="image/*"
-                        className="hidden"
-                      />
-                    </label>
+                    </div>
+                    <input
+                      type="file"
+                      name="photos"
+                      onChange={handleChange}
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
                     
                     {/* Image Previews - Desktop */}
                     {imagePreviews.length > 0 && (
@@ -613,7 +633,7 @@ export function Contact() {
                         ))}
                       </div>
                     )}
-                  </div>
+                </div>
 
                   {/* Honeypot field - hidden from users */}
                   <input
