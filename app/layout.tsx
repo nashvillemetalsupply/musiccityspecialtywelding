@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Playfair_Display, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import Script from "next/script"
 import "./globals.css"
 
 const _playfairDisplay = Playfair_Display({
@@ -40,6 +41,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${_inter.variable} ${_playfairDisplay.variable} font-sans antialiased`}>
+        {/* Google Ads Conversion Tracking */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-17817632790"
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-17817632790');
+          `}
+        </Script>
         {children}
         <Analytics />
       </body>

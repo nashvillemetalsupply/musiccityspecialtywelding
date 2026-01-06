@@ -108,6 +108,10 @@ export function Contact() {
       }
 
       setSubmitStatus("success")
+      
+      // Google Ads will automatically detect the form submission
+      // (configured in Google Ads to track form submissions on the domain)
+      
       // Clean up image preview URLs
       imagePreviews.forEach(url => URL.revokeObjectURL(url))
       setImagePreviews([])
