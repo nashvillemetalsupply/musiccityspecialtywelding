@@ -1,57 +1,89 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function Services() {
-  const scrollToContact = () => {
-    const element = document.getElementById("contact")
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
-    }
-  }
-
   const services = [
     {
       number: "02",
+      slug: "architectural-welding",
       title: "Architectural Welding",
       subtitle: "& Fabrication",
+      image: "/images/optimized/Service 02.webp",
       description:
-        "Custom metalwork that combines structural strength with refined design. From railings to stair systems, we fabricate code-compliant steel for long-term commercial use.",
+        "Custom metalwork that combines structural requirements with a clean finished result. From railings to stair systems, we fabricate steel from confirmed dimensions, drawings, and installation requirements.",
       features: ["Custom Design", "Structural Fabrication", "Architectural Details"],
       availability: null,
       qualifying: null,
     },
     {
       number: "03",
+      slug: "mobile-welding",
       title: "Mobile Welding. Fixed On-Site.",
       subtitle: "",
+      image: "/images/optimized/trailer_repair.webp",
       description:
-        "We come to your site to repair equipment, structural failures, and broken components — fast, clean, and done right the first time.",
-      features: ["24/7 Emergency Service", "Industrial & Commercial Equipment", "Rapid On-Site Response"],
-      availability: "Typical response: Same-day or next-day availability",
+        "We come to your site to evaluate and repair equipment, structural failures, and broken components when on-site work is the right fit.",
+      features: ["Urgent Work When Available", "Industrial & Commercial Equipment", "On-Site Repair Evaluation"],
+      availability: "Call to confirm current mobile availability",
       serviceRadius: "Service radius varies by project scope.",
       qualifying: null,
     },
     {
       number: "04",
+      slug: "equipment-repair",
       title: "Equipment Repair & Maintenance",
       subtitle: "",
+      image: "/images/optimized/Service 04.webp",
       description:
-        "Reliable repair and maintenance for industrial equipment, machinery, and production assets. From scheduled maintenance to urgent repairs, we help minimize downtime and keep production moving.",
-      features: ["Industrial Grade", "Preventive Care", "Minimal Downtime"],
+        "Repair and maintenance for industrial equipment, machinery, and production assets. We review the failure, load, access, and service requirements before confirming the repair plan.",
+      features: ["Equipment Repair", "Preventive Maintenance", "Working Asset Repairs"],
       availability: null,
       qualifying: null,
     },
     {
       number: "05",
+      slug: "custom-fabrication",
       title: "Specialty Fabrication",
       subtitle: "& Custom Work",
+      image: "/images/optimized/speciality_welding.webp",
       description:
-        "Expert fabrication of gas manifolds, streetscape poles, custom signage, and specialized metalwork—built to exact specifications, drawings, and real-world installation requirements.",
+        "Fabrication of gas manifolds, streetscape poles, custom signage, and specialized metalwork built from documented specifications, drawings, and installation requirements.",
       features: ["Built-to-Spec", "Drawing-Driven", "Industrial Materials"],
       availability: null,
       qualifying: "Ideal for municipalities, utilities, contractors, and industrial facilities.",
       specAuthority: "Built to drawings, tolerances, and installation requirements.",
+    },
+    {
+      number: "06",
+      slug: "custom-metal-products",
+      title: "Custom Wrought Iron Mailboxes",
+      subtitle: "Built to Order",
+      image: "/images/mailbox.webp",
+      secondaryImage: "/images/optimized/bracket.webp",
+      description:
+        "We design and build custom wrought iron mailboxes for residential and commercial properties, with dimensions, layout, finish, and mounting reviewed before fabrication.",
+      features: ["Custom Fabrication", "Installation Planning", "Mailbox Repair", "Residential & Cluster Units"],
+      availability: null,
+      qualifying:
+        "We fabricate individual residential mailboxes and commercial-style mailbox clusters for neighborhoods, apartments, businesses, and multi-unit properties.",
+      specAuthority:
+        "Built from heavy-duty steel for long-term performance, security, and clean architectural appeal.",
+    },
+    {
+      number: "07",
+      slug: "custom-metal-products",
+      title: "Custom Metal Planter Boxes",
+      subtitle: "Built to Order",
+      image: "/images/optimized/planter picture.webp",
+      description:
+        "Custom metal planter boxes are reviewed around size, placement, drainage, finish, and installation needs for residential and commercial landscapes.",
+      features: ["Custom Built to Spec", "Steel Construction", "Modern Architectural Look", "Installation Planning"],
+      availability: null,
+      qualifying:
+        "Each planter is built to your size, shape, and finish, from rooftop planters to decorative entryway pieces and commercial properties.",
+      specAuthority:
+        "Designed for long-term outdoor use with proper placement, stability, and drainage.",
     },
   ]
 
@@ -72,15 +104,15 @@ export function Services() {
           {/* Proof Strip */}
           <div className="mb-4 sm:mb-6 md:mb-8 space-y-2 sm:space-y-3">
             <div className="flex flex-wrap gap-x-2 sm:gap-x-3 md:gap-x-4 gap-y-1.5 sm:gap-y-2 text-xs sm:text-sm font-medium text-muted-foreground">
-              <span>Licensed & Insured</span>
+              <span>Mobile & Shop Welding</span>
               <span className="hidden sm:inline">•</span>
-              <span>Commercial-Grade Work</span>
+              <span>Documented Project Scope</span>
               <span className="hidden sm:inline">•</span>
               <span className="break-words">Serving Greater Nashville</span>
               <span className="hidden sm:inline">•</span>
-              <span className="break-words">Same/Next-Day Response (when available)</span>
+              <span className="break-words">Emergency Work When Available</span>
             </div>
-            <div className="text-[10px] sm:text-xs text-muted-foreground/70">
+            <div className="text-[10px] sm:text-xs text-muted-foreground">
               Contractors • Facilities • Utilities • Municipalities
             </div>
           </div>
@@ -121,41 +153,59 @@ export function Services() {
                 ))}
               </ul>
 
+              <Link
+                href={`/services/${service.slug}`}
+                className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:text-primary/80"
+              >
+                Learn more about {service.title}
+              </Link>
+
               {/* Optional image - AFTER text, locked sizing for consistency */}
               <div className="w-full overflow-hidden rounded-lg mt-4" style={{ maxHeight: '35vh', aspectRatio: '4/3' }}>
-                <img 
-                  src={
-                    index === 0 ? "/images/Service 02.jpg" :
-                    index === 1 ? "/images/Service 03.jpg" :
-                    index === 2 ? "/images/Service 04.jpg" :
-                    index === 3 ? "/images/Service 05.jpg" :
-                    "/images/image.jpeg"
-                  } 
-                  alt={service.title} 
-                  className="w-full h-full object-cover" 
+                <img
+                  src={service.image}
+                  alt={service.title}
+                  width={1000}
+                  height={750}
+                  className="w-full h-full object-cover"
                   style={{ maxHeight: '35vh', objectFit: 'cover', aspectRatio: '4/3' }}
                   loading="lazy"
+                  decoding="async"
                 />
               </div>
+              {service.secondaryImage && (
+                <div className="w-full overflow-hidden rounded-lg" style={{ maxHeight: '28vh', aspectRatio: '4/3' }}>
+                  <img
+                    src={service.secondaryImage}
+                    alt={`${service.title} detail`}
+                    width={1000}
+                    height={750}
+                    className="w-full h-full object-cover"
+                    style={{ maxHeight: '28vh', objectFit: 'cover', aspectRatio: '4/3' }}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              )}
 
               {/* Additional info if exists */}
               {service.availability && (
-                <p className="text-xs text-muted-foreground/80 italic">
+                <p className="text-xs text-muted-foreground italic">
                   {service.availability}
                 </p>
               )}
               {service.serviceRadius && (
-                <p className="text-xs text-muted-foreground/80 italic">
+                <p className="text-xs text-muted-foreground italic">
                   {service.serviceRadius}
                 </p>
               )}
               {service.qualifying && (
-                <p className="text-xs text-muted-foreground/80 italic">
+                <p className="text-xs text-muted-foreground italic">
                   {service.qualifying}
                 </p>
               )}
               {service.specAuthority && (
-                <p className="text-xs text-muted-foreground/80 italic">
+                <p className="text-xs text-muted-foreground italic">
                   {service.specAuthority}
                 </p>
               )}
@@ -202,6 +252,13 @@ export function Services() {
                       ))}
                     </div>
 
+                    <Link
+                      href={`/services/${service.slug}`}
+                      className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:text-primary/80"
+                    >
+                      Learn more about {service.title}
+                    </Link>
+
                     {service.availability && (
                       <p className="text-sm text-muted-foreground/80 italic mt-2">
                         {service.availability}
@@ -222,22 +279,34 @@ export function Services() {
               </div>
 
               <div className={`col-span-5 ${index % 2 === 0 ? "" : "col-start-1 row-start-1"}`}>
-                <div className="relative h-96 rounded-xl overflow-hidden">
-                  <img 
-                    src={
-                      index === 0 ? "/images/Service 02.jpg" :
-                      index === 1 ? "/images/Service 03.jpg" :
-                      index === 2 ? "/images/Service 04.jpg" :
-                      index === 3 ? "/images/Service 05.jpg" :
-                      "/images/image.jpeg"
-                    } 
-                    alt={service.title} 
-                    className="w-full h-full object-cover shadow-xl" 
-                    loading="lazy"
-                  />
-                  <div className="absolute top-6 right-6 bg-primary text-white w-16 h-16 flex items-center justify-center rounded">
-                    <span className="font-serif text-2xl font-bold">{service.number}</span>
+                <div className="space-y-4">
+                  <div className="relative h-96 rounded-xl overflow-hidden">
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      width={1000}
+                      height={750}
+                      className="w-full h-full object-cover shadow-xl"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div className="absolute top-6 right-6 bg-primary text-white w-16 h-16 flex items-center justify-center rounded">
+                      <span className="font-serif text-2xl font-bold">{service.number}</span>
+                    </div>
                   </div>
+                  {service.secondaryImage && (
+                    <div className="h-64 rounded-xl overflow-hidden">
+                      <img
+                        src={service.secondaryImage}
+                        alt={`${service.title} detail`}
+                        width={1000}
+                        height={750}
+                        className="w-full h-full object-cover shadow-xl"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

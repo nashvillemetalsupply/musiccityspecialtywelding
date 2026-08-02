@@ -11,15 +11,15 @@ export function TrustSignals() {
             </div>
             <div className="space-y-1">
               <div className="text-base font-serif font-bold text-primary">✓</div>
-              <div className="text-xs font-medium text-secondary leading-tight">Licensed & Insured</div>
+              <div className="text-xs font-medium text-secondary leading-tight">Mobile & Shop Welding</div>
             </div>
             <div className="space-y-1">
               <div className="text-base font-serif font-bold text-primary">✓</div>
-              <div className="text-xs font-medium text-secondary leading-tight">Commercial & Industrial Clients</div>
+              <div className="text-xs font-medium text-secondary leading-tight">Commercial & Industrial Work</div>
             </div>
             <div className="space-y-1">
               <div className="text-base font-serif font-bold text-primary">✓</div>
-              <div className="text-xs font-medium text-secondary leading-tight">Trusted by Contractors & Facilities</div>
+              <div className="text-xs font-medium text-secondary leading-tight">Urgent Work When Available</div>
             </div>
           </div>
 
@@ -31,15 +31,15 @@ export function TrustSignals() {
             </div>
             <div className="space-y-3">
               <div className="text-4xl font-serif font-bold text-primary">✓</div>
-              <div className="text-base font-medium text-secondary leading-snug">Licensed & Insured</div>
+              <div className="text-base font-medium text-secondary leading-snug">Mobile & Shop Welding</div>
             </div>
             <div className="space-y-3">
               <div className="text-4xl font-serif font-bold text-primary">✓</div>
-              <div className="text-base font-medium text-secondary leading-snug">Commercial & Industrial Clients</div>
+              <div className="text-base font-medium text-secondary leading-snug">Commercial & Industrial Work</div>
             </div>
             <div className="space-y-3">
               <div className="text-4xl font-serif font-bold text-primary">✓</div>
-              <div className="text-base font-medium text-secondary leading-snug">Trusted by contractors, facilities, and municipalities</div>
+              <div className="text-base font-medium text-secondary leading-snug">Emergency service available when scheduling allows</div>
             </div>
           </div>
         </div>

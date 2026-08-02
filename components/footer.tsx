@@ -33,17 +33,25 @@ export function Footer() {
           <div className="lg:hidden space-y-4">
             <Link href="/" className="text-center block hover:opacity-80 transition-opacity">
               <div className="font-serif font-semibold text-sm leading-none mb-1">Music City Specialty Welding</div>
-              <div className="text-[10px] text-white/60">Licensed • Insured</div>
+              <div className="text-[10px] text-white/60">Mobile • Shop • On-site</div>
             </Link>
             
             <div className="text-center space-y-1 text-xs text-white/70">
               <div>
                 <a href="tel:6158104910" className="hover:text-white">(615) 810-4910</a>
               </div>
-              <div className="text-white/60">Mon - Fri: 7:00 AM - 6:00 PM (CT)</div>
+              <div className="text-white/60">Open 24 hours</div>
             </div>
 
             <div className="border-t border-white/10 pt-3 text-center">
+              <a
+                href="https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-2 inline-block text-[11px] text-white/70 hover:text-white"
+              >
+                Facebook
+              </a>
               <p className="text-[10px] text-white/50">
                 &copy; {new Date().getFullYear()} Music City Specialty Welding
               </p>
@@ -68,13 +76,13 @@ export function Footer() {
                 </Link>
 
                 <p className="text-base text-white/70 leading-relaxed mb-6 max-w-md">
-                  Professional mobile welding and fabrication services throughout Nashville and surrounding areas.
-                  Bringing expert craftsmanship directly to you.
+                  Mobile welding and fabrication services throughout Nashville and surrounding areas.
+                  On-site and shop work built around the documented project scope.
                 </p>
 
                 <div className="space-y-3 text-sm text-white/70 mb-6">
-                  <div>Available 24/7 for emergency service</div>
-                  <div className="text-white/60">Licensed • Insured • Commercial-grade work</div>
+                  <div>Urgent work considered when availability allows</div>
+                  <div className="text-white/60">Mobile • Shop • On-site</div>
                 </div>
 
                 <button
@@ -119,9 +127,9 @@ export function Footer() {
               <div>
                 <h3 className="font-semibold text-lg mb-6">Hours</h3>
                 <ul className="space-y-3 text-sm text-white/70">
-                  <li>Monday - Friday</li>
-                  <li>7:00 AM - 6:00 PM (CT)</li>
-                  <li className="pt-2">Emergency services available 24/7</li>
+                  <li>Monday - Sunday</li>
+                  <li>Open 24 hours</li>
+                  <li className="pt-2">Urgent work: call to confirm</li>
                 </ul>
               </div>
             </div>
@@ -132,6 +140,14 @@ export function Footer() {
                 &copy; {new Date().getFullYear()} Music City Specialty Welding. All rights reserved.
               </p>
               <div className="flex gap-6 text-sm text-white/50">
+                <a
+                  href="https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  Facebook
+                </a>
                 <a href="/privacy" className="hover:text-white transition-colors">
                   Privacy Policy
                 </a>

@@ -25,3 +25,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local backups and QA artifacts
+/.backups/
+/tmp/
+/lighthouse*.json
+/GROWTH_GAPS_AUDIT_*.md

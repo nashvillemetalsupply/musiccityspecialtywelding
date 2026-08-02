@@ -1,5 +1,13 @@
+import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "How Music City Specialty Welding collects, uses, and protects website and quote-request information.",
+  alternates: { canonical: "/privacy" },
+  openGraph: { url: "/privacy" },
+}
 
 export default function PrivacyPage() {
   return (
@@ -12,7 +20,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="text-sm text-muted-foreground mb-10 sm:mb-12">
-              Last updated: January 3, 2026
+              Last updated: August 1, 2026
             </p>
 
             <div className="space-y-8 text-base text-foreground leading-relaxed">
@@ -92,7 +100,16 @@ export default function PrivacyPage() {
                   <li>Improve performance and usability</li>
                 </ul>
                 <p>
-                  You can disable cookies through your browser settings if you prefer.
+                  We use Vercel Analytics and Google Analytics to understand website usage, and Google advertising technology to measure whether an ad leads to a successful quote request. These providers may process device, browser, page, and conversion-event information under their own privacy terms. Learn more about{" "}
+                  <a
+                    href="https://policies.google.com/technologies/partner-sites"
+                    className="text-primary hover:text-primary/80 transition-colors"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    how Google uses information from sites that use its services
+                  </a>
+                  . You can limit cookies through your browser settings and Google advertising controls.
                 </p>
               </section>
 

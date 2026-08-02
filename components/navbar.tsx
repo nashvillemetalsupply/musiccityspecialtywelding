@@ -61,9 +61,12 @@ export function Navbar() {
           >
             <div className="relative">
               <img 
-                src="/images/mcs_welding_logo.png" 
+                src="/images/optimized/mcs_welding_logo.webp"
                 alt="Music City Specialty Welding Logo" 
+                width={240}
+                height={160}
                 className="h-7 sm:h-8 md:h-10 lg:h-12 w-auto translate-y-1"
+                decoding="async"
               />
             </div>
           </Link>

@@ -8,7 +8,8 @@ export function Hero() {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    setIsVisible(true)
+    const frame = window.requestAnimationFrame(() => setIsVisible(true))
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   const scrollToContact = () => {
@@ -20,6 +21,7 @@ export function Hero() {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center overflow-x-hidden pt-16 sm:pt-20 md:pt-22 lg:pt-24">
+      <h1 className="sr-only">Mobile Welding and Fabrication Across Nashville</h1>
       {/* Visual separator gradient */}
       <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent hidden lg:block -translate-x-1/2" style={{ left: 'calc(58.333% - 1px)' }}></div>
       
@@ -29,11 +31,15 @@ export function Hero() {
           {/* Mobile: Image first, 35-40% viewport max */}
           <div className="w-full" style={{ maxHeight: '38vh' }}>
             <img
-              src="/images/welder.webp"
+              src="/images/optimized/welder.webp"
               alt="Professional welding craftsmanship"
+              width={1200}
+              height={960}
               className="w-full h-full object-cover object-center rounded-lg shadow-xl"
               style={{ maxHeight: '38vh', objectPosition: 'center 30%' }}
-              loading="lazy"
+              loading="eager"
+              fetchPriority="high"
+              decoding="sync"
             />
           </div>
 
@@ -43,12 +49,12 @@ export function Hero() {
               Serving Greater Nashville
             </div>
 
-            <h1 className="font-serif font-bold text-secondary leading-[1.1] tracking-tight text-3xl sm:text-4xl">
+            <div className="font-serif font-bold text-secondary leading-[1.1] tracking-tight text-3xl sm:text-4xl">
               Mobile Welding &amp; Fabrication
-            </h1>
+            </div>
 
             <p className="text-base font-medium text-secondary">
-              Fast, on-site commercial &amp; industrial welding.
+              On-site commercial &amp; industrial welding.
             </p>
 
             {/* Mobile: Single CTA */}
@@ -62,7 +68,7 @@ export function Hero() {
 
             {/* Mobile: Description below image - tighter copy */}
             <p className="text-sm text-muted-foreground leading-relaxed pt-2">
-              Certified technicians come to you — repairs, fabrication, and on-site work.
+              Mobile welding comes to you: repairs, fabrication, and on-site work.
             </p>
           </div>
         </div>
@@ -77,7 +83,7 @@ export function Hero() {
                 Serving Greater Nashville
               </div>
 
-              <h1 className={`font-serif font-bold text-secondary leading-[1.1] tracking-tight transition-all duration-1000 delay-200 ${
+              <div className={`font-serif font-bold text-secondary leading-[1.1] tracking-tight transition-all duration-1000 delay-200 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
               style={{ fontSize: 'clamp(2rem, 6vw + 0.5rem, 4.5rem)' }}>
@@ -86,25 +92,25 @@ export function Hero() {
                 <span className="block text-primary italic mt-1">
                   Across Nashville
                 </span>
-              </h1>
+              </div>
 
               <p className={`text-xl font-medium text-secondary transition-all duration-1000 delay-300 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}>
-                Fast, on-site welding for equipment, facilities, and fabrication
+                On-site welding for equipment, facilities, and fabrication
               </p>
 
               {/* Credibility anchor line - Desktop only */}
               <p className={`text-sm text-muted-foreground/70 transition-all duration-1000 delay-350 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}>
-                Licensed & insured · Commercial-grade work · Fast on-site response
+                Mobile and shop service · Middle Tennessee coverage · Built around your project
               </p>
 
               <p className={`text-lg text-muted-foreground leading-relaxed max-w-2xl transition-all duration-1000 delay-400 ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}>
-                Get professional mobile welding services throughout the greater Nashville area. Our certified technicians come directly to you, handling everything from on-site repairs to custom fabrication with dependable workmanship.
+                Our mobile welding team serves the greater Nashville area with on-site repairs and custom fabrication. We review access, material, safety, and scope before confirming the right work plan.
               </p>
             </div>
 
@@ -132,25 +138,25 @@ export function Hero() {
               </div>
 
               <div className="grid grid-cols-3 gap-4 pt-6 max-w-lg">
-                <div className="text-left" aria-label="10+ Years of experience">
-                  <div className="font-serif text-5xl font-extrabold text-foreground">10+</div>
+                <div className="text-left" aria-label="Mobile welding service">
+                  <div className="font-serif text-4xl font-extrabold text-foreground">Mobile</div>
                   <div className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
                     <Clock className="h-4 w-4" />
-                    <span>Years</span>
+                    <span>Service</span>
                   </div>
                 </div>
-                <div className="text-left" aria-label="100+ Projects completed">
-                  <div className="font-serif text-5xl font-extrabold text-foreground">100+</div>
+                <div className="text-left" aria-label="Middle Tennessee coverage">
+                  <div className="font-serif text-4xl font-extrabold text-foreground">Middle TN</div>
                   <div className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
                     <Briefcase className="h-4 w-4" />
-                    <span>Projects</span>
+                    <span>Coverage</span>
                   </div>
                 </div>
-                <div className="text-left" aria-label="24/7 Available for emergencies">
-                  <div className="font-serif text-5xl font-extrabold text-foreground">24/7</div>
+                <div className="text-left" aria-label="Call to confirm urgent work availability">
+                  <div className="font-serif text-4xl font-extrabold text-foreground">Urgent</div>
                   <div className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
                     <CheckCircle className="h-4 w-4" />
-                    <span>Available</span>
+                    <span>Call first</span>
                   </div>
                 </div>
               </div>
@@ -164,10 +170,14 @@ export function Hero() {
               }`}>
                 <div className="w-full h-full">
                   <img
-                    src="/images/welder.webp"
+                    src="/images/optimized/welder.webp"
                     alt="Professional welding craftsmanship"
+                    width={1200}
+                    height={960}
                     className="w-full h-full object-cover shadow-2xl rounded-sm"
-                    loading="lazy"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="sync"
                   />
                 </div>
               </div>
@@ -176,7 +186,15 @@ export function Hero() {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}>
                 <div className="w-full h-full">
-                  <img src="/images/EDITED.jpg" alt="Welding detail work" className="w-full h-full object-cover rounded-sm" loading="lazy" />
+                  <img
+                    src="/images/optimized/EDITED.webp"
+                    alt="Welding detail work"
+                    width={1000}
+                    height={750}
+                    className="w-full h-full object-cover rounded-sm"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
                 <div className="absolute bottom-4 left-4 right-4 bg-primary text-white p-4">
                   <div className="text-xs uppercase tracking-wider mb-1">Mobile Service</div>

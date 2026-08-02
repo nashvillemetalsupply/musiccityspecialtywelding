@@ -1,5 +1,13 @@
+import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Website and quote-request terms for Music City Specialty Welding.",
+  alternates: { canonical: "/terms" },
+  openGraph: { url: "/terms" },
+}
 
 export default function TermsPage() {
   return (
@@ -88,7 +96,7 @@ export default function TermsPage() {
                   Intellectual Property
                 </h2>
                 <p>
-                  All content on this website—including text, images, logos, and branding—is the property of Music City Specialty Welding and may not be copied, reproduced, or used without written permission.
+                  All content on this website, including text, images, logos, and branding, is the property of Music City Specialty Welding and may not be copied, reproduced, or used without written permission.
                 </p>
               </section>
 

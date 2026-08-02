@@ -2,6 +2,39 @@ import { Resend } from "resend";
 
 export const runtime = "nodejs"; // important for email libs
 
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+]);
+const MAX_PHOTO_COUNT = 5;
+const MAX_FILE_SIZE = 3 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 4 * 1024 * 1024;
+const MAX_REQUEST_SIZE = 6 * 1024 * 1024;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 6;
+
+type RateLimitEntry = { count: number; resetAt: number };
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+function isRateLimited(ip: string) {
+  if (!ip || ip === "unknown") return false;
+
+  const now = Date.now();
+  const existing = rateLimitStore.get(ip);
+
+  if (!existing || existing.resetAt <= now) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+
+  existing.count += 1;
+  return existing.count > RATE_LIMIT_MAX_REQUESTS;
+}
+
 function isValidEmail(email?: string) {
   if (!email) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -29,6 +62,23 @@ export async function POST(req: Request) {
       req.headers.get("x-real-ip") ||
       "unknown";
 
+    const contentLength = Number(req.headers.get("content-length") || "0");
+    if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_SIZE) {
+      return Response.json(
+        { ok: false, error: "This request is too large. Please attach fewer or smaller photos." },
+        { status: 413 }
+      );
+    }
+
+    // Best-effort per-instance protection. A shared store is still needed for a
+    // durable limit across all serverless instances.
+    if (isRateLimited(ip)) {
+      return Response.json(
+        { ok: false, error: "Too many quote attempts. Please wait a few minutes or call (615) 810-4910." },
+        { status: 429, headers: { "Retry-After": "600" } }
+      );
+    }
+
     // Handle FormData (for file uploads)
     const formData = await req.formData();
 
@@ -50,22 +100,31 @@ export async function POST(req: Request) {
     // Get uploaded photos with size validation
     const photoFiles: File[] = [];
     const photos = formData.getAll("photos");
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
-    const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25MB total
-    
     let totalSize = 0;
     for (const photo of photos) {
-      if (photo instanceof File && photo.type.startsWith("image/")) {
+      if (photo instanceof File) {
+        if (!ALLOWED_IMAGE_TYPES.has(photo.type)) {
+          return Response.json(
+            { ok: false, error: "Please attach supported image files only." },
+            { status: 400 }
+          );
+        }
+        if (photoFiles.length >= MAX_PHOTO_COUNT) {
+          return Response.json(
+            { ok: false, error: `You can attach up to ${MAX_PHOTO_COUNT} photos.` },
+            { status: 400 }
+          );
+        }
         if (photo.size > MAX_FILE_SIZE) {
           return Response.json(
-            { ok: false, error: `File "${photo.name}" is too large. Maximum size is 10MB per file.` },
+            { ok: false, error: `File "${photo.name}" is too large. Maximum size is 3MB per file.` },
             { status: 400 }
           );
         }
         totalSize += photo.size;
         if (totalSize > MAX_TOTAL_SIZE) {
           return Response.json(
-            { ok: false, error: "Total file size exceeds 25MB. Please reduce the number or size of images." },
+            { ok: false, error: "Attached photos must total 4MB or less." },
             { status: 400 }
           );
         }
@@ -86,9 +145,6 @@ export async function POST(req: Request) {
       return Response.json({ ok: false, error: "Invalid email." }, { status: 400 });
     }
 
-    // Basic rate limit (in-memory is not perfect on serverless, but helps)
-    // If you want stronger rate limiting later, we can add Upstash Redis.
-    // For now: lightweight friction-free.
     const now = new Date().toISOString();
 
     const to = process.env.QUOTE_TO_EMAIL;
@@ -102,7 +158,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} — ${serviceNeeded}`;
+    const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
 
     const text = [
       `New quote request received`,
@@ -129,13 +185,13 @@ export async function POST(req: Request) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         return {
-          filename: file.name,
+          filename: file.name.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 120) || "photo",
           content: buffer,
         };
       })
     );
 
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from,
       to,
       subject,
@@ -144,12 +200,16 @@ export async function POST(req: Request) {
       attachments: attachments.length > 0 ? attachments : undefined,
     });
 
+    if (error) {
+      console.error("Quote delivery error:", error);
+      throw new Error("Quote email delivery failed.");
+    }
+
     return Response.json({ ok: true }, { status: 200 });
   } catch (err) {
     console.error("Quote API error:", err);
-    const errorMessage = err instanceof Error ? err.message : "Server error.";
     return Response.json(
-      { ok: false, error: errorMessage },
+      { ok: false, error: "We couldn't submit your request. Please call (615) 810-4910 or try again." },
       { status: 500 }
     );
   }

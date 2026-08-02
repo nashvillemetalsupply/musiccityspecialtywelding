@@ -3,7 +3,19 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Phone, MapPin, Clock, Mail, ArrowRight, X } from "lucide-react"
+import { MapPin, Clock, X } from "lucide-react"
+import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID } from "@/lib/measurement"
+
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void
+  }
+}
+
+const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"])
+const maxPhotoCount = 5
+const maxPhotoSize = 3 * 1024 * 1024
+const maxTotalPhotoSize = 4 * 1024 * 1024
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -108,9 +120,31 @@ export function Contact() {
       }
 
       setSubmitStatus("success")
+
+      // Record a qualified lead in this business's GA4 property only after the
+      // server has accepted the quote request. No personal form data is sent.
+      if (
+        GA_MEASUREMENT_ID &&
+        typeof window !== "undefined" &&
+        typeof window.gtag === "function"
+      ) {
+        window.gtag("event", "generate_lead", {
+          send_to: GA_MEASUREMENT_ID,
+          lead_source: "website_quote_form",
+          service_requested: formData.service,
+        })
+      }
       
-      // Google Ads will automatically detect the form submission
-      // (configured in Google Ads to track form submissions on the domain)
+      // Fire explicit Google Ads conversion event after successful quote submit.
+      if (
+        ADS_CONVERSION_SEND_TO &&
+        typeof window !== "undefined" &&
+        typeof window.gtag === "function"
+      ) {
+        window.gtag("event", "conversion", {
+          send_to: ADS_CONVERSION_SEND_TO,
+        })
+      }
       
       // Clean up image preview URLs
       imagePreviews.forEach(url => URL.revokeObjectURL(url))
@@ -150,12 +184,35 @@ export function Contact() {
         const newPreviews: string[] = []
         const filesToAdd: File[] = []
         
+        let totalSize = photoFiles.reduce((sum, file) => sum + file.size, 0)
+        let validationError = ""
+
         for (let i = 0; i < newFiles.length; i++) {
           const file = newFiles[i]
-          if (file.type.startsWith('image/')) {
-            newPreviews.push(URL.createObjectURL(file))
-            filesToAdd.push(file)
+          if (photoFiles.length + filesToAdd.length >= maxPhotoCount) {
+            validationError = `You can attach up to ${maxPhotoCount} photos.`
+            break
           }
+          if (!allowedPhotoTypes.has(file.type)) {
+            validationError = "Please attach JPG, PNG, WebP, GIF, HEIC, or HEIF images only."
+            continue
+          }
+          if (file.size > maxPhotoSize) {
+            validationError = `Each photo must be 3 MB or smaller.`
+            continue
+          }
+          if (totalSize + file.size > maxTotalPhotoSize) {
+            validationError = "Attached photos must total 4 MB or less."
+            continue
+          }
+          newPreviews.push(URL.createObjectURL(file))
+          filesToAdd.push(file)
+          totalSize += file.size
+        }
+
+        if (validationError) {
+          setSubmitStatus("error")
+          setErrorMessage(validationError)
         }
         
         // Append new previews to existing ones
@@ -219,17 +276,17 @@ export function Contact() {
             </h2>
               {/* One reassurance line */}
               <p className="text-sm text-muted-foreground">
-              Get a fast, no-obligation quote.
+              Start a clear, no-obligation quote request.
             </p>
           </div>
 
-            {/* Owner-Operated Trust Signal */}
+            {/* Quote preparation guidance */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
               <p className="text-sm font-semibold text-secondary mb-1">
-                Owner-Operated.
+                Help us assess the work.
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-              You’ll speak directly with the person doing the work — no dispatcher, no sales rep.
+              Share the scope, location, timing, and photos so the welding team can review the right next step.
               </p>
             </div>
 
@@ -239,8 +296,9 @@ export function Contact() {
                 {/* Name */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-1.5">First Name <span className="text-muted-foreground font-normal">*</span></label>
+                    <label htmlFor="mobile-first-name" className="block text-sm font-medium text-secondary mb-1.5">First Name <span className="text-muted-foreground font-normal">*</span></label>
                     <input
+                      id="mobile-first-name"
                       ref={firstNameInputRef}
                       type="text"
                       name="firstName"
@@ -253,8 +311,9 @@ export function Contact() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-1.5">Last Name <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <label htmlFor="mobile-last-name" className="block text-sm font-medium text-secondary mb-1.5">Last Name <span className="text-muted-foreground font-normal">(optional)</span></label>
                     <input
+                      id="mobile-last-name"
                       type="text"
                       name="lastName"
                       value={formData.lastName}
@@ -268,8 +327,9 @@ export function Contact() {
 
                 {/* Phone - Required, early in form */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Phone <span className="text-muted-foreground font-normal">*</span></label>
+                  <label htmlFor="mobile-phone" className="block text-sm font-medium text-secondary mb-1.5">Phone <span className="text-muted-foreground font-normal">*</span></label>
                   <input
+                    id="mobile-phone"
                     type="tel"
                     name="phone"
                     value={formData.phone}
@@ -284,8 +344,9 @@ export function Contact() {
 
                 {/* Service Needed */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Service Needed <span className="text-muted-foreground font-normal">*</span></label>
+                  <label htmlFor="mobile-service" className="block text-sm font-medium text-secondary mb-1.5">Service Needed <span className="text-muted-foreground font-normal">*</span></label>
                   <select
+                    id="mobile-service"
                     name="service"
                     value={formData.service}
                     onChange={handleChange}
@@ -298,14 +359,17 @@ export function Contact() {
                     <option>Mobile Welding (On-Site)</option>
                     <option>Equipment Repair & Maintenance</option>
                     <option>Specialty Fabrication</option>
+                    <option>Custom Wrought Iron Mailboxes</option>
+                    <option>Custom Metal Planter Boxes</option>
                     <option>Not Sure / Other</option>
                   </select>
                 </div>
 
                 {/* Project Details */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Project Details <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <label htmlFor="mobile-project-details" className="block text-sm font-medium text-secondary mb-1.5">Project Details <span className="text-muted-foreground font-normal">(optional)</span></label>
                   <textarea
+                    id="mobile-project-details"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
@@ -331,7 +395,7 @@ export function Contact() {
                       name="photos"
                       onChange={handleChange}
                       multiple
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
                       className="hidden"
                     />
                   </label>
@@ -366,8 +430,9 @@ export function Contact() {
 
                 {/* Email - Moved to end, optional */}
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1.5">Email <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <label htmlFor="mobile-email" className="block text-sm font-medium text-secondary mb-1.5">Email <span className="text-muted-foreground font-normal">(optional)</span></label>
                   <input
+                    id="mobile-email"
                     type="email"
                     name="email"
                     value={formData.email}
@@ -394,7 +459,7 @@ export function Contact() {
                 {/* Reassurance text above submit button */}
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
                   <p className="text-xs font-medium text-secondary text-center">
-                    Most quotes sent within 1 business day.
+                    We’ll review your request and follow up about next steps.
                   </p>
                 </div>
 
@@ -426,7 +491,7 @@ export function Contact() {
 
                 {/* Micro-trust line */}
                 <p className="text-xs text-muted-foreground text-center">
-                  Emergency requests handled immediately.
+                  For urgent work, call to confirm availability.
                 </p>
               </form>
             </div>
@@ -439,7 +504,7 @@ export function Contact() {
                 Let's discuss your project
               </h2>
               <p className="text-lg text-muted-foreground">
-                Get a fast, no-obligation quote.
+                Start a clear, no-obligation quote request.
               </p>
             </div>
 
@@ -455,7 +520,7 @@ export function Contact() {
                       >
                         (615) 810-4910
                       </a>
-                      <span className="text-muted-foreground text-sm">24/7 emergencies</span>
+                      <span className="text-muted-foreground text-sm">Urgent work: call to confirm availability</span>
                     </li>
                     <li>
                       <a 
@@ -471,7 +536,7 @@ export function Contact() {
                     </li>
                     <li className="text-muted-foreground flex items-start gap-2">
                       <Clock className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                      <span>Mon - Fri: 7:00 AM - 6:00 PM (CT)</span>
+                      <span>Open 24 hours</span>
                     </li>
                   </ul>
                 </div>
@@ -479,21 +544,22 @@ export function Contact() {
 
               {/* Contact Form */}
               <div className="bg-white rounded-3xl p-8 shadow-xl border border-border">
-                {/* Owner-Operated Trust Signal */}
+                {/* Quote preparation guidance */}
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 mb-6 text-center">
                   <p className="text-base font-semibold text-secondary mb-1.5">
-                    Owner-Operated.
+                    Help us assess the work.
                   </p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                  You’ll speak directly with the person doing the work — no dispatcher, no sales rep.
+                  Share the scope, location, timing, and photos so the welding team can review the right next step.
                   </p>
                 </div>
                 
                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-secondary mb-2">First Name <span className="text-muted-foreground font-normal">*</span></label>
+                      <label htmlFor="desktop-first-name" className="block text-sm font-medium text-secondary mb-2">First Name <span className="text-muted-foreground font-normal">*</span></label>
                       <input
+                        id="desktop-first-name"
                         ref={firstNameInputRef}
                         type="text"
                         name="firstName"
@@ -505,8 +571,9 @@ export function Contact() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-secondary mb-2">Last Name <span className="text-muted-foreground font-normal">(optional)</span></label>
+                      <label htmlFor="desktop-last-name" className="block text-sm font-medium text-secondary mb-2">Last Name <span className="text-muted-foreground font-normal">(optional)</span></label>
                       <input
+                        id="desktop-last-name"
                         type="text"
                         name="lastName"
                         value={formData.lastName}
@@ -518,8 +585,9 @@ export function Contact() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Email <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <label htmlFor="desktop-email" className="block text-sm font-medium text-secondary mb-2">Email <span className="text-muted-foreground font-normal">(optional)</span></label>
                     <input
+                      id="desktop-email"
                       type="email"
                       name="email"
                       value={formData.email}
@@ -530,8 +598,9 @@ export function Contact() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Phone <span className="text-muted-foreground font-normal">*</span></label>
+                    <label htmlFor="desktop-phone" className="block text-sm font-medium text-secondary mb-2">Phone <span className="text-muted-foreground font-normal">*</span></label>
                     <input
+                      id="desktop-phone"
                       type="tel"
                       name="phone"
                       value={formData.phone}
@@ -543,8 +612,9 @@ export function Contact() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Service Needed <span className="text-muted-foreground font-normal">*</span></label>
+                    <label htmlFor="desktop-service" className="block text-sm font-medium text-secondary mb-2">Service Needed <span className="text-muted-foreground font-normal">*</span></label>
                     <select
+                      id="desktop-service"
                       name="service"
                       value={formData.service}
                       onChange={handleChange}
@@ -556,13 +626,16 @@ export function Contact() {
                       <option>Mobile Welding (On-Site)</option>
                       <option>Equipment Repair & Maintenance</option>
                       <option>Specialty Fabrication</option>
+                      <option>Custom Wrought Iron Mailboxes</option>
+                      <option>Custom Metal Planter Boxes</option>
                       <option>Not Sure / Other</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">Project Details <span className="text-muted-foreground font-normal">(optional)</span></label>
+                    <label htmlFor="desktop-project-details" className="block text-sm font-medium text-secondary mb-2">Project Details <span className="text-muted-foreground font-normal">(optional)</span></label>
                     <textarea
+                      id="desktop-project-details"
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
@@ -573,8 +646,9 @@ export function Contact() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">Preferred contact method</label>
+                  <label htmlFor="desktop-preferred-contact" className="block text-sm font-medium text-secondary mb-2">Preferred contact method</label>
                   <select
+                    id="desktop-preferred-contact"
                     name="preferredContact"
                     value={formData.preferredContact}
                     onChange={handleChange}
@@ -595,14 +669,14 @@ export function Contact() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                         <p className="mb-2 text-sm text-muted-foreground text-center"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p className="text-xs text-muted-foreground text-center">PNG, JPG, GIF (optional)</p>
+                      <p className="text-xs text-muted-foreground text-center">Up to 5 photos, 4 MB total</p>
                     </div>
                     <input
                       type="file"
                       name="photos"
                       onChange={handleChange}
                       multiple
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
                       className="hidden"
                     />
                   </label>
@@ -648,8 +722,8 @@ export function Contact() {
                   />
 
                   {/* Expectation-setting line above button - Desktop only */}
-                  <p className="text-xs text-muted-foreground/70 text-center">
-                    Most quotes sent within 1 business day. Emergency requests handled immediately.
+                  <p className="text-xs text-muted-foreground text-center">
+                    We’ll review your request and follow up. For urgent work, call to confirm availability.
                   </p>
 
                   {/* Success/Error Messages */}
@@ -680,10 +754,10 @@ export function Contact() {
                   {/* Reassurance box below button - Desktop only */}
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1">
                     <p className="text-sm font-medium text-secondary text-center">
-                      Most quotes sent within 1 business day.
+                      We’ll review your request and follow up about next steps.
                     </p>
                     <p className="text-sm text-muted-foreground text-center">
-                      Emergency requests handled immediately.
+                      For urgent work, call to confirm availability.
                     </p>
                   </div>
               </form>

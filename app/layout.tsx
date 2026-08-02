@@ -1,35 +1,143 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Playfair_Display, Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
 import Script from "next/script"
+import { DeferredGoogleTag } from "@/components/deferred-google-tag"
 import "./globals.css"
 
-const _playfairDisplay = Playfair_Display({
+const _archivo = Archivo({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-serif",
+  variable: "--font-ms-display",
+  display: "swap",
 })
 
-const _inter = Inter({
+const _plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-ms-sans",
+  display: "swap",
+  preload: false,
 })
+
+const _plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-ms-mono",
+  display: "swap",
+  preload: false,
+})
+
+const googleAnalyticsMeasurementId =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
 
 export const metadata: Metadata = {
-  title: "Music City Specialty Welding | Expert Mobile Welding Services in Nashville",
+  metadataBase: new URL("https://musiccityspecialtywelding.com"),
+  title: {
+    default: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
+    template: "%s | Music City Specialty Welding",
+  },
   description:
-    "Professional mobile welding, architectural fabrication, equipment repair, and specialty welding services in Nashville. Expert craftsmanship for all your welding needs.",
-  generator: "v0.app",
-  keywords: ["mobile welding", "Nashville welding", "architectural fabrication", "equipment repair", "custom welding"],
+    "Open 24/7 for mobile and shop welding, trailer and equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee.",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Music City Specialty Welding",
+    title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
+    description:
+      "Mobile welding, equipment repair, architectural metalwork, and custom fabrication across Middle Tennessee.",
+    images: [
+      {
+        url: "/images/optimized/welder.webp",
+        width: 1200,
+        height: 630,
+        alt: "Music City Specialty Welding at work",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
+    description:
+      "Mobile welding, equipment repair, architectural metalwork, and custom fabrication across Middle Tennessee.",
+    images: ["/images/optimized/welder.webp"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: {
     icon: [
       {
-        url: "/images/mcs welding logo.png",
+        url: "/images/optimized/mcs welding logo.png",
         type: "image/png",
       },
     ],
-    apple: "/images/mcs welding logo.png",
+    apple: "/images/optimized/mcs welding logo.png",
+  },
+}
+
+const localBusinessSchema = {
+  "@context": "https://schema.org",
+  "@type": ["LocalBusiness", "ProfessionalService"],
+  "@id": "https://musiccityspecialtywelding.com/#business",
+  name: "Music City Specialty Welding",
+  url: "https://musiccityspecialtywelding.com/",
+  telephone: "+1-615-810-4910",
+  email: "sales@musiccityspecialtywelding.com",
+  sameAs: [
+    "https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/",
+  ],
+  description:
+    "Mobile and shop welding, equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee.",
+  logo: "https://musiccityspecialtywelding.com/images/optimized/mcs_welding_logo.webp",
+  image: "https://musiccityspecialtywelding.com/images/optimized/welder.webp",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "533 W Baddour Pkwy",
+    addressLocality: "Lebanon",
+    addressRegion: "TN",
+    postalCode: "37087",
+    addressCountry: "US",
+  },
+  openingHoursSpecification: [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ].map((dayOfWeek) => ({
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek,
+    opens: "00:00",
+    closes: "23:59",
+  })),
+  areaServed: [
+    "Lebanon, Tennessee",
+    "Nashville, Tennessee",
+    "Franklin, Tennessee",
+    "Murfreesboro, Tennessee",
+    "Gallatin, Tennessee",
+    "Hendersonville, Tennessee",
+    "Clarksville, Tennessee",
+  ],
+  hasOfferCatalog: {
+    "@type": "OfferCatalog",
+    name: "Welding and fabrication services",
+    itemListElement: [
+      "Mobile welding",
+      "Trailer and truck welding repair",
+      "Equipment and structural welding repair",
+      "Architectural welding and fabrication",
+      "Specialty fabrication",
+      "Aluminum and boat welding",
+      "Custom wrought iron mailboxes",
+      "Custom metal planter boxes",
+    ].map((name) => ({
+      "@type": "Offer",
+      itemOffered: { "@type": "Service", name },
+    })),
   },
 }
 
@@ -40,22 +148,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${_inter.variable} ${_playfairDisplay.variable} font-sans antialiased`}>
-        {/* Google Ads Conversion Tracking */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=AW-17817632790"
-          strategy="afterInteractive"
+      <body className={`${_archivo.variable} ${_plexSans.variable} ${_plexMono.variable} font-sans antialiased`}>
+        <script
+          id="local-business-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
-        <Script id="google-ads" strategy="afterInteractive">
+        {/* Queue measurement immediately; load the third-party library after intent or 8 seconds. */}
+        <Script id="google-tag" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'AW-17817632790');
+            window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
+            window.gtag('js', new Date());
+            window.gtag('config', 'GT-TWZ9WFGX');
+            window.gtag('config', 'AW-17817632790');
+            ${googleAnalyticsMeasurementId ? `window.gtag('config', ${JSON.stringify(googleAnalyticsMeasurementId)});` : ""}
           `}
         </Script>
+        <DeferredGoogleTag containerId="GT-TWZ9WFGX" />
         {children}
-        <Analytics />
       </body>
     </html>
   )
