@@ -1572,6 +1572,10 @@ html {
   line-height: 0.93;
 }
 
+.ms-subpage[data-service="architectural-welding"] .ms-subhero h1 {
+  font-size: clamp(4.1rem, 7vw, 8.2rem);
+}
+
 .ms-subhero-copy > p {
   max-width: 43rem;
   margin: 2rem 0 0;
@@ -2207,6 +2211,10 @@ html {
   .ms-subhero h1 {
     font-size: clamp(3.35rem, 15vw, 5rem);
     line-height: 0.95;
+  }
+
+  .ms-subpage[data-service="architectural-welding"] .ms-subhero h1 {
+    font-size: clamp(3.1rem, 14vw, 4.7rem);
   }
 
   .ms-subhero-copy > p {
