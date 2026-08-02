@@ -156,8 +156,9 @@ html {
   --ms-bone: #f1f0e8;
   --ms-bone-light: #f8f7f1;
   --ms-steel: #a6aaa1;
-  --ms-steel-dark: #6c7168;
+  --ms-steel-dark: #545a52;
   --ms-arc: #ff8200;
+  --ms-arc-ink: #a33a00;
   --ms-line: rgba(241, 240, 232, 0.18);
   min-width: 0;
   background: var(--ms-carbon);
@@ -651,7 +652,7 @@ html {
 }
 
 .ms-work-statement-accent {
-  color: var(--ms-arc);
+  color: var(--ms-arc-ink);
 }
 
 .ms-services {
@@ -1332,6 +1333,7 @@ html {
 
 .ms-upload > span {
   display: grid;
+  color: var(--ms-carbon);
   text-transform: none;
 }
 
