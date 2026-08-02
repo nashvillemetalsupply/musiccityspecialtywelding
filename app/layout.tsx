@@ -1,12 +1,13 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
+import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
 import Script from "next/script"
 import { DeferredGoogleTag } from "@/components/deferred-google-tag"
 import "./globals.css"
 
-const _archivo = Archivo({
+const _barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
+  weight: ["800", "900"],
   variable: "--font-ms-display",
   display: "swap",
 })
@@ -148,7 +149,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${_archivo.variable} ${_plexSans.variable} ${_plexMono.variable} font-sans antialiased`}>
+      <body className={`${_barlowCondensed.variable} ${_plexSans.variable} ${_plexMono.variable} font-sans antialiased`}>
         <script
           id="local-business-schema"
           type="application/ld+json"

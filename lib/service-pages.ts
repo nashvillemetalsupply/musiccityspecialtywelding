@@ -23,8 +23,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "The welding equipment comes to you",
     intro:
       "When moving the damaged equipment or metalwork is impractical, we bring mobile welding capability to the job site. We review the failure, access, material, and working conditions before confirming the safest and most efficient repair plan.",
-    image: "/images/optimized/trailer_repair.webp",
-    imageAlt: "Mobile welding and trailer repair work",
+    image: "/images/owner-work/IMG_20260225_135845.jpg",
+    imageAlt: "Installed steel balcony railing completed on-site by Music City Specialty Welding",
     commonJobs: [
       "Equipment and trailer component repairs",
       "Broken brackets, frames, supports, and attachments",

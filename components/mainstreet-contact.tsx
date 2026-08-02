@@ -160,7 +160,6 @@ export function MainstreetContact() {
   return (
     <section className="ms-contact" id="contact" aria-labelledby="contact-title">
       <div className="ms-contact-lead">
-        <p className="ms-kicker">Your turn</p>
         <h2 className="ms-display" id="contact-title">Show us the job.</h2>
         <p>Three things get this moving: your name, your number, and what the metal needs.</p>
         <a className="ms-contact-call" href="tel:6158104910">
@@ -168,11 +167,6 @@ export function MainstreetContact() {
           <span><small>Open 24/7</small><strong>(615) 810-4910</strong></span>
           <ArrowUpRight aria-hidden="true" />
         </a>
-        <div className="ms-contact-note">
-          <span>Mobile + shop work</span>
-          <span>Greater Nashville</span>
-          <span>Calls answered 24/7</span>
-        </div>
       </div>
 
       <form className="ms-quote-form" onSubmit={submit} noValidate>
@@ -222,7 +216,7 @@ export function MainstreetContact() {
           <span className="ms-upload-label">Photos <i>optional</i></span>
           <label className="ms-upload" htmlFor="quote-photos">
             <Camera aria-hidden="true" />
-            <span><strong>Add job photos</strong><small>Up to 5 · 4 MB total</small></span>
+            <span><strong>Add job photos</strong><small>Up to 5 / 4 MB total</small></span>
           </label>
           <input id="quote-photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" multiple onChange={addPhotos} />
         </div>

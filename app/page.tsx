@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowDownRight, ArrowUpRight, MapPin, Phone } from "lucide-react"
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
+import { MobileQuickActions } from "@/components/mobile-quick-actions"
 
 export const metadata: Metadata = {
   title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
@@ -15,17 +16,17 @@ export const metadata: Metadata = {
 
 const services = [
   {
-    number: "01",
     title: "Mobile welding",
+    mobileTitleLines: ["Mobile welding"],
     line: "The metal stays put. We bring the rig.",
     detail: "On-site welding and repair for trucks, trailers, equipment, aluminum, structures, and working metal across Middle Tennessee. No towing required.",
     href: "/services/mobile-welding",
-    image: "/images/mobile_repair.png",
-    alt: "Mobile welder working from a service rig on a structural steel job",
+    image: "/images/owner-work/IMG_20260225_135845.jpg",
+    alt: "Installed steel balcony railing completed on-site by Music City Specialty Welding",
   },
   {
-    number: "02",
     title: "Trailer & equipment repair",
+    mobileTitleLines: ["Trailer & equipment", "repair"],
     line: "Downtime costs more than steel.",
     detail: "Frames, ramps, liftgates, failed brackets, machinery, and attachments repaired around the real damage and the work they still have to do.",
     href: "/services/equipment-repair",
@@ -33,8 +34,8 @@ const services = [
     alt: "Trailer frame and axle exposed during structural welding repair",
   },
   {
-    number: "03",
     title: "Architectural metal",
+    mobileTitleLines: ["Architectural", "metal"],
     line: "Built to look right. Built to stay put.",
     detail: "Railings, stairs, supports, and architectural steel built to code with clean welds and a precise fit in the real space.",
     href: "/services/architectural-welding",
@@ -42,8 +43,8 @@ const services = [
     alt: "Finished black steel railing on a Tennessee property",
   },
   {
-    number: "04",
     title: "Specialty fabrication",
+    mobileTitleLines: ["Specialty", "fabrication"],
     line: "If the catalog had it, you would not be calling.",
     detail: "One-offs, manifolds, frames, brackets, signage, and built-to-spec work made for the job in front of us.",
     href: "/services/custom-fabrication",
@@ -51,8 +52,8 @@ const services = [
     alt: "Custom fabricated gas manifold installed on a commercial building",
   },
   {
-    number: "05",
     title: "Custom metalwork",
+    mobileTitleLines: ["Custom", "metalwork"],
     line: "Useful first. Good-looking for a long time.",
     detail: "Mailboxes, cluster units, planters, and exterior steel sized for the property, not a retail shelf.",
     href: "/services/custom-metal-products",
@@ -154,14 +155,13 @@ export default function Page() {
       <main id="main-content">
         <section className="ms-hero" id="home">
           <div className="ms-hero-copy">
-            <p className="ms-kicker ms-hero-kicker">Mobile welder Nashville · On-site + shop fabrication</p>
             <h1 className="ms-display ms-hero-title" aria-label="Metal problem? We get it.">
               <span>Metal</span>
               <span>problem?</span>
               <span className="ms-accent-line">We get it.</span>
             </h1>
             <p className="ms-hero-deck">
-              On-site welding and repair for trucks, trailers, equipment, aluminum, and structural steel, plus built-to-spec fabrication at the shop.
+              24/7 mobile welding across Nashville and Middle Tennessee. Trucks, trailers, equipment, aluminum, structural steel, and built-to-spec shop fabrication.
             </p>
             <div className="ms-hero-actions">
               <a className="ms-button ms-button-primary" href="tel:6158104910">
@@ -172,31 +172,17 @@ export default function Page() {
                 Show us the job <ArrowDownRight aria-hidden="true" />
               </a>
             </div>
-            <div className="ms-hero-proof" aria-label="Service summary">
-              <span>Open 24/7</span>
-              <span>Mobile welding</span>
-              <span>Metal fabrication</span>
-            </div>
           </div>
 
           <div className="ms-hero-media" aria-label="Music City Specialty Welding at work">
             <figure className="ms-hero-image ms-hero-image-main">
               <Image
-                src="/images/optimized/welder.webp"
+                src="/images/welder.webp"
                 alt="Music City Specialty Welding fabricating a steel frame in the shop"
                 fill
                 priority
                 fetchPriority="high"
-                unoptimized
-                sizes="(max-width: 767px) 94vw, 48vw"
-              />
-            </figure>
-            <figure className="ms-hero-image ms-hero-image-detail">
-              <Image
-                src="/images/optimized/EDITED.webp"
-                alt="Welder grinding steel with sparks flying in the shop"
-                fill
-                sizes="(max-width: 767px) 44vw, 18vw"
+                sizes="(max-width: 900px) 94vw, 60vw"
               />
             </figure>
           </div>
@@ -204,7 +190,6 @@ export default function Page() {
 
         <section className="ms-work" id="work">
           <div className="ms-section-intro ms-reveal">
-            <p className="ms-kicker">The proof is already in the steel</p>
             <h2 className="ms-display">Good welds don&apos;t need a sales pitch.</h2>
             <p>
               Look close. The work tells you whether a shop understands fit, finish, load, access, and the part nobody planned for.
@@ -214,19 +199,34 @@ export default function Page() {
           <div className="ms-work-grid">
             <figure className="ms-work-shot ms-work-shot-a ms-reveal">
               <Image src="/images/owner-work/IMG_20260625_160502986_HDR.jpg" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 767px) 88vw, 46vw" />
-              <figcaption><span>Built to spec</span><strong>From steel to service.</strong></figcaption>
+              <figcaption><strong>Food-service trailer build.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-b ms-reveal">
-              <Image src="/images/owner-work/IMG_20260225_135845.jpg" alt="Installed black steel balcony and architectural railing" fill sizes="(max-width: 767px) 70vw, 27vw" />
-              <figcaption><span>Architectural</span><strong>Fit in the real space.</strong></figcaption>
+              <Image src="/images/owner-work/IMG_20260522_234850864_HDR.jpg" alt="Custom stainless steel sink fabricated to fit existing commercial equipment" fill sizes="(max-width: 767px) 70vw, 27vw" />
+              <figcaption><strong>Fitted stainless sink.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-c ms-reveal">
               <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 767px) 78vw, 31vw" />
-              <figcaption><span>Shop fabrication</span><strong>The work before the finish.</strong></figcaption>
+              <figcaption><strong>Shop-fabricated steel frame.</strong></figcaption>
+            </figure>
+            <figure className="ms-work-shot ms-work-shot-d ms-reveal">
+              <Image src="/images/owner-work/IMG_3994.jpg" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 640px) 78vw, 34vw" />
+              <figcaption><strong>Commercial on-site install.</strong></figcaption>
+            </figure>
+            <figure className="ms-work-shot ms-work-shot-e ms-reveal">
+              <Image src="/images/owner-work/IMG_20250527_141244.jpg" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 640px) 100vw, 50vw" />
+              <figcaption><strong>Steel gate, fit on-site.</strong></figcaption>
+            </figure>
+            <figure className="ms-work-shot ms-work-shot-f ms-reveal">
+              <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.jpg" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 640px) 82vw, 46vw" />
+              <figcaption><strong>Custom-cut steel letters.</strong></figcaption>
             </figure>
           </div>
 
-          <p className="ms-work-statement ms-display ms-reveal">Show the weld.<br /><span>Then talk.</span></p>
+          <p className="ms-work-statement ms-display ms-reveal">
+            <span className="ms-work-statement-line">Show the weld.</span>
+            <span className="ms-work-statement-accent">Then talk.</span>
+          </p>
         </section>
 
         <section className="ms-services" id="services">
@@ -237,10 +237,18 @@ export default function Page() {
 
           <div className="ms-service-list">
             {services.map((service) => (
-              <article className="ms-service-row ms-reveal" key={service.number}>
-                <span className="ms-service-number">{service.number}</span>
+              <article className="ms-service-row ms-reveal" key={service.title}>
                 <div className="ms-service-copy">
-                  <h3 className={service.number === "02" ? "ms-service-title-long" : undefined}>{service.title}</h3>
+                  <h3
+                    className={service.title === "Trailer & equipment repair" ? "ms-service-title-long" : undefined}
+                    aria-label={service.title}
+                  >
+                    {service.mobileTitleLines.map((line, index) => (
+                      <span className="ms-service-title-line" key={line}>
+                        {line}{index < service.mobileTitleLines.length - 1 ? " " : ""}
+                      </span>
+                    ))}
+                  </h3>
                   <strong>{service.line}</strong>
                   <p>{service.detail}</p>
                   <Link href={service.href}>
@@ -271,9 +279,9 @@ export default function Page() {
         <section className="ms-get-it" id="approach" aria-label="We understand the job">
           <div className="ms-get-it-pin">
             <div className="ms-problem-lines ms-display" aria-hidden="true">
-              <span>Your gate broke.</span>
-              <span>Your equipment stopped.</span>
-              <span>Your drawing needs steel.</span>
+              <span>Gate won’t close.</span>
+              <span>Trailer won’t roll.</span>
+              <span>Drawing needs steel.</span>
             </div>
             <h2 className="ms-display">We get it.</h2>
             <p>Tell us what broke or what needs built. We&apos;ll take it from there.</p>
@@ -298,9 +306,8 @@ export default function Page() {
 
         <section className="ms-territory" id="service-area" aria-labelledby="territory-title">
           <div className="ms-territory-map" aria-hidden="true">
-            <span className="ms-area-label">Lebanon, Tennessee</span>
-            <strong>Middle<br />Tennessee</strong>
-            <span className="ms-area-mode">Shop / mobile / on-site</span>
+            <strong><span>Middle</span><span>Tennessee</span></strong>
+            <small>Lebanon shop<br />Middle Tennessee road work</small>
           </div>
           <div className="ms-territory-copy ms-reveal">
             <h2 className="ms-display" id="territory-title">Shop work or we come to you.</h2>
@@ -346,10 +353,7 @@ export default function Page() {
         </div>
       </footer>
 
-      <div className="ms-mobile-cta" aria-label="Quick actions">
-        <a href="tel:6158104910"><Phone aria-hidden="true" /><span><small>Open 24/7</small>Call now</span></a>
-        <a href="#contact">Quote</a>
-      </div>
+      <MobileQuickActions />
     </div>
   )
 }
