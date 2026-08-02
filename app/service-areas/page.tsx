@@ -22,7 +22,7 @@ export default function ServiceAreasPage() {
         <section className="ms-area-hero">
           <h1 className="ms-display">Middle Tennessee is the shop floor.</h1>
           <div>
-            <p>We leave Lebanon for metal that is better fixed where it sits. Job size, access, urgency, travel, and safe working conditions decide the plan—not a neat circle on a map.</p>
+            <p>We leave Lebanon for metal that is better fixed where it sits. Job size, access, urgency, travel, and safe working conditions decide the plan, not a neat circle on a map.</p>
             <div className="ms-hero-actions">
               <a className="ms-button ms-button-primary" href="tel:6158104910"><Phone aria-hidden="true" />Call 24/7</a>
               <Link className="ms-text-link" href="/#contact">Send the address <ArrowUpRight aria-hidden="true" /></Link>
