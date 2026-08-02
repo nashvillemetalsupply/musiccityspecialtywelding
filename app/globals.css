@@ -2632,6 +2632,12 @@ html {
   }
 }
 
+@media (max-width: 360px) {
+  .ms-subpage[data-service="architectural-welding"] .ms-subhero h1 {
+    font-size: clamp(2.35rem, 12.5vw, 2.75rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
