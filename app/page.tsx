@@ -182,6 +182,7 @@ export default function Page() {
                 fill
                 priority
                 fetchPriority="high"
+                decoding="sync"
                 sizes="(max-width: 900px) 94vw, 60vw"
               />
             </figure>
