@@ -2665,6 +2665,17 @@ html {
 --------------------------------------------------------------------------- */
 
 .ops-shell {
+  --ms-carbon: #070807;
+  --ms-carbon-soft: #111310;
+  --ms-panel: #1a1d19;
+  --ms-galvanized: #d4d8d1;
+  --ms-bone: #f1f0e8;
+  --ms-bone-light: #f8f7f1;
+  --ms-steel: #a6aaa1;
+  --ms-steel-dark: #545a52;
+  --ms-arc: #ff8200;
+  --ms-arc-ink: #a33a00;
+  --ms-line: rgba(241, 240, 232, 0.18);
   min-height: 100vh;
   background: var(--ms-carbon);
   color: var(--ms-bone);
