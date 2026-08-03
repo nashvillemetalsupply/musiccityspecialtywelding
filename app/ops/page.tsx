@@ -29,7 +29,7 @@ function ageInWords(iso: string) {
   return `${Math.floor(minutes / (60 * 24))}d`
 }
 
-type SearchParams = Promise<{ status?: string; tests?: string; error?: string }>
+type SearchParams = Promise<{ status?: string; tests?: string; error?: string; q?: string }>
 
 export default async function OpsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
@@ -50,9 +50,10 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
 
   const statusFilter = (params.status ?? "open") as LeadFilter["status"]
   const includeTests = params.tests === "1"
+  const searchQuery = params.q?.trim() ?? ""
   const [stats, leads, counts] = await Promise.all([
     getOpsStats(),
-    listLeads({ status: statusFilter, includeTests }),
+    listLeads({ status: statusFilter, includeTests, query: searchQuery }),
     getStatusCounts(includeTests),
   ])
 
@@ -135,6 +136,24 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
         </Link>
         <a href="/api/ops/export" className="ops-ghost">Export CSV</a>
       </nav>
+
+      <form className="ops-search" action="/ops" method="get">
+        <input type="hidden" name="status" value={statusFilter} />
+        {includeTests && <input type="hidden" name="tests" value="1" />}
+        <input
+          type="search"
+          name="q"
+          defaultValue={searchQuery}
+          placeholder="Search name, phone, job, notes…"
+          aria-label="Search leads"
+        />
+        <button type="submit" className="ops-ghost">Search</button>
+        {searchQuery && (
+          <Link className="ops-ghost" href={`/ops?status=${statusFilter}${includeTests ? "&tests=1" : ""}`}>
+            Clear
+          </Link>
+        )}
+      </form>
 
       <section className="ops-table-wrap" aria-label="Leads">
         {leads.length === 0 ? (

@@ -3142,3 +3142,23 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .ops-shell * { transition-duration: 0.01ms !important; }
 }
+
+.ops-search {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ops-search input[type="search"] {
+  flex: 1 1 16rem;
+  min-width: 0;
+  background: var(--ms-carbon-soft);
+  border: 1px solid var(--ms-line);
+  border-radius: 4px;
+  color: var(--ms-bone);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  transition: border-color 140ms ease;
+}
+
+.ops-search input[type="search"]:hover { border-color: rgba(241, 240, 232, 0.35); }

@@ -5,6 +5,7 @@ import { LEAD_STATUSES } from "@/lib/leads"
 export type LeadFilter = {
   status?: LeadStatus | "all" | "open"
   includeTests?: boolean
+  query?: string
 }
 
 const OPEN_STATUSES = ["new", "contacted", "qualified", "quoted"] as const
@@ -13,6 +14,20 @@ export async function listLeads(filter: LeadFilter = {}): Promise<LeadRow[]> {
   const sql = getSql()
   const status = filter.status ?? "all"
   const includeTests = filter.includeTests ?? false
+  const query = filter.query?.trim().slice(0, 80) ?? ""
+
+  if (query) {
+    const pattern = `%${query.replace(/[%_\\]/g, "\\$&")}%`
+    const rows = await sql`
+      SELECT * FROM leads
+      WHERE (${includeTests}::boolean OR is_test = false)
+        AND (first_name ILIKE ${pattern} OR last_name ILIKE ${pattern}
+          OR phone ILIKE ${pattern} OR email ILIKE ${pattern}
+          OR service ILIKE ${pattern} OR message ILIKE ${pattern}
+          OR notes ILIKE ${pattern} OR public_id ILIKE ${pattern})
+      ORDER BY created_at DESC LIMIT 500`
+    return rows as LeadRow[]
+  }
 
   if (status === "open") {
     const rows = await sql`
