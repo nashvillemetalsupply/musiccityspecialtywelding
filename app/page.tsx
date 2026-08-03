@@ -2,6 +2,15 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowDownRight, ArrowUpRight, MapPin, Phone } from "lucide-react"
+import {
+  FlashBolt,
+  FlashFlame,
+  FlashGear,
+  FlashHorseshoe,
+  FlashSpark,
+  FlashStar,
+  FlashTorch,
+} from "@/components/flash-art"
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
@@ -154,10 +163,17 @@ export default function Page() {
 
       <main id="main-content">
         <section className="ms-hero" id="home">
+          <FlashSpark className="ms-flash is-gold" size={54} style={{ top: "9%", right: "44%" }} />
+          <FlashBolt className="ms-flash is-arc" size={64} style={{ bottom: "12%", left: "46%" }} />
+          <FlashStar className="ms-flash is-red" size={40} style={{ top: "18%", right: "6%" }} />
           <div className="ms-hero-copy">
+            <div className="ms-hero-kicker" aria-hidden="true">
+              <span className="ms-sticker is-arc">Open 24 hours</span>
+              <span className="ms-sticker">Lebanon, TN</span>
+            </div>
             <h1 className="ms-display ms-hero-title" aria-label="Metal problem? We get it.">
               <span>Metal</span>
-              <span>problem?</span>
+              <span className="ms-hero-outline">problem?</span>
               <span className="ms-accent-line">We get it.</span>
             </h1>
             <p className="ms-hero-deck">
@@ -188,7 +204,19 @@ export default function Page() {
           </div>
         </section>
 
+        <div className="ms-stripe" aria-hidden="true" />
+
+        <div className="ms-badge-strip" aria-label="Shop facts">
+          <span className="ms-sticker is-gold">Shop + road rig</span>
+          <span className="ms-sticker is-red">Call anytime</span>
+          <span className="ms-sticker">Steel · Aluminum · Stainless</span>
+          <span className="ms-sticker is-blue">Middle Tennessee</span>
+          <span className="ms-sticker is-arc">(615) 810-4910</span>
+        </div>
+
         <section className="ms-work" id="work">
+          <FlashTorch className="ms-flash" size={110} style={{ top: "3%", right: "4%" }} />
+          <FlashStar className="ms-flash" size={46} style={{ bottom: "6%", left: "3%" }} />
           <div className="ms-section-intro ms-reveal">
             <h2 className="ms-display">Good welds don&apos;t need a sales pitch.</h2>
             <p>
@@ -229,7 +257,10 @@ export default function Page() {
           </p>
         </section>
 
+        <div className="ms-stripe is-bone" aria-hidden="true" />
+
         <section className="ms-services" id="services">
+          <FlashGear className="ms-flash is-gold" size={72} style={{ top: "2.5%", right: "5%", opacity: 0.5 }} />
           <div className="ms-services-heading ms-reveal">
             <h2 className="ms-display">Almost anything metal.</h2>
             <p>Homeowner fix. Commercial deadline. Equipment down. A drawing that needs to become steel.</p>
@@ -276,7 +307,11 @@ export default function Page() {
           </aside>
         </section>
 
+        <div className="ms-stripe" aria-hidden="true" />
+
         <section className="ms-get-it" id="approach" aria-label="We understand the job">
+          <FlashFlame className="ms-flash" size={90} style={{ top: "10%", left: "6%" }} />
+          <FlashBolt className="ms-flash" size={70} style={{ bottom: "12%", right: "7%" }} />
           <div className="ms-get-it-pin">
             <div className="ms-problem-lines ms-display" aria-hidden="true">
               <span>Gate won’t close.</span>
@@ -304,7 +339,10 @@ export default function Page() {
           </a>
         </section>
 
+        <div className="ms-stripe is-bone" aria-hidden="true" />
+
         <section className="ms-territory" id="service-area" aria-labelledby="territory-title">
+          <FlashHorseshoe className="ms-flash is-ink" size={64} style={{ top: "6%", right: "4%", opacity: 0.25 }} />
           <div className="ms-territory-map" aria-hidden="true">
             <strong><span>Middle</span><span>Tennessee</span></strong>
             <small>Lebanon shop<br />Middle Tennessee road work</small>
@@ -336,7 +374,10 @@ export default function Page() {
         <MainstreetContact />
       </main>
 
+      <div className="ms-stripe" aria-hidden="true" />
+
       <footer className="ms-footer">
+        <FlashSpark className="ms-flash is-arc" size={52} style={{ top: "12%", right: "8%", opacity: 0.6 }} />
         <div className="ms-footer-mark">
           <Image src="/images/optimized/mcs_welding_logo.webp" alt="Music City Specialty Welding" width={240} height={160} sizes="96px" unoptimized />
           <p className="ms-display">Built here.<br />Fixed where it sits.</p>
