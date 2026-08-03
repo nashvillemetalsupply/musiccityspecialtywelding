@@ -150,6 +150,62 @@ export async function markReviewRequested(formData: FormData) {
   revalidatePath(`/ops/leads/${leadId}`)
 }
 
+// Quick interaction log: one entry per call/text/email touch. Also counts as
+// the first response when none is recorded yet.
+export async function logInteraction(formData: FormData) {
+  const operator = await requireOperator()
+  const leadId = parseLeadId(formData.get("leadId"))
+  const channel = String(formData.get("channel") ?? "phone").trim().slice(0, 40) || "phone"
+  const note = String(formData.get("note") ?? "").trim().slice(0, 2000)
+
+  const sql = getSql()
+  await sql`
+    UPDATE leads SET
+      first_response_at = COALESCE(first_response_at, now()),
+      first_response_channel = CASE
+        WHEN first_response_channel = '' THEN ${channel}
+        ELSE first_response_channel END,
+      status = CASE WHEN status = 'new' THEN 'contacted' ELSE status END,
+      updated_at = now()
+    WHERE id = ${leadId}`
+  await recordLeadEvent(leadId, "interaction", operator, { channel, note: note || null })
+  revalidatePath("/ops")
+  revalidatePath(`/ops/leads/${leadId}`)
+}
+
+export async function setFollowUp(formData: FormData) {
+  const operator = await requireOperator()
+  const leadId = parseLeadId(formData.get("leadId"))
+  const clear = String(formData.get("clear") ?? "") === "1"
+  const quick = String(formData.get("quick") ?? "").trim()
+  const when = String(formData.get("when") ?? "").trim()
+
+  let followUp: string | null = null
+  if (!clear) {
+    if (quick) {
+      const hours = { "4h": 4, "1d": 24, "3d": 72, "1w": 168 }[quick]
+      if (!hours) throw new Error("Invalid quick follow-up option.")
+      followUp = new Date(Date.now() + hours * 3600_000).toISOString()
+    } else if (when) {
+      const parsed = new Date(when)
+      if (Number.isNaN(parsed.getTime())) throw new Error("Invalid follow-up date.")
+      followUp = parsed.toISOString()
+    } else {
+      throw new Error("Pick a follow-up time.")
+    }
+  }
+
+  const sql = getSql()
+  await sql`
+    UPDATE leads SET next_follow_up_at = ${followUp}::timestamptz, updated_at = now()
+    WHERE id = ${leadId}`
+  await recordLeadEvent(leadId, clear ? "follow_up_cleared" : "follow_up_set", operator, {
+    at: followUp,
+  })
+  revalidatePath("/ops")
+  revalidatePath(`/ops/leads/${leadId}`)
+}
+
 // Deletes are limited to internal test records so real customer history stays immutable.
 export async function deleteTestLead(formData: FormData) {
   const operator = await requireOperator()

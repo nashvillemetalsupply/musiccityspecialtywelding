@@ -3162,3 +3162,9 @@ html {
 }
 
 .ops-search input[type="search"]:hover { border-color: rgba(241, 240, 232, 0.35); }
+
+.ops-followup-current {
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 0.7rem;
+  color: var(--ms-steel);
+}

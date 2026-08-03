@@ -57,6 +57,7 @@ const statements = [
     email_delivery_error TEXT NOT NULL DEFAULT '',
     email_delivered_at TIMESTAMPTZ
   )`,
+  `ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_follow_up_at TIMESTAMPTZ`,
   `CREATE INDEX IF NOT EXISTS leads_status_idx ON leads(status)`,
   `CREATE INDEX IF NOT EXISTS leads_created_idx ON leads(created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS leads_delivery_idx ON leads(email_delivery_status)`,

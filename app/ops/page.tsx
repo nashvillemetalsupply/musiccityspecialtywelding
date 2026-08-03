@@ -91,6 +91,9 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
           </strong>
           <span>median response</span>
         </div>
+        <div className={stats.followUpsDue > 0 ? "is-hot" : ""}>
+          <strong>{stats.followUpsDue}</strong><span>follow-ups due</span>
+        </div>
         <div><strong>{stats.wonJobs}</strong><span>won jobs</span></div>
         <div className="is-money">
           <strong>{formatMoney(stats.totalRevenueCents)}</strong><span>revenue recorded</span>
@@ -167,6 +170,7 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
                 <th>Job</th>
                 <th>Source</th>
                 <th>Status</th>
+                <th>Next step</th>
                 <th>Age</th>
                 <th>Value</th>
               </tr>
@@ -193,6 +197,19 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
                     <span className={`ops-status is-${lead.status}`}>{lead.status}</span>
                     {lead.email_delivery_status === "failed" && (
                       <small className="is-bad">email failed</small>
+                    )}
+                  </td>
+                  <td>
+                    {lead.next_follow_up_at ? (
+                      <span
+                        className={
+                          new Date(lead.next_follow_up_at).getTime() <= Date.now() ? "is-bad" : ""
+                        }
+                      >
+                        {formatCentral(lead.next_follow_up_at)}
+                      </span>
+                    ) : (
+                      "—"
                     )}
                   </td>
                   <td title={formatCentral(lead.created_at)}>{ageInWords(lead.created_at)}</td>

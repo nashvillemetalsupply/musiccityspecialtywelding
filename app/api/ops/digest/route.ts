@@ -37,14 +37,21 @@ export async function GET(req: Request) {
       WHERE status = 'quoted' AND is_test = false
         AND quoted_at < now() - interval '3 days'
       ORDER BY quoted_at ASC LIMIT 50`) as LeadRow[]
+    const followUpsDue = (await sql`
+      SELECT * FROM leads
+      WHERE next_follow_up_at IS NOT NULL AND next_follow_up_at <= now()
+        AND status NOT IN ('won', 'lost', 'spam') AND is_test = false
+      ORDER BY next_follow_up_at ASC LIMIT 50`) as LeadRow[]
 
     detail = {
       unanswered: unanswered.length,
       failedDeliveries: failed.length,
       staleQuotes: openQuotes.length,
+      followUpsDue: followUpsDue.length,
     }
 
-    const needsEmail = unanswered.length > 0 || failed.length > 0 || openQuotes.length > 0
+    const needsEmail =
+      unanswered.length > 0 || failed.length > 0 || openQuotes.length > 0 || followUpsDue.length > 0
     const apiKey = process.env.RESEND_API_KEY
     const to = process.env.QUOTE_TO_EMAIL
     const from = process.env.QUOTE_FROM_EMAIL
@@ -56,6 +63,9 @@ export async function GET(req: Request) {
         ` · https://musiccityspecialtywelding.com/ops/leads/${lead.id}`
 
       const sections: string[] = []
+      if (followUpsDue.length) {
+        sections.push(`FOLLOW-UPS DUE (${followUpsDue.length}):`, ...followUpsDue.map(describe), "")
+      }
       if (unanswered.length) {
         sections.push(`LEADS STILL WAITING ON A FIRST CALL (${unanswered.length}):`, ...unanswered.map(describe), "")
       }
@@ -75,7 +85,7 @@ export async function GET(req: Request) {
       const { error } = await resend.emails.send({
         from,
         to,
-        subject: `Daily lead follow-up: ${unanswered.length} waiting, ${openQuotes.length} stale quotes`,
+        subject: `Daily lead follow-up: ${unanswered.length} waiting, ${followUpsDue.length} due, ${openQuotes.length} stale quotes`,
         text: sections.join("\n"),
       })
       if (error) throw new Error(error.message || "Digest email failed.")

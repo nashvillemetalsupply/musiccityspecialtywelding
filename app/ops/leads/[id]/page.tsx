@@ -7,11 +7,13 @@ import { getLead, getLeadEvents } from "@/lib/ops-data"
 import { OpsLoginForm } from "../../login-form"
 import {
   deleteTestLead,
+  logInteraction,
   markFirstResponse,
   markReviewRequested,
   saveEstimate,
   saveNotes,
   saveOutcome,
+  setFollowUp,
   updateLeadStatus,
 } from "../../actions"
 
@@ -83,7 +85,14 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
         <section className="ops-card" aria-label="Lead details">
           <h2>The job</h2>
           <dl>
-            <div><dt>Phone</dt><dd><a href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}>{lead.phone}</a></dd></div>
+            <div>
+              <dt>Phone</dt>
+              <dd>
+                <a href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}>{lead.phone}</a>
+                {" · "}
+                <a href={`sms:${lead.phone.replace(/[^\d+]/g, "")}`}>text</a>
+              </dd>
+            </div>
             <div><dt>Email</dt><dd>{lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : "—"}</dd></div>
             <div><dt>Service</dt><dd>{lead.service}</dd></div>
             <div><dt>Preferred contact</dt><dd>{lead.preferred_contact || "—"}</dd></div>
@@ -131,6 +140,42 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
               <button type="submit">Mark first response</button>
             </form>
           )}
+
+          <form action={logInteraction} className="ops-inline-form">
+            <label htmlFor="interaction-channel">Log a touch</label>
+            <input type="hidden" name="leadId" value={lead.id} />
+            <select id="interaction-channel" name="channel" defaultValue="phone">
+              <option value="phone">called</option>
+              <option value="text">texted</option>
+              <option value="email">emailed</option>
+              <option value="voicemail">left voicemail</option>
+              <option value="in-person">met in person</option>
+            </select>
+            <input name="note" placeholder="What happened? (optional)" />
+            <button type="submit">Log it</button>
+          </form>
+
+          <form action={setFollowUp} className="ops-inline-form">
+            <label htmlFor="follow-up-when">Follow up</label>
+            <input type="hidden" name="leadId" value={lead.id} />
+            <select id="follow-up-when" name="quick" defaultValue="1d">
+              <option value="4h">in 4 hours</option>
+              <option value="1d">tomorrow</option>
+              <option value="3d">in 3 days</option>
+              <option value="1w">next week</option>
+            </select>
+            <button type="submit">Set reminder</button>
+            {lead.next_follow_up_at && (
+              <>
+                <span className="ops-followup-current">
+                  set for {formatCentral(lead.next_follow_up_at)}
+                </span>
+                <button type="submit" name="clear" value="1" className="ops-ghost">
+                  Clear
+                </button>
+              </>
+            )}
+          </form>
 
           <form action={updateLeadStatus} className="ops-inline-form">
             <input type="hidden" name="leadId" value={lead.id} />

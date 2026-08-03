@@ -41,6 +41,7 @@ export type LeadRow = {
   status_reason: string
   first_response_at: string | null
   first_response_channel: string
+  next_follow_up_at: string | null
   estimate_value_cents: number | null
   quoted_at: string | null
   won_at: string | null

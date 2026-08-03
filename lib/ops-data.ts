@@ -70,6 +70,7 @@ export type OpsStats = {
   awaitingFirstResponse: number
   leadsLast30Days: number
   medianFirstResponseMinutes: number | null
+  followUpsDue: number
   wonJobs: number
   totalRevenueCents: number
   openEstimateValueCents: number
@@ -86,6 +87,8 @@ export async function getOpsStats(): Promise<OpsStats> {
       count(*) FILTER (WHERE first_response_at IS NULL
         AND status NOT IN ('spam', 'lost', 'won'))::int AS awaiting_first_response,
       count(*) FILTER (WHERE created_at > now() - interval '30 days')::int AS leads_30d,
+      count(*) FILTER (WHERE next_follow_up_at IS NOT NULL AND next_follow_up_at <= now()
+        AND status NOT IN ('won', 'lost', 'spam'))::int AS follow_ups_due,
       count(*) FILTER (WHERE status = 'won')::int AS won_jobs,
       COALESCE(sum(revenue_cents) FILTER (WHERE status = 'won'), 0)::bigint AS total_revenue_cents,
       COALESCE(sum(estimate_value_cents)
@@ -118,6 +121,7 @@ export async function getOpsStats(): Promise<OpsStats> {
       summary?.median_response_minutes === null || summary?.median_response_minutes === undefined
         ? null
         : Number(summary.median_response_minutes),
+    followUpsDue: Number(summary?.follow_ups_due ?? 0),
     wonJobs: Number(summary?.won_jobs ?? 0),
     totalRevenueCents: Number(summary?.total_revenue_cents ?? 0),
     openEstimateValueCents: Number(summary?.open_estimate_cents ?? 0),
