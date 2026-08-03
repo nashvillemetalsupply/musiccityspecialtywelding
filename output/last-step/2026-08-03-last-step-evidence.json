@@ -48,9 +48,11 @@
     "Ads keyword decisions from the Aug 1-2 audit remain open ($409 zero-conversion keywords)."
   ],
   "independentJudge": {
-    "round1": { "score": "7/10", "verdict": "better than folk.app for this business", "note": "all 8 gaps + all bugs remediated and deployed same session" },
-    "round2": { "status": "see markdown evidence file for final score" }
+    "round1": { "score": "7/10", "verdict": "better than folk.app for this business", "note": "8 gaps + bug list returned; all remediated same session" },
+    "round2": { "score": "9/10", "verdict": "YES — now unambiguously better than folk.app", "note": "returned 6 further items; all software-only items implemented same session" },
+    "round3": { "score": "9.5/10", "verdict": "decisively better than folk.app for this business", "note": "all items verified in code; remaining half point requires owner actions (enable push on a device, paid cron tier or Twilio), not code" }
   },
+  "finalDeployedCommit": "e2fc161 (web push alerts + round-two fixes)",
   "decision": "READY FOR TRAFFIC",
   "decisionNote": "Site was already live and serving paid traffic; every hard gate passes with fresh evidence. Single WARNING: first automatic scheduled run of the newly added external monitors is pending GitHub cron registration; manual runs are proven green. Owner-gated exclusions (GBP verification/review URL, DMARC hardening, SMS number) are documented and do not affect lead receipt, attribution, safety, or money paths."
 }

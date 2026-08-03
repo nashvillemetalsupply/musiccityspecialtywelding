@@ -58,13 +58,18 @@ Full machine-readable results: `2026-08-03-last-step-evidence.json`. Summary:
 
 ## Independent judge (folk.app benchmark)
 
-Round 1 (fresh independent reviewer, full code read + live folk.app fetch): **7/10,
-"better than folk.app for this business"**, with 8 ranked gaps and a bug list.
-Every gap and bug was implemented or fixed and redeployed the same session
-(manual entry, first-response consistency, hourly reminders, photo persistence,
-delivery acknowledgement, offline-conversion export, pagination/search carry,
-magic-link origin, login oracle, timing-safe cron auth, public-id retry, health
-data exposure). Round 2 verdict is recorded in the close-out.
+Three adversarial rounds by an independent reviewer (full code read + live
+folk.app fetch each round):
+
+- **Round 1: 7/10** — 8 ranked gaps + a bug list. All remediated same session.
+- **Round 2: 9/10, "YES — now unambiguously better than folk"** — 6 further
+  items. All software-only items implemented same session, including a full
+  Web Push alert channel (new-lead and follow-up notifications to the owner's
+  phone, independent of the email provider).
+- **Round 3 (final): 9.5/10, "decisively better than folk.app for this
+  business."** Every item verified in code. The remaining half point is
+  owner-action-bound (tap "Enable phone alerts" on at least one device;
+  best-effort GitHub cron vs a paid scheduler/Twilio), not software.
 
 Note: the requested verifier "sol 5.6 ultra" does not exist as an available model;
 the judge is an independent Fable-powered reviewer agent with no stake in the code.
