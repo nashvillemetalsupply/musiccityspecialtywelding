@@ -104,3 +104,39 @@ then turns those won, ad-attributed jobs into a Google Ads offline-conversion CS
 There is no magic-link connection between QuickBooks and the CRM — QuickBooks
 sign-in is unchanged. A future upgrade could sync QuickBooks invoices via the
 Intuit API, but that needs owner-approved Intuit developer credentials.
+
+---
+
+## Addendum — evening session (same day): THE SHOP WALL redesign shipped
+
+Final deployed commit: `8345bb1` (merge `cad1cb4` + two-tone neon), serving at
+the apex. Owner-directed full redesign: the site is now "the inside of the shop
+at night" — neon brand sign (two-tone: warm-white MUSIC CITY tube over molten
+amber), hand-painted marker tagline, plank-sign phone number, enamel OPEN 24
+HOURS tin, taped polaroid proof wall with handwritten captions on brushed-steel
+walls, pegboard services, magnet-pinned process notes, push-pinned territory
+card, clipboard FAQ, paper WORK ORDER form, weld-seam panel joints. The CRM
+adopted the same palette and all five email flows (owner notification, NEW
+customer confirmation, magic link, daily digest, hourly reminders) ship a
+shared branded shell.
+
+Design judge (independent, adversarial, three review rounds): initial 8/10 with
+an 11-item punch list → all 11 items closed same session → **final 9/10 —
+"SHIP"**, explicitly capped only by the absence of real third-party reviews,
+which honesty forbids fabricating and which unlocks at 9.5/10 the day the owner
+completes Google Business Profile verification. Ruling also held the site
+**better than dontboardme.com at this business's actual job** and the platform
+**decisively better than folk.app** for this shop.
+
+Fresh production evidence after the redesign deploy:
+- `/api/health` ok:true on the deployed commit.
+- Live E2E lead L-20260803-CDD6 through the redesigned form: persisted, owner
+  notification delivered, **branded customer confirmation delivered** (both
+  verified in the business inbox), then removed (leads 0, events 0).
+- First **automatic scheduled** GitHub Actions health-monitor run: success
+  (schedule trigger, 18:25 UTC) — the earlier monitoring WARNING is cleared.
+- Horizontal overflow zero at 320/375/768/1440.
+- Rejected design iterations preserved for rollback on branch
+  `redesign/metal-shop` (`46f76e7` v1 checkpoint).
+
+Decision stands: **READY FOR TRAFFIC.**
