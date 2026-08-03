@@ -3864,3 +3864,17 @@ a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140m
 .ops-add-lead .ops-inline-form { padding-bottom: 0; border-bottom: 0; }
 .ops-add-lead .ops-inline-form input:not([type="hidden"]),
 .ops-add-lead .ops-inline-form select { margin-bottom: 0.15rem; }
+
+/* write-up panel: definitive spacing */
+.ops-add-lead form {
+  padding: 1.5rem 1.5rem 2rem;
+  row-gap: 1rem;
+}
+
+.ops-add-lead .ops-inline-form input:not([type="hidden"]),
+.ops-add-lead .ops-inline-form select {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
+.ops-add-lead .ops-inline-form button { padding-top: 0.9rem; padding-bottom: 0.9rem; }
