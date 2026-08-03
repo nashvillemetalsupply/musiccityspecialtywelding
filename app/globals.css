@@ -3805,3 +3805,51 @@ a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140m
 .ops-timeline span { font-size: 0.82rem; color: #5a4c38; }
 .ops-timeline strong { font-size: 1.02rem; font-weight: 600; color: #241a10; }
 .ops-timeline em { font-size: 0.85rem; color: #6d5f47; }
+
+/* ---- final legibility + spacing polish (owner punch list) ---- */
+
+/* push-toggle status on the dark header: readable chip, not a whisper */
+.ops-header-actions .ops-followup-current {
+  color: #efe6d2;
+  border: 1px solid rgba(243, 234, 216, 0.4);
+  padding: 0.5rem 0.85rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* ticket id + date: proper ink, proper size */
+.ops-ticket-id span { color: #4f4433; font-weight: 700; font-size: 0.85rem; }
+.ops-ticket-id em { color: #3d3324; font-size: 0.92rem; }
+.ops-ticket-who em { color: #5a4c38; font-size: 0.76rem; }
+
+/* pagination + dark-context meta text */
+.ops-main > .ops-filters .ops-followup-current { color: #e6dcc4; font-size: 0.9rem; }
+.ops-empty { color: #e6dcc4; }
+.ops-sources { color: #d9cec2; }
+.ops-sources strong { color: #f3ead8; }
+
+/* the write-up panel breathes */
+.ops-add-lead form {
+  padding: 1.25rem 1.25rem 1.4rem;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.ops-add-lead .ops-inline-form input:not([type="hidden"]),
+.ops-add-lead .ops-inline-form select {
+  padding: 0.8rem 0.9rem;
+  font-size: 1.02rem;
+}
+
+.ops-add-lead .ops-inline-form button { padding: 0.8rem 1.4rem; align-self: stretch; }
+.ops-add-lead summary { padding: 0.9rem 1.25rem; }
+
+/* selects everywhere on paper: roomier hit targets */
+.ops-inline-form select { padding: 0.75rem 0.85rem; }
+
+/* urgent-card meta a touch stronger */
+.ops-ticket-urgent span { font-size: 0.95rem; color: #3d3324; }
+
+/* gauge zone label ink */
+.ops-gauge span { color: #4f4433; }
