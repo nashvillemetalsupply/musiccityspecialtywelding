@@ -2155,7 +2155,7 @@ html {
   z-index: 1;
 }
 
-.ms-site > *, .ms-site main { position: relative; z-index: 2; }
+.ms-site main, .ms-site footer, .ms-site .ms-badge-strip, .ms-site .wm-seam { position: relative; z-index: 2; }
 
 /* seams join the plates */
 
@@ -3336,4 +3336,16 @@ a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140m
     0 0 10px #ffe9c4,
     0 0 24px rgba(255, 214, 150, 0.8),
     0 0 48px rgba(255, 170, 80, 0.35);
+}
+
+/* nav stays pinned above everything; call bar stays fixed to the glass */
+.ms-site > header.ms-nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.ms-site > .ms-mobile-cta {
+  position: fixed;
+  z-index: 220;
 }
