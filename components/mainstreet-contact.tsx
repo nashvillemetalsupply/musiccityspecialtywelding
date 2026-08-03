@@ -176,7 +176,8 @@ export function MainstreetContact() {
 
       <form className="ms-quote-form" onSubmit={submit} noValidate>
         <div className="ms-form-heading">
-          <span>Quote request</span>
+          <span>Work order</span>
+          <span className="wm-order-no">Nº assigned on receipt</span>
           <small>Required fields marked *</small>
         </div>
 

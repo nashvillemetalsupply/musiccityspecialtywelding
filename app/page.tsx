@@ -2,6 +2,14 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowDownRight, ArrowUpRight, MapPin, Phone } from "lucide-react"
+import {
+  Gusset,
+  PlateStamp,
+  ShopCrest,
+  TennesseeMap,
+  Torch,
+  WeldSeam,
+} from "@/components/weldment"
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
@@ -110,6 +118,17 @@ const faqs = [
   },
 ]
 
+function FrameGussets() {
+  return (
+    <>
+      <Gusset className="wm-gusset tl" />
+      <Gusset className="wm-gusset tr" />
+      <Gusset className="wm-gusset br" />
+      <Gusset className="wm-gusset bl" />
+    </>
+  )
+}
+
 export default function Page() {
   return (
     <div className="ms-site">
@@ -154,19 +173,24 @@ export default function Page() {
 
       <main id="main-content">
         <section className="ms-hero" id="home">
-          <div className="ms-hero-copy">
-            <h1 className="ms-display ms-hero-title" aria-label="Metal problem? We get it.">
-              <span>Metal</span>
-              <span>problem?</span>
-              <span className="ms-accent-line">We get it.</span>
+          <div className="ms-hero-copy sw-signwall">
+            <h1 className="sw-sign" aria-label="Music City Specialty Welding">
+              <span className="sw-line-sm">Music City</span>
+              <span className="sw-line-lg">Specialty</span>
+              <span className="sw-line-lg">
+                Weld<i className="sw-buzz" style={{ fontStyle: "normal" }}>i</i>ng
+              </span>
             </h1>
+            <p className="sw-paint">
+              Metal problem? <em>We get it.</em>
+            </p>
             <p className="ms-hero-deck">
               24/7 mobile welding across Nashville and Middle Tennessee. Trucks, trailers, equipment, aluminum, structural steel, and built-to-spec shop fabrication.
             </p>
             <div className="ms-hero-actions">
-              <a className="ms-button ms-button-primary" href="tel:6158104910">
-                <Phone aria-hidden="true" />
-                Call 24/7
+              <a className="sw-plank" href="tel:6158104910">
+                <small>call the shop — day or night</small>
+                <strong>(615) 810-4910</strong>
               </a>
               <a className="ms-text-link" href="#contact">
                 Show us the job <ArrowDownRight aria-hidden="true" />
@@ -175,7 +199,13 @@ export default function Page() {
           </div>
 
           <div className="ms-hero-media" aria-label="Music City Specialty Welding at work">
-            <figure className="ms-hero-image ms-hero-image-main">
+            <div className="sw-tin" aria-hidden="true">
+              <small>Lebanon · Tennessee</small>
+              <strong>Open 24 Hours</strong>
+            </div>
+            <figure className="ms-hero-image ms-hero-image-main wm-frame">
+              <span className="sw-tape-tl" aria-hidden="true" />
+              <span className="sw-tape-tr" aria-hidden="true" />
               <Image
                 src="/images/welder.webp"
                 alt="Music City Specialty Welding fabricating a steel frame in the shop"
@@ -188,7 +218,19 @@ export default function Page() {
           </div>
         </section>
 
+        <div className="ms-badge-strip" aria-label="Shop facts">
+          <span className="ms-sticker is-gold">Shop + road rig</span>
+          <span className="ms-sticker is-red">Call anytime</span>
+          <span className="ms-sticker">Steel · Aluminum · Stainless</span>
+          <span className="ms-sticker is-blue">Middle Tennessee</span>
+          <a className="ms-sticker is-arc" href="tel:6158104910">(615) 810-4910</a>
+        </div>
+
+        <WeldSeam />
+
         <section className="ms-work" id="work">
+          <PlateStamp id="PLT-01" name="The work" className="is-ink" />
+          <Torch className="wm-art" style={{ width: "9rem", top: "4.5rem", right: "4%", color: "var(--mx-ink)", opacity: 0.14 }} />
           <div className="ms-section-intro ms-reveal">
             <h2 className="ms-display">Good welds don&apos;t need a sales pitch.</h2>
             <p>
@@ -197,29 +239,29 @@ export default function Page() {
           </div>
 
           <div className="ms-work-grid">
-            <figure className="ms-work-shot ms-work-shot-a ms-reveal">
+            <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20260625_160502986_HDR.jpg" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 767px) 88vw, 46vw" />
-              <figcaption><strong>Food-service trailer build.</strong></figcaption>
+              <figcaption><strong>Custom BBQ trailer — full steel build-out.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-b ms-reveal">
+            <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20260522_234850864_HDR.jpg" alt="Custom stainless steel sink fabricated to fit existing commercial equipment" fill sizes="(max-width: 767px) 70vw, 27vw" />
-              <figcaption><strong>Fitted stainless sink.</strong></figcaption>
+              <figcaption><strong>Stainless sink, fitted to the existing line.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-c ms-reveal">
+            <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 767px) 78vw, 31vw" />
-              <figcaption><strong>Shop-fabricated steel frame.</strong></figcaption>
+              <figcaption><strong>Steel frame, jigged square in our shop.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-d ms-reveal">
+            <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_3994.jpg" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 640px) 78vw, 34vw" />
-              <figcaption><strong>Commercial on-site install.</strong></figcaption>
+              <figcaption><strong>Commercial manifold, installed on-site.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-e ms-reveal">
+            <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20250527_141244.jpg" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 640px) 100vw, 50vw" />
-              <figcaption><strong>Steel gate, fit on-site.</strong></figcaption>
+              <figcaption><strong>Steel gate, hung level where it sits.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-f ms-reveal">
+            <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.jpg" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 640px) 82vw, 46vw" />
-              <figcaption><strong>Custom-cut steel letters.</strong></figcaption>
+              <figcaption><strong>Custom-cut letters, right off the table.</strong></figcaption>
             </figure>
           </div>
 
@@ -227,9 +269,27 @@ export default function Page() {
             <span className="ms-work-statement-line">Show the weld.</span>
             <span className="ms-work-statement-accent">Then talk.</span>
           </p>
+
+          <div className="sw-proof-row">
+            <p className="sw-proof-note">
+              Every photo on this wall is our own work. Nothing staged, nothing stock.
+            </p>
+            <a
+              className="sw-tin"
+              href="https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <small>More jobs · more photos</small>
+              <strong>Find us on Facebook</strong>
+            </a>
+          </div>
         </section>
 
+        <WeldSeam />
+
         <section className="ms-services" id="services">
+          <PlateStamp id="PLT-02" name="What we weld" />
           <div className="ms-services-heading ms-reveal">
             <h2 className="ms-display">Almost anything metal.</h2>
             <p>Homeowner fix. Commercial deadline. Equipment down. A drawing that needs to become steel.</p>
@@ -276,6 +336,8 @@ export default function Page() {
           </aside>
         </section>
 
+        <WeldSeam />
+
         <section className="ms-get-it" id="approach" aria-label="We understand the job">
           <div className="ms-get-it-pin">
             <div className="ms-problem-lines ms-display" aria-hidden="true">
@@ -288,7 +350,10 @@ export default function Page() {
           </div>
         </section>
 
+        <WeldSeam />
+
         <section className="ms-process" id="process" aria-labelledby="process-title">
+          <PlateStamp id="PLT-03" name="The plan" />
           <div className="ms-process-lead ms-reveal">
             <h2 className="ms-display" id="process-title">Call. Show. Get it done.</h2>
           </div>
@@ -304,10 +369,15 @@ export default function Page() {
           </a>
         </section>
 
+        <WeldSeam />
+
         <section className="ms-territory" id="service-area" aria-labelledby="territory-title">
+          <PlateStamp id="PLT-04" name="Territory" className="is-ink" />
           <div className="ms-territory-map" aria-hidden="true">
+            <TennesseeMap className="wm-tn" />
+            <span className="wm-tn-star-label">★ Lebanon — the shop</span>
             <strong><span>Middle</span><span>Tennessee</span></strong>
-            <small>Lebanon shop<br />Middle Tennessee road work</small>
+            <small>Shop work in Lebanon<br />Road rig everywhere else</small>
           </div>
           <div className="ms-territory-copy ms-reveal">
             <h2 className="ms-display" id="territory-title">Shop work or we come to you.</h2>
@@ -319,7 +389,10 @@ export default function Page() {
           </div>
         </section>
 
+        <WeldSeam />
+
         <section className="ms-faq" id="faq" aria-labelledby="faq-title">
+          <PlateStamp id="PLT-05" name="Straight answers" />
           <div className="ms-faq-heading ms-reveal">
             <h2 className="ms-display" id="faq-title">Straight answers.</h2>
           </div>
@@ -333,10 +406,15 @@ export default function Page() {
           </div>
         </section>
 
+        <WeldSeam />
+
         <MainstreetContact />
       </main>
 
+      <WeldSeam />
+
       <footer className="ms-footer">
+        <ShopCrest className="wm-art wm-crest" style={{ width: "7.5rem", top: "2.6rem", right: "6%", opacity: 0.35 }} />
         <div className="ms-footer-mark">
           <Image src="/images/optimized/mcs_welding_logo.webp" alt="Music City Specialty Welding" width={240} height={160} sizes="96px" unoptimized />
           <p className="ms-display">Built here.<br />Fixed where it sits.</p>

@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { dbConfigured, getSql } from "@/lib/db"
+import { brandedEmail, escapeHtml } from "@/lib/email-templates"
 import type { LeadRow } from "@/lib/leads"
 import { isAuthorizedCron } from "@/lib/ops-auth"
 import { sendPushToAll } from "@/lib/push"
@@ -57,6 +58,15 @@ export async function GET(req: Request) {
           ``,
           `Open the board: https://musiccityspecialtywelding.com/ops`,
         ].join("\n"),
+        html: brandedEmail({
+          preheader: `${due.length} follow-up${due.length === 1 ? "" : "s"} due now`,
+          headline: "Follow-ups due now",
+          bodyHtml: lines
+            .map((line) => escapeHtml(line).replace(/(https:\/\/\S+)/g, '<a href="$1">$1</a>'))
+            .join("<br />"),
+          ctaLabel: "Work the board",
+          ctaUrl: "https://musiccityspecialtywelding.com/ops",
+        }),
       })
       if (error) throw new Error(error.message || "Reminder email failed.")
       const ids = due.map((lead) => Number(lead.id))

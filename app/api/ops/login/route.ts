@@ -1,6 +1,7 @@
 import { Resend } from "resend"
 import { dbConfigured } from "@/lib/db"
 import { isRateLimitedDurable } from "@/lib/leads"
+import { brandedEmail } from "@/lib/email-templates"
 import { CANONICAL_ORIGIN, createLoginToken, getOwnerEmail, safeEmailMatch } from "@/lib/ops-auth"
 
 export const runtime = "nodejs"
@@ -61,6 +62,14 @@ export async function POST(req: Request) {
         "",
         "If you did not request this, ignore this email.",
       ].join("\n"),
+      html: brandedEmail({
+        preheader: "One-time sign-in link for the shop board.",
+        headline: "Open the board",
+        bodyHtml:
+          "This link signs you into the shop's lead board on this device. It works <strong>once</strong> and expires in <strong>15 minutes</strong>.<br /><br />If you didn't ask for it, ignore this email.",
+        ctaLabel: "Sign in to operations",
+        ctaUrl: link,
+      }),
     })
     if (error) {
       // Stay indistinguishable from the non-operator path; the failure is
