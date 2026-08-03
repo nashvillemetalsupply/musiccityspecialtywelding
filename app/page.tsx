@@ -342,8 +342,10 @@ export default function Page() {
           <p className="ms-display">Built here.<br />Fixed where it sits.</p>
         </div>
         <div className="ms-footer-contact">
-          <strong>Open 24/7</strong>
-          <a href="tel:6158104910">(615) 810-4910</a>
+          <div className="ms-footer-call">
+            <strong>Open 24/7</strong>
+            <a href="tel:6158104910">Call the shop · (615) 810-4910</a>
+          </div>
           <a href="mailto:Sales@musiccityspecialtywelding.com">Sales@musiccityspecialtywelding.com</a>
           <span>533 W Baddour Pkwy<br />Lebanon, TN 37087</span>
         </div>

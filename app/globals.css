@@ -1499,7 +1499,14 @@ html {
   text-decoration: none;
 }
 
-.ms-footer-contact > strong {
+.ms-footer-call {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+}
+
+.ms-footer-call > strong {
   color: var(--ms-arc);
   font-family: var(--font-ms-mono), monospace;
   font-size: 0.65rem;
@@ -1507,11 +1514,10 @@ html {
   text-transform: uppercase;
 }
 
-.ms-footer-contact a[href^="tel:"] {
-  font-family: var(--font-ms-display), sans-serif;
-  font-size: clamp(1.8rem, 3vw, 3rem);
-  font-weight: 800;
-  letter-spacing: -0.01em;
+.ms-footer-call a {
+  color: var(--ms-bone);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
 .ms-footer-meta {

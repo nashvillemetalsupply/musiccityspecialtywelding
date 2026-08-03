@@ -9,17 +9,35 @@ export function MobileQuickActions({ quoteHref = "#contact" }: { quoteHref?: str
   useEffect(() => {
     const trigger = document.querySelector<HTMLElement>(".ms-hero-actions")
 
-    if (!trigger || !("IntersectionObserver" in window)) {
+    if (!trigger) {
       const frame = window.requestAnimationFrame(() => setIsVisible(true))
       return () => window.cancelAnimationFrame(frame)
     }
 
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsVisible(!entry.isIntersecting && entry.boundingClientRect.bottom < 0)
-    }, { rootMargin: "-24px 0px 0px" })
+    let frame = 0
+    const updateVisibility = () => {
+      frame = 0
+      const shouldShow = trigger.getBoundingClientRect().bottom <= 0
+      setIsVisible((current) => current === shouldShow ? current : shouldShow)
+    }
+    const scheduleVisibilityUpdate = () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(updateVisibility)
+    }
 
-    observer.observe(trigger)
-    return () => observer.disconnect()
+    scheduleVisibilityUpdate()
+    window.addEventListener("scroll", scheduleVisibilityUpdate, { passive: true })
+    window.addEventListener("resize", scheduleVisibilityUpdate)
+    window.addEventListener("orientationchange", scheduleVisibilityUpdate)
+    window.addEventListener("pageshow", scheduleVisibilityUpdate)
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", scheduleVisibilityUpdate)
+      window.removeEventListener("resize", scheduleVisibilityUpdate)
+      window.removeEventListener("orientationchange", scheduleVisibilityUpdate)
+      window.removeEventListener("pageshow", scheduleVisibilityUpdate)
+    }
   }, [])
 
   return (
