@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { dbConfigured, getSql } from "@/lib/db"
+import { brandedEmail, escapeHtml } from "@/lib/email-templates"
 import type { LeadRow } from "@/lib/leads"
 import { isAuthorizedCron } from "@/lib/ops-auth"
 
@@ -97,6 +98,22 @@ export async function GET(req: Request) {
         to,
         subject: `Daily lead follow-up: ${unanswered.length} waiting, ${followUpsDue.length} due, ${openQuotes.length} stale quotes`,
         text: sections.join("\n"),
+        html: brandedEmail({
+          preheader: `${unanswered.length} waiting · ${followUpsDue.length} due · ${openQuotes.length} stale`,
+          headline: "Today's follow-up list",
+          bodyHtml: sections
+            .map((line) =>
+              line.startsWith("http")
+                ? `<a href="${line}">${line}</a>`
+                : escapeHtml(line).replace(
+                    /(https:\/\/\S+)/g,
+                    '<a href="$1">$1</a>'
+                  )
+            )
+            .join("<br />"),
+          ctaLabel: "Work the board",
+          ctaUrl: "https://musiccityspecialtywelding.com/ops",
+        }),
       })
       if (error) throw new Error(error.message || "Digest email failed.")
       detail.emailSent = true

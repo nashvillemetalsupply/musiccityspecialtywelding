@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { put } from "@vercel/blob";
 import { dbConfigured } from "@/lib/db";
+import { brandedEmail, escapeHtml } from "@/lib/email-templates";
 import { sendPushToAll } from "@/lib/push";
 import {
   attachLeadPhotos,
@@ -275,12 +276,32 @@ export async function POST(req: Request) {
         })
       );
 
+      const ownerHtml = brandedEmail({
+        preheader: `${firstName} · ${serviceNeeded} · ${phone}`,
+        headline: "New job in the door",
+        bodyHtml: [
+          `<strong>${escapeHtml(firstName)} ${escapeHtml(lastName)}</strong>`.trim(),
+          `Phone: <a href="tel:${escapeHtml(phone.replace(/[^\d+]/g, ""))}">${escapeHtml(phone)}</a>`,
+          email ? `Email: ${escapeHtml(email)}` : `Email: (not provided)`,
+          `Job: <strong>${escapeHtml(serviceNeeded)}</strong>`,
+          projectDetails ? `<br />“${escapeHtml(projectDetails)}”` : "",
+          photoFiles.length > 0 ? `<br />${photoFiles.length} photo(s) attached.` : "",
+          leadPublicId ? `<br />Lead ${escapeHtml(leadPublicId)} is on the board.` : "",
+        ]
+          .filter(Boolean)
+          .join("<br />"),
+        ctaLabel: "Open the board",
+        ctaUrl: "https://musiccityspecialtywelding.com/ops",
+        footnote: `Source: ${escapeHtml(gclid ? "google-ads" : utmSource || referrer || "direct")} · ${now}`,
+      });
+
       try {
         const { error } = await resend.emails.send({
           from,
           to,
           subject,
           text,
+          html: ownerHtml,
           replyTo: email ? email : undefined,
           attachments: attachments.length > 0 ? attachments : undefined,
         });
@@ -294,6 +315,40 @@ export async function POST(req: Request) {
         emailErrorMessage =
           sendError instanceof Error ? sendError.message : "Email send threw.";
         console.error("Quote delivery exception:", sendError);
+      }
+
+      // Customer confirmation — same brand, never blocks the lead.
+      if (email && !isTest) {
+        try {
+          await resend.emails.send({
+            from,
+            to: email,
+            subject: "We got your job — Music City Specialty Welding",
+            text: [
+              `Hey ${firstName},`,
+              ``,
+              `Your ${serviceNeeded} request just hit our board. A real person from the shop will call you at ${phone}.`,
+              ``,
+              `If it can't wait, call us right now — we're open 24 hours: (615) 810-4910.`,
+              ``,
+              `Music City Specialty Welding`,
+              `533 W Baddour Pkwy, Lebanon, TN 37087`,
+            ].join("\n"),
+            html: brandedEmail({
+              preheader: "Your job hit the board. We'll call you.",
+              headline: `Got it, ${escapeHtml(firstName)}.`,
+              bodyHtml: [
+                `Your <strong>${escapeHtml(serviceNeeded)}</strong> request just hit the board at the shop.`,
+                `A real person will call you at <strong>${escapeHtml(phone)}</strong> — not a bot, not a call center.`,
+                `If it can't wait, don't wait on us.`,
+              ].join("<br /><br />"),
+              ctaLabel: "Call the shop — open 24 hours",
+              ctaUrl: "tel:6158104910",
+            }),
+          });
+        } catch (confirmError) {
+          console.error("Customer confirmation error:", confirmError);
+        }
       }
     } else {
       emailErrorMessage = "Email service not configured.";

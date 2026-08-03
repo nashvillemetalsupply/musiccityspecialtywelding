@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Alfa_Slab_One, Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
+import { Alfa_Slab_One, Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans, Permanent_Marker } from "next/font/google"
 import Script from "next/script"
 import { AttributionTracker } from "@/components/attribution-tracker"
 import { DeferredGoogleTag } from "@/components/deferred-google-tag"
@@ -25,6 +25,14 @@ const _plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["500", "600"],
   variable: "--font-ms-mono",
+  display: "swap",
+  preload: false,
+})
+
+const _marker = Permanent_Marker({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-ms-marker",
   display: "swap",
   preload: false,
 })
@@ -158,7 +166,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${_barlowCondensed.variable} ${_plexSans.variable} ${_plexMono.variable} ${_alfaSlab.variable} font-sans antialiased`}>
+      <body className={`${_barlowCondensed.variable} ${_plexSans.variable} ${_plexMono.variable} ${_alfaSlab.variable} ${_marker.variable} font-sans antialiased`}>
         <script
           id="local-business-schema"
           type="application/ld+json"
