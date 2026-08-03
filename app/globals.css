@@ -3853,3 +3853,14 @@ a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140m
 
 /* gauge zone label ink */
 .ops-gauge span { color: #4f4433; }
+
+/* write-up rows: real breathing room */
+.ops-add-lead form {
+  padding: 1.4rem 1.4rem 1.8rem;
+  gap: 0.9rem 0.8rem;
+  border-bottom: 0;
+}
+
+.ops-add-lead .ops-inline-form { padding-bottom: 0; border-bottom: 0; }
+.ops-add-lead .ops-inline-form input:not([type="hidden"]),
+.ops-add-lead .ops-inline-form select { margin-bottom: 0.15rem; }
