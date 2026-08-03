@@ -1,0 +1,46 @@
+name: Production health monitor
+
+on:
+  schedule:
+    # Every 5 minutes. GitHub may delay scheduled runs under load.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check /api/health
+        run: |
+          set -euo pipefail
+          response=$(curl -sS --max-time 20 -w '\n%{http_code}' \
+            "https://musiccityspecialtywelding.com/api/health")
+          body=$(printf '%s' "$response" | sed '$d')
+          status=$(printf '%s' "$response" | tail -n 1)
+          echo "HTTP $status"
+          echo "$body"
+          if [ "$status" != "200" ]; then
+            echo "::error::Health endpoint returned HTTP $status"
+            exit 1
+          fi
+          ok=$(printf '%s' "$body" | python3 -c 'import json,sys; print(json.load(sys.stdin)["ok"])')
+          leads=$(printf '%s' "$body" | python3 -c 'import json,sys; print(json.load(sys.stdin)["leadsAccepted"])')
+          if [ "$ok" != "True" ] || [ "$leads" != "True" ]; then
+            echo "::error::Launch gate failing: ok=$ok leadsAccepted=$leads"
+            exit 1
+          fi
+
+      - name: Check homepage serves
+        run: |
+          set -euo pipefail
+          status=$(curl -sS -o /dev/null --max-time 20 -w '%{http_code}' \
+            "https://musiccityspecialtywelding.com/")
+          echo "HTTP $status"
+          if [ "$status" != "200" ]; then
+            echo "::error::Homepage returned HTTP $status"
+            exit 1
+          fi

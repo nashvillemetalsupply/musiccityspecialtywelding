@@ -3,6 +3,7 @@
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
+import { captureAttribution } from "@/lib/attribution"
 import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID } from "@/lib/measurement"
 
 declare global {
@@ -123,6 +124,10 @@ export function MainstreetContact() {
     payload.append("email", formData.email)
     payload.append("preferredContact", "Call")
     payload.append("company", formData.company)
+    const attribution = captureAttribution()
+    for (const [key, value] of Object.entries(attribution)) {
+      if (value) payload.append(key, value)
+    }
     photoFiles.forEach((file) => payload.append("photos", file))
 
     try {

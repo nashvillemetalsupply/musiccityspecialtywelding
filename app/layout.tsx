@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google"
 import Script from "next/script"
+import { AttributionTracker } from "@/components/attribution-tracker"
 import { DeferredGoogleTag } from "@/components/deferred-google-tag"
 import "./globals.css"
 
@@ -167,6 +168,7 @@ export default function RootLayout({
           `}
         </Script>
         <DeferredGoogleTag containerId="GT-TWZ9WFGX" />
+        <AttributionTracker />
         {children}
       </body>
     </html>

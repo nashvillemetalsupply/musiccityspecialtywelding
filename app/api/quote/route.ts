@@ -1,4 +1,10 @@
 import { Resend } from "resend";
+import { dbConfigured } from "@/lib/db";
+import {
+  createLead,
+  isRateLimitedDurable,
+  markLeadDelivery,
+} from "@/lib/leads";
 
 export const runtime = "nodejs"; // important for email libs
 
@@ -20,7 +26,8 @@ const RATE_LIMIT_MAX_REQUESTS = 6;
 type RateLimitEntry = { count: number; resetAt: number };
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-function isRateLimited(ip: string) {
+// Fast per-instance layer; the durable cross-instance layer lives in Postgres.
+function isRateLimitedLocal(ip: string) {
   if (!ip || ip === "unknown") return false;
 
   const now = Date.now();
@@ -40,27 +47,19 @@ function isValidEmail(email?: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function sanitize(s: unknown) {
+function sanitize(s: unknown, max = 2000) {
   if (typeof s !== "string") return "";
-  return s.trim().slice(0, 2000);
+  return s.trim().slice(0, max);
 }
 
 export async function POST(req: Request) {
   try {
-    // Initialize Resend inside the function to avoid build-time errors
     const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      return Response.json(
-        { ok: false, error: "Email service not configured." },
-        { status: 500 }
-      );
-    }
-    const resend = new Resend(apiKey);
-
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
+    const userAgent = sanitize(req.headers.get("user-agent"), 400);
 
     const contentLength = Number(req.headers.get("content-length") || "0");
     if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_SIZE) {
@@ -70,34 +69,44 @@ export async function POST(req: Request) {
       );
     }
 
-    // Best-effort per-instance protection. A shared store is still needed for a
-    // durable limit across all serverless instances.
-    if (isRateLimited(ip)) {
+    if (isRateLimitedLocal(ip)) {
       return Response.json(
         { ok: false, error: "Too many quote attempts. Please wait a few minutes or call (615) 810-4910." },
         { status: 429, headers: { "Retry-After": "600" } }
       );
     }
 
-    // Handle FormData (for file uploads)
     const formData = await req.formData();
 
-    // Honeypot field: add <input name="company" ... hidden> to your form
-    const honeypot = sanitize(formData.get("company") as string);
+    // Honeypot field: hidden input named "company" on the form.
+    const honeypot = sanitize(formData.get("company"));
     if (honeypot) {
-      // Pretend success to bots; do not send email.
+      // Pretend success to bots; do not persist or send email.
       return Response.json({ ok: true }, { status: 200 });
     }
 
-    const firstName = sanitize(formData.get("firstName") as string);
-    const lastName = sanitize(formData.get("lastName") as string);
-    const email = sanitize(formData.get("email") as string);
-    const phone = sanitize(formData.get("phone") as string);
-    const serviceNeeded = sanitize(formData.get("service") as string);
-    const projectDetails = sanitize(formData.get("message") as string);
-    const preferredContact = sanitize(formData.get("preferredContact") as string);
-    
-    // Get uploaded photos with size validation
+    const firstName = sanitize(formData.get("firstName"));
+    const lastName = sanitize(formData.get("lastName"));
+    const email = sanitize(formData.get("email"));
+    const phone = sanitize(formData.get("phone"));
+    const serviceNeeded = sanitize(formData.get("service"));
+    const projectDetails = sanitize(formData.get("message"));
+    const preferredContact = sanitize(formData.get("preferredContact"));
+
+    // Attribution (hidden fields populated client-side).
+    const gclid = sanitize(formData.get("gclid"), 200);
+    const utmSource = sanitize(formData.get("utm_source"), 120);
+    const utmMedium = sanitize(formData.get("utm_medium"), 120);
+    const utmCampaign = sanitize(formData.get("utm_campaign"), 200);
+    const utmTerm = sanitize(formData.get("utm_term"), 200);
+    const utmContent = sanitize(formData.get("utm_content"), 200);
+    const landingPage = sanitize(formData.get("landing_page"), 500);
+    const referrer = sanitize(formData.get("page_referrer"), 500);
+
+    // Internal verification submissions carry this marker so they can be
+    // filtered and cleaned up without touching real customer records.
+    const isTest = projectDetails.includes("[INTERNAL TEST]");
+
     const photoFiles: File[] = [];
     const photos = formData.getAll("photos");
     let totalSize = 0;
@@ -132,7 +141,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Minimal required fields
     if (!firstName || !phone || !serviceNeeded) {
       return Response.json(
         { ok: false, error: "Missing required fields." },
@@ -140,72 +148,146 @@ export async function POST(req: Request) {
       );
     }
 
-    // Optional email validation (only if provided)
     if (email && !isValidEmail(email)) {
       return Response.json({ ok: false, error: "Invalid email." }, { status: 400 });
     }
 
-    const now = new Date().toISOString();
+    // Durable cross-instance throttle. Never blocks a lead on DB failure.
+    if (dbConfigured() && ip !== "unknown") {
+      const limited = await isRateLimitedDurable(
+        `quote:${ip}`,
+        RATE_LIMIT_WINDOW_MS,
+        RATE_LIMIT_MAX_REQUESTS
+      );
+      if (limited) {
+        return Response.json(
+          { ok: false, error: "Too many quote attempts. Please wait a few minutes or call (615) 810-4910." },
+          { status: 429, headers: { "Retry-After": "600" } }
+        );
+      }
+    }
 
+    // Persist the lead FIRST so it survives any email-provider failure.
+    let leadId: number | null = null;
+    let leadPublicId = "";
+    if (dbConfigured()) {
+      try {
+        const lead = await createLead({
+          firstName,
+          lastName,
+          phone,
+          email,
+          service: serviceNeeded,
+          message: projectDetails,
+          preferredContact,
+          photoCount: photoFiles.length,
+          gclid,
+          utmSource,
+          utmMedium,
+          utmCampaign,
+          utmTerm,
+          utmContent,
+          landingPage,
+          referrer,
+          ip,
+          userAgent,
+          isTest,
+        });
+        leadId = lead.id;
+        leadPublicId = lead.publicId;
+      } catch (dbError) {
+        // Email delivery below still protects the lead.
+        console.error("Lead persistence error:", dbError);
+      }
+    }
+
+    const now = new Date().toISOString();
     const to = process.env.QUOTE_TO_EMAIL;
     const from = process.env.QUOTE_FROM_EMAIL;
     const subjectPrefix = process.env.QUOTE_EMAIL_SUBJECT_PREFIX || "New Quote Request";
 
-    if (!to || !from) {
-      return Response.json(
-        { ok: false, error: "Email configuration missing." },
-        { status: 500 }
+    let emailSent = false;
+    let emailErrorMessage = "";
+    if (apiKey && to && from) {
+      const resend = new Resend(apiKey);
+      const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
+
+      const text = [
+        `New quote request received`,
+        ``,
+        `Name: ${firstName} ${lastName}`.trim(),
+        `Phone: ${phone}`,
+        email ? `Email: ${email}` : `Email: (not provided)`,
+        `Service Needed: ${serviceNeeded}`,
+        preferredContact ? `Preferred Contact: ${preferredContact}` : `Preferred Contact: (not provided)`,
+        ``,
+        `Project Details:`,
+        projectDetails || "(none provided)",
+        ``,
+        photoFiles.length > 0 ? `${photoFiles.length} photo(s) attached.` : "No photos attached.",
+        ``,
+        `Meta:`,
+        leadPublicId ? `Lead ID: ${leadPublicId}` : `Lead ID: (not persisted)`,
+        `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"}`,
+        `IP: ${ip}`,
+        `Time: ${now}`,
+        leadPublicId
+          ? `Manage: https://musiccityspecialtywelding.com/ops`
+          : ``,
+      ].join("\n");
+
+      const attachments = await Promise.all(
+        photoFiles.map(async (file) => {
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          return {
+            filename: file.name.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 120) || "photo",
+            content: buffer,
+          };
+        })
       );
+
+      try {
+        const { error } = await resend.emails.send({
+          from,
+          to,
+          subject,
+          text,
+          replyTo: email ? email : undefined,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
+        if (error) {
+          emailErrorMessage = error.message || "Resend rejected the message.";
+          console.error("Quote delivery error:", error);
+        } else {
+          emailSent = true;
+        }
+      } catch (sendError) {
+        emailErrorMessage =
+          sendError instanceof Error ? sendError.message : "Email send threw.";
+        console.error("Quote delivery exception:", sendError);
+      }
+    } else {
+      emailErrorMessage = "Email service not configured.";
     }
 
-    const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
+    if (leadId !== null) {
+      try {
+        await markLeadDelivery(leadId, emailSent ? "sent" : "failed", emailErrorMessage || undefined);
+      } catch (deliveryLogError) {
+        console.error("Delivery status update error:", deliveryLogError);
+      }
+    }
 
-    const text = [
-      `New quote request received`,
-      ``,
-      `Name: ${firstName} ${lastName}`.trim(),
-      `Phone: ${phone}`,
-      email ? `Email: ${email}` : `Email: (not provided)`,
-      `Service Needed: ${serviceNeeded}`,
-      preferredContact ? `Preferred Contact: ${preferredContact}` : `Preferred Contact: (not provided)`,
-      ``,
-      `Project Details:`,
-      projectDetails || "(none provided)",
-      ``,
-      photoFiles.length > 0 ? `${photoFiles.length} photo(s) attached.` : "No photos attached.",
-      ``,
-      `Meta:`,
-      `IP: ${ip}`,
-      `Time: ${now}`,
-    ].join("\n");
+    // The request succeeds when the lead is captured by at least one channel.
+    if (emailSent || leadId !== null) {
+      return Response.json({ ok: true }, { status: 200 });
+    }
 
-    // Prepare email attachments
-    const attachments = await Promise.all(
-      photoFiles.map(async (file) => {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        return {
-          filename: file.name.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 120) || "photo",
-          content: buffer,
-        };
-      })
+    return Response.json(
+      { ok: false, error: "We couldn't submit your request. Please call (615) 810-4910 or try again." },
+      { status: 500 }
     );
-
-    const { error } = await resend.emails.send({
-      from,
-      to,
-      subject,
-      text,
-      replyTo: email ? email : undefined,
-      attachments: attachments.length > 0 ? attachments : undefined,
-    });
-
-    if (error) {
-      console.error("Quote delivery error:", error);
-      throw new Error("Quote email delivery failed.");
-    }
-
-    return Response.json({ ok: true }, { status: 200 });
   } catch (err) {
     console.error("Quote API error:", err);
     return Response.json(
@@ -214,4 +296,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
