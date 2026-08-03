@@ -52,7 +52,7 @@ export async function listLeads(filter: LeadFilter = {}): Promise<LeadRow[]> {
   const rows = await sql`
     SELECT * FROM leads
     WHERE (${includeTests}::boolean OR is_test = false)
-    ORDER BY created_at DESC LIMIT 500`
+    ORDER BY created_at DESC LIMIT ${PAGE_SIZE} OFFSET ${offset}`
   return rows as LeadRow[]
 }
 
@@ -102,7 +102,8 @@ export async function getOpsStats(): Promise<OpsStats> {
       (SELECT percentile_cont(0.5) WITHIN GROUP (
           ORDER BY EXTRACT(EPOCH FROM (first_response_at - created_at)) / 60.0)
         FROM leads
-        WHERE first_response_at IS NOT NULL AND is_test = false) AS median_response_minutes
+        WHERE first_response_at IS NOT NULL AND is_test = false
+          AND first_response_at > created_at) AS median_response_minutes
     FROM leads
     WHERE is_test = false`) as Record<string, unknown>[]
 

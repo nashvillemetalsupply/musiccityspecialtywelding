@@ -2,6 +2,7 @@ import { Resend } from "resend"
 import { dbConfigured, getSql } from "@/lib/db"
 import type { LeadRow } from "@/lib/leads"
 import { isAuthorizedCron } from "@/lib/ops-auth"
+import { sendPushToAll } from "@/lib/push"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -62,6 +63,15 @@ export async function GET(req: Request) {
       await sql`
         UPDATE leads SET follow_up_notified_at = now() WHERE id = ANY(${ids})`
       detail.emailSent = true
+      const push = await sendPushToAll({
+        title: `Follow-up due: ${due.length} lead${due.length === 1 ? "" : "s"}`,
+        body: due
+          .slice(0, 3)
+          .map((lead) => `${lead.first_name} · ${lead.service}`)
+          .join(" — "),
+        url: "/ops",
+      })
+      detail.pushSent = push.sent
     } else {
       detail.emailSent = false
     }

@@ -3206,3 +3206,10 @@ html {
 .ops-add-lead summary::-webkit-details-marker { display: none; }
 .ops-add-lead[open] summary { border-bottom: 1px solid var(--ops-line-soft); }
 .ops-add-lead form { padding: 0.9rem 1rem 1rem; border-bottom: 0; }
+
+.ops-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}

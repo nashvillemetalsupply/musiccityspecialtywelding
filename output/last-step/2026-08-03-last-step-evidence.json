@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-08-03T18:05:00Z",
+  "identity": {
+    "productionDomain": "https://musiccityspecialtywelding.com",
+    "vercelProject": "music-city-speciality-welding",
+    "vercelTeam": "team_WcJMotNxyWKutmpAAbagMcAl",
+    "gitHubRepo": "nashvillemetalsupply/musiccityspecialtywelding",
+    "defaultBranch": "main",
+    "deployedCommit": "ce18a977e71a0be99743d6d8305f687d726d5915",
+    "operationsEmail": "sales@musiccityspecialtywelding.com",
+    "publicPhone": "(615) 810-4910",
+    "googleAdsCustomerId": "747-818-3137",
+    "ga4MeasurementId": "G-CNSPDW74CJ",
+    "database": "Neon Postgres (Vercel Marketplace), same instance all environments",
+    "blobStore": "mcsw-lead-photos (private, store_dry7UoUzSMNUQVd7)"
+  },
+  "gates": [
+    { "gate": "typecheck (tsc --noEmit)", "status": "PASS", "evidence": "clean at ce18a97" },
+    { "gate": "lint (eslint)", "status": "PASS", "evidence": "0 errors 0 warnings at ce18a97" },
+    { "gate": "production build (next build)", "status": "PASS", "evidence": "17+ routes compiled at ce18a97" },
+    { "gate": "dependency audit (npm audit --audit-level=high)", "status": "PASS", "evidence": "0 vulnerabilities" },
+    { "gate": "deployment serves intended commit", "status": "PASS", "evidence": "git-integrated deploy of ce18a97 READY and aliased to apex; new /ops features exercised live" },
+    { "gate": "www -> apex redirect", "status": "PASS", "evidence": "HTTP 308" },
+    { "gate": "robots.txt", "status": "PASS", "evidence": "allows /, disallows /api/ and /ops, sitemap declared" },
+    { "gate": "sitemap.xml", "status": "PASS", "evidence": "9 canonical URLs, HTTP 200" },
+    { "gate": "canonical + schema + tags", "status": "PASS", "evidence": "apex canonical, LocalBusiness JSON-LD, G-CNSPDW74CJ + AW-17817632790 in served HTML" },
+    { "gate": "/api/health launch gate", "status": "PASS", "evidence": "ok:true — email credential valid (live Resend API probe), database connected, ads conversion configured, failed deliveries 0, digest heartbeat recorded" },
+    { "gate": "lead intake end-to-end (website)", "status": "PASS", "evidence": "internal test lead L-20260803-FNE0 submitted through production form at 390px with photo: persisted with gclid/UTM attribution (source google-ads), owner email delivered to business inbox (verified in Gmail), GA/Ads conversion events fire on client success path" },
+    { "gate": "lead persistence-first (email failure survival)", "status": "PASS", "evidence": "lead L-20260803-3AQ7 persisted with email_delivery_status=failed when email service unavailable; API still returned ok" },
+    { "gate": "photo persistence", "status": "PASS", "evidence": "photo stored to private Blob (leads/L-20260803-0XJO/), metadata on lead row, authenticated stream returned 200 / 70 bytes / image/png" },
+    { "gate": "operations auth (magic link)", "status": "PASS", "evidence": "sign-in email delivered by Resend to business inbox; one-time token redeemed; session cookie set; dashboard rendered; unauthenticated /api/ops/* returns 401" },
+    { "gate": "pipeline work loop", "status": "PASS", "evidence": "first response (4m, phone) -> quoted (estimate) -> won (revenue $450, completed) with full lead_events audit trail and operator identity" },
+    { "gate": "manual phone-in lead entry", "status": "PASS", "evidence": "lead id 5 created from dashboard: source phone-in, status contacted, first_response stamped" },
+    { "gate": "interaction log + follow-up reminders", "status": "PASS", "evidence": "interaction (text) auto-stamped first response; follow-up set +4h; hourly reminder endpoint 200 with notified-at watermark; unauthenticated 401" },
+    { "gate": "CSV + Google Ads offline-conversion export", "status": "PASS", "evidence": "authenticated CSV export 200 with formula-injection guard; google-oci format emits Click ID/Time/Value/Currency for won gclid leads" },
+    { "gate": "daily digest automation", "status": "PASS", "evidence": "production run ok:true, automation_runs heartbeat recorded, 401 without CRON_SECRET; Vercel cron scheduled 12:00 UTC daily" },
+    { "gate": "external monitoring (GitHub Actions)", "status": "WARNING", "evidence": "5-minute health monitor + hourly reminder workflows on default branch; manual (workflow_dispatch) runs succeeded for both; first automatic scheduled execution had not yet fired at evidence time — GitHub registers new schedules with delay. Owner check: green scheduled runs at github.com/nashvillemetalsupply/musiccityspecialtywelding/actions within 24h." },
+    { "gate": "synthetic data cleanup", "status": "PASS", "evidence": "leads=0, lead_events=0, blobs=0 after verification; deletions performed through the dashboard's test-only delete action" },
+    { "gate": "DNS/email auth", "status": "PASS", "evidence": "single root SPF (Google), Google DKIM resolving, DMARC v=DMARC1 p=none, Google MX, Resend/SES SPF on send. subdomain — matches Aug 1-2 audit, no drift" },
+    { "gate": "growth-gaps public audit", "status": "PASS", "evidence": "audit-public-growth.mjs: 0 high, 1 medium (Google review URL — owner-gated GBP verification)" },
+    { "gate": "security hardening", "status": "PASS", "evidence": "magic-link URLs pinned to canonical origin; uniform login responses; timing-safe cron auth; hashed one-time + session tokens; healthcheck no longer exposes lead counts" }
+  ],
+  "ownerActions": [
+    "Complete Google Business Profile video verification, then add the review link (health reports it unconfigured).",
+    "Decide DMARC hardening (currently p=none) after monitoring.",
+    "Approve/decline a dedicated Twilio number for SMS lead alerts (CRM is email-alert-only until then).",
+    "Confirm GitHub Actions scheduled runs are green within 24h (first-time cron registration delay).",
+    "Ads keyword decisions from the Aug 1-2 audit remain open ($409 zero-conversion keywords)."
+  ],
+  "independentJudge": {
+    "round1": { "score": "7/10", "verdict": "better than folk.app for this business", "note": "all 8 gaps + all bugs remediated and deployed same session" },
+    "round2": { "status": "see markdown evidence file for final score" }
+  },
+  "decision": "READY FOR TRAFFIC",
+  "decisionNote": "Site was already live and serving paid traffic; every hard gate passes with fresh evidence. Single WARNING: first automatic scheduled run of the newly added external monitors is pending GitHub cron registration; manual runs are proven green. Owner-gated exclusions (GBP verification/review URL, DMARC hardening, SMS number) are documented and do not affect lead receipt, attribution, safety, or money paths."
+}

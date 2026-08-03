@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { put } from "@vercel/blob";
 import { dbConfigured } from "@/lib/db";
+import { sendPushToAll } from "@/lib/push";
 import {
   attachLeadPhotos,
   createLead,
@@ -303,6 +304,14 @@ export async function POST(req: Request) {
         await markLeadDelivery(leadId, emailSent ? "sent" : "failed", emailErrorMessage || undefined);
       } catch (deliveryLogError) {
         console.error("Delivery status update error:", deliveryLogError);
+      }
+      if (!isTest) {
+        // Second alert channel: instant phone push, independent of the email provider.
+        await sendPushToAll({
+          title: `New lead: ${firstName}`,
+          body: `${serviceNeeded} · ${phone}${emailSent ? "" : " · EMAIL FAILED — dashboard only"}`,
+          url: `/ops/leads/${leadId}`,
+        });
       }
     }
 

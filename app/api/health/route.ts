@@ -24,6 +24,8 @@ type DatabaseHealth = {
   failedDeliveries: number | null
   lastDigestAt: string | null
   lastDigestOk: boolean | null
+  lastReminderAt: string | null
+  lastReminderOk: boolean | null
 }
 
 async function checkDatabase(): Promise<DatabaseHealth> {
@@ -34,6 +36,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     failedDeliveries: null,
     lastDigestAt: null,
     lastDigestOk: null,
+    lastReminderAt: null,
+    lastReminderOk: null,
   }
   if (!result.configured) return result
   try {
@@ -58,6 +62,16 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     if (digest.length) {
       result.lastDigestAt = new Date(digest[0].ran_at).toISOString()
       result.lastDigestOk = digest[0].ok
+    }
+    const reminder = (await sql`
+      SELECT ran_at, ok FROM automation_runs
+      WHERE job = 'follow-up-reminders' ORDER BY ran_at DESC LIMIT 1`) as {
+      ran_at: string
+      ok: boolean
+    }[]
+    if (reminder.length) {
+      result.lastReminderAt = new Date(reminder[0].ran_at).toISOString()
+      result.lastReminderOk = reminder[0].ok
     }
   } catch {
     result.connected = false
@@ -118,6 +132,12 @@ export async function GET() {
       automation: {
         lastDigestAt: database.lastDigestAt,
         lastDigestOk: database.lastDigestOk,
+        lastReminderAt: database.lastReminderAt,
+        lastReminderOk: database.lastReminderOk,
+        // Surfaces a silently-disabled GitHub schedule once reminders have run at least once.
+        reminderStale:
+          database.lastReminderAt !== null &&
+          Date.now() - new Date(database.lastReminderAt).getTime() > 3 * 60 * 60 * 1000,
       },
       googleAds: {
         conversionConfigured: adsConversionConfigured,

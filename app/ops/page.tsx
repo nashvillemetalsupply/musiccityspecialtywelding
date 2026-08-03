@@ -5,6 +5,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getOpsStats, getStatusCounts, listLeads, PAGE_SIZE, type LeadFilter } from "@/lib/ops-data"
 import { createManualLead } from "./actions"
 import { OpsLoginForm } from "./login-form"
+import { PushToggle } from "./push-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -86,9 +87,12 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
           <span className="ops-kicker">Music City Specialty Welding</span>
           <h1>Lead operations</h1>
         </div>
-        <form action="/api/ops/logout" method="post">
-          <button className="ops-ghost" type="submit">Sign out</button>
-        </form>
+        <div className="ops-header-actions">
+          <PushToggle vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} />
+          <form action="/api/ops/logout" method="post">
+            <button className="ops-ghost" type="submit">Sign out</button>
+          </form>
+        </div>
       </header>
 
       <section className="ops-stats" aria-label="Pipeline summary">

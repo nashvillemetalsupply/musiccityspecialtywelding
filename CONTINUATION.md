@@ -1,8 +1,17 @@
 # Music City Specialty Welding - release record
 
-Release date: August 2, 2026
+Release date: August 2, 2026 · CRM platform release: August 3, 2026
 
-Status: live at `https://musiccityspecialtywelding.com`, committed to `main`, and deployed through Vercel. Resume from this record instead of restarting the project.
+Status: live at `https://musiccityspecialtywelding.com`, committed to `main`, and deployed through Vercel. GitHub → Vercel auto-deploy is now connected (pushes to `main` deploy production). Resume from this record instead of restarting the project.
+
+## August 3, 2026 — custom CRM platform (Lead Operations)
+
+- Neon Postgres provisioned via Vercel Marketplace (one database across environments); private Vercel Blob store `mcsw-lead-photos` for job photos.
+- Quote intake is persistence-first: lead row (with gclid/UTM/landing/referrer attribution) and photos are stored before the Resend email is attempted; leads survive provider outages.
+- Owner dashboard at `/ops`: magic-link sign-in to the shop mailbox, pipeline stages with auto-timestamps, first-response/speed-to-lead tracking, interaction log, follow-up reminders (hourly sweep), estimate/revenue capture, manual phone-in/walk-in entry, instant search, pagination, CSV export, and Google Ads offline-conversion export (`?format=google-oci`).
+- Automation: daily digest (Vercel cron 12:00 UTC) and hourly reminder sweep + 5-minute health monitor (GitHub Actions, CRON_SECRET repo secret). `/api/health` now proves database, delivery failures, ops auth, scheduler secret, and automation heartbeat.
+- Evidence bundle: `output/last-step/2026-08-03-last-step-evidence.{md,json}` — decision READY FOR TRAFFIC with one monitoring warning (first scheduled GitHub cron run pending) and the owner-gated exclusions (GBP verification/review URL, DMARC hardening, SMS number decision).
+- The public site design is locked pending the owner's new reference designs; only the footer call row and sticky-bar visibility were refined.
 
 ## Locked direction
 

@@ -78,6 +78,17 @@ export async function GET(req: Request) {
           ""
         )
       }
+      const [ociReady] = (await sql`
+        SELECT count(*)::int AS count FROM leads
+        WHERE status = 'won' AND gclid <> '' AND won_at > now() - interval '7 days'
+          AND is_test = false`) as { count: number }[]
+      if (ociReady.count > 0) {
+        sections.push(
+          `${ociReady.count} won ad-driven job(s) this week are ready to upload to Google Ads:`,
+          `https://musiccityspecialtywelding.com/api/ops/export?format=google-oci`,
+          ""
+        )
+      }
       sections.push("Work the list: https://musiccityspecialtywelding.com/ops")
 
       const resend = new Resend(apiKey)
