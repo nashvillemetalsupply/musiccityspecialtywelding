@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { dbConfigured } from "@/lib/db"
-import { LEAD_STATUSES } from "@/lib/leads"
+import { LEAD_STATUSES, type LeadEventRow } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getLead, getLeadEvents } from "@/lib/ops-data"
 import { OpsLoginForm } from "../../login-form"
@@ -34,6 +34,53 @@ function formatCentral(iso: string | null) {
 
 function centsToDollars(cents: number | null) {
   return cents === null ? "" : String(Math.round(cents / 100))
+}
+
+function money(cents: unknown) {
+  const n = Number(cents)
+  if (!Number.isFinite(n)) return ""
+  return `$${(n / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+}
+
+function digits(phone: string) {
+  return phone.replace(/[^\d+]/g, "")
+}
+
+/* Plain-English history lines — no raw JSON on the shop floor. */
+function describeEvent(event: LeadEventRow): string {
+  const d = (event.detail ?? {}) as Record<string, unknown>
+  switch (event.type) {
+    case "created":
+      return `Job hit the board (source: ${d.source ?? "unknown"})`
+    case "email_sent":
+      return "Owner email delivered"
+    case "email_failed":
+      return `Owner email FAILED${d.error ? ` — ${d.error}` : ""}`
+    case "first_response":
+      return `First call-back made (${d.channel ?? "unrecorded"})`
+    case "interaction":
+      return `Touch logged: ${d.channel ?? "contact"}${d.note ? ` — “${d.note}”` : ""}`
+    case "follow_up_set":
+      return `Reminder set for ${formatCentral(typeof d.at === "string" ? d.at : null)}`
+    case "follow_up_cleared":
+      return "Reminder cleared"
+    case "status_changed":
+      return `Stamped ${String(d.status ?? "").toUpperCase()}${d.reason ? ` — ${d.reason}` : ""}`
+    case "estimate_saved":
+      return d.cents == null ? "Estimate cleared" : `Estimate saved: ${money(d.cents)}`
+    case "outcome_saved":
+      return d.revenueCents == null
+        ? "Outcome updated"
+        : `Job WON — ${money(d.revenueCents)}${d.completed ? " · completed" : ""}`
+    case "notes_saved":
+      return "Notes updated"
+    case "review_tracked":
+      return d.received ? "Review received" : "Review requested"
+    case "delivery_acknowledged":
+      return "Email failure marked handled"
+    default:
+      return event.type.replace(/_/g, " ")
+  }
 }
 
 type Params = Promise<{ id: string }>
@@ -69,44 +116,35 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
       <header className="ops-header">
         <div>
           <span className="ops-kicker">
-            <Link href="/ops">← All leads</Link>
+            <Link href="/ops">← Back to the board</Link>
           </span>
-          <h1>
+          <h1 className="ops-neon">
             {lead.first_name} {lead.last_name}
             {lead.is_test && <em className="ops-test-flag"> INTERNAL TEST</em>}
           </h1>
           <p className="ops-sub">
-            {lead.public_id} · received {formatCentral(lead.created_at)} ·{" "}
-            <span className={`ops-status is-${lead.status}`}>{lead.status}</span>
+            Work order <strong>{lead.public_id}</strong> · in {formatCentral(lead.created_at)}
           </p>
         </div>
+        <div className={`ops-stamp-ink is-${lead.status} ops-stamp-hero`}>{lead.status}</div>
       </header>
 
+      <div className="ops-phone-row">
+        <div>
+          <span>Customer line</span>
+          <strong>{lead.phone}</strong>
+        </div>
+        <a className="ops-act-call" href={`tel:${digits(lead.phone)}`}>Call now</a>
+        <a className="ops-act-text" href={`sms:${digits(lead.phone)}`}>Text</a>
+        {lead.email && <a className="ops-act-mail" href={`mailto:${lead.email}`}>Email</a>}
+      </div>
+
       <div className="ops-columns">
-        <section className="ops-card" aria-label="Lead details">
+        <section className="ops-card ops-order" aria-label="Work order">
           <h2>The job</h2>
-          <dl>
-            <div>
-              <dt>Phone</dt>
-              <dd>
-                <a href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}>{lead.phone}</a>
-                {" · "}
-                <a href={`sms:${lead.phone.replace(/[^\d+]/g, "")}`}>text</a>
-              </dd>
-            </div>
-            <div><dt>Email</dt><dd>{lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : "—"}</dd></div>
-            <div><dt>Service</dt><dd>{lead.service}</dd></div>
-            <div><dt>Preferred contact</dt><dd>{lead.preferred_contact || "—"}</dd></div>
-            <div>
-              <dt>Photos</dt>
-              <dd>
-                {lead.photo_count > 0
-                  ? `${lead.photo_count} attached to the quote email`
-                  : "none"}
-              </dd>
-            </div>
-            <div className="ops-span"><dt>Details</dt><dd>{lead.message || "—"}</dd></div>
-          </dl>
+          <p className="ops-order-service">{lead.service}</p>
+          {lead.message && <p className="ops-order-details">“{lead.message}”</p>}
+
           {Array.isArray(lead.photos) && lead.photos.length > 0 && (
             <>
               <h2>Job photos</h2>
@@ -130,13 +168,38 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
             </>
           )}
 
+          <h2>The customer</h2>
+          <dl>
+            <div>
+              <dt>Email</dt>
+              <dd>{lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : "not given"}</dd>
+            </div>
+            <div><dt>Prefers</dt><dd>{lead.preferred_contact || "—"}</dd></div>
+            <div>
+              <dt>First call-back</dt>
+              <dd>
+                {lead.first_response_at
+                  ? `${formatCentral(lead.first_response_at)} — ${responseMinutes} min (${lead.first_response_channel || "unrecorded"})`
+                  : "not yet"}
+              </dd>
+            </div>
+            {lead.next_follow_up_at && (
+              <div>
+                <dt>Next reminder</dt>
+                <dd>{formatCentral(lead.next_follow_up_at)}</dd>
+              </div>
+            )}
+          </dl>
+
           <h2>Where it came from</h2>
           <dl>
             <div><dt>Source</dt><dd>{lead.source}</dd></div>
-            {lead.gclid && <div><dt>gclid</dt><dd className="ops-mono">{lead.gclid.slice(0, 24)}…</dd></div>}
             {lead.utm_campaign && <div><dt>Campaign</dt><dd>{lead.utm_campaign}</dd></div>}
-            <div className="ops-span"><dt>Landing page</dt><dd>{lead.landing_page || "—"}</dd></div>
-            <div className="ops-span"><dt>Referrer</dt><dd>{lead.referrer || "—"}</dd></div>
+            {lead.gclid && <div className="ops-span"><dt>Ad click ID</dt><dd className="ops-mono">{lead.gclid}</dd></div>}
+            {lead.landing_page && (
+              <div className="ops-span"><dt>Landed on</dt><dd className="ops-mono">{lead.landing_page}</dd></div>
+            )}
+            {lead.referrer && <div className="ops-span"><dt>Referred by</dt><dd className="ops-mono">{lead.referrer}</dd></div>}
             <div>
               <dt>Owner email</dt>
               <dd className={lead.email_delivery_status === "failed" ? "is-bad" : ""}>
@@ -150,24 +213,16 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
                 )}
               </dd>
             </div>
-            <div>
-              <dt>First response</dt>
-              <dd>
-                {lead.first_response_at
-                  ? `${formatCentral(lead.first_response_at)} (${responseMinutes}m, ${lead.first_response_channel || "unrecorded"})`
-                  : "not yet"}
-              </dd>
-            </div>
           </dl>
         </section>
 
-        <section className="ops-card" aria-label="Work the lead">
-          <h2>Work it</h2>
+        <section className="ops-card ops-tools" aria-label="Work the lead">
+          <h2>Respond</h2>
 
           {!lead.first_response_at && (
             <form action={markFirstResponse} className="ops-inline-form">
               <input type="hidden" name="leadId" value={lead.id} />
-              <label htmlFor="response-channel">Responded via</label>
+              <label htmlFor="response-channel">Called them back via</label>
               <select id="response-channel" name="channel" defaultValue="phone">
                 <option value="phone">phone</option>
                 <option value="text">text</option>
@@ -179,8 +234,8 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
           )}
 
           <form action={logInteraction} className="ops-inline-form">
-            <label htmlFor="interaction-channel">Log a touch</label>
             <input type="hidden" name="leadId" value={lead.id} />
+            <label htmlFor="interaction-channel">Log a touch</label>
             <select id="interaction-channel" name="channel" defaultValue="phone">
               <option value="phone">called</option>
               <option value="text">texted</option>
@@ -193,8 +248,8 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
           </form>
 
           <form action={setFollowUp} className="ops-inline-form">
-            <label htmlFor="follow-up-when">Follow up</label>
             <input type="hidden" name="leadId" value={lead.id} />
+            <label htmlFor="follow-up-when">Remind me</label>
             <select id="follow-up-when" name="quick" defaultValue="1d">
               <option value="4h">in 4 hours</option>
               <option value="1d">tomorrow</option>
@@ -203,32 +258,17 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
             </select>
             <button type="submit">Set reminder</button>
             {lead.next_follow_up_at && (
-              <>
-                <span className="ops-followup-current">
-                  set for {formatCentral(lead.next_follow_up_at)}
-                </span>
-                <button type="submit" name="clear" value="1" className="ops-ghost">
-                  Clear
-                </button>
-              </>
+              <button type="submit" name="clear" value="1" className="ops-ghost">
+                Clear reminder
+              </button>
             )}
           </form>
 
-          <form action={updateLeadStatus} className="ops-inline-form">
-            <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="lead-status">Status</label>
-            <select id="lead-status" name="status" defaultValue={lead.status}>
-              {LEAD_STATUSES.map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-            <input name="reason" placeholder="Reason (required for lost/spam)" defaultValue={lead.status_reason} />
-            <button type="submit">Save status</button>
-          </form>
+          <h2>Money</h2>
 
           <form action={saveEstimate} className="ops-inline-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="lead-estimate">Estimate ($)</label>
+            <label htmlFor="lead-estimate">Estimate ($) — stamps it QUOTED</label>
             <input
               id="lead-estimate"
               name="estimate"
@@ -241,19 +281,33 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
 
           <form action={saveOutcome} className="ops-inline-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="lead-revenue">Final revenue ($)</label>
+            <label htmlFor="lead-revenue">Final revenue ($) — stamps it WON</label>
             <input
               id="lead-revenue"
               name="revenue"
               inputMode="decimal"
               defaultValue={centsToDollars(lead.revenue_cents)}
-              placeholder="marks the job won"
+              placeholder="what it actually paid"
             />
             <label className="ops-check">
               <input type="checkbox" name="completed" defaultChecked={Boolean(lead.completed_at)} />
               job completed
             </label>
             <button type="submit">Save outcome</button>
+          </form>
+
+          <h2>Paper trail</h2>
+
+          <form action={updateLeadStatus} className="ops-inline-form">
+            <input type="hidden" name="leadId" value={lead.id} />
+            <label htmlFor="lead-status">Re-stamp the ticket</label>
+            <select id="lead-status" name="status" defaultValue={lead.status}>
+              {LEAD_STATUSES.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+            <input name="reason" placeholder="Reason (required for lost/spam)" defaultValue={lead.status_reason} />
+            <button type="submit">Stamp it</button>
           </form>
 
           <form action={markReviewRequested} className="ops-inline-form">
@@ -270,7 +324,13 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
           <form action={saveNotes} className="ops-notes-form">
             <input type="hidden" name="leadId" value={lead.id} />
             <label htmlFor="lead-notes">Notes</label>
-            <textarea id="lead-notes" name="notes" rows={5} defaultValue={lead.notes} />
+            <textarea
+              id="lead-notes"
+              name="notes"
+              rows={5}
+              defaultValue={lead.notes}
+              placeholder="Quote numbers, measurements, gate codes, the dog's name…"
+            />
             <button type="submit">Save notes</button>
           </form>
 
@@ -283,15 +343,14 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
         </section>
       </div>
 
-      <section className="ops-card" aria-label="History">
-        <h2>History</h2>
+      <section className="ops-card ops-history" aria-label="History">
+        <h2>The story so far</h2>
         <ol className="ops-timeline">
           {events.map((event) => (
             <li key={event.id}>
               <span>{formatCentral(event.created_at)}</span>
-              <strong>{event.type}</strong>
-              <em>{event.actor}</em>
-              {event.detail && <code>{JSON.stringify(event.detail)}</code>}
+              <strong>{describeEvent(event)}</strong>
+              {event.actor !== "system" && <em>by {event.actor}</em>}
             </li>
           ))}
         </ol>

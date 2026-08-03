@@ -3697,3 +3697,111 @@ a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140m
 
 /* detail page stamp reuse */
 .ops-sub .ops-status { border: 3px double currentColor; transform: rotate(-4deg); display: inline-block; font-weight: 700; letter-spacing: 0.18em; }
+
+/* -------------------------------------------------------------------------- */
+/* WORK ORDER detail v2 + global legibility final pass                        */
+/* -------------------------------------------------------------------------- */
+
+/* every label steps up; every muted ink darkens */
+.ops-card dt { font-size: 0.78rem; color: #5a4c38; letter-spacing: 0.12em; }
+.ops-card dd { font-size: 1.08rem; line-height: 1.55; }
+.ops-card h2 { font-size: 0.84rem; letter-spacing: 0.16em; }
+.ops-inline-form label, .ops-notes-form label { font-size: 0.78rem; color: #5a4c38; }
+.ops-followup-current { font-size: 0.88rem; }
+.ops-kicker { font-size: 0.72rem; }
+.ops-header .ops-kicker a { color: #e6dcc4; }
+.ops-header .ops-kicker a:hover { color: #ffb46b; }
+.ops-sub { font-size: 1.05rem; color: #e6dcc4; }
+.ops-sub strong { color: #ffb46b; }
+.ops-sources { font-size: 0.95rem; }
+.ops-mono { font-size: 0.9rem; overflow-wrap: anywhere; }
+.ops-empty { font-size: 1.1rem; }
+.ops-board-note { color: #efe6d2; }
+.ops-gauge span { font-size: 0.68rem; color: #5a4c38; }
+.ops-stats span { font-size: 0.7rem; color: #5a4c38; }
+.ops-ticket-id span { font-size: 0.78rem; color: #6d5f47; }
+.ops-ticket-id em { font-size: 0.85rem; }
+.ops-ticket-who span { font-size: 1rem; }
+.ops-ticket-who em { font-size: 0.72rem; }
+.ops-ticket-value em { font-size: 0.74rem; }
+.ops-login p { color: #e6dcc4; }
+
+/* hero stamp next to the neon name */
+.ops-stamp-hero { font-size: 1.15rem; padding: 0.5rem 1.1rem; align-self: center; }
+
+/* the customer line bar */
+.ops-phone-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1.1rem;
+  padding: 1rem 1.2rem;
+  background: linear-gradient(180deg, #241a10, #1a120a);
+  border: 2px solid rgba(0, 0, 0, 0.8);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+.ops-phone-row > div { display: flex; flex-direction: column; gap: 0.15rem; margin-right: auto; }
+.ops-phone-row span { font-family: var(--font-ms-mono), monospace; font-size: 0.64rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #ffb46b; }
+.ops-phone-row strong { font-family: var(--font-ms-display), sans-serif; font-size: clamp(1.5rem, 4vw, 2.1rem); color: #f3ead8; line-height: 1; }
+
+.ops-phone-row a {
+  padding: 0.7rem 1.4rem;
+  text-decoration: none;
+  font-family: var(--font-ms-display), sans-serif;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.8);
+}
+
+.ops-act-call { background: linear-gradient(180deg, #ffb46b, #ff8a2a 60%, #c95f12); color: #1b0f02; box-shadow: 0 0 14px rgba(255, 138, 42, 0.35); }
+.ops-act-text { background: #f3ead8; color: #241a10; }
+.ops-act-mail { background: transparent; color: #e6dcc4; border-color: rgba(243, 234, 216, 0.4); }
+.ops-phone-row a:hover { filter: brightness(1.08); }
+
+/* the order sheet */
+.ops-order-service {
+  font-family: var(--font-ms-display), sans-serif;
+  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  text-transform: uppercase;
+  line-height: 1;
+  color: #241a10;
+}
+
+.ops-order-details {
+  font-family: var(--font-ms-marker), cursive;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: #43392a;
+  transform: rotate(-0.4deg);
+  max-width: 40ch;
+}
+
+.ops-photos { gap: 0.8rem; }
+.ops-photos img {
+  width: 9.5rem;
+  height: 9.5rem;
+  border: 4px solid #fff;
+  outline: 2px solid rgba(36, 26, 16, 0.5);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.35);
+  transform: rotate(-1.2deg);
+}
+
+.ops-photos a:nth-child(2n) img { transform: rotate(1.4deg); }
+.ops-photos a:hover img { transform: rotate(0deg) scale(1.03); transition: transform 140ms ease; }
+
+/* tools panel rhythm */
+.ops-tools h2 { margin-top: 0.4rem; }
+.ops-tools .ops-inline-form { padding-bottom: 1.1rem; }
+.ops-inline-form button, .ops-notes-form button { font-size: 1rem; padding: 0.7rem 1.2rem; }
+
+/* history strip */
+.ops-history { background: linear-gradient(180deg, #fdf3df, #f6e9cd); }
+.ops-timeline { gap: 0; font-size: 1rem; }
+.ops-timeline li { padding: 0.55rem 0 0.55rem 1.5rem; }
+.ops-timeline li::after { top: 1rem; }
+.ops-timeline span { font-size: 0.82rem; color: #5a4c38; }
+.ops-timeline strong { font-size: 1.02rem; font-weight: 600; color: #241a10; }
+.ops-timeline em { font-size: 0.85rem; color: #6d5f47; }
