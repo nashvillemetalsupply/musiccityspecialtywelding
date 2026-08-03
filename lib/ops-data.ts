@@ -136,6 +136,31 @@ export async function getOpsStats(): Promise<OpsStats> {
   }
 }
 
+// The "needs you now" strip: due follow-ups and unanswered fresh leads.
+export async function getNeedsNow(): Promise<{ due: LeadRow[]; unanswered: LeadRow[] }> {
+  const sql = getSql()
+  const due = (await sql`
+    SELECT * FROM leads
+    WHERE next_follow_up_at IS NOT NULL AND next_follow_up_at <= now()
+      AND status NOT IN ('won', 'lost', 'spam') AND is_test = false
+    ORDER BY next_follow_up_at ASC LIMIT 8`) as LeadRow[]
+  const unanswered = (await sql`
+    SELECT * FROM leads
+    WHERE first_response_at IS NULL AND status NOT IN ('won', 'lost', 'spam')
+      AND is_test = false
+    ORDER BY created_at ASC LIMIT 8`) as LeadRow[]
+  return { due, unanswered }
+}
+
+export async function getMonthRevenueCents(): Promise<number> {
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT COALESCE(sum(revenue_cents), 0)::bigint AS cents FROM leads
+    WHERE status = 'won' AND won_at >= date_trunc('month', now())
+      AND is_test = false`) as { cents: number }[]
+  return Number(rows[0]?.cents ?? 0)
+}
+
 export async function getStatusCounts(includeTests: boolean): Promise<Record<string, number>> {
   const sql = getSql()
   const rows = (await sql`

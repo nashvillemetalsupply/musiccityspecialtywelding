@@ -2,7 +2,15 @@ import Link from "next/link"
 import { dbConfigured } from "@/lib/db"
 import { LEAD_STATUSES } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
-import { getOpsStats, getStatusCounts, listLeads, PAGE_SIZE, type LeadFilter } from "@/lib/ops-data"
+import {
+  getMonthRevenueCents,
+  getNeedsNow,
+  getOpsStats,
+  getStatusCounts,
+  listLeads,
+  PAGE_SIZE,
+  type LeadFilter,
+} from "@/lib/ops-data"
 import { createManualLead } from "./actions"
 import { OpsLoginForm } from "./login-form"
 import { PushToggle } from "./push-toggle"
@@ -28,11 +36,59 @@ function isOverdue(iso: string) {
   return new Date(iso).getTime() <= Date.now()
 }
 
+function ageMinutes(iso: string) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+}
+
 function ageInWords(iso: string) {
-  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  const minutes = ageMinutes(iso)
   if (minutes < 60) return `${minutes}m`
   if (minutes < 60 * 24) return `${Math.floor(minutes / 60)}h`
   return `${Math.floor(minutes / (60 * 24))}d`
+}
+
+function heatClass(lead: { created_at: string; first_response_at: string | null; status: string }) {
+  if (lead.first_response_at || !["new", "contacted"].includes(lead.status)) return ""
+  const minutes = ageMinutes(lead.created_at)
+  if (minutes >= 240) return " is-heat-red"
+  if (minutes >= 60) return " is-heat-hot"
+  return ""
+}
+
+function digits(phone: string) {
+  return phone.replace(/[^\d+]/g, "")
+}
+
+/* Hand-drawn speed-to-lead gauge. Needle sweeps 0–60+ minutes across 180°. */
+function SpeedGauge({ minutes }: { minutes: number | null }) {
+  const clamped = minutes === null ? null : Math.min(Math.max(minutes, 0), 60)
+  const angle = clamped === null ? -90 : -90 + (clamped / 60) * 180
+  const zone = minutes === null ? "none" : minutes <= 15 ? "good" : minutes <= 45 ? "warn" : "bad"
+  return (
+    <div className={`ops-gauge is-${zone}`}>
+      <svg viewBox="0 0 200 118" aria-hidden="true" focusable="false">
+        <path d="M18 104 A82 82 0 0 1 182 104" fill="none" stroke="currentColor" strokeWidth="4" opacity="0.35" />
+        <path d="M18 104 A82 82 0 0 1 63 33" fill="none" stroke="#4c7a3d" strokeWidth="7" strokeLinecap="round" />
+        <path d="M63 33 A82 82 0 0 1 137 33" fill="none" stroke="#c99b1c" strokeWidth="7" strokeLinecap="round" />
+        <path d="M137 33 A82 82 0 0 1 182 104" fill="none" stroke="#b3402a" strokeWidth="7" strokeLinecap="round" />
+        {[0, 15, 30, 45, 60].map((m) => {
+          const a = ((-90 + (m / 60) * 180) * Math.PI) / 180
+          const x1 = 100 + Math.sin(a) * 68
+          const y1 = 104 - Math.cos(a) * 68
+          const x2 = 100 + Math.sin(a) * 78
+          const y2 = 104 - Math.cos(a) * 78
+          return <line key={m} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="3" />
+        })}
+        <g transform={`rotate(${angle} 100 104)`}>
+          <line x1="100" y1="104" x2="100" y2="34" stroke="#241a10" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="100" cy="104" r="9" fill="#241a10" />
+          <circle cx="100" cy="104" r="3.5" fill="#f3ead8" />
+        </g>
+      </svg>
+      <strong>{minutes === null ? "—" : `${Math.round(minutes)} min`}</strong>
+      <span>median first call-back</span>
+    </div>
+  )
 }
 
 type SearchParams = Promise<{
@@ -64,10 +120,12 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
   const includeTests = params.tests === "1"
   const searchQuery = params.q?.trim() ?? ""
   const page = Math.max(1, Number(params.page) || 1)
-  const [stats, leads, counts] = await Promise.all([
+  const [stats, leads, counts, needsNow, monthRevenue] = await Promise.all([
     getOpsStats(),
     listLeads({ status: statusFilter, includeTests, query: searchQuery, page }),
     getStatusCounts(includeTests),
+    getNeedsNow(),
+    getMonthRevenueCents(),
   ])
 
   const baseQuery = `status=${statusFilter}${includeTests ? "&tests=1" : ""}${
@@ -80,12 +138,20 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
     ...LEAD_STATUSES.map((status) => ({ key: status, label: status })),
   ]
 
+  const urgent = [
+    ...needsNow.due.map((lead) => ({ lead, reason: "follow-up due" })),
+    ...needsNow.unanswered
+      .filter((lead) => !needsNow.due.some((d) => d.id === lead.id))
+      .map((lead) => ({ lead, reason: "no call back yet" })),
+  ].slice(0, 8)
+
   return (
     <main className="ops-main">
       <header className="ops-header">
         <div>
           <span className="ops-kicker">Music City Specialty Welding</span>
-          <h1>Lead operations</h1>
+          <h1 className="ops-neon">Lead board</h1>
+          <p className="ops-board-note">Every job. Every promise. On the wall.</p>
         </div>
         <div className="ops-header-actions">
           <PushToggle vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} />
@@ -95,34 +161,54 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
         </div>
       </header>
 
-      <section className="ops-stats" aria-label="Pipeline summary">
-        <div className={stats.newLeads > 0 ? "is-hot" : ""}>
-          <strong>{stats.newLeads}</strong><span>new leads</span>
-        </div>
-        <div className={stats.awaitingFirstResponse > 0 ? "is-hot" : ""}>
-          <strong>{stats.awaitingFirstResponse}</strong><span>awaiting response</span>
-        </div>
-        <div><strong>{stats.leadsLast30Days}</strong><span>last 30 days</span></div>
-        <div>
-          <strong>
-            {stats.medianFirstResponseMinutes === null
-              ? "—"
-              : `${Math.round(stats.medianFirstResponseMinutes)}m`}
-          </strong>
-          <span>median response</span>
-        </div>
-        <div className={stats.followUpsDue > 0 ? "is-hot" : ""}>
-          <strong>{stats.followUpsDue}</strong><span>follow-ups due</span>
-        </div>
-        <div><strong>{stats.wonJobs}</strong><span>won jobs</span></div>
-        <div className="is-money">
-          <strong>{formatMoney(stats.totalRevenueCents)}</strong><span>revenue recorded</span>
-        </div>
-        <div className="is-money">
-          <strong>{formatMoney(stats.openEstimateValueCents)}</strong><span>open quote value</span>
-        </div>
-        <div className={stats.failedDeliveries > 0 ? "is-bad" : ""}>
-          <strong>{stats.failedDeliveries}</strong><span>failed email deliveries</span>
+      {urgent.length > 0 && (
+        <section className="ops-now" aria-label="Needs you now">
+          <h2 className="ops-now-title">Needs you now</h2>
+          <div className="ops-now-strip">
+            {urgent.map(({ lead, reason }) => (
+              <div className="ops-ticket-urgent" key={`${lead.id}-${reason}`}>
+                <strong>
+                  <Link href={`/ops/leads/${lead.id}`}>
+                    {lead.first_name} {lead.last_name}
+                  </Link>
+                </strong>
+                <span>{lead.service}</span>
+                <em>{reason} · in {ageInWords(lead.created_at)}</em>
+                <div>
+                  <a href={`tel:${digits(lead.phone)}`}>Call</a>
+                  <a href={`sms:${digits(lead.phone)}`}>Text</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="ops-deck" aria-label="Shop pulse">
+        <SpeedGauge minutes={stats.medianFirstResponseMinutes} />
+        <div className="ops-stats">
+          <div className={stats.newLeads > 0 ? "is-hot" : ""}>
+            <strong>{stats.newLeads}</strong><span>new leads</span>
+          </div>
+          <div className={stats.awaitingFirstResponse > 0 ? "is-hot" : ""}>
+            <strong>{stats.awaitingFirstResponse}</strong><span>awaiting call-back</span>
+          </div>
+          <div className={stats.followUpsDue > 0 ? "is-hot" : ""}>
+            <strong>{stats.followUpsDue}</strong><span>follow-ups due</span>
+          </div>
+          <div><strong>{stats.leadsLast30Days}</strong><span>last 30 days</span></div>
+          <div className="is-money">
+            <strong>{formatMoney(monthRevenue)}</strong><span>won this month</span>
+          </div>
+          <div className="is-money">
+            <strong>{formatMoney(stats.totalRevenueCents)}</strong><span>revenue all-time</span>
+          </div>
+          <div className="is-money">
+            <strong>{formatMoney(stats.openEstimateValueCents)}</strong><span>quotes on the street</span>
+          </div>
+          <div className={stats.failedDeliveries > 0 ? "is-bad" : ""}>
+            <strong>{stats.failedDeliveries}</strong><span>failed email deliveries</span>
+          </div>
         </div>
       </section>
 
@@ -166,7 +252,7 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
       </nav>
 
       <details className="ops-add-lead">
-        <summary>+ Add a phone or walk-in lead</summary>
+        <summary>+ Write up a phone or walk-in lead</summary>
         <form action={createManualLead} className="ops-inline-form">
           <input name="firstName" placeholder="Name *" required aria-label="Name" />
           <input name="phone" type="tel" inputMode="tel" placeholder="Phone *" required aria-label="Phone" />
@@ -190,7 +276,7 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
             <option value="repeat-customer">repeat customer</option>
           </select>
           <input name="message" placeholder="What do they need?" aria-label="Job details" />
-          <button type="submit">Add lead</button>
+          <button type="submit">Put it on the board</button>
         </form>
       </details>
 
@@ -212,66 +298,45 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
         )}
       </form>
 
-      <section className="ops-table-wrap" aria-label="Leads">
+      <section className="ops-tickets" aria-label="Leads">
         {leads.length === 0 ? (
-          <p className="ops-empty">No leads match this view.</p>
+          <p className="ops-empty">Nothing on the board for this view.</p>
         ) : (
-          <table className="ops-table">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Contact</th>
-                <th>Job</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Next step</th>
-                <th>Age</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((lead) => (
-                <tr key={lead.id} className={lead.is_test ? "is-test" : ""}>
-                  <td>
-                    <Link href={`/ops/leads/${lead.id}`}>
-                      {lead.first_name} {lead.last_name}
-                    </Link>
-                    <small>{lead.public_id}{lead.is_test ? " · TEST" : ""}</small>
-                  </td>
-                  <td>
-                    <a href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}>{lead.phone}</a>
-                    {lead.email && <small>{lead.email}</small>}
-                  </td>
-                  <td>
-                    {lead.service}
-                    {lead.photo_count > 0 && <small>{lead.photo_count} photo(s)</small>}
-                  </td>
-                  <td>{lead.source}</td>
-                  <td>
-                    <span className={`ops-status is-${lead.status}`}>{lead.status}</span>
-                    {lead.email_delivery_status === "failed" && (
-                      <small className="is-bad">email failed</small>
-                    )}
-                  </td>
-                  <td>
-                    {lead.next_follow_up_at ? (
-                      <span className={isOverdue(lead.next_follow_up_at) ? "is-bad" : ""}>
-                        {formatCentral(lead.next_follow_up_at)}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td title={formatCentral(lead.created_at)}>{ageInWords(lead.created_at)}</td>
-                  <td>
-                    {lead.status === "won"
-                      ? formatMoney(lead.revenue_cents)
-                      : formatMoney(lead.estimate_value_cents)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          leads.map((lead) => (
+            <article className={`ops-ticket${lead.is_test ? " is-test" : ""}${heatClass(lead)}`} key={lead.id}>
+              <div className="ops-ticket-punch" aria-hidden="true" />
+              <div className="ops-ticket-id">
+                <span>{lead.public_id}</span>
+                <em>{formatCentral(lead.created_at)} · {ageInWords(lead.created_at)} ago</em>
+              </div>
+              <div className="ops-ticket-who">
+                <Link href={`/ops/leads/${lead.id}`}>
+                  {lead.first_name} {lead.last_name}
+                  {lead.is_test ? " · TEST" : ""}
+                </Link>
+                <span>{lead.service}{lead.photo_count > 0 ? ` · ${lead.photo_count} photo(s)` : ""}</span>
+                <em>{lead.source}{lead.email_delivery_status === "failed" ? " · EMAIL FAILED" : ""}</em>
+              </div>
+              <div className={`ops-stamp-ink is-${lead.status}`}>{lead.status}</div>
+              <div className="ops-ticket-value">
+                {lead.status === "won"
+                  ? formatMoney(lead.revenue_cents)
+                  : lead.estimate_value_cents !== null
+                    ? formatMoney(lead.estimate_value_cents)
+                    : "—"}
+                {lead.next_follow_up_at && (
+                  <em className={isOverdue(lead.next_follow_up_at) ? "is-bad" : ""}>
+                    ↻ {formatCentral(lead.next_follow_up_at)}
+                  </em>
+                )}
+              </div>
+              <div className="ops-ticket-actions">
+                <a href={`tel:${digits(lead.phone)}`}>Call</a>
+                <a href={`sms:${digits(lead.phone)}`}>Text</a>
+                <Link href={`/ops/leads/${lead.id}`}>Open</Link>
+              </div>
+            </article>
+          ))
         )}
       </section>
 
