@@ -256,7 +256,7 @@ export async function POST(req: Request) {
         photoFiles.length > 0 ? `${photoFiles.length} photo(s) attached.` : "No photos attached.",
         ``,
         `Meta:`,
-        leadPublicId ? `Lead ID: ${leadPublicId}` : `Lead ID: (not persisted)`,
+        leadId !== null ? `Job #${leadId}` : `Job number: (not persisted)`,
         `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"}`,
         `IP: ${ip}`,
         `Time: ${now}`,
@@ -286,7 +286,7 @@ export async function POST(req: Request) {
           `Job: <strong>${escapeHtml(serviceNeeded)}</strong>`,
           projectDetails ? `<br />“${escapeHtml(projectDetails)}”` : "",
           photoFiles.length > 0 ? `<br />${photoFiles.length} photo(s) attached.` : "",
-          leadPublicId ? `<br />Lead ${escapeHtml(leadPublicId)} is on the board.` : "",
+          leadId !== null ? `<br />Job #${leadId} is on the board.` : "",
         ]
           .filter(Boolean)
           .join("<br />"),

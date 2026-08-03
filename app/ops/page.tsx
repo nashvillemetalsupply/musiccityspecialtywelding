@@ -321,7 +321,7 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
             <article className={`ops-ticket${lead.is_test ? " is-test" : ""}${heatClass(lead)}`} key={lead.id}>
               <div className="ops-ticket-punch" aria-hidden="true" />
               <div className="ops-ticket-id">
-                <span>{lead.public_id}</span>
+                <span>Job #{lead.id}</span>
                 <em>{formatCentral(lead.created_at)} · {ageInWords(lead.created_at)} ago</em>
               </div>
               <div className="ops-ticket-who">

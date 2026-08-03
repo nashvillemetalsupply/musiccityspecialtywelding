@@ -134,7 +134,7 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
             {lead.is_test && <em className="ops-test-flag"> INTERNAL TEST</em>}
           </h1>
           <p className="ops-sub">
-            Work order <strong>{lead.public_id}</strong> · in {formatCentral(lead.created_at)}
+            Job <strong>#{lead.id}</strong> · in {formatCentral(lead.created_at)}
           </p>
         </div>
         <div className={`ops-stamp-ink is-${lead.status} ops-stamp-hero`}>{lead.status}</div>
