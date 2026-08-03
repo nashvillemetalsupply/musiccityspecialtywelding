@@ -5,10 +5,12 @@ import { createLoginToken, getOwnerEmail, safeEmailMatch } from "@/lib/ops-auth"
 
 export const runtime = "nodejs"
 
-const GENERIC_RESPONSE = Response.json(
-  { ok: true, message: "If that address runs this shop, a sign-in link is on its way." },
-  { status: 200 }
-)
+function genericResponse() {
+  return Response.json(
+    { ok: true, message: "If that address runs this shop, a sign-in link is on its way." },
+    { status: 200 }
+  )
+}
 
 export async function POST(req: Request) {
   try {
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
 
     // Do not reveal whether an address is the operator address.
     if (!requestedEmail || !safeEmailMatch(requestedEmail, ownerEmail)) {
-      return GENERIC_RESPONSE.clone()
+      return genericResponse()
     }
 
     const token = await createLoginToken(ownerEmail)
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: false, error: "Could not send the sign-in email." }, { status: 502 })
     }
 
-    return GENERIC_RESPONSE.clone()
+    return genericResponse()
   } catch (err) {
     console.error("Ops login error:", err)
     return Response.json({ ok: false, error: "Sign-in failed." }, { status: 500 })

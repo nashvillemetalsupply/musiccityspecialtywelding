@@ -46,17 +46,17 @@ export async function updateLeadStatus(formData: FormData) {
       status = ${status},
       status_reason = ${reason},
       first_response_at = CASE
-        WHEN ${status} IN ('contacted', 'qualified', 'quoted', 'won')
+        WHEN ${status}::text IN ('contacted', 'qualified', 'quoted', 'won')
           AND first_response_at IS NULL THEN now()
         ELSE first_response_at END,
       first_response_channel = CASE
-        WHEN ${status} IN ('contacted', 'qualified', 'quoted', 'won')
+        WHEN ${status}::text IN ('contacted', 'qualified', 'quoted', 'won')
           AND first_response_at IS NULL AND first_response_channel = ''
           THEN 'ops-dashboard'
         ELSE first_response_channel END,
-      quoted_at = CASE WHEN ${status} = 'quoted' AND quoted_at IS NULL THEN now() ELSE quoted_at END,
-      won_at = CASE WHEN ${status} = 'won' AND won_at IS NULL THEN now() ELSE won_at END,
-      lost_at = CASE WHEN ${status} = 'lost' AND lost_at IS NULL THEN now() ELSE lost_at END,
+      quoted_at = CASE WHEN ${status}::text = 'quoted' AND quoted_at IS NULL THEN now() ELSE quoted_at END,
+      won_at = CASE WHEN ${status}::text = 'won' AND won_at IS NULL THEN now() ELSE won_at END,
+      lost_at = CASE WHEN ${status}::text = 'lost' AND lost_at IS NULL THEN now() ELSE lost_at END,
       updated_at = now()
     WHERE id = ${leadId}`
   await recordLeadEvent(leadId, "status_changed", operator, { status, reason: reason || null })
@@ -92,9 +92,9 @@ export async function saveEstimate(formData: FormData) {
   const sql = getSql()
   await sql`
     UPDATE leads SET
-      estimate_value_cents = ${cents},
-      quoted_at = CASE WHEN ${cents} IS NOT NULL AND quoted_at IS NULL THEN now() ELSE quoted_at END,
-      status = CASE WHEN ${cents} IS NOT NULL AND status IN ('new', 'contacted', 'qualified')
+      estimate_value_cents = ${cents}::bigint,
+      quoted_at = CASE WHEN ${cents}::bigint IS NOT NULL AND quoted_at IS NULL THEN now() ELSE quoted_at END,
+      status = CASE WHEN ${cents}::bigint IS NOT NULL AND status IN ('new', 'contacted', 'qualified')
         THEN 'quoted' ELSE status END,
       updated_at = now()
     WHERE id = ${leadId}`
@@ -112,10 +112,10 @@ export async function saveOutcome(formData: FormData) {
   const sql = getSql()
   await sql`
     UPDATE leads SET
-      revenue_cents = ${revenueCents},
-      status = CASE WHEN ${revenueCents} IS NOT NULL THEN 'won' ELSE status END,
-      won_at = CASE WHEN ${revenueCents} IS NOT NULL AND won_at IS NULL THEN now() ELSE won_at END,
-      completed_at = CASE WHEN ${completed} AND completed_at IS NULL THEN now() ELSE completed_at END,
+      revenue_cents = ${revenueCents}::bigint,
+      status = CASE WHEN ${revenueCents}::bigint IS NOT NULL THEN 'won' ELSE status END,
+      won_at = CASE WHEN ${revenueCents}::bigint IS NOT NULL AND won_at IS NULL THEN now() ELSE won_at END,
+      completed_at = CASE WHEN ${completed}::boolean AND completed_at IS NULL THEN now() ELSE completed_at END,
       updated_at = now()
     WHERE id = ${leadId}`
   await recordLeadEvent(leadId, "outcome_saved", operator, { revenueCents, completed })
@@ -143,7 +143,7 @@ export async function markReviewRequested(formData: FormData) {
   await sql`
     UPDATE leads SET
       review_requested_at = COALESCE(review_requested_at, now()),
-      review_received = ${received},
+      review_received = ${received}::boolean,
       updated_at = now()
     WHERE id = ${leadId}`
   await recordLeadEvent(leadId, "review_tracked", operator, { received })

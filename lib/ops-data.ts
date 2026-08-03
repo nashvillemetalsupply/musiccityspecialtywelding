@@ -18,20 +18,20 @@ export async function listLeads(filter: LeadFilter = {}): Promise<LeadRow[]> {
     const rows = await sql`
       SELECT * FROM leads
       WHERE status = ANY(${[...OPEN_STATUSES]})
-        AND (${includeTests} OR is_test = false)
+        AND (${includeTests}::boolean OR is_test = false)
       ORDER BY created_at DESC LIMIT 500`
     return rows as LeadRow[]
   }
   if (status !== "all" && (LEAD_STATUSES as readonly string[]).includes(status)) {
     const rows = await sql`
       SELECT * FROM leads
-      WHERE status = ${status} AND (${includeTests} OR is_test = false)
+      WHERE status = ${status} AND (${includeTests}::boolean OR is_test = false)
       ORDER BY created_at DESC LIMIT 500`
     return rows as LeadRow[]
   }
   const rows = await sql`
     SELECT * FROM leads
-    WHERE (${includeTests} OR is_test = false)
+    WHERE (${includeTests}::boolean OR is_test = false)
     ORDER BY created_at DESC LIMIT 500`
   return rows as LeadRow[]
 }
