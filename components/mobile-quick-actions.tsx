@@ -14,29 +14,24 @@ export function MobileQuickActions({ quoteHref = "#contact" }: { quoteHref?: str
       return () => window.cancelAnimationFrame(frame)
     }
 
-    let frame = 0
+    // Direct evaluation on every scroll/resize event. No animation-frame
+    // dependency: rAF pauses in hidden or battery-throttled tabs.
     const updateVisibility = () => {
-      frame = 0
       const shouldShow = trigger.getBoundingClientRect().bottom <= 0
-      setIsVisible((current) => current === shouldShow ? current : shouldShow)
-    }
-    const scheduleVisibilityUpdate = () => {
-      if (frame) window.cancelAnimationFrame(frame)
-      frame = window.requestAnimationFrame(updateVisibility)
+      setIsVisible((current) => (current === shouldShow ? current : shouldShow))
     }
 
-    scheduleVisibilityUpdate()
-    window.addEventListener("scroll", scheduleVisibilityUpdate, { passive: true })
-    window.addEventListener("resize", scheduleVisibilityUpdate)
-    window.addEventListener("orientationchange", scheduleVisibilityUpdate)
-    window.addEventListener("pageshow", scheduleVisibilityUpdate)
+    updateVisibility()
+    window.addEventListener("scroll", updateVisibility, { passive: true })
+    window.addEventListener("resize", updateVisibility)
+    window.addEventListener("orientationchange", updateVisibility)
+    window.addEventListener("pageshow", updateVisibility)
 
     return () => {
-      if (frame) window.cancelAnimationFrame(frame)
-      window.removeEventListener("scroll", scheduleVisibilityUpdate)
-      window.removeEventListener("resize", scheduleVisibilityUpdate)
-      window.removeEventListener("orientationchange", scheduleVisibilityUpdate)
-      window.removeEventListener("pageshow", scheduleVisibilityUpdate)
+      window.removeEventListener("scroll", updateVisibility)
+      window.removeEventListener("resize", updateVisibility)
+      window.removeEventListener("orientationchange", updateVisibility)
+      window.removeEventListener("pageshow", updateVisibility)
     }
   }, [])
 
