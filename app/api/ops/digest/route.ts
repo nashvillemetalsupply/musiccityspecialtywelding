@@ -37,6 +37,10 @@ export async function GET(req: Request) {
       WHERE status = 'quoted' AND is_test = false
         AND quoted_at < now() - interval '3 days'
       ORDER BY quoted_at ASC LIMIT 50`) as LeadRow[]
+    const unpaidInvoices = (await sql`
+      SELECT * FROM leads
+      WHERE invoiced_at IS NOT NULL AND revenue_cents IS NULL AND is_test = false
+      ORDER BY invoice_due_at ASC NULLS LAST LIMIT 50`) as LeadRow[]
     const followUpsDue = (await sql`
       SELECT * FROM leads
       WHERE next_follow_up_at IS NOT NULL AND next_follow_up_at <= now()
@@ -48,10 +52,15 @@ export async function GET(req: Request) {
       failedDeliveries: failed.length,
       staleQuotes: openQuotes.length,
       followUpsDue: followUpsDue.length,
+      unpaidInvoices: unpaidInvoices.length,
     }
 
     const needsEmail =
-      unanswered.length > 0 || failed.length > 0 || openQuotes.length > 0 || followUpsDue.length > 0
+      unanswered.length > 0 ||
+      failed.length > 0 ||
+      openQuotes.length > 0 ||
+      followUpsDue.length > 0 ||
+      unpaidInvoices.length > 0
     const apiKey = process.env.RESEND_API_KEY
     const to = process.env.QUOTE_TO_EMAIL
     const from = process.env.QUOTE_FROM_EMAIL
@@ -71,6 +80,21 @@ export async function GET(req: Request) {
       }
       if (openQuotes.length) {
         sections.push(`QUOTES OUT MORE THAN 3 DAYS (${openQuotes.length}):`, ...openQuotes.map(describe), "")
+      }
+      if (unpaidInvoices.length) {
+        const now = Date.now()
+        sections.push(
+          `INVOICES OUT, NOT PAID (${unpaidInvoices.length}):`,
+          ...unpaidInvoices.map((lead) => {
+            const overdue =
+              lead.invoice_due_at && new Date(lead.invoice_due_at).getTime() < now
+                ? " · OVERDUE"
+                : ""
+            return `- #${lead.invoice_number} · ${lead.first_name} ${lead.last_name}`.trim() +
+              ` · ${lead.service}${overdue} · https://musiccityspecialtywelding.com/ops/leads/${lead.id}`
+          }),
+          ""
+        )
       }
       if (failed.length) {
         sections.push(
@@ -96,7 +120,7 @@ export async function GET(req: Request) {
       const { error } = await resend.emails.send({
         from,
         to,
-        subject: `Daily lead follow-up: ${unanswered.length} waiting, ${followUpsDue.length} due, ${openQuotes.length} stale quotes`,
+        subject: `Daily shop board: ${unanswered.length} waiting, ${followUpsDue.length} due, ${unpaidInvoices.length} unpaid invoices`,
         text: sections.join("\n"),
         html: brandedEmail({
           preheader: `${unanswered.length} waiting · ${followUpsDue.length} due · ${openQuotes.length} stale`,

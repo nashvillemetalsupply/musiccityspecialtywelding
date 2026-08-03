@@ -303,6 +303,43 @@ export async function saveOutcome(formData: FormData) {
   revalidatePath(`/ops/leads/${leadId}`)
 }
 
+// Invoices are MADE in QuickBooks; the board tracks and chases them.
+// Recording the QB number + due date puts the unpaid invoice on the radar;
+// saving final revenue (won) closes it out.
+export async function recordInvoice(formData: FormData) {
+  const operator = await requireOperator()
+  const leadId = parseLeadId(formData.get("leadId"))
+  const clear = String(formData.get("clear") ?? "") === "1"
+  const invoiceNumber = String(formData.get("invoiceNumber") ?? "").trim().slice(0, 60)
+  const dueDays = Number(formData.get("dueDays") ?? 14)
+
+  const sql = getSql()
+  if (clear) {
+    await sql`
+      UPDATE leads SET invoice_number = '', invoiced_at = NULL, invoice_due_at = NULL,
+        updated_at = now()
+      WHERE id = ${leadId}`
+    await recordLeadEvent(leadId, "invoice_cleared", operator, null)
+  } else {
+    if (!invoiceNumber) throw new Error("Invoice number is required.")
+    if (![0, 7, 14, 30].includes(dueDays)) throw new Error("Invalid due terms.")
+    const dueAt = new Date(Date.now() + dueDays * 24 * 3600_000).toISOString()
+    await sql`
+      UPDATE leads SET
+        invoice_number = ${invoiceNumber},
+        invoiced_at = COALESCE(invoiced_at, now()),
+        invoice_due_at = ${dueAt}::timestamptz,
+        updated_at = now()
+      WHERE id = ${leadId}`
+    await recordLeadEvent(leadId, "invoice_recorded", operator, {
+      invoiceNumber,
+      dueDays,
+    })
+  }
+  revalidatePath("/ops")
+  revalidatePath(`/ops/leads/${leadId}`)
+}
+
 export async function saveNotes(formData: FormData) {
   const operator = await requireOperator()
   const leadId = parseLeadId(formData.get("leadId"))

@@ -44,6 +44,9 @@ export type LeadRow = {
   next_follow_up_at: string | null
   follow_up_notified_at: string | null
   photos: { pathname: string; contentType: string; size: number; name: string }[]
+  invoice_number: string
+  invoiced_at: string | null
+  invoice_due_at: string | null
   estimate_value_cents: number | null
   quoted_at: string | null
   won_at: string | null

@@ -11,6 +11,7 @@ import {
   logInteraction,
   markFirstResponse,
   markReviewRequested,
+  recordInvoice,
   saveEstimate,
   saveNotes,
   saveOutcome,
@@ -76,6 +77,10 @@ function describeEvent(event: LeadEventRow): string {
       return "Notes updated"
     case "review_tracked":
       return d.received ? "Review received" : "Review requested"
+    case "invoice_recorded":
+      return `Invoice #${d.invoiceNumber ?? "?"} recorded (${d.dueDays === 0 ? "due on receipt" : `net ${d.dueDays}`})`
+    case "invoice_cleared":
+      return "Invoice tracking cleared"
     case "estimate_emailed":
       return d.sent
         ? `Estimate emailed to the customer (${money(d.cents)})`
@@ -312,6 +317,37 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
               </label>
             )}
             <button type="submit">Save outcome</button>
+          </form>
+
+          <form action={recordInvoice} className="ops-inline-form">
+            <input type="hidden" name="leadId" value={lead.id} />
+            <label htmlFor="invoice-number">
+              QuickBooks invoice — the board chases it until revenue is saved
+            </label>
+            <input
+              id="invoice-number"
+              name="invoiceNumber"
+              defaultValue={lead.invoice_number}
+              placeholder="Invoice # (e.g. 1337)"
+            />
+            <select name="dueDays" defaultValue="14" aria-label="Due terms">
+              <option value="0">due on receipt</option>
+              <option value="7">net 7</option>
+              <option value="14">net 14</option>
+              <option value="30">net 30</option>
+            </select>
+            <button type="submit">{lead.invoiced_at ? "Update invoice" : "Invoice is out"}</button>
+            {lead.invoiced_at && (
+              <>
+                <span className="ops-followup-current">
+                  #{lead.invoice_number} out since {formatCentral(lead.invoiced_at)} · due {formatCentral(lead.invoice_due_at)}
+                  {lead.revenue_cents === null && lead.invoice_due_at && new Date(lead.invoice_due_at).getTime() < Date.now()
+                    ? " · OVERDUE"
+                    : ""}
+                </span>
+                <button type="submit" name="clear" value="1" className="ops-ghost">Clear</button>
+              </>
+            )}
           </form>
 
           <h2>Paper trail</h2>

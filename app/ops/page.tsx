@@ -324,6 +324,12 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
                   : lead.estimate_value_cents !== null
                     ? formatMoney(lead.estimate_value_cents)
                     : "—"}
+                {lead.invoiced_at && lead.revenue_cents === null && (
+                  <em className={lead.invoice_due_at && isOverdue(lead.invoice_due_at) ? "is-bad" : ""}>
+                    INV #{lead.invoice_number}
+                    {lead.invoice_due_at && isOverdue(lead.invoice_due_at) ? " OVERDUE" : " out"}
+                  </em>
+                )}
                 {lead.next_follow_up_at && (
                   <em className={isOverdue(lead.next_follow_up_at) ? "is-bad" : ""}>
                     ↻ {formatCentral(lead.next_follow_up_at)}
