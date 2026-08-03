@@ -107,7 +107,6 @@ export async function GET() {
       database: {
         configured: database.configured,
         connected: database.connected,
-        leadCount: database.leadCount,
       },
       delivery: {
         failedCount: database.failedDeliveries,

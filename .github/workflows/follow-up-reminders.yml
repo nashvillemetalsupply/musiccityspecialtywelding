@@ -1,0 +1,30 @@
+name: Follow-up reminders
+
+on:
+  schedule:
+    # Hourly sweep so same-day follow-up picks fire on time.
+    - cron: "10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger reminder sweep
+        run: |
+          set -euo pipefail
+          response=$(curl -sS --max-time 25 -w '\n%{http_code}' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://musiccityspecialtywelding.com/api/ops/reminders")
+          body=$(printf '%s' "$response" | sed '$d')
+          status=$(printf '%s' "$response" | tail -n 1)
+          echo "HTTP $status"
+          echo "$body"
+          if [ "$status" != "200" ]; then
+            echo "::error::Reminder sweep failed with HTTP $status"
+            exit 1
+          fi

@@ -25,7 +25,7 @@ function csvCell(value: unknown): string {
   return s
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const cookieStore = await cookies()
   const operator = await validateSessionToken(cookieStore.get(OPS_SESSION_COOKIE)?.value)
   if (!operator) {
@@ -33,6 +33,39 @@ export async function GET() {
   }
 
   const sql = getSql()
+  const format = new URL(req.url).searchParams.get("format") ?? "full"
+
+  // Google Ads offline-conversion import: won leads that came from an ad click.
+  if (format === "google-oci") {
+    const won = (await sql`
+      SELECT gclid, won_at, revenue_cents FROM leads
+      WHERE status = 'won' AND gclid <> '' AND won_at IS NOT NULL AND is_test = false
+      ORDER BY won_at ASC LIMIT 5000`) as {
+      gclid: string
+      won_at: string
+      revenue_cents: number | null
+    }[]
+    const lines = [
+      "Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency",
+      ...won.map((row) => {
+        const time = new Date(row.won_at)
+          .toISOString()
+          .replace("T", " ")
+          .slice(0, 19)
+        const value = row.revenue_cents === null ? "" : (row.revenue_cents / 100).toFixed(2)
+        return `${csvCell(row.gclid)},Won Job (Offline),${time}+00:00,${value},USD`
+      }),
+    ]
+    return new Response(lines.join("\r\n"), {
+      status: 200,
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="mcsw-google-offline-conversions-${new Date().toISOString().slice(0, 10)}.csv"`,
+        "Cache-Control": "no-store",
+      },
+    })
+  }
+
   const rows = (await sql`SELECT * FROM leads ORDER BY created_at DESC LIMIT 5000`) as LeadRow[]
 
   const lines = [

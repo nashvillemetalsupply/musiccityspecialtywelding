@@ -2,7 +2,8 @@ import Link from "next/link"
 import { dbConfigured } from "@/lib/db"
 import { LEAD_STATUSES } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
-import { getOpsStats, getStatusCounts, listLeads, type LeadFilter } from "@/lib/ops-data"
+import { getOpsStats, getStatusCounts, listLeads, PAGE_SIZE, type LeadFilter } from "@/lib/ops-data"
+import { createManualLead } from "./actions"
 import { OpsLoginForm } from "./login-form"
 
 export const dynamic = "force-dynamic"
@@ -22,6 +23,10 @@ function formatCentral(iso: string) {
   })
 }
 
+function isOverdue(iso: string) {
+  return new Date(iso).getTime() <= Date.now()
+}
+
 function ageInWords(iso: string) {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
   if (minutes < 60) return `${minutes}m`
@@ -29,7 +34,13 @@ function ageInWords(iso: string) {
   return `${Math.floor(minutes / (60 * 24))}d`
 }
 
-type SearchParams = Promise<{ status?: string; tests?: string; error?: string; q?: string }>
+type SearchParams = Promise<{
+  status?: string
+  tests?: string
+  error?: string
+  q?: string
+  page?: string
+}>
 
 export default async function OpsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
@@ -51,11 +62,16 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
   const statusFilter = (params.status ?? "open") as LeadFilter["status"]
   const includeTests = params.tests === "1"
   const searchQuery = params.q?.trim() ?? ""
+  const page = Math.max(1, Number(params.page) || 1)
   const [stats, leads, counts] = await Promise.all([
     getOpsStats(),
-    listLeads({ status: statusFilter, includeTests, query: searchQuery }),
+    listLeads({ status: statusFilter, includeTests, query: searchQuery, page }),
     getStatusCounts(includeTests),
   ])
+
+  const baseQuery = `status=${statusFilter}${includeTests ? "&tests=1" : ""}${
+    searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""
+  }`
 
   const filters: { key: string; label: string }[] = [
     { key: "open", label: "Open" },
@@ -124,7 +140,9 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
             <Link
               key={filter.key}
               className={statusFilter === filter.key ? "is-active" : ""}
-              href={`/ops?status=${filter.key}${includeTests ? "&tests=1" : ""}`}
+              href={`/ops?status=${filter.key}${includeTests ? "&tests=1" : ""}${
+                searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""
+              }`}
             >
               {filter.label}
               {count > 0 && <em>{count}</em>}
@@ -133,12 +151,44 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
         })}
         <Link
           className={includeTests ? "is-active" : ""}
-          href={`/ops?status=${statusFilter}${includeTests ? "" : "&tests=1"}`}
+          href={`/ops?status=${statusFilter}${includeTests ? "" : "&tests=1"}${
+            searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ""
+          }`}
         >
           {includeTests ? "hide tests" : "show tests"}
         </Link>
         <a href="/api/ops/export" className="ops-ghost">Export CSV</a>
+        <a href="/api/ops/export?format=google-oci" className="ops-ghost">Ads conversions</a>
       </nav>
+
+      <details className="ops-add-lead">
+        <summary>+ Add a phone or walk-in lead</summary>
+        <form action={createManualLead} className="ops-inline-form">
+          <input name="firstName" placeholder="Name *" required aria-label="Name" />
+          <input name="phone" type="tel" inputMode="tel" placeholder="Phone *" required aria-label="Phone" />
+          <select name="service" defaultValue="" aria-label="Service">
+            <option value="">Service (optional)</option>
+            <option>Mobile Welding (On-Site)</option>
+            <option>Trailer / Truck Welding Repair</option>
+            <option>Equipment & Structural Repair</option>
+            <option>Architectural Welding & Fabrication</option>
+            <option>Specialty Fabrication</option>
+            <option>Aluminum / Boat Welding</option>
+            <option>Custom Wrought Iron Mailboxes</option>
+            <option>Custom Metal Planter Boxes</option>
+            <option>Stainless Countertops / Manifolds</option>
+            <option>Not Sure / Other</option>
+          </select>
+          <select name="source" defaultValue="phone-in" aria-label="How it came in">
+            <option value="phone-in">called in</option>
+            <option value="walk-in">walked in</option>
+            <option value="referral-word-of-mouth">referral</option>
+            <option value="repeat-customer">repeat customer</option>
+          </select>
+          <input name="message" placeholder="What do they need?" aria-label="Job details" />
+          <button type="submit">Add lead</button>
+        </form>
+      </details>
 
       <form className="ops-search" action="/ops" method="get">
         <input type="hidden" name="status" value={statusFilter} />
@@ -201,11 +251,7 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
                   </td>
                   <td>
                     {lead.next_follow_up_at ? (
-                      <span
-                        className={
-                          new Date(lead.next_follow_up_at).getTime() <= Date.now() ? "is-bad" : ""
-                        }
-                      >
+                      <span className={isOverdue(lead.next_follow_up_at) ? "is-bad" : ""}>
                         {formatCentral(lead.next_follow_up_at)}
                       </span>
                     ) : (
@@ -224,6 +270,22 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
           </table>
         )}
       </section>
+
+      {(page > 1 || leads.length === PAGE_SIZE) && (
+        <nav className="ops-filters" aria-label="Pages">
+          {page > 1 && (
+            <Link className="ops-ghost" href={`/ops?${baseQuery}&page=${page - 1}`}>
+              ← Newer
+            </Link>
+          )}
+          <span className="ops-followup-current">page {page}</span>
+          {leads.length === PAGE_SIZE && (
+            <Link className="ops-ghost" href={`/ops?${baseQuery}&page=${page + 1}`}>
+              Older →
+            </Link>
+          )}
+        </nav>
+      )}
     </main>
   )
 }

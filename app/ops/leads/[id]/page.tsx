@@ -6,6 +6,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getLead, getLeadEvents } from "@/lib/ops-data"
 import { OpsLoginForm } from "../../login-form"
 import {
+  acknowledgeDeliveryFailure,
   deleteTestLead,
   logInteraction,
   markFirstResponse,
@@ -96,9 +97,39 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
             <div><dt>Email</dt><dd>{lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : "—"}</dd></div>
             <div><dt>Service</dt><dd>{lead.service}</dd></div>
             <div><dt>Preferred contact</dt><dd>{lead.preferred_contact || "—"}</dd></div>
-            <div><dt>Photos</dt><dd>{lead.photo_count > 0 ? `${lead.photo_count} attached to the quote email` : "none"}</dd></div>
+            <div>
+              <dt>Photos</dt>
+              <dd>
+                {lead.photo_count > 0
+                  ? `${lead.photo_count} attached to the quote email`
+                  : "none"}
+              </dd>
+            </div>
             <div className="ops-span"><dt>Details</dt><dd>{lead.message || "—"}</dd></div>
           </dl>
+          {Array.isArray(lead.photos) && lead.photos.length > 0 && (
+            <>
+              <h2>Job photos</h2>
+              <div className="ops-photos">
+                {lead.photos.map((photo) => (
+                  <a
+                    key={photo.pathname}
+                    href={`/api/ops/photo?path=${encodeURIComponent(photo.pathname)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {/* Private blob photos stream through an authenticated route. */}
+                    <img
+                      src={`/api/ops/photo?path=${encodeURIComponent(photo.pathname)}`}
+                      alt={`Job photo ${photo.name}`}
+                      loading="lazy"
+                    />
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+
           <h2>Where it came from</h2>
           <dl>
             <div><dt>Source</dt><dd>{lead.source}</dd></div>
@@ -111,6 +142,12 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
               <dd className={lead.email_delivery_status === "failed" ? "is-bad" : ""}>
                 {lead.email_delivery_status}
                 {lead.email_delivery_error ? ` — ${lead.email_delivery_error}` : ""}
+                {lead.email_delivery_status === "failed" && (
+                  <form action={acknowledgeDeliveryFailure} className="ops-inline-ack">
+                    <input type="hidden" name="leadId" value={lead.id} />
+                    <button type="submit" className="ops-ghost">Mark handled</button>
+                  </form>
+                )}
               </dd>
             </div>
             <div>

@@ -18,6 +18,23 @@ function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex")
 }
 
+export const CANONICAL_ORIGIN =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://musiccityspecialtywelding.com"
+
+// Constant-time bearer-secret comparison for cron/automation routes.
+export function safeSecretMatch(candidate: string, expected: string) {
+  const a = createHash("sha256").update(candidate).digest()
+  const b = createHash("sha256").update(expected).digest()
+  return timingSafeEqual(a, b)
+}
+
+export function isAuthorizedCron(req: Request): boolean {
+  const secret = process.env.CRON_SECRET?.trim()
+  if (!secret) return false
+  const header = req.headers.get("authorization") ?? ""
+  return safeSecretMatch(header, `Bearer ${secret}`)
+}
+
 export function safeEmailMatch(candidate: string, expected: string) {
   const a = Buffer.from(candidate.trim().toLowerCase())
   const b = Buffer.from(expected.trim().toLowerCase())

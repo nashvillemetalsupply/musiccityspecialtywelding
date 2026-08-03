@@ -42,6 +42,8 @@ export type LeadRow = {
   first_response_at: string | null
   first_response_channel: string
   next_follow_up_at: string | null
+  follow_up_notified_at: string | null
+  photos: { pathname: string; contentType: string; size: number; name: string }[]
   estimate_value_cents: number | null
   quoted_at: string | null
   won_at: string | null
@@ -118,28 +120,60 @@ function makePublicId(now: Date) {
   return `L-${stamp}-${rand}`
 }
 
-export async function createLead(input: NewLeadInput): Promise<{ id: number; publicId: string }> {
+export async function createLead(
+  input: NewLeadInput,
+  options: { sourceOverride?: string; actor?: string; firstResponseNow?: boolean } = {}
+): Promise<{ id: number; publicId: string }> {
   const sql = getSql()
-  const publicId = makePublicId(new Date())
-  const source = deriveLeadSource(input)
-  const rows = (await sql`
-    INSERT INTO leads (
-      public_id, first_name, last_name, phone, email, service, message,
-      preferred_contact, photo_count, source, gclid, utm_source, utm_medium,
-      utm_campaign, utm_term, utm_content, landing_page, referrer, ip,
-      user_agent, is_test
-    ) VALUES (
-      ${publicId}, ${input.firstName}, ${input.lastName}, ${input.phone},
-      ${input.email}, ${input.service}, ${input.message},
-      ${input.preferredContact}, ${input.photoCount}, ${source}, ${input.gclid},
-      ${input.utmSource}, ${input.utmMedium}, ${input.utmCampaign},
-      ${input.utmTerm}, ${input.utmContent}, ${input.landingPage},
-      ${input.referrer}, ${input.ip}, ${input.userAgent}, ${input.isTest}
-    )
-    RETURNING id`) as { id: number }[]
-  const id = rows[0].id
-  await recordLeadEvent(id, "created", "system", { source, isTest: input.isTest })
-  return { id, publicId }
+  const source = options.sourceOverride ?? deriveLeadSource(input)
+
+  // The 4-char suffix can collide against the UNIQUE constraint; retry with a
+  // fresh id instead of dropping the durable copy of a lead.
+  let id: number | null = null
+  let publicId = ""
+  for (let attempt = 0; attempt < 3 && id === null; attempt++) {
+    publicId = makePublicId(new Date())
+    try {
+      const rows = (await sql`
+        INSERT INTO leads (
+          public_id, first_name, last_name, phone, email, service, message,
+          preferred_contact, photo_count, source, gclid, utm_source, utm_medium,
+          utm_campaign, utm_term, utm_content, landing_page, referrer, ip,
+          user_agent, is_test, first_response_at, first_response_channel, status
+        ) VALUES (
+          ${publicId}, ${input.firstName}, ${input.lastName}, ${input.phone},
+          ${input.email}, ${input.service}, ${input.message},
+          ${input.preferredContact}, ${input.photoCount}, ${source}, ${input.gclid},
+          ${input.utmSource}, ${input.utmMedium}, ${input.utmCampaign},
+          ${input.utmTerm}, ${input.utmContent}, ${input.landingPage},
+          ${input.referrer}, ${input.ip}, ${input.userAgent}, ${input.isTest},
+          ${options.firstResponseNow ? new Date().toISOString() : null}::timestamptz,
+          ${options.firstResponseNow ? "phone" : ""},
+          ${options.firstResponseNow ? "contacted" : "new"}
+        )
+        RETURNING id`) as { id: number }[]
+      id = rows[0].id
+    } catch (error) {
+      const isUniqueViolation =
+        typeof error === "object" && error !== null && (error as { code?: string }).code === "23505"
+      if (!isUniqueViolation || attempt === 2) throw error
+    }
+  }
+  await recordLeadEvent(id!, "created", options.actor ?? "system", {
+    source,
+    isTest: input.isTest,
+  })
+  return { id: id!, publicId }
+}
+
+export async function attachLeadPhotos(
+  leadId: number,
+  photos: { pathname: string; contentType: string; size: number; name: string }[]
+) {
+  const sql = getSql()
+  await sql`
+    UPDATE leads SET photos = ${JSON.stringify(photos)}::jsonb, updated_at = now()
+    WHERE id = ${leadId}`
 }
 
 export async function recordLeadEvent(

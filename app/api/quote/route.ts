@@ -1,6 +1,8 @@
 import { Resend } from "resend";
+import { put } from "@vercel/blob";
 import { dbConfigured } from "@/lib/db";
 import {
+  attachLeadPhotos,
   createLead,
   isRateLimitedDurable,
   markLeadDelivery,
@@ -198,6 +200,31 @@ export async function POST(req: Request) {
       } catch (dbError) {
         // Email delivery below still protects the lead.
         console.error("Lead persistence error:", dbError);
+      }
+    }
+
+    // Persist photos to private Blob storage so they survive an email failure.
+    if (leadId !== null && photoFiles.length > 0 && process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        const stored = [];
+        for (const [index, file] of photoFiles.entries()) {
+          const safeName =
+            file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `photo-${index + 1}`;
+          const blob = await put(`leads/${leadPublicId}/${index + 1}-${safeName}`, file, {
+            access: "private",
+            contentType: file.type,
+          });
+          stored.push({
+            pathname: blob.pathname,
+            contentType: file.type,
+            size: file.size,
+            name: safeName,
+          });
+        }
+        await attachLeadPhotos(leadId, stored);
+      } catch (blobError) {
+        // Photos still ride along on the notification email.
+        console.error("Photo persistence error:", blobError);
       }
     }
 

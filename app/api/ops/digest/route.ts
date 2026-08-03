@@ -1,6 +1,7 @@
 import { Resend } from "resend"
 import { dbConfigured, getSql } from "@/lib/db"
 import type { LeadRow } from "@/lib/leads"
+import { isAuthorizedCron } from "@/lib/ops-auth"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -8,9 +9,7 @@ export const dynamic = "force-dynamic"
 // Daily follow-up digest, triggered by Vercel Cron. Also serves as the
 // automation heartbeat that /api/health and external monitoring check.
 export async function GET(req: Request) {
-  const cronSecret = process.env.CRON_SECRET?.trim()
-  const authHeader = req.headers.get("authorization") ?? ""
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!isAuthorizedCron(req)) {
     return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 })
   }
   if (!dbConfigured()) {
@@ -25,7 +24,7 @@ export async function GET(req: Request) {
     const unanswered = (await sql`
       SELECT * FROM leads
       WHERE first_response_at IS NULL
-        AND status IN ('new', 'contacted')
+        AND status NOT IN ('won', 'lost', 'spam')
         AND is_test = false
       ORDER BY created_at ASC LIMIT 50`) as LeadRow[]
     const failed = (await sql`

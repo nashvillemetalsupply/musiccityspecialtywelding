@@ -1,7 +1,7 @@
 import { Resend } from "resend"
 import { dbConfigured } from "@/lib/db"
 import { isRateLimitedDurable } from "@/lib/leads"
-import { createLoginToken, getOwnerEmail, safeEmailMatch } from "@/lib/ops-auth"
+import { CANONICAL_ORIGIN, createLoginToken, getOwnerEmail, safeEmailMatch } from "@/lib/ops-auth"
 
 export const runtime = "nodejs"
 
@@ -44,9 +44,10 @@ export async function POST(req: Request) {
       return genericResponse()
     }
 
+    // Always the canonical origin — never the request Host — so a spoofed or
+    // alternate host can never receive a valid one-time token.
     const token = await createLoginToken(ownerEmail)
-    const origin = new URL(req.url).origin
-    const link = `${origin}/api/ops/verify?token=${token}`
+    const link = `${CANONICAL_ORIGIN}/api/ops/verify?token=${token}`
 
     const resend = new Resend(apiKey)
     const { error } = await resend.emails.send({
@@ -62,8 +63,9 @@ export async function POST(req: Request) {
       ].join("\n"),
     })
     if (error) {
+      // Stay indistinguishable from the non-operator path; the failure is
+      // visible in server logs and the owner can retry.
       console.error("Ops login email error:", error)
-      return Response.json({ ok: false, error: "Could not send the sign-in email." }, { status: 502 })
     }
 
     return genericResponse()

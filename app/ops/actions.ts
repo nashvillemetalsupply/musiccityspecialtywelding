@@ -1,8 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 import { getSql } from "@/lib/db"
-import { LEAD_STATUSES, recordLeadEvent, type LeadStatus } from "@/lib/leads"
+import { createLead, LEAD_STATUSES, recordLeadEvent, type LeadStatus } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 
 async function requireOperator(): Promise<string> {
@@ -25,6 +26,66 @@ function parseDollarsToCents(value: FormDataEntryValue | null): number | null {
     throw new Error("Invalid dollar amount.")
   }
   return Math.round(dollars * 100)
+}
+
+// Phone-in and walk-in leads enter the same pipeline as website leads. The
+// first response is already made by definition, so speed-to-lead stays honest.
+export async function createManualLead(formData: FormData) {
+  const operator = await requireOperator()
+  const firstName = String(formData.get("firstName") ?? "").trim().slice(0, 120)
+  const phone = String(formData.get("phone") ?? "").trim().slice(0, 40)
+  const service = String(formData.get("service") ?? "").trim().slice(0, 120)
+  const message = String(formData.get("message") ?? "").trim().slice(0, 2000)
+  const sourceChoice = String(formData.get("source") ?? "phone-in").trim().slice(0, 40)
+
+  if (!firstName || !phone) throw new Error("Name and phone are required.")
+  if (!["phone-in", "walk-in", "referral-word-of-mouth", "repeat-customer"].includes(sourceChoice)) {
+    throw new Error("Invalid source.")
+  }
+
+  const { id } = await createLead(
+    {
+      firstName,
+      lastName: "",
+      phone,
+      email: "",
+      service: service || "Not Sure / Other",
+      message,
+      preferredContact: "Call",
+      photoCount: 0,
+      gclid: "",
+      utmSource: "",
+      utmMedium: "",
+      utmCampaign: "",
+      utmTerm: "",
+      utmContent: "",
+      landingPage: "",
+      referrer: "",
+      ip: "",
+      userAgent: "ops-dashboard",
+      isTest: message.includes("[INTERNAL TEST]"),
+    },
+    { sourceOverride: sourceChoice, actor: operator, firstResponseNow: true }
+  )
+  revalidatePath("/ops")
+  redirect(`/ops/leads/${id}`)
+}
+
+// A transient provider outage should be resolvable, not a permanent red flag.
+export async function acknowledgeDeliveryFailure(formData: FormData) {
+  const operator = await requireOperator()
+  const leadId = parseLeadId(formData.get("leadId"))
+
+  const sql = getSql()
+  const rows = (await sql`
+    UPDATE leads SET email_delivery_status = 'resolved', updated_at = now()
+    WHERE id = ${leadId} AND email_delivery_status = 'failed'
+    RETURNING id`) as { id: number }[]
+  if (rows.length) {
+    await recordLeadEvent(leadId, "delivery_acknowledged", operator, null)
+  }
+  revalidatePath("/ops")
+  revalidatePath(`/ops/leads/${leadId}`)
 }
 
 export async function updateLeadStatus(formData: FormData) {
@@ -96,6 +157,10 @@ export async function saveEstimate(formData: FormData) {
       quoted_at = CASE WHEN ${cents}::bigint IS NOT NULL AND quoted_at IS NULL THEN now() ELSE quoted_at END,
       status = CASE WHEN ${cents}::bigint IS NOT NULL AND status IN ('new', 'contacted', 'qualified')
         THEN 'quoted' ELSE status END,
+      first_response_at = CASE WHEN ${cents}::bigint IS NOT NULL
+        THEN COALESCE(first_response_at, now()) ELSE first_response_at END,
+      first_response_channel = CASE WHEN ${cents}::bigint IS NOT NULL AND first_response_channel = ''
+        THEN 'ops-dashboard' ELSE first_response_channel END,
       updated_at = now()
     WHERE id = ${leadId}`
   await recordLeadEvent(leadId, "estimate_saved", operator, { cents })
@@ -116,6 +181,10 @@ export async function saveOutcome(formData: FormData) {
       status = CASE WHEN ${revenueCents}::bigint IS NOT NULL THEN 'won' ELSE status END,
       won_at = CASE WHEN ${revenueCents}::bigint IS NOT NULL AND won_at IS NULL THEN now() ELSE won_at END,
       completed_at = CASE WHEN ${completed}::boolean AND completed_at IS NULL THEN now() ELSE completed_at END,
+      first_response_at = CASE WHEN ${revenueCents}::bigint IS NOT NULL
+        THEN COALESCE(first_response_at, now()) ELSE first_response_at END,
+      first_response_channel = CASE WHEN ${revenueCents}::bigint IS NOT NULL AND first_response_channel = ''
+        THEN 'ops-dashboard' ELSE first_response_channel END,
       updated_at = now()
     WHERE id = ${leadId}`
   await recordLeadEvent(leadId, "outcome_saved", operator, { revenueCents, completed })

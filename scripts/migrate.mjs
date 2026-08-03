@@ -58,6 +58,8 @@ const statements = [
     email_delivered_at TIMESTAMPTZ
   )`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_follow_up_at TIMESTAMPTZ`,
+  `ALTER TABLE leads ADD COLUMN IF NOT EXISTS follow_up_notified_at TIMESTAMPTZ`,
+  `ALTER TABLE leads ADD COLUMN IF NOT EXISTS photos JSONB NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE INDEX IF NOT EXISTS leads_status_idx ON leads(status)`,
   `CREATE INDEX IF NOT EXISTS leads_created_idx ON leads(created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS leads_delivery_idx ON leads(email_delivery_status)`,

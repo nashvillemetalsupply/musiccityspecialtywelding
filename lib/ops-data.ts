@@ -6,15 +6,20 @@ export type LeadFilter = {
   status?: LeadStatus | "all" | "open"
   includeTests?: boolean
   query?: string
+  page?: number
 }
 
 const OPEN_STATUSES = ["new", "contacted", "qualified", "quoted"] as const
+
+export const PAGE_SIZE = 100
 
 export async function listLeads(filter: LeadFilter = {}): Promise<LeadRow[]> {
   const sql = getSql()
   const status = filter.status ?? "all"
   const includeTests = filter.includeTests ?? false
   const query = filter.query?.trim().slice(0, 80) ?? ""
+  const page = Math.max(1, Math.floor(filter.page ?? 1))
+  const offset = (page - 1) * PAGE_SIZE
 
   if (query) {
     const pattern = `%${query.replace(/[%_\\]/g, "\\$&")}%`
@@ -25,7 +30,7 @@ export async function listLeads(filter: LeadFilter = {}): Promise<LeadRow[]> {
           OR phone ILIKE ${pattern} OR email ILIKE ${pattern}
           OR service ILIKE ${pattern} OR message ILIKE ${pattern}
           OR notes ILIKE ${pattern} OR public_id ILIKE ${pattern})
-      ORDER BY created_at DESC LIMIT 500`
+      ORDER BY created_at DESC LIMIT ${PAGE_SIZE} OFFSET ${offset}`
     return rows as LeadRow[]
   }
 
@@ -34,14 +39,14 @@ export async function listLeads(filter: LeadFilter = {}): Promise<LeadRow[]> {
       SELECT * FROM leads
       WHERE status = ANY(${[...OPEN_STATUSES]})
         AND (${includeTests}::boolean OR is_test = false)
-      ORDER BY created_at DESC LIMIT 500`
+      ORDER BY created_at DESC LIMIT ${PAGE_SIZE} OFFSET ${offset}`
     return rows as LeadRow[]
   }
   if (status !== "all" && (LEAD_STATUSES as readonly string[]).includes(status)) {
     const rows = await sql`
       SELECT * FROM leads
       WHERE status = ${status} AND (${includeTests}::boolean OR is_test = false)
-      ORDER BY created_at DESC LIMIT 500`
+      ORDER BY created_at DESC LIMIT ${PAGE_SIZE} OFFSET ${offset}`
     return rows as LeadRow[]
   }
   const rows = await sql`
