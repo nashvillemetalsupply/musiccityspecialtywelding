@@ -111,6 +111,19 @@ export async function getOpsStats(): Promise<OpsStats> {
   }
 }
 
+export async function getStatusCounts(includeTests: boolean): Promise<Record<string, number>> {
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT status, count(*)::int AS count FROM leads
+    WHERE (${includeTests}::boolean OR is_test = false)
+    GROUP BY status`) as { status: string; count: number }[]
+  const counts: Record<string, number> = {}
+  for (const row of rows) counts[row.status] = row.count
+  counts.all = rows.reduce((sum, row) => sum + row.count, 0)
+  counts.open = (counts.new ?? 0) + (counts.contacted ?? 0) + (counts.qualified ?? 0) + (counts.quoted ?? 0)
+  return counts
+}
+
 export async function countFailedDeliveries(): Promise<number> {
   const sql = getSql()
   const rows = (await sql`

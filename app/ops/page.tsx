@@ -2,7 +2,7 @@ import Link from "next/link"
 import { dbConfigured } from "@/lib/db"
 import { LEAD_STATUSES } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
-import { getOpsStats, listLeads, type LeadFilter } from "@/lib/ops-data"
+import { getOpsStats, getStatusCounts, listLeads, type LeadFilter } from "@/lib/ops-data"
 import { OpsLoginForm } from "./login-form"
 
 export const dynamic = "force-dynamic"
@@ -50,9 +50,10 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
 
   const statusFilter = (params.status ?? "open") as LeadFilter["status"]
   const includeTests = params.tests === "1"
-  const [stats, leads] = await Promise.all([
+  const [stats, leads, counts] = await Promise.all([
     getOpsStats(),
     listLeads({ status: statusFilter, includeTests }),
+    getStatusCounts(includeTests),
   ])
 
   const filters: { key: string; label: string }[] = [
@@ -74,8 +75,12 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
       </header>
 
       <section className="ops-stats" aria-label="Pipeline summary">
-        <div><strong>{stats.newLeads}</strong><span>new leads</span></div>
-        <div><strong>{stats.awaitingFirstResponse}</strong><span>awaiting response</span></div>
+        <div className={stats.newLeads > 0 ? "is-hot" : ""}>
+          <strong>{stats.newLeads}</strong><span>new leads</span>
+        </div>
+        <div className={stats.awaitingFirstResponse > 0 ? "is-hot" : ""}>
+          <strong>{stats.awaitingFirstResponse}</strong><span>awaiting response</span>
+        </div>
         <div><strong>{stats.leadsLast30Days}</strong><span>last 30 days</span></div>
         <div>
           <strong>
@@ -86,8 +91,12 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
           <span>median response</span>
         </div>
         <div><strong>{stats.wonJobs}</strong><span>won jobs</span></div>
-        <div><strong>{formatMoney(stats.totalRevenueCents)}</strong><span>revenue recorded</span></div>
-        <div><strong>{formatMoney(stats.openEstimateValueCents)}</strong><span>open quote value</span></div>
+        <div className="is-money">
+          <strong>{formatMoney(stats.totalRevenueCents)}</strong><span>revenue recorded</span>
+        </div>
+        <div className="is-money">
+          <strong>{formatMoney(stats.openEstimateValueCents)}</strong><span>open quote value</span>
+        </div>
         <div className={stats.failedDeliveries > 0 ? "is-bad" : ""}>
           <strong>{stats.failedDeliveries}</strong><span>failed email deliveries</span>
         </div>
@@ -105,15 +114,19 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
       )}
 
       <nav className="ops-filters" aria-label="Lead filters">
-        {filters.map((filter) => (
-          <Link
-            key={filter.key}
-            className={statusFilter === filter.key ? "is-active" : ""}
-            href={`/ops?status=${filter.key}${includeTests ? "&tests=1" : ""}`}
-          >
-            {filter.label}
-          </Link>
-        ))}
+        {filters.map((filter) => {
+          const count = counts[filter.key] ?? 0
+          return (
+            <Link
+              key={filter.key}
+              className={statusFilter === filter.key ? "is-active" : ""}
+              href={`/ops?status=${filter.key}${includeTests ? "&tests=1" : ""}`}
+            >
+              {filter.label}
+              {count > 0 && <em>{count}</em>}
+            </Link>
+          )
+        })}
         <Link
           className={includeTests ? "is-active" : ""}
           href={`/ops?status=${statusFilter}${includeTests ? "" : "&tests=1"}`}
