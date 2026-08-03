@@ -76,6 +76,12 @@ function describeEvent(event: LeadEventRow): string {
       return "Notes updated"
     case "review_tracked":
       return d.received ? "Review received" : "Review requested"
+    case "estimate_emailed":
+      return d.sent
+        ? `Estimate emailed to the customer (${money(d.cents)})`
+        : "Estimate email FAILED to send"
+    case "thankyou_emailed":
+      return d.sent ? "Thank-you email sent to the customer" : "Thank-you email FAILED to send"
     case "delivery_acknowledged":
       return "Email failure marked handled"
     default:
@@ -276,6 +282,12 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
               defaultValue={centsToDollars(lead.estimate_value_cents)}
               placeholder="e.g. 1200"
             />
+            {lead.email && (
+              <label className="ops-check">
+                <input type="checkbox" name="emailEstimate" />
+                email this estimate to the customer
+              </label>
+            )}
             <button type="submit">Save estimate</button>
           </form>
 
@@ -293,6 +305,12 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
               <input type="checkbox" name="completed" defaultChecked={Boolean(lead.completed_at)} />
               job completed
             </label>
+            {lead.email && (
+              <label className="ops-check">
+                <input type="checkbox" name="sendThanks" />
+                send the thank-you email
+              </label>
+            )}
             <button type="submit">Save outcome</button>
           </form>
 

@@ -2,9 +2,43 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { Resend } from "resend"
 import { getSql } from "@/lib/db"
+import { brandedEmail, escapeHtml } from "@/lib/email-templates"
 import { createLead, LEAD_STATUSES, recordLeadEvent, type LeadStatus } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
+
+async function sendCustomerEmail(options: {
+  to: string
+  subject: string
+  text: string
+  headline: string
+  bodyHtml: string
+}): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY
+  const from = process.env.QUOTE_FROM_EMAIL
+  if (!apiKey || !from) return false
+  try {
+    const resend = new Resend(apiKey)
+    const { error } = await resend.emails.send({
+      from,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: brandedEmail({
+        preheader: options.subject,
+        headline: options.headline,
+        bodyHtml: options.bodyHtml,
+        ctaLabel: "Call the shop — open 24 hours",
+        ctaUrl: "tel:6158104910",
+      }),
+    })
+    return !error
+  } catch (error) {
+    console.error("Customer email error:", error)
+    return false
+  }
+}
 
 async function requireOperator(): Promise<string> {
   const operator = await getAuthenticatedOperator()
@@ -149,6 +183,7 @@ export async function saveEstimate(formData: FormData) {
   const operator = await requireOperator()
   const leadId = parseLeadId(formData.get("leadId"))
   const cents = parseDollarsToCents(formData.get("estimate"))
+  const emailIt = String(formData.get("emailEstimate") ?? "") === "on"
 
   const sql = getSql()
   await sql`
@@ -164,6 +199,44 @@ export async function saveEstimate(formData: FormData) {
       updated_at = now()
     WHERE id = ${leadId}`
   await recordLeadEvent(leadId, "estimate_saved", operator, { cents })
+
+  // Owner-controlled quote email — only when explicitly ticked.
+  if (emailIt && cents !== null) {
+    const rows = (await sql`
+      SELECT first_name, email, service, is_test FROM leads WHERE id = ${leadId}`) as {
+      first_name: string
+      email: string
+      service: string
+      is_test: boolean
+    }[]
+    const lead = rows[0]
+    if (lead?.email && !lead.is_test) {
+      const amount = `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+      const sent = await sendCustomerEmail({
+        to: lead.email,
+        subject: `Your estimate from Music City Specialty Welding: ${amount}`,
+        text: [
+          `Hey ${lead.first_name},`,
+          ``,
+          `Here's your estimate for the ${lead.service} work we talked about: ${amount}.`,
+          ``,
+          `That's for the scope as we understand it today — if anything about the job changes, the number can too, and we'll tell you before we touch anything.`,
+          ``,
+          `Ready to get it on the schedule, or got questions? Call us any time, day or night: (615) 810-4910.`,
+          ``,
+          `Music City Specialty Welding · Lebanon, TN`,
+        ].join("\n"),
+        headline: `Your estimate: ${amount}`,
+        bodyHtml: [
+          `Here's your estimate for the <strong>${escapeHtml(lead.service)}</strong> work: <strong style="font-size:22px;">${amount}</strong>.`,
+          `That's for the scope as we understand it today — if the job changes, the number can too, and we'll tell you before we touch anything.`,
+          `Ready to put it on the schedule, or got questions? Call any time — <strong>(615)&nbsp;810-4910</strong>, open 24 hours.`,
+        ].join("<br /><br />"),
+      })
+      await recordLeadEvent(leadId, "estimate_emailed", operator, { cents, sent })
+    }
+  }
+
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
 }
@@ -173,6 +246,7 @@ export async function saveOutcome(formData: FormData) {
   const leadId = parseLeadId(formData.get("leadId"))
   const revenueCents = parseDollarsToCents(formData.get("revenue"))
   const completed = String(formData.get("completed") ?? "") === "on"
+  const sendThanks = String(formData.get("sendThanks") ?? "") === "on"
 
   const sql = getSql()
   await sql`
@@ -188,6 +262,43 @@ export async function saveOutcome(formData: FormData) {
       updated_at = now()
     WHERE id = ${leadId}`
   await recordLeadEvent(leadId, "outcome_saved", operator, { revenueCents, completed })
+
+  // Owner-controlled thank-you when the job wraps.
+  if (sendThanks && completed) {
+    const rows = (await sql`
+      SELECT first_name, email, service, is_test FROM leads WHERE id = ${leadId}`) as {
+      first_name: string
+      email: string
+      service: string
+      is_test: boolean
+    }[]
+    const lead = rows[0]
+    if (lead?.email && !lead.is_test) {
+      const sent = await sendCustomerEmail({
+        to: lead.email,
+        subject: "Job's done — thanks for trusting the shop",
+        text: [
+          `Hey ${lead.first_name},`,
+          ``,
+          `Your ${lead.service} work is wrapped up. Thanks for trusting a local shop with it.`,
+          ``,
+          `Keep our number — (615) 810-4910. Metal breaks at the worst times, and we answer 24 hours a day.`,
+          ``,
+          `If anything about the work ever isn't right, call us first. We stand behind what we weld.`,
+          ``,
+          `Music City Specialty Welding · 533 W Baddour Pkwy, Lebanon, TN`,
+        ].join("\n"),
+        headline: `Job's done, ${escapeHtml(lead.first_name)}.`,
+        bodyHtml: [
+          `Your <strong>${escapeHtml(lead.service)}</strong> work is wrapped. Thanks for trusting a local shop with it.`,
+          `Keep our number — metal breaks at the worst times, and we answer 24 hours a day.`,
+          `If anything about the work ever isn't right, call us first. <strong>We stand behind what we weld.</strong>`,
+        ].join("<br /><br />"),
+      })
+      await recordLeadEvent(leadId, "thankyou_emailed", operator, { sent })
+    }
+  }
+
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
 }
