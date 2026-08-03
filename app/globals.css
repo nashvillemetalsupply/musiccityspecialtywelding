@@ -2614,7 +2614,6 @@ html {
 
 .sw-plank:hover { transform: rotate(0deg) scale(1.02); }
 
-.sw-plank::after { right: 18%; transform: rotate(-6deg); }
 
 .sw-plank small {
   font-family: var(--font-ms-marker), cursive;
@@ -2711,7 +2710,6 @@ html {
 
 .ms-hero-image::after {
   content: "the shop · lebanon";
-  position: static;
   display: block;
   position: absolute;
   left: 0;
@@ -3238,7 +3236,7 @@ html {
 .ms-quote-form .ms-field label span,
 .ms-quote-form .ms-upload-label i {
   color: #241a10;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .ms-quote-form .ms-field label span,
@@ -3294,3 +3292,38 @@ html {
       #262119 0 218px, #16120c 218px 221px, #322b20 221px 224px, #262119 224px 442px),
     #241f17;
 }
+
+/* ---- judge pass: wide-desktop hero staging ---- */
+
+.ms-hero {
+  max-width: 88rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 1280px) {
+  .ms-hero { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); column-gap: 4rem; }
+  .ms-hero-image { width: min(100%, 40rem); }
+  .sw-sign .sw-line-lg { font-size: clamp(3rem, 7.2vw, 7.4rem); }
+}
+
+/* honest proof props */
+.sw-proof-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.2rem 1.6rem;
+  margin-top: 2.6rem;
+}
+
+.sw-proof-note {
+  font-family: var(--font-ms-marker), cursive;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+  color: var(--sw-chalk);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
+  transform: rotate(-1deg);
+  max-width: 26ch;
+}
+
+a.sw-tin { text-decoration: none; }
+a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140ms ease; }

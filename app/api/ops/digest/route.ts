@@ -103,12 +103,10 @@ export async function GET(req: Request) {
           headline: "Today's follow-up list",
           bodyHtml: sections
             .map((line) =>
-              line.startsWith("http")
-                ? `<a href="${line}">${line}</a>`
-                : escapeHtml(line).replace(
-                    /(https:\/\/\S+)/g,
-                    '<a href="$1">$1</a>'
-                  )
+              escapeHtml(line).replace(/(https:\/\/[^\s&]+(?:&amp;[^\s&]+)*)/g, (url) => {
+                const attr = url.replace(/&amp;/g, "&").replace(/"/g, "%22")
+                return `<a href="${attr}">${url}</a>`
+              })
             )
             .join("<br />"),
           ctaLabel: "Work the board",

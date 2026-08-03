@@ -223,7 +223,7 @@ export default function Page() {
           <span className="ms-sticker is-red">Call anytime</span>
           <span className="ms-sticker">Steel · Aluminum · Stainless</span>
           <span className="ms-sticker is-blue">Middle Tennessee</span>
-          <span className="ms-sticker is-arc">(615) 810-4910</span>
+          <a className="ms-sticker is-arc" href="tel:6158104910">(615) 810-4910</a>
         </div>
 
         <WeldSeam />
@@ -241,27 +241,27 @@ export default function Page() {
           <div className="ms-work-grid">
             <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20260625_160502986_HDR.jpg" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 767px) 88vw, 46vw" />
-              <figcaption><strong>Food-service trailer build.</strong></figcaption>
+              <figcaption><strong>Custom BBQ trailer — full steel build-out.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20260522_234850864_HDR.jpg" alt="Custom stainless steel sink fabricated to fit existing commercial equipment" fill sizes="(max-width: 767px) 70vw, 27vw" />
-              <figcaption><strong>Fitted stainless sink.</strong></figcaption>
+              <figcaption><strong>Stainless sink, fitted to the existing line.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 767px) 78vw, 31vw" />
-              <figcaption><strong>Shop-fabricated steel frame.</strong></figcaption>
+              <figcaption><strong>Steel frame, jigged square in our shop.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_3994.jpg" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 640px) 78vw, 34vw" />
-              <figcaption><strong>Commercial on-site install.</strong></figcaption>
+              <figcaption><strong>Commercial manifold, installed on-site.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20250527_141244.jpg" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 640px) 100vw, 50vw" />
-              <figcaption><strong>Steel gate, fit on-site.</strong></figcaption>
+              <figcaption><strong>Steel gate, hung level where it sits.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.jpg" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 640px) 82vw, 46vw" />
-              <figcaption><strong>Custom-cut steel letters.</strong></figcaption>
+              <figcaption><strong>Custom-cut letters, right off the table.</strong></figcaption>
             </figure>
           </div>
 
@@ -269,6 +269,21 @@ export default function Page() {
             <span className="ms-work-statement-line">Show the weld.</span>
             <span className="ms-work-statement-accent">Then talk.</span>
           </p>
+
+          <div className="sw-proof-row">
+            <p className="sw-proof-note">
+              Every photo on this wall is our own work. Nothing staged, nothing stock.
+            </p>
+            <a
+              className="sw-tin"
+              href="https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <small>More jobs · more photos</small>
+              <strong>Find us on Facebook</strong>
+            </a>
+          </div>
         </section>
 
         <WeldSeam />

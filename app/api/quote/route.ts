@@ -317,8 +317,9 @@ export async function POST(req: Request) {
         console.error("Quote delivery exception:", sendError);
       }
 
-      // Customer confirmation — same brand, never blocks the lead.
-      if (email && !isTest) {
+      // Customer confirmation — same brand, never blocks the lead, and only
+      // when the job actually landed on at least one durable channel.
+      if (email && !isTest && (emailSent || leadId !== null)) {
         try {
           await resend.emails.send({
             from,
@@ -340,7 +341,7 @@ export async function POST(req: Request) {
               bodyHtml: [
                 `Your <strong>${escapeHtml(serviceNeeded)}</strong> request just hit the board at the shop.`,
                 `A real person will call you at <strong>${escapeHtml(phone)}</strong> — not a bot, not a call center.`,
-                `If it can't wait, don't wait on us.`,
+                `If it can't wait, don't wait on us — call <strong>(615)&nbsp;810-4910</strong>. We're open 24 hours.`,
               ].join("<br /><br />"),
               ctaLabel: "Call the shop — open 24 hours",
               ctaUrl: "tel:6158104910",
