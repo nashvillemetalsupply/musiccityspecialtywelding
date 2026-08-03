@@ -3885,3 +3885,54 @@ a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140m
 .ops-add-lead .ops-inline-form:last-child {
   padding: 1.5rem 1.5rem 1.9rem;
 }
+
+/* the write-up: a proper mini work-order, not a cramped strip */
+.ops-writeup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.1rem 1.2rem;
+  padding: 1.5rem 1.5rem 1.75rem;
+}
+
+@media (min-width: 760px) { .ops-writeup { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.ops-writeup-field { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+.ops-writeup-wide { grid-column: 1 / -1; }
+
+.ops-writeup-field label {
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5a4c38;
+}
+
+.ops-writeup-field input,
+.ops-writeup-field select {
+  background: #fffdf6;
+  border: 2px solid rgba(36, 26, 16, 0.55);
+  color: #241a10;
+  padding: 0.85rem 0.9rem;
+  font-size: 1.05rem;
+  border-radius: 0;
+  width: 100%;
+}
+
+.ops-writeup button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  background: linear-gradient(180deg, #ffb46b, #ff8a2a 55%, #c95f12);
+  border: 2px solid rgba(0, 0, 0, 0.8);
+  border-radius: 6px;
+  color: #1b0f02;
+  font-family: var(--font-ms-display), sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 1.7rem;
+  cursor: pointer;
+}
+
+.ops-writeup button:hover { filter: brightness(1.06); }

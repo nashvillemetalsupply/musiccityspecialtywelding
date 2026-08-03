@@ -253,29 +253,44 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
 
       <details className="ops-add-lead">
         <summary>+ Write up a phone or walk-in lead</summary>
-        <form action={createManualLead} className="ops-inline-form">
-          <input name="firstName" placeholder="Name *" required aria-label="Name" />
-          <input name="phone" type="tel" inputMode="tel" placeholder="Phone *" required aria-label="Phone" />
-          <select name="service" defaultValue="" aria-label="Service">
-            <option value="">Service (optional)</option>
-            <option>Mobile Welding (On-Site)</option>
-            <option>Trailer / Truck Welding Repair</option>
-            <option>Equipment & Structural Repair</option>
-            <option>Architectural Welding & Fabrication</option>
-            <option>Specialty Fabrication</option>
-            <option>Aluminum / Boat Welding</option>
-            <option>Custom Wrought Iron Mailboxes</option>
-            <option>Custom Metal Planter Boxes</option>
-            <option>Stainless Countertops / Manifolds</option>
-            <option>Not Sure / Other</option>
-          </select>
-          <select name="source" defaultValue="phone-in" aria-label="How it came in">
-            <option value="phone-in">called in</option>
-            <option value="walk-in">walked in</option>
-            <option value="referral-word-of-mouth">referral</option>
-            <option value="repeat-customer">repeat customer</option>
-          </select>
-          <input name="message" placeholder="What do they need?" aria-label="Job details" />
+        <form action={createManualLead} className="ops-writeup">
+          <div className="ops-writeup-field">
+            <label htmlFor="wu-name">Name *</label>
+            <input id="wu-name" name="firstName" required />
+          </div>
+          <div className="ops-writeup-field">
+            <label htmlFor="wu-phone">Phone *</label>
+            <input id="wu-phone" name="phone" type="tel" inputMode="tel" required />
+          </div>
+          <div className="ops-writeup-field">
+            <label htmlFor="wu-service">Service</label>
+            <select id="wu-service" name="service" defaultValue="">
+              <option value="">Pick the closest fit</option>
+              <option>Mobile Welding (On-Site)</option>
+              <option>Trailer / Truck Welding Repair</option>
+              <option>Equipment & Structural Repair</option>
+              <option>Architectural Welding & Fabrication</option>
+              <option>Specialty Fabrication</option>
+              <option>Aluminum / Boat Welding</option>
+              <option>Custom Wrought Iron Mailboxes</option>
+              <option>Custom Metal Planter Boxes</option>
+              <option>Stainless Countertops / Manifolds</option>
+              <option>Not Sure / Other</option>
+            </select>
+          </div>
+          <div className="ops-writeup-field">
+            <label htmlFor="wu-source">How it came in</label>
+            <select id="wu-source" name="source" defaultValue="phone-in">
+              <option value="phone-in">called in</option>
+              <option value="walk-in">walked in</option>
+              <option value="referral-word-of-mouth">referral</option>
+              <option value="repeat-customer">repeat customer</option>
+            </select>
+          </div>
+          <div className="ops-writeup-field ops-writeup-wide">
+            <label htmlFor="wu-message">What do they need?</label>
+            <input id="wu-message" name="message" placeholder="Gate hinge sheared off, farm off Hartsville Pike…" />
+          </div>
           <button type="submit">Put it on the board</button>
         </form>
       </details>
