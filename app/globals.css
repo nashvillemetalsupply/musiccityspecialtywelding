@@ -3327,3 +3327,13 @@ html {
 
 a.sw-tin { text-decoration: none; }
 a.sw-tin:hover { transform: rotate(0deg) scale(1.03); transition: transform 140ms ease; }
+
+/* two-tone neon: MUSIC CITY runs a warm-white tube, the rest stays molten */
+.sw-sign .sw-line-sm {
+  color: #fff6e2;
+  text-shadow:
+    0 0 2px #ffffff,
+    0 0 10px #ffe9c4,
+    0 0 24px rgba(255, 214, 150, 0.8),
+    0 0 48px rgba(255, 170, 80, 0.35);
+}
