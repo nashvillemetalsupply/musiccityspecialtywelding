@@ -97,13 +97,13 @@ export async function redeemSmsVerificationIntent(operator: Operator): Promise<s
   const sql = getSql()
   const rows = (await sql`
     UPDATE ops_tokens SET used_at = now()
-    WHERE id = (
-      SELECT id FROM ops_tokens
+    WHERE token_hash = (
+      SELECT token_hash FROM ops_tokens
       WHERE purpose = 'sms-verify-login' AND operator_id = ${operator.id}::bigint
         AND used_at IS NULL AND expires_at > now()
       ORDER BY expires_at DESC LIMIT 1
     )
-    RETURNING id`) as { id: number }[]
+    RETURNING token_hash`) as { token_hash: string }[]
   return rows.length ? createSession(Number(operator.id), operator.email) : null
 }
 
