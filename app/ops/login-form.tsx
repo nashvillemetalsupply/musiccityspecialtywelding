@@ -68,7 +68,6 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
       <div className="ops-login-plate">
         <div className="ops-login-brand">
           <Image src="/images/optimized/mcs_welding_logo.webp" alt="MCS Welding" width={240} height={160} sizes="72px" priority unoptimized />
-          <strong>Jobs</strong>
         </div>
         <h1>Sign in</h1><p>Choose your name. This device stays signed in for up to 90 days.</p>
       </div>
@@ -76,7 +75,7 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
 
       {operators.length > 0 && <section className="ops-punch-rack" aria-label="Team members">
         <span>Choose your name</span>
-        <div>{operators.map((operator) => <button type="button" key={operator.selector} aria-pressed={selector === operator.selector} className={selector === operator.selector ? "is-picked" : ""} onClick={() => chooseOperator(operator)}><strong>{operator.name}</strong><small>{selector === operator.selector ? "Selected" : "Sign in"}</small></button>)}</div>
+        <div>{operators.map((operator) => <button type="button" key={operator.selector} aria-label={`Sign in as ${operator.name}`} aria-pressed={selector === operator.selector} className={selector === operator.selector ? "is-picked" : ""} onClick={() => chooseOperator(operator)}><strong>{operator.name}</strong><small>{selector === operator.selector ? "Selected" : "Sign in"}</small></button>)}</div>
       </section>}
       {!picked && !manual && <p className="ops-login-hint">One tap. Then choose text or email.</p>}
 

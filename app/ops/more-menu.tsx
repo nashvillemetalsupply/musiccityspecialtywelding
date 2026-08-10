@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { Menu as MenuIcon, X as CloseIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { PushToggle } from "./push-toggle"
 import { ShopDock } from "./shop-dock"
@@ -8,7 +9,6 @@ import { ShopDock } from "./shop-dock"
 export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" | "crew"; vapidPublicKey: string; voiceReady: boolean }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -23,7 +23,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
     const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".jobs-root main")]
     for (const surface of pageSurfaces) surface.inert = true
     document.body.style.overflow = "hidden"
-    closeRef.current?.focus()
+    trigger?.focus()
     const keydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault()
@@ -31,7 +31,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
         return
       }
       if (event.key !== "Tab") return
-      const focusable = [...(panelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? [])]
+      const focusable = [...(trigger ? [trigger] : []), ...(panelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? [])]
       if (!focusable.length) return
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
@@ -48,11 +48,11 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
   }, [open])
   const close = () => setOpen(false)
   return <>
-    <button ref={triggerRef} className="ops-more-trigger" type="button" aria-haspopup="dialog" aria-expanded={open} aria-controls="ops-more-panel" onClick={() => setOpen(true)}>More</button>
+    <button ref={triggerRef} className="ops-more-trigger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-haspopup="dialog" aria-expanded={open} aria-controls="ops-more-panel" onClick={() => open ? close() : setOpen(true)}><span className="ops-menu-icon" aria-hidden="true"><MenuIcon className="is-menu" /><CloseIcon className="is-close" /></span></button>
     {open && <div className="ops-more-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) close() }}>
       <aside ref={panelRef} className="ops-more-panel" id="ops-more-panel" role="dialog" aria-modal="true" aria-labelledby="ops-more-title">
-        <header><div><span>MCSW Jobs</span><h2 id="ops-more-title">More</h2></div><button ref={closeRef} type="button" onClick={close} aria-label="Close More">Close</button></header>
-        <nav aria-label="MCSW Jobs sections">
+        <header><div><span>MCSW</span><h2 id="ops-more-title">Menu</h2></div></header>
+        <nav aria-label="MCSW sections">
           <Link href="/ops?view=updates" onClick={close}>Updates</Link>
           <Link href="/ops?view=promises" onClick={close}>Promises</Link>
           <Link href="/ops?view=regulars" onClick={close}>Regular Customers</Link>

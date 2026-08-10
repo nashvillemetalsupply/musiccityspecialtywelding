@@ -213,12 +213,6 @@
   object-fit: contain;
 }
 
-.jobs-root[data-jobs-theme="brand"] .jobs-brand > strong {
-  color: var(--jobs-header-ink);
-  font-weight: 780;
-  line-height: 1.2;
-}
-
 .jobs-root[data-jobs-theme="brand"] .jobs-person {
   color: var(--jobs-header-muted);
   font-size: 0.875rem;
@@ -233,19 +227,58 @@
   border-radius: var(--jobs-radius-control);
   background: transparent;
   color: var(--jobs-header-ink);
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.2;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
   transition:
     background-color var(--jobs-dur-short) var(--jobs-ease-out),
     transform var(--jobs-dur-micro) var(--jobs-ease-out);
 }
 
+.jobs-root[data-jobs-theme="brand"] .ops-menu-icon {
+  position: relative;
+  width: 1.375rem;
+  height: 1.375rem;
+  display: block;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-menu-icon svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  stroke-width: 2;
+  transition:
+    opacity var(--jobs-dur-short) var(--jobs-ease-out),
+    transform var(--jobs-dur-short) var(--jobs-ease-out);
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-menu-icon .is-close {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.75);
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-more-trigger[aria-expanded="true"] .is-menu {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.75);
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-more-trigger[aria-expanded="true"] .is-close {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jobs-root[data-jobs-theme="brand"] .ops-menu-icon svg {
+    transition: none;
+  }
+}
+
 .jobs-root[data-jobs-theme="brand"] .ops-more-trigger:active {
   background: var(--jobs-ink-soft);
   transform: translateY(1px);
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-more-trigger[aria-expanded="true"] {
+  position: relative;
+  z-index: 121;
 }
 
 /* Home frame */
@@ -4961,13 +4994,6 @@
   object-fit: contain;
 }
 
-.jobs-root[data-jobs-theme="brand"] .ops-login-brand strong {
-  color: var(--jobs-header-ink);
-  font-size: 1.125rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
 .jobs-root[data-jobs-theme="brand"] .ops-login-plate h1 {
   margin: var(--jobs-space-xs) 0 0;
   color: var(--jobs-header-ink);
@@ -5022,9 +5048,10 @@
   min-height: 4rem;
   display: flex;
   padding: var(--jobs-space-xs) var(--jobs-space-sm);
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--jobs-space-sm);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--jobs-space-3xs);
   border: 0;
   border-bottom: 1px solid var(--jobs-line);
   border-radius: 0;
@@ -5051,10 +5078,13 @@
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-login-shell > .ops-punch-rack button :is(strong, small) {
+  max-width: 100%;
   color: inherit;
   font-family: inherit;
   letter-spacing: normal;
+  line-height: 1.1;
   text-transform: none;
+  white-space: nowrap;
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-login-shell > .ops-punch-rack button small {

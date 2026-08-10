@@ -31,6 +31,8 @@ Provider activation remains intentionally separate from code completion. Keep cu
 
 Operator phone-login activation is separate from customer messaging. Twilio Verify uses `TWILIO_VERIFY_SERVICE_SID` plus account credentials, preserves a durable pre-send intent, validates the provider-approved code before session creation, and does not enable customer SMS. Philippe Auguste and TJ Harahan are active owner operators ending `4910` and `8197`, respectively. The logged-out `/ops` and `/ops/install` screens share the same operator picker and text-code readiness.
 
+Final navigation refinement: the authenticated and login headers show the MCSW logo without a redundant `Jobs` label. Authenticated navigation uses an accessible animated hamburger-to-X control and the panel title `Menu`. Login name cards stack `Sign in` or `Selected` beneath the owner name so the action never collides with long names on desktop or mobile.
+
 ## Start here for future maintenance
 
 1. Read this file completely.

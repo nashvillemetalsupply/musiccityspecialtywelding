@@ -16,9 +16,8 @@ export function OpsCompactHeader({ name, role, voiceReady }: { name: string; rol
           decoding="sync"
           fetchPriority="high"
         />
-        <strong>Jobs</strong>
       </Link>
-      <nav aria-label="Account and more">
+      <nav aria-label="Account and menu">
         <span className="jobs-person">{firstName}</span>
         <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceReady} />
       </nav>

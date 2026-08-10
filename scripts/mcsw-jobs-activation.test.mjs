@@ -5,7 +5,7 @@ import test from "node:test"
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 const visibleJsxText = (value) => [...value.matchAll(/>([^<{]+)</g)].map((match) => match[1]).join(" ")
 
-test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools under More", () => {
+test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools under Menu", () => {
   const header = source("app/ops/ops-header.tsx")
   const layout = source("app/ops/layout.tsx")
   const more = source("app/ops/more-menu.tsx")
@@ -19,7 +19,10 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(header, /MCSW Jobs/)
   assert.match(header, /firstName/)
   assert.match(header, /<MoreMenu/)
-  assert.match(more, />More<\/button>/)
+  assert.match(more, /aria-label=\{open \? "Close menu" : "Open menu"\}/)
+  assert.match(more, /<MenuIcon/)
+  assert.match(more, /<CloseIcon/)
+  assert.doesNotMatch(header, /<strong>Jobs<\/strong>/)
   assert.doesNotMatch(layout, /ShopDock/)
   for (const label of ["Updates", "Promises", "Regular Customers", "Install MCSW Jobs", "Settings", "Sign out"]) {
     assert.match(more, new RegExp(label))
