@@ -50,6 +50,10 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(css, /--jobs-header:\s*#12100d/)
   assert.match(css, /\.jobs-product-frame\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
   assert.match(css, /min-height:\s*3rem/)
+  assert.match(
+    css,
+    /\.ops-more-trigger\[aria-expanded="true"\]\s*\{[^}]*position:\s*fixed;[^}]*top:\s*max\(1rem, env\(safe-area-inset-top\)\);[^}]*right:\s*max\(1rem, env\(safe-area-inset-right\)\);/s,
+  )
 })
 
 test("mobile side effects use centered scroll-safe controls with busy-state protection", () => {

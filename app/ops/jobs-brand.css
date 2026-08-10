@@ -277,7 +277,9 @@
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-more-trigger[aria-expanded="true"] {
-  position: relative;
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
   z-index: 121;
 }
 
