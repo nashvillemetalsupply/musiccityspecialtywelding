@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { MobileQuickActions } from "@/components/mobile-quick-actions"
+import { getShopPhone } from "@/lib/shop-contact"
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -10,17 +12,18 @@ export const metadata: Metadata = {
 }
 
 export default function TermsPage() {
+  const shopPhone = getShopPhone()
   return (
     <>
       <Navbar />
-      <main className="min-h-screen pt-24 sm:pt-28 md:pt-32 pb-16 bg-background">
+      <main className="ms-site ms-legal">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 max-w-4xl">
           <div className="prose prose-lg max-w-none">
             <h1 className="font-serif font-bold text-3xl sm:text-4xl text-secondary mb-3 sm:mb-4">
               Terms of Service
             </h1>
             <p className="text-sm text-muted-foreground mb-10 sm:mb-12">
-              Last updated: January 3, 2026
+              Last updated: August 8, 2026
             </p>
 
             <div className="space-y-8 text-base text-foreground leading-relaxed">
@@ -42,6 +45,18 @@ export default function TermsPage() {
                   <li>Upload malicious files or content</li>
                   <li>Use the site in a way that violates applicable laws or regulations</li>
                 </ul>
+              </section>
+
+              <section>
+                <h2 className="font-serif font-semibold text-2xl text-secondary mt-12 mb-5">
+                  Optional Job Texts
+                </h2>
+                <p className="mb-4">
+                  If you check “Text me about this job,” you agree to receive customer-care and job-update texts from Music City Specialty Welding at the number provided. Message frequency varies, and message and data rates may apply. Consent is optional and is not a condition of purchase.
+                </p>
+                <p>
+                  Reply STOP to opt out, START to opt back in, or HELP for help. A STOP request overrides earlier permission until a later START. Carrier delivery is not guaranteed.
+                </p>
               </section>
 
               <section>
@@ -146,8 +161,8 @@ export default function TermsPage() {
                 <div className="bg-muted/50 rounded-lg p-6 space-y-2">
                   <p className="font-semibold text-secondary">Music City Specialty Welding</p>
                   <p>
-                    <a href="tel:6158104910" className="text-primary hover:text-primary/80 transition-colors">
-                      Phone: (615) 810-4910
+                    <a href={shopPhone.href} className="text-primary hover:text-primary/80 transition-colors">
+                      Phone: {shopPhone.display}
                     </a>
                   </p>
                   <p>
@@ -165,6 +180,7 @@ export default function TermsPage() {
         </div>
       </main>
       <Footer />
+      <MobileQuickActions quoteHref="/#contact" phoneHref={shopPhone.href} />
     </>
   )
 }

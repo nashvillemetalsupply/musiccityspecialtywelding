@@ -1,14 +1,19 @@
-import { Resend } from "resend";
+import { Resend, type CreateEmailOptions } from "resend";
 import { put } from "@vercel/blob";
-import { dbConfigured } from "@/lib/db";
+import { after } from "next/server";
+import { dbConfigured, getSql } from "@/lib/db";
 import { brandedEmail, escapeHtml } from "@/lib/email-templates";
-import { sendPushToAll } from "@/lib/push";
+import { recordEvent } from "@/lib/events";
+import { notifyAll } from "@/lib/notify";
+import { getShopPhone } from "@/lib/shop-contact";
 import {
   attachLeadPhotos,
   createLead,
   isRateLimitedDurable,
   markLeadDelivery,
 } from "@/lib/leads";
+import { processEvent } from "@/lib/extract";
+import { normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs";
 
 export const runtime = "nodejs"; // important for email libs
 
@@ -56,9 +61,124 @@ function sanitize(s: unknown, max = 2000) {
   return s.trim().slice(0, max);
 }
 
+type DurableEmailState = "accepted" | "failed" | "unknown";
+type DurableEmailResult = {
+  state: DurableEmailState;
+  error: string;
+  receiptEventId: number | null;
+};
+
+async function resumeEventId(kind: string, externalId: string) {
+  const rows = (await getSql()`
+    SELECT id FROM events
+    WHERE kind = ${kind}::text AND external_id = ${externalId}::text
+    LIMIT 1`) as { id: number }[];
+  return Number(rows[0]?.id) || null;
+}
+
+async function sendDurableQuoteEmail(input: {
+  resend: Resend;
+  leadId: number | null;
+  personId: number | null;
+  intent: string;
+  audience: "shop" | "customer";
+  payload: CreateEmailOptions;
+}): Promise<DurableEmailResult> {
+  let sourceEventId: number | null = null;
+  if (input.leadId !== null) {
+    sourceEventId = await recordEvent({
+      kind: "email.out",
+      actorType: "system",
+      leadId: input.leadId,
+      personId: input.personId,
+      externalId: input.intent,
+      body: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
+      crewBody: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
+      detail: {
+        audience: input.audience,
+        subject: input.payload.subject,
+        deliveryStatus: "pending",
+      },
+    });
+    if (!sourceEventId) sourceEventId = await resumeEventId("email.out", input.intent);
+    if (sourceEventId) {
+      const receipts = (await getSql()`
+        SELECT kind FROM events
+        WHERE kind = ANY(ARRAY['email.accepted','email.delivered']::text[])
+          AND detail->>'sourceEventId' = ${String(sourceEventId)}::text
+        ORDER BY id DESC LIMIT 1`) as { kind: string }[];
+      if (receipts[0]) return { state: "accepted", error: "", receiptEventId: sourceEventId };
+    }
+  }
+
+  try {
+    const { data, error } = await input.resend.emails.send(input.payload, {
+      idempotencyKey: input.intent,
+    });
+    if (error || !data?.id) {
+      const message = error?.message || "Email provider did not accept the message.";
+      if (sourceEventId && input.leadId !== null) {
+        let failureEventId = await recordEvent({
+          kind: "email.failed",
+          actorType: "system",
+          leadId: input.leadId,
+          personId: input.personId,
+          externalId: `request-failed:${input.intent}`,
+          body: message,
+          crewBody: "Email provider rejected the message.",
+          detail: { sourceEventId, audience: input.audience },
+        });
+        if (!failureEventId) failureEventId = await resumeEventId("email.failed", `request-failed:${input.intent}`);
+        return { state: "failed", error: message, receiptEventId: failureEventId || sourceEventId };
+      }
+      return { state: "failed", error: message, receiptEventId: sourceEventId };
+    }
+    let acceptanceEventId: number | null = null;
+    if (sourceEventId && input.leadId !== null) {
+      acceptanceEventId = await recordEvent({
+        kind: "email.accepted",
+        actorType: "system",
+        leadId: input.leadId,
+        personId: input.personId,
+        externalId: data.id,
+        body: "Email accepted by the delivery provider.",
+        crewBody: "Email accepted by the delivery provider.",
+        detail: {
+          sourceEventId,
+          providerEmailId: data.id,
+          audience: input.audience,
+        },
+      });
+      if (!acceptanceEventId) acceptanceEventId = await resumeEventId("email.accepted", data.id);
+    }
+    return { state: "accepted", error: "", receiptEventId: acceptanceEventId || sourceEventId };
+  } catch (error) {
+    // A transport exception is ambiguous: Resend may have accepted the email
+    // before the response was lost. The same idempotency key makes a retry
+    // safe, so keep the durable intent resumable instead of recording a lie.
+    const message = error instanceof Error ? error.message : "Email provider response was lost.";
+    if (sourceEventId && input.leadId !== null) {
+      let unknownEventId = await recordEvent({
+        kind: "email.unknown",
+        actorType: "system",
+        leadId: input.leadId,
+        personId: input.personId,
+        externalId: `request-unknown:${input.intent}`,
+        body: message,
+        crewBody: "Email provider response was not confirmed.",
+        detail: { sourceEventId, audience: input.audience },
+      });
+      if (!unknownEventId) unknownEventId = await resumeEventId("email.unknown", `request-unknown:${input.intent}`);
+      return { state: "unknown", error: message, receiptEventId: unknownEventId || sourceEventId };
+    }
+    return { state: "unknown", error: message, receiptEventId: sourceEventId };
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.RESEND_API_KEY;
+    const shopPhone = getShopPhone();
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
@@ -75,7 +195,7 @@ export async function POST(req: Request) {
 
     if (isRateLimitedLocal(ip)) {
       return Response.json(
-        { ok: false, error: "Too many quote attempts. Please wait a few minutes or call (615) 810-4910." },
+        { ok: false, error: `Too many quote attempts. Please wait a few minutes or call ${shopPhone.display}.` },
         { status: 429, headers: { "Retry-After": "600" } }
       );
     }
@@ -96,6 +216,8 @@ export async function POST(req: Request) {
     const serviceNeeded = sanitize(formData.get("service"));
     const projectDetails = sanitize(formData.get("message"));
     const preferredContact = sanitize(formData.get("preferredContact"));
+    const textConsent = sanitize(formData.get("textConsent")) === "yes";
+    const intakeKey = sanitize(formData.get("intakeKey"), 80);
 
     // Attribution (hidden fields populated client-side).
     const gclid = sanitize(formData.get("gclid"), 200);
@@ -156,6 +278,27 @@ export async function POST(req: Request) {
       return Response.json({ ok: false, error: "Invalid email." }, { status: 400 });
     }
 
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(intakeKey)) {
+      return Response.json(
+        { ok: false, error: "This form expired before it could be sent. Refresh the page and try again." },
+        { status: 400 }
+      );
+    }
+
+    const consentPhone = textConsent && !isTest ? normalizeUsPhone(phone) : "";
+    if (textConsent && !isTest && !consentPhone) {
+      return Response.json(
+        { ok: false, error: "Enter a valid US mobile number to receive text updates." },
+        { status: 400 }
+      );
+    }
+    if (textConsent && !isTest && !dbConfigured()) {
+      return Response.json(
+        { ok: false, error: "We couldn't safely save text permission. Uncheck text updates or call the shop." },
+        { status: 503 }
+      );
+    }
+
     // Durable cross-instance throttle. Never blocks a lead on DB failure.
     if (dbConfigured() && ip !== "unknown") {
       const limited = await isRateLimitedDurable(
@@ -165,7 +308,7 @@ export async function POST(req: Request) {
       );
       if (limited) {
         return Response.json(
-          { ok: false, error: "Too many quote attempts. Please wait a few minutes or call (615) 810-4910." },
+          { ok: false, error: `Too many quote attempts. Please wait a few minutes or call ${shopPhone.display}.` },
           { status: 429, headers: { "Retry-After": "600" } }
         );
       }
@@ -174,33 +317,95 @@ export async function POST(req: Request) {
     // Persist the lead FIRST so it survives any email-provider failure.
     let leadId: number | null = null;
     let leadPublicId = "";
+    let leadPersonId: number | null = null;
     if (dbConfigured()) {
       try {
-        const lead = await createLead({
-          firstName,
-          lastName,
-          phone,
-          email,
-          service: serviceNeeded,
-          message: projectDetails,
-          preferredContact,
-          photoCount: photoFiles.length,
-          gclid,
-          utmSource,
-          utmMedium,
-          utmCampaign,
-          utmTerm,
-          utmContent,
-          landingPage,
-          referrer,
-          ip,
-          userAgent,
-          isTest,
-        });
+        const lead = await createLead(
+          {
+            firstName,
+            lastName,
+            phone,
+            email,
+            service: serviceNeeded,
+            message: projectDetails,
+            preferredContact,
+            photoCount: photoFiles.length,
+            gclid,
+            utmSource,
+            utmMedium,
+            utmCampaign,
+            utmTerm,
+            utmContent,
+            landingPage,
+            referrer,
+            ip,
+            userAgent,
+            isTest,
+          },
+          {
+            intakeKey: `website:${intakeKey}`,
+            ...(textConsent && !isTest
+              ? {
+                webTextConsent: {
+                  phoneE164: consentPhone,
+                  provenance: {
+                    checked: true,
+                    disclosureVersion: "2026-08-08",
+                    ip,
+                    userAgent,
+                    landingPage,
+                    referrer,
+                  },
+                },
+              }
+              : {}),
+          }
+        );
         leadId = lead.id;
         leadPublicId = lead.publicId;
+        const leadRows = (await getSql()`
+          SELECT person_id, first_name, last_name, phone, email, service, message,
+            preferred_contact, photo_count
+          FROM leads WHERE id = ${lead.id}::bigint LIMIT 1`) as {
+          person_id: number | null;
+          first_name: string;
+          last_name: string;
+          phone: string;
+          email: string;
+          service: string;
+          message: string;
+          preferred_contact: string;
+          photo_count: number;
+        }[];
+        if (lead.reused) {
+          const saved = leadRows[0];
+          const sameSubmission = Boolean(saved)
+            && saved.first_name === firstName
+            && saved.last_name === lastName
+            && normalizeUsPhone(saved.phone) === normalizeUsPhone(phone)
+            && saved.email.trim().toLowerCase() === email.trim().toLowerCase()
+            && saved.service === serviceNeeded
+            && saved.message === projectDetails
+            && saved.preferred_contact === preferredContact
+            && Number(saved.photo_count) === photoFiles.length;
+          if (!sameSubmission) {
+            return Response.json(
+              { ok: false, error: "The earlier version of this request was already saved. Refresh the page to start a changed request, or call the shop." },
+              { status: 409 },
+            );
+          }
+        }
+        leadPersonId = leadRows[0]?.person_id ?? null;
+        if (lead.eventId) after(() => processEvent(lead.eventId!).catch((error) => console.error("Quote intake extraction failed:", error)));
       } catch (dbError) {
-        // Email delivery below still protects the lead.
+        if (textConsent && !isTest) {
+          console.error("Lead and text-consent persistence error:", dbError);
+          return Response.json(
+            { ok: false, error: "We couldn't confirm the saved text permission. Try again, uncheck text updates, or call the shop." },
+            { status: 503 }
+          );
+        }
+        // Email delivery below still protects a lead that did not request SMS.
         console.error("Lead persistence error:", dbError);
       }
     }
@@ -215,6 +420,8 @@ export async function POST(req: Request) {
           const blob = await put(`leads/${leadPublicId}/${index + 1}-${safeName}`, file, {
             access: "private",
             contentType: file.type,
+            addRandomSuffix: false,
+            allowOverwrite: true,
           });
           stored.push({
             pathname: blob.pathname,
@@ -223,7 +430,7 @@ export async function POST(req: Request) {
             name: safeName,
           });
         }
-        await attachLeadPhotos(leadId, stored);
+        await attachLeadPhotos(leadId, stored, { externalId: `quote-photos:${intakeKey}` });
       } catch (blobError) {
         // Photos still ride along on the notification email.
         console.error("Photo persistence error:", blobError);
@@ -236,8 +443,9 @@ export async function POST(req: Request) {
     const subjectPrefix = process.env.QUOTE_EMAIL_SUBJECT_PREFIX || "New Quote Request";
 
     let emailSent = false;
+    let ownerEmailState: DurableEmailState = "failed";
     let emailErrorMessage = "";
-    if (apiKey && to && from) {
+    if (!isTest && apiKey && to && from) {
       const resend = new Resend(apiKey);
       const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
 
@@ -295,8 +503,13 @@ export async function POST(req: Request) {
         footnote: `Source: ${escapeHtml(gclid ? "google-ads" : utmSource || referrer || "direct")} · ${now}`,
       });
 
-      try {
-        const { error } = await resend.emails.send({
+      const ownerResult = await sendDurableQuoteEmail({
+        resend,
+        leadId,
+        personId: leadPersonId,
+        intent: `quote-owner:${intakeKey}`,
+        audience: "shop",
+        payload: {
           from,
           to,
           subject,
@@ -304,24 +517,23 @@ export async function POST(req: Request) {
           html: ownerHtml,
           replyTo: email ? email : undefined,
           attachments: attachments.length > 0 ? attachments : undefined,
-        });
-        if (error) {
-          emailErrorMessage = error.message || "Resend rejected the message.";
-          console.error("Quote delivery error:", error);
-        } else {
-          emailSent = true;
-        }
-      } catch (sendError) {
-        emailErrorMessage =
-          sendError instanceof Error ? sendError.message : "Email send threw.";
-        console.error("Quote delivery exception:", sendError);
-      }
+        },
+      });
+      ownerEmailState = ownerResult.state;
+      emailSent = ownerResult.state === "accepted";
+      emailErrorMessage = ownerResult.error;
+      if (ownerResult.state !== "accepted") console.error("Quote delivery was not confirmed:", ownerResult.error);
 
       // Customer confirmation — same brand, never blocks the lead, and only
       // when the job actually landed on at least one durable channel.
       if (email && !isTest && (emailSent || leadId !== null)) {
-        try {
-          await resend.emails.send({
+        const customerResult = await sendDurableQuoteEmail({
+          resend,
+          leadId,
+          personId: leadPersonId,
+          intent: `quote-customer:${intakeKey}`,
+          audience: "customer",
+          payload: {
             from,
             to: email,
             subject: "We got your job — Music City Specialty Welding",
@@ -330,7 +542,7 @@ export async function POST(req: Request) {
               ``,
               `Your ${serviceNeeded} request just hit our board. A real person from the shop will call you at ${phone}.`,
               ``,
-              `If it can't wait, call us right now — we're open 24 hours: (615) 810-4910.`,
+              `If it can't wait, call us right now — we're open 24 hours: ${shopPhone.display}.`,
               ``,
               `Music City Specialty Welding`,
               `533 W Baddour Pkwy, Lebanon, TN 37087`,
@@ -341,32 +553,63 @@ export async function POST(req: Request) {
               bodyHtml: [
                 `Your <strong>${escapeHtml(serviceNeeded)}</strong> request just hit the board at the shop.`,
                 `A real person will call you at <strong>${escapeHtml(phone)}</strong> — not a bot, not a call center.`,
-                `If it can't wait, don't wait on us — call <strong>(615)&nbsp;810-4910</strong>. We're open 24 hours.`,
+                `If it can't wait, don't wait on us — call <strong>${escapeHtml(shopPhone.display)}</strong>. We're open 24 hours.`,
               ].join("<br /><br />"),
               ctaLabel: "Call the shop — open 24 hours",
-              ctaUrl: "tel:6158104910",
+              ctaUrl: getShopPhone().href,
             }),
-          });
-        } catch (confirmError) {
-          console.error("Customer confirmation error:", confirmError);
+          },
+        });
+        if (customerResult.state !== "accepted") {
+          console.error("Customer confirmation was not confirmed:", customerResult.error);
+          if (leadId !== null) {
+            await notifyAll({
+              priority: "digest",
+              stock: "red",
+              title: customerResult.state === "failed"
+                ? "Customer confirmation did not send"
+                : "Check customer confirmation delivery",
+              body: customerResult.error,
+              crewBody: "The customer confirmation needs an owner delivery check.",
+              url: `/ops/leads/${leadId}#spike`,
+              sourceEventId: customerResult.receiptEventId,
+              ownerOnly: true,
+              dedupeKey: `quote-customer-delivery:${intakeKey}:${customerResult.state}`,
+            });
+          }
         }
       }
+    } else if (isTest) {
+      emailErrorMessage = "INTERNAL TEST delivery suppressed."
     } else {
       emailErrorMessage = "Email service not configured.";
     }
 
     if (leadId !== null) {
-      try {
-        await markLeadDelivery(leadId, emailSent ? "sent" : "failed", emailErrorMessage || undefined);
-      } catch (deliveryLogError) {
-        console.error("Delivery status update error:", deliveryLogError);
+      if (!isTest) {
+        try {
+          if (ownerEmailState === "accepted") {
+            await markLeadDelivery(leadId, "accepted");
+          } else if (ownerEmailState === "failed") {
+            await markLeadDelivery(leadId, "failed", emailErrorMessage || undefined);
+          }
+        } catch (deliveryLogError) {
+          console.error("Delivery status update error:", deliveryLogError);
+        }
       }
       if (!isTest) {
         // Second alert channel: instant phone push, independent of the email provider.
-        await sendPushToAll({
+        await notifyAll({
+          priority: "interrupt",
+          stock: ownerEmailState === "accepted" ? "white" : "red",
           title: `New lead: ${firstName}`,
-          body: `${serviceNeeded} · ${phone}${emailSent ? "" : " · EMAIL FAILED — dashboard only"}`,
+          body: `${serviceNeeded} · ${phone}${ownerEmailState === "failed" ? " · OWNER EMAIL FAILED — dashboard only" : ownerEmailState === "unknown" ? " · OWNER EMAIL UNCONFIRMED — dashboard saved" : ""}`,
+          crewBody: `${serviceNeeded} · ${phone}`,
           url: `/ops/leads/${leadId}`,
+          capExempt: true,
+          quietHoursExempt: true,
+          smsFallback: true,
+          dedupeKey: `quote-intake:${intakeKey}:new-lead`,
         });
       }
     }
@@ -377,13 +620,13 @@ export async function POST(req: Request) {
     }
 
     return Response.json(
-      { ok: false, error: "We couldn't submit your request. Please call (615) 810-4910 or try again." },
+      { ok: false, error: `We couldn't submit your request. Please call ${shopPhone.display} or try again.` },
       { status: 500 }
     );
   } catch (err) {
     console.error("Quote API error:", err);
     return Response.json(
-      { ok: false, error: "We couldn't submit your request. Please call (615) 810-4910 or try again." },
+      { ok: false, error: `We couldn't submit your request. Please call ${getShopPhone().display} or try again.` },
       { status: 500 }
     );
   }

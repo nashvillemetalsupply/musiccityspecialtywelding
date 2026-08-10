@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MCSW Jobs — home directions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,650&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V5
+     * scratch-only browser concepts · no production UI code
+     */
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; overflow-x: clip; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: default; }
+    .concept { display: none; width: 100%; min-height: 100dvh; }
+    body[data-view="d"] .concept-d,
+    body[data-view="e"] .concept-e,
+    body[data-view="f"] .concept-f,
+    body[data-view="g"] .concept-g,
+    body[data-view="h"] .concept-h,
+    body[data-view="i"] .concept-i,
+    body[data-view="j"] .concept-j { display: block; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+    /* D — quiet native work tool */
+    .concept-d {
+      --d-paper: oklch(97% .008 85);
+      --d-surface: oklch(99% .005 85);
+      --d-surface-2: oklch(93% .009 85);
+      --d-ink: oklch(20% .026 252);
+      --d-muted: oklch(45% .018 252);
+      --d-rule: oklch(82% .012 252);
+      --d-accent: oklch(54% .17 42);
+      --d-on-dark: oklch(97% .006 85);
+      color: var(--d-ink);
+      background: var(--d-paper);
+      font-family: "Public Sans", sans-serif;
+    }
+    .d-topbar { display: grid; min-height: 56px; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid var(--d-rule); background: var(--d-surface); }
+    .d-brand { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -.025em; }
+    .d-brand::before { width: 3px; height: 18px; background: var(--d-accent); content: ""; }
+    .d-person { color: var(--d-muted); font-size: 13px; }
+    .d-more { min-height: 44px; padding: 0; border: 0; color: var(--d-ink); background: transparent; font-size: 14px; font-weight: 600; }
+    .d-composer { padding: 15px 16px 14px; border-bottom: 6px solid var(--d-surface-2); background: var(--d-surface); }
+    .d-composer-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
+    .d-composer h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+    .d-source { display: flex; gap: 16px; }
+    .d-source span { padding-bottom: 5px; border-bottom: 2px solid transparent; color: var(--d-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .d-source .is-active { border-color: var(--d-ink); color: var(--d-ink); }
+    .d-fields { display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(0, .82fr); gap: 10px; }
+    .d-field { display: grid; min-width: 0; gap: 5px; }
+    .d-field-wide { grid-column: 1 / -1; }
+    .d-field span { color: var(--d-muted); font-size: 12px; font-weight: 600; }
+    .d-field input { width: 100%; min-width: 0; min-height: 46px; padding: 0 11px; border: 1px solid var(--d-rule); border-radius: 2px; color: var(--d-ink); background: var(--d-paper); font-size: 15px; }
+    .d-field input::placeholder { color: var(--d-muted); opacity: 1; }
+    .d-composer-actions { display: grid; grid-template-columns: 1fr 132px; align-items: center; gap: 12px; margin-top: 12px; }
+    .d-details { min-height: 46px; padding: 0; border: 0; color: var(--d-muted); background: transparent; text-align: left; font-size: 13px; }
+    .d-add { min-height: 46px; border: 0; border-radius: 2px; color: var(--d-on-dark); background: var(--d-ink); font-weight: 700; }
+    .d-queue-head { display: grid; min-height: 48px; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--d-rule); background: var(--d-paper); }
+    .d-queue-head h2 { margin: 0; font-size: 18px; letter-spacing: -.03em; }
+    .d-count { color: var(--d-accent); font: 600 13px/1 "IBM Plex Mono", monospace; }
+    .d-view { color: var(--d-ink); font-size: 13px; font-weight: 600; }
+    .d-row { position: relative; display: grid; min-height: 91px; grid-template-columns: minmax(0, 1fr) 102px; gap: 10px; align-items: center; padding: 11px 16px 11px 20px; border-bottom: 1px solid var(--d-rule); background: var(--d-surface); }
+    .d-row::before { position: absolute; inset-block: 14px; inset-inline-start: 0; width: 3px; background: var(--d-accent); content: ""; }
+    .d-row-meta { display: grid; min-width: 0; gap: 3px; }
+    .d-reason { color: var(--d-accent); font-size: 12px; font-weight: 600; }
+    .d-row strong { overflow: hidden; font-size: 15px; letter-spacing: -.015em; text-overflow: ellipsis; white-space: nowrap; }
+    .d-row p { overflow: hidden; margin: 0; color: var(--d-muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .d-row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .d-row-actions button { min-width: 0; min-height: 42px; padding: 0; border: 1px solid var(--d-rule); border-radius: 2px; color: var(--d-ink); background: var(--d-surface); font-size: 12px; font-weight: 700; }
+    .d-row-actions .d-open { border-color: var(--d-ink); color: var(--d-on-dark); background: var(--d-ink); }
+    .d-active .d-row::before { background: var(--d-rule); }
+
+    /* E — service-order ledger */
+    .concept-e {
+      --e-paper: oklch(96% .018 86);
+      --e-sheet: oklch(98% .012 86);
+      --e-ink: oklch(19% .015 66);
+      --e-muted: oklch(43% .015 66);
+      --e-rule: oklch(33% .014 66);
+      --e-rule-soft: oklch(78% .018 86);
+      --e-accent: oklch(48% .16 32);
+      --e-on-ink: oklch(96% .015 86);
+      color: var(--e-ink);
+      background: var(--e-paper);
+      font-family: "IBM Plex Sans", sans-serif;
+    }
+    .e-topbar { display: grid; min-height: 64px; grid-template-columns: 1fr auto; align-items: center; padding: 8px 18px 7px; border-bottom: 2px solid var(--e-rule); }
+    .e-brand { display: grid; gap: 1px; }
+    .e-brand strong { font: 650 22px/1 "Newsreader", serif; letter-spacing: -.025em; }
+    .e-brand small { color: var(--e-muted); font: 500 10px/1.2 "IBM Plex Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
+    .e-user { display: flex; align-items: center; gap: 14px; font-size: 12px; }
+    .e-user button { min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--e-rule); color: var(--e-ink); background: transparent; font-weight: 600; }
+    .e-ticket { padding: 14px 18px 13px; background: var(--e-sheet); }
+    .e-ticket-head { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 12px; margin-bottom: 11px; }
+    .e-ticket h1 { margin: 0; font: 650 29px/.95 "Newsreader", serif; letter-spacing: -.035em; }
+    .e-source { display: flex; gap: 13px; color: var(--e-muted); font: 500 11px/1 "IBM Plex Mono", monospace; text-transform: uppercase; }
+    .e-source .is-active { color: var(--e-accent); }
+    .e-form { display: grid; gap: 0; border-top: 1px solid var(--e-rule); }
+    .e-line { display: grid; min-height: 48px; grid-template-columns: 72px minmax(0, 1fr); align-items: center; border-bottom: 1px solid var(--e-rule-soft); }
+    .e-line label { color: var(--e-muted); font: 500 10px/1 "IBM Plex Mono", monospace; letter-spacing: .05em; text-transform: uppercase; }
+    .e-line input { min-width: 0; height: 46px; padding: 0; border: 0; color: var(--e-ink); background: transparent; font-size: 15px; outline: 0; }
+    .e-line input::placeholder { color: var(--e-muted); opacity: .85; }
+    .e-ticket-actions { display: grid; grid-template-columns: 1fr 128px; align-items: center; gap: 16px; margin-top: 10px; }
+    .e-ticket-actions button { min-height: 45px; }
+    .e-details { padding: 0; border: 0; color: var(--e-muted); background: transparent; text-align: left; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+    .e-save { border: 1px solid var(--e-rule); border-radius: 0; color: var(--e-on-ink); background: var(--e-ink); font-weight: 700; }
+    .e-ledger { border-top: 7px solid var(--e-ink); }
+    .e-ledger-head { display: grid; min-height: 49px; grid-template-columns: 1fr auto; align-items: center; padding: 0 18px; border-bottom: 1px solid var(--e-rule); }
+    .e-ledger-head h2 { margin: 0; font: 650 21px/1 "Newsreader", serif; letter-spacing: -.025em; }
+    .e-ledger-head h2 span { color: var(--e-accent); font: 600 11px/1 "IBM Plex Mono", monospace; vertical-align: top; }
+    .e-ledger-head a { color: var(--e-ink); font: 600 11px/1 "IBM Plex Mono", monospace; text-decoration: underline; text-underline-offset: 4px; }
+    .e-entry { display: grid; min-height: 90px; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; align-items: center; padding: 10px 18px; border-bottom: 1px solid var(--e-rule); background: var(--e-sheet); }
+    .e-entry-copy { display: grid; min-width: 0; gap: 2px; }
+    .e-entry-copy small { color: var(--e-accent); font: 500 10px/1.25 "IBM Plex Mono", monospace; }
+    .e-entry-copy strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+    .e-entry-copy p { overflow: hidden; margin: 0; color: var(--e-muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .e-entry-actions { display: flex; min-height: 43px; align-items: stretch; border: 1px solid var(--e-rule); }
+    .e-entry-actions button { flex: 1; min-width: 0; padding: 0; border: 0; color: var(--e-ink); background: transparent; font: 600 10px/1 "IBM Plex Mono", monospace; text-transform: uppercase; }
+    .e-entry-actions button + button { border-left: 1px solid var(--e-rule); }
+    .e-active { border-top-width: 2px; }
+
+    /* F — restrained MCSW identity */
+    .concept-f {
+      --f-navy: oklch(22% .055 252);
+      --f-navy-2: oklch(28% .06 252);
+      --f-paper: oklch(96% .012 78);
+      --f-surface: oklch(99% .006 78);
+      --f-steel: oklch(79% .018 252);
+      --f-muted: oklch(45% .024 252);
+      --f-orange: oklch(65% .18 55);
+      --f-light: oklch(97% .008 78);
+      color: var(--f-navy);
+      background: var(--f-paper);
+      font-family: "IBM Plex Sans", sans-serif;
+    }
+    .f-topbar { display: grid; min-height: 58px; grid-template-columns: 1fr auto auto; align-items: center; gap: 13px; padding: 0 16px; color: var(--f-light); background: var(--f-navy); }
+    .f-brand { font: 800 21px/1 "Barlow Condensed", sans-serif; letter-spacing: .045em; text-transform: uppercase; }
+    .f-person { color: var(--f-steel); font-size: 12px; }
+    .f-more { min-height: 42px; padding: 0; border: 0; color: var(--f-light); background: transparent; font-size: 13px; font-weight: 600; }
+    .f-intake { position: relative; padding: 14px 16px 14px 20px; border-bottom: 1px solid var(--f-steel); background: var(--f-surface); }
+    .f-intake::before { position: absolute; inset-block: 0; inset-inline-start: 0; width: 4px; background: var(--f-orange); content: ""; }
+    .f-intake-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .f-intake-title h1 { margin: 0; font-size: 22px; letter-spacing: -.035em; }
+    .f-source { display: grid; grid-template-columns: 1fr 1fr; min-width: 148px; min-height: 36px; border: 1px solid var(--f-steel); }
+    .f-source span { display: grid; place-items: center; padding-inline: 8px; color: var(--f-muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .f-source .is-active { color: var(--f-light); background: var(--f-navy); }
+    .f-fields { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 8px; }
+    .f-field { display: grid; min-width: 0; gap: 4px; }
+    .f-field-wide { grid-column: 1 / -1; }
+    .f-field label { color: var(--f-muted); font-size: 11px; font-weight: 600; }
+    .f-field input { width: 100%; min-width: 0; min-height: 44px; padding: 0 10px; border: 1px solid var(--f-steel); border-radius: 0; color: var(--f-navy); background: var(--f-paper); font-size: 14px; }
+    .f-field input::placeholder { color: var(--f-muted); opacity: 1; }
+    .f-intake-actions { display: grid; grid-template-columns: 1fr 132px; align-items: center; gap: 10px; margin-top: 10px; }
+    .f-details { min-height: 44px; padding: 0; border: 0; color: var(--f-muted); background: transparent; text-align: left; font-size: 12px; }
+    .f-add { min-height: 44px; border: 0; border-radius: 0; color: var(--f-navy); background: var(--f-orange); font-weight: 700; }
+    .f-section-head { display: grid; min-height: 46px; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 0 16px; color: var(--f-light); background: var(--f-navy); }
+    .f-section-head h2 { margin: 0; font: 700 18px/1 "Barlow Condensed", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+    .f-section-head b { color: var(--f-orange); font: 600 11px/1 "IBM Plex Mono", monospace; }
+    .f-section-head a { color: var(--f-light); font-size: 12px; font-weight: 600; }
+    .f-job { display: grid; min-height: 91px; grid-template-columns: minmax(0, 1fr) 106px; gap: 10px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--f-steel); background: var(--f-surface); }
+    .f-job-copy { display: grid; min-width: 0; gap: 3px; }
+    .f-job-copy small { color: var(--f-orange); font-size: 11px; font-weight: 700; }
+    .f-job-copy strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+    .f-job-copy p { overflow: hidden; margin: 0; color: var(--f-muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .f-job-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .f-job-actions button { min-width: 0; min-height: 43px; padding: 0; border: 1px solid var(--f-navy); border-radius: 0; color: var(--f-navy); background: transparent; font-size: 11px; font-weight: 700; }
+    .f-job-actions button:last-child { color: var(--f-light); background: var(--f-navy); }
+    .f-active .f-job-copy small { color: var(--f-muted); }
+
+    /* G — phone notebook */
+    .concept-g {
+      --g-paper: oklch(98% .006 92);
+      --g-surface: oklch(94% .008 92);
+      --g-surface-2: oklch(90% .008 92);
+      --g-ink: oklch(18% .012 255);
+      --g-muted: oklch(45% .012 255);
+      --g-rule: oklch(84% .01 255);
+      --g-action: oklch(48% .16 257);
+      --g-urgent: oklch(55% .18 31);
+      --g-on-action: oklch(98% .006 92);
+      color: var(--g-ink);
+      background: var(--g-paper);
+      font-family: "Public Sans", sans-serif;
+    }
+    .g-topbar { display: grid; min-height: 56px; grid-template-columns: 1fr auto; align-items: center; padding: 0 16px; }
+    .g-brand { display: grid; gap: 1px; }
+    .g-brand strong { font-size: 18px; letter-spacing: -.03em; }
+    .g-brand small { color: var(--g-muted); font-size: 11px; }
+    .g-topbar button { min-height: 44px; padding: 0; border: 0; color: var(--g-action); background: transparent; font-size: 14px; font-weight: 600; }
+    .g-note { margin: 0 12px 12px; padding: 14px; border-radius: 12px; background: var(--g-surface); }
+    .g-note-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .g-note h1 { margin: 0; font-size: 22px; letter-spacing: -.035em; }
+    .g-source { display: flex; gap: 4px; padding: 3px; border-radius: 8px; background: var(--g-surface-2); }
+    .g-source span { display: grid; min-height: 32px; place-items: center; padding: 0 9px; border-radius: 6px; color: var(--g-muted); font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .g-source .is-active { color: var(--g-ink); background: var(--g-paper); }
+    .g-inputs { overflow: clip; border: 1px solid var(--g-rule); border-radius: 9px; background: var(--g-paper); }
+    .g-input { display: grid; min-height: 46px; grid-template-columns: 62px minmax(0, 1fr); align-items: center; padding: 0 11px; }
+    .g-input + .g-input { border-top: 1px solid var(--g-rule); }
+    .g-input label { color: var(--g-muted); font-size: 12px; }
+    .g-input input { min-width: 0; height: 44px; padding: 0; border: 0; color: var(--g-ink); background: transparent; font-size: 14px; outline: 0; }
+    .g-input input::placeholder { color: var(--g-muted); opacity: .8; }
+    .g-note-actions { display: grid; grid-template-columns: 1fr 128px; align-items: center; gap: 10px; margin-top: 10px; }
+    .g-details { min-height: 44px; padding: 0 4px; border: 0; color: var(--g-action); background: transparent; text-align: left; font-size: 12px; font-weight: 600; }
+    .g-add { min-height: 44px; border: 0; border-radius: 8px; color: var(--g-on-action); background: var(--g-action); font-weight: 700; }
+    .g-list-head { display: grid; min-height: 47px; grid-template-columns: 1fr auto; align-items: center; padding: 0 16px; }
+    .g-list-head h2 { margin: 0; font-size: 19px; letter-spacing: -.035em; }
+    .g-list-head h2 span { margin-left: 4px; color: var(--g-muted); font-size: 13px; font-weight: 500; }
+    .g-list-head a { color: var(--g-action); font-size: 13px; font-weight: 600; }
+    .g-item { display: grid; min-height: 88px; grid-template-columns: 10px minmax(0, 1fr) 100px; gap: 8px; align-items: center; padding: 8px 16px 8px 12px; border-top: 1px solid var(--g-rule); background: var(--g-paper); }
+    .g-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--g-urgent); }
+    .g-copy { display: grid; min-width: 0; gap: 2px; }
+    .g-copy small { color: var(--g-urgent); font-size: 11px; font-weight: 600; }
+    .g-copy strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+    .g-copy p { overflow: hidden; margin: 0; color: var(--g-muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .g-item-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .g-item-actions button { min-width: 0; min-height: 42px; padding: 0; border: 0; border-radius: 7px; color: var(--g-action); background: var(--g-surface); font-size: 11px; font-weight: 700; }
+    .g-item-actions button:last-child { color: var(--g-on-action); background: var(--g-action); }
+    .g-active .g-dot { background: var(--g-rule); }
+
+    /* H — monochrome native, no app-blue and no floating dashboard cards */
+    .concept-h {
+      --h-paper: oklch(96.5% .006 85);
+      --h-surface: oklch(99% .004 85);
+      --h-ink: oklch(18% .012 255);
+      --h-muted: oklch(46% .01 255);
+      --h-rule: oklch(82% .008 255);
+      --h-urgent: oklch(48% .13 34);
+      --h-on-ink: oklch(98% .004 85);
+      color: var(--h-ink);
+      background: var(--h-paper);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .h-top { display: grid; min-height: 54px; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid var(--h-rule); background: var(--h-surface); }
+    .h-top strong { font-size: 17px; letter-spacing: -.025em; }
+    .h-top span { color: var(--h-muted); font-size: 12px; }
+    .h-top button { min-height: 44px; padding: 0; border: 0; color: var(--h-ink); background: transparent; font-size: 13px; font-weight: 600; }
+    .h-compose { padding: 14px 16px 13px; border-bottom: 7px solid var(--h-paper); background: var(--h-surface); }
+    .h-compose-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+    .h-compose h1 { margin: 0; font-size: 22px; letter-spacing: -.035em; }
+    .h-mode { display: flex; gap: 15px; }
+    .h-mode span { min-height: 30px; padding-top: 7px; border-bottom: 2px solid transparent; color: var(--h-muted); font-size: 12px; white-space: nowrap; }
+    .h-mode .is-active { border-color: var(--h-ink); color: var(--h-ink); font-weight: 600; }
+    .h-fields { border-top: 1px solid var(--h-rule); }
+    .h-field { display: grid; min-height: 47px; grid-template-columns: 72px minmax(0, 1fr); align-items: center; border-bottom: 1px solid var(--h-rule); }
+    .h-field label { color: var(--h-muted); font-size: 12px; }
+    .h-field input { min-width: 0; height: 45px; padding: 0; border: 0; color: var(--h-ink); background: transparent; font-size: 14px; outline: 0; }
+    .h-field input::placeholder { color: var(--h-muted); opacity: .78; }
+    .h-compose-actions { display: grid; grid-template-columns: 1fr 128px; gap: 12px; align-items: center; margin-top: 10px; }
+    .h-compose-actions button { min-height: 44px; }
+    .h-details { padding: 0; border: 0; color: var(--h-muted); background: transparent; text-align: left; font-size: 12px; }
+    .h-add { border: 0; border-radius: 6px; color: var(--h-on-ink); background: var(--h-ink); font-weight: 650; }
+    .h-head { display: grid; min-height: 44px; grid-template-columns: 1fr auto; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--h-rule); }
+    .h-head h2 { margin: 0; font-size: 17px; letter-spacing: -.025em; }
+    .h-head h2 span { margin-left: 4px; color: var(--h-muted); font-size: 12px; font-weight: 500; }
+    .h-head a { color: var(--h-ink); font-size: 12px; font-weight: 600; }
+    .h-job { display: grid; min-height: 82px; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--h-rule); background: var(--h-surface); }
+    .h-copy { display: grid; min-width: 0; gap: 2px; }
+    .h-copy small { color: var(--h-urgent); font-size: 11px; font-weight: 600; }
+    .h-copy strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+    .h-copy p { overflow: hidden; margin: 0; color: var(--h-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .h-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .h-actions button { min-width: 0; min-height: 42px; padding: 0; border: 0; border-radius: 5px; color: var(--h-ink); background: var(--h-paper); font-size: 11px; font-weight: 650; }
+    .h-actions button:first-child { color: var(--h-on-ink); background: var(--h-ink); }
+    .h-active .h-copy small { color: var(--h-muted); }
+
+    /* I — call-capture first; the need is the main thought */
+    .concept-i {
+      --i-paper: oklch(97% .011 82);
+      --i-surface: oklch(99% .006 82);
+      --i-ink: oklch(19% .012 58);
+      --i-muted: oklch(46% .012 58);
+      --i-rule: oklch(83% .014 82);
+      --i-urgent: oklch(49% .14 34);
+      --i-highlight: oklch(92% .03 82);
+      --i-on-ink: oklch(98% .006 82);
+      color: var(--i-ink);
+      background: var(--i-paper);
+      font-family: "IBM Plex Sans", sans-serif;
+    }
+    .i-top { display: grid; min-height: 54px; grid-template-columns: 1fr auto; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--i-rule); }
+    .i-brand { display: flex; align-items: baseline; gap: 8px; }
+    .i-brand strong { font-size: 17px; letter-spacing: -.025em; }
+    .i-brand span { color: var(--i-muted); font-size: 11px; }
+    .i-top button { min-height: 44px; padding: 0; border: 0; color: var(--i-ink); background: transparent; font-size: 13px; font-weight: 600; }
+    .i-capture { padding: 14px 16px 13px; border-bottom: 7px solid var(--i-rule); background: var(--i-surface); }
+    .i-capture-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .i-capture h1 { margin: 0; font-size: 21px; letter-spacing: -.035em; }
+    .i-switch { min-height: 38px; padding: 0 10px; border: 1px solid var(--i-rule); border-radius: 6px; color: var(--i-ink); background: transparent; font-size: 11px; font-weight: 600; }
+    .i-need { display: grid; gap: 5px; }
+    .i-need label, .i-person-field label { color: var(--i-muted); font-size: 11px; font-weight: 600; }
+    .i-need input { min-height: 54px; padding: 0 12px; border: 1px solid var(--i-rule); border-radius: 7px; color: var(--i-ink); background: var(--i-paper); font-size: 16px; }
+    .i-need input::placeholder, .i-person-field input::placeholder { color: var(--i-muted); opacity: .8; }
+    .i-person { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 9px; margin-top: 9px; }
+    .i-person-field { display: grid; min-width: 0; gap: 4px; }
+    .i-person-field input { min-width: 0; min-height: 43px; padding: 0 10px; border: 0; border-bottom: 1px solid var(--i-rule); color: var(--i-ink); background: transparent; font-size: 13px; }
+    .i-capture-actions { display: grid; grid-template-columns: 1fr 128px; align-items: center; gap: 12px; margin-top: 8px; }
+    .i-capture-actions button { min-height: 43px; }
+    .i-details { padding: 0; border: 0; color: var(--i-muted); background: transparent; text-align: left; font-size: 11px; }
+    .i-add { border: 0; border-radius: 6px; color: var(--i-on-ink); background: var(--i-ink); font-weight: 700; }
+    .i-queue-head { display: grid; min-height: 43px; grid-template-columns: 1fr auto; align-items: center; padding: 0 16px; }
+    .i-queue-head h2 { margin: 0; font-size: 17px; letter-spacing: -.025em; }
+    .i-queue-head h2 span { color: var(--i-muted); font-size: 12px; font-weight: 500; }
+    .i-queue-head a { color: var(--i-ink); font-size: 12px; font-weight: 600; }
+    .i-next { margin: 0 10px 8px; padding: 12px 14px; border: 1px solid var(--i-rule); border-radius: 8px; background: var(--i-highlight); }
+    .i-next-label { color: var(--i-urgent); font-size: 11px; font-weight: 700; }
+    .i-next h3 { margin: 3px 0 0; font-size: 19px; letter-spacing: -.035em; }
+    .i-next p { margin: 2px 0 10px; color: var(--i-muted); font-size: 13px; }
+    .i-next-actions { display: grid; grid-template-columns: 1.25fr .75fr; gap: 7px; }
+    .i-next-actions button { min-height: 44px; border: 0; border-radius: 6px; color: var(--i-on-ink); background: var(--i-ink); font-size: 12px; font-weight: 700; }
+    .i-next-actions button:last-child { border: 1px solid var(--i-rule); color: var(--i-ink); background: var(--i-surface); }
+    .i-compact { display: grid; min-height: 63px; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 16px; border-top: 1px solid var(--i-rule); }
+    .i-compact-copy { display: grid; min-width: 0; gap: 1px; }
+    .i-compact-copy small { color: var(--i-urgent); font-size: 10px; font-weight: 600; }
+    .i-compact-copy strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .i-compact-copy p { overflow: hidden; margin: 0; color: var(--i-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .i-compact-actions { display: flex; gap: 5px; }
+    .i-compact-actions button { min-height: 42px; min-width: 44px; padding: 0 6px; border: 0; border-radius: 5px; color: var(--i-ink); background: var(--i-highlight); font-size: 10px; font-weight: 650; }
+    .i-active { border-top: 7px solid var(--i-rule); }
+
+    /* J — focus queue; only the selected job expands */
+    .concept-j {
+      --j-paper: oklch(97% .008 92);
+      --j-surface: oklch(99% .004 92);
+      --j-ink: oklch(17% .01 255);
+      --j-muted: oklch(45% .01 255);
+      --j-rule: oklch(84% .009 255);
+      --j-focus: oklch(92% .055 94);
+      --j-alert: oklch(46% .13 38);
+      --j-on-ink: oklch(98% .004 92);
+      color: var(--j-ink);
+      background: var(--j-paper);
+      font-family: "IBM Plex Sans", sans-serif;
+    }
+    .j-top { display: grid; min-height: 54px; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px; padding: 0 16px; background: var(--j-surface); }
+    .j-top strong { font-size: 17px; letter-spacing: -.025em; }
+    .j-top span { color: var(--j-muted); font-size: 11px; }
+    .j-top button { min-height: 44px; padding: 0; border: 0; color: var(--j-ink); background: transparent; font-size: 13px; font-weight: 600; }
+    .j-compose { padding: 12px 16px 12px; border-block: 1px solid var(--j-rule); background: var(--j-surface); }
+    .j-compose-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+    .j-compose h1 { margin: 0; font-size: 20px; letter-spacing: -.035em; }
+    .j-modes { display: flex; gap: 12px; color: var(--j-muted); font-size: 11px; }
+    .j-modes .is-active { color: var(--j-ink); font-weight: 700; }
+    .j-fields { overflow: clip; border: 1px solid var(--j-rule); border-radius: 6px; }
+    .j-field { display: grid; min-height: 43px; grid-template-columns: 66px minmax(0, 1fr); align-items: center; padding: 0 10px; }
+    .j-field + .j-field { border-top: 1px solid var(--j-rule); }
+    .j-field label { color: var(--j-muted); font-size: 11px; }
+    .j-field input { min-width: 0; height: 41px; padding: 0; border: 0; color: var(--j-ink); background: transparent; font-size: 13px; outline: 0; }
+    .j-field input::placeholder { color: var(--j-muted); opacity: .8; }
+    .j-compose-actions { display: grid; grid-template-columns: 1fr 126px; align-items: center; gap: 12px; margin-top: 8px; }
+    .j-compose-actions button { min-height: 42px; }
+    .j-details { padding: 0; border: 0; color: var(--j-muted); background: transparent; text-align: left; font-size: 11px; }
+    .j-add { border: 0; border-radius: 5px; color: var(--j-on-ink); background: var(--j-ink); font-weight: 700; }
+    .j-head { display: grid; min-height: 42px; grid-template-columns: 1fr auto; align-items: center; padding: 0 16px; }
+    .j-head h2 { margin: 0; font-size: 17px; letter-spacing: -.03em; }
+    .j-head h2 span { color: var(--j-muted); font-size: 11px; font-weight: 500; }
+    .j-head a { color: var(--j-ink); font-size: 11px; font-weight: 600; }
+    .j-selected { margin: 0 10px 6px; padding: 11px 13px; border-radius: 7px; background: var(--j-focus); }
+    .j-selected small { color: var(--j-alert); font-size: 10px; font-weight: 700; }
+    .j-selected h3 { margin: 3px 0 0; font-size: 18px; letter-spacing: -.035em; }
+    .j-selected p { margin: 1px 0 9px; color: var(--j-muted); font-size: 12px; }
+    .j-selected-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: min(100%, 230px); margin-inline: auto; }
+    .j-selected-actions button { min-height: 43px; border: 1px solid var(--j-ink); border-radius: 5px; color: var(--j-ink); background: transparent; font-size: 11px; font-weight: 700; }
+    .j-selected-actions button:first-child { color: var(--j-on-ink); background: var(--j-ink); }
+    .j-line { display: grid; min-height: 61px; grid-template-columns: 38px minmax(0, 1fr) 84px; align-items: center; gap: 7px; padding: 6px 16px; border-top: 1px solid var(--j-rule); background: var(--j-surface); }
+    .j-time { color: var(--j-alert); font: 600 10px/1 "IBM Plex Mono", monospace; }
+    .j-line-copy { display: grid; min-width: 0; gap: 1px; }
+    .j-line-copy strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .j-line-copy p { overflow: hidden; margin: 0; color: var(--j-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .j-line-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .j-line-actions button { min-width: 0; min-height: 40px; padding: 0; border: 0; border-radius: 4px; color: var(--j-ink); background: var(--j-paper); font-size: 9px; font-weight: 700; }
+    .j-active { border-top: 6px solid var(--j-rule); }
+
+    @media (max-width: 339px) {
+      .d-topbar, .e-topbar, .f-topbar, .g-topbar { padding-inline: 12px; }
+      .d-composer, .d-queue-head, .e-ticket, .e-ledger-head, .f-intake, .f-section-head { padding-inline: 12px; }
+      .d-row, .e-entry, .f-job, .g-item { padding-inline: 12px; }
+      .d-fields, .f-fields { grid-template-columns: 1fr; }
+      .d-field-wide, .f-field-wide { grid-column: auto; }
+      .d-row, .e-entry, .f-job, .g-item { grid-template-columns: minmax(0, 1fr); }
+      .d-row-actions, .e-entry-actions, .f-job-actions, .g-item-actions { width: min(100%, 220px); justify-self: center; }
+      .g-item { grid-template-columns: 10px minmax(0, 1fr); }
+      .g-item-actions { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body data-view="d">
+  <main class="concept concept-d">
+    <header class="d-topbar"><div class="d-brand">MCSW Jobs</div><span class="d-person">Philippe</span><button class="d-more">More</button></header>
+    <section class="d-composer">
+      <div class="d-composer-head"><h1>Add job</h1><div class="d-source"><span class="is-active">Phone call</span><span>Walk-in</span></div></div>
+      <div class="d-fields"><label class="d-field"><span>Name or company</span><input placeholder="Nashville Trailer Co." /></label><label class="d-field"><span>Phone</span><input placeholder="615 555 0198" /></label><label class="d-field d-field-wide"><span>What do they need?</span><input placeholder="Gate, trailer, repair, fabrication" /></label></div>
+      <div class="d-composer-actions"><button class="d-details">More details</button><button class="d-add">Add job</button></div>
+    </section>
+    <section><header class="d-queue-head"><h2>Needs attention</h2><span class="d-count">3</span><span class="d-view">View all</span></header>
+      <article class="d-row"><div class="d-row-meta"><span class="d-reason">Needs a call · 12m</span><strong>Nashville Trailer Co.</strong><p>Trailer tongue repair</p></div><div class="d-row-actions"><button>Call</button><button class="d-open">Open</button></div></article>
+      <article class="d-row"><div class="d-row-meta"><span class="d-reason">New files · 41m</span><strong>Davis</strong><p>Custom gate measurements</p></div><div class="d-row-actions"><button>Call</button><button class="d-open">Open</button></div></article>
+      <article class="d-row"><div class="d-row-meta"><span class="d-reason">Promise overdue · 2h</span><strong>Stone River Farm</strong><p>Loader bracket</p></div><div class="d-row-actions"><button>Call</button><button class="d-open">Open</button></div></article>
+    </section>
+    <section class="d-active"><header class="d-queue-head"><h2>Active jobs</h2><span class="d-count">6</span><span class="d-view">View all</span></header><article class="d-row"><div class="d-row-meta"><span class="d-reason">In progress</span><strong>Anderson Equipment</strong><p>Skid steer quick attach plate</p></div><div class="d-row-actions"><button>Call</button><button class="d-open">Open</button></div></article></section>
+  </main>
+
+  <main class="concept concept-e">
+    <header class="e-topbar"><div class="e-brand"><strong>MCSW Jobs</strong><small>Shop record</small></div><div class="e-user"><span>Philippe</span><button>More</button></div></header>
+    <section class="e-ticket"><div class="e-ticket-head"><h1>New job</h1><div class="e-source"><span class="is-active">● Phone</span><span>○ Walk-in</span></div></div>
+      <div class="e-form"><div class="e-line"><label>Name</label><input placeholder="Name or company" /></div><div class="e-line"><label>Phone</label><input placeholder="(615) 555-0198" /></div><div class="e-line"><label>Need</label><input placeholder="Gate, trailer, repair, fabrication" /></div></div>
+      <div class="e-ticket-actions"><button class="e-details">More details</button><button class="e-save">Add job</button></div>
+    </section>
+    <section class="e-ledger"><header class="e-ledger-head"><h2>Needs attention <span>03</span></h2><a>View all</a></header>
+      <article class="e-entry"><div class="e-entry-copy"><small>NEEDS A CALL · 12 MIN</small><strong>Nashville Trailer Co.</strong><p>Trailer tongue repair</p></div><div class="e-entry-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="e-entry"><div class="e-entry-copy"><small>NEW FILES · 41 MIN</small><strong>Davis</strong><p>Custom gate measurements</p></div><div class="e-entry-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="e-entry"><div class="e-entry-copy"><small>PROMISE OVERDUE · 2 HR</small><strong>Stone River Farm</strong><p>Loader bracket</p></div><div class="e-entry-actions"><button>Call</button><button>Open</button></div></article>
+    </section>
+    <section class="e-ledger e-active"><header class="e-ledger-head"><h2>Active jobs <span>06</span></h2><a>View all</a></header><article class="e-entry"><div class="e-entry-copy"><small>IN PROGRESS</small><strong>Anderson Equipment</strong><p>Skid steer quick attach plate</p></div><div class="e-entry-actions"><button>Call</button><button>Open</button></div></article></section>
+  </main>
+
+  <main class="concept concept-f">
+    <header class="f-topbar"><div class="f-brand">MCSW Jobs</div><span class="f-person">Philippe</span><button class="f-more">More</button></header>
+    <section class="f-intake"><div class="f-intake-title"><h1>Add job</h1><div class="f-source"><span class="is-active">Phone call</span><span>Walk-in</span></div></div>
+      <div class="f-fields"><div class="f-field"><label>Name or company</label><input placeholder="Nashville Trailer Co." /></div><div class="f-field"><label>Phone</label><input placeholder="615 555 0198" /></div><div class="f-field f-field-wide"><label>What do they need?</label><input placeholder="Gate, trailer, repair, fabrication" /></div></div>
+      <div class="f-intake-actions"><button class="f-details">More details</button><button class="f-add">Add job</button></div>
+    </section>
+    <section><header class="f-section-head"><h2>Needs attention</h2><b>03</b><a>View all</a></header>
+      <article class="f-job"><div class="f-job-copy"><small>Needs a call · 12m</small><strong>Nashville Trailer Co.</strong><p>Trailer tongue repair</p></div><div class="f-job-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="f-job"><div class="f-job-copy"><small>New files · 41m</small><strong>Davis</strong><p>Custom gate measurements</p></div><div class="f-job-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="f-job"><div class="f-job-copy"><small>Promise overdue · 2h</small><strong>Stone River Farm</strong><p>Loader bracket</p></div><div class="f-job-actions"><button>Call</button><button>Open</button></div></article>
+    </section>
+    <section class="f-active"><header class="f-section-head"><h2>Active jobs</h2><b>06</b><a>View all</a></header><article class="f-job"><div class="f-job-copy"><small>In progress</small><strong>Anderson Equipment</strong><p>Skid steer quick attach plate</p></div><div class="f-job-actions"><button>Call</button><button>Open</button></div></article></section>
+  </main>
+
+  <main class="concept concept-g">
+    <header class="g-topbar"><div class="g-brand"><strong>MCSW Jobs</strong><small>Philippe</small></div><button>More</button></header>
+    <section class="g-note"><div class="g-note-head"><h1>Add job</h1><div class="g-source"><span class="is-active">Phone call</span><span>Walk-in</span></div></div>
+      <div class="g-inputs"><div class="g-input"><label>Name</label><input placeholder="Name or company" /></div><div class="g-input"><label>Phone</label><input placeholder="(615) 555-0198" /></div><div class="g-input"><label>Need</label><input placeholder="Gate, trailer, repair, fabrication" /></div></div>
+      <div class="g-note-actions"><button class="g-details">More details</button><button class="g-add">Add job</button></div>
+    </section>
+    <section><header class="g-list-head"><h2>Needs attention <span>3</span></h2><a>View all</a></header>
+      <article class="g-item"><span class="g-dot"></span><div class="g-copy"><small>Needs a call · 12m</small><strong>Nashville Trailer Co.</strong><p>Trailer tongue repair</p></div><div class="g-item-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="g-item"><span class="g-dot"></span><div class="g-copy"><small>New files · 41m</small><strong>Davis</strong><p>Custom gate measurements</p></div><div class="g-item-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="g-item"><span class="g-dot"></span><div class="g-copy"><small>Promise overdue · 2h</small><strong>Stone River Farm</strong><p>Loader bracket</p></div><div class="g-item-actions"><button>Call</button><button>Open</button></div></article>
+    </section>
+    <section class="g-active"><header class="g-list-head"><h2>Active jobs <span>6</span></h2><a>View all</a></header><article class="g-item"><span class="g-dot"></span><div class="g-copy"><small>In progress</small><strong>Anderson Equipment</strong><p>Skid steer quick attach plate</p></div><div class="g-item-actions"><button>Call</button><button>Open</button></div></article></section>
+  </main>
+
+  <main class="concept concept-h">
+    <header class="h-top"><strong>MCSW Jobs</strong><span>Philippe</span><button>More</button></header>
+    <section class="h-compose"><div class="h-compose-head"><h1>Add job</h1><div class="h-mode"><span class="is-active">Phone call</span><span>Walk-in</span></div></div>
+      <div class="h-fields"><div class="h-field"><label>Name</label><input placeholder="Name or company" /></div><div class="h-field"><label>Phone</label><input placeholder="(615) 555-0198" /></div><div class="h-field"><label>Need</label><input placeholder="Gate, trailer, repair, fabrication" /></div></div>
+      <div class="h-compose-actions"><button class="h-details">More details</button><button class="h-add">Add job</button></div>
+    </section>
+    <section><header class="h-head"><h2>Needs attention <span>3</span></h2><a>View all</a></header>
+      <article class="h-job"><div class="h-copy"><small>Needs a call · 12m</small><strong>Nashville Trailer Co.</strong><p>Trailer tongue repair</p></div><div class="h-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="h-job"><div class="h-copy"><small>New files · 41m</small><strong>Davis</strong><p>Custom gate measurements</p></div><div class="h-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="h-job"><div class="h-copy"><small>Promise overdue · 2h</small><strong>Stone River Farm</strong><p>Loader bracket</p></div><div class="h-actions"><button>Call</button><button>Open</button></div></article>
+    </section>
+    <section class="h-active"><header class="h-head"><h2>Active jobs <span>6</span></h2><a>View all</a></header><article class="h-job"><div class="h-copy"><small>In progress</small><strong>Anderson Equipment</strong><p>Skid steer quick attach plate</p></div><div class="h-actions"><button>Call</button><button>Open</button></div></article></section>
+  </main>
+
+  <main class="concept concept-i">
+    <header class="i-top"><div class="i-brand"><strong>MCSW Jobs</strong><span>Philippe</span></div><button>More</button></header>
+    <section class="i-capture"><div class="i-capture-head"><h1>New phone call</h1><button class="i-switch">Walk-in instead</button></div>
+      <label class="i-need"><span>What do they need?</span><input placeholder="Gate, trailer, repair, fabrication" /></label>
+      <div class="i-person"><label class="i-person-field"><span>Name or company</span><input placeholder="Nashville Trailer Co." /></label><label class="i-person-field"><span>Phone</span><input placeholder="615 555 0198" /></label></div>
+      <div class="i-capture-actions"><button class="i-details">More details</button><button class="i-add">Add job</button></div>
+    </section>
+    <section><header class="i-queue-head"><h2>Needs attention <span>3</span></h2><a>View all</a></header>
+      <article class="i-next"><span class="i-next-label">Call next · waiting 12m</span><h3>Nashville Trailer Co.</h3><p>Trailer tongue repair</p><div class="i-next-actions"><button>Call now</button><button>Open job</button></div></article>
+      <article class="i-compact"><div class="i-compact-copy"><small>New files · 41m</small><strong>Davis</strong><p>Custom gate measurements</p></div><div class="i-compact-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="i-compact"><div class="i-compact-copy"><small>Promise overdue · 2h</small><strong>Stone River Farm</strong><p>Loader bracket</p></div><div class="i-compact-actions"><button>Call</button><button>Open</button></div></article>
+    </section>
+    <section class="i-active"><header class="i-queue-head"><h2>Active jobs <span>6</span></h2><a>View all</a></header><article class="i-compact"><div class="i-compact-copy"><small>In progress</small><strong>Anderson Equipment</strong><p>Skid steer quick attach plate</p></div><div class="i-compact-actions"><button>Call</button><button>Open</button></div></article></section>
+  </main>
+
+  <main class="concept concept-j">
+    <header class="j-top"><strong>MCSW Jobs</strong><span>Philippe</span><button>More</button></header>
+    <section class="j-compose"><div class="j-compose-head"><h1>Add job</h1><div class="j-modes"><span class="is-active">Phone call</span><span>Walk-in</span></div></div>
+      <div class="j-fields"><div class="j-field"><label>Name</label><input placeholder="Name or company" /></div><div class="j-field"><label>Phone</label><input placeholder="(615) 555-0198" /></div><div class="j-field"><label>Need</label><input placeholder="Gate, trailer, repair, fabrication" /></div></div>
+      <div class="j-compose-actions"><button class="j-details">More details</button><button class="j-add">Add job</button></div>
+    </section>
+    <section><header class="j-head"><h2>Needs attention <span>3</span></h2><a>View all</a></header>
+      <article class="j-selected"><small>Needs a call · 12m</small><h3>Nashville Trailer Co.</h3><p>Trailer tongue repair</p><div class="j-selected-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="j-line"><span class="j-time">41m</span><div class="j-line-copy"><strong>Davis</strong><p>Custom gate measurements</p></div><div class="j-line-actions"><button>Call</button><button>Open</button></div></article>
+      <article class="j-line"><span class="j-time">2h</span><div class="j-line-copy"><strong>Stone River Farm</strong><p>Loader bracket</p></div><div class="j-line-actions"><button>Call</button><button>Open</button></div></article>
+    </section>
+    <section class="j-active"><header class="j-head"><h2>Active jobs <span>6</span></h2><a>View all</a></header><article class="j-line"><span class="j-time">NOW</span><div class="j-line-copy"><strong>Anderson Equipment</strong><p>Skid steer quick attach plate</p></div><div class="j-line-actions"><button>Call</button><button>Open</button></div></article></section>
+  </main>
+  <script>
+    const view = new URLSearchParams(location.search).get("view") || "d";
+    document.body.dataset.view = ["d", "e", "f", "g", "h", "i", "j"].includes(view) ? view : "d";
+  </script>
+</body>
+</html>

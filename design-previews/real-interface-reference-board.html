@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Real interface reference board</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #ececec; color: #111; font-family: Arial, Helvetica, sans-serif; }
+    body { padding: 40px; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 2px solid #111; }
+    h1 { margin: 0; font-size: 30px; letter-spacing: -.035em; }
+    header p { max-width: 620px; margin: 0; color: #555; font-size: 15px; line-height: 1.45; }
+    .board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+    figure { display: grid; min-width: 0; grid-template-rows: 560px auto; margin: 0; border: 1px solid #b9b9b9; background: #fff; }
+    .capture { display: grid; overflow: hidden; place-items: center; padding: 14px; background: #f7f7f7; }
+    .capture img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+    figcaption { display: grid; gap: 5px; align-content: start; min-height: 105px; padding: 13px 14px 15px; border-top: 1px solid #d3d3d3; }
+    figcaption strong { font-size: 16px; }
+    figcaption span { color: #555; font-size: 12px; line-height: 1.35; }
+    figcaption a { width: fit-content; margin-top: 3px; color: #111; font-size: 12px; font-weight: 700; text-underline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Real shipped interfaces</h1>
+    <p>No generated concepts. Pick the product whose visual judgment feels closest—even if its function has nothing to do with CRM.</p>
+  </header>
+  <main class="board">
+    <figure>
+      <div class="capture"><img src="https://static.culturedcode.com/things/videos/2017-05-18-website-videos/2-today-iphone.png" alt="Things Today view" /></div>
+      <figcaption><strong>1 · Things</strong><span>Task focus · invisible complexity · whitespace</span><a href="https://culturedcode.com/things/features/">Open source</a></figcaption>
+    </figure>
+    <figure>
+      <div class="capture"><img src="https://images.ctfassets.net/2d5q1td6cyxq/64abFNB6GfQSQxpqWLA54Q/9e9239f3aa51521a2e16b45d8680a137/PD03905_-_USEN_Keypad_Entered.jpg" alt="Square point of sale keypad" /></div>
+      <figcaption><strong>2 · Square</strong><span>One transaction · huge clarity · merchant speed</span><a href="https://squareup.com/us/en/payments/tap-to-pay">Open source</a></figcaption>
+    </figure>
+    <figure>
+      <div class="capture"><img src="https://cdsassets.apple.com/live/7WUAS350/images/ios/ios-26-iphone-16-pro-reminders-app-new-reminder.png" alt="Apple Reminders new reminder screen" /></div>
+      <figcaption><strong>3 · Apple Reminders</strong><span>Native form · progressive detail · calm controls</span><a href="https://support.apple.com/en-us/102484">Open source</a></figcaption>
+    </figure>
+    <figure>
+      <div class="capture"><img src="https://cdn.macstories.net/8b2bce7d-412d-4e35-ba37-641cc2451b4a-1605193588712-1637679108902.png" alt="Craft documents screen" /></div>
+      <figcaption><strong>4 · Craft</strong><span>Editorial rhythm · spatial hierarchy · tactile navigation</span><a href="https://www.macstories.net/reviews/craft-review-a-powerful-native-notes-and-collaboration-app/">Open source</a></figcaption>
+    </figure>
+    <figure>
+      <div class="capture"><img src="https://help.getjobber.com/hc/article_attachments/38642608873111" alt="Jobber mobile home screen" /></div>
+      <figcaption><strong>5 · Jobber</strong><span>Field-service hierarchy · owner overview · action queues</span><a href="https://help.getjobber.com/hc/en-us/articles/38642097101591-Receptionist-in-the-Jobber-App">Open source</a></figcaption>
+    </figure>
+    <figure>
+      <div class="capture"><img src="https://support.shopmonkey.io/hc/article_attachments/38741954168468" alt="Shopmonkey technician dashboard" /></div>
+      <figcaption><strong>6 · Shopmonkey</strong><span>Technician focus · today-first · practical density</span><a href="https://support.shopmonkey.io/hc/en-us/articles/38744313956884-Shopmonkey-for-Techs-Mobile-App">Open source</a></figcaption>
+    </figure>
+  </main>
+</body>
+</html>

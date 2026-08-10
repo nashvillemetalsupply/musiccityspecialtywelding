@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { servicePageBySlug, servicePages } from "@/lib/service-pages"
+import { getShopPhone } from "@/lib/shop-contact"
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -36,6 +37,7 @@ export default async function ServicePage({ params }: PageProps) {
   const { slug } = await params
   const service = servicePageBySlug.get(slug)
   if (!service) notFound()
+  const shopPhone = getShopPhone()
 
   const schema = {
     "@context": "https://schema.org",
@@ -55,10 +57,11 @@ export default async function ServicePage({ params }: PageProps) {
 
         <section className="ms-subhero">
           <div className="ms-subhero-copy">
+            <span className="ms-subhero-eyebrow">{service.eyebrow}</span>
             <h1 className="ms-display">{service.title}</h1>
             <p>{service.intro}</p>
             <div className="ms-hero-actions">
-              <a className="ms-button ms-button-primary" href="tel:6158104910"><Phone aria-hidden="true" />Call 24/7</a>
+              <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" />Call 24/7</a>
               <Link className="ms-text-link" href="/#contact">Show us the job <ArrowUpRight aria-hidden="true" /></Link>
             </div>
           </div>
@@ -87,6 +90,12 @@ export default async function ServicePage({ params }: PageProps) {
           <ul>{service.details.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
 
+        <aside className="ms-subglass">
+          <div><span>Your private Customer Page</span><strong>No portal. No password. No chasing.</strong></div>
+          <p>Once the job is active, one private link carries the promise, live status, approved progress photos, and paperwork.</p>
+          <Link href="/#job-glass">See how it works <ArrowUpRight aria-hidden="true" /></Link>
+        </aside>
+
         <section className="ms-subfaq">
           <h2 className="ms-display">Straight answers.</h2>
           <div>
@@ -103,13 +112,13 @@ export default async function ServicePage({ params }: PageProps) {
           <h2 className="ms-display">Tell us what the metal is doing.</h2>
           <div>
             <p>Photos. Location. Timing. The honest version of what happened.</p>
-            <a href="tel:6158104910"><small>Open 24/7</small>(615) 810-4910</a>
+            <a href={shopPhone.href}><small>Open 24/7</small>{shopPhone.display}</a>
             <Link href="/#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
           </div>
         </section>
       </main>
       <Footer />
-      <MobileQuickActions quoteHref="/#contact" />
+      <MobileQuickActions quoteHref="/#contact" phoneHref={shopPhone.href} />
     </>
   )
 }

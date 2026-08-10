@@ -31,3 +31,5 @@ next-env.d.ts
 /tmp/
 /lighthouse*.json
 /GROWTH_GAPS_AUDIT_*.md
+/.preview-*.log
+/.tmp-*.log

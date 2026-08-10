@@ -1,0 +1,2921 @@
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
+ * Hallmark · macrostructure: Comparison Matrix · component decision aid
+ * genre: modern-minimal · theme: reference study + behavior-first workflow exploration
+ * purpose: compare twenty-four surface, type, and structural systems before production design · motion: press feedback only
+ * contrast: pass (46–50) · responsive: pass (36, 59, 61–69) · slop: pass (1–69) · type: comparison-only exception (39; each concept uses ≤2 faces)
+ */
+
+html:has(.jobs-directions-page),
+body:has(.jobs-directions-page) {
+  overflow-x: clip;
+}
+
+html:has(.jobs-directions-page) {
+  --chooser-paper: oklch(97% 0.003 255);
+  --chooser-ink: oklch(17% 0.008 255);
+  --chooser-muted: oklch(43% 0.008 255);
+  --chooser-rule: oklch(84% 0.005 255);
+  --chooser-font: var(--font-ms-sans), sans-serif;
+  --chooser-font-mono: var(--font-ms-mono), monospace;
+}
+
+body:has(.jobs-directions-page) {
+  margin: 0;
+  background: var(--chooser-paper);
+}
+
+body:has(.jobs-directions-page) nextjs-portal {
+  display: none !important;
+}
+
+.jobs-directions-page {
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.3125rem;
+  --radius-lg: 0.5rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro: 100ms;
+  min-height: 100dvh;
+  padding: var(--space-xl) var(--space-md) var(--space-2xl);
+  background: var(--chooser-paper);
+  color: var(--chooser-ink);
+  font-family: var(--chooser-font);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.jobs-directions-page,
+.jobs-directions-page * {
+  box-sizing: border-box;
+}
+
+.jobs-directions-page button {
+  font: inherit;
+  white-space: nowrap;
+}
+
+.jobs-directions-page button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.jobs-directions-page button:active {
+  transform: translateY(1px);
+}
+
+.jobs-directions-page button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.jobs-directions-intro {
+  width: min(100%, 82rem);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.jobs-directions-intro p,
+.jobs-directions-intro h1,
+.jobs-directions-intro span,
+.jobs-direction-label h2,
+.jobs-direction-label p {
+  margin: 0;
+}
+
+.jobs-directions-intro p {
+  color: var(--chooser-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.jobs-directions-intro h1 {
+  min-width: 0;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+.jobs-directions-intro > span {
+  color: var(--chooser-muted);
+  font-size: 0.9375rem;
+}
+
+.jobs-directions-grid {
+  width: min(100%, 82rem);
+  margin: var(--space-xl) auto 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-xl);
+}
+
+.jobs-directions-page.jobs-directions-page--capture {
+  min-height: auto;
+  padding: var(--space-md);
+}
+
+.jobs-directions-page--capture .jobs-directions-grid {
+  width: min(100%, 22.375rem);
+  margin: 0 auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.jobs-direction-choice {
+  min-width: 0;
+  scroll-margin-top: var(--space-md);
+  display: grid;
+  align-content: start;
+  gap: var(--space-md);
+}
+
+.jobs-direction-label {
+  min-height: 3rem;
+  display: block;
+}
+
+.jobs-direction-label h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.jobs-direction-label h2 span {
+  color: var(--chooser-muted);
+  font-family: var(--chooser-font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-direction-label p {
+  margin-top: var(--space-2xs);
+  color: var(--chooser-muted);
+  font-size: 0.875rem;
+}
+
+.jobs-direction {
+  --dir-paper: oklch(15% 0.004 255);
+  --dir-paper-2: oklch(18% 0.004 255);
+  --dir-paper-3: oklch(21% 0.004 255);
+  --dir-ink: oklch(96% 0.003 255);
+  --dir-muted: oklch(72% 0.003 255);
+  --dir-rule: oklch(30% 0.003 255);
+  --dir-rule-strong: oklch(40% 0.003 255);
+  --dir-accent: oklch(52% 0.13 164);
+  --dir-accent-ink: oklch(98% 0.002 255);
+  --dir-focus-inner: var(--dir-ink);
+  --dir-focus-outer: var(--dir-paper);
+  --dir-font-display: var(--font-ms-sans), sans-serif;
+  --dir-font-body: var(--font-ms-sans), sans-serif;
+  min-width: 0;
+  overflow: clip;
+  border: 1px solid var(--dir-rule);
+  border-radius: var(--radius-lg);
+  background: var(--dir-paper);
+  color: var(--dir-ink);
+  font-family: var(--dir-font-body);
+}
+
+.jobs-direction--light {
+  --dir-paper: oklch(100% 0 0);
+  --dir-paper-2: oklch(97% 0.002 255);
+  --dir-paper-3: oklch(94% 0.003 255);
+  --dir-ink: oklch(17% 0.007 255);
+  --dir-muted: oklch(42% 0.006 255);
+  --dir-rule: oklch(86% 0.003 255);
+  --dir-rule-strong: oklch(70% 0.004 255);
+  --dir-accent: oklch(43% 0.14 25);
+  --dir-accent-ink: oklch(98% 0.002 255);
+}
+
+.jobs-direction--hybrid {
+  --dir-paper: oklch(94% 0.007 245);
+  --dir-paper-2: oklch(98% 0.003 245);
+  --dir-paper-3: oklch(90% 0.008 245);
+  --dir-ink: oklch(20% 0.018 245);
+  --dir-muted: oklch(43% 0.012 245);
+  --dir-rule: oklch(80% 0.009 245);
+  --dir-rule-strong: oklch(62% 0.011 245);
+  --dir-accent: oklch(45% 0.13 27);
+  --dir-accent-ink: oklch(97% 0.004 245);
+  --dir-dark: oklch(17% 0.018 245);
+  --dir-dark-2: oklch(21% 0.019 245);
+  --dir-dark-3: oklch(25% 0.019 245);
+  --dir-dark-ink: oklch(96% 0.005 245);
+  --dir-dark-muted: oklch(76% 0.008 245);
+  --dir-dark-rule: oklch(34% 0.014 245);
+  --dir-font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", serif;
+}
+
+.jobs-direction--signal-slab {
+  --dir-paper: oklch(100% 0 0);
+  --dir-paper-2: oklch(97% 0.004 250);
+  --dir-paper-3: oklch(93% 0.006 250);
+  --dir-ink: oklch(16% 0.012 250);
+  --dir-muted: oklch(40% 0.012 250);
+  --dir-rule: oklch(84% 0.008 250);
+  --dir-rule-strong: oklch(64% 0.012 250);
+  --dir-accent: oklch(55% 0.19 42);
+  --dir-accent-ink: oklch(99% 0.003 80);
+}
+
+.jobs-direction--ultramarine {
+  --dir-paper: oklch(96% 0.014 260);
+  --dir-paper-2: oklch(99% 0.004 260);
+  --dir-paper-3: oklch(91% 0.022 260);
+  --dir-ink: oklch(20% 0.035 265);
+  --dir-muted: oklch(42% 0.035 265);
+  --dir-rule: oklch(80% 0.025 260);
+  --dir-rule-strong: oklch(62% 0.05 265);
+  --dir-accent: oklch(93% 0.035 255);
+  --dir-accent-ink: oklch(28% 0.17 269);
+  --dir-blue: oklch(35% 0.2 269);
+  --dir-blue-2: oklch(39% 0.2 269);
+  --dir-blue-3: oklch(43% 0.19 269);
+  --dir-blue-ink: oklch(97% 0.015 255);
+  --dir-blue-muted: oklch(82% 0.05 255);
+  --dir-blue-rule: oklch(56% 0.14 269);
+}
+
+.jobs-direction--carbon {
+  --dir-paper: oklch(94% 0.004 250);
+  --dir-paper-2: oklch(98% 0.002 250);
+  --dir-paper-3: oklch(89% 0.007 250);
+  --dir-ink: oklch(15% 0.01 250);
+  --dir-muted: oklch(42% 0.012 250);
+  --dir-rule: oklch(78% 0.008 250);
+  --dir-rule-strong: oklch(60% 0.012 250);
+  --dir-accent: oklch(88% 0.18 102);
+  --dir-accent-ink: oklch(18% 0.025 105);
+  --dir-carbon: oklch(14% 0.012 250);
+  --dir-carbon-2: oklch(18% 0.012 250);
+  --dir-carbon-3: oklch(22% 0.014 250);
+  --dir-carbon-ink: oklch(96% 0.006 250);
+  --dir-carbon-muted: oklch(75% 0.01 250);
+  --dir-carbon-rule: oklch(33% 0.012 250);
+}
+
+.jobs-direction--redline {
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --dir-paper: oklch(99% 0.002 95);
+  --dir-paper-2: oklch(96% 0.004 95);
+  --dir-paper-3: oklch(91% 0.006 95);
+  --dir-ink: oklch(16% 0.01 25);
+  --dir-muted: oklch(39% 0.012 25);
+  --dir-rule: oklch(69% 0.008 25);
+  --dir-rule-strong: oklch(22% 0.012 25);
+  --dir-accent: oklch(47% 0.205 29);
+  --dir-accent-ink: oklch(99% 0.002 95);
+}
+
+.jobs-direction--bordeaux {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.75rem;
+  --dir-paper: oklch(97% 0.012 260);
+  --dir-paper-2: oklch(99% 0.004 260);
+  --dir-paper-3: oklch(92% 0.022 260);
+  --dir-ink: oklch(23% 0.065 13);
+  --dir-muted: oklch(42% 0.042 13);
+  --dir-rule: oklch(80% 0.025 265);
+  --dir-rule-strong: oklch(57% 0.052 13);
+  --dir-accent: oklch(35% 0.13 13);
+  --dir-accent-ink: oklch(98% 0.008 260);
+  --dir-wine: oklch(25% 0.09 13);
+  --dir-wine-2: oklch(30% 0.095 13);
+  --dir-wine-3: oklch(35% 0.095 13);
+  --dir-wine-ink: oklch(97% 0.012 260);
+  --dir-wine-muted: oklch(80% 0.035 260);
+  --dir-wine-rule: oklch(47% 0.075 13);
+}
+
+.jobs-direction--daymark {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --dir-paper: oklch(94% 0.125 102);
+  --dir-paper-2: oklch(98% 0.026 112);
+  --dir-paper-3: oklch(87% 0.13 102);
+  --dir-ink: oklch(22% 0.058 154);
+  --dir-muted: oklch(38% 0.052 154);
+  --dir-rule: oklch(62% 0.085 135);
+  --dir-rule-strong: oklch(28% 0.065 154);
+  --dir-accent: oklch(27% 0.075 154);
+  --dir-accent-ink: oklch(95% 0.13 102);
+  --dir-forest: oklch(22% 0.058 154);
+  --dir-forest-2: oklch(27% 0.06 154);
+  --dir-forest-3: oklch(32% 0.062 154);
+  --dir-forest-ink: oklch(95% 0.13 102);
+  --dir-forest-muted: oklch(83% 0.085 108);
+  --dir-forest-rule: oklch(43% 0.07 154);
+}
+
+.jobs-direction--sidecar {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.25rem;
+  --dir-paper: oklch(97% 0.017 246);
+  --dir-paper-2: oklch(100% 0 0);
+  --dir-paper-3: oklch(90% 0.04 246);
+  --dir-ink: oklch(20% 0.055 258);
+  --dir-muted: oklch(41% 0.045 258);
+  --dir-rule: oklch(76% 0.04 250);
+  --dir-rule-strong: oklch(32% 0.075 258);
+  --dir-accent: oklch(45% 0.19 265);
+  --dir-accent-ink: oklch(99% 0.004 246);
+  --dir-warm: oklch(55% 0.19 33);
+  --dir-warm-ink: oklch(99% 0.004 246);
+}
+
+.jobs-direction--caller-first {
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --dir-paper: oklch(97% 0.015 195);
+  --dir-paper-2: oklch(100% 0 0);
+  --dir-paper-3: oklch(91% 0.035 195);
+  --dir-ink: oklch(19% 0.045 210);
+  --dir-muted: oklch(40% 0.04 210);
+  --dir-rule: oklch(79% 0.035 198);
+  --dir-rule-strong: oklch(53% 0.055 205);
+  --dir-accent: oklch(47% 0.15 31);
+  --dir-accent-ink: oklch(99% 0.004 195);
+  --dir-deep: oklch(27% 0.072 210);
+  --dir-deep-2: oklch(31% 0.072 210);
+  --dir-deep-3: oklch(35% 0.072 210);
+  --dir-deep-ink: oklch(98% 0.01 195);
+  --dir-deep-muted: oklch(82% 0.04 195);
+  --dir-deep-rule: oklch(48% 0.06 210);
+}
+
+.jobs-direction--bands {
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --dir-paper: oklch(99% 0.003 245);
+  --dir-paper-2: oklch(89% 0.065 240);
+  --dir-paper-3: oklch(83% 0.09 240);
+  --dir-ink: oklch(19% 0.055 255);
+  --dir-muted: oklch(39% 0.045 255);
+  --dir-rule: oklch(66% 0.055 245);
+  --dir-rule-strong: oklch(28% 0.065 255);
+  --dir-accent: oklch(66% 0.185 45);
+  --dir-accent-ink: oklch(18% 0.055 255);
+  --dir-navy: oklch(19% 0.055 255);
+  --dir-navy-2: oklch(24% 0.06 255);
+  --dir-navy-3: oklch(29% 0.065 255);
+  --dir-navy-ink: oklch(98% 0.008 245);
+  --dir-navy-muted: oklch(80% 0.035 245);
+  --dir-navy-rule: oklch(42% 0.065 255);
+}
+
+.jobs-direction--inbox {
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.625rem;
+  --dir-paper: oklch(98% 0.008 250);
+  --dir-paper-2: oklch(94% 0.025 250);
+  --dir-paper-3: oklch(88% 0.045 250);
+  --dir-ink: oklch(19% 0.055 258);
+  --dir-muted: oklch(41% 0.045 258);
+  --dir-rule: oklch(76% 0.04 250);
+  --dir-rule-strong: oklch(49% 0.075 258);
+  --dir-accent: oklch(36% 0.19 265);
+  --dir-accent-ink: oklch(99% 0.004 250);
+  --dir-inbox: oklch(31% 0.17 265);
+  --dir-inbox-2: oklch(36% 0.17 265);
+  --dir-inbox-3: oklch(41% 0.16 265);
+  --dir-inbox-ink: oklch(98% 0.01 250);
+  --dir-inbox-muted: oklch(82% 0.055 250);
+  --dir-inbox-rule: oklch(51% 0.12 265);
+}
+
+.jobs-direction--twin-pane {
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --dir-paper: oklch(96% 0.004 255);
+  --dir-paper-2: oklch(100% 0 0);
+  --dir-paper-3: oklch(90% 0.006 255);
+  --dir-ink: oklch(16% 0.012 255);
+  --dir-muted: oklch(41% 0.012 255);
+  --dir-rule: oklch(76% 0.008 255);
+  --dir-rule-strong: oklch(28% 0.012 255);
+  --dir-accent: oklch(64% 0.19 45);
+  --dir-accent-ink: oklch(17% 0.02 45);
+  --dir-rail: oklch(15% 0.012 255);
+  --dir-rail-2: oklch(20% 0.014 255);
+  --dir-rail-3: oklch(25% 0.016 255);
+  --dir-rail-ink: oklch(97% 0.004 255);
+  --dir-rail-muted: oklch(76% 0.008 255);
+  --dir-rail-rule: oklch(36% 0.014 255);
+}
+
+.jobs-direction--command {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.5rem;
+  --dir-paper: oklch(98% 0.004 245);
+  --dir-paper-2: oklch(91% 0.055 205);
+  --dir-paper-3: oklch(84% 0.09 198);
+  --dir-ink: oklch(18% 0.035 250);
+  --dir-muted: oklch(40% 0.035 250);
+  --dir-rule: oklch(70% 0.04 220);
+  --dir-rule-strong: oklch(31% 0.05 245);
+  --dir-accent: oklch(76% 0.13 195);
+  --dir-accent-ink: oklch(17% 0.04 245);
+  --dir-command: oklch(20% 0.07 250);
+  --dir-command-2: oklch(25% 0.075 250);
+  --dir-command-3: oklch(30% 0.075 250);
+  --dir-command-ink: oklch(98% 0.008 245);
+  --dir-command-muted: oklch(80% 0.04 220);
+  --dir-command-rule: oklch(43% 0.07 245);
+}
+
+.jobs-direction--plainspoken {
+  --radius-sm: 0;
+  --radius-md: 0.25rem;
+  --radius-lg: 0;
+  --dir-paper: oklch(99% 0.002 255);
+  --dir-paper-2: oklch(96% 0.004 255);
+  --dir-paper-3: oklch(92% 0.006 255);
+  --dir-ink: oklch(18% 0.018 255);
+  --dir-muted: oklch(40% 0.018 255);
+  --dir-rule: oklch(82% 0.008 255);
+  --dir-rule-strong: oklch(55% 0.018 255);
+  --dir-accent: oklch(35% 0.12 254);
+  --dir-accent-ink: oklch(99% 0.002 255);
+}
+
+.jobs-direction--attention-strip {
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --dir-paper: oklch(99% 0.003 245);
+  --dir-paper-2: oklch(95% 0.009 245);
+  --dir-paper-3: oklch(90% 0.014 245);
+  --dir-ink: oklch(19% 0.025 250);
+  --dir-muted: oklch(41% 0.024 250);
+  --dir-rule: oklch(81% 0.014 245);
+  --dir-rule-strong: oklch(54% 0.03 250);
+  --dir-accent: oklch(47% 0.18 35);
+  --dir-accent-ink: oklch(99% 0.003 245);
+  --dir-strip: oklch(22% 0.036 250);
+  --dir-strip-2: oklch(27% 0.04 250);
+  --dir-strip-3: oklch(32% 0.042 250);
+  --dir-strip-ink: oklch(98% 0.006 245);
+  --dir-strip-muted: oklch(79% 0.025 245);
+  --dir-strip-rule: oklch(43% 0.04 250);
+}
+
+.jobs-direction--worklist {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.25rem;
+  --dir-paper: oklch(100% 0 0);
+  --dir-paper-2: oklch(96% 0.003 255);
+  --dir-paper-3: oklch(91% 0.005 255);
+  --dir-ink: oklch(15% 0.012 255);
+  --dir-muted: oklch(39% 0.012 255);
+  --dir-rule: oklch(80% 0.007 255);
+  --dir-rule-strong: oklch(50% 0.014 255);
+  --dir-accent: oklch(42% 0.17 28);
+  --dir-accent-ink: oklch(100% 0 0);
+}
+
+.jobs-direction--focus-capture {
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.625rem;
+  --dir-paper: oklch(99% 0.002 250);
+  --dir-paper-2: oklch(94% 0.008 250);
+  --dir-paper-3: oklch(89% 0.014 250);
+  --dir-ink: oklch(17% 0.025 250);
+  --dir-muted: oklch(40% 0.025 250);
+  --dir-rule: oklch(79% 0.015 250);
+  --dir-rule-strong: oklch(51% 0.03 250);
+  --dir-accent: oklch(44% 0.17 27);
+  --dir-accent-ink: oklch(99% 0.002 250);
+  --dir-focus: oklch(19% 0.04 250);
+  --dir-focus-2: oklch(24% 0.045 250);
+  --dir-focus-3: oklch(29% 0.045 250);
+  --dir-focus-ink: oklch(98% 0.006 250);
+  --dir-focus-muted: oklch(79% 0.022 250);
+  --dir-focus-rule: oklch(42% 0.04 250);
+}
+
+.jobs-direction--call-path {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --dir-paper: oklch(99% 0.002 255);
+  --dir-paper-2: oklch(96% 0.004 255);
+  --dir-paper-3: oklch(91% 0.007 255);
+  --dir-ink: oklch(16% 0.016 255);
+  --dir-muted: oklch(39% 0.016 255);
+  --dir-rule: oklch(79% 0.009 255);
+  --dir-rule-strong: oklch(49% 0.02 255);
+  --dir-accent: oklch(43% 0.18 24);
+  --dir-accent-ink: oklch(100% 0 0);
+}
+
+.jobs-direction--open-sheet {
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --dir-paper: oklch(100% 0 0);
+  --dir-paper-2: oklch(96% 0.007 250);
+  --dir-paper-3: oklch(90% 0.014 250);
+  --dir-ink: oklch(18% 0.03 255);
+  --dir-muted: oklch(40% 0.03 255);
+  --dir-rule: oklch(81% 0.014 250);
+  --dir-rule-strong: oklch(53% 0.035 255);
+  --dir-accent: oklch(38% 0.15 263);
+  --dir-accent-ink: oklch(100% 0 0);
+  --dir-sheet-back: oklch(19% 0.06 255);
+  --dir-sheet-back-2: oklch(24% 0.062 255);
+  --dir-sheet-back-3: oklch(29% 0.062 255);
+  --dir-sheet-back-ink: oklch(98% 0.008 250);
+  --dir-sheet-back-muted: oklch(79% 0.035 250);
+  --dir-sheet-back-rule: oklch(43% 0.055 255);
+  --dir-sheet-shadow: oklch(8% 0.03 255 / 0.2);
+}
+
+.jobs-direction--hybrid .jobs-direction-bar,
+.jobs-direction--hybrid .jobs-direction-intake {
+  --dir-paper: var(--dir-dark);
+  --dir-paper-2: var(--dir-dark-2);
+  --dir-paper-3: var(--dir-dark-3);
+  --dir-ink: var(--dir-dark-ink);
+  --dir-muted: var(--dir-dark-muted);
+  --dir-rule: var(--dir-dark-rule);
+  --dir-rule-strong: var(--dir-dark-rule);
+  background: var(--dir-dark);
+  color: var(--dir-dark-ink);
+}
+
+.jobs-direction--ultramarine .jobs-direction-bar,
+.jobs-direction--ultramarine .jobs-direction-intake {
+  --dir-paper: var(--dir-blue);
+  --dir-paper-2: var(--dir-blue-2);
+  --dir-paper-3: var(--dir-blue-3);
+  --dir-ink: var(--dir-blue-ink);
+  --dir-muted: var(--dir-blue-muted);
+  --dir-rule: var(--dir-blue-rule);
+  --dir-rule-strong: var(--dir-blue-rule);
+  background: var(--dir-blue);
+  color: var(--dir-blue-ink);
+}
+
+.jobs-direction--carbon .jobs-direction-bar,
+.jobs-direction--carbon .jobs-direction-intake {
+  --dir-paper: var(--dir-carbon);
+  --dir-paper-2: var(--dir-carbon-2);
+  --dir-paper-3: var(--dir-carbon-3);
+  --dir-ink: var(--dir-carbon-ink);
+  --dir-muted: var(--dir-carbon-muted);
+  --dir-rule: var(--dir-carbon-rule);
+  --dir-rule-strong: var(--dir-carbon-rule);
+  background: var(--dir-carbon);
+  color: var(--dir-carbon-ink);
+}
+
+.jobs-direction--bordeaux .jobs-direction-bar {
+  --dir-paper: var(--dir-wine);
+  --dir-paper-2: var(--dir-wine-2);
+  --dir-paper-3: var(--dir-wine-3);
+  --dir-ink: var(--dir-wine-ink);
+  --dir-muted: var(--dir-wine-muted);
+  --dir-rule: var(--dir-wine-rule);
+  --dir-rule-strong: var(--dir-wine-rule);
+  background: var(--dir-wine);
+  color: var(--dir-wine-ink);
+}
+
+.jobs-direction--daymark .jobs-direction-bar {
+  --dir-paper: var(--dir-forest);
+  --dir-paper-2: var(--dir-forest-2);
+  --dir-paper-3: var(--dir-forest-3);
+  --dir-ink: var(--dir-forest-ink);
+  --dir-muted: var(--dir-forest-muted);
+  --dir-rule: var(--dir-forest-rule);
+  --dir-rule-strong: var(--dir-forest-rule);
+  background: var(--dir-forest);
+  color: var(--dir-forest-ink);
+}
+
+.jobs-direction--caller-first .jobs-direction-caller {
+  --dir-paper: var(--dir-deep);
+  --dir-paper-2: var(--dir-deep-2);
+  --dir-paper-3: var(--dir-deep-3);
+  --dir-ink: var(--dir-deep-ink);
+  --dir-muted: var(--dir-deep-muted);
+  --dir-rule: var(--dir-deep-rule);
+  --dir-rule-strong: var(--dir-deep-rule);
+  background: var(--dir-deep);
+  color: var(--dir-deep-ink);
+}
+
+.jobs-direction--bands .jobs-direction-bar {
+  --dir-paper: var(--dir-navy);
+  --dir-paper-2: var(--dir-navy-2);
+  --dir-paper-3: var(--dir-navy-3);
+  --dir-ink: var(--dir-navy-ink);
+  --dir-muted: var(--dir-navy-muted);
+  --dir-rule: var(--dir-navy-rule);
+  --dir-rule-strong: var(--dir-navy-rule);
+  background: var(--dir-navy);
+  color: var(--dir-navy-ink);
+}
+
+.jobs-direction--inbox .jobs-direction-queue {
+  --dir-paper: var(--dir-inbox);
+  --dir-paper-2: var(--dir-inbox-2);
+  --dir-paper-3: var(--dir-inbox-3);
+  --dir-ink: var(--dir-inbox-ink);
+  --dir-muted: var(--dir-inbox-muted);
+  --dir-rule: var(--dir-inbox-rule);
+  --dir-rule-strong: var(--dir-inbox-rule);
+  background: var(--dir-inbox);
+  color: var(--dir-inbox-ink);
+}
+
+.jobs-direction--twin-pane .jobs-direction-bar,
+.jobs-direction--twin-pane .jobs-direction-queue {
+  --dir-paper: var(--dir-rail);
+  --dir-paper-2: var(--dir-rail-2);
+  --dir-paper-3: var(--dir-rail-3);
+  --dir-ink: var(--dir-rail-ink);
+  --dir-muted: var(--dir-rail-muted);
+  --dir-rule: var(--dir-rail-rule);
+  --dir-rule-strong: var(--dir-rail-rule);
+  background: var(--dir-rail);
+  color: var(--dir-rail-ink);
+}
+
+.jobs-direction--command .jobs-direction-bar {
+  --dir-paper: var(--dir-command);
+  --dir-paper-2: var(--dir-command-2);
+  --dir-paper-3: var(--dir-command-3);
+  --dir-ink: var(--dir-command-ink);
+  --dir-muted: var(--dir-command-muted);
+  --dir-rule: var(--dir-command-rule);
+  --dir-rule-strong: var(--dir-command-rule);
+  background: var(--dir-command);
+  color: var(--dir-command-ink);
+}
+
+.jobs-direction--attention-strip .jobs-direction-queue {
+  --dir-paper: var(--dir-strip);
+  --dir-paper-2: var(--dir-strip-2);
+  --dir-paper-3: var(--dir-strip-3);
+  --dir-ink: var(--dir-strip-ink);
+  --dir-muted: var(--dir-strip-muted);
+  --dir-rule: var(--dir-strip-rule);
+  --dir-rule-strong: var(--dir-strip-rule);
+  background: var(--dir-strip);
+  color: var(--dir-strip-ink);
+}
+
+.jobs-direction--focus-capture .jobs-direction-caller {
+  --dir-paper: var(--dir-focus);
+  --dir-paper-2: var(--dir-focus-2);
+  --dir-paper-3: var(--dir-focus-3);
+  --dir-ink: var(--dir-focus-ink);
+  --dir-muted: var(--dir-focus-muted);
+  --dir-rule: var(--dir-focus-rule);
+  --dir-rule-strong: var(--dir-focus-rule);
+  background: var(--dir-focus);
+  color: var(--dir-focus-ink);
+}
+
+.jobs-direction--open-sheet .jobs-direction-bar,
+.jobs-direction--open-sheet .jobs-direction-queue {
+  --dir-paper: var(--dir-sheet-back);
+  --dir-paper-2: var(--dir-sheet-back-2);
+  --dir-paper-3: var(--dir-sheet-back-3);
+  --dir-ink: var(--dir-sheet-back-ink);
+  --dir-muted: var(--dir-sheet-back-muted);
+  --dir-rule: var(--dir-sheet-back-rule);
+  --dir-rule-strong: var(--dir-sheet-back-rule);
+  background: var(--dir-sheet-back);
+  color: var(--dir-sheet-back-ink);
+}
+
+.jobs-direction--type-humanist {
+  --dir-font-display: var(--font-direction-familjen), sans-serif;
+  --dir-font-body: var(--font-direction-atkinson), sans-serif;
+}
+
+.jobs-direction--type-engineered {
+  --dir-font-display: var(--font-direction-geologica), sans-serif;
+  --dir-font-body: var(--font-direction-atkinson), sans-serif;
+}
+
+.jobs-direction--type-editorial {
+  --dir-font-display: var(--font-direction-newsreader), serif;
+  --dir-font-body: var(--font-direction-atkinson), sans-serif;
+}
+
+.jobs-direction--type-slab {
+  --dir-font-display: var(--font-direction-bitter), serif;
+  --dir-font-body: var(--font-direction-radio), sans-serif;
+}
+
+.jobs-direction--type-flared {
+  --dir-font-display: var(--font-direction-commissioner), sans-serif;
+  --dir-font-body: var(--font-direction-commissioner), sans-serif;
+  font-variation-settings: "FLAR" 18, "VOLM" 14;
+}
+
+.jobs-direction--type-recursive {
+  --dir-font-display: var(--font-direction-recursive), sans-serif;
+  --dir-font-body: var(--font-direction-recursive), sans-serif;
+  font-variation-settings: "CASL" 0.18, "CRSV" 0, "MONO" 0;
+}
+
+.jobs-direction--type-ledger {
+  --dir-font-display: var(--font-direction-azeret), monospace;
+  --dir-font-body: var(--font-direction-radio), sans-serif;
+}
+
+.jobs-direction--type-bordeaux {
+  --dir-font-display: var(--font-direction-alegreya), serif;
+  --dir-font-body: var(--font-direction-alegreya-sans), sans-serif;
+}
+
+.jobs-direction--type-daymark {
+  --dir-font-display: var(--font-direction-chivo), sans-serif;
+  --dir-font-body: var(--font-direction-karla), sans-serif;
+}
+
+.jobs-direction--type-sidecar {
+  --dir-font-display: var(--font-direction-barlow), sans-serif;
+  --dir-font-body: var(--font-direction-barlow), sans-serif;
+}
+
+.jobs-direction--type-caller-first {
+  --dir-font-display: var(--font-direction-fraunces), serif;
+  --dir-font-body: var(--font-direction-public-sans), sans-serif;
+}
+
+.jobs-direction--type-bands {
+  --dir-font-display: var(--font-direction-suse), sans-serif;
+  --dir-font-body: var(--font-direction-suse), sans-serif;
+}
+
+.jobs-direction--type-inbox {
+  --dir-font-display: var(--font-direction-lexend), sans-serif;
+  --dir-font-body: var(--font-direction-lexend), sans-serif;
+}
+
+.jobs-direction--type-twin-pane {
+  --dir-font-display: var(--font-direction-sometype), monospace;
+  --dir-font-body: var(--font-direction-atkinson), sans-serif;
+}
+
+.jobs-direction--type-command {
+  --dir-font-display: var(--font-direction-funnel-display), sans-serif;
+  --dir-font-body: var(--font-direction-funnel-sans), sans-serif;
+}
+
+.jobs-direction button {
+  min-height: 2.75rem;
+  border-radius: var(--radius-md);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.jobs-direction button:focus-visible {
+  outline-color: var(--dir-focus-inner);
+  box-shadow: 0 0 0 4px var(--dir-focus-outer);
+}
+
+.jobs-direction-bar {
+  min-height: 3.5rem;
+  padding-inline: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  border-bottom: 1px solid var(--dir-rule);
+}
+
+.jobs-direction-bar > strong {
+  font-family: var(--dir-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.jobs-direction-bar > div {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.jobs-direction-bar span {
+  color: var(--dir-muted);
+  font-size: 0.875rem;
+}
+
+.jobs-direction-bar button,
+.jobs-direction-row button {
+  width: 2.75rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--dir-rule-strong);
+  background: transparent;
+  color: var(--dir-ink);
+}
+
+.jobs-direction-intake {
+  padding: var(--space-md);
+  display: grid;
+  gap: var(--space-md);
+}
+
+.jobs-direction-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  border: 1px solid var(--dir-rule);
+  border-radius: var(--radius-lg);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction-tabs button {
+  min-width: 0;
+  padding-inline: var(--space-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--dir-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.jobs-direction-tabs button.is-active {
+  background: var(--dir-ink);
+  color: var(--dir-paper);
+}
+
+.jobs-direction-heading {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.jobs-direction-heading > span {
+  color: var(--dir-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-direction-heading h3 {
+  min-width: 0;
+  margin: 0;
+  color: var(--dir-ink);
+  font-family: var(--dir-font-display);
+  font-size: clamp(1.55rem, 7vw, 1.9rem);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.jobs-direction--light .jobs-direction-heading h3 {
+  font-weight: 600;
+}
+
+.jobs-direction--hybrid .jobs-direction-heading h3 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.jobs-direction--type-humanist .jobs-direction-heading h3 {
+  font-size: clamp(1.7rem, 7vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.jobs-direction--type-engineered .jobs-direction-heading h3 {
+  font-size: clamp(1.65rem, 7vw, 1.95rem);
+  font-weight: 600;
+  letter-spacing: -0.018em;
+}
+
+.jobs-direction--type-editorial .jobs-direction-heading h3 {
+  font-size: clamp(1.8rem, 7vw, 2.1rem);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.jobs-direction--type-slab .jobs-direction-heading h3 {
+  font-size: clamp(1.72rem, 7vw, 2.02rem);
+  font-weight: 600;
+  letter-spacing: -0.026em;
+}
+
+.jobs-direction--type-flared .jobs-direction-heading h3 {
+  font-size: clamp(1.72rem, 7vw, 2.02rem);
+  font-variation-settings: "FLAR" 72, "VOLM" 42;
+  font-weight: 640;
+  letter-spacing: -0.022em;
+}
+
+.jobs-direction--type-flared :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue strong
+) {
+  font-variation-settings: "FLAR" 42, "VOLM" 24;
+}
+
+.jobs-direction--type-recursive .jobs-direction-heading h3 {
+  font-size: clamp(1.7rem, 7vw, 2rem);
+  font-variation-settings: "CASL" 0.76, "CRSV" 0, "MONO" 0;
+  font-weight: 680;
+  letter-spacing: -0.018em;
+}
+
+.jobs-direction--type-recursive :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue strong
+) {
+  font-variation-settings: "CASL" 0.48, "CRSV" 0, "MONO" 0;
+}
+
+.jobs-direction--type-ledger .jobs-direction-heading h3 {
+  font-size: clamp(1.48rem, 6.7vw, 1.78rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.16;
+}
+
+.jobs-direction--type-ledger :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue > header strong
+) {
+  font-family: var(--dir-font-display);
+  letter-spacing: -0.025em;
+}
+
+.jobs-direction--type-bordeaux .jobs-direction-heading h3 {
+  font-size: clamp(1.9rem, 8vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.jobs-direction--type-bordeaux .jobs-direction-bar > strong {
+  font-size: 1.125rem;
+}
+
+.jobs-direction--type-bordeaux :is(
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save
+) {
+  font-weight: 700;
+}
+
+.jobs-direction--type-daymark .jobs-direction-heading h3 {
+  font-size: clamp(1.75rem, 7vw, 2.05rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.jobs-direction--type-daymark :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue strong
+) {
+  font-family: var(--dir-font-display);
+}
+
+.jobs-direction--type-sidecar .jobs-direction-heading h3 {
+  font-size: clamp(1.4rem, 6.4vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.jobs-direction--type-sidecar :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue strong
+) {
+  font-family: var(--dir-font-display);
+  font-weight: 600;
+}
+
+.jobs-direction--type-caller-first :is(
+  .jobs-direction-heading h3,
+  .jobs-direction-caller strong,
+  .jobs-direction-queue > header strong
+) {
+  font-family: var(--dir-font-display);
+  font-variation-settings: "SOFT" 35, "WONK" 0, "opsz" 48;
+}
+
+.jobs-direction--type-caller-first .jobs-direction-heading h3 {
+  font-size: clamp(1.9rem, 8vw, 2.3rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.jobs-direction--type-caller-first .jobs-direction-caller strong {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.jobs-direction--type-bands .jobs-direction-heading h3 {
+  font-size: clamp(1.8rem, 7.4vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.jobs-direction--type-bands :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue strong
+) {
+  font-family: var(--dir-font-display);
+}
+
+.jobs-direction--type-inbox .jobs-direction-heading h3 {
+  font-size: clamp(1.65rem, 7vw, 1.95rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.jobs-direction--type-inbox :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue strong
+) {
+  font-family: var(--dir-font-display);
+  font-weight: 600;
+}
+
+.jobs-direction--type-twin-pane .jobs-direction-heading h3 {
+  font-size: clamp(1.4rem, 6.3vw, 1.7rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+}
+
+.jobs-direction--type-twin-pane :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-save,
+  .jobs-direction-queue > header strong
+) {
+  font-family: var(--dir-font-display);
+}
+
+.jobs-direction--type-command .jobs-direction-heading h3 {
+  font-size: clamp(1.8rem, 7.5vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+}
+
+.jobs-direction--type-command :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-caller strong,
+  .jobs-direction-need > span:first-child,
+  .jobs-direction-save,
+  .jobs-direction-queue strong
+) {
+  font-family: var(--dir-font-display);
+}
+
+.jobs-direction--type-plainspoken {
+  --dir-font-display: var(--font-direction-bitter), serif;
+  --dir-font-body: var(--font-direction-radio), sans-serif;
+}
+
+.jobs-direction--type-plainspoken .jobs-direction-heading h3 {
+  font-size: clamp(1.5rem, 6.4vw, 1.78rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.jobs-direction--type-attention-strip {
+  --dir-font-display: var(--font-direction-commissioner), sans-serif;
+  --dir-font-body: var(--font-direction-commissioner), sans-serif;
+  font-variation-settings: "FLAR" 10, "VOLM" 10;
+}
+
+.jobs-direction--type-attention-strip .jobs-direction-heading h3 {
+  font-size: clamp(1.55rem, 6.5vw, 1.82rem);
+  font-variation-settings: "FLAR" 32, "VOLM" 20;
+  font-weight: 640;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.jobs-direction--type-worklist {
+  --dir-font-display: var(--font-direction-sometype), monospace;
+  --dir-font-body: var(--font-direction-atkinson), sans-serif;
+}
+
+.jobs-direction--type-worklist .jobs-direction-heading h3 {
+  font-size: clamp(1.42rem, 6vw, 1.68rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.jobs-direction--type-focus-capture {
+  --dir-font-display: var(--font-direction-funnel-display), sans-serif;
+  --dir-font-body: var(--font-direction-funnel-sans), sans-serif;
+}
+
+.jobs-direction--type-focus-capture .jobs-direction-heading h3 {
+  font-size: clamp(1.375rem, 5.5vw, 1.625rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+
+.jobs-direction--type-call-path {
+  --dir-font-display: var(--font-direction-recursive), sans-serif;
+  --dir-font-body: var(--font-direction-recursive), sans-serif;
+  font-variation-settings: "CASL" 0.12, "CRSV" 0, "MONO" 0;
+}
+
+.jobs-direction--type-call-path .jobs-direction-heading h3 {
+  font-size: clamp(1.52rem, 6.4vw, 1.8rem);
+  font-variation-settings: "CASL" 0.62, "CRSV" 0, "MONO" 0;
+  font-weight: 680;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+}
+
+.jobs-direction--type-open-sheet {
+  --dir-font-display: var(--font-direction-familjen), sans-serif;
+  --dir-font-body: var(--font-direction-atkinson), sans-serif;
+}
+
+.jobs-direction--type-open-sheet .jobs-direction-heading h3 {
+  font-size: clamp(1.62rem, 6.8vw, 1.92rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
+}
+
+.jobs-direction--type-plainspoken :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-save,
+  .jobs-direction-queue > header strong
+),
+.jobs-direction--type-worklist :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-save,
+  .jobs-direction-queue > header strong
+),
+.jobs-direction--type-focus-capture :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-save,
+  .jobs-direction-queue > header strong
+),
+.jobs-direction--type-call-path :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-save,
+  .jobs-direction-queue > header strong
+),
+.jobs-direction--type-open-sheet :is(
+  .jobs-direction-bar > strong,
+  .jobs-direction-tabs button,
+  .jobs-direction-save,
+  .jobs-direction-queue > header strong
+) {
+  font-family: var(--dir-font-display);
+}
+
+.jobs-direction-caller {
+  min-height: 4.25rem;
+  padding-block: var(--space-sm);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-sm);
+  border-block: 1px solid var(--dir-rule);
+}
+
+.jobs-direction-caller > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.jobs-direction-caller strong,
+.jobs-direction-caller span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobs-direction-caller strong {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.jobs-direction-caller span {
+  color: var(--dir-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-direction-time {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.jobs-direction-caller > button {
+  min-width: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dir-ink);
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: var(--space-3xs);
+}
+
+.jobs-direction-need {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.jobs-direction-need > span:first-child {
+  color: var(--dir-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.jobs-direction-field {
+  min-height: 5.25rem;
+  padding: var(--space-sm);
+  border: 1px solid var(--dir-rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--dir-paper-2);
+  color: var(--dir-ink);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.jobs-direction-save {
+  width: 100%;
+  min-height: 3rem !important;
+  padding-inline: var(--space-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  border: 1px solid var(--dir-accent);
+  background: var(--dir-accent);
+  color: var(--dir-accent-ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.jobs-direction--light .jobs-direction-save {
+  border-color: var(--dir-ink);
+  background: var(--dir-ink);
+}
+
+.jobs-direction-queue {
+  padding: var(--space-md);
+  border-top: 1px solid var(--dir-rule);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction-queue > header {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.jobs-direction-queue > header strong {
+  font-family: var(--dir-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.jobs-direction-queue > header span {
+  color: var(--dir-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-direction-row {
+  min-height: 4.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+  border-top: 1px solid var(--dir-rule);
+}
+
+.jobs-direction-row > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.jobs-direction-row strong,
+.jobs-direction-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobs-direction-row strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.jobs-direction-row > div > span {
+  color: var(--dir-muted);
+  font-size: 0.8125rem;
+}
+
+/* 10 · Redline Ledger — squared, rule-led, and deliberately non-cardlike. */
+.jobs-direction--redline {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--redline .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-top: 0.375rem solid var(--dir-accent);
+  border-bottom: 2px solid var(--dir-ink);
+}
+
+.jobs-direction--redline .jobs-direction-bar > strong {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+}
+
+.jobs-direction--redline :is(.jobs-direction-bar button, .jobs-direction-row button) {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--redline .jobs-direction-intake {
+  padding-left: calc(var(--space-md) + 0.375rem);
+  box-shadow: inset 0.375rem 0 0 var(--dir-accent);
+}
+
+.jobs-direction--redline .jobs-direction-tabs {
+  gap: 0;
+  padding: 0;
+  border: 2px solid var(--dir-ink);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--redline .jobs-direction-tabs button + button {
+  border-left: 2px solid var(--dir-ink);
+}
+
+.jobs-direction--redline .jobs-direction-tabs button.is-active {
+  background: var(--dir-accent);
+  color: var(--dir-accent-ink);
+}
+
+.jobs-direction--redline .jobs-direction-heading > span {
+  font-family: var(--dir-font-display);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+}
+
+.jobs-direction--redline .jobs-direction-caller {
+  border-block-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--redline .jobs-direction-field {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--redline .jobs-direction-save {
+  width: calc(100% - 2rem);
+  justify-self: center;
+  justify-content: center;
+  border-width: 2px;
+  position: relative;
+}
+
+.jobs-direction--redline .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+.jobs-direction--redline .jobs-direction-queue {
+  border-top: 2px solid var(--dir-ink);
+}
+
+.jobs-direction--redline .jobs-direction-row {
+  border-top-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+/* 11 · Bordeaux — editorial typography with an airy, underlined control language. */
+.jobs-direction--bordeaux .jobs-direction-bar {
+  min-height: 3.75rem;
+  padding-inline: 1.125rem;
+}
+
+.jobs-direction--bordeaux .jobs-direction-intake {
+  gap: 1.125rem;
+  padding: 1.125rem;
+}
+
+.jobs-direction--bordeaux .jobs-direction-tabs {
+  gap: var(--space-lg);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--dir-rule-strong);
+  border-radius: 0;
+  background: transparent;
+}
+
+.jobs-direction--bordeaux .jobs-direction-tabs button {
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+
+.jobs-direction--bordeaux .jobs-direction-tabs button.is-active {
+  border-bottom-color: var(--dir-accent);
+  background: transparent;
+  color: var(--dir-accent);
+}
+
+.jobs-direction--bordeaux .jobs-direction-caller {
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--dir-rule);
+  border-left: 4px solid var(--dir-accent);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--bordeaux .jobs-direction-field {
+  min-height: 5.5rem;
+  padding: 0.875rem;
+}
+
+.jobs-direction--bordeaux .jobs-direction-save {
+  width: calc(100% - 2rem);
+  justify-self: center;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--bordeaux .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+.jobs-direction--bordeaux .jobs-direction-queue {
+  padding-inline: 1.125rem;
+}
+
+/* 12 · Daymark — high-readability citrus and forest with independent controls. */
+.jobs-direction--daymark {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--daymark .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 0;
+}
+
+.jobs-direction--daymark .jobs-direction-intake {
+  gap: 1.125rem;
+}
+
+.jobs-direction--daymark .jobs-direction-tabs {
+  gap: var(--space-xs);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.jobs-direction--daymark .jobs-direction-tabs button {
+  border: 2px solid var(--dir-ink);
+  background: transparent;
+  color: var(--dir-ink);
+}
+
+.jobs-direction--daymark .jobs-direction-tabs button.is-active {
+  background: var(--dir-ink);
+  color: var(--dir-paper);
+}
+
+.jobs-direction--daymark .jobs-direction-caller {
+  padding-inline: var(--space-sm);
+  border: 2px solid var(--dir-ink);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--daymark .jobs-direction-field {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--daymark .jobs-direction-save {
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--daymark .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-md);
+}
+
+.jobs-direction--daymark .jobs-direction-queue {
+  border-top: 2px solid var(--dir-ink);
+}
+
+.jobs-direction--daymark .jobs-direction-row {
+  border-top-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--daymark .jobs-direction-row button {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+  background: var(--dir-paper);
+}
+
+/* 13 · Sidecar — source choice becomes a vertical rail beside the call summary. */
+.jobs-direction--sidecar {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--sidecar .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 4px solid var(--dir-accent);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--sidecar .jobs-direction-intake {
+  grid-template-columns: 6.25rem minmax(0, 1fr);
+  column-gap: var(--space-sm);
+  row-gap: var(--space-md);
+}
+
+.jobs-direction--sidecar .jobs-direction-tabs {
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: minmax(0, 1fr);
+  align-self: start;
+  gap: var(--space-2xs);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.jobs-direction--sidecar .jobs-direction-tabs button {
+  padding-inline: var(--space-xs);
+  border: 1px solid var(--dir-rule-strong);
+  background: var(--dir-paper-2);
+  color: var(--dir-ink);
+}
+
+.jobs-direction--sidecar .jobs-direction-tabs button.is-active {
+  border-color: var(--dir-accent);
+  background: var(--dir-accent);
+  color: var(--dir-accent-ink);
+}
+
+.jobs-direction--sidecar .jobs-direction-heading {
+  grid-column: 2;
+  grid-row: 1;
+  align-content: center;
+}
+
+.jobs-direction--sidecar .jobs-direction-heading > span {
+  font-size: 0.8125rem;
+}
+
+.jobs-direction--sidecar .jobs-direction-caller,
+.jobs-direction--sidecar .jobs-direction-need,
+.jobs-direction--sidecar .jobs-direction-save {
+  grid-column: 1 / -1;
+}
+
+.jobs-direction--sidecar .jobs-direction-caller {
+  grid-row: 2;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--dir-rule-strong);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--sidecar .jobs-direction-need {
+  grid-row: 3;
+}
+
+.jobs-direction--sidecar .jobs-direction-field {
+  border-color: var(--dir-rule-strong);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--sidecar .jobs-direction-save {
+  grid-row: 4;
+  width: calc(100% - 2rem);
+  justify-self: center;
+  justify-content: center;
+  position: relative;
+  border-color: var(--dir-warm);
+  background: var(--dir-warm);
+  color: var(--dir-warm-ink);
+}
+
+.jobs-direction--sidecar .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+.jobs-direction--sidecar .jobs-direction-queue {
+  background: var(--dir-paper-2);
+}
+
+/* 14 · Caller First — the person is the hero; controls follow in a calm sequence. */
+.jobs-direction--caller-first .jobs-direction-intake {
+  gap: 0;
+  padding: 0;
+}
+
+.jobs-direction--caller-first .jobs-direction-caller {
+  order: 1;
+  min-height: 7.25rem;
+  padding: 1.125rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  border: 0;
+}
+
+.jobs-direction--caller-first .jobs-direction-caller > div {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  gap: var(--space-xs);
+}
+
+.jobs-direction--caller-first .jobs-direction-time {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.jobs-direction--caller-first .jobs-direction-caller > button {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.jobs-direction--caller-first .jobs-direction-heading {
+  order: 2;
+  gap: var(--space-sm);
+  padding: 1.25rem 1.125rem 0.875rem;
+}
+
+.jobs-direction--caller-first .jobs-direction-tabs {
+  order: 3;
+  margin-inline: 1.125rem;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--dir-rule-strong);
+  border-radius: 0;
+  background: transparent;
+}
+
+.jobs-direction--caller-first .jobs-direction-tabs button {
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+
+.jobs-direction--caller-first .jobs-direction-tabs button.is-active {
+  border-bottom-color: var(--dir-accent);
+  background: transparent;
+  color: var(--dir-accent);
+}
+
+.jobs-direction--caller-first .jobs-direction-need {
+  order: 4;
+  padding: 1.125rem;
+}
+
+.jobs-direction--caller-first .jobs-direction-field {
+  min-height: 5.5rem;
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--caller-first .jobs-direction-save {
+  order: 5;
+  width: calc(100% - 4.25rem);
+  margin: 0 2.125rem 1.25rem;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--caller-first .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+.jobs-direction--caller-first .jobs-direction-queue {
+  background: var(--dir-paper-3);
+}
+
+/* 15 · Signal Bands — hierarchy comes from full-width bands, not nested cards. */
+.jobs-direction--bands {
+  border-width: 2px;
+  border-color: var(--dir-navy);
+}
+
+.jobs-direction--bands .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 0;
+}
+
+.jobs-direction--bands .jobs-direction-intake {
+  gap: 0;
+  padding: 0;
+  background: var(--dir-navy);
+}
+
+.jobs-direction--bands .jobs-direction-heading {
+  order: 1;
+  gap: var(--space-xs);
+  padding: 1.25rem var(--space-md);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--bands .jobs-direction-tabs {
+  order: 2;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: 0;
+  border-radius: 0;
+  background: var(--dir-accent);
+}
+
+.jobs-direction--bands .jobs-direction-tabs button {
+  border: 1px solid var(--dir-ink);
+  background: transparent;
+  color: var(--dir-ink);
+}
+
+.jobs-direction--bands .jobs-direction-tabs button.is-active {
+  background: var(--dir-ink);
+  color: var(--dir-navy-ink);
+}
+
+.jobs-direction--bands .jobs-direction-caller {
+  order: 3;
+  padding: var(--space-md);
+  border: 0;
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--bands .jobs-direction-need {
+  order: 4;
+  padding: var(--space-md);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--bands .jobs-direction-field {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--bands .jobs-direction-save {
+  order: 5;
+  width: calc(100% - 2rem);
+  min-height: 3.5rem !important;
+  margin: var(--space-md);
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--bands .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-md);
+}
+
+.jobs-direction--bands .jobs-direction-queue {
+  border-top: 0;
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--bands .jobs-direction-queue > header {
+  border-bottom: 2px solid var(--dir-ink);
+}
+
+/* 16 · Inbox First — urgent work is the first block after the app header. */
+.jobs-direction--inbox .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 0;
+}
+
+.jobs-direction--inbox .jobs-direction-queue {
+  padding: var(--space-md);
+  border-top: 0;
+  border-bottom: 1px solid var(--dir-rule);
+}
+
+.jobs-direction--inbox .jobs-direction-queue > header {
+  border-bottom: 1px solid var(--dir-rule);
+}
+
+.jobs-direction--inbox .jobs-direction-row {
+  border-top: 0;
+}
+
+.jobs-direction--inbox .jobs-direction-intake {
+  padding: 1.125rem;
+  background: var(--dir-paper);
+}
+
+.jobs-direction--inbox .jobs-direction-tabs {
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--inbox .jobs-direction-field {
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--inbox .jobs-direction-save {
+  width: calc(100% - 2rem);
+  justify-self: center;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--inbox .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+/* 17 · Twin Pane — a persistent work rail sits beside call capture. */
+.jobs-direction--twin-pane {
+  display: grid;
+  grid-template-columns: 7.25rem minmax(0, 1fr);
+  border-width: 2px;
+  border-color: var(--dir-rail);
+}
+
+.jobs-direction--twin-pane .jobs-direction-bar {
+  grid-column: 1 / -1;
+  min-height: 3.75rem;
+  border-bottom: 4px solid var(--dir-accent);
+}
+
+.jobs-direction--twin-pane .jobs-direction-queue {
+  min-width: 0;
+  padding: var(--space-sm);
+  grid-column: 1;
+  grid-row: 2;
+  border-top: 0;
+  border-right: 1px solid var(--dir-rule);
+}
+
+.jobs-direction--twin-pane .jobs-direction-queue > header {
+  min-height: 4.75rem;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: var(--space-xs);
+}
+
+.jobs-direction--twin-pane .jobs-direction-queue > header strong {
+  font-size: 0.875rem;
+  line-height: 1.15;
+}
+
+.jobs-direction--twin-pane .jobs-direction-row {
+  min-height: 0;
+  padding-top: var(--space-sm);
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+  gap: var(--space-sm);
+}
+
+.jobs-direction--twin-pane .jobs-direction-row :is(strong, span) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.jobs-direction--twin-pane .jobs-direction-row strong {
+  font-size: 0.8125rem;
+}
+
+.jobs-direction--twin-pane .jobs-direction-row button {
+  justify-self: start;
+}
+
+.jobs-direction--twin-pane .jobs-direction-intake {
+  min-width: 0;
+  padding: var(--space-sm);
+  grid-column: 2;
+  grid-row: 2;
+  gap: var(--space-sm);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--twin-pane .jobs-direction-tabs {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.jobs-direction--twin-pane .jobs-direction-tabs button {
+  border: 1px solid var(--dir-rule-strong);
+}
+
+.jobs-direction--twin-pane .jobs-direction-tabs button.is-active {
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--twin-pane .jobs-direction-caller {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+}
+
+.jobs-direction--twin-pane .jobs-direction-caller > div {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.jobs-direction--twin-pane .jobs-direction-time {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.jobs-direction--twin-pane .jobs-direction-caller > button {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.jobs-direction--twin-pane .jobs-direction-field {
+  min-height: 6rem;
+  background: var(--dir-paper);
+}
+
+.jobs-direction--twin-pane .jobs-direction-save {
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--twin-pane .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-xs);
+}
+
+/* 18 · Command Grid — source and queue share the top deck, then the form spans wide. */
+.jobs-direction--command {
+  border-width: 2px;
+  border-color: var(--dir-command);
+}
+
+.jobs-direction--command .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 0;
+}
+
+.jobs-direction--command .jobs-direction-command-grid {
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  background: var(--dir-paper);
+}
+
+.jobs-direction--command .jobs-direction-tabs {
+  min-width: 0;
+  padding: var(--space-sm);
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--space-2xs);
+  border: 0;
+  border-right: 1px solid var(--dir-rule-strong);
+  border-radius: 0;
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--command .jobs-direction-tabs button {
+  padding-inline: var(--space-xs);
+  border: 1px solid var(--dir-rule-strong);
+}
+
+.jobs-direction--command .jobs-direction-tabs button.is-active {
+  background: var(--dir-ink);
+  color: var(--dir-paper);
+}
+
+.jobs-direction--command .jobs-direction-queue {
+  min-width: 0;
+  padding: var(--space-sm);
+  grid-column: 2;
+  grid-row: 1;
+  border-top: 0;
+  background: var(--dir-accent);
+}
+
+.jobs-direction--command .jobs-direction-queue > header {
+  min-height: 2.75rem;
+  align-items: flex-start;
+}
+
+.jobs-direction--command .jobs-direction-queue > header strong {
+  font-size: 0.875rem;
+  line-height: 1.15;
+}
+
+.jobs-direction--command .jobs-direction-row {
+  min-height: 0;
+  padding-top: var(--space-xs);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-xs);
+}
+
+.jobs-direction--command .jobs-direction-row > div > span {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.jobs-direction--command .jobs-direction-row button {
+  justify-self: end;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--command .jobs-direction-heading {
+  padding: 1.125rem var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 2;
+  border-top: 1px solid var(--dir-rule-strong);
+}
+
+.jobs-direction--command .jobs-direction-caller {
+  margin-inline: var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+.jobs-direction--command .jobs-direction-need {
+  padding: var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 4;
+}
+
+.jobs-direction--command .jobs-direction-field {
+  border-color: var(--dir-rule-strong);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--command .jobs-direction-save {
+  width: calc(100% - 4rem);
+  margin: 0 2rem var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 5;
+  justify-content: center;
+  position: relative;
+  border-color: var(--dir-command);
+  background: var(--dir-command);
+  color: var(--dir-command-ink);
+}
+
+.jobs-direction--command .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+/* 19 · Plainspoken — one continuous sheet, ranked by reading order. */
+.jobs-direction--plainspoken {
+  border-inline: 0;
+  border-color: var(--dir-rule-strong);
+}
+
+.jobs-direction--plainspoken .jobs-direction-bar {
+  border-bottom: 2px solid var(--dir-ink);
+}
+
+.jobs-direction--plainspoken .jobs-direction-intake {
+  gap: 0;
+  padding: 0 var(--space-md) var(--space-md);
+}
+
+.jobs-direction--plainspoken .jobs-direction-tabs {
+  gap: var(--space-lg);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--dir-rule);
+  border-radius: 0;
+  background: var(--dir-paper);
+}
+
+.jobs-direction--plainspoken .jobs-direction-tabs button {
+  min-height: 3.25rem;
+  padding-inline: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+}
+
+.jobs-direction--plainspoken .jobs-direction-tabs button.is-active {
+  border-bottom-color: var(--dir-accent);
+  background: transparent;
+  color: var(--dir-accent);
+}
+
+.jobs-direction--plainspoken .jobs-direction-heading {
+  gap: var(--space-2xs);
+  padding-block: var(--space-md);
+}
+
+.jobs-direction--plainspoken .jobs-direction-caller {
+  min-height: 4.5rem;
+}
+
+.jobs-direction--plainspoken .jobs-direction-need {
+  padding-block: var(--space-md);
+}
+
+.jobs-direction--plainspoken .jobs-direction-field {
+  border-radius: 0;
+  background: var(--dir-paper);
+}
+
+.jobs-direction--plainspoken .jobs-direction-save {
+  width: calc(100% - 4rem);
+  justify-self: center;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--plainspoken .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+.jobs-direction--plainspoken .jobs-direction-queue {
+  border-top: 3px solid var(--dir-ink);
+  background: var(--dir-paper);
+}
+
+/* 20 · Attention Strip — a compact live strip keeps urgent work in sight. */
+.jobs-direction--attention-strip .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 0;
+}
+
+.jobs-direction--attention-strip .jobs-direction-queue {
+  padding: var(--space-xs) var(--space-md);
+  display: grid;
+  grid-template-columns: minmax(5.75rem, 0.42fr) minmax(0, 1fr);
+  align-items: stretch;
+  border-top: 0;
+}
+
+.jobs-direction--attention-strip .jobs-direction-queue > header {
+  min-height: 3.5rem;
+  padding-right: var(--space-sm);
+  align-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2xs);
+  border-right: 1px solid var(--dir-rule);
+}
+
+.jobs-direction--attention-strip .jobs-direction-queue > header strong {
+  font-size: 0.8125rem;
+  line-height: 1.15;
+}
+
+.jobs-direction--attention-strip .jobs-direction-row {
+  min-height: 3.5rem;
+  padding-left: var(--space-sm);
+  border-top: 0;
+}
+
+.jobs-direction--attention-strip .jobs-direction-intake {
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.jobs-direction--attention-strip .jobs-direction-tabs {
+  padding: 0;
+  border: 0;
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--attention-strip .jobs-direction-tabs button {
+  border: 1px solid transparent;
+}
+
+.jobs-direction--attention-strip .jobs-direction-tabs button.is-active {
+  border-color: var(--dir-ink);
+  background: var(--dir-paper);
+  color: var(--dir-ink);
+}
+
+.jobs-direction--attention-strip .jobs-direction-caller {
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--dir-rule);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--attention-strip .jobs-direction-field {
+  background: var(--dir-paper);
+}
+
+.jobs-direction--attention-strip .jobs-direction-save {
+  width: calc(100% - 3rem);
+  justify-self: center;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--attention-strip .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+/* 21 · Worklist — familiar checklist hierarchy before a quiet capture form. */
+.jobs-direction--worklist {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--worklist .jobs-direction-bar {
+  border-bottom: 1px solid var(--dir-ink);
+}
+
+.jobs-direction--worklist .jobs-direction-queue {
+  padding: 0;
+  border-top: 0;
+  background: var(--dir-paper);
+}
+
+.jobs-direction--worklist .jobs-direction-queue > header {
+  min-height: 3.75rem;
+  padding-inline: var(--space-md);
+  border-bottom: 3px solid var(--dir-accent);
+}
+
+.jobs-direction--worklist .jobs-direction-row {
+  min-height: 5rem;
+  padding-inline: var(--space-md);
+  border-top: 0;
+}
+
+.jobs-direction--worklist .jobs-direction-row > div {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.jobs-direction--worklist .jobs-direction-row > div::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  position: absolute;
+  top: var(--space-2xs);
+  left: 0;
+  border: 1px solid var(--dir-rule-strong);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--worklist .jobs-direction-row button {
+  border-color: var(--dir-ink);
+  border-radius: var(--radius-sm);
+}
+
+.jobs-direction--worklist .jobs-direction-intake {
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-top: 1px solid var(--dir-ink);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--worklist .jobs-direction-heading {
+  order: 1;
+}
+
+.jobs-direction--worklist .jobs-direction-tabs {
+  order: 2;
+  gap: var(--space-xs);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.jobs-direction--worklist .jobs-direction-tabs button {
+  border: 1px solid var(--dir-rule-strong);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--worklist .jobs-direction-tabs button.is-active {
+  border-color: var(--dir-ink);
+  background: var(--dir-ink);
+  color: var(--dir-paper);
+}
+
+.jobs-direction--worklist .jobs-direction-caller {
+  order: 3;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--dir-rule);
+  background: var(--dir-paper);
+}
+
+.jobs-direction--worklist .jobs-direction-need {
+  order: 4;
+}
+
+.jobs-direction--worklist .jobs-direction-field {
+  background: var(--dir-paper);
+}
+
+.jobs-direction--worklist .jobs-direction-save {
+  order: 5;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--worklist .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+/* 22 · Focus Capture — the live call owns the surface; the queue becomes a tray. */
+.jobs-direction--focus-capture {
+  border-width: 2px;
+  border-color: var(--dir-ink);
+}
+
+.jobs-direction--focus-capture .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 1px solid var(--dir-ink);
+}
+
+.jobs-direction--focus-capture .jobs-direction-command-grid {
+  padding: 0;
+  grid-template-columns: minmax(0, 1fr) 7.25rem;
+  gap: 0;
+  background: var(--dir-paper);
+}
+
+.jobs-direction--focus-capture .jobs-direction-heading {
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.jobs-direction--focus-capture .jobs-direction-tabs {
+  padding: 0 var(--space-md) var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 3;
+  gap: var(--space-xs);
+  border: 0;
+  background: transparent;
+}
+
+.jobs-direction--focus-capture .jobs-direction-tabs button {
+  border: 1px solid var(--dir-rule-strong);
+}
+
+.jobs-direction--focus-capture .jobs-direction-tabs button.is-active {
+  border-color: var(--dir-ink);
+  background: var(--dir-ink);
+  color: var(--dir-paper);
+}
+
+.jobs-direction--focus-capture .jobs-direction-queue {
+  min-width: 0;
+  padding: var(--space-sm);
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  border-top: 0;
+  border-left: 1px solid var(--dir-rule);
+  background: var(--dir-paper-2);
+  color: var(--dir-ink);
+}
+
+.jobs-direction--focus-capture .jobs-direction-queue > header {
+  min-height: 3.75rem;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: var(--space-2xs);
+}
+
+.jobs-direction--focus-capture .jobs-direction-queue > header strong {
+  font-size: 0.8125rem;
+  line-height: 1.08;
+}
+
+.jobs-direction--focus-capture .jobs-direction-row {
+  min-height: 0;
+  padding-top: var(--space-sm);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-sm);
+}
+
+.jobs-direction--focus-capture .jobs-direction-row :is(strong, span) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.jobs-direction--focus-capture .jobs-direction-row strong {
+  font-size: 0.8125rem;
+}
+
+.jobs-direction--focus-capture .jobs-direction-row button {
+  justify-self: start;
+}
+
+.jobs-direction--focus-capture .jobs-direction-caller {
+  min-height: 5.75rem;
+  padding-inline: var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 4;
+  border: 0;
+}
+
+.jobs-direction--focus-capture .jobs-direction-caller strong {
+  font-size: 1.125rem;
+}
+
+.jobs-direction--focus-capture .jobs-direction-need {
+  padding: var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 5;
+}
+
+.jobs-direction--focus-capture .jobs-direction-field {
+  background: var(--dir-paper);
+}
+
+.jobs-direction--focus-capture .jobs-direction-save {
+  width: calc(100% - 4rem);
+  margin: 0 2rem var(--space-md);
+  grid-column: 1 / -1;
+  grid-row: 6;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--focus-capture .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+/* 23 · Call Path — three explicit steps make the capture sequence self-teaching. */
+.jobs-direction--call-path {
+  border-color: var(--dir-rule-strong);
+}
+
+.jobs-direction--call-path .jobs-direction-bar {
+  border-bottom: 3px solid var(--dir-ink);
+}
+
+.jobs-direction--call-path .jobs-direction-call-path {
+  gap: 0;
+  padding: var(--space-md);
+}
+
+.jobs-direction--call-path .jobs-direction-heading {
+  order: -1;
+  padding-bottom: var(--space-md);
+}
+
+.jobs-direction--call-path :is(
+  .jobs-direction-tabs,
+  .jobs-direction-caller,
+  .jobs-direction-need
+) {
+  position: relative;
+  padding-left: 3rem;
+  border-left: 2px solid var(--dir-accent);
+}
+
+.jobs-direction--call-path :is(
+  .jobs-direction-tabs,
+  .jobs-direction-caller,
+  .jobs-direction-need
+)::before {
+  width: 2rem;
+  height: 2rem;
+  position: absolute;
+  top: var(--space-xs);
+  left: -1rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--dir-accent);
+  background: var(--dir-paper);
+  color: var(--dir-accent);
+  font-family: var(--dir-font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.jobs-direction--call-path .jobs-direction-tabs::before {
+  content: "1";
+}
+
+.jobs-direction--call-path .jobs-direction-caller::before {
+  content: "2";
+}
+
+.jobs-direction--call-path .jobs-direction-need::before {
+  content: "3";
+}
+
+.jobs-direction--call-path .jobs-direction-tabs {
+  gap: var(--space-xs);
+  padding-block: 0.25rem var(--space-md);
+  padding-right: 0;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.jobs-direction--call-path .jobs-direction-tabs button {
+  border: 1px solid var(--dir-rule-strong);
+}
+
+.jobs-direction--call-path .jobs-direction-tabs button.is-active {
+  border-color: var(--dir-ink);
+  background: var(--dir-ink);
+  color: var(--dir-paper);
+}
+
+.jobs-direction--call-path .jobs-direction-caller {
+  min-height: 5.25rem;
+  padding-block: var(--space-sm);
+  padding-right: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 1px solid var(--dir-rule);
+}
+
+.jobs-direction--call-path .jobs-direction-caller > div {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.jobs-direction--call-path .jobs-direction-time {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.jobs-direction--call-path .jobs-direction-caller > button {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.jobs-direction--call-path .jobs-direction-need {
+  gap: var(--space-xs);
+  padding-block: var(--space-md);
+  padding-right: 0;
+}
+
+.jobs-direction--call-path .jobs-direction-field {
+  background: var(--dir-paper);
+}
+
+.jobs-direction--call-path .jobs-direction-save {
+  width: calc(100% - 5rem);
+  margin-left: 3rem;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--call-path .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+.jobs-direction--call-path .jobs-direction-queue {
+  border-top: 3px solid var(--dir-ink);
+  background: var(--dir-paper-2);
+}
+
+/* 24 · Open Sheet — urgent work remains behind the already-open Add Job sheet. */
+.jobs-direction--open-sheet {
+  border-color: var(--dir-sheet-back);
+  background: var(--dir-sheet-back);
+  color: var(--dir-sheet-back-ink);
+}
+
+.jobs-direction--open-sheet .jobs-direction-bar {
+  min-height: 3.75rem;
+  border-bottom: 0;
+}
+
+.jobs-direction--open-sheet .jobs-direction-queue {
+  padding: 0 var(--space-md) 3.25rem;
+  border-top: 0;
+}
+
+.jobs-direction--open-sheet .jobs-direction-queue > header {
+  border-bottom: 1px solid var(--dir-rule);
+}
+
+.jobs-direction--open-sheet .jobs-direction-row {
+  border-top: 0;
+}
+
+.jobs-direction--open-sheet .jobs-direction-intake {
+  margin: -2rem var(--space-sm) var(--space-sm);
+  padding: var(--space-md);
+  position: relative;
+  z-index: 1;
+  gap: var(--space-sm);
+  border: 1px solid var(--dir-rule);
+  border-top: 4px solid var(--dir-accent);
+  border-radius: var(--radius-lg);
+  background: var(--dir-paper);
+  color: var(--dir-ink);
+  box-shadow: 0 0.75rem 2rem var(--dir-sheet-shadow);
+}
+
+.jobs-direction--open-sheet .jobs-direction-heading {
+  order: 1;
+}
+
+.jobs-direction--open-sheet .jobs-direction-tabs {
+  order: 2;
+  padding: 0;
+  border: 0;
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--open-sheet .jobs-direction-tabs button {
+  border: 1px solid transparent;
+}
+
+.jobs-direction--open-sheet .jobs-direction-tabs button.is-active {
+  border-color: var(--dir-ink);
+  background: var(--dir-paper);
+  color: var(--dir-ink);
+}
+
+.jobs-direction--open-sheet .jobs-direction-caller {
+  order: 3;
+  padding-inline: var(--space-sm);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  border: 1px solid var(--dir-rule);
+  border-radius: var(--radius-md);
+  background: var(--dir-paper-2);
+}
+
+.jobs-direction--open-sheet .jobs-direction-caller > div {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.jobs-direction--open-sheet .jobs-direction-time {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.jobs-direction--open-sheet .jobs-direction-caller > button {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.jobs-direction--open-sheet .jobs-direction-need {
+  order: 4;
+}
+
+.jobs-direction--open-sheet .jobs-direction-field {
+  background: var(--dir-paper);
+}
+
+.jobs-direction--open-sheet .jobs-direction-save {
+  order: 5;
+  width: calc(100% - 3rem);
+  justify-self: center;
+  justify-content: center;
+  position: relative;
+}
+
+.jobs-direction--open-sheet .jobs-direction-save svg {
+  position: absolute;
+  right: var(--space-sm);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .jobs-direction-bar button:hover,
+  .jobs-direction-row button:hover,
+  .jobs-direction-tabs button:not(.is-active):hover {
+    background: var(--dir-paper-3);
+  }
+
+  .jobs-direction-caller > button:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  .jobs-direction-save:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 21rem) {
+  .jobs-direction-caller {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+  }
+
+  .jobs-direction-caller > div {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .jobs-direction-time {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .jobs-direction-caller > button {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .jobs-direction--attention-strip .jobs-direction-queue {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jobs-direction--attention-strip .jobs-direction-queue > header {
+    min-height: 2.75rem;
+    padding-right: 0;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    border-right: 0;
+    border-bottom: 1px solid var(--dir-rule);
+  }
+
+  .jobs-direction--attention-strip .jobs-direction-row {
+    padding-left: 0;
+  }
+
+  .jobs-direction--focus-capture .jobs-direction-command-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jobs-direction--focus-capture .jobs-direction-heading {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .jobs-direction--focus-capture .jobs-direction-queue {
+    padding: var(--space-xs) var(--space-sm);
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: 5.75rem minmax(0, 1fr);
+    border-top: 1px solid var(--dir-rule);
+    border-left: 0;
+  }
+
+  .jobs-direction--focus-capture .jobs-direction-queue > header {
+    min-height: 3.5rem;
+    padding-right: var(--space-sm);
+    justify-content: center;
+    border-right: 1px solid var(--dir-rule);
+  }
+
+  .jobs-direction--focus-capture .jobs-direction-row {
+    padding-top: 0;
+    padding-left: var(--space-sm);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .jobs-direction--focus-capture .jobs-direction-row > div > span {
+    white-space: nowrap;
+  }
+
+  .jobs-direction--focus-capture .jobs-direction-tabs {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+
+@media (min-width: 48rem) {
+  .jobs-directions-page {
+    padding-inline: var(--space-lg);
+  }
+
+  .jobs-directions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+  }
+}
+
+@media (min-width: 64rem) {
+  .jobs-directions-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 90rem) {
+  .jobs-directions-grid {
+    gap: var(--space-xl);
+  }
+}
+
+@media (pointer: coarse) {
+  .jobs-direction button {
+    min-height: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jobs-directions-page *,
+  .jobs-directions-page *::before,
+  .jobs-directions-page *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

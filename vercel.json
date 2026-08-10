@@ -3,6 +3,14 @@
     {
       "path": "/api/ops/digest",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/ingest/gmail",
+      "schedule": "5 12 * * *"
+    },
+    {
+      "path": "/api/ops/brief",
+      "schedule": "30 11 * * *"
     }
   ]
 }

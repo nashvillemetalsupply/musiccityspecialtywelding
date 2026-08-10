@@ -1,0 +1,17 @@
+{
+  "date": "2026-08-10",
+  "framework": "Next.js 16 App Router",
+  "font_stack": [
+    "Barlow Condensed",
+    "IBM Plex Sans",
+    "IBM Plex Mono"
+  ],
+  "preview_fonts": [
+    "Commissioner",
+    "Atkinson Hyperlegible Next"
+  ],
+  "palette_source": "design.md and tokens.css",
+  "motion": "CSS transitions only",
+  "spacing": "4-point semantic scale",
+  "scope": "isolated design-preview route"
+}

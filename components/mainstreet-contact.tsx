@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
 import { captureAttribution } from "@/lib/attribution"
 import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID } from "@/lib/measurement"
+import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 
 declare global {
   interface Window {
@@ -24,6 +25,7 @@ type QuoteForm = {
   message: string
   email: string
   company: string
+  textConsent: boolean
 }
 
 const emptyForm: QuoteForm = {
@@ -33,9 +35,10 @@ const emptyForm: QuoteForm = {
   message: "",
   email: "",
   company: "",
+  textConsent: false,
 }
 
-export function MainstreetContact() {
+export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY }: { phoneHref?: string; phoneDisplay?: string }) {
   const [formData, setFormData] = useState<QuoteForm>(emptyForm)
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
@@ -43,6 +46,10 @@ export function MainstreetContact() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
   const previewsRef = useRef<string[]>([])
+  // Keep one durable identity for every user submission attempt. A network
+  // retry must resume the same job and provider sends, not manufacture a
+  // duplicate lead. Rotate it only after the server confirms success.
+  const intakeKeyRef = useRef("")
 
   useEffect(() => {
     previewsRef.current = previews
@@ -116,6 +123,8 @@ export function MainstreetContact() {
     setMessage("")
 
     const payload = new FormData()
+    if (!intakeKeyRef.current) intakeKeyRef.current = crypto.randomUUID()
+    payload.append("intakeKey", intakeKeyRef.current)
     payload.append("firstName", formData.firstName)
     payload.append("lastName", "")
     payload.append("phone", formData.phone)
@@ -124,6 +133,7 @@ export function MainstreetContact() {
     payload.append("email", formData.email)
     payload.append("preferredContact", "Call")
     payload.append("company", formData.company)
+    if (formData.textConsent) payload.append("textConsent", "yes")
     const attribution = captureAttribution()
     for (const [key, value] of Object.entries(attribution)) {
       if (value) payload.append(key, value)
@@ -152,6 +162,7 @@ export function MainstreetContact() {
       setPreviews([])
       setPhotoFiles([])
       setFormData(emptyForm)
+      intakeKeyRef.current = ""
       setStatus("success")
       setMessage("Got it. We’ll review the job and call you back. If it cannot wait, call now. We’re open 24/7.")
     } catch (error) {
@@ -167,9 +178,9 @@ export function MainstreetContact() {
       <div className="ms-contact-lead">
         <h2 className="ms-display" id="contact-title">Show us the job.</h2>
         <p>Three things get this moving: your name, your number, and what the metal needs.</p>
-        <a className="ms-contact-call" href="tel:6158104910">
+        <a className="ms-contact-call" href={phoneHref}>
           <Phone aria-hidden="true" />
-          <span><small>Open 24/7</small><strong>(615) 810-4910</strong></span>
+          <span><small>Open 24/7</small><strong>{phoneDisplay}</strong></span>
           <ArrowUpRight aria-hidden="true" />
         </a>
       </div>
@@ -227,6 +238,17 @@ export function MainstreetContact() {
           <input id="quote-photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" multiple onChange={addPhotos} />
         </div>
 
+        <label className="ms-text-consent" htmlFor="quote-text-consent">
+          <input
+            id="quote-text-consent"
+            name="textConsent"
+            type="checkbox"
+            checked={formData.textConsent}
+            onChange={(event) => setFormData((current) => ({ ...current, textConsent: event.target.checked }))}
+          />
+          <span><strong>Text me about this job <i>optional</i></strong><small>Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a>.</small></span>
+        </label>
+
         {previews.length > 0 && (
           <div className="ms-previews" aria-label="Selected photos">
             {previews.map((preview, index) => (
@@ -249,7 +271,7 @@ export function MainstreetContact() {
           <span>{isSubmitting ? "Sending the job…" : "Send the job"}</span>
           <ArrowUpRight aria-hidden="true" />
         </button>
-        <p className="ms-form-fallback">If the form fights you, call <a href="tel:6158104910">(615) 810-4910</a>.</p>
+        <p className="ms-form-fallback">If the form fights you, call <a href={phoneHref}>{phoneDisplay}</a>.</p>
       </form>
     </section>
   )

@@ -13,6 +13,7 @@ import {
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
+import { getShopPhone } from "@/lib/shop-contact"
 
 export const metadata: Metadata = {
   title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
@@ -130,6 +131,7 @@ function FrameGussets() {
 }
 
 export default function Page() {
+  const shopPhone = getShopPhone()
   return (
     <div className="ms-site">
       <a className="ms-skip" href="#main-content">Skip to the work</a>
@@ -157,18 +159,19 @@ export default function Page() {
         <nav className="ms-nav-links" aria-label="Desktop navigation">
           <a href="#work">The work</a>
           <a href="#services">What we weld</a>
+          <a href="#job-glass">Customer Page</a>
           <a href="#contact">Show us the job</a>
         </nav>
 
-        <a className="ms-nav-call" href="tel:6158104910">
+        <a className="ms-nav-call" href={shopPhone.href}>
           <Phone aria-hidden="true" />
           <span>
             <small>Open 24/7</small>
-            (615) 810-4910
+            {shopPhone.display}
           </span>
         </a>
 
-        <MainstreetMenu />
+        <MainstreetMenu phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
       </header>
 
       <main id="main-content">
@@ -188,9 +191,9 @@ export default function Page() {
               24/7 mobile welding across Nashville and Middle Tennessee. Trucks, trailers, equipment, aluminum, structural steel, and built-to-spec shop fabrication.
             </p>
             <div className="ms-hero-actions">
-              <a className="sw-plank" href="tel:6158104910">
+              <a className="sw-plank" href={shopPhone.href}>
                 <small>call the shop — day or night</small>
-                <strong>(615) 810-4910</strong>
+                <strong>{shopPhone.display}</strong>
               </a>
               <a className="ms-text-link" href="#contact">
                 Show us the job <ArrowDownRight aria-hidden="true" />
@@ -223,7 +226,7 @@ export default function Page() {
           <span className="ms-sticker is-red">Call anytime</span>
           <span className="ms-sticker">Steel · Aluminum · Stainless</span>
           <span className="ms-sticker is-blue">Middle Tennessee</span>
-          <a className="ms-sticker is-arc" href="tel:6158104910">(615) 810-4910</a>
+          <a className="ms-sticker is-arc" href={shopPhone.href}>{shopPhone.display}</a>
         </div>
 
         <WeldSeam />
@@ -330,7 +333,7 @@ export default function Page() {
             <ul>
               {adVerifiedCapabilities.map((capability) => <li key={capability}>{capability}</li>)}
             </ul>
-            <a className="ms-button ms-button-primary" href="tel:6158104910">
+            <a className="ms-button ms-button-primary" href={shopPhone.href}>
               <Phone aria-hidden="true" /> Ask the shop
             </a>
           </aside>
@@ -362,11 +365,42 @@ export default function Page() {
             <li className="ms-reveal"><strong>Show the job.</strong><p>Send photos, dimensions, location, timing, or the drawing.</p></li>
             <li className="ms-reveal"><strong>Get a real plan.</strong><p>We quote the scope, not a number designed to get a click.</p></li>
           </ol>
-          <a className="ms-process-call" href="tel:6158104910">
+          <a className="ms-process-call" href={shopPhone.href}>
             <span>Start with a call</span>
-            <strong>(615) 810-4910</strong>
+            <strong>{shopPhone.display}</strong>
             <ArrowUpRight aria-hidden="true" />
           </a>
+        </section>
+
+        <WeldSeam />
+
+        <section className="ms-job-glass" id="job-glass" aria-labelledby="job-glass-title">
+          <div className="ms-job-glass-copy ms-reveal">
+            <span className="ms-job-glass-kicker">Customer Page</span>
+            <h2 className="ms-display" id="job-glass-title">Know what&apos;s happening without chasing the shop.</h2>
+            <p className="ms-job-glass-lead">Once a job is active, one private link keeps the customer side current. No app. No password. No vague “we&apos;ll let you know.”</p>
+            <ul>
+              <li><strong>The promise</strong><span>The date we gave you, with honest changes left visible.</span></li>
+              <li><strong>The work</strong><span>Status and approved progress photos from the crew doing it.</span></li>
+              <li><strong>The paperwork</strong><span>Quote, invoice, and payment link in one clean place.</span></li>
+            </ul>
+            <a className="ms-text-link" href="#contact">Show us the job <ArrowDownRight aria-hidden="true" /></a>
+          </div>
+
+          <figure className="ms-job-glass-demo" aria-label="Example private customer job page">
+            <span className="ms-job-glass-clip" aria-hidden="true" />
+            <figcaption><strong>Your private Customer Page</strong><small>No app · no password</small></figcaption>
+            <div className="ms-job-glass-title"><small>Your job</small><strong>Driveway gate repair</strong><span>Lebanon · Tennessee</span></div>
+            <div className="ms-job-glass-promise"><small>The promise</small><strong>Ready Friday</strong><span>August 15</span></div>
+            <div className="ms-job-glass-route" aria-label="Job progress">
+              <span className="is-done">Wrote it up</span><span className="is-done">Quoted</span><span className="is-now">On the schedule</span><span>On the job</span><span>Done</span>
+            </div>
+            <div className="ms-job-glass-progress">
+              <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 900px) 45vw, 18vw" />
+              <p><small>Progress from the shop</small><strong>Frame fitted square. Hinge stock is next.</strong><span>Cody · today, 2:14 PM</span></p>
+            </div>
+            <div className="ms-job-glass-footer"><span>Something look wrong?</span><a href={shopPhone.href}>Call the shop</a></div>
+          </figure>
         </section>
 
         <WeldSeam />
@@ -408,7 +442,7 @@ export default function Page() {
 
         <WeldSeam />
 
-        <MainstreetContact />
+        <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
       </main>
 
       <WeldSeam />
@@ -422,7 +456,7 @@ export default function Page() {
         <div className="ms-footer-contact">
           <div className="ms-footer-call">
             <strong>Open 24/7</strong>
-            <a href="tel:6158104910">Call the shop · (615) 810-4910</a>
+            <a href={shopPhone.href}>Call the shop · {shopPhone.display}</a>
           </div>
           <a href="mailto:Sales@musiccityspecialtywelding.com">Sales@musiccityspecialtywelding.com</a>
           <span>533 W Baddour Pkwy<br />Lebanon, TN 37087</span>
@@ -433,7 +467,7 @@ export default function Page() {
         </div>
       </footer>
 
-      <MobileQuickActions />
+      <MobileQuickActions phoneHref={shopPhone.href} />
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
+import { getShopPhone } from "@/lib/shop-contact"
 
 export function Footer() {
+  const shopPhone = getShopPhone()
   return (
     <footer className="ms-site ms-footer">
       <div className="ms-footer-mark">
@@ -11,7 +13,7 @@ export function Footer() {
       <div className="ms-footer-contact">
         <div className="ms-footer-call">
           <strong>Open 24/7</strong>
-          <a href="tel:6158104910">Call the shop · (615) 810-4910</a>
+          <a href={shopPhone.href}>Call the shop · {shopPhone.display}</a>
         </div>
         <a href="mailto:Sales@musiccityspecialtywelding.com">Sales@musiccityspecialtywelding.com</a>
         <span>533 W Baddour Pkwy<br />Lebanon, TN 37087</span>

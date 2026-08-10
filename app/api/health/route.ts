@@ -1,6 +1,19 @@
 import { ADS_CONVERSION_SEND_TO } from "@/lib/measurement"
 import { dbConfigured, getSql } from "@/lib/db"
 import { getOwnerEmail } from "@/lib/ops-auth"
+import { aiConfigured } from "@/lib/ai"
+import { gmailConfigured } from "@/lib/gmail"
+import {
+  checkTwilioProviderReadiness,
+  twilioMessagingServiceConfigured,
+  twilioPublicNumberEnabled,
+  twilioSmsConfigured,
+  twilioSmsWebhookConfigured,
+  twilioVoiceConfigured,
+  twilioWebhookBaseUrl,
+} from "@/lib/twilio"
+import { callTranscriptionConfigured, deepgramCallbackSecretConfigured } from "@/lib/call-transcription"
+import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 
 export const dynamic = "force-dynamic"
 
@@ -26,6 +39,14 @@ type DatabaseHealth = {
   lastDigestOk: boolean | null
   lastReminderAt: string | null
   lastReminderOk: boolean | null
+  lastGmailAt: string | null
+  lastGmailOk: boolean | null
+  lastBriefAt: string | null
+  lastBriefOk: boolean | null
+  callTranscriptBacklog: number | null
+  voiceTranscriptBacklog: number | null
+  uploadRecoveryBacklog: number | null
+  consentRecordCount: number | null
 }
 
 async function checkDatabase(): Promise<DatabaseHealth> {
@@ -38,6 +59,14 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     lastDigestOk: null,
     lastReminderAt: null,
     lastReminderOk: null,
+    lastGmailAt: null,
+    lastGmailOk: null,
+    lastBriefAt: null,
+    lastBriefOk: null,
+    callTranscriptBacklog: null,
+    voiceTranscriptBacklog: null,
+    uploadRecoveryBacklog: null,
+    consentRecordCount: null,
   }
   if (!result.configured) return result
   try {
@@ -46,13 +75,31 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       SELECT
         (SELECT count(*)::int FROM leads WHERE is_test = false) AS lead_count,
         (SELECT count(*)::int FROM leads
-          WHERE email_delivery_status = 'failed' AND is_test = false) AS failed_deliveries`) as {
+          WHERE email_delivery_status = 'failed' AND is_test = false) AS failed_deliveries,
+        (SELECT count(*)::int FROM calls
+          WHERE recording_sid <> '' AND transcript_status IN ('queued','failed','submitting','submitted')
+            AND updated_at < now() - interval '30 minutes') AS call_transcript_backlog,
+        (SELECT count(*)::int FROM voice_transcription_intents
+          WHERE status IN ('persisted','queued','failed','submitting')
+            AND updated_at < now() - interval '20 minutes') AS voice_transcript_backlog,
+        (SELECT count(*)::int FROM glass_uploads
+          WHERE status IN ('uploading','uploaded','projecting','unknown')
+            AND updated_at < now() - interval '20 minutes') AS upload_recovery_backlog,
+        (SELECT count(*)::int FROM messaging_consents) AS consent_record_count`) as {
       lead_count: number
       failed_deliveries: number
+      call_transcript_backlog: number
+      voice_transcript_backlog: number
+      upload_recovery_backlog: number
+      consent_record_count: number
     }[]
     result.connected = true
     result.leadCount = counts.lead_count
     result.failedDeliveries = counts.failed_deliveries
+    result.callTranscriptBacklog = counts.call_transcript_backlog
+    result.voiceTranscriptBacklog = counts.voice_transcript_backlog
+    result.uploadRecoveryBacklog = counts.upload_recovery_backlog
+    result.consentRecordCount = counts.consent_record_count
     const digest = (await sql`
       SELECT ran_at, ok FROM automation_runs
       WHERE job = 'daily-digest' ORDER BY ran_at DESC LIMIT 1`) as {
@@ -73,6 +120,14 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       result.lastReminderAt = new Date(reminder[0].ran_at).toISOString()
       result.lastReminderOk = reminder[0].ok
     }
+    const integrations = (await sql`
+      SELECT DISTINCT ON (job) job, ran_at, ok FROM automation_runs
+      WHERE job IN ('gmail-ingest', 'morning-brief')
+      ORDER BY job, ran_at DESC`) as { job: string; ran_at: string; ok: boolean }[]
+    for (const run of integrations) {
+      if (run.job === "gmail-ingest") { result.lastGmailAt = new Date(run.ran_at).toISOString(); result.lastGmailOk = run.ok }
+      if (run.job === "morning-brief") { result.lastBriefAt = new Date(run.ran_at).toISOString(); result.lastBriefOk = run.ok }
+    }
   } catch {
     result.connected = false
   }
@@ -86,16 +141,85 @@ export async function GET() {
       process.env.QUOTE_FROM_EMAIL?.trim() &&
       process.env.QUOTE_TO_EMAIL?.trim()
   )
-  const [quoteEmailCredentialValid, database] = await Promise.all([
+  const [quoteEmailCredentialValid, database, twilioProvider] = await Promise.all([
     quoteEmailConfigured ? hasWorkingResendCredential(resendApiKey) : Promise.resolve(false),
     checkDatabase(),
+    checkTwilioProviderReadiness(),
   ])
   const adsConversionConfigured = Boolean(ADS_CONVERSION_SEND_TO)
   const analyticsMeasurementConfigured = Boolean(
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
   )
   const opsAuthConfigured = Boolean(getOwnerEmail()) && database.connected
-  const cronSecretConfigured = Boolean(process.env.CRON_SECRET?.trim())
+  const cronSecretConfigured = Buffer.byteLength(process.env.CRON_SECRET?.trim() ?? "", "utf8") >= 32
+  const resendWebhookConfigured = Boolean(process.env.RESEND_WEBHOOK_SECRET?.trim())
+  const glassTokenSecretConfigured = Buffer.byteLength(process.env.GLASS_TOKEN_SECRET?.trim() ?? "", "utf8") >= 32
+  const punchSecretConfigured = Buffer.byteLength(process.env.OPS_PUNCH_SECRET?.trim() ?? "", "utf8") >= 32
+  const shopBrainRequired = process.env.SHOP_BRAIN_REQUIRED?.trim().toLowerCase() === "true"
+  const blobConfigured = Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim())
+  const publicNumberEnabled = twilioPublicNumberEnabled()
+  const messagingServiceConfigured = twilioMessagingServiceConfigured()
+  const smsWebhookConfigured = twilioSmsWebhookConfigured()
+  const smsConfigured = twilioSmsConfigured()
+  const voiceConfigured = twilioVoiceConfigured()
+  const webhookBaseConfigured = Boolean(twilioWebhookBaseUrl())
+  const providerVoiceReady = Boolean(
+    twilioProvider.checked &&
+      twilioProvider.credentialsValid &&
+      twilioProvider.numberFound &&
+      twilioProvider.voiceCapable &&
+      twilioProvider.voiceWebhookMatches &&
+      twilioProvider.voiceFallbackProviderHosted
+  )
+  const providerMessagingReady = Boolean(
+    twilioProvider.checked &&
+      twilioProvider.credentialsValid &&
+      twilioProvider.numberFound &&
+      twilioProvider.smsCapable &&
+      twilioProvider.mmsCapable &&
+      twilioProvider.messagingServiceFound &&
+      twilioProvider.messagingInboundWebhookMatches &&
+      twilioProvider.numberInSenderPool
+  )
+  const centralHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hourCycle: "h23" }).format(new Date()))
+  const reminderStale = database.lastReminderAt === null ? centralHour >= 2 : Date.now() - new Date(database.lastReminderAt).getTime() > 3 * 60 * 60 * 1000
+  const digestStale = database.lastDigestAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastDigestAt).getTime() > 26 * 60 * 60 * 1000
+  const gmailStale = database.lastGmailAt === null || Date.now() - new Date(database.lastGmailAt).getTime() > 20 * 60 * 1000
+  const morningBriefStale = database.lastBriefAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastBriefAt).getTime() > 26 * 60 * 60 * 1000
+  const reminderHealthy = !reminderStale && (database.lastReminderOk === true || database.lastReminderAt === null)
+  const digestHealthy = !digestStale && (database.lastDigestOk === true || database.lastDigestAt === null)
+  const briefHealthy = !morningBriefStale && (database.lastBriefOk === true || database.lastBriefAt === null)
+  const shopBrainReady = (
+    database.connected &&
+    database.consentRecordCount !== null &&
+    cronSecretConfigured &&
+    webhookBaseConfigured &&
+    voiceConfigured &&
+    providerVoiceReady &&
+    publicNumberEnabled &&
+    messagingServiceConfigured &&
+    smsWebhookConfigured &&
+    smsConfigured &&
+    providerMessagingReady &&
+    blobConfigured &&
+    callTranscriptionConfigured() &&
+    voiceTranscriptionConfigured() &&
+    gmailConfigured() &&
+    aiConfigured() &&
+    resendWebhookConfigured &&
+    glassTokenSecretConfigured &&
+    punchSecretConfigured &&
+    reminderHealthy &&
+    digestHealthy &&
+    database.lastGmailOk === true &&
+    briefHealthy &&
+    !gmailStale &&
+    !morningBriefStale &&
+    (database.callTranscriptBacklog ?? 0) === 0 &&
+    (database.voiceTranscriptBacklog ?? 0) === 0 &&
+    (database.uploadRecoveryBacklog ?? 0) === 0
+  )
+  const shopBrainGateSatisfied = !shopBrainRequired || shopBrainReady
 
   // Leads are accepted when either durable channel works; both healthy is the target.
   const leadsAccepted =
@@ -107,7 +231,8 @@ export async function GET() {
     adsConversionConfigured &&
     database.configured &&
     database.connected &&
-    (database.failedDeliveries ?? 0) === 0
+    (database.failedDeliveries ?? 0) === 0 &&
+    shopBrainGateSatisfied
 
   return Response.json(
     {
@@ -134,10 +259,55 @@ export async function GET() {
         lastDigestOk: database.lastDigestOk,
         lastReminderAt: database.lastReminderAt,
         lastReminderOk: database.lastReminderOk,
+        lastGmailAt: database.lastGmailAt,
+        lastGmailOk: database.lastGmailOk,
+        lastBriefAt: database.lastBriefAt,
+        lastBriefOk: database.lastBriefOk,
         // Surfaces a silently-disabled GitHub schedule once reminders have run at least once.
-        reminderStale:
-          database.lastReminderAt !== null &&
-          Date.now() - new Date(database.lastReminderAt).getTime() > 3 * 60 * 60 * 1000,
+        reminderStale,
+        digestStale,
+        gmailStale: gmailConfigured() && gmailStale,
+        morningBriefStale,
+      },
+      shopBrain: {
+        required: shopBrainRequired,
+        ready: shopBrainReady,
+        gateSatisfied: shopBrainGateSatisfied,
+        twilioSmsConfigured: smsConfigured,
+        twilioSmsWebhookConfigured: smsWebhookConfigured,
+        twilioVoiceConfigured: voiceConfigured,
+        twilioWebhookBaseConfigured: webhookBaseConfigured,
+        publicNumberEnabled,
+        messagingServiceConfigured,
+        twilioProvider: {
+          checked: twilioProvider.checked,
+          credentialsValid: twilioProvider.credentialsValid,
+          numberFound: twilioProvider.numberFound,
+          voiceCapable: twilioProvider.voiceCapable,
+          smsCapable: twilioProvider.smsCapable,
+          mmsCapable: twilioProvider.mmsCapable,
+          voiceWebhookMatches: twilioProvider.voiceWebhookMatches,
+          voiceFallbackProviderHosted: twilioProvider.voiceFallbackProviderHosted,
+          messagingServiceFound: twilioProvider.messagingServiceFound,
+          messagingInboundWebhookMatches: twilioProvider.messagingInboundWebhookMatches,
+          numberInSenderPool: twilioProvider.numberInSenderPool,
+          voiceReady: providerVoiceReady,
+          messagingReady: providerMessagingReady,
+        },
+        consentLedgerReady: database.consentRecordCount !== null,
+        blobConfigured,
+        uploadRecoveryBacklog: database.uploadRecoveryBacklog,
+        deepgramConfigured: Boolean(process.env.DEEPGRAM_API_KEY?.trim()),
+        deepgramCallbackSecretConfigured: deepgramCallbackSecretConfigured(),
+        callTranscriptionConfigured: callTranscriptionConfigured(),
+        voiceTranscriptionConfigured: voiceTranscriptionConfigured(),
+        callTranscriptBacklog: database.callTranscriptBacklog,
+        voiceTranscriptBacklog: database.voiceTranscriptBacklog,
+        gmailConfigured: gmailConfigured(),
+        aiGatewayConfigured: aiConfigured(),
+        resendWebhookConfigured,
+        glassTokenSecretConfigured,
+        punchSecretConfigured,
       },
       googleAds: {
         conversionConfigured: adsConversionConfigured,
@@ -146,13 +316,15 @@ export async function GET() {
         measurementConfigured: analyticsMeasurementConfigured,
       },
       reviews: {
-        googleReviewUrlConfigured: false,
+        googleReviewUrlConfigured: Boolean(process.env.GOOGLE_REVIEW_URL?.trim()),
       },
       launchGate: {
         passed: launchGatePassed,
         detail: launchGatePassed
-          ? "Quote delivery, lead persistence, and Ads conversion configuration passed."
-          : "Quote delivery, lead persistence, or Ads conversion configuration failed.",
+          ? "Quote delivery, lead persistence, Ads conversion, and activated MCSW Jobs checks passed."
+          : shopBrainRequired && !shopBrainReady
+            ? "MCSW Jobs is activated but an ingestion, brief, transcription, or configuration check is degraded."
+            : "Quote delivery, lead persistence, or Ads conversion configuration failed.",
       },
     },
     {

@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Phone, Clock, Briefcase, CheckCircle } from "lucide-react"
+import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 
-export function Hero() {
+export function Hero({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY }: { phoneHref?: string; phoneDisplay?: string }) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -125,14 +126,14 @@ export function Hero() {
                 >
                   Request Quote
                 </Button>
-                <a href="tel:6158104910">
+                <a href={phoneHref}>
                   <Button 
                     size="lg" 
                     variant="outline" 
                     className="h-14 px-6 text-base font-semibold gap-2 bg-background hover:bg-muted border-2"
                   >
                     <Phone className="h-5 w-5" />
-                    (615) 810-4910
+                    {phoneDisplay}
                   </Button>
                 </a>
               </div>

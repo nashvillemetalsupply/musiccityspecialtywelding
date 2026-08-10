@@ -3,8 +3,9 @@
 import { Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePathname, useRouter } from "next/navigation"
+import { FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 
-export function StickyMobileCTA() {
+export function StickyMobileCTA({ phoneHref = FALLBACK_SHOP_PHONE_HREF }: { phoneHref?: string }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -26,7 +27,7 @@ export function StickyMobileCTA() {
       <div className="container mx-auto px-4 py-2.5">
         <div className="flex gap-2">
           <a
-            href="tel:6158104910"
+            href={phoneHref}
             className="flex-1 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 active:bg-muted/70 text-secondary font-semibold py-2.5 px-3 rounded-lg transition-all touch-manipulation"
             style={{ minHeight: '44px' }}
           >

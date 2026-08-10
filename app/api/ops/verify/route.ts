@@ -1,4 +1,8 @@
-import { redeemLoginToken, OPS_SESSION_COOKIE } from "@/lib/ops-auth"
+import {
+  redeemLoginToken,
+  OPS_SESSION_COOKIE,
+  OPS_SESSION_MAX_AGE_SECONDS,
+} from "@/lib/ops-auth"
 
 export const runtime = "nodejs"
 
@@ -19,7 +23,7 @@ export async function GET(req: Request) {
   const headers = new Headers(response.headers)
   headers.append(
     "Set-Cookie",
-    `${OPS_SESSION_COOKIE}=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`
+    `${OPS_SESSION_COOKIE}=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${OPS_SESSION_MAX_AGE_SECONDS}`
   )
   return new Response(null, { status: 303, headers })
 }

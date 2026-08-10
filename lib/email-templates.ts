@@ -1,3 +1,5 @@
+import { getShopPhone } from "@/lib/shop-contact"
+
 /* Branded email shell — same shop-wall identity as the site and the CRM.
    Table-based, inline-styled, no external assets; every send keeps a plain-
    text fallback. */
@@ -19,6 +21,7 @@ export function brandedEmail(options: {
   ctaUrl?: string
   footnote?: string
 }): string {
+  const shopPhone = getShopPhone()
   const cta = options.ctaLabel && options.ctaUrl
     ? `<tr><td align="left" style="padding: 8px 0 4px;">
         <a href="${options.ctaUrl}"
@@ -38,8 +41,8 @@ export function brandedEmail(options: {
           <tr>
             <td style="background:${COAL};border:3px solid #000;border-radius:10px;padding:26px 28px 22px;text-align:left;">
               <div style="font-family:Courier New,monospace;font-size:11px;letter-spacing:4px;color:${NEON};text-transform:uppercase;">Music City</div>
-              <div style="font-family:Arial Black,Arial,sans-serif;font-size:30px;line-height:1;color:${NEON};text-transform:uppercase;letter-spacing:1px;text-shadow:0 0 12px ${FIRE};">Specialty Welding</div>
-              <div style="font-family:Courier New,monospace;font-size:11px;letter-spacing:3px;color:#a3947c;text-transform:uppercase;margin-top:8px;">Lebanon, TN &nbsp;·&nbsp; Open 24 hours &nbsp;·&nbsp; (615) 810-4910</div>
+              <div style="font-family:Arial Black,Arial,sans-serif;font-size:30px;line-height:1;color:${NEON};text-transform:uppercase;letter-spacing:1px;">Specialty Welding</div>
+              <div style="font-family:Courier New,monospace;font-size:11px;letter-spacing:3px;color:#d4cab8;text-transform:uppercase;margin-top:8px;">Lebanon, TN &nbsp;·&nbsp; Open 24 hours &nbsp;·&nbsp; ${shopPhone.display}</div>
             </td>
           </tr>
           <tr><td style="height:12px;font-size:0;">&nbsp;</td></tr>
@@ -55,7 +58,7 @@ export function brandedEmail(options: {
             <td style="background:${WOOD};border-radius:4px;padding:18px 24px;color:${CREAM};font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.7;">
               <strong style="color:${NEON};">Built here. Fixed where it sits.</strong><br />
               533 W Baddour Pkwy, Lebanon, TN 37087<br />
-              <a href="tel:6158104910" style="color:${CREAM};">(615) 810-4910</a> ·
+              <a href="${shopPhone.href}" style="color:${CREAM};">${shopPhone.display}</a> ·
               <a href="mailto:sales@musiccityspecialtywelding.com" style="color:${CREAM};">sales@musiccityspecialtywelding.com</a> ·
               <a href="https://musiccityspecialtywelding.com" style="color:${NEON};">musiccityspecialtywelding.com</a>
               ${options.footnote ? `<div style="margin-top:10px;color:${MUTED};font-size:12px;">${options.footnote}</div>` : ""}

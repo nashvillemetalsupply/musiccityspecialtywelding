@@ -2,7 +2,8 @@ import { Resend } from "resend"
 import { dbConfigured } from "@/lib/db"
 import { isRateLimitedDurable } from "@/lib/leads"
 import { brandedEmail } from "@/lib/email-templates"
-import { CANONICAL_ORIGIN, createLoginToken, getOwnerEmail, safeEmailMatch } from "@/lib/ops-auth"
+import { CANONICAL_ORIGIN, createLoginToken } from "@/lib/ops-auth"
+import { getOperatorByEmail, getOperatorByPunchSelector } from "@/lib/operators"
 
 export const runtime = "nodejs"
 
@@ -30,30 +31,30 @@ export async function POST(req: Request) {
       )
     }
 
-    const body = (await req.json().catch(() => null)) as { email?: string } | null
+    const body = (await req.json().catch(() => null)) as { email?: string; selector?: string } | null
     const requestedEmail = (body?.email ?? "").trim()
-    const ownerEmail = getOwnerEmail()
     const apiKey = process.env.RESEND_API_KEY
     const from = process.env.QUOTE_FROM_EMAIL
 
-    if (!ownerEmail || !apiKey || !from) {
+    if (!apiKey || !from) {
       return Response.json({ ok: false, error: "Sign-in email is not configured." }, { status: 503 })
     }
 
     // Do not reveal whether an address is the operator address.
-    if (!requestedEmail || !safeEmailMatch(requestedEmail, ownerEmail)) {
+    const operator = body?.selector ? await getOperatorByPunchSelector(body.selector) : requestedEmail ? await getOperatorByEmail(requestedEmail) : null
+    if (!operator) {
       return genericResponse()
     }
 
     // Always the canonical origin — never the request Host — so a spoofed or
     // alternate host can never receive a valid one-time token.
-    const token = await createLoginToken(ownerEmail)
+    const token = await createLoginToken(operator)
     const link = `${CANONICAL_ORIGIN}/api/ops/verify?token=${token}`
 
     const resend = new Resend(apiKey)
     const { error } = await resend.emails.send({
       from,
-      to: ownerEmail,
+      to: operator.email,
       subject: "Your Music City Specialty Welding operations sign-in link",
       text: [
         "Use this link to open the operations dashboard. It works once and expires in 15 minutes.",
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
       ].join("\n"),
       html: brandedEmail({
         preheader: "One-time sign-in link for the shop board.",
-        headline: "Open the board",
+        headline: `Clock in, ${operator.name || "shop"}`,
         bodyHtml:
           "This link signs you into the shop's lead board on this device. It works <strong>once</strong> and expires in <strong>15 minutes</strong>.<br /><br />If you didn't ask for it, ignore this email.",
         ctaLabel: "Sign in to operations",

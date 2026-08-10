@@ -2,8 +2,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { Phone } from "lucide-react"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
+import { getShopPhone } from "@/lib/shop-contact"
 
 export function Navbar() {
+  const shopPhone = getShopPhone()
   return (
     <header className="ms-site ms-nav" aria-label="Main navigation">
       <Link className="ms-brand" href="/">
@@ -26,15 +28,16 @@ export function Navbar() {
       <nav className="ms-nav-links" aria-label="Desktop navigation">
         <Link href="/#work">The work</Link>
         <Link href="/#services">What we weld</Link>
+        <Link href="/#job-glass">Customer Page</Link>
         <Link href="/#contact">Show us the job</Link>
       </nav>
 
-      <a className="ms-nav-call" href="tel:6158104910">
+      <a className="ms-nav-call" href={shopPhone.href}>
         <Phone aria-hidden="true" />
-        <span><small>Open 24/7</small>(615) 810-4910</span>
+        <span><small>Open 24/7</small>{shopPhone.display}</span>
       </a>
 
-      <MainstreetMenu homeHref="/" />
+      <MainstreetMenu homeHref="/" phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
     </header>
   )
 }

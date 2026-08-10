@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   await saveSubscription({
     endpoint: body.endpoint,
     keys: { p256dh: body.keys.p256dh.slice(0, 300), auth: body.keys.auth.slice(0, 100) },
-  })
+  }, operator.id)
   return Response.json({ ok: true }, { status: 200 })
 }
 

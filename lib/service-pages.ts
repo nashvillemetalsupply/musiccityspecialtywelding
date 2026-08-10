@@ -1,3 +1,5 @@
+import { getShopPhone } from "@/lib/shop-contact"
+
 export type ServicePage = {
   slug: string
   title: string
@@ -55,7 +57,7 @@ export const servicePages: ServicePage[] = [
       },
       {
         question: "Do you handle emergency work?",
-        answer: "Urgent work is accepted when scheduling and travel allow. Call (615) 810-4910 to confirm availability.",
+        answer: `Urgent work is accepted when scheduling and travel allow. Call ${getShopPhone().display} to confirm availability.`,
       },
     ],
   },

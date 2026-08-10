@@ -1,0 +1,465 @@
+.glass-page-brand {
+  --glass-paper: #f7f8f9;
+  --glass-surface: #ffffff;
+  --glass-surface-2: #eceff1;
+  --glass-ink: #171a1d;
+  --glass-ink-2: #394047;
+  --glass-muted: #59626b;
+  --glass-rule: #d9dde1;
+  --glass-rule-strong: #838c94;
+  --glass-accent: #b34513;
+  --glass-accent-hover: #91370e;
+  --glass-focus: #e8611c;
+  --glass-focus-ring: #dd5818;
+  --glass-attention: #fff1eb;
+  --glass-header: #12100d;
+  --glass-header-ink: #f1ebdc;
+  --glass-header-muted: #c8bead;
+  --glass-positive: #287a44;
+  --glass-danger: #9b2c23;
+  --glass-on-accent: #ffffff;
+  min-height: 100dvh;
+  padding: 0.75rem;
+  overflow-x: clip;
+  background: var(--glass-paper);
+  color: var(--glass-ink);
+  font-family: var(--font-mcsw-customer), sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.glass-page-brand,
+.glass-page-brand *,
+.glass-page-brand *::before,
+.glass-page-brand *::after {
+  box-sizing: border-box;
+}
+
+.glass-page-brand :is(button, input, select, textarea) {
+  font: inherit;
+}
+
+.glass-page-brand :is(button, input:not([type="hidden"]), select) {
+  min-height: 3rem;
+}
+
+.glass-page-brand :is(button, a) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.glass-page-brand :focus-visible {
+  outline: 2px solid var(--glass-focus-ring);
+  outline-offset: 1px;
+}
+
+.glass-page-brand :is(input, select, textarea):focus-visible {
+  border-color: var(--glass-focus);
+  outline-color: var(--glass-focus-ring);
+}
+
+.glass-page-brand :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.glass-page-brand :is(button, a[href]):active {
+  filter: brightness(0.92);
+}
+
+.glass-page-brand .glass-clipboard {
+  width: min(100%, 48rem);
+  margin: 0 auto;
+  overflow: clip;
+  border: 1px solid var(--glass-rule-strong);
+  border-radius: 1rem;
+  background: var(--glass-surface);
+  color: var(--glass-ink);
+  box-shadow: none;
+}
+
+.glass-page-brand .glass-clipboard > header {
+  min-height: 4rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--glass-header);
+  background: var(--glass-header);
+  color: var(--glass-header-ink);
+}
+
+.glass-page-brand .glass-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.glass-page-brand .glass-brand-lockup img {
+  width: auto;
+  height: 3rem;
+  display: block;
+  object-fit: contain;
+}
+
+.glass-page-brand .glass-brand-lockup > strong {
+  color: var(--glass-header-ink);
+  font-size: 1rem;
+  font-weight: 780;
+  line-height: 1.2;
+}
+
+.glass-page-brand .glass-contact > span {
+  color: var(--glass-header-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.glass-page-brand .glass-contact > a {
+  min-height: 3rem;
+  color: var(--glass-header-ink);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.glass-page-brand .glass-job {
+  padding: 1.5rem;
+}
+
+.glass-page-brand :is(.glass-job > span, .glass-promise > span) {
+  color: var(--glass-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.glass-page-brand .glass-job h1 {
+  margin: 0.5rem 0 0;
+  color: var(--glass-ink);
+  font-family: inherit;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 790;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  text-transform: none;
+}
+
+.glass-page-brand .glass-promise {
+  margin: 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--glass-rule);
+  border-radius: 0.625rem;
+  background: var(--glass-attention);
+  color: var(--glass-ink);
+}
+
+.glass-page-brand .glass-promise > strong {
+  margin-top: 0.5rem;
+  color: var(--glass-ink);
+  font-family: inherit;
+  font-size: 1.375rem;
+  font-weight: 780;
+  text-transform: none;
+}
+
+.glass-page-brand .glass-promise :is(p, span) {
+  color: var(--glass-ink-2);
+}
+
+.glass-page-brand .glass-correction button {
+  min-height: 3rem;
+  color: var(--glass-muted);
+  font: 750 0.875rem/1.35 var(--font-mcsw-customer), sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.glass-page-brand .glass-traveler {
+  margin: 1.5rem;
+}
+
+.glass-page-brand .glass-traveler li {
+  color: var(--glass-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.glass-page-brand .glass-traveler li::before {
+  background: var(--glass-rule-strong);
+}
+
+.glass-page-brand .glass-traveler i {
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--glass-rule-strong);
+  border-radius: 0.25rem;
+  background: var(--glass-surface);
+  color: var(--glass-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.glass-page-brand .glass-traveler li.is-done {
+  color: var(--glass-ink);
+  font-weight: 700;
+}
+
+.glass-page-brand .glass-traveler li.is-done i {
+  border-color: var(--glass-positive);
+  background: var(--glass-positive);
+  color: var(--glass-on-accent);
+}
+
+.glass-page-brand .glass-traveler li.is-current i {
+  border-color: var(--glass-accent);
+  background: var(--glass-accent);
+  color: var(--glass-on-accent);
+}
+
+.glass-page-brand .glass-runner {
+  margin: 0 1.5rem 1.5rem;
+  border-color: var(--glass-rule);
+  border-radius: 0.625rem;
+  background: var(--glass-surface-2);
+  color: var(--glass-ink-2);
+}
+
+.glass-page-brand :is(.glass-progress, .glass-money, .glass-review, .glass-uploads) {
+  padding: 1.5rem;
+  border-top: 1px solid var(--glass-rule);
+  background: var(--glass-surface);
+  color: var(--glass-ink);
+}
+
+.glass-page-brand :is(.glass-progress, .glass-money, .glass-review, .glass-uploads) h2 {
+  color: var(--glass-ink);
+  font-family: inherit;
+  font-size: 1.375rem;
+  font-weight: 780;
+  letter-spacing: -0.025em;
+  text-transform: none;
+}
+
+.glass-page-brand .glass-progress figure,
+.glass-page-brand .glass-upload-list li {
+  border: 1px solid var(--glass-rule);
+  border-radius: 0.625rem;
+  background: var(--glass-paper);
+  box-shadow: none;
+  transform: none;
+}
+
+.glass-page-brand .glass-progress figcaption,
+.glass-page-brand :is(.glass-review p, .glass-uploads p, .glass-upload-limits) {
+  color: var(--glass-ink-2);
+  font-family: inherit;
+  font-size: 0.9375rem;
+}
+
+.glass-page-brand .glass-money p {
+  border-color: var(--glass-rule);
+}
+
+.glass-page-brand .glass-money p :is(span, strong) {
+  color: var(--glass-ink);
+  font-family: inherit;
+}
+
+.glass-page-brand :is(.glass-pay, .glass-review form button, .glass-upload-choose) {
+  min-height: 3rem;
+  display: inline-flex;
+  padding-inline: 1rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--glass-accent);
+  border-radius: 0.625rem;
+  background: var(--glass-accent);
+  color: var(--glass-on-accent);
+  font: 750 0.9375rem/1 var(--font-mcsw-customer), sans-serif;
+  box-shadow: none;
+  text-transform: none;
+}
+
+.glass-page-brand .glass-upload-choose {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.glass-page-brand .glass-upload-choose > input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.glass-page-brand .glass-upload-choose:focus-within {
+  outline: 2px solid var(--glass-focus-ring);
+  outline-offset: 1px;
+}
+
+.glass-page-brand .glass-upload-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.glass-page-brand .glass-upload-list li > :is(a, button) {
+  min-height: 3rem;
+  border: 1px solid var(--glass-rule-strong);
+  border-radius: 0.625rem;
+  background: var(--glass-surface);
+  color: var(--glass-ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 750;
+}
+
+.glass-page-brand .glass-upload-error {
+  border-left: 3px solid var(--glass-danger);
+  background: var(--glass-attention);
+  color: var(--glass-danger);
+}
+
+.glass-page-brand .glass-clipboard > footer {
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--glass-rule);
+  background: var(--glass-paper);
+  color: var(--glass-ink);
+}
+
+.glass-page-brand .glass-clipboard > footer p {
+  color: var(--glass-muted);
+}
+
+.glass-page-brand .glass-clipboard > footer a,
+.glass-page-brand .glass-clipboard > footer a:last-child {
+  min-height: 3rem;
+  border: 1px solid var(--glass-accent);
+  border-radius: 0.625rem;
+  background: var(--glass-accent);
+  color: var(--glass-on-accent);
+  font: 750 0.9375rem/1 var(--font-mcsw-customer), sans-serif;
+}
+
+.glass-page-brand .glass-clipboard > footer a:last-child {
+  border-color: var(--glass-rule-strong);
+  background: var(--glass-surface);
+  color: var(--glass-ink);
+}
+
+.glass-page-brand .glass-closed {
+  width: min(100%, 32rem);
+  margin: 8vh auto 0;
+  padding: 1.5rem;
+  border: 1px solid var(--glass-rule-strong);
+  border-radius: 1rem;
+  background: var(--glass-surface);
+  color: var(--glass-ink);
+  box-shadow: none;
+}
+
+.glass-page-brand .glass-closed h1 {
+  color: var(--glass-ink);
+  font-family: inherit;
+  font-size: 1.5rem;
+  text-transform: none;
+}
+
+.glass-page-brand .glass-closed > a {
+  min-height: 3rem;
+  display: inline-flex;
+  padding-inline: 1rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--glass-accent);
+  border-radius: 0.625rem;
+  background: var(--glass-accent);
+  color: var(--glass-on-accent);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glass-page-brand :is(.glass-pay, .glass-review form button, .glass-upload-choose, .glass-closed > a):hover {
+    background: var(--glass-accent-hover);
+  }
+}
+
+@media (max-width: 40rem) {
+  .glass-page-brand {
+    padding: 0;
+  }
+
+  .glass-page-brand .glass-clipboard {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .glass-page-brand .glass-contact > span {
+    display: none;
+  }
+
+  .glass-page-brand :is(.glass-job, .glass-progress, .glass-money, .glass-review, .glass-uploads, .glass-clipboard > footer) {
+    padding: 1rem;
+  }
+
+  .glass-page-brand .glass-promise,
+  .glass-page-brand .glass-traveler {
+    margin-inline: 1rem;
+  }
+
+  .glass-page-brand .glass-runner {
+    margin-inline: 1rem;
+  }
+}
+
+@media (max-width: 26.25rem) {
+  .glass-page-brand .glass-traveler {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .glass-page-brand .glass-traveler li {
+    min-height: 2.75rem;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .glass-page-brand .glass-traveler li::before {
+    top: -50%;
+    right: auto;
+    bottom: 50%;
+    left: 1.25rem;
+    width: 1px;
+    height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-page-brand *,
+  .glass-page-brand *::before,
+  .glass-page-brand *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

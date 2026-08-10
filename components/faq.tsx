@@ -1,3 +1,5 @@
+import { getShopPhone } from "@/lib/shop-contact"
+
 const questions = [
   {
     question: "Do you come to the job site?",
@@ -17,7 +19,7 @@ const questions = [
   {
     question: "Do you take urgent repair work?",
     answer:
-      "Yes, when scheduling and travel allow. Call (615) 810-4910 for an urgent request so we can confirm current availability instead of relying on the online form alone.",
+      `Yes, when scheduling and travel allow. Call ${getShopPhone().display} for an urgent request so we can confirm current availability instead of relying on the online form alone.`,
   },
   {
     question: "Can you work from drawings or specifications?",

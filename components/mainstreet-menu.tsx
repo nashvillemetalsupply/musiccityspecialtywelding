@@ -1,8 +1,9 @@
 "use client"
 
 import { useRef } from "react"
+import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 
-export function MainstreetMenu({ homeHref = "" }: { homeHref?: string }) {
+export function MainstreetMenu({ homeHref = "", phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY }: { homeHref?: string; phoneHref?: string; phoneDisplay?: string }) {
   const menuRef = useRef<HTMLDetailsElement>(null)
 
   function closeMenu() {
@@ -15,8 +16,9 @@ export function MainstreetMenu({ homeHref = "" }: { homeHref?: string }) {
       <div className="ms-menu-panel">
         <a href={`${homeHref}#work`} onClick={closeMenu}>The work</a>
         <a href={`${homeHref}#services`} onClick={closeMenu}>What we weld</a>
+        <a href={`${homeHref}#job-glass`} onClick={closeMenu}>Customer Page</a>
         <a href={`${homeHref}#contact`} onClick={closeMenu}>Show us the job</a>
-        <a href="tel:6158104910" onClick={closeMenu}>Call (615) 810-4910</a>
+        <a href={phoneHref} onClick={closeMenu}>Call {phoneDisplay}</a>
       </div>
     </details>
   )

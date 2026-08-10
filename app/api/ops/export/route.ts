@@ -28,8 +28,8 @@ function csvCell(value: unknown): string {
 export async function GET(req: Request) {
   const cookieStore = await cookies()
   const operator = await validateSessionToken(cookieStore.get(OPS_SESSION_COOKIE)?.value)
-  if (!operator) {
-    return new Response("Not signed in.", { status: 401 })
+  if (!operator || operator.role !== "owner") {
+    return new Response("Owner access required.", { status: operator ? 403 : 401 })
   }
 
   const sql = getSql()

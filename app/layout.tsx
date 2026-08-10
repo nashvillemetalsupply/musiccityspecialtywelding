@@ -1,9 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Alfa_Slab_One, Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans, Permanent_Marker } from "next/font/google"
-import Script from "next/script"
-import { AttributionTracker } from "@/components/attribution-tracker"
-import { DeferredGoogleTag } from "@/components/deferred-google-tag"
+import { PublicAnalytics } from "@/components/public-analytics"
+import { getShopPhone } from "@/lib/shop-contact"
 import "./globals.css"
 
 const _barlowCondensed = Barlow_Condensed({
@@ -94,13 +93,14 @@ export const metadata: Metadata = {
   },
 }
 
+const shopPhone = getShopPhone()
 const localBusinessSchema = {
   "@context": "https://schema.org",
   "@type": ["LocalBusiness", "ProfessionalService"],
   "@id": "https://musiccityspecialtywelding.com/#business",
   name: "Music City Specialty Welding",
   url: "https://musiccityspecialtywelding.com/",
-  telephone: "+1-615-810-4910",
+  telephone: shopPhone.e164,
   email: "sales@musiccityspecialtywelding.com",
   sameAs: [
     "https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/",
@@ -172,19 +172,8 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
-        {/* Queue measurement immediately; load the third-party library after intent or 8 seconds. */}
-        <Script id="google-tag" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
-            window.gtag('js', new Date());
-            window.gtag('config', 'GT-TWZ9WFGX');
-            window.gtag('config', 'AW-17817632790');
-            ${googleAnalyticsMeasurementId ? `window.gtag('config', ${JSON.stringify(googleAnalyticsMeasurementId)});` : ""}
-          `}
-        </Script>
-        <DeferredGoogleTag containerId="GT-TWZ9WFGX" />
-        <AttributionTracker />
+        {/* Customer bearer links and internal operations never load third-party analytics. */}
+        <PublicAnalytics measurementId={googleAnalyticsMeasurementId} />
         {children}
       </body>
     </html>

@@ -1,14 +1,13 @@
-import { Resend } from "resend"
 import { dbConfigured, getSql } from "@/lib/db"
-import { brandedEmail, escapeHtml } from "@/lib/email-templates"
 import type { LeadRow } from "@/lib/leads"
 import { isAuthorizedCron } from "@/lib/ops-auth"
+import { notifyAll } from "@/lib/notify"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-// Daily follow-up digest, triggered by Vercel Cron. Also serves as the
-// automation heartbeat that /api/health and external monitoring check.
+// Legacy automation heartbeat. The Radio is the morning brief; this route files
+// an owner-only Wire summary instead of bypassing the notification authority.
 export async function GET(req: Request) {
   if (!isAuthorizedCron(req)) {
     return Response.json({ ok: false, error: "Unauthorized." }, { status: 401 })
@@ -25,8 +24,7 @@ export async function GET(req: Request) {
     const unanswered = (await sql`
       SELECT * FROM leads
       WHERE first_response_at IS NULL
-        AND status NOT IN ('won', 'lost', 'spam')
-        AND is_test = false
+        AND completed_at IS NULL AND status NOT IN ('lost', 'spam') AND is_test = false
       ORDER BY created_at ASC LIMIT 50`) as LeadRow[]
     const failed = (await sql`
       SELECT * FROM leads
@@ -39,13 +37,17 @@ export async function GET(req: Request) {
       ORDER BY quoted_at ASC LIMIT 50`) as LeadRow[]
     const unpaidInvoices = (await sql`
       SELECT * FROM leads
-      WHERE invoiced_at IS NOT NULL AND revenue_cents IS NULL AND is_test = false
+      WHERE invoiced_at IS NOT NULL AND paid_at IS NULL AND is_test = false
       ORDER BY invoice_due_at ASC NULLS LAST LIMIT 50`) as LeadRow[]
     const followUpsDue = (await sql`
       SELECT * FROM leads
       WHERE next_follow_up_at IS NOT NULL AND next_follow_up_at <= now()
-        AND status NOT IN ('won', 'lost', 'spam') AND is_test = false
+        AND completed_at IS NULL AND status NOT IN ('lost', 'spam') AND is_test = false
       ORDER BY next_follow_up_at ASC LIMIT 50`) as LeadRow[]
+    const [ociReady] = (await sql`
+      SELECT count(*)::int AS count FROM leads
+      WHERE status = 'won' AND gclid <> '' AND won_at > now() - interval '7 days'
+        AND is_test = false`) as { count: number }[]
 
     detail = {
       unanswered: unanswered.length,
@@ -53,94 +55,25 @@ export async function GET(req: Request) {
       staleQuotes: openQuotes.length,
       followUpsDue: followUpsDue.length,
       unpaidInvoices: unpaidInvoices.length,
+      adWinsReady: Number(ociReady?.count ?? 0),
     }
 
-    const needsEmail =
-      unanswered.length > 0 ||
-      failed.length > 0 ||
-      openQuotes.length > 0 ||
-      followUpsDue.length > 0 ||
-      unpaidInvoices.length > 0
-    const apiKey = process.env.RESEND_API_KEY
-    const to = process.env.QUOTE_TO_EMAIL
-    const from = process.env.QUOTE_FROM_EMAIL
-
-    if (needsEmail && apiKey && to && from) {
-      const describe = (lead: LeadRow) =>
-        `- ${lead.first_name} ${lead.last_name}`.trim() +
-        ` · ${lead.phone} · ${lead.service} · in ${new Date(lead.created_at).toLocaleString("en-US", { timeZone: "America/Chicago" })} CT` +
-        ` · https://musiccityspecialtywelding.com/ops/leads/${lead.id}`
-
-      const sections: string[] = []
-      if (followUpsDue.length) {
-        sections.push(`FOLLOW-UPS DUE (${followUpsDue.length}):`, ...followUpsDue.map(describe), "")
-      }
-      if (unanswered.length) {
-        sections.push(`LEADS STILL WAITING ON A FIRST CALL (${unanswered.length}):`, ...unanswered.map(describe), "")
-      }
-      if (openQuotes.length) {
-        sections.push(`QUOTES OUT MORE THAN 3 DAYS (${openQuotes.length}):`, ...openQuotes.map(describe), "")
-      }
-      if (unpaidInvoices.length) {
-        const now = Date.now()
-        sections.push(
-          `INVOICES OUT, NOT PAID (${unpaidInvoices.length}):`,
-          ...unpaidInvoices.map((lead) => {
-            const overdue =
-              lead.invoice_due_at && new Date(lead.invoice_due_at).getTime() < now
-                ? " · OVERDUE"
-                : ""
-            return `- #${lead.invoice_number} · ${lead.first_name} ${lead.last_name}`.trim() +
-              ` · ${lead.service}${overdue} · https://musiccityspecialtywelding.com/ops/leads/${lead.id}`
-          }),
-          ""
-        )
-      }
-      if (failed.length) {
-        sections.push(
-          `QUOTE EMAILS THAT FAILED TO DELIVER (${failed.length}) — these leads are ONLY in the dashboard:`,
-          ...failed.map(describe),
-          ""
-        )
-      }
-      const [ociReady] = (await sql`
-        SELECT count(*)::int AS count FROM leads
-        WHERE status = 'won' AND gclid <> '' AND won_at > now() - interval '7 days'
-          AND is_test = false`) as { count: number }[]
-      if (ociReady.count > 0) {
-        sections.push(
-          `${ociReady.count} won ad-driven job(s) this week are ready to upload to Google Ads:`,
-          `https://musiccityspecialtywelding.com/api/ops/export?format=google-oci`,
-          ""
-        )
-      }
-      sections.push("Work the list: https://musiccityspecialtywelding.com/ops")
-
-      const resend = new Resend(apiKey)
-      const { error } = await resend.emails.send({
-        from,
-        to,
-        subject: `Daily shop board: ${unanswered.length} waiting, ${followUpsDue.length} due, ${unpaidInvoices.length} unpaid invoices`,
-        text: sections.join("\n"),
-        html: brandedEmail({
-          preheader: `${unanswered.length} waiting · ${followUpsDue.length} due · ${openQuotes.length} stale`,
-          headline: "Today's follow-up list",
-          bodyHtml: sections
-            .map((line) =>
-              escapeHtml(line).replace(/(https:\/\/[^\s&]+(?:&amp;[^\s&]+)*)/g, (url) => {
-                const attr = url.replace(/&amp;/g, "&").replace(/"/g, "%22")
-                return `<a href="${attr}">${url}</a>`
-              })
-            )
-            .join("<br />"),
-          ctaLabel: "Work the board",
-          ctaUrl: "https://musiccityspecialtywelding.com/ops",
-        }),
+    const needsAttention = Object.values(detail).some((value) => typeof value === "number" && value > 0)
+    if (needsAttention) {
+      const centralDay = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date())
+      const filed = await notifyAll({
+        priority: "digest",
+        stock: failed.length ? "red" : "manila",
+        title: "Today’s shop list is ready",
+        body: `${followUpsDue.length} due · ${unanswered.length} waiting · ${openQuotes.length} stale quotes · ${unpaidInvoices.length} unpaid`,
+        url: "/ops",
+        ownerOnly: true,
+        dedupeKey: `daily-digest:${centralDay}`,
       })
-      if (error) throw new Error(error.message || "Digest email failed.")
-      detail.emailSent = true
+      detail.notificationsFiled = filed.length
+      detail.delivery = "wire"
     } else {
-      detail.emailSent = false
+      detail.delivery = "none"
     }
 
     ok = true
@@ -153,7 +86,7 @@ export async function GET(req: Request) {
     try {
       await sql`
         INSERT INTO automation_runs (job, ok, detail)
-        VALUES ('daily-digest', ${ok}, ${JSON.stringify(detail)})`
+        VALUES ('daily-digest', ${ok}::boolean, ${JSON.stringify(detail)}::jsonb)`
       await sql`DELETE FROM automation_runs WHERE ran_at < now() - interval '90 days'`
     } catch (logError) {
       console.error("Automation log error:", logError)

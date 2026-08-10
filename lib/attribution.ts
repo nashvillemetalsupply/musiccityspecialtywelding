@@ -38,6 +38,9 @@ function emptyAttribution(): Attribution {
 // keep them for the session so a lead submitted from any page keeps its source.
 export function captureAttribution(): Attribution {
   if (typeof window === "undefined") return emptyAttribution()
+  if (window.location.pathname === "/ops" || window.location.pathname.startsWith("/ops/") || window.location.pathname === "/j" || window.location.pathname.startsWith("/j/")) {
+    return emptyAttribution()
+  }
   try {
     const stored = window.sessionStorage.getItem(STORAGE_KEY)
     const existing: Attribution = stored ? JSON.parse(stored) : emptyAttribution()

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { Phone } from "lucide-react"
+import { FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 
-export function MobileQuickActions({ quoteHref = "#contact" }: { quoteHref?: string }) {
+export function MobileQuickActions({ quoteHref = "#contact", phoneHref = FALLBACK_SHOP_PHONE_HREF }: { quoteHref?: string; phoneHref?: string }) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export function MobileQuickActions({ quoteHref = "#contact" }: { quoteHref?: str
       aria-hidden={!isVisible}
       inert={!isVisible}
     >
-      <a href="tel:6158104910">
+      <a href={phoneHref}>
         <Phone aria-hidden="true" />
         <span><small>Open 24/7</small>Call now</span>
       </a>

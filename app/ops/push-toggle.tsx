@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { registerOpsServiceWorker } from "./register-ops-service-worker"
 
 function base64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4)
@@ -11,7 +12,7 @@ function base64ToUint8Array(base64: string) {
 
 export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
   const [state, setState] = useState<
-    "unsupported" | "checking" | "off" | "on" | "working" | "denied"
+    "unsupported" | "checking" | "off" | "on" | "enabling" | "disabling" | "denied"
   >("checking")
 
   useEffect(() => {
@@ -28,8 +29,19 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
         return
       }
       try {
-        const registration = await navigator.serviceWorker.register("/ops-sw.js")
+        const registration = await registerOpsServiceWorker()
+        if (!registration) throw new Error("service worker unavailable")
         const subscription = await registration.pushManager.getSubscription()
+        if (subscription) {
+          // Existing browsers predate per-person identity. Re-posting is
+          // idempotent and binds the endpoint to whoever punched in today.
+          const rebound = await fetch("/api/ops/push", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(subscription.toJSON()),
+          })
+          if (!rebound.ok) throw new Error("push rebind failed")
+        }
         if (!cancelled) setState(subscription ? "on" : "off")
       } catch {
         if (!cancelled) setState("unsupported")
@@ -42,9 +54,10 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
   }, [vapidPublicKey])
 
   const enable = async () => {
-    setState("working")
+    setState("enabling")
     try {
-      const registration = await navigator.serviceWorker.ready
+      const registration = await registerOpsServiceWorker()
+      if (!registration) throw new Error("service worker unavailable")
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: base64ToUint8Array(vapidPublicKey),
@@ -62,9 +75,10 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
   }
 
   const disable = async () => {
-    setState("working")
+    setState("disabling")
     try {
-      const registration = await navigator.serviceWorker.ready
+      const registration = await registerOpsServiceWorker()
+      if (!registration) throw new Error("service worker unavailable")
       const subscription = await registration.pushManager.getSubscription()
       if (subscription) {
         await fetch("/api/ops/push", {
@@ -88,10 +102,17 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
     <button
       type="button"
       className="ops-ghost"
-      disabled={state === "checking" || state === "working"}
+      aria-pressed={state === "on" || state === "disabling"}
+      disabled={state === "checking" || state === "enabling" || state === "disabling"}
       onClick={state === "on" ? disable : enable}
     >
-      {state === "on" ? "Phone alerts: on" : "Enable phone alerts"}
+      {state === "on"
+        ? "Alerts on"
+        : state === "enabling"
+          ? "Turning alerts on"
+          : state === "disabling"
+            ? "Turning alerts off"
+            : "Alerts"}
     </button>
   )
 }
