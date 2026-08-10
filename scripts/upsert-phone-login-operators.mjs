@@ -13,7 +13,7 @@ const sql = neon(databaseUrl)
 const ownerEmail = (envValue("OPS_LOGIN_EMAIL") || envValue("QUOTE_TO_EMAIL") || "sales@musiccityspecialtywelding.com").toLowerCase()
 const people = [
   { email: ownerEmail, name: "Philippe Auguste", phone: "+16158104910", role: "owner" },
-  { email: "tj.harahan@phone.mcsw.invalid", name: "TJ Harahan", phone: "+16155468197", role: "crew" },
+  { email: "tj.harahan@phone.mcsw.invalid", name: "TJ Harahan", phone: "+16155468197", role: "owner" },
 ]
 
 for (const person of people) {
