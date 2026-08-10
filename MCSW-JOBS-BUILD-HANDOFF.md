@@ -29,6 +29,8 @@ Release verification:
 
 Provider activation remains intentionally separate from code completion. Keep customer Text hidden until Twilio A2P approval and production flags are enabled; keep the existing call ads and old number untouched until the documented cutover is explicitly approved.
 
+Operator phone-login activation is separate from customer messaging. Twilio Verify uses `TWILIO_VERIFY_SERVICE_SID` plus account credentials, preserves a durable pre-send intent, validates the provider-approved code before session creation, and does not enable customer SMS. Philippe Auguste is the active owner operator ending `4910`; TJ Harahan is active crew ending `8197`. The logged-out `/ops` and `/ops/install` screens share the same operator picker and text-code readiness.
+
 ## Start here for future maintenance
 
 1. Read this file completely.

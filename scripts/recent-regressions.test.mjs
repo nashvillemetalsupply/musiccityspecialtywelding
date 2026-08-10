@@ -297,3 +297,16 @@ test("VoiceCapture gives virtual clicks a toggle and releases on repeat-safe blu
   assert.match(keyDown, /pressStart\(\)/)
   assert.match(control, /onKeyUp=\{\(event\)\s*=>\s*\{[\s\S]*pressEnd\(\)/)
 })
+
+test("phone login uses Twilio Verify without enabling customer SMS", () => {
+  const twilio = source("lib/twilio.ts")
+  const request = source("app/api/ops/sms-login/request/route.ts")
+  const verify = source("app/api/ops/sms-login/verify/route.ts")
+  const install = source("app/ops/install/page.tsx")
+
+  assert.match(twilio, /TWILIO_VERIFY_SERVICE_SID/)
+  assert.match(twilio, /twilioPhoneLoginConfigured\(\)[\s\S]*twilioVerifyConfigured\(\) \|\| twilioSmsConfigured\(\)/)
+  assertInOrder(request, ["createSmsVerificationIntent(operator)", "startPhoneLoginVerification(phone)"], "Verify intent must persist before provider send")
+  assertInOrder(verify, ["checkPhoneLoginVerification(phone, code)", "redeemSmsVerificationIntent(operator)"], "Provider approval must precede session creation")
+  assert.match(install, /operators=\{operators\} smsReady=\{smsReady\}/)
+})

@@ -24,6 +24,7 @@ Install secrets directly in Vercel, never in chat or source control:
 ```text
 TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN
+TWILIO_VERIFY_SERVICE_SID (Verify service used only for operator sign-in)
 TWILIO_PHONE_NUMBER
 TWILIO_MESSAGING_SERVICE_SID
 TWILIO_WEBHOOK_BASE_URL
@@ -77,7 +78,11 @@ Philippe must personally do only these steps:
 
 The technical setup—webhooks, Messaging Service, Advanced Opt-Out, Vercel secrets, retry behavior, and test matrix—does not require Philippe to click through alone. Keep the existing Google call-ad number active and do not edit the campaigns; the private Twilio number stays separate until cutover testing is accepted.
 
-Register an EIN-based Low-Volume Standard Brand and the approved low-volume job-update/customer-care Campaign. Do not expose Text or SMS login while the Campaign is pending.
+Register an EIN-based Low-Volume Standard Brand and the approved low-volume job-update/customer-care Campaign. Keep customer Text hidden while the Campaign is pending. Operator phone login may run independently through Twilio Verify's managed sender pool.
+
+### Operator phone login
+
+Create a Twilio Verify service named `MCSW Jobs Login`, store its `VA...` SID as `TWILIO_VERIFY_SERVICE_SID`, and deploy. Verify login remains separate from customer SMS: it must not enable `TWILIO_SMS_ENABLED`, customer Text controls, the public number, or voice. Active operators with unique E.164 cell numbers receive six-digit codes; successful login creates the same 90-day device session as email. Phone-only operators use a reserved `.invalid` address so email login is never offered for a mailbox that does not exist.
 
 Twilio's labels are separate gates; do not treat an earlier approval as final activation:
 

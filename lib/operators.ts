@@ -17,6 +17,11 @@ export type Operator = {
   glass_auto_post: boolean
 }
 
+export function operatorHasEmail(operator: Pick<Operator, "email">) {
+  const email = operator.email.trim().toLowerCase()
+  return Boolean(email && !email.endsWith(".invalid"))
+}
+
 export function operatorSignature(operator: Pick<Operator, "name" | "signature_name" | "role">) {
   const explicit = operator.signature_name?.trim()
   if (explicit) return explicit

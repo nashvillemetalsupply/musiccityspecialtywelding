@@ -83,6 +83,17 @@ export function twilioSmsConfigured() {
   )
 }
 
+export function twilioVerifyConfigured() {
+  return Boolean(
+    accountCredentialsConfigured() &&
+      /^VA[0-9a-f]{32}$/i.test(process.env.TWILIO_VERIFY_SERVICE_SID?.trim() ?? "")
+  )
+}
+
+export function twilioPhoneLoginConfigured() {
+  return twilioVerifyConfigured() || twilioSmsConfigured()
+}
+
 export function twilioVoiceConfigured() {
   return Boolean(
     twilioConfigured() &&
@@ -343,6 +354,43 @@ export async function sendSms(input: {
   }
   if (!data?.sid) throw new TwilioProviderError("Twilio responded without a text receipt. Verify before retrying.", false)
   return { sid: data.sid, status: data.status ?? "queued" }
+}
+
+async function twilioVerifyPost(path: string, form: URLSearchParams) {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim()
+  const authToken = process.env.TWILIO_AUTH_TOKEN?.trim()
+  const serviceSid = process.env.TWILIO_VERIFY_SERVICE_SID?.trim()
+  if (!accountSid || !authToken || !serviceSid) throw new Error("Twilio Verify is not configured.")
+  const response = await fetch(
+    `https://verify.twilio.com/v2/Services/${encodeURIComponent(serviceSid)}/${path}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: form,
+      cache: "no-store",
+    }
+  )
+  const data = (await response.json().catch(() => null)) as { sid?: string; status?: string; message?: string } | null
+  return { response, data }
+}
+
+export async function startPhoneLoginVerification(phone: string) {
+  if (!twilioVerifyConfigured()) throw new Error("Twilio Verify is not configured.")
+  const { response, data } = await twilioVerifyPost("Verifications", new URLSearchParams({ To: phone, Channel: "sms" }))
+  if (!response.ok || !data?.sid) throw new Error(data?.message || "Twilio could not send the sign-in code.")
+}
+
+export async function checkPhoneLoginVerification(phone: string, code: string) {
+  if (!twilioVerifyConfigured()) return false
+  const { response, data } = await twilioVerifyPost("VerificationCheck", new URLSearchParams({ To: phone, Code: code }))
+  if (!response.ok) {
+    if (response.status === 400 || response.status === 404) return false
+    throw new Error(data?.message || "Twilio could not check the sign-in code.")
+  }
+  return data?.status === "approved"
 }
 
 export async function startVoiceCall(input: { to: string; url: string; statusCallback: string }) {

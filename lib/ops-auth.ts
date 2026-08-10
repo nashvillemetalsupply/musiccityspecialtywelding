@@ -77,6 +77,36 @@ async function createSession(operatorId: number, email: string): Promise<string>
   return sessionToken
 }
 
+export async function createSmsVerificationIntent(operator: Operator) {
+  const sql = getSql()
+  const expiresAt = new Date(Date.now() + SMS_CODE_TTL_MS).toISOString()
+  await sql`DELETE FROM ops_tokens WHERE expires_at < now()`
+  await sql`DELETE FROM ops_tokens WHERE purpose = 'sms-verify-login' AND operator_id = ${operator.id}::bigint`
+  await sql`
+    INSERT INTO ops_tokens (token_hash, purpose, email, operator_id, expires_at)
+    VALUES (
+      ${hashToken(randomBytes(32).toString("hex"))}::text,
+      'sms-verify-login'::text,
+      ${operator.email}::text,
+      ${operator.id}::bigint,
+      ${expiresAt}::timestamptz
+    )`
+}
+
+export async function redeemSmsVerificationIntent(operator: Operator): Promise<string | null> {
+  const sql = getSql()
+  const rows = (await sql`
+    UPDATE ops_tokens SET used_at = now()
+    WHERE id = (
+      SELECT id FROM ops_tokens
+      WHERE purpose = 'sms-verify-login' AND operator_id = ${operator.id}::bigint
+        AND used_at IS NULL AND expires_at > now()
+      ORDER BY expires_at DESC LIMIT 1
+    )
+    RETURNING id`) as { id: number }[]
+  return rows.length ? createSession(Number(operator.id), operator.email) : null
+}
+
 export async function redeemLoginToken(token: string): Promise<string | null> {
   if (!/^[a-f0-9]{64}$/.test(token)) return null
   const sql = getSql()

@@ -1,10 +1,10 @@
 import { dbConfigured } from "@/lib/db"
 import { after } from "next/server"
-import { createSmsLoginCode } from "@/lib/ops-auth"
+import { createSmsLoginCode, createSmsVerificationIntent } from "@/lib/ops-auth"
 import { getOperatorByPhone, getOperatorByPunchSelector } from "@/lib/operators"
 import { normalizePhone } from "@/lib/people"
 import { consumeStrictRateLimit, rateLimitFingerprint } from "@/lib/rate-limit"
-import { sendSms, twilioSmsConfigured } from "@/lib/twilio"
+import { startPhoneLoginVerification, sendSms, twilioPhoneLoginConfigured, twilioVerifyConfigured } from "@/lib/twilio"
 
 export const runtime = "nodejs"
 
@@ -12,7 +12,7 @@ const generic = () =>
   Response.json({ ok: true, message: "If that number belongs to an active team member, a code is on its way." })
 
 export async function POST(req: Request) {
-  if (!dbConfigured() || !twilioSmsConfigured()) {
+  if (!dbConfigured() || !twilioPhoneLoginConfigured()) {
     return Response.json({ ok: false, error: "Text sign-in is not ready yet. Use email." }, { status: 503 })
   }
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
@@ -28,6 +28,12 @@ export async function POST(req: Request) {
   }
   const operator = selectedOperator ?? (phone ? await getOperatorByPhone(phone) : null)
   if (!operator) return generic()
+
+  if (twilioVerifyConfigured()) {
+    await createSmsVerificationIntent(operator)
+    await startPhoneLoginVerification(phone).catch((error) => console.error("Twilio Verify sign-in send failed:", error))
+    return generic()
+  }
 
   const code = await createSmsLoginCode(operator).catch((error) => {
     console.error("Punch-code intent could not be created:", error)

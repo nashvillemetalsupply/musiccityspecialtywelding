@@ -17,8 +17,8 @@ import {
 } from "@/lib/ops-data"
 import { listPendingCallIntakes, type CallIntakeDraft } from "@/lib/job-intake"
 import { projectEventForRole } from "@/lib/visibility"
-import { listOperators, operatorPunchSelector } from "@/lib/operators"
-import { twilioSmsConfigured, twilioVoiceConfigured } from "@/lib/twilio"
+import { listOperators, operatorHasEmail, operatorPunchSelector } from "@/lib/operators"
+import { twilioPhoneLoginConfigured, twilioSmsConfigured, twilioVoiceConfigured } from "@/lib/twilio"
 import { shopEventLabel } from "@/lib/shop-language"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getMessagingConsentState } from "@/lib/messaging-consent"
@@ -158,11 +158,11 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
   if (!dbConfigured()) return <main className="ops-login"><h1>MCSW Jobs</h1><p className="ops-alert">The operations database is not configured.</p></main>
   const operator = await getAuthenticatedOperator()
   if (!operator) {
-    const smsLoginReady = twilioSmsConfigured()
+    const smsLoginReady = twilioPhoneLoginConfigured()
     const punchCards = (await listOperators()).map((person) => ({
       selector: operatorPunchSelector(person.id),
       name: person.name.split(/\s+/)[0] || "Crew",
-      hasEmail: Boolean(person.email),
+      hasEmail: operatorHasEmail(person),
       hasSms: smsLoginReady && Boolean(person.cell_phone),
     })).filter((person) => Boolean(person.selector))
     return <OpsLoginForm linkError={params.error === "link"} operators={punchCards} smsReady={smsLoginReady} />

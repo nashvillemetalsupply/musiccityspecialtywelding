@@ -1,5 +1,7 @@
 import { dbConfigured } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
+import { listOperators, operatorHasEmail, operatorPunchSelector } from "@/lib/operators"
+import { twilioPhoneLoginConfigured } from "@/lib/twilio"
 import { OpsLoginForm } from "../login-form"
 import { InstallAppButton } from "./install-app-button"
 import Link from "next/link"
@@ -9,7 +11,16 @@ export const dynamic = "force-dynamic"
 export default async function InstallPage() {
   if (!dbConfigured()) return <main className="ops-login"><h1>MCSW Jobs</h1><p className="ops-alert">The operations database is not configured.</p></main>
   const operator = await getAuthenticatedOperator()
-  if (!operator) return <OpsLoginForm linkError={false} />
+  if (!operator) {
+    const smsReady = twilioPhoneLoginConfigured()
+    const operators = (await listOperators()).map((person) => ({
+      selector: operatorPunchSelector(person.id),
+      name: person.name.split(/\s+/)[0] || "Crew",
+      hasEmail: operatorHasEmail(person),
+      hasSms: smsReady && Boolean(person.cell_phone),
+    })).filter((person) => Boolean(person.selector))
+    return <OpsLoginForm linkError={false} operators={operators} smsReady={smsReady} />
+  }
   return <main className="ops-main ops-install-page">
     <header className="ops-page-heading"><Link href="/ops">Back to Jobs</Link><h1>Install MCSW Jobs</h1><p>Put Jobs on this phone&apos;s home screen.</p></header>
     <InstallAppButton />

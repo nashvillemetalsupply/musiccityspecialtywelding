@@ -7,9 +7,11 @@ import {
   checkTwilioProviderReadiness,
   twilioMessagingServiceConfigured,
   twilioPublicNumberEnabled,
+  twilioPhoneLoginConfigured,
   twilioSmsConfigured,
   twilioSmsWebhookConfigured,
   twilioVoiceConfigured,
+  twilioVerifyConfigured,
   twilioWebhookBaseUrl,
 } from "@/lib/twilio"
 import { callTranscriptionConfigured, deepgramCallbackSecretConfigured } from "@/lib/call-transcription"
@@ -161,6 +163,7 @@ export async function GET() {
   const messagingServiceConfigured = twilioMessagingServiceConfigured()
   const smsWebhookConfigured = twilioSmsWebhookConfigured()
   const smsConfigured = twilioSmsConfigured()
+  const verifyConfigured = twilioVerifyConfigured()
   const voiceConfigured = twilioVoiceConfigured()
   const webhookBaseConfigured = Boolean(twilioWebhookBaseUrl())
   const providerVoiceReady = Boolean(
@@ -274,6 +277,8 @@ export async function GET() {
         ready: shopBrainReady,
         gateSatisfied: shopBrainGateSatisfied,
         twilioSmsConfigured: smsConfigured,
+        twilioVerifyConfigured: verifyConfigured,
+        phoneLoginConfigured: twilioPhoneLoginConfigured(),
         twilioSmsWebhookConfigured: smsWebhookConfigured,
         twilioVoiceConfigured: voiceConfigured,
         twilioWebhookBaseConfigured: webhookBaseConfigured,

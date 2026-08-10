@@ -3,9 +3,11 @@ import {
   OPS_SESSION_COOKIE,
   OPS_SESSION_MAX_AGE_SECONDS,
   redeemSmsLoginCode,
+  redeemSmsVerificationIntent,
 } from "@/lib/ops-auth"
 import { consumeStrictRateLimit, rateLimitFingerprint } from "@/lib/rate-limit"
-import { getOperatorByPunchSelector } from "@/lib/operators"
+import { getOperatorByPhone, getOperatorByPunchSelector } from "@/lib/operators"
+import { checkPhoneLoginVerification, twilioVerifyConfigured } from "@/lib/twilio"
 
 export const runtime = "nodejs"
 
@@ -22,7 +24,19 @@ export async function POST(req: Request) {
   if (ipLimited || phoneLimited) {
     return Response.json({ ok: false, error: "Too many code attempts. Request a fresh code later." }, { status: 429 })
   }
-  const session = phone ? await redeemSmsLoginCode(phone, code) : null
+  const operator = selectedOperator ?? (phone ? await getOperatorByPhone(phone) : null)
+  let session: string | null = null
+  if (operator && phone && /^\d{6}$/.test(code)) {
+    if (twilioVerifyConfigured()) {
+      const approved = await checkPhoneLoginVerification(phone, code).catch((error) => {
+        console.error("Twilio Verify sign-in check failed:", error)
+        return false
+      })
+      session = approved ? await redeemSmsVerificationIntent(operator) : null
+    } else {
+      session = await redeemSmsLoginCode(phone, code)
+    }
+  }
   if (!session) {
     return Response.json({ ok: false, error: "That code is wrong or expired. Request another." }, { status: 400 })
   }
