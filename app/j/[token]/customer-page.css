@@ -359,11 +359,24 @@
 }
 
 .glass-page-brand .glass-clipboard > footer {
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.5rem;
+  align-items: center;
   padding: 1.5rem;
   border-top: 1px solid var(--glass-rule);
   background: var(--glass-paper);
   color: var(--glass-ink);
+}
+
+.glass-page-brand .glass-clipboard > footer > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 0.125rem;
+}
+
+.glass-page-brand .glass-clipboard > footer > div > :is(strong, span) {
+  display: block;
 }
 
 .glass-page-brand .glass-clipboard > footer p {
@@ -401,6 +414,9 @@
 }
 
 .glass-page-brand .glass-clipboard > footer a:last-child {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
   border-color: var(--glass-rule-strong);
   background: var(--glass-surface);
   color: var(--glass-ink);

@@ -2694,12 +2694,16 @@
   color: var(--jobs-primary);
 }
 
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-stamp-hero {
+  margin-top: var(--jobs-space-2xs);
+}
+
 .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row {
   position: static;
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: var(--jobs-space-2xs);
   padding: var(--jobs-space-sm);
@@ -2710,6 +2714,14 @@
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row:has(> :is(.ops-tracked-call, a):nth-child(3)) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row:has(> :is(.ops-tracked-call, a):nth-child(4)) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row > div {
@@ -2752,8 +2764,11 @@
   width: 100%;
   min-width: 0;
   max-width: none;
-  display: block;
   grid-column: auto;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row > .ops-tracked-call {
+  display: block;
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row button,
@@ -4121,10 +4136,15 @@
   }
 
   .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-stamp-hero {
+    margin-top: 0;
     justify-self: start;
   }
 
   .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead > .ops-phone-row:has(> :is(.ops-tracked-call, a):nth-child(4)) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -4616,16 +4636,17 @@
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-header-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 6rem;
   justify-content: flex-end;
   gap: var(--jobs-space-2xs);
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-header-actions > *,
 .jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-header-actions .ops-tracked-call {
-  width: auto;
-  min-width: 6rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-account-page :is(button, .ops-header-actions > a, .ops-account-people nav > a, .ops-ticket-actions > a) {
@@ -4730,9 +4751,26 @@
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-account-people article nav {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: var(--jobs-space-2xs);
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-account-page :is(.ops-header-actions, .ops-account-people article nav, .ops-ticket-actions) > *,
+.jobs-root[data-jobs-theme="brand"] .ops-account-page :is(.ops-header-actions, .ops-account-people article nav, .ops-ticket-actions) .ops-tracked-call,
+.jobs-root[data-jobs-theme="brand"] .ops-account-page :is(.ops-header-actions, .ops-account-people article nav, .ops-ticket-actions) .ops-tracked-call > button {
+  width: 100%;
+  min-width: 0;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-ticket-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-ticket-actions:has(> :nth-child(2)) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-account-tools {
@@ -5274,6 +5312,10 @@
   background: transparent;
 }
 
+.jobs-root[data-jobs-theme="brand"] .ops-login-cards:has(> button:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .jobs-root[data-jobs-theme="brand"] .ops-login-cards button {
   min-width: 0;
   min-height: 4rem;
@@ -5441,13 +5483,14 @@
   }
 
   .jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-header-actions {
+    width: 100%;
+    grid-auto-columns: minmax(0, 1fr);
     justify-content: stretch;
   }
 
   .jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-header-actions > *,
   .jobs-root[data-jobs-theme="brand"] .ops-account-page .ops-header-actions .ops-tracked-call {
     min-width: 0;
-    flex: 1;
   }
 
   .jobs-root[data-jobs-theme="brand"] .ops-account-clipboard {
