@@ -214,6 +214,12 @@ export function GateDrawing({ spec, compact = false }: { spec: GateSpec; compact
   const latchLeaderInnerX = spec.latchSide === "left" ? frameX + 28 : frameRight - 28
   const latchLeaderEndX = spec.latchSide === "left" ? latchLabelX - 14 : latchLabelX + 14
   const latchLeaderY = frameCenterY + Math.max(31, tube * 2)
+  const drawingTitle = `Rough front elevation of the described ${isGate ? "gate" : "frame"}`
+  const drawingDescription = `A ${widthLabel} wide by ${heightLabel} high ${isGate ? "gate" : "rectangular frame"} with ${spec.railCount || "no confirmed"} interior rails${
+    isGate
+      ? `${spec.hingeSide ? `, hinges on the ${spec.hingeSide}` : ", hinge side not yet stated"}${spec.latchSide ? `, and a latch on the ${spec.latchSide}` : ", and latch side not yet stated"}.`
+      : "."
+  }`
 
   return (
     <svg
@@ -222,11 +228,8 @@ export function GateDrawing({ spec, compact = false }: { spec: GateSpec; compact
       role="img"
       aria-labelledby="call-sketch-drawing-title call-sketch-drawing-description"
     >
-      <title id="call-sketch-drawing-title">Rough front elevation of the described {isGate ? "gate" : "frame"}</title>
-      <desc id="call-sketch-drawing-description">
-        A {widthLabel} wide by {heightLabel} high {isGate ? "gate" : "rectangular frame"} with {spec.railCount || "no confirmed"} interior rails
-        {isGate ? `${spec.hingeSide ? `, hinges on the ${spec.hingeSide}` : ", hinge side not yet stated"}${spec.latchSide ? `, and a latch on the ${spec.latchSide}` : ", and latch side not yet stated"}.` : "."}
-      </desc>
+      <title id="call-sketch-drawing-title">{drawingTitle}</title>
+      <desc id="call-sketch-drawing-description">{drawingDescription}</desc>
       <defs>
         <pattern id="call-sketch-grid-small" width="18" height="18" patternUnits="userSpaceOnUse">
           <path d="M 18 0 L 0 0 0 18" className={styles.gridMinor} />
@@ -331,7 +334,13 @@ function TranscriptList({ through }: { through: number }) {
   </ol>
 }
 
-export function CallSketchPrototype({ embedded = false }: { embedded?: boolean } = {}) {
+export function CallSketchPrototype({
+  embedded = false,
+  compareHierarchy = false,
+}: {
+  embedded?: boolean
+  compareHierarchy?: boolean
+} = {}) {
   const [stage, setStage] = useState<Stage>("live")
   const [momentIndex, setMomentIndex] = useState(0)
   const [frozen, setFrozen] = useState(false)
@@ -345,6 +354,7 @@ export function CallSketchPrototype({ embedded = false }: { embedded?: boolean }
   const [confirmed, setConfirmed] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(38)
   const [announcement, setAnnouncement] = useState("Call Sketch is drawing from the conversation.")
+  const [hierarchyMode, setHierarchyMode] = useState<"current" | "task-first">("current")
 
   const currentMoment = CALL_MOMENTS[momentIndex]
   const spec = useMemo<GateSpec>(() => ({
@@ -476,7 +486,14 @@ export function CallSketchPrototype({ embedded = false }: { embedded?: boolean }
   const factStock = spec.stockSize ? `${formatShopInches(spec.stockSize)} square tube` : "Not caught"
 
   return (
-    <main className={`${styles.page}${embedded ? ` ${styles.embedded}` : ""}`}>
+    <main className={`${styles.page}${embedded ? ` ${styles.embedded}` : ""}${hierarchyMode === "task-first" ? ` ${styles.taskFirst}` : ""}`}>
+      {compareHierarchy && <section className={styles.hierarchyCompare} aria-label="Call Sketch hierarchy comparison">
+        <div><strong>Type hierarchy</strong><span>Compare without changing production.</span></div>
+        <div role="group" aria-label="Choose a hierarchy">
+          <button type="button" aria-pressed={hierarchyMode === "current"} onClick={() => setHierarchyMode("current")}>Polished current</button>
+          <button type="button" aria-pressed={hierarchyMode === "task-first"} onClick={() => setHierarchyMode("task-first")}>Task-first</button>
+        </div>
+      </section>}
       <div className={styles.prototypeBar}>
         <div>
           <strong>Call Sketch <span className={styles.prototypeWord}>prototype</span></strong>

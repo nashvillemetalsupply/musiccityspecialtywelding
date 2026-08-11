@@ -18,6 +18,6 @@ export const metadata: Metadata = {
 
 export default function MCSWJobsCallSketchPage() {
   return <div className={chivo.variable}>
-    <CallSketchPrototype />
+    <CallSketchPrototype compareHierarchy />
   </div>
 }
