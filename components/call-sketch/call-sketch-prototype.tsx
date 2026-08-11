@@ -331,7 +331,7 @@ function TranscriptList({ through }: { through: number }) {
   </ol>
 }
 
-export function CallSketchPrototype() {
+export function CallSketchPrototype({ embedded = false }: { embedded?: boolean } = {}) {
   const [stage, setStage] = useState<Stage>("live")
   const [momentIndex, setMomentIndex] = useState(0)
   const [frozen, setFrozen] = useState(false)
@@ -476,7 +476,7 @@ export function CallSketchPrototype() {
   const factStock = spec.stockSize ? `${formatShopInches(spec.stockSize)} square tube` : "Not caught"
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page}${embedded ? ` ${styles.embedded}` : ""}`}>
       <div className={styles.prototypeBar}>
         <div>
           <strong>Call Sketch <span className={styles.prototypeWord}>prototype</span></strong>
@@ -486,10 +486,10 @@ export function CallSketchPrototype() {
       </div>
 
       <div className={styles.productFrame}>
-        <header className={styles.productHeader}>
+        {!embedded && <header className={styles.productHeader}>
           <a href="/ops" aria-label="Back to MCSW Jobs"><span aria-hidden="true" />MCSW Jobs</a>
           <div><span>Philippe</span><button type="button">More</button></div>
-        </header>
+        </header>}
 
         {stage === "live" && <div className={styles.liveWorkspace}>
           <section className={styles.liveHeading} aria-labelledby="call-sketch-live-title">

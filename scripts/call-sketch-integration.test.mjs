@@ -58,3 +58,17 @@ test("the public showcase is gated until the production phone path is enabled", 
   assert.match(home, /callSketchPublicEnabled &&/)
   assert.match(contact, /twilioPublicNumberEnabled\(\) && twilioVoiceConfigured\(\)/)
 })
+
+test("the owner can always open a truthful Call Sketch practice workspace inside the app", async () => {
+  const [intake, page, prototype] = await Promise.all([
+    read("app/ops/intake/inline-job-intake.tsx"),
+    read("app/ops/call-sketch/page.tsx"),
+    read("components/call-sketch/call-sketch-prototype.tsx"),
+  ])
+  assert.match(intake, /owner && <Link className="jobs-call-sketch-link" href="\/ops\/call-sketch"/)
+  assert.match(page, /getAuthenticatedOperator\(\)/)
+  assert.match(page, /operator\.role !== "owner"/)
+  assert.match(page, /<CallSketchPrototype embedded \/>/)
+  assert.match(prototype, /No production calls or jobs are changed\./)
+  assert.match(prototype, /!embedded && <header/)
+})

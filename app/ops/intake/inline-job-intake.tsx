@@ -189,6 +189,7 @@ export function InlineJobIntake({
       </div>
       <div className="jobs-inline-intake-links">
         {source === "phone-in" && pendingTotal > 1 && <Link href="/ops?calls=all">{pendingTotal - 1} more {pendingTotal - 1 === 1 ? "call" : "calls"}</Link>}
+        {owner && <Link className="jobs-call-sketch-link" href="/ops/call-sketch" aria-label="Open the Call Sketch practice workspace">Call Sketch</Link>}
         <button type="button" className="jobs-text-action" onClick={() => switchSource(source === "phone-in" ? "walk-in" : "phone-in")}>{source === "phone-in" ? "Walk-in" : "Phone call"}</button>
       </div>
     </header>

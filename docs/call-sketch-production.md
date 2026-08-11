@@ -4,6 +4,8 @@
 
 Call Sketch is an owner-only, phone-first workspace embedded in an active inbound call draft in MCSW Jobs. Twilio starts a managed Real-Time Transcription session on both call tracks. Signed callbacks land at `/api/twilio/live-transcript`, where partial and final utterances are stored idempotently and converted into a conservative gate or rectangular-frame sketch.
 
+The MCSW Jobs home screen also gives the owner a permanent **Call Sketch** launcher. It opens a clearly labeled practice workspace inside the installed app so the interaction can be rehearsed before provider activation. The practice workspace uses example data, stays in the browser, and never changes production calls or jobs.
+
 The system distinguishes four fact states: unknown, uncertain, stated on the call, and owner-confirmed. It never promotes speech recognition output to confirmed geometry. DXF export remains locked until the owner reviews and confirms the relevant geometry: width, height, stock, and rails for a rectangular frame, plus hinge side and latch side for a gate. Frame exports never invent gate hardware.
 
 The existing dual-track recording and post-call Deepgram route remain in place as a separate fallback. Call Sketch uses Twilio's managed `<Start><Transcription>` integration rather than maintaining a raw Media Streams WebSocket on Vercel. Twilio owns the live audio fork and sends near-real-time HTTPS callbacks; the application owns durable state, drawing, review, and export.

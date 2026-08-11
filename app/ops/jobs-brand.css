@@ -406,6 +406,18 @@
   text-decoration-thickness: 1px;
 }
 
+.jobs-inline-intake-links > .jobs-call-sketch-link {
+  min-width: auto;
+  padding-inline: var(--jobs-space-xs);
+  border: 1px solid color-mix(in oklch, var(--jobs-primary) 42%, var(--jobs-line));
+  background: var(--jobs-attention);
+  color: var(--jobs-primary);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .jobs-root[data-jobs-theme="brand"] .jobs-inline-intake-head .jobs-text-action {
   min-width: 2.75rem;
   display: block;

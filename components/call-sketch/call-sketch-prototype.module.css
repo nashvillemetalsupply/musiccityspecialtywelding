@@ -149,6 +149,14 @@
   background: var(--paper);
 }
 
+.embedded {
+  min-height: calc(100dvh - 4rem);
+}
+
+.embedded .productFrame {
+  min-height: calc(100dvh - 8rem);
+}
+
 .productHeader {
   min-height: 3.75rem;
   padding: 0 max(var(--space-sm), env(safe-area-inset-right)) 0 max(var(--space-sm), env(safe-area-inset-left));
@@ -1196,6 +1204,10 @@
     min-height: calc(100dvh - 6.5rem);
     border: 1px solid var(--color-raw-steel);
     border-radius: 0 0 var(--radius-card) var(--radius-card);
+  }
+
+  .embedded .productFrame {
+    min-height: calc(100dvh - 10.5rem);
   }
 
   .productHeader {
