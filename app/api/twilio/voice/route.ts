@@ -4,7 +4,7 @@ import { recordEvent } from "@/lib/events"
 import { prepareInboundCallIntake } from "@/lib/job-intake"
 import { notifyAll } from "@/lib/notify"
 import { normalizePhone } from "@/lib/people"
-import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioCallbackUrl, twilioVoiceConfigured, twiml } from "@/lib/twilio"
+import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioCallbackUrl, twilioLiveTranscriptionStart, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 
 export const runtime = "nodejs"
 
@@ -36,6 +36,7 @@ export async function POST(req: Request) {
   }
   const response = twiml(
       `<Say voice="man">Music City Specialty Welding. This call may be recorded for job notes.</Say>` +
+      twilioLiveTranscriptionStart({ callSid: sid, direction: "in" }) +
       `<Dial answerOnBridge="true" record="record-from-answer-dual" ` +
       `recordingStatusCallback="${escapeXml(twilioCallbackUrl("/api/twilio/recording"))}" ` +
       `action="${escapeXml(twilioCallbackUrl("/api/twilio/voice-status"))}">${escapeXml(ownerCell)}</Dial>`
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
         priority: "interrupt",
         stock: "white",
         title: `${name} calling`,
-        body: prepared.kind === "draft" ? "The call is safe. Tap after you hang up, then Save Job." : "Their active job is ready.",
+        body: prepared.kind === "draft" ? "Tap now for the live call sketch. Confirm it after hangup, then Save Job." : "Their active job is ready.",
         crewBody: prepared.kind === "draft" ? "The call is safe. Tap after you hang up, then Save Job." : "Their active job is ready.",
         url: prepared.kind === "draft" ? `/ops/intake/${prepared.draft.public_id}` : `/ops/leads/${prepared.leadId}`,
         sourceEventId: eventId,

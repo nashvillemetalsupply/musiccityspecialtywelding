@@ -13,6 +13,7 @@ import {
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
+import { HomeCallSketch } from "@/components/call-sketch/home-call-sketch"
 import { getShopPhone } from "@/lib/shop-contact"
 
 export const metadata: Metadata = {
@@ -132,6 +133,7 @@ function FrameGussets() {
 
 export default function Page() {
   const shopPhone = getShopPhone()
+  const callSketchPublicEnabled = process.env.CALL_SKETCH_PUBLIC_ENABLED?.trim().toLowerCase() === "true"
   return (
     <div className="ms-site">
       <a className="ms-skip" href="#main-content">Skip to the work</a>
@@ -373,6 +375,11 @@ export default function Page() {
         </section>
 
         <WeldSeam />
+
+        {callSketchPublicEnabled && <>
+          <HomeCallSketch phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
+          <WeldSeam />
+        </>}
 
         <section className="ms-job-glass" id="job-glass" aria-labelledby="job-glass-title">
           <div className="ms-job-glass-copy ms-reveal">

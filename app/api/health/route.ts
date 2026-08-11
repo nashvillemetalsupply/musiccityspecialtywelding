@@ -10,6 +10,7 @@ import {
   twilioPhoneLoginConfigured,
   twilioSmsConfigured,
   twilioSmsWebhookConfigured,
+  twilioLiveTranscriptionConfigured,
   twilioVoiceConfigured,
   twilioVerifyConfigured,
   twilioWebhookBaseUrl,
@@ -49,6 +50,7 @@ type DatabaseHealth = {
   voiceTranscriptBacklog: number | null
   uploadRecoveryBacklog: number | null
   consentRecordCount: number | null
+  callSketchErrorCount: number | null
 }
 
 async function checkDatabase(): Promise<DatabaseHealth> {
@@ -69,6 +71,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     voiceTranscriptBacklog: null,
     uploadRecoveryBacklog: null,
     consentRecordCount: null,
+    callSketchErrorCount: null,
   }
   if (!result.configured) return result
   try {
@@ -87,13 +90,16 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         (SELECT count(*)::int FROM glass_uploads
           WHERE status IN ('uploading','uploaded','projecting','unknown')
             AND updated_at < now() - interval '20 minutes') AS upload_recovery_backlog,
-        (SELECT count(*)::int FROM messaging_consents) AS consent_record_count`) as {
+        (SELECT count(*)::int FROM messaging_consents) AS consent_record_count,
+        (SELECT count(*)::int FROM call_sketches
+          WHERE status = 'error' AND updated_at > now() - interval '24 hours') AS call_sketch_error_count`) as {
       lead_count: number
       failed_deliveries: number
       call_transcript_backlog: number
       voice_transcript_backlog: number
       upload_recovery_backlog: number
       consent_record_count: number
+      call_sketch_error_count: number
     }[]
     result.connected = true
     result.leadCount = counts.lead_count
@@ -102,6 +108,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.voiceTranscriptBacklog = counts.voice_transcript_backlog
     result.uploadRecoveryBacklog = counts.upload_recovery_backlog
     result.consentRecordCount = counts.consent_record_count
+    result.callSketchErrorCount = counts.call_sketch_error_count
     const digest = (await sql`
       SELECT ran_at, ok FROM automation_runs
       WHERE job = 'daily-digest' ORDER BY ran_at DESC LIMIT 1`) as {
@@ -165,6 +172,8 @@ export async function GET() {
   const smsConfigured = twilioSmsConfigured()
   const verifyConfigured = twilioVerifyConfigured()
   const voiceConfigured = twilioVoiceConfigured()
+  const liveTranscriptionConfigured = twilioLiveTranscriptionConfigured()
+  const callSketchPublicEnabled = process.env.CALL_SKETCH_PUBLIC_ENABLED?.trim().toLowerCase() === "true"
   const webhookBaseConfigured = Boolean(twilioWebhookBaseUrl())
   const providerVoiceReady = Boolean(
     twilioProvider.checked &&
@@ -281,6 +290,9 @@ export async function GET() {
         phoneLoginConfigured: twilioPhoneLoginConfigured(),
         twilioSmsWebhookConfigured: smsWebhookConfigured,
         twilioVoiceConfigured: voiceConfigured,
+        twilioLiveTranscriptionConfigured: liveTranscriptionConfigured,
+        callSketchPublicEnabled,
+        callSketchRecentErrors: database.callSketchErrorCount,
         twilioWebhookBaseConfigured: webhookBaseConfigured,
         publicNumberEnabled,
         messagingServiceConfigured,

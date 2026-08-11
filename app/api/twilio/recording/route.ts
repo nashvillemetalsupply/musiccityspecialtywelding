@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       recording_url = ${recordingUrl}::text,
       transcript_status = CASE
         WHEN recording_sid = ${recordingSid}::text THEN transcript_status
+        WHEN transcript_status = 'ready' AND transcript <> '' THEN 'ready'
         ELSE ${transcriptStatus}::text
       END
     WHERE (twilio_sid = ${callSid}::text OR id = ${Number.isInteger(intent) && intent > 0 ? intent : null}::bigint)
