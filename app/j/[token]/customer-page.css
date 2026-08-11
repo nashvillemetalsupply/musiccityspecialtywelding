@@ -1,3 +1,7 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app
+ * pre-emit critique: P5 H5 E5 S5 R5 V5 · contrast: pass (46-50) · honest: pass (56)
+ * chrome: pass (57) · tokens: pass (58) · responsive: pass (36, 59, 61-69) · icons: pass (60) · slop: 69 / 69 pass
+ */
 .glass-page-brand {
   --glass-paper: #f7f8f9;
   --glass-surface: #ffffff;
@@ -25,7 +29,15 @@
   color: var(--glass-ink);
   font-family: var(--font-mcsw-customer), sans-serif;
   font-size: 1rem;
+  font-synthesis: none;
+  font-kerning: normal;
+  font-weight: var(--font-weight-body);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
 }
 
 .glass-page-brand,
@@ -48,8 +60,8 @@
 }
 
 .glass-page-brand :focus-visible {
-  outline: 2px solid var(--glass-focus-ring);
-  outline-offset: 1px;
+  outline: 3px solid var(--glass-focus-ring);
+  outline-offset: 2px;
 }
 
 .glass-page-brand :is(input, select, textarea):focus-visible {
@@ -64,6 +76,7 @@
 
 .glass-page-brand :is(button, a[href]):active {
   filter: brightness(0.92);
+  transform: none;
 }
 
 .glass-page-brand .glass-clipboard {
@@ -101,14 +114,18 @@
 .glass-page-brand .glass-brand-lockup > strong {
   color: var(--glass-header-ink);
   font-size: 1rem;
-  font-weight: 780;
+  font-weight: var(--font-weight-heading);
   line-height: 1.2;
+  letter-spacing: var(--tracking-heading);
+  text-transform: none;
 }
 
 .glass-page-brand .glass-contact > span {
   color: var(--glass-header-muted);
   font-size: 0.875rem;
-  font-weight: 650;
+  font-weight: var(--font-weight-label);
+  letter-spacing: var(--tracking-utility);
+  text-transform: none;
 }
 
 .glass-page-brand .glass-contact > a {
@@ -129,7 +146,9 @@
   color: var(--glass-muted);
   font-family: inherit;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-label);
+  letter-spacing: var(--tracking-utility);
+  text-transform: none;
 }
 
 .glass-page-brand .glass-job h1 {
@@ -137,8 +156,8 @@
   color: var(--glass-ink);
   font-family: inherit;
   font-size: clamp(1.5rem, 5vw, 2rem);
-  font-weight: 790;
-  letter-spacing: -0.03em;
+  font-weight: var(--font-weight-display);
+  letter-spacing: var(--tracking-display);
   line-height: 1.15;
   text-transform: none;
 }
@@ -157,7 +176,8 @@
   color: var(--glass-ink);
   font-family: inherit;
   font-size: 1.375rem;
-  font-weight: 780;
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--tracking-heading);
   text-transform: none;
 }
 
@@ -181,6 +201,9 @@
   color: var(--glass-muted);
   font-family: inherit;
   font-size: 0.875rem;
+  font-weight: var(--font-weight-body);
+  letter-spacing: var(--tracking-body);
+  text-transform: none;
 }
 
 .glass-page-brand .glass-traveler li::before {
@@ -206,7 +229,7 @@
 
 .glass-page-brand .glass-traveler li.is-done {
   color: var(--glass-ink);
-  font-weight: 700;
+  font-weight: var(--font-weight-label);
 }
 
 .glass-page-brand .glass-traveler li.is-done i {
@@ -240,8 +263,8 @@
   color: var(--glass-ink);
   font-family: inherit;
   font-size: 1.375rem;
-  font-weight: 780;
-  letter-spacing: -0.025em;
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--tracking-heading);
   text-transform: none;
 }
 
@@ -357,6 +380,26 @@
   font: 750 0.9375rem/1 var(--font-mcsw-customer), sans-serif;
 }
 
+.glass-page-brand .glass-traveler i svg {
+  width: var(--icon-size-compact);
+  height: var(--icon-size-compact);
+  stroke-width: var(--icon-stroke);
+}
+
+.glass-page-brand .glass-traveler i svg * {
+  vector-effect: non-scaling-stroke;
+}
+
+.glass-page-brand :is(.glass-contact, .glass-money, .glass-promise-history) {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.glass-page-brand :is(h1, h2, .glass-promise > strong) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
 .glass-page-brand .glass-clipboard > footer a:last-child {
   border-color: var(--glass-rule-strong);
   background: var(--glass-surface);
@@ -399,6 +442,19 @@
   .glass-page-brand :is(.glass-pay, .glass-review form button, .glass-upload-choose, .glass-closed > a):hover {
     background: var(--glass-accent-hover);
   }
+
+  .glass-page-brand :is(.glass-clipboard > footer a:last-child, .glass-upload-list li > a, .glass-upload-list li > button):hover {
+    border-color: var(--glass-accent);
+    color: var(--glass-accent);
+    background: var(--glass-paper);
+  }
+}
+
+@media (min-width: 40.0625rem) {
+  .glass-page-brand .glass-clipboard,
+  .glass-page-brand .glass-closed {
+    box-shadow: var(--shadow-product-whisper);
+  }
 }
 
 @media (max-width: 40rem) {
@@ -411,12 +467,25 @@
     border-radius: 0;
   }
 
+  .glass-page-brand .glass-clipboard > header {
+    min-height: calc(4rem + env(safe-area-inset-top));
+    padding-top: calc(0.5rem + env(safe-area-inset-top));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+
   .glass-page-brand .glass-contact > span {
     display: none;
   }
 
   .glass-page-brand :is(.glass-job, .glass-progress, .glass-money, .glass-review, .glass-uploads, .glass-clipboard > footer) {
     padding: 1rem;
+  }
+
+  .glass-page-brand .glass-clipboard > footer {
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    padding-left: max(1rem, env(safe-area-inset-left));
   }
 
   .glass-page-brand .glass-promise,

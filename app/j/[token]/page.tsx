@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import Image from "next/image"
+import type { Viewport } from "next"
 import { Chivo } from "next/font/google"
+import { Check } from "lucide-react"
 import { getGlassJob, listGlassPromises, noteGlassView } from "@/lib/glass"
 import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
@@ -22,6 +24,14 @@ export const metadata = {
   title: { absolute: "Private MCSW Customer Page" },
   description: "A private Music City Specialty Welding job page.",
   robots: { index: false, follow: false },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  colorScheme: "light",
+  themeColor: "#f7f8f9",
 }
 
 const STATIONS = ["Received", "Quoted", "Scheduled", "In progress", "Finished"]
@@ -54,7 +64,7 @@ export default async function GlassPage({ params }: { params: Promise<{ token: s
     <header><div className="glass-brand-lockup"><Image src="/images/optimized/mcs_welding_logo.webp" alt="MCS Welding" width={240} height={160} sizes="72px" priority unoptimized /><strong>Customer Page</strong></div><div className="glass-contact"><span>{shopPhone.textReady ? "Call or text us" : "Call the shop"}</span><a href={shopPhone.href}>{shopPhone.display}</a></div></header>
     <section className="glass-job"><span>Your job</span><h1>{job.first_name}’s {job.service}</h1><CorrectionStub token={token} fact="job status" /></section>
     <section className="glass-promise"><span>Timing</span><strong>{promise ? date(promise.due_at) : job.completed_at ? "Finished" : "We’re confirming the date"}</strong>{promise && <><p>{promise.summary}</p>{promise.history.length > 0 && <div className="glass-promise-history">{promise.history.map((move) => <p key={`${move.changed_at}-${move.previous_due_at}`}><del>{date(move.previous_due_at)}</del><span>{move.reason || "The shop called and moved the date."}</span></p>)}</div>}</>}<CorrectionStub token={token} fact="promised date" /></section>
-    <ol className="glass-traveler" aria-label="Job status">{STATIONS.map((station, index) => <li className={`${index <= stageIndex ? "is-done" : ""}${index === stageIndex ? " is-current" : ""}`} key={station}><i>{index < stageIndex ? "✓" : index === stageIndex ? "Now" : ""}</i><span>{station}</span></li>)}</ol>
+    <ol className="glass-traveler" aria-label="Job status">{STATIONS.map((station, index) => <li className={`${index <= stageIndex ? "is-done" : ""}${index === stageIndex ? " is-current" : ""}`} key={station}><i>{index < stageIndex ? <Check aria-hidden="true" /> : index === stageIndex ? "Now" : ""}</i><span>{station}</span></li>)}</ol>
     {job.assigned_name && !job.completed_at && <p className="glass-runner"><strong>{job.assigned_name.split(" ")[0]}</strong> is running your job.</p>}
     {sharedPhotos.length > 0 && <section className="glass-progress"><h2>Progress from the shop</h2><div>{sharedPhotos.map((photo) => {
       const caption = photo.caption || job.glass_caption_draft || "Progress from the crew"

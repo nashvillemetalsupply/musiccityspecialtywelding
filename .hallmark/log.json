@@ -3,6 +3,16 @@
     "date": "2026-08-11",
     "macrostructure": "Workbench",
     "theme": "MCSW Jobs locked design system",
+    "theme_axes": "light shop paper / Chivo / coal + welding red-rust",
+    "vibe": "Motorola-first, crisp, restrained, optically disciplined",
+    "enrichment": "none",
+    "scope": "app",
+    "brief": "CRM-wide typography, icon, spacing, state, and device polish"
+  },
+  {
+    "date": "2026-08-11",
+    "macrostructure": "Workbench",
+    "theme": "MCSW Jobs locked design system",
     "theme_axes": "light workspace / Chivo / coal + brand red-orange",
     "vibe": "technical, utilitarian, phone-first drawing review",
     "enrichment": "traceable gate elevation",

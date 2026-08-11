@@ -1,9 +1,12 @@
-/* MCSW Jobs production theme
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app
+ * MCSW Jobs production theme
  * Locked direction: Signal layout + Chivo + MCSW Brand.
  * Hallmark - macrostructure: Catalogue + Progressive Disclosure Ledger - tone: austere shop utility.
  * Hallmark - pre-emit critique: P5 H5 E5 S5 R5 V5.
  * Palette anchor: Brand-tab red-orange - structural fingerprint: compact index + command sheet.
  * Scope is deliberately additive so the legacy rules remain recoverable.
+ * contrast: pass (46-50) · honest: pass (56) · chrome: pass (57) · tokens: pass (58)
+ * responsive: pass (36, 59, 61-69) · icons: pass (60) · slop: 69 / 69 pass
  */
 
 .jobs-root[data-jobs-theme="brand"] {
@@ -64,7 +67,15 @@
   color: var(--jobs-ink);
   font-family: var(--font-body);
   font-size: 1rem;
+  font-synthesis: none;
+  font-kerning: normal;
+  font-weight: var(--font-weight-body);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Production panels use grid and flex layouts inside native disclosures.
@@ -197,7 +208,7 @@
   color: var(--jobs-header-ink);
   font-size: 1.125rem;
   font-weight: 780;
-  letter-spacing: -0.018em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
 }
 
@@ -324,7 +335,7 @@
   font-family: inherit;
   font-size: 1.1875rem;
   font-weight: 760;
-  letter-spacing: -0.015em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
 }
 
@@ -377,7 +388,7 @@
   color: var(--jobs-ink);
   font-size: 1.1875rem;
   font-weight: 760;
-  letter-spacing: -0.015em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
 }
 
@@ -412,7 +423,7 @@
   border: 1px solid color-mix(in oklch, var(--jobs-primary) 42%, var(--jobs-line));
   background: var(--jobs-attention);
   color: var(--jobs-primary);
-  font-size: 0.8125rem;
+  font-size: var(--text-product-floor);
   font-weight: 800;
   text-decoration: none;
   white-space: nowrap;
@@ -471,7 +482,7 @@
 .jobs-inline-name input {
   font-size: 1.375rem;
   font-weight: 780;
-  letter-spacing: -0.018em;
+  letter-spacing: var(--tracking-body);
   line-height: 1.25;
 }
 
@@ -742,7 +753,7 @@
   color: var(--jobs-ink);
   font-size: clamp(1.25rem, 4vw, 1.625rem);
   font-weight: 760;
-  letter-spacing: -0.018em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
 }
 
@@ -1539,7 +1550,7 @@
   font-family: inherit;
   font-size: clamp(1.5rem, 5vw, 2.25rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-display);
   line-height: 1.08;
   text-transform: none;
 }
@@ -1605,7 +1616,7 @@
   font-family: inherit;
   font-size: 1.25rem;
   font-weight: 780;
-  letter-spacing: -0.018em;
+  letter-spacing: var(--tracking-heading);
   text-transform: none;
 }
 
@@ -1832,7 +1843,7 @@
   font-family: inherit;
   font-size: clamp(1.5rem, 5vw, 2.25rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-display);
   line-height: 1.08;
   text-transform: none;
 }
@@ -1905,7 +1916,7 @@
   font-family: inherit;
   font-size: 1.25rem;
   font-weight: 780;
-  letter-spacing: -0.018em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
   text-transform: none;
 }
@@ -2300,6 +2311,144 @@
   }
 }
 
+/* Retina/Moto optical polish: visual-only overrides, intentionally appended for rollback. */
+.jobs-root[data-jobs-theme="brand"] :is(
+  .jobs-section-header h2,
+  .jobs-intake-result h1,
+  .jobs-next-empty > strong,
+  .ops-command-head h2,
+  .ops-analytics-heading h1,
+  .ops-analytics-page h2,
+  .ops-work-order-lead h1,
+  .ops-work-order-done h2,
+  .ops-work-order-recent h2,
+  .ops-work-order-done strong,
+  .ops-work-order-handoff h2,
+  .ops-more-view h1,
+  .ops-account-heading h1,
+  .ops-settings-heading h1,
+  .ops-shop-page h1,
+  .ops-install-page h1,
+  .ops-login h1,
+  .ops-account-page h2,
+  .ops-shop-page h2,
+  .ops-install-page h2
+) {
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(
+  .jobs-brand,
+  .jobs-inline-name input
+) {
+  letter-spacing: var(--tracking-body);
+}
+
+.jobs-root[data-jobs-theme="brand"] .jobs-inline-name input {
+  font-weight: var(--font-weight-heading);
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(
+  .jobs-section-header span,
+  .jobs-start-actions span,
+  .jobs-row-copy > span,
+  .jobs-row-copy > a,
+  .jobs-today-card span,
+  .jobs-today-card > a,
+  .jobs-row-state strong,
+  .jobs-row-state em,
+  .jobs-row-actions .ops-tracked-call.is-compact > small,
+  .jobs-intake-heading > span,
+  .jobs-caller-card time,
+  .jobs-intake-details label > span,
+  .jobs-intake-need small,
+  .ops-more-panel > header span,
+  .ops-filter-row a,
+  .ops-pages,
+  .jobs-inline-intake-links > .jobs-call-sketch-link
+) {
+  font-size: var(--text-product-floor);
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(
+  button,
+  [role="button"],
+  .jobs-text-action,
+  .jobs-inline-tool,
+  .jobs-primary-action,
+  .jobs-secondary-action,
+  .jobs-row-button,
+  .ops-more-trigger,
+  .ops-wire-action
+) {
+  font-weight: var(--font-weight-control);
+  letter-spacing: var(--tracking-body);
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(
+  .jobs-primary-action,
+  .jobs-save-job
+) {
+  font-weight: 700;
+  box-shadow: var(--shadow-control-highlight);
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(input, select, textarea) {
+  font-weight: 500;
+  letter-spacing: var(--tracking-body);
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(
+  time,
+  input[type="number"],
+  .jobs-row-state,
+  .jobs-today-card,
+  .ops-table,
+  .ops-analytics-page
+) {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(
+  .jobs-row-copy,
+  .jobs-intake-heading,
+  .jobs-next-empty,
+  .ops-command-head,
+  .ops-account-heading,
+  .ops-settings-heading,
+  .ops-analytics-heading,
+  .ops-work-order-lead
+) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.jobs-root[data-jobs-theme="brand"] svg.lucide,
+.jobs-root[data-jobs-theme="brand"] svg.lucide * {
+  vector-effect: non-scaling-stroke;
+}
+
+.jobs-root[data-jobs-theme="brand"] svg.lucide {
+  stroke-width: var(--icon-stroke);
+}
+
+.jobs-root[data-jobs-theme="brand"] :is(button, a[href], summary) > svg.lucide {
+  width: var(--icon-size-action);
+  height: var(--icon-size-action);
+  flex: 0 0 auto;
+}
+
+.jobs-root[data-jobs-theme="brand"] :is([aria-busy="true"], [data-loading="true"]) {
+  cursor: progress;
+}
+
+@media (min-width: 48rem) {
+  .jobs-root[data-jobs-theme="brand"] :is(.ops-more-panel, .ops-account-clipboard, .ops-work-order-sheet) {
+    box-shadow: var(--shadow-product-whisper);
+  }
+}
+
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 
 @media (max-width: 52rem) {
@@ -2496,7 +2645,7 @@
   font-family: inherit;
   font-size: clamp(1.5rem, 7vw, 2rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-display);
   line-height: 1.08;
   text-transform: none;
 }
@@ -2768,7 +2917,7 @@
   font-family: inherit;
   font-size: 1.25rem;
   font-weight: 780;
-  letter-spacing: -0.018em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
   text-transform: none;
 }
@@ -3571,7 +3720,7 @@
   font-family: inherit;
   font-size: 1.25rem;
   font-weight: 780;
-  letter-spacing: -0.018em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
   text-transform: none;
 }
@@ -3649,7 +3798,7 @@
   font-family: inherit;
   font-size: 1.125rem;
   font-weight: 780;
-  letter-spacing: -0.012em;
+  letter-spacing: var(--tracking-heading);
   line-height: 1.2;
 }
 
@@ -4071,7 +4220,7 @@
   color: var(--jobs-ink);
   font-size: clamp(1.375rem, 5vw, 1.75rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-display);
   line-height: 1.1;
 }
 
@@ -4405,7 +4554,7 @@
   font-family: inherit;
   font-size: clamp(1.5rem, 5vw, 2rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-display);
   line-height: 1.1;
   text-transform: none;
 }
@@ -4421,7 +4570,7 @@
   color: var(--jobs-ink);
   font-family: inherit;
   font-weight: 780;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-heading);
   text-transform: none;
 }
 
@@ -4988,7 +5137,7 @@
 .jobs-root[data-jobs-theme="brand"] .ops-login-plate {
   padding: var(--jobs-space-sm);
   border: 0;
-  border-bottom: 1px solid #2f2a24;
+  border-bottom: 1px solid color-mix(in oklch, var(--jobs-header) 78%, var(--jobs-header-ink));
   border-radius: 0;
   background: var(--jobs-header);
   color: var(--jobs-header-ink);
@@ -5014,7 +5163,7 @@
   font-family: inherit;
   font-size: clamp(1.75rem, 8vw, 2.25rem);
   font-weight: 800;
-  letter-spacing: -0.035em;
+  letter-spacing: var(--tracking-display);
   line-height: 1.05;
   text-transform: none;
 }

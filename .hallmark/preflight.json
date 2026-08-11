@@ -1,17 +1,14 @@
 {
-  "date": "2026-08-10",
-  "framework": "Next.js 16 App Router",
+  "date": "2026-08-11",
+  "framework": "Next.js 16.2.12 App Router",
   "font_stack": [
-    "Barlow Condensed",
-    "IBM Plex Sans",
-    "IBM Plex Mono"
-  ],
-  "preview_fonts": [
-    "Commissioner",
-    "Atkinson Hyperlegible Next"
+    "Chivo variable for /ops and /j",
+    "Existing public-site fonts are outside this pass"
   ],
   "palette_source": "design.md and tokens.css",
-  "motion": "CSS transitions only",
+  "motion": "Purposeful CSS state transitions only; no motion library",
   "spacing": "4-point semantic scale",
-  "scope": "isolated design-preview route"
+  "scope": "Multi-page /ops CRM and /j customer pages; public marketing excluded",
+  "baseline_commit": "c777bc2",
+  "primary_device": "Motorola Moto G (2026); 360 CSS px development baseline; physical viewport measurement pending"
 }

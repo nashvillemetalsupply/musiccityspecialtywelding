@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Chivo } from "next/font/google"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
@@ -23,6 +23,14 @@ export const metadata: Metadata = {
   manifest: "/ops/manifest.webmanifest",
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, title: "MCSW Jobs", statusBarStyle: "black-translucent" },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  colorScheme: "light",
+  themeColor: "#12100d",
 }
 
 export const dynamic = "force-dynamic"
