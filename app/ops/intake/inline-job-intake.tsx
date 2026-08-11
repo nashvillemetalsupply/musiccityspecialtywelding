@@ -6,6 +6,7 @@ import { useActionState, useState } from "react"
 import { SafeActionButton, SafeSubmitButton } from "../safe-action-controls"
 import { VoiceCaptureButton } from "../voice-capture-button"
 import { changeCallDraftDispositionAction, saveInlineJobAction, undoInlineJobAction, type InlineJobSaveState } from "./actions"
+import { LiveCallSketch } from "@/components/call-sketch/live-call-sketch"
 
 type IntakeSource = "phone-in" | "walk-in"
 type Fields = { name: string; phone: string; need: string }
@@ -193,6 +194,8 @@ export function InlineJobIntake({
     </header>
 
     {(activeDraft?.lastError || actionError || saveState.status === "error") && <p className="jobs-inline-error" role="alert">{actionError || (saveState.status === "error" ? saveState.message : activeDraft?.lastError)}</p>}
+
+    {owner && inbound && <LiveCallSketch draftId={activeDraft!.publicId} />}
 
     <form action={saveAction} className="jobs-inline-form" aria-busy={savePending}>
       {inbound ? <input type="hidden" name="draftId" value={activeDraft!.publicId} /> : <>

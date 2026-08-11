@@ -7632,6 +7632,198 @@ body { overflow-x: clip; }
   .ops-install-page > .ops-install-note { box-shadow: none; }
 }
 
+/* Call Sketch: a real shop tool, shown publicly only after the phone path is live. */
+.ms-call-sketch {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  padding: clamp(4rem, 8vw, 7.5rem) clamp(1rem, 5vw, 5rem);
+  gap: clamp(2.1rem, 6vw, 5rem);
+  overflow: hidden;
+  color: #f1e8d5;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 44px),
+    radial-gradient(circle at 82% 20%, rgba(228, 81, 42, 0.13), transparent 28rem),
+    #211b14;
+}
+
+.ms-call-sketch::before {
+  content: "CS-01 · CALL TO STEEL";
+  position: absolute;
+  top: 1rem;
+  right: clamp(1rem, 5vw, 5rem);
+  padding: 0.38rem 0.62rem;
+  border: 1px solid rgba(241, 232, 213, 0.38);
+  color: rgba(241, 232, 213, 0.62);
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 0.62rem;
+  line-height: 1;
+  letter-spacing: 0.13em;
+  transform: rotate(1deg);
+}
+
+.ms-call-sketch-copy { display: grid; min-width: 0; align-content: center; }
+.ms-call-sketch-kicker {
+  width: max-content;
+  margin-bottom: 1rem;
+  padding: 0.42rem 0.68rem;
+  color: #fff7e5;
+  background: #b83a25;
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transform: rotate(-1.2deg);
+}
+
+.ms-call-sketch-copy h2 {
+  max-width: 8ch;
+  margin: 0;
+  color: #fff8e7;
+  font-size: clamp(3.25rem, 11vw, 7.4rem);
+  line-height: 0.82;
+  letter-spacing: -0.055em;
+}
+
+.ms-call-sketch-copy > p:not(.ms-call-sketch-note) {
+  max-width: 38rem;
+  margin: 1.45rem 0 0;
+  color: #d0c3ad;
+  font-size: clamp(1rem, 2vw, 1.16rem);
+  line-height: 1.68;
+}
+
+.ms-call-sketch-copy ol {
+  display: grid;
+  margin: 1.7rem 0 0;
+  padding: 0;
+  gap: 0;
+  list-style: none;
+  counter-reset: call-sketch;
+}
+
+.ms-call-sketch-copy li {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  padding: 0.9rem 0 0.9rem 3.2rem;
+  gap: 0.22rem;
+  border-top: 1px solid rgba(241, 232, 213, 0.16);
+  counter-increment: call-sketch;
+}
+
+.ms-call-sketch-copy li::before {
+  content: "0" counter(call-sketch);
+  position: absolute;
+  top: 0.95rem;
+  left: 0;
+  color: #e05232;
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+}
+
+.ms-call-sketch-copy li strong { color: #fff8e7; font-size: 0.97rem; line-height: 1.35; }
+.ms-call-sketch-copy li span { color: #aa9f8c; font-size: 0.88rem; line-height: 1.55; }
+
+.ms-call-sketch-note {
+  display: flex;
+  max-width: 38rem;
+  margin: 1.1rem 0 0;
+  align-items: flex-start;
+  gap: 0.55rem;
+  color: #a99f8e;
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.ms-call-sketch-note svg { width: 1rem; height: 1rem; flex: 0 0 auto; margin-top: 0.08rem; color: #da4b2d; }
+
+.ms-call-sketch-call {
+  display: grid;
+  width: min(100%, 25rem);
+  min-height: 4.5rem;
+  margin-top: 1.45rem;
+  padding: 0.78rem 0.9rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid #ba432d;
+  color: #fff7e5;
+  background: #a93220;
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.3);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.ms-call-sketch-call:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 rgba(0,0,0,0.34); }
+.ms-call-sketch-call > svg { width: 1.25rem; height: 1.25rem; }
+.ms-call-sketch-call > svg:last-child { width: 1.05rem; height: 1.05rem; }
+.ms-call-sketch-call span { display: grid; min-width: 0; gap: 0.15rem; }
+.ms-call-sketch-call small { font-family: var(--font-ms-mono), monospace; font-size: 0.6rem; font-weight: 700; line-height: 1.2; letter-spacing: 0.12em; text-transform: uppercase; }
+.ms-call-sketch-call strong { overflow-wrap: anywhere; font-family: var(--font-ms-display), sans-serif; font-size: clamp(1.3rem, 6vw, 1.8rem); font-weight: 900; line-height: 1; }
+
+.ms-call-sketch-demo {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(0.72rem, 2vw, 1.1rem);
+  align-self: center;
+  border: 1px solid #0c0c0b;
+  color: #17140f;
+  background: #d9d0ba;
+  box-shadow: clamp(0.7rem, 2vw, 1.4rem) clamp(0.8rem, 2.4vw, 1.7rem) 0 rgba(0,0,0,0.32);
+  transform: rotate(0.55deg);
+}
+.ms-call-sketch-demo::before,
+.ms-call-sketch-demo::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: -0.55rem;
+  width: 4.6rem;
+  height: 1.1rem;
+  background: rgba(215, 190, 136, 0.73);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.15);
+}
+.ms-call-sketch-demo::before { left: 12%; transform: rotate(-4deg); }
+.ms-call-sketch-demo::after { right: 10%; transform: rotate(4deg); }
+
+.ms-call-sketch-demo figcaption {
+  display: flex;
+  min-width: 0;
+  padding: 0.2rem 0.15rem 0.72rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.ms-call-sketch-demo figcaption span { color: #574e40; font-family: var(--font-ms-mono), monospace; font-size: 0.58rem; font-weight: 700; line-height: 1.35; letter-spacing: 0.08em; text-transform: uppercase; }
+.ms-call-sketch-demo figcaption strong { color: #1d1710; font-family: var(--font-ms-display), sans-serif; font-size: clamp(1.2rem, 4vw, 1.75rem); font-weight: 900; line-height: 1; text-align: right; text-transform: uppercase; }
+.ms-call-sketch-canvas { overflow: hidden; border: 2px solid #11110f; background: #1f201e; }
+.ms-call-sketch-canvas svg { display: block; width: 100%; height: auto; }
+
+.ms-call-sketch-facts { display: grid; min-width: 0; padding-top: 0.65rem; gap: 0.45rem; }
+.ms-call-sketch-facts p { display: flex; min-width: 0; margin: 0; align-items: baseline; justify-content: space-between; gap: 0.8rem; border-bottom: 1px solid rgba(31, 25, 17, 0.22); }
+.ms-call-sketch-facts small { color: #625745; font-family: var(--font-ms-mono), monospace; font-size: 0.58rem; font-weight: 700; line-height: 1.6; letter-spacing: 0.06em; text-transform: uppercase; }
+.ms-call-sketch-facts strong { color: #211a12; font-size: 0.76rem; font-weight: 850; line-height: 1.55; text-align: right; text-transform: uppercase; }
+
+@media (min-width: 900px) {
+  .ms-call-sketch { grid-template-columns: minmax(0, 0.84fr) minmax(31rem, 1.16fr); align-items: center; }
+  .ms-call-sketch-demo { max-width: 47rem; justify-self: end; }
+}
+
+@media (max-width: 420px) {
+  .ms-call-sketch { padding-inline: 0.85rem; }
+  .ms-call-sketch-copy h2 { font-size: clamp(3rem, 19vw, 4.4rem); }
+  .ms-call-sketch-call { gap: 0.6rem; }
+  .ms-call-sketch-demo figcaption { align-items: flex-start; flex-direction: column; gap: 0.35rem; }
+  .ms-call-sketch-demo figcaption strong { text-align: left; }
+  .ms-call-sketch-facts p { align-items: flex-start; flex-direction: column; gap: 0; }
+  .ms-call-sketch-facts strong { text-align: left; }
+}
+
 /* Customer Page: private job status with no clipboard metaphor. */
 .glass-page {
   min-height: 100dvh;

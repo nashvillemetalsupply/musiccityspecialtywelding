@@ -102,6 +102,32 @@ export function twilioVoiceConfigured() {
   )
 }
 
+export function twilioLiveTranscriptionConfigured() {
+  return (
+    twilioVoiceConfigured() &&
+    process.env.TWILIO_LIVE_TRANSCRIPTION_ENABLED?.trim().toLowerCase() === "true"
+  )
+}
+
+export function twilioLiveTranscriptionStart(input: {
+  callSid: string
+  direction: "in" | "out"
+}) {
+  if (!twilioLiveTranscriptionConfigured()) return ""
+  const inboundLabel = input.direction === "in" ? "customer" : "shop"
+  const outboundLabel = input.direction === "in" ? "shop" : "customer"
+  const hints = "gate,frame,panel,width,height,opening,finished dimension,square tube,steel,aluminum,rail,hinge,latch,swing,driveway"
+  return (
+    `<Start><Transcription ` +
+    `name="${escapeXml(`call-sketch-${input.callSid}`)}" ` +
+    `statusCallbackUrl="${escapeXml(twilioCallbackUrl("/api/twilio/live-transcript"))}" ` +
+    `track="both_tracks" inboundTrackLabel="${inboundLabel}" outboundTrackLabel="${outboundLabel}" ` +
+    `transcriptionEngine="deepgram" speechModel="nova-3" languageCode="en-US" ` +
+    `partialResults="true" enableAutomaticPunctuation="true" profanityFilter="false" ` +
+    `hints="${escapeXml(hints)}" /></Start>`
+  )
+}
+
 export type TwilioProviderReadiness = {
   checked: boolean
   credentialsValid: boolean
