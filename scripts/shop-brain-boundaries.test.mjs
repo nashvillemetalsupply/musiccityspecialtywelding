@@ -81,6 +81,21 @@ test("the sole notification gate suppresses every INTERNAL TEST source", () => {
   assert.match(voice, /!isTestCall && !person\?\.is_test && !\(prepared\.kind === "draft" && prepared\.draft\.is_test\)/)
 })
 
+test("marking mail Not a job also closes its unread alert retries", () => {
+  const actions = source("app/ops/actions.ts")
+  const updateStatus = actions.slice(actions.indexOf("export async function updateLeadStatus"), actions.indexOf("export async function markFirstResponse"))
+  assert.match(updateStatus, /if \(status === "spam"\)/)
+  assert.match(updateStatus, /UPDATE notifications n SET[\s\S]*read_at = COALESCE\(n\.read_at, now\(\)\)/)
+  assert.match(updateStatus, /delivery_status IN \('pending','sending','retry'\)[\s\S]*THEN 'filed'/)
+  assert.match(updateStatus, /FROM events e[\s\S]*e\.lead_id = \$\{leadId\}::bigint/)
+})
+
+test("work orders render old and new email bodies as readable text", () => {
+  const workOrder = source("app/ops/leads/[id]/page.tsx")
+  assert.match(workOrder, /import \{ readableEmailText \} from "@\/lib\/gmail-plaintext\.mjs"/)
+  assert.match(workOrder, /return readableEmailText\(text\) \|\|/)
+})
+
 test("tracked calling rejects the shop number and test work", () => {
   const call = source("app/api/ops/call/route.ts")
   const button = source("app/ops/tracked-call-button.tsx")
@@ -572,6 +587,7 @@ test("DONE voice addenda remain playable from their receipt", () => {
   assert.match(voice, /detail->>'voicePath'/)
   assert.match(capture, /onTranscript: \(transcript: string, intentId\?: string\)/)
   assert.match(done, /name="voiceIntentId" value=\{voiceIntentId\}/)
+  assert.match(actions, /FROM voice_transcription_intents[\s\S]{0,260}recovery_key = \$\{`closeout:\$\{leadId\}`\}/)
   assert.match(actions, /FROM voice_transcription_intents[\s\S]{0,260}recovery_key = \$\{`done:\$\{leadId\}`\}/)
   assert.match(actions, /recoveredVoiceIntentId/)
 })

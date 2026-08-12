@@ -1,5 +1,5 @@
-/* MCSW Jobs · simple surface, rigorous system · locked Signal + Brand
- * macrostructure: compact header + intake + bounded job rows · design-system: design.md
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app
+ * MCSW Jobs · simple surface, rigorous system · locked Signal + Brand
  * Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
  * audience: shop owner + field crew · use: act, answer, complete · contrast: verified high
  */
@@ -37,6 +37,18 @@
   --font-outlier: var(--font-body);
   --font-receipt: var(--font-body);
 
+  /* Product optical roles. Chivo is variable, so these values render as real
+     weights instead of browser-synthesised bold. */
+  --font-weight-body: 450;
+  --font-weight-label: 650;
+  --font-weight-control: 680;
+  --font-weight-heading: 760;
+  --font-weight-display: 780;
+  --tracking-body: 0;
+  --tracking-utility: 0.025em;
+  --tracking-heading: -0.008em;
+  --tracking-display: -0.012em;
+
   --space-3xs: 0.25rem;
   --space-2xs: 0.5rem;
   --space-xs: 0.75rem;
@@ -61,6 +73,18 @@
   --text-xl: 1.75rem;
   --text-2xl: 2.25rem;
   --text-display: clamp(2.25rem, 5vw, 4.5rem);
+  --text-product-floor: 0.875rem;
+  --text-product-body: 1rem;
+  --text-product-emphasis: 1.0625rem;
+  --text-product-title: 1.1875rem;
+  --text-product-display: 1.375rem;
+
+  --icon-stroke: 1.875;
+  --icon-size-compact: 1rem;
+  --icon-size-action: 1.125rem;
+  --icon-size-prominent: 1.25rem;
+  --touch-target-min: 2.75rem;
+  --control-height: 3rem;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
@@ -80,6 +104,9 @@
   --shadow-overlay: 0 2rem 6rem oklch(0% 0 0 / 0.65);
   --shadow-dock: 0 1rem 3rem oklch(0% 0 0 / 0.55);
   --shadow-glass: 0 1.5rem 4rem oklch(10% 0.015 70 / 0.25);
+  --shadow-product-whisper: 0 1px 2px oklch(20% 0.01 45 / 0.08);
+  --shadow-product-overlay: 0 1.5rem 4rem oklch(16% 0.015 45 / 0.22);
+  --shadow-control-highlight: inset 0 1px 0 oklch(100% 0 0 / 0.22);
   --color-metal-sheen: oklch(100% 0 0 / 0.025);
   --color-metal-bloom: oklch(100% 0 0 / 0.045);
 }

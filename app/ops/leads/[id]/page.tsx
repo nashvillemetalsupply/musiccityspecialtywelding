@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { randomUUID } from "node:crypto"
 import { notFound } from "next/navigation"
 import { dbConfigured, getSql } from "@/lib/db"
 import { LEAD_STATUSES } from "@/lib/leads"
@@ -15,7 +16,9 @@ import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getMessagingConsentState } from "@/lib/messaging-consent"
 import { isReservedShopPhone } from "@/lib/people"
 import { normalizePage } from "@/lib/pagination"
+import { readableEmailText } from "@/lib/gmail-plaintext.mjs"
 import { getActiveGlassLinkState } from "@/lib/glass"
+import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { glassUrl } from "@/lib/glass-delivery"
 import { shopClaimLabel, shopClaimText, shopDeliveryLabel, shopEventLabel, shopJobStatusLabel, shopSourceLabel } from "@/lib/shop-language"
 import { projectClaimForRole, projectCommitmentForRole, projectEventForRole, redactCrewText } from "@/lib/visibility"
@@ -89,7 +92,7 @@ function receiptMoment(detail: Record<string, unknown> | null) {
 }
 
 function visibleEventText(text: string, role: "owner" | "crew") {
-  return text || (role === "owner" ? "Recorded without a text body." : "Crew-safe copy is still being filed.")
+  return readableEmailText(text) || (role === "owner" ? "Recorded without a text body." : "Crew-safe copy is still being filed.")
 }
 
 type SpikeAttachment = { pathname?: unknown; name?: unknown; contentType?: unknown; sensitivity?: unknown }
@@ -283,7 +286,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     : null
   const sourceEventById = new Map(safeUnifiedEvents.map((event) => [event.id, event]))
   const sourceCallBySid = new Map(calls.map((call) => [call.twilio_sid, call]))
-  const memoryClaims = safeClaims.filter((claim) => claim.predicate !== "quoted_price_cents").slice(0, 6)
+  const memoryClaims = safeClaims.filter((claim) => !["quoted_price_cents", "build_fact"].includes(claim.predicate)).slice(0, 6)
   const visibleJobStatus = lead.handed_off_at
     ? "Handed Off"
     : lead.completed_at
@@ -321,6 +324,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           <p className="ops-sub">
             Job <strong>#{lead.id}</strong>, opened {formatCentral(lead.created_at)}
           </p>
+          {operator.role === "owner" && lead.is_test && buildSheetsEnabled() && <Link className="ops-builds-link" href={`/ops/leads/${lead.id}/builds`}>Builds</Link>}
         </div>
         <div className={`ops-stamp-ink is-${lead.status} ops-stamp-hero`}>{visibleJobStatus}</div>
       </header>
@@ -766,7 +770,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </div>
       </details>
 
-      <DoneStamp leadId={lead.id} completed={Boolean(lead.completed_at)} undoUntil={completionUndoUntil} voiceReady={voiceReady} />
+      <DoneStamp leadId={lead.id} completed={Boolean(lead.completed_at)} undoUntil={completionUndoUntil} voiceReady={voiceReady} reviewedCloseout={Boolean(operator.role === "owner" && lead.is_test && buildSheetsEnabled())} closeoutKey={randomUUID()} />
 
       <HandoffControl
         leadId={lead.id}

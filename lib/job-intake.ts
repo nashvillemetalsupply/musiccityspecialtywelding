@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { attachRecoveredCallArtifacts } from "@/lib/call-artifacts"
+import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { createLead } from "@/lib/leads"
@@ -44,6 +45,19 @@ function cleanCallerName(value: string) {
   return /^(unknown|anonymous|private)$/i.test(name) ? "" : name
 }
 
+async function projectRecoveredTestCallBuildFacts(callSid: string, leadId: number, isTest: boolean) {
+  if (!isTest) return
+  const sql = getSql()
+  await sql`
+    INSERT INTO build_sketch_job_links (lead_id, call_sid, is_test)
+    SELECT l.id, ${callSid}::text, true
+    FROM leads l
+    WHERE l.id = ${leadId}::bigint AND l.is_test = true
+    ON CONFLICT (lead_id) DO UPDATE SET call_sid = EXCLUDED.call_sid
+    WHERE build_sketch_job_links.is_test = true`
+  await ingestCallSketchBuildFacts(leadId)
+}
+
 export async function prepareInboundCallIntake(input: {
   callSid: string
   phone: string
@@ -76,6 +90,7 @@ export async function prepareInboundCallIntake(input: {
           updated_at = now()
         WHERE twilio_sid = ${input.callSid}::text`
       await attachRecoveredCallArtifacts(input.callSid, existingLead, person.id, person.is_test)
+      await projectRecoveredTestCallBuildFacts(input.callSid, existingLead, person.is_test)
       return { kind: "existing", leadId: existingLead, person }
     }
   }
@@ -267,6 +282,7 @@ export async function saveInboundCallAsJob(input: {
         updated_at = now()
       WHERE twilio_sid = ${draft.call_sid}::text`
     await attachRecoveredCallArtifacts(draft.call_sid, created.id, personId, leads[0]?.is_test ?? draft.is_test)
+    await projectRecoveredTestCallBuildFacts(draft.call_sid, created.id, leads[0]?.is_test ?? draft.is_test)
     await recordEvent({
       kind: "call.intake.saved",
       actorType: "operator",
@@ -597,6 +613,7 @@ export async function reconcileStaleCallIntakes(limit = 20) {
           person_id = COALESCE(person_id, ${leads[0].person_id}::bigint), updated_at = now()
         WHERE twilio_sid = ${row.call_sid}::text`
       await attachRecoveredCallArtifacts(row.call_sid, leads[0].id, leads[0].person_id ?? row.person_id, leads[0].is_test)
+      await projectRecoveredTestCallBuildFacts(row.call_sid, leads[0].id, leads[0].is_test)
       saved += 1
     } else {
       await sql`

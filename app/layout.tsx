@@ -99,6 +99,8 @@ const localBusinessSchema = {
   "@type": ["LocalBusiness", "ProfessionalService"],
   "@id": "https://musiccityspecialtywelding.com/#business",
   name: "Music City Specialty Welding",
+  legalName: "Neverlift Chassis Works, LLC",
+  alternateName: "Music City Specialty Welding",
   url: "https://musiccityspecialtywelding.com/",
   telephone: shopPhone.e164,
   email: "sales@musiccityspecialtywelding.com",

@@ -320,6 +320,40 @@ Design-phase verification completed on 2026-08-10:
 - `npm run build`: pass; one non-blocking fallback-font warning for existing `Atkinson Hyperlegible Next`
 - responsive browser sweep: pass at 320, 360, 375, 390, 414, 768, 832, 1280, and 1440 px
 
+## CRM optical polish record — 2026-08-11
+
+Scope: every private CRM surface under `/ops`, production Call Sketch, and the private Customer Page under `/j/[token]`. The public homepage and marketing routes were deliberately excluded.
+
+Locked outcome:
+
+- Preserve the Signal structure, navigation order, workflows, copy meaning, data, and provider behavior.
+- Keep Chivo as the only visible product face.
+- Use the MCSW welding red-rust `#b34513`; do not imitate Apple styling or introduce a new palette.
+- Apply a 14px meaningful-text floor, natural tracking for names/customer language/questions, 48px primary controls, a 44px compact floor, and one Lucide 16/18/20px optical system.
+- Support the owner's Motorola Moto G (2026) first, with installed PWA primary and Chrome fallback.
+- Keep the current Call Sketch hierarchy in production. The task-first hierarchy is available only in `/design-preview/mcsw-jobs-call-sketch` for owner comparison.
+- Keep all changes reversible in small commits with evidence under `docs/visual-polish/2026-08-11/`.
+
+Rollback checkpoints:
+
+- Baseline: `c777bc2` (`feat(ops): add Call Sketch launcher`)
+- Visual foundation: `916433e` (`style(ops): refine visual foundation`)
+- Call Sketch: `ef62c61` (`style(call-sketch): sharpen visual hierarchy`)
+
+Verified on 2026-08-11:
+
+- `npm run typecheck`: pass
+- `npm run lint`: pass
+- `npm run test:shop-brain`: 149/149 pass
+- `npm run build`: pass; the existing Atkinson fallback-font warning is unrelated
+- browser widths: 320, 360, 375, 390, 414, 768, 1280, and 1440 pass
+- landscape: 720×360 and 800×360 pass
+- 125% Moto display-size proxy: effective 288×640 pass
+- 14px minimum text, no squeezed computed tracking, no horizontal overflow, and no interactive control below 44px
+- keyboard focus: immediate 3px ring; core tested contrast pairs: 5.56:1 or better
+
+Still required before production acceptance: physical testing on the owner's Moto G (2026), including actual CSS viewport measurement, installed/PWA and Chrome modes, gesture navigation, keyboard-open layouts, and default plus enlarged Android text/display settings. Browser emulation is evidence, not physical signoff.
+
 ## Do not change after lock without owner approval
 
 - Signal structure

@@ -19,6 +19,8 @@ import { createOrReuseQuoteGlassLink } from "@/lib/glass"
 import { deliverGlassClipboard, glassUrl as customerGlassUrl } from "@/lib/glass-delivery"
 import { redactCrewText } from "@/lib/visibility"
 import { fileIdentityConflict, findOrCreatePerson, isReservedShopPhone, normalizeEmail, normalizePhone } from "@/lib/people"
+import { validateCloseoutReview } from "@/lib/closeout-domain.mjs"
+import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 
 async function sendCustomerEmail(options: {
   leadId: number
@@ -291,6 +293,21 @@ export async function updateLeadStatus(formData: FormData) {
       lost_at = CASE WHEN ${status}::text = 'lost' AND lost_at IS NULL THEN now() ELSE lost_at END,
       updated_at = now()
     WHERE id = ${leadId}::bigint`
+  if (status === "spam") {
+    await sql`
+      UPDATE notifications n SET
+        read_at = COALESCE(n.read_at, now()),
+        delivery_status = CASE
+          WHEN n.sent_at IS NULL AND n.delivery_status IN ('pending','sending','retry') THEN 'filed'
+          ELSE n.delivery_status END,
+        delivery_next_attempt_at = NULL,
+        interrupt_reserved_at = NULL,
+        delivery_error = CASE
+          WHEN n.sent_at IS NULL THEN 'Suppressed after the work order was marked Not a job.'
+          ELSE n.delivery_error END
+      FROM events e
+      WHERE e.id = n.source_event_id AND e.lead_id = ${leadId}::bigint`
+  }
   await recordLeadEvent(leadId, "status_changed", actorId(operator), { status, reason: reason || null })
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
@@ -774,21 +791,12 @@ export async function setFollowUp(formData: FormData) {
   revalidatePath(`/ops/leads/${leadId}`)
 }
 
-// Glove-first completion path. No money is required and no confirmation modal
-// stands between the crew and a durable DONE event.
+// Glove-first completion path. The crew reviews structured outcomes before the
+// durable DONE event; commercial state remains an independent ledger.
 export async function markLeadComplete(formData: FormData) {
   const operator = await requireOperator()
   const leadId = parseLeadId(formData.get("leadId"))
-  const note = String(formData.get("note") ?? "").trim().slice(0, 2000)
-  const noteSource = String(formData.get("noteSource") ?? "typed") === "voice" ? "voice" : "typed"
-  const photo = formData.get("photo")
-  const voiceNote = formData.get("voiceNote")
-  if (photo instanceof File && photo.size > 0 && (photo.size > 12 * 1024 * 1024 || !photo.type.startsWith("image/"))) {
-    throw new Error("Closeout photos must be an image under 12 MB.")
-  }
-  if (voiceNote instanceof File && voiceNote.size > 0 && (voiceNote.size > 8 * 1024 * 1024 || !voiceNote.type.startsWith("audio/"))) {
-    throw new Error("Closeout voice notes must be audio under 8 MB.")
-  }
+  const reviewedCloseoutRequested = String(formData.get("reviewedCloseout") ?? "") === "1"
   const sql = getSql()
   const before = (await sql`
     SELECT status, public_id, first_name, service, person_id, is_test,
@@ -805,6 +813,93 @@ export async function markLeadComplete(formData: FormData) {
       assigned_operator_id: number | null
     }[]
   if (!before[0]) throw new Error("Job not found.")
+  const reviewedCloseoutEnabled = operator.role === "owner" && before[0].is_test && buildSheetsEnabled()
+  if (reviewedCloseoutRequested && !reviewedCloseoutEnabled) throw new Error("Reviewed closeout is unavailable for this job.")
+  const closeout = reviewedCloseoutEnabled ? validateCloseoutReview({
+    completion: String(formData.get("completion") ?? "") as "complete" | "partial",
+    fit: String(formData.get("fit") ?? "") as "fit" | "adjusted" | "not-checked",
+    extraTrips: Number(formData.get("extraTrips")),
+    rework: String(formData.get("rework") ?? "") as "yes" | "no",
+    asBuiltDifferences: String(formData.get("asBuiltDifferences") ?? "").slice(0, 2000),
+    remainingWork: String(formData.get("remainingWork") ?? "").slice(0, 2000),
+    sourceWords: String(formData.get("sourceWords") ?? "").slice(0, 2000),
+    reviewed: String(formData.get("reviewed") ?? "") === "1",
+  }) : null
+  const note = closeout?.sourceWords ?? ""
+  const noteSource = String(formData.get("noteSource") ?? "typed") === "voice" ? "voice" : "typed"
+  const voiceIntentId = String(formData.get("voiceIntentId") ?? "").trim()
+  const hasVoiceIntent = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(voiceIntentId)
+  if (voiceIntentId && !hasVoiceIntent) throw new Error("That saved voice note is not valid.")
+  const recoveredVoice = hasVoiceIntent ? (await sql`
+    SELECT blob_path, content_type FROM voice_transcription_intents
+    WHERE id = ${voiceIntentId}::text AND operator_id = ${operator.id}::bigint
+      AND lead_id = ${leadId}::bigint AND recovery_key = ${`closeout:${leadId}`}::text
+      AND status = 'completed' AND blob_path <> '' LIMIT 1`) as Array<{ blob_path: string; content_type: string }> : []
+  if (noteSource === "voice" && (!hasVoiceIntent || !recoveredVoice[0])) {
+    throw new Error("That saved voice note does not belong to this closeout.")
+  }
+  if (closeout?.completion === "partial") {
+    const closeoutKey = String(formData.get("closeoutKey") ?? "").trim().slice(0, 120)
+    if (!closeoutKey) throw new Error("The closeout update receipt is missing. Reload this job.")
+    const externalId = `job-closeout-update:${leadId}:${closeoutKey}`
+    const updates = (await sql`
+      WITH event_write AS (
+        INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+        SELECT 'job.closeout-update'::text, 'operator'::text, ${String(operator.id)}::text,
+          l.id, l.person_id, ${externalId}::text, ${note}::text,
+          'Partial work update filed. Job remains open.'::text,
+          ${JSON.stringify({ closeout, noteSource, voiceIntentId: hasVoiceIntent ? voiceIntentId : null, ...(recoveredVoice[0] ? { voicePath: recoveredVoice[0].blob_path, voiceContentType: recoveredVoice[0].content_type, recoveredVoiceIntentId: voiceIntentId } : {}), sensitivity: "owner-only", isTest: true })}::jsonb
+        FROM leads l WHERE l.id = ${leadId}::bigint AND l.is_test = true AND l.completed_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM events keyed
+            WHERE keyed.kind = 'job.closeout-update' AND keyed.external_id = ${externalId}::text
+              AND (keyed.detail->'closeout' IS DISTINCT FROM ${JSON.stringify(closeout)}::jsonb
+                OR COALESCE(keyed.detail->>'noteSource', '') <> ${noteSource}::text
+                OR COALESCE(keyed.detail->>'voiceIntentId', '') <> ${hasVoiceIntent ? voiceIntentId : ""}::text)
+          )
+        ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+        RETURNING id
+      ), event_scope AS (
+        SELECT id FROM event_write
+        UNION ALL
+        SELECT id FROM events WHERE kind = 'job.closeout-update' AND external_id = ${externalId}::text
+          AND detail->'closeout' = ${JSON.stringify(closeout)}::jsonb
+          AND COALESCE(detail->>'noteSource', '') = ${noteSource}::text
+          AND COALESCE(detail->>'voiceIntentId', '') = ${hasVoiceIntent ? voiceIntentId : ""}::text
+          AND NOT EXISTS (SELECT 1 FROM event_write)
+        LIMIT 1
+      ), update_write AS (
+        INSERT INTO job_closeout_updates (
+          lead_id, source_event_id, completion_state, fit_state, extra_trips,
+          rework_state, as_built_differences, remaining_work, source_words,
+          reviewed_by, reviewed_at, is_test
+        )
+        SELECT ${leadId}::bigint, event.id, 'partial'::text, ${closeout.fit}::text,
+          ${closeout.extraTrips}::int, ${closeout.rework}::text,
+          ${closeout.asBuiltDifferences}::text, ${closeout.remainingWork}::text,
+          ${closeout.sourceWords}::text, ${operator.id}::bigint, now(), true
+        FROM event_scope event
+        ON CONFLICT (source_event_id) DO NOTHING
+        RETURNING id, source_event_id
+      )
+      SELECT id, source_event_id FROM update_write
+      UNION ALL
+      SELECT stored.id, stored.source_event_id FROM job_closeout_updates stored JOIN event_scope event ON event.id = stored.source_event_id
+      WHERE NOT EXISTS (SELECT 1 FROM update_write)
+      LIMIT 1`) as Array<{ id: number; source_event_id: number }>
+    const update = updates[0]
+    if (!update) throw new Error("The closeout update could not be filed.")
+    revalidatePath(`/ops/leads/${leadId}`)
+    return
+  }
+  const photo = formData.get("photo")
+  const voiceNote = formData.get("voiceNote")
+  if (photo instanceof File && photo.size > 0 && (photo.size > 12 * 1024 * 1024 || !photo.type.startsWith("image/"))) {
+    throw new Error("Closeout photos must be an image under 12 MB.")
+  }
+  if (voiceNote instanceof File && voiceNote.size > 0 && (voiceNote.size > 8 * 1024 * 1024 || !voiceNote.type.startsWith("audio/"))) {
+    throw new Error("Closeout voice notes must be audio under 8 MB.")
+  }
   const deliveryCommitments = (await sql`
     SELECT id FROM commitments
     WHERE lead_id = ${leadId}::bigint
@@ -822,6 +917,9 @@ export async function markLeadComplete(formData: FormData) {
     previousAssignedOperatorId: before[0].assigned_operator_id,
     operatorName: operator.name,
     closedCommitmentIds,
+    ...(hasVoiceIntent ? { voiceIntentId } : {}),
+    ...(recoveredVoice[0] ? { voicePath: recoveredVoice[0].blob_path, voiceContentType: recoveredVoice[0].content_type, recoveredVoiceIntentId: voiceIntentId } : {}),
+    ...(closeout ? { closeout } : {}),
   }
   const completion = (await sql`
     WITH target AS (
@@ -842,6 +940,20 @@ export async function markLeadComplete(formData: FormData) {
         ('lead_event:' || lr.id::text), ${note}::text, ${JSON.stringify({ ...completionDetail, legacyType: "completed" })}::jsonb
       FROM legacy_receipt lr CROSS JOIN target t
       RETURNING id
+    ), closeout_write AS (
+      INSERT INTO job_closeouts (
+        lead_id, completion_event_id, completion_state, fit_state, extra_trips,
+        rework_state, as_built_differences, remaining_work, source_words,
+        reviewed_by, reviewed_at, is_test
+      )
+      SELECT t.id, receipt.id, ${closeout?.completion ?? "complete"}::text, ${closeout?.fit ?? "not-checked"}::text,
+        ${closeout?.extraTrips ?? 0}::int, ${closeout?.rework ?? "no"}::text,
+        ${closeout?.asBuiltDifferences ?? ""}::text, ${closeout?.remainingWork ?? ""}::text,
+        ${closeout?.sourceWords ?? ""}::text, ${operator.id}::bigint, now(), ${before[0].is_test}::boolean
+      FROM target t CROSS JOIN immutable_receipt receipt
+      WHERE ${Boolean(closeout)}::boolean
+      ON CONFLICT (completion_event_id) DO NOTHING
+      RETURNING lead_id, completion_event_id
     ), lead_update AS (
       UPDATE leads l SET
         completed_at = now(), status = 'won', won_at = COALESCE(l.won_at, now()),
@@ -849,7 +961,8 @@ export async function markLeadComplete(formData: FormData) {
         assigned_operator_id = COALESCE(l.assigned_operator_id, ${operator.id}::bigint),
         updated_at = now()
       FROM target t CROSS JOIN immutable_receipt r
-      WHERE l.id = t.id RETURNING l.id
+      WHERE (${Boolean(closeout)}::boolean = false OR EXISTS (SELECT 1 FROM closeout_write))
+        AND l.id = t.id RETURNING l.id
     ), glass_update AS (
       UPDATE glass_links g SET expires_at = COALESCE(g.expires_at, now() + interval '90 days')
       FROM immutable_receipt r

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { extractQuickBooksPaymentFacts, isAuthenticatedIntuitPayment, paymentCompletesInvoice, sentMessageMayStartWork, shouldSkipGmailMessage } from "../lib/gmail-routing.mjs"
-import { stripQuotedReply } from "../lib/gmail-plaintext.mjs"
+import { readableEmailText, stripQuotedReply } from "../lib/gmail-plaintext.mjs"
 
 test("sales sent mail is never swallowed by the own-domain noise rule", () => {
   assert.equal(shouldSkipGmailMessage({
@@ -15,6 +15,26 @@ test("inbound CRM and promotional noise stays skipped", () => {
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "alerts@musiccityspecialtywelding.com" }), true)
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: true, from: "vendor@example.com" }), true)
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "dale@example.com" }), false)
+})
+
+test("provider subdomains, bulk mail, and cold finance pitches never become jobs", () => {
+  assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "rep@xwf.google.com" }), true)
+  assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "intuit@eq.intuit.com" }), true)
+  assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "donotreply@twilio.com" }), true)
+  assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "news@vendor.example", headers: { "List-Unsubscribe": "<https://vendor.example/unsubscribe>" } }), true)
+  assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "jake@lender.example", subject: "Funding partnership?" }), true)
+})
+
+test("real customer RFQs survive Gmail noise screening", () => {
+  assert.equal(shouldSkipGmailMessage({
+    sent: false,
+    categorizedNoise: false,
+    from: "buyer@epsi.com",
+    subject: "RFQ for EPSI-TN",
+    body: "Please quote the attached stainless parts.",
+    headers: {},
+  }), false)
+  assert.equal(shouldSkipGmailMessage({ sent: true, categorizedNoise: false, from: "donotreply@twilio.com" }), false)
 })
 
 test("QuickBooks money requires aligned Google authentication and exact domain boundaries", () => {
@@ -46,4 +66,9 @@ test("only the newly authored email survives Gmail, Outlook, and mobile reply ta
   assert.equal(stripQuotedReply("We can have it Friday.\r\n\r\n-----Original Message-----\r\nFrom: Dale <dale@example.com>\r\nSent: Thursday\r\nTo: Sales\r\nSubject: Gate\r\nOld promise"), "We can have it Friday.")
   assert.equal(stripQuotedReply("On it.\n\nFrom: Dale <dale@example.com>\nSent: Friday, August 8\nTo: Sales <sales@example.com>\nSubject: RE: Gate\nOld quote $700"), "On it.")
   assert.equal(stripQuotedReply("Photo attached.\nSent from my iPhone\n\n> old message"), "Photo attached.")
+})
+
+test("HTML and invisible tracking junk become readable email text", () => {
+  const raw = `<!doctype html><html><head><style>.hide{display:none}</style></head><body><!-- tracker --><p>Hello&nbsp;Philippe,</p><div>Please quote <strong>12 brackets</strong>.</div><script>steal()</script><p>You&rsquo;re all set.\u034f\u034f\u200b</p></body></html>`
+  assert.equal(readableEmailText(raw), "Hello Philippe,\nPlease quote 12 brackets.\nYou’re all set.")
 })

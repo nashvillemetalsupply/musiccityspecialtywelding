@@ -9,7 +9,7 @@
     "migrate": "node scripts/migrate.mjs",
     "start": "next start",
     "test:recent-regressions": "node --test scripts/recent-regressions.test.mjs",
-    "test:shop-brain": "node --test scripts/gmail-routing.test.mjs scripts/shop-brain-invariants.test.mjs scripts/shop-brain-boundaries.test.mjs scripts/mcsw-jobs-activation.test.mjs scripts/event-visibility.test.mjs scripts/glass-revoke-race.test.mjs scripts/glass-upload-expiry.test.mjs scripts/receipt-email-hardening.test.mjs scripts/job-handoff-lifecycle.test.mjs scripts/recent-regressions.test.mjs scripts/production-flow-regressions.test.mjs scripts/call-sketch-dxf.test.mjs scripts/call-sketch-live.test.mjs scripts/call-sketch-integration.test.mjs",
+    "test:shop-brain": "node --test scripts/gmail-routing.test.mjs scripts/shop-brain-invariants.test.mjs scripts/shop-brain-boundaries.test.mjs scripts/mcsw-jobs-activation.test.mjs scripts/event-visibility.test.mjs scripts/glass-revoke-race.test.mjs scripts/glass-upload-expiry.test.mjs scripts/receipt-email-hardening.test.mjs scripts/job-handoff-lifecycle.test.mjs scripts/recent-regressions.test.mjs scripts/production-flow-regressions.test.mjs scripts/call-sketch-dxf.test.mjs scripts/call-sketch-live.test.mjs scripts/call-sketch-integration.test.mjs scripts/build-sheets-domain.test.mjs scripts/build-sheets-continuation.test.mjs scripts/build-sheets-integration.test.mjs scripts/build-sheets-persistence.test.mjs scripts/build-paperwork.test.mjs scripts/build-sheets-continuation-integration.test.mjs scripts/closeout-domain.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -75,12 +75,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "@types/ws": "^8.18.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.12",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "ws": "^8.21.3"
   },
   "overrides": {
     "nanoid": "3.3.17",
