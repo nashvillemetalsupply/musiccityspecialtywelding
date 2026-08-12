@@ -143,7 +143,14 @@ export async function GET(req: Request) {
         counters.skipped++
         continue
       }
-      if (shouldSkipGmailMessage({ sent, categorizedNoise: Boolean(categorizedNoise), from })) { counters.skipped++; continue }
+      if (shouldSkipGmailMessage({
+        sent,
+        categorizedNoise: Boolean(categorizedNoise),
+        from,
+        subject,
+        body,
+        headers,
+      })) { counters.skipped++; continue }
       const customerEmail = sent ? to : from
       if (!customerEmail || !customerEmail.includes("@")) { counters.skipped++; continue }
       const mapped = (await sql`

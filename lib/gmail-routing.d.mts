@@ -3,6 +3,9 @@ export function shouldSkipGmailMessage(input: {
   sent: boolean
   categorizedNoise: boolean
   from: string
+  subject?: string
+  body?: string
+  headers?: Record<string, string>
 }): boolean
 export function isAuthenticatedIntuitPayment(input: {
   from: string

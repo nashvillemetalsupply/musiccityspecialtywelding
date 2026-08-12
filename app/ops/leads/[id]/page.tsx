@@ -15,6 +15,7 @@ import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getMessagingConsentState } from "@/lib/messaging-consent"
 import { isReservedShopPhone } from "@/lib/people"
 import { normalizePage } from "@/lib/pagination"
+import { readableEmailText } from "@/lib/gmail-plaintext.mjs"
 import { getActiveGlassLinkState } from "@/lib/glass"
 import { glassUrl } from "@/lib/glass-delivery"
 import { shopClaimLabel, shopClaimText, shopDeliveryLabel, shopEventLabel, shopJobStatusLabel, shopSourceLabel } from "@/lib/shop-language"
@@ -89,7 +90,7 @@ function receiptMoment(detail: Record<string, unknown> | null) {
 }
 
 function visibleEventText(text: string, role: "owner" | "crew") {
-  return text || (role === "owner" ? "Recorded without a text body." : "Crew-safe copy is still being filed.")
+  return readableEmailText(text) || (role === "owner" ? "Recorded without a text body." : "Crew-safe copy is still being filed.")
 }
 
 type SpikeAttachment = { pathname?: unknown; name?: unknown; contentType?: unknown; sensitivity?: unknown }

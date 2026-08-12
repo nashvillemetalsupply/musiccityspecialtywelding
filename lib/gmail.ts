@@ -1,5 +1,5 @@
 import { put } from "@vercel/blob"
-import { stripQuotedReply } from "@/lib/gmail-plaintext.mjs"
+import { readableEmailText, stripQuotedReply } from "@/lib/gmail-plaintext.mjs"
 
 type GmailPart = { mimeType?: string; filename?: string; body?: { data?: string; attachmentId?: string; size?: number }; parts?: GmailPart[]; headers?: Array<{ name: string; value: string }> }
 export type GmailMessage = { id: string; threadId: string; historyId: string; internalDate: string; labelIds?: string[]; payload: GmailPart; snippet?: string }
@@ -34,8 +34,7 @@ export function gmailPlaintext(message: GmailMessage) {
   const html = parts.find((part) => part.mimeType === "text/html" && part.body?.data)
   const raw = decode(plain?.body?.data || html?.body?.data || "").toString("utf8")
   const freshHtml = plain ? raw : raw.split(/<(?:div|blockquote)[^>]+(?:gmail_quote|divRplyFwdMsg)[^>]*>/i)[0]
-  const text = plain ? freshHtml : freshHtml.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p\s*>/gi, "\n").replace(/<[^>]+>/g, " ")
-  return stripQuotedReply(text)
+  return stripQuotedReply(readableEmailText(freshHtml))
 }
 export function emailAddress(value = "") { return (value.match(/<([^>]+)>/)?.[1] || value).trim().toLowerCase() }
 export function emailName(value = "") { return (value.split("<")[0] || "").replace(/^"|"$/g, "").trim() }

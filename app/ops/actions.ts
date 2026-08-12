@@ -291,6 +291,21 @@ export async function updateLeadStatus(formData: FormData) {
       lost_at = CASE WHEN ${status}::text = 'lost' AND lost_at IS NULL THEN now() ELSE lost_at END,
       updated_at = now()
     WHERE id = ${leadId}::bigint`
+  if (status === "spam") {
+    await sql`
+      UPDATE notifications n SET
+        read_at = COALESCE(n.read_at, now()),
+        delivery_status = CASE
+          WHEN n.sent_at IS NULL AND n.delivery_status IN ('pending','sending','retry') THEN 'filed'
+          ELSE n.delivery_status END,
+        delivery_next_attempt_at = NULL,
+        interrupt_reserved_at = NULL,
+        delivery_error = CASE
+          WHEN n.sent_at IS NULL THEN 'Suppressed after the work order was marked Not a job.'
+          ELSE n.delivery_error END
+      FROM events e
+      WHERE e.id = n.source_event_id AND e.lead_id = ${leadId}::bigint`
+  }
   await recordLeadEvent(leadId, "status_changed", actorId(operator), { status, reason: reason || null })
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
