@@ -587,6 +587,7 @@ test("DONE voice addenda remain playable from their receipt", () => {
   assert.match(voice, /detail->>'voicePath'/)
   assert.match(capture, /onTranscript: \(transcript: string, intentId\?: string\)/)
   assert.match(done, /name="voiceIntentId" value=\{voiceIntentId\}/)
+  assert.match(actions, /FROM voice_transcription_intents[\s\S]{0,260}recovery_key = \$\{`closeout:\$\{leadId\}`\}/)
   assert.match(actions, /FROM voice_transcription_intents[\s\S]{0,260}recovery_key = \$\{`done:\$\{leadId\}`\}/)
   assert.match(actions, /recoveredVoiceIntentId/)
 })

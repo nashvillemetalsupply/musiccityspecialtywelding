@@ -16,7 +16,6 @@ import {
   Karla,
   Lexend,
   Newsreader,
-  Public_Sans,
   Radio_Canada,
   Recursive,
   Sometype_Mono,
@@ -144,14 +143,6 @@ const fraunces = Fraunces({
   weight: "variable",
   axes: ["SOFT", "WONK", "opsz"],
   variable: "--font-direction-fraunces",
-  display: "swap",
-  preload: false,
-})
-
-const publicSans = Public_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-direction-public-sans",
   display: "swap",
   preload: false,
 })
@@ -500,7 +491,7 @@ export default async function MCSWJobsDirectionsPage({
 
   return (
     <main
-      className={`${atkinson.variable} ${familjen.variable} ${geologica.variable} ${newsreader.variable} ${bitter.variable} ${radioCanada.variable} ${commissioner.variable} ${recursive.variable} ${azeretMono.variable} ${alegreya.variable} ${alegreyaSans.variable} ${chivo.variable} ${karla.variable} ${barlow.variable} ${fraunces.variable} ${publicSans.variable} ${suse.variable} ${lexend.variable} ${sometypeMono.variable} ${funnelDisplay.variable} ${funnelSans.variable} jobs-directions-page${capturedDirection ? " jobs-directions-page--capture" : ""}`}
+      className={`${atkinson.variable} ${familjen.variable} ${geologica.variable} ${newsreader.variable} ${bitter.variable} ${radioCanada.variable} ${commissioner.variable} ${recursive.variable} ${azeretMono.variable} ${alegreya.variable} ${alegreyaSans.variable} ${chivo.variable} ${karla.variable} ${barlow.variable} ${fraunces.variable} ${suse.variable} ${lexend.variable} ${sometypeMono.variable} ${funnelDisplay.variable} ${funnelSans.variable} jobs-directions-page${capturedDirection ? " jobs-directions-page--capture" : ""}`}
     >
       {!capturedDirection ? (
         <header className="jobs-directions-intro">

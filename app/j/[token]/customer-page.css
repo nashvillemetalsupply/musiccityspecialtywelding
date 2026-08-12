@@ -259,6 +259,263 @@
   color: var(--glass-ink);
 }
 
+.glass-page-brand .glass-understanding {
+  padding: 1.5rem;
+  border-top: 1px solid var(--glass-rule);
+  background: var(--glass-surface);
+  color: var(--glass-ink);
+}
+
+.glass-page-brand .glass-understanding > header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.glass-page-brand .glass-understanding > header span {
+  color: var(--glass-muted);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-label);
+  line-height: 1.4;
+}
+
+.glass-page-brand .glass-understanding h2 {
+  margin: 0.25rem 0 0;
+  color: var(--glass-ink);
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 680;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: none;
+}
+
+.glass-page-brand .glass-understanding > header > strong {
+  color: var(--glass-ink-2);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.glass-page-brand .glass-understanding > p {
+  max-width: 62ch;
+  margin: 1rem 0 0;
+  color: var(--glass-ink-2);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.glass-page-brand .glass-understanding > .glass-build-receipt {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--glass-positive);
+  border-radius: 0.625rem;
+  color: var(--glass-ink);
+  background: var(--glass-surface);
+  font-weight: 650;
+}
+
+.glass-page-brand .glass-build-receipt svg,
+.glass-page-brand .glass-understanding-response svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  stroke-width: 2;
+}
+
+.glass-page-brand .glass-understanding-facts {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--glass-rule);
+}
+
+.glass-page-brand .glass-build-drawing {
+  margin: 1.25rem 0 0;
+  overflow: hidden;
+  border: 1px solid var(--glass-rule-strong);
+  border-radius: 0.625rem;
+  background: var(--glass-paper);
+}
+
+.glass-page-brand .glass-build-drawing svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.glass-page-brand .glass-build-drawing-frame {
+  fill: none;
+  stroke: var(--glass-ink);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.glass-page-brand .glass-build-drawing-rail {
+  fill: var(--glass-surface-2);
+  stroke: var(--glass-ink);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.glass-page-brand .glass-build-drawing-hardware {
+  fill: var(--glass-accent);
+}
+
+.glass-page-brand .glass-build-drawing-dimension {
+  stroke: var(--glass-muted);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.glass-page-brand :is(.glass-build-drawing-source, .glass-build-drawing-label) {
+  fill: var(--glass-ink);
+  font-family: var(--font-mcsw-customer), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.glass-page-brand .glass-build-drawing-source {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.glass-page-brand .glass-build-drawing figcaption {
+  padding: 0.75rem;
+  border-top: 1px solid var(--glass-rule);
+  color: var(--glass-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.glass-page-brand .glass-build-drawing-empty {
+  padding: 0.75rem;
+  border: 1px solid var(--glass-rule);
+  border-radius: 0.625rem;
+  background: var(--glass-paper);
+}
+
+.glass-page-brand .glass-understanding-facts > article {
+  display: grid;
+  gap: 0.875rem;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--glass-rule);
+}
+
+.glass-page-brand .glass-understanding-value,
+.glass-page-brand .glass-understanding-response {
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.glass-page-brand .glass-understanding-value > span,
+.glass-page-brand .glass-understanding-response label > span {
+  color: var(--glass-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.glass-page-brand .glass-understanding-value > strong {
+  color: var(--glass-ink);
+  font-size: 1.125rem;
+  font-weight: 680;
+  line-height: 1.45;
+}
+
+.glass-page-brand .glass-understanding-value > small {
+  color: var(--glass-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.glass-page-brand .glass-understanding-value > .glass-build-state {
+  color: var(--glass-ink-2);
+  font-weight: 600;
+}
+
+.glass-page-brand .glass-understanding-value > .glass-build-state.is-working-number {
+  color: var(--glass-accent-hover);
+}
+
+.glass-page-brand .glass-understanding-response > span {
+  min-height: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--glass-positive);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.glass-page-brand .glass-understanding-response > span.is-proposed {
+  color: var(--glass-accent-hover);
+}
+
+.glass-page-brand .glass-understanding-response button,
+.glass-page-brand .glass-understanding-response summary {
+  min-height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.875rem;
+  border: 1px solid var(--glass-rule-strong);
+  border-radius: 0.625rem;
+  color: var(--glass-ink);
+  background: var(--glass-surface);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.glass-page-brand .glass-understanding-response > form button {
+  border-color: var(--glass-accent);
+  background: var(--glass-accent);
+  color: var(--glass-on-accent);
+}
+
+.glass-page-brand .glass-understanding-response details {
+  min-width: 0;
+}
+
+.glass-page-brand .glass-understanding-response summary {
+  width: 100%;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.glass-page-brand .glass-understanding-response details form {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.glass-page-brand .glass-understanding-response label {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.glass-page-brand .glass-understanding-response :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--glass-rule-strong);
+  border-radius: 0.625rem;
+  color: var(--glass-ink);
+  background: var(--glass-surface);
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+
+.glass-page-brand .glass-understanding-response details button {
+  width: 100%;
+  border-color: var(--glass-accent);
+  background: var(--glass-accent);
+  color: var(--glass-on-accent);
+}
+
 .glass-page-brand :is(.glass-progress, .glass-money, .glass-review, .glass-uploads) h2 {
   color: var(--glass-ink);
   font-family: inherit;
@@ -471,6 +728,16 @@
   .glass-page-brand .glass-closed {
     box-shadow: var(--shadow-product-whisper);
   }
+
+  .glass-page-brand .glass-understanding > header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .glass-page-brand .glass-understanding-facts > article {
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.72fr);
+    align-items: start;
+  }
 }
 
 @media (max-width: 40rem) {
@@ -494,7 +761,7 @@
     display: none;
   }
 
-  .glass-page-brand :is(.glass-job, .glass-progress, .glass-money, .glass-review, .glass-uploads, .glass-clipboard > footer) {
+  .glass-page-brand :is(.glass-job, .glass-understanding, .glass-progress, .glass-money, .glass-review, .glass-uploads, .glass-clipboard > footer) {
     padding: 1rem;
   }
 

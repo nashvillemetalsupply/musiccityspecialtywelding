@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { randomUUID } from "node:crypto"
 import { notFound } from "next/navigation"
 import { dbConfigured, getSql } from "@/lib/db"
 import { LEAD_STATUSES } from "@/lib/leads"
@@ -769,7 +770,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </div>
       </details>
 
-      <DoneStamp leadId={lead.id} completed={Boolean(lead.completed_at)} undoUntil={completionUndoUntil} voiceReady={voiceReady} />
+      <DoneStamp leadId={lead.id} completed={Boolean(lead.completed_at)} undoUntil={completionUndoUntil} voiceReady={voiceReady} reviewedCloseout={Boolean(operator.role === "owner" && lead.is_test && buildSheetsEnabled())} closeoutKey={randomUUID()} />
 
       <HandoffControl
         leadId={lead.id}

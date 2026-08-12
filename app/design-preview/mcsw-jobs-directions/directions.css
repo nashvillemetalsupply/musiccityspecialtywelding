@@ -773,7 +773,7 @@ body:has(.jobs-directions-page) nextjs-portal {
 
 .jobs-direction--type-caller-first {
   --dir-font-display: var(--font-direction-fraunces), serif;
-  --dir-font-body: var(--font-direction-public-sans), sans-serif;
+  --dir-font-body: var(--font-direction-chivo), sans-serif;
 }
 
 .jobs-direction--type-bands {

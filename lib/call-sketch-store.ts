@@ -1,4 +1,6 @@
 import { getSql } from "@/lib/db"
+import { buildSheetsEnabled } from "@/lib/build-sheets-access"
+import { buildClarificationForSketch } from "@/lib/build-sheets-continuation.mjs"
 import { confirmedCallSketch, deriveCallSketch, emptyCallSketchSpec, type CallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import { recordEvent } from "@/lib/events"
 
@@ -230,7 +232,7 @@ export async function getCallSketchForDraft(publicId: string) {
       COALESCE(s.status, 'waiting') AS sketch_status,
       COALESCE(s.observed_spec, ${JSON.stringify(emptyCallSketchSpec())}::jsonb) AS observed_spec,
       s.confirmed_spec, COALESCE(s.revision, 0)::int AS revision,
-      s.confirmed_at, COALESCE(s.last_error, '') AS last_error, s.last_event_at
+      s.confirmed_at, COALESCE(s.last_error, '') AS last_error, s.last_event_at, d.is_test
     FROM call_intake_drafts d
     JOIN calls c ON c.twilio_sid = d.call_sid
     LEFT JOIN call_sketches s ON s.call_sid = d.call_sid
@@ -249,10 +251,14 @@ export async function getCallSketchForDraft(publicId: string) {
       confirmed_at: string | null
       last_error: string
       last_event_at: string | null
+      is_test: boolean
     }>
   const sketch = rows[0]
   if (!sketch) return null
   const utterances = (await sketchUtterances(sketch.call_sid)).slice(-24)
+  const buildQuestion = buildSheetsEnabled() && sketch.is_test && !sketch.confirmed_spec
+    ? buildClarificationForSketch(sketch.observed_spec)
+    : null
   return {
     callerName: sketch.caller_name,
     phone: sketch.phone,
@@ -264,6 +270,7 @@ export async function getCallSketchForDraft(publicId: string) {
     confirmedAt: sketch.confirmed_at,
     lastError: sketch.last_error,
     lastEventAt: sketch.last_event_at,
+    buildQuestion,
     utterances: utterances.map((item) => ({
       sequenceId: Number(item.sequence_id),
       speaker: sketch.direction === "in"

@@ -120,6 +120,7 @@
 .review { display: grid; min-width: 0; align-content: start; background: var(--jobs-surface); }
 .question { display: grid; padding: var(--space-xs) var(--space-sm); gap: var(--space-3xs); border-bottom: 1px solid var(--jobs-line); }
 .question p { margin: 0; color: var(--jobs-ink); font-size: var(--text-product-emphasis); font-weight: var(--font-weight-control); line-height: 1.4; letter-spacing: var(--tracking-body); }
+.question small { color: var(--jobs-muted); font-size: 0.875rem; font-weight: var(--font-weight-body); line-height: 1.5; }
 
 .facts { display: grid; margin: 0; }
 .fact { display: grid; min-width: 0; padding: var(--space-xs) var(--space-sm); gap: var(--space-3xs); border-bottom: 1px solid var(--jobs-line); }

@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
+import { BuildSheetDrawing } from "@/components/build-sheets/build-sheet-drawing"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { getBuildsWorkspace } from "@/lib/build-sheets"
+import { projectBuildDrawing, type BuildDrawingProjection } from "@/lib/build-sheets-continuation.mjs"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import {
   addWorkingBuildFactAction,
@@ -11,6 +13,7 @@ import {
   lockBuildSheetAction,
   proposeBuildFactChangeAction,
 } from "./actions"
+import "./builds.css"
 
 export const dynamic = "force-dynamic"
 
@@ -55,6 +58,14 @@ export default async function BuildsPage({ params }: { params: Params }) {
   const conflictClaims = new Set(workspace.draft.conflicts.flatMap((conflict) => conflict.claimIds))
   const acceptedCount = workspace.draft.factRows.filter((fact) => fact.state === "confirmed" || fact.state === "working-number").length
   const latestSheet = workspace.sheets.at(-1)
+  let drawing: BuildDrawingProjection | null = null
+  if (latestSheet) {
+    try {
+      drawing = projectBuildDrawing(latestSheet.snapshot)
+    } catch {
+      drawing = null
+    }
+  }
 
   return <main className="ops-builds">
     <header className="ops-builds-header">
@@ -69,6 +80,28 @@ export default async function BuildsPage({ params }: { params: Params }) {
         {latestSheet && <strong className="ops-builds-current">Build Sheet {latestSheet.number}</strong>}
       </div>
     </header>
+
+    <section className="ops-builds-canvas" aria-labelledby="build-canvas-heading">
+      <header>
+        <div>
+          <span>Current locked geometry</span>
+          <h2 id="build-canvas-heading">Build canvas</h2>
+        </div>
+        <p>{latestSheet ? `Build Sheet ${latestSheet.number}` : "No locked source yet"}</p>
+      </header>
+      {drawing ? <div className="ops-builds-canvas-grid">
+        <BuildSheetDrawing drawing={drawing} />
+        <dl>
+          <div><dt>Finished size</dt><dd>{drawing.width} × {drawing.height} in</dd></div>
+          <div><dt>Frame</dt><dd>{drawing.stockSize} in stock · {drawing.railCount} rails</dd></div>
+          <div><dt>Hardware</dt><dd>Hinges {drawing.hingeSide} · latch {drawing.latchSide}</dd></div>
+          <div><dt>Release</dt><dd>{drawing.fabricationReady ? "Fabrication outputs allowed" : "Preview only"}</dd></div>
+        </dl>
+      </div> : <div className="ops-builds-canvas-empty">
+        <strong>The drawing needs a complete locked geometry.</strong>
+        <p>Confirm the finished width, height, stock, rails, hinge side, and latch side. No dimensions are guessed.</p>
+      </div>}
+    </section>
 
     <div className="ops-builds-grid">
       <section className="ops-builds-panel" aria-labelledby="draft-heading">
@@ -201,6 +234,11 @@ export default async function BuildsPage({ params }: { params: Params }) {
               <em>{paperworkLabel(item.status)}</em>
               {item.reason && <p>{item.reason}</p>}
               {item.issueState === "blocked" && item.status === "current" && <p>Issue blocked until critical numbers are Confirmed.</p>}
+              {["drawing", "dxf"].includes(item.kind) && item.status === "current" && item.issueState === "current" && item.sourceBuildSheetNumber === latestSheet?.number && !drawing && <p>Issue blocked until the locked geometry is complete.</p>}
+              {["drawing", "dxf"].includes(item.kind) && item.status === "current" && item.issueState === "current" && item.sourceBuildSheetNumber === latestSheet?.number && drawing && <form action={`/api/ops/build-paperwork/${item.id}`} method="post">
+                <input type="hidden" name="issueKey" value={randomUUID()} />
+                <button type="submit">Issue current {item.kind === "dxf" ? "DXF" : "drawing"}</button>
+              </form>}
               <small>Still valid as the record for Build Sheet {item.sourceBuildSheetNumber}.</small>
             </article>)}
           </div>}

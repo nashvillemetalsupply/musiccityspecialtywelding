@@ -839,6 +839,75 @@ const statements = [
     UNIQUE (build_sheet_id, kind)
   )`,
   `CREATE INDEX IF NOT EXISTS build_paperwork_lead_idx ON build_paperwork(lead_id, created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS build_customer_responses (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    build_sheet_id BIGINT NOT NULL REFERENCES build_sheets(id),
+    claim_id BIGINT NOT NULL REFERENCES claims(id),
+    response_state TEXT NOT NULL,
+    proposed_claim_id BIGINT REFERENCES claims(id),
+    source_event_id BIGINT NOT NULL REFERENCES events(id),
+    token_hash TEXT NOT NULL,
+    response_key TEXT NOT NULL,
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    responded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT build_customer_responses_state_check CHECK (response_state IN ('accepted','corrected')),
+    UNIQUE (lead_id, response_key)
+  )`,
+  `CREATE INDEX IF NOT EXISTS build_customer_responses_sheet_idx
+    ON build_customer_responses(build_sheet_id, claim_id, responded_at DESC, id DESC)`,
+  `CREATE TABLE IF NOT EXISTS build_paperwork_issues (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    paperwork_id BIGINT NOT NULL REFERENCES build_paperwork(id),
+    build_sheet_id BIGINT NOT NULL REFERENCES build_sheets(id),
+    issue_key TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    issued_by BIGINT NOT NULL REFERENCES operators(id),
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (paperwork_id, issue_key)
+  )`,
+  `CREATE INDEX IF NOT EXISTS build_paperwork_issues_lead_idx
+    ON build_paperwork_issues(lead_id, issued_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS job_closeouts (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    completion_event_id BIGINT NOT NULL UNIQUE REFERENCES events(id),
+    completion_state TEXT NOT NULL,
+    fit_state TEXT NOT NULL,
+    extra_trips INT NOT NULL DEFAULT 0,
+    rework_state TEXT NOT NULL,
+    as_built_differences TEXT NOT NULL DEFAULT '',
+    remaining_work TEXT NOT NULL DEFAULT '',
+    source_words TEXT NOT NULL DEFAULT '',
+    reviewed_by BIGINT NOT NULL REFERENCES operators(id),
+    reviewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_test BOOLEAN NOT NULL DEFAULT false,
+    CONSTRAINT job_closeouts_completion_check CHECK (completion_state = 'complete'),
+    CONSTRAINT job_closeouts_fit_check CHECK (fit_state IN ('fit','adjusted','not-checked')),
+    CONSTRAINT job_closeouts_rework_check CHECK (rework_state IN ('yes','no')),
+    CONSTRAINT job_closeouts_extra_trips_check CHECK (extra_trips >= 0)
+  )`,
+  `CREATE INDEX IF NOT EXISTS job_closeouts_lead_idx ON job_closeouts(lead_id, reviewed_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS job_closeout_updates (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    source_event_id BIGINT NOT NULL UNIQUE REFERENCES events(id),
+    completion_state TEXT NOT NULL DEFAULT 'partial' CHECK (completion_state = 'partial'),
+    fit_state TEXT NOT NULL,
+    extra_trips INT NOT NULL DEFAULT 0 CHECK (extra_trips >= 0),
+    rework_state TEXT NOT NULL,
+    as_built_differences TEXT NOT NULL DEFAULT '',
+    remaining_work TEXT NOT NULL,
+    source_words TEXT NOT NULL,
+    reviewed_by BIGINT NOT NULL REFERENCES operators(id),
+    reviewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    CONSTRAINT job_closeout_updates_fit_check CHECK (fit_state IN ('fit','adjusted','not-checked')),
+    CONSTRAINT job_closeout_updates_rework_check CHECK (rework_state IN ('yes','no'))
+  )`,
+  `CREATE INDEX IF NOT EXISTS job_closeout_updates_lead_idx ON job_closeout_updates(lead_id, reviewed_at DESC)`,
   `CREATE OR REPLACE FUNCTION reject_build_sheet_mutation()
     RETURNS trigger LANGUAGE plpgsql AS $$
     BEGIN

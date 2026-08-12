@@ -1,9 +1,13 @@
+import { randomUUID } from "node:crypto"
 import { notFound } from "next/navigation"
 import Image from "next/image"
+import { CustomerBuildDrawing } from "@/components/build-sheets/customer-build-drawing"
 import type { Viewport } from "next"
 import { Chivo } from "next/font/google"
 import { Check } from "lucide-react"
 import { getGlassJob, listGlassPromises, noteGlassView } from "@/lib/glass"
+import { buildSheetsEnabled } from "@/lib/build-sheets-access"
+import { getCustomerBuildProjection } from "@/lib/build-sheets"
 import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 import { getShopPhone } from "@/lib/shop-contact"
@@ -39,14 +43,20 @@ function money(cents: number | null) { return cents == null ? "" : (Number(cents
 function date(iso: string | null) { return iso ? new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Chicago", month: "long", day: "numeric", year: "numeric" }) : "Date being confirmed" }
 function CorrectionStub({ token, fact }: { token: string; fact: string }) { return <form className="glass-correction" action={`/j/${token}/correct?fact=${encodeURIComponent(fact)}`} method="post"><button type="submit">Something wrong with this?</button></form> }
 
-export default async function GlassPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function GlassPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ build?: string }> }) {
   const { token } = await params
+  const query = await searchParams
   const shopPhone = getShopPhone()
   const job = await getGlassJob(token)
   if (!job) notFound()
   if (job.status === "closed") return <main className={`${chivo.variable} glass-page glass-page-brand`}><section className="glass-closed"><span>MCSW Customer Page</span><h1>This page is closed.</h1><p>Need the shop again? Call us. We still answer our phone.</p><a href={shopPhone.href}>Call the shop</a></section></main>
   const showReview = Boolean(job.completed_at && job.paid_at && !job.review_shown_at && process.env.GOOGLE_REVIEW_URL?.trim())
-  const [promises, view, uploads] = await Promise.all([listGlassPromises(job.lead_id), noteGlassView(job), listGlassUploads(job)])
+  const [promises, view, uploads, customerBuild] = await Promise.all([
+    listGlassPromises(job.lead_id),
+    noteGlassView(job),
+    listGlassUploads(job),
+    job.is_test && buildSheetsEnabled() ? getCustomerBuildProjection(job.lead_id) : Promise.resolve(null),
+  ])
   if (!job.is_test && view && Number(view.daily_view_count) >= 3) {
     const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date())
     let eventId = await recordEvent({ kind: "glass.view", actorType: "customer", leadId: job.lead_id, externalId: `glass:${job.token_hash}:${day}:buying-signal`, body: "Customer checked the Customer Page 3 times today", crewBody: "Customer checked the Customer Page 3 times today" })
@@ -66,6 +76,51 @@ export default async function GlassPage({ params }: { params: Promise<{ token: s
     <section className="glass-promise"><span>Timing</span><strong>{promise ? date(promise.due_at) : job.completed_at ? "Finished" : "We’re confirming the date"}</strong>{promise && <><p>{promise.summary}</p>{promise.history.length > 0 && <div className="glass-promise-history">{promise.history.map((move) => <p key={`${move.changed_at}-${move.previous_due_at}`}><del>{date(move.previous_due_at)}</del><span>{move.reason || "The shop called and moved the date."}</span></p>)}</div>}</>}<CorrectionStub token={token} fact="promised date" /></section>
     <ol className="glass-traveler" aria-label="Job status">{STATIONS.map((station, index) => <li className={`${index <= stageIndex ? "is-done" : ""}${index === stageIndex ? " is-current" : ""}`} key={station}><i>{index < stageIndex ? <Check aria-hidden="true" /> : index === stageIndex ? "Now" : ""}</i><span>{station}</span></li>)}</ol>
     {job.assigned_name && !job.completed_at && <p className="glass-runner"><strong>{job.assigned_name.split(" ")[0]}</strong> is running your job.</p>}
+    {customerBuild && <section className="glass-understanding" id="what-we-understand" aria-labelledby="glass-understanding-title">
+      <header>
+        <div><span>Build Sheet {customerBuild.buildSheetNumber}</span><h2 id="glass-understanding-title">What We Understand</h2></div>
+        <strong>{customerBuild.scope}</strong>
+      </header>
+      <p>This is the saved version the shop is working from. Confirm each line or propose a correction. A correction opens a new shop draft; it never rewrites this Build Sheet.</p>
+      {customerBuild.drawing
+        ? <CustomerBuildDrawing drawing={customerBuild.drawing} />
+        : <p className="glass-build-drawing-empty">The shared drawing is waiting on the remaining dimensions. No numbers are guessed.</p>}
+      {query.build === "accepted" && <p className="glass-build-receipt" role="status"><Check aria-hidden="true" />Confirmation filed.</p>}
+      {query.build === "corrected" && <p className="glass-build-receipt" role="status"><Check aria-hidden="true" />Correction proposed for shop review.</p>}
+      <div className="glass-understanding-facts">
+        {customerBuild.facts.map((fact) => {
+          const numberFact = ["opening.clear_width", "gate_leaf.finished_width", "gate_leaf.finished_height", "frame.stock_size", "frame.rail_count"].includes(fact.factKey)
+          const sideFact = ["gate.hinge_side", "gate.latch_side"].includes(fact.factKey)
+          return <article key={fact.claimId}>
+            <div className="glass-understanding-value"><span>{fact.label}</span><strong>{fact.value}</strong>{fact.reference && <small>{fact.reference}</small>}<small className={`glass-build-state is-${fact.state}`}>{fact.state === "working-number" ? "Shop working number — not fabrication-confirmed" : "Saved on this locked Build Sheet"}</small></div>
+            <div className="glass-understanding-response">
+              {fact.state === "customer-confirmed" ? <span className="is-confirmed"><Check aria-hidden="true" />You confirmed this</span>
+                : fact.state === "customer-correction-proposed" ? <span className="is-proposed">Shop review pending</span>
+                  : <form action={`/j/${token}/build`} method="post">
+                    <input type="hidden" name="intent" value="accept" />
+                    <input type="hidden" name="buildSheetNumber" value={customerBuild.buildSheetNumber} />
+                    <input type="hidden" name="claimId" value={fact.claimId} />
+                    <input type="hidden" name="responseKey" value={randomUUID()} />
+                    <button type="submit">Confirm</button>
+                  </form>}
+              <details>
+                <summary>Propose a correction</summary>
+                <form action={`/j/${token}/build`} method="post">
+                  <input type="hidden" name="intent" value="correct" />
+                  <input type="hidden" name="buildSheetNumber" value={customerBuild.buildSheetNumber} />
+                  <input type="hidden" name="claimId" value={fact.claimId} />
+                  <input type="hidden" name="responseKey" value={randomUUID()} />
+                  <label><span>What should this say?</span>{sideFact
+                    ? <select name="correction" defaultValue="" required><option value="" disabled>Choose a side</option><option value="left">Left</option><option value="right">Right</option></select>
+                    : <input name="correction" type={numberFact ? "number" : "text"} min={numberFact ? "0.01" : undefined} step={fact.factKey === "frame.rail_count" ? "1" : numberFact ? "0.01" : undefined} inputMode={numberFact ? "decimal" : undefined} maxLength={numberFact ? undefined : 120} required />}</label>
+                  <button type="submit">Send correction</button>
+                </form>
+              </details>
+            </div>
+          </article>
+        })}
+      </div>
+    </section>}
     {sharedPhotos.length > 0 && <section className="glass-progress"><h2>Progress from the shop</h2><div>{sharedPhotos.map((photo) => {
       const caption = photo.caption || job.glass_caption_draft || "Progress from the crew"
       return <figure key={photo.pathname}><img src={`/api/glass/photo?token=${token}&path=${encodeURIComponent(photo.pathname)}`} alt={`Shop progress: ${caption}`} /><figcaption>{caption}</figcaption><CorrectionStub token={token} fact="progress photo" /></figure>

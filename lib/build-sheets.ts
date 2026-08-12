@@ -10,6 +10,8 @@ import {
   type LockedBuildSheet,
   type PaperworkManifest,
 } from "@/lib/build-sheets-domain.mjs"
+import { compileBuildPaperwork, paperworkIssueDecision } from "@/lib/build-paperwork.mjs"
+import { createCustomerBuildProjection } from "@/lib/build-sheets-continuation.mjs"
 import type { CallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import { persistLockedBuildSheet, persistObservedBuildFacts } from "@/lib/build-sheets-persistence.mjs"
 
@@ -623,4 +625,374 @@ export async function getBuildsWorkspace(leadId: number) {
     return { ...classified, label: row.label, issueState: row.issue_state }
   })
   return { lead, claims, decisions, draft, sheets, paperwork }
+}
+
+export async function getCustomerBuildProjection(leadId: number) {
+  const sql = getSql()
+  const sheets = (await sql`
+    SELECT s.id, s.sequence, s.snapshot
+    FROM build_sheets s JOIN leads l ON l.id = s.lead_id
+    WHERE s.lead_id = ${leadId}::bigint AND s.is_test = true AND l.is_test = true
+    ORDER BY s.sequence DESC LIMIT 1`) as Array<{
+      id: number
+      sequence: number
+      snapshot: LockedBuildSheet
+    }>
+  const sheet = sheets[0]
+  if (!sheet) return null
+  const responses = (await sql`
+    SELECT DISTINCT ON (r.claim_id) r.claim_id, r.response_state, r.responded_at
+    FROM build_customer_responses r JOIN leads l ON l.id = r.lead_id
+    WHERE r.lead_id = ${leadId}::bigint AND r.build_sheet_id = ${sheet.id}::bigint
+      AND r.is_test = true AND l.is_test = true
+    ORDER BY r.claim_id, r.responded_at DESC, r.id DESC`) as Array<{
+      claim_id: number
+      response_state: "accepted" | "corrected"
+      responded_at: string
+    }>
+  return {
+    sheetId: Number(sheet.id),
+    ...createCustomerBuildProjection({
+      sheet: sheet.snapshot,
+      customerConfirmations: responses.map((response) => ({
+        claimId: Number(response.claim_id),
+        state: response.response_state,
+        respondedAt: response.responded_at,
+      })),
+    }),
+  }
+}
+
+function customerCorrectionValue(source: BuildClaim, rawValue: string) {
+  if (typeof source.value === "number") {
+    const value = Number(rawValue)
+    if (!Number.isFinite(value) || value <= 0) throw new Error("Enter a positive number for the shop to review.")
+    if (value === source.value) throw new Error("That matches the current Build Sheet.")
+    return value
+  }
+  const value = rawValue.replace(/\s+/g, " ").trim().slice(0, 120)
+  if (!value) throw new Error("Enter the correction for the shop to review.")
+  if (["gate.hinge_side", "gate.latch_side"].includes(source.factKey) && !["left", "right"].includes(value.toLowerCase())) {
+    throw new Error("Choose left or right.")
+  }
+  if (value.toLowerCase() === String(source.value).toLowerCase()) throw new Error("That matches the current Build Sheet.")
+  return ["gate.hinge_side", "gate.latch_side"].includes(source.factKey) ? value.toLowerCase() : value
+}
+
+export async function respondToCustomerBuildFact(input: {
+  leadId: number
+  tokenHash: string
+  buildSheetNumber: number
+  claimId: number
+  intent: "accept" | "correct"
+  correction?: string
+  responseKey: string
+}) {
+  const responseKey = input.responseKey.trim().slice(0, 120)
+  if (!responseKey) throw new Error("The response receipt is missing. Reload the Customer Page.")
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT s.id, s.sequence, s.snapshot
+    FROM build_sheets s JOIN leads l ON l.id = s.lead_id
+    JOIN glass_links g ON g.lead_id = l.id
+    WHERE s.lead_id = ${input.leadId}::bigint AND s.sequence = ${input.buildSheetNumber}::int
+      AND s.is_test = true AND l.is_test = true AND g.token_hash = ${input.tokenHash}::text
+      AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+      AND NOT EXISTS (
+        SELECT 1 FROM build_sheets newer
+        WHERE newer.lead_id = s.lead_id AND newer.is_test = true AND newer.sequence > s.sequence
+      )
+    LIMIT 1`) as Array<{ id: number; sequence: number; snapshot: LockedBuildSheet }>
+  const sheet = rows[0]
+  if (!sheet) throw new Error("A newer Build Sheet is ready. Reload before responding.")
+  const source = sheet.snapshot.facts.find((fact) => Number(fact.id) === Number(input.claimId))
+  if (!source) throw new Error("That build fact is no longer on the current sheet.")
+  if (input.intent === "accept") {
+    const externalId = `build-customer:${input.leadId}:${input.buildSheetNumber}:${input.claimId}:accepted:${responseKey}`
+    const receipts = (await sql`
+      WITH scope AS (
+        SELECT s.id AS build_sheet_id, s.lead_id, c.id AS claim_id
+        FROM build_sheets s JOIN leads l ON l.id = s.lead_id
+        JOIN glass_links g ON g.lead_id = l.id
+        JOIN claims c ON c.id = ${input.claimId}::bigint AND c.subject_type = 'lead'
+          AND c.subject_id = l.id AND c.predicate = 'build_fact'
+        WHERE s.id = ${sheet.id}::bigint AND s.lead_id = ${input.leadId}::bigint
+          AND s.is_test = true AND l.is_test = true AND g.token_hash = ${input.tokenHash}::text
+          AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+          AND NOT EXISTS (
+            SELECT 1 FROM build_sheets newer
+            WHERE newer.lead_id = s.lead_id AND newer.is_test = true AND newer.sequence > s.sequence
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM build_customer_responses keyed
+            WHERE keyed.lead_id = s.lead_id AND keyed.response_key = ${responseKey}::text
+              AND (keyed.build_sheet_id <> s.id OR keyed.claim_id <> c.id
+                OR keyed.response_state <> 'accepted' OR keyed.proposed_claim_id IS NOT NULL
+                OR keyed.token_hash <> ${input.tokenHash}::text)
+          )
+          AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements(s.snapshot->'facts') fact
+            WHERE (fact->>'id')::bigint = c.id
+          )
+      ), event_write AS (
+        INSERT INTO events (
+          kind, actor_type, lead_id, external_id, body, crew_body, detail
+        )
+        SELECT 'build.customer-response'::text, 'customer'::text, scope.lead_id,
+          ${externalId}::text, 'Customer confirmed a Build Sheet fact.'::text,
+          'Customer confirmed a Build Sheet fact.'::text,
+          ${JSON.stringify({ buildSheetNumber: input.buildSheetNumber, claimId: input.claimId, response: "accepted", isTest: true })}::jsonb
+        FROM scope
+        ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+        RETURNING id, lead_id
+      ), event_scope AS (
+        SELECT id, lead_id FROM event_write
+        UNION ALL
+        SELECT e.id, e.lead_id FROM events e JOIN scope ON scope.lead_id = e.lead_id
+        WHERE e.kind = 'build.customer-response' AND e.external_id = ${externalId}::text
+          AND NOT EXISTS (SELECT 1 FROM event_write)
+        LIMIT 1
+      ), response_write AS (
+        INSERT INTO build_customer_responses (
+          lead_id, build_sheet_id, claim_id, response_state, source_event_id,
+          token_hash, response_key, is_test
+        )
+        SELECT scope.lead_id, scope.build_sheet_id, scope.claim_id, 'accepted'::text,
+          event.id, ${input.tokenHash}::text, ${responseKey}::text, true
+        FROM scope JOIN event_scope event ON event.lead_id = scope.lead_id
+        ON CONFLICT (lead_id, response_key) DO NOTHING
+        RETURNING id
+      )
+      SELECT id FROM response_write
+      UNION ALL
+      SELECT stored.id FROM build_customer_responses stored JOIN scope
+        ON scope.lead_id = stored.lead_id AND scope.build_sheet_id = stored.build_sheet_id AND scope.claim_id = stored.claim_id
+      WHERE stored.response_key = ${responseKey}::text
+        AND stored.response_state = 'accepted' AND stored.proposed_claim_id IS NULL
+        AND stored.token_hash = ${input.tokenHash}::text
+        AND NOT EXISTS (SELECT 1 FROM response_write)
+      LIMIT 1`) as { id: number }[]
+    if (!receipts[0]) throw new Error("The customer confirmation could not be filed.")
+    return { state: "accepted" as const, responseId: Number(receipts[0].id) }
+  }
+
+  const value = customerCorrectionValue(source, String(input.correction ?? ""))
+  const fact: StoredBuildClaimValue = {
+    factKey: source.factKey,
+    subject: source.subject,
+    property: source.property,
+    value,
+    unit: source.unit,
+    reference: source.reference,
+    original: "Customer correction proposed on the Customer Page.",
+    speaker: "customer",
+    certainty: "corrected",
+    critical: source.critical,
+  }
+  const externalId = `build-customer:${input.leadId}:${input.buildSheetNumber}:${input.claimId}:corrected:${hashItem(JSON.stringify(value))}:${responseKey}`
+  const itemKey = hashItem(`${externalId}:claim`)
+  const decisionKey = `${responseKey}:${input.buildSheetNumber}:${input.claimId}:${hashItem(JSON.stringify(value))}:customer-proposed`
+  const corrections = (await sql`
+    WITH scope AS (
+      SELECT s.id AS build_sheet_id, s.lead_id, c.id AS claim_id, owner.id AS owner_id
+      FROM build_sheets s JOIN leads l ON l.id = s.lead_id
+      JOIN glass_links g ON g.lead_id = l.id
+      JOIN claims c ON c.id = ${input.claimId}::bigint AND c.subject_type = 'lead'
+        AND c.subject_id = l.id AND c.predicate = 'build_fact'
+      JOIN LATERAL (
+        SELECT o.id FROM operators o WHERE o.role = 'owner' AND o.active = true
+        ORDER BY o.created_at, o.id LIMIT 1
+      ) owner ON true
+      WHERE s.id = ${sheet.id}::bigint AND s.lead_id = ${input.leadId}::bigint
+        AND s.is_test = true AND l.is_test = true AND g.token_hash = ${input.tokenHash}::text
+        AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+        AND NOT EXISTS (
+          SELECT 1 FROM build_sheets newer
+          WHERE newer.lead_id = s.lead_id AND newer.is_test = true AND newer.sequence > s.sequence
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM build_customer_responses keyed
+          LEFT JOIN claims proposed ON proposed.id = keyed.proposed_claim_id
+          WHERE keyed.lead_id = s.lead_id AND keyed.response_key = ${responseKey}::text
+            AND (keyed.build_sheet_id <> s.id OR keyed.claim_id <> c.id
+              OR keyed.response_state <> 'corrected' OR keyed.proposed_claim_id IS NULL
+              OR keyed.token_hash <> ${input.tokenHash}::text
+              OR proposed.value->>'factKey' <> ${source.factKey}::text
+              OR proposed.value->'value' IS DISTINCT FROM ${JSON.stringify(value)}::jsonb)
+        )
+        AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements(s.snapshot->'facts') snapshot_fact
+          WHERE (snapshot_fact->>'id')::bigint = c.id
+        )
+    ), event_write AS (
+      INSERT INTO events (
+        kind, actor_type, lead_id, external_id, body, crew_body, detail
+      )
+      SELECT 'build.customer-correction'::text, 'customer'::text, scope.lead_id,
+        ${externalId}::text, ${`Customer proposed a correction to ${source.factKey}.`}::text,
+        'Customer proposed a Build Sheet correction.'::text,
+        ${JSON.stringify({ buildSheetNumber: input.buildSheetNumber, claimId: input.claimId, factKey: source.factKey, value, unit: source.unit, isTest: true })}::jsonb
+      FROM scope
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id, lead_id
+    ), event_scope AS (
+      SELECT id, lead_id FROM event_write
+      UNION ALL
+      SELECT e.id, e.lead_id FROM events e JOIN scope ON scope.lead_id = e.lead_id
+      WHERE e.kind = 'build.customer-correction' AND e.external_id = ${externalId}::text
+        AND NOT EXISTS (SELECT 1 FROM event_write)
+      LIMIT 1
+    ), claim_write AS (
+      INSERT INTO claims (
+        subject_type, subject_id, predicate, value, confidence,
+        source_event_id, extracted_by, item_key
+      )
+      SELECT 'lead'::text, scope.lead_id, 'build_fact'::text, ${JSON.stringify(fact)}::jsonb,
+        1::real, event.id, 'customer-build-confirmation'::text, ${itemKey}::text
+      FROM scope JOIN event_scope event ON event.lead_id = scope.lead_id
+      ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
+      RETURNING id, source_event_id
+    ), claim_scope AS (
+      SELECT id, source_event_id FROM claim_write
+      UNION ALL
+      SELECT c.id, c.source_event_id FROM claims c JOIN event_scope event ON event.id = c.source_event_id
+      WHERE c.item_key = ${itemKey}::text AND NOT EXISTS (SELECT 1 FROM claim_write)
+      LIMIT 1
+    ), decision_write AS (
+      INSERT INTO build_fact_decisions (
+        lead_id, claim_id, state, actor_id, proposer_type, purpose,
+        source_event_id, decision_key, is_test, decided_at
+      )
+      SELECT scope.lead_id, claim.id, 'proposed'::text, scope.owner_id,
+        'customer'::text, 'customer-correction'::text, claim.source_event_id,
+        ${decisionKey}::text, true, now()
+      FROM scope JOIN claim_scope claim ON true
+      ON CONFLICT (lead_id, decision_key) DO NOTHING
+      RETURNING claim_id
+    ), conflict_write AS (
+      INSERT INTO build_claim_conflicts (
+        lead_id, conflict_key, kind, claim_ids, source_event_id, is_test
+      )
+      SELECT scope.lead_id, ('customer:' || claim.id::text)::text, 'different-values'::text,
+        ARRAY[scope.claim_id, claim.id]::bigint[], claim.source_event_id, true
+      FROM scope JOIN claim_scope claim ON true
+      ON CONFLICT (lead_id, conflict_key) DO NOTHING
+      RETURNING conflict_key
+    ), response_write AS (
+      INSERT INTO build_customer_responses (
+        lead_id, build_sheet_id, claim_id, response_state, proposed_claim_id,
+        source_event_id, token_hash, response_key, is_test
+      )
+      SELECT scope.lead_id, scope.build_sheet_id, scope.claim_id, 'corrected'::text,
+        claim.id, claim.source_event_id, ${input.tokenHash}::text, ${responseKey}::text, true
+      FROM scope JOIN claim_scope claim ON true
+      WHERE EXISTS (SELECT 1 FROM build_fact_decisions d WHERE d.lead_id = scope.lead_id AND d.claim_id = claim.id AND d.decision_key = ${decisionKey}::text)
+        AND EXISTS (SELECT 1 FROM build_claim_conflicts conflict WHERE conflict.lead_id = scope.lead_id AND conflict.conflict_key = ('customer:' || claim.id::text))
+      ON CONFLICT (lead_id, response_key) DO NOTHING
+      RETURNING id, proposed_claim_id
+    )
+    SELECT id, proposed_claim_id FROM response_write
+    UNION ALL
+    SELECT stored.id, stored.proposed_claim_id FROM build_customer_responses stored
+    JOIN scope ON scope.lead_id = stored.lead_id AND scope.build_sheet_id = stored.build_sheet_id AND scope.claim_id = stored.claim_id
+    JOIN claims proposed ON proposed.id = stored.proposed_claim_id
+    WHERE stored.response_key = ${responseKey}::text
+      AND stored.response_state = 'corrected'
+      AND stored.token_hash = ${input.tokenHash}::text
+      AND proposed.value->>'factKey' = ${source.factKey}::text
+      AND proposed.value->'value' = ${JSON.stringify(value)}::jsonb
+      AND NOT EXISTS (SELECT 1 FROM response_write)
+    LIMIT 1`) as Array<{ id: number; proposed_claim_id: number }>
+  if (!corrections[0]?.proposed_claim_id) throw new Error("The customer correction draft could not be filed.")
+  return {
+    state: "corrected" as const,
+    responseId: Number(corrections[0].id),
+    proposedClaimId: Number(corrections[0].proposed_claim_id),
+  }
+}
+
+export async function issueBuildPaperwork(input: {
+  paperworkId: number
+  operatorId: number
+  issueKey: string
+}) {
+  const issueKey = input.issueKey.trim().slice(0, 120)
+  if (!issueKey) throw new Error("The Paperwork issue receipt is missing.")
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT p.lead_id
+    FROM build_paperwork p JOIN leads l ON l.id = p.lead_id
+    JOIN operators o ON o.id = ${input.operatorId}::bigint AND o.role = 'owner' AND o.active = true
+    WHERE p.id = ${input.paperworkId}::bigint AND p.is_test = true AND l.is_test = true
+    LIMIT 1`) as Array<{ lead_id: number }>
+  const leadId = Number(rows[0]?.lead_id ?? 0)
+  if (!leadId) throw new Error("That internal-test Paperwork is unavailable.")
+  const workspace = await getBuildsWorkspace(leadId)
+  if (!workspace) throw new Error("That internal-test Paperwork is unavailable.")
+  const item = workspace.paperwork.find((paperwork) => Number(paperwork.id) === Number(input.paperworkId))
+  const currentSheet = workspace.sheets.at(-1)
+  if (!item || !currentSheet) throw new Error("That Paperwork no longer has a locked source.")
+  const decision = paperworkIssueDecision({
+    kind: item.kind,
+    status: item.status,
+    issueState: item.issueState,
+    sourceBuildSheetNumber: item.sourceBuildSheetNumber,
+    currentBuildSheetNumber: currentSheet.number,
+    fabricationReady: currentSheet.snapshot.fabrication.ready,
+  })
+  if (!decision.allowed) throw new Error(decision.reason)
+  if (!['drawing', 'dxf'].includes(item.kind)) throw new Error("This Paperwork is a manifest note, not an issued file.")
+  const compiled = compileBuildPaperwork({ kind: item.kind as "drawing" | "dxf", sheet: currentSheet.snapshot })
+  const receipts = (await sql`
+    WITH scope AS (
+      SELECT p.id AS paperwork_id, p.lead_id, p.build_sheet_id
+      FROM build_paperwork p JOIN leads l ON l.id = p.lead_id
+      JOIN build_sheets s ON s.id = p.build_sheet_id AND s.is_test = true
+      JOIN operators o ON o.id = ${input.operatorId}::bigint AND o.role = 'owner' AND o.active = true
+      WHERE p.id = ${input.paperworkId}::bigint AND p.lead_id = ${leadId}::bigint
+        AND p.is_test = true AND l.is_test = true
+        AND p.current_status = 'current' AND p.issue_state = 'current'
+        AND s.sequence = (
+          SELECT max(latest.sequence) FROM build_sheets latest
+          WHERE latest.lead_id = p.lead_id AND latest.is_test = true
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM claims active
+          JOIN LATERAL jsonb_array_elements(p.dependency_fingerprint) dependency
+            ON active.value->>'factKey' = dependency->>'factKey'
+          WHERE active.subject_type = 'lead' AND active.subject_id = p.lead_id
+            AND active.predicate = 'build_fact' AND active.superseded_by IS NULL
+            AND COALESCE((
+              SELECT decision.state FROM build_fact_decisions decision
+              WHERE decision.lead_id = p.lead_id AND decision.claim_id = active.id
+              ORDER BY decision.decided_at DESC, decision.id DESC
+              LIMIT 1
+            ), 'proposed') NOT IN ('rejected', 'superseded')
+            AND NOT EXISTS (
+              SELECT 1 FROM jsonb_array_elements(s.snapshot->'facts') source_fact
+              WHERE source_fact->>'factKey' = active.value->>'factKey'
+                AND source_fact->'value' = active.value->'value'
+                AND COALESCE(source_fact->>'unit', '') = COALESCE(active.value->>'unit', '')
+                AND COALESCE(source_fact->>'reference', '') = COALESCE(active.value->>'reference', '')
+            )
+        )
+    ), issue_write AS (
+      INSERT INTO build_paperwork_issues (
+        lead_id, paperwork_id, build_sheet_id, issue_key, content_hash,
+        issued_by, is_test
+      )
+      SELECT scope.lead_id, scope.paperwork_id, scope.build_sheet_id,
+        ${issueKey}::text, ${compiled.contentHash}::text, ${input.operatorId}::bigint, true
+      FROM scope
+      ON CONFLICT (paperwork_id, issue_key) DO NOTHING
+      RETURNING id
+    )
+    SELECT id FROM issue_write
+    UNION ALL
+    SELECT stored.id FROM build_paperwork_issues stored JOIN scope ON scope.paperwork_id = stored.paperwork_id
+    WHERE stored.issue_key = ${issueKey}::text AND stored.content_hash = ${compiled.contentHash}::text
+      AND NOT EXISTS (SELECT 1 FROM issue_write)
+    LIMIT 1`) as Array<{ id: number }>
+  if (!receipts[0]) throw new Error("Paperwork changed before issue. Reload the current Build Sheet.")
+  return { ...compiled, issueId: Number(receipts[0].id), leadId }
 }

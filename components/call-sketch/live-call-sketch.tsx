@@ -18,6 +18,7 @@ type Payload = {
   lastError: string
   lastEventAt: string | null
   liveTranscriptionEnabled: boolean
+  buildQuestion: { question: string; reason: string } | null
   utterances: Array<{
     sequenceId: number
     speaker: "Customer" | "Shop"
@@ -210,7 +211,8 @@ export function LiveCallSketch({ draftId }: { draftId: string }) {
         <div className={styles.review}>
           <div className={styles.question}>
             <span>Ask next</span>
-            <p>{activeSpec.nextQuestion}</p>
+            <p>{payload.buildQuestion?.question ?? activeSpec.nextQuestion}</p>
+            {payload.buildQuestion && <small>{payload.buildQuestion.reason}</small>}
           </div>
           <dl className={styles.facts}>
             <Fact label="Finished width" fact={activeSpec.width}>{measurement(activeSpec.width)}</Fact>

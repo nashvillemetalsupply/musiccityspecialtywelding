@@ -1,0 +1,241 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: MCSW Jobs · enrichment: traceable gate elevation · nav: existing app shell · footer: none
+ * Pre-emit critique: P5 H5 E5 S5 R5 V5 · typography: normal-width, sentence-case, no Impact treatment
+ * contrast: pass (46-50) · honest: pass (56) · chrome: pass (57) · tokens: pass (58) · responsive: pass (36, 59, 61-69) · icons: pass (60) · slop: 69 / 69 pass
+ */
+.jobs-root .ops-builds {
+  width: min(100%, 76rem);
+  padding-inline: clamp(0.75rem, 3vw, 1.5rem);
+  overflow-x: clip;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 450;
+  line-height: 1.55;
+}
+
+.jobs-root .ops-builds :is(h1, h2, h3, strong, button, input, select, summary) {
+  font-family: var(--font-body);
+  font-stretch: normal;
+}
+
+.jobs-root .ops-builds :is(h1, h2, h3) {
+  max-width: 28ch;
+  color: var(--jobs-ink);
+  font-weight: 680;
+  letter-spacing: 0;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+  text-transform: none;
+}
+
+.jobs-root .ops-builds h1 {
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  font-weight: 700;
+}
+
+.jobs-root .ops-builds h2 {
+  font-size: clamp(1.25rem, 4vw, 1.625rem);
+}
+
+.jobs-root .ops-builds h3 {
+  font-size: 1.125rem;
+}
+
+.jobs-root .ops-builds :is(.ops-builds-header span, .ops-builds-panel-head span, .ops-builds-question span, .ops-builds-fact-top span, .ops-builds-lock span, .ops-builds-canvas header span) {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.45;
+  text-transform: none;
+}
+
+.jobs-root .ops-builds-canvas {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--jobs-line-strong);
+  border-radius: 0.75rem;
+  background: var(--jobs-surface);
+  color: var(--jobs-ink);
+}
+
+.jobs-root .ops-builds-canvas > header {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.jobs-root .ops-builds-canvas > header > div {
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-canvas > header h2,
+.jobs-root .ops-builds-canvas > header p {
+  margin: 0.25rem 0 0;
+}
+
+.jobs-root .ops-builds-canvas > header p {
+  flex: 0 0 auto;
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-root .ops-builds-canvas-grid {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.jobs-root .ops-builds-drawing {
+  min-width: 0;
+  margin: 0;
+  border-top: 1px solid var(--jobs-line);
+  border-bottom: 1px solid var(--jobs-line);
+  background: var(--jobs-surface-soft);
+}
+
+.jobs-root .ops-builds-drawing svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.jobs-root .ops-builds-drawing-frame,
+.jobs-root .ops-builds-drawing-rail {
+  fill: none;
+  stroke: var(--jobs-ink);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.jobs-root .ops-builds-drawing-rail {
+  fill: var(--jobs-line);
+}
+
+.jobs-root .ops-builds-drawing-hardware {
+  fill: var(--jobs-primary);
+}
+
+.jobs-root .ops-builds-drawing-dimension {
+  stroke: var(--jobs-muted);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.jobs-root .ops-builds-drawing-source,
+.jobs-root .ops-builds-drawing-label {
+  fill: var(--jobs-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.jobs-root .ops-builds-drawing-source {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.jobs-root .ops-builds-drawing figcaption {
+  padding: 0.75rem;
+  border-top: 1px solid var(--jobs-line);
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.jobs-root .ops-builds-canvas-grid > dl {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-canvas-grid > dl > div {
+  display: grid;
+  gap: 0.25rem;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-canvas-grid dt {
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.jobs-root .ops-builds-canvas-grid dd {
+  margin: 0;
+  color: var(--jobs-ink);
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+
+.jobs-root .ops-builds-canvas-empty {
+  padding-block: 1.25rem;
+  border-block: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-canvas-empty p {
+  max-width: 62ch;
+  margin: 0.5rem 0 0;
+  color: var(--jobs-muted);
+}
+
+.jobs-root .ops-builds :is(button, .ops-builds-back) {
+  white-space: nowrap;
+}
+
+.jobs-root .ops-builds blockquote a {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.jobs-root .ops-builds-paperwork form {
+  margin-top: 0.75rem;
+}
+
+.jobs-root .ops-builds-paperwork form button {
+  width: 100%;
+  min-height: 3rem;
+  padding-inline: 0.875rem;
+  border: 1px solid var(--jobs-primary);
+  border-radius: 0.625rem;
+  background: var(--jobs-primary);
+  color: var(--jobs-on-primary);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .jobs-root .ops-builds-paperwork form button:hover {
+    filter: brightness(0.9);
+  }
+}
+
+@media (min-width: 40rem) {
+  .jobs-root .ops-builds-canvas {
+    padding: 1.25rem;
+  }
+
+  .jobs-root .ops-builds-canvas-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(12rem, 0.8fr);
+    align-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jobs-root .ops-builds *,
+  .jobs-root .ops-builds *::before,
+  .jobs-root .ops-builds *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
