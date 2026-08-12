@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { Check, PencilLine, X } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
@@ -27,7 +28,7 @@ function formatValue(value: number | string, unit: string) {
 
 function stateLabel(state: string) {
   if (state === "still-need") return "Still need"
-  if (state === "working-number") return "Working number"
+  if (state === "working-number") return "Shop estimate"
   if (state === "confirmed") return "Confirmed"
   return "Heard on call"
 }
@@ -130,8 +131,8 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 <input type="hidden" name="leadId" value={leadId} />
                 <input type="hidden" name="factKey" value={fact.factKey} />
                 <input type="hidden" name="actionKey" value={randomUUID()} />
-                <label><span>Carry a Working number</span><input name="value" type="number" min="0.01" step="0.01" inputMode="decimal" required /></label>
-                <SafeSubmitButton pendingLabel="Filing…">Use Working number</SafeSubmitButton>
+                <label><span>Enter a shop estimate</span><input name="value" type="number" min="0.01" step="0.01" inputMode="decimal" required /></label>
+                <SafeSubmitButton pendingLabel="Filing…">Use estimate</SafeSubmitButton>
               </form>}
             </article>
 
@@ -146,7 +147,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 <em>{stateLabel(fact.state)}</em>
               </div>
               {fact.reference && <p className="ops-builds-reference">Measured {fact.reference}</p>}
-              <blockquote>“{fact.original}” <Link href={sourceHref}>Exact utterance</Link></blockquote>
+              <blockquote>“{fact.original}” <Link href={sourceHref}>From the call</Link></blockquote>
 
               <div className="ops-builds-actions">
                 {fact.state !== "confirmed" && <form action={decideBuildFactAction}>
@@ -154,21 +155,33 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="confirm" />
                   <input type="hidden" name="actionKey" value={randomUUID()} />
-                  <SafeSubmitButton pendingLabel="Confirming…">Confirm</SafeSubmitButton>
+                  <SafeSubmitButton pendingLabel="Confirming…">
+                    <Check aria-hidden="true" />
+                    <span className="ops-builds-action-label">Confirm</span>
+                    <span className="ops-builds-action-note" aria-hidden="true">Lock this value</span>
+                  </SafeSubmitButton>
                 </form>}
                 {fact.state === "heard-on-call" && <form action={decideBuildFactAction}>
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="working" />
                   <input type="hidden" name="actionKey" value={randomUUID()} />
-                  <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Filing…">Working number</SafeSubmitButton>
+                  <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Filing…">
+                    <PencilLine aria-hidden="true" />
+                    <span className="ops-builds-action-label">Use estimate</span>
+                    <span className="ops-builds-action-note" aria-hidden="true">Not fab-ready</span>
+                  </SafeSubmitButton>
                 </form>}
                 {fact.state !== "confirmed" && <form action={decideBuildFactAction}>
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="reject" />
                   <input type="hidden" name="actionKey" value={randomUUID()} />
-                  <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Rejecting…">Reject</SafeSubmitButton>
+                  <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Rejecting…">
+                    <X aria-hidden="true" />
+                    <span className="ops-builds-action-label">Reject</span>
+                    <span className="ops-builds-action-note" aria-hidden="true">Drop this reading</span>
+                  </SafeSubmitButton>
                 </form>}
               </div>
 
@@ -216,7 +229,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 <div><span>{index === 0 ? "Current" : "History"}</span><h3>Build Sheet {sheet.number}</h3></div>
                 <time>{new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }).format(new Date(sheet.lockedAt))}</time>
               </header>
-              <dl>{sheet.snapshot.facts.map((fact) => <div key={`${sheet.id}-${fact.factKey}`}><dt>{fact.factKey.split(".").at(-1)?.replaceAll("_", " ")}</dt><dd>{formatValue(fact.value, fact.unit)}{fact.decisionState === "working-number" ? " / Working number" : ""}</dd></div>)}</dl>
+              <dl>{sheet.snapshot.facts.map((fact) => <div key={`${sheet.id}-${fact.factKey}`}><dt>{fact.factKey.split(".").at(-1)?.replaceAll("_", " ")}</dt><dd>{formatValue(fact.value, fact.unit)}{fact.decisionState === "working-number" ? " / Shop estimate" : ""}</dd></div>)}</dl>
               <p>{sheet.snapshot.fabrication.ready ? "Ready for fabrication outputs." : "Preview only — fabrication outputs blocked."}</p>
               <small>Locked by {sheet.lockedBy}. This record cannot be edited.</small>
             </article>)}

@@ -132,7 +132,7 @@ test("a Build Sheet cannot lock while a conflict is unresolved", () => {
   }), /doesn't match/i)
 })
 
-test("a locked Build Sheet is immutable and blocks fabrication over a critical Working number", () => {
+test("a locked Build Sheet is immutable and blocks fabrication over a critical shop estimate", () => {
   const claims = [
     measurementClaim({ id: 10, interpretationGroup: undefined, certainty: "corrected", factKey: "gate_leaf.finished_width", subject: "gate_leaf", property: "finished_width" }),
     measurementClaim({ id: 11, interpretationGroup: undefined, certainty: "corrected", factKey: "gate_leaf.finished_height", subject: "gate_leaf", property: "finished_height", value: 42, original: "42 inches" }),
@@ -152,7 +152,7 @@ test("a locked Build Sheet is immutable and blocks fabrication over a critical W
   assert.equal(Object.isFrozen(sheet), true)
   assert.equal(Object.isFrozen(sheet.facts), true)
   assert.equal(sheet.fabrication.ready, false)
-  assert.match(sheet.fabrication.blockers.join(" "), /Finished height is a Working number\./)
+  assert.match(sheet.fabrication.blockers.join(" "), /Finished height is a shop estimate\./)
   assert.throws(() => { sheet.facts[0].value = 99 }, TypeError)
 })
 
@@ -233,7 +233,7 @@ test("normalized units compare without invented tolerance and different subjects
   assert.equal(draft.conflicts.length, 0)
 })
 
-test("missing facts stay visible and a Working number never looks fabrication-ready", () => {
+test("missing facts stay visible and a shop estimate never looks fabrication-ready", () => {
   const height = measurementClaim({ id: 50, interpretationGroup: undefined, factKey: "gate_leaf.finished_height", subject: "gate_leaf", property: "finished_height", value: 42, original: "42 inches" })
   const draft = deriveBuildDraft({
     claims: [height],
@@ -244,5 +244,5 @@ test("missing facts stay visible and a Working number never looks fabrication-re
   assert.equal(draft.factRows.find((fact) => fact.factKey === "gate_leaf.finished_width").state, "still-need")
   assert.equal(draft.fabrication.ready, false)
   assert.match(draft.fabrication.blockers.join(" "), /finished width.*still need/i)
-  assert.match(draft.fabrication.blockers.join(" "), /finished height.*working number/i)
+  assert.match(draft.fabrication.blockers.join(" "), /finished height.*shop estimate/i)
 })

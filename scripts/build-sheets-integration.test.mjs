@@ -114,8 +114,8 @@ test("the owner workspace exposes evidence, decisions, immutable sheets, and dep
     "Heard on call",
     "Doesn't match",
     "Still need",
-    "Working number",
-    "Exact utterance",
+    "Shop estimate",
+    "From the call",
     "Lock Build Sheet",
     "Read-only record",
     "Paperwork",
@@ -154,7 +154,7 @@ test("Build Sheets tests join the full gate and owner vocabulary is checked in",
   assert.match(pkg, /scripts\/build-sheets-domain\.test\.mjs/)
   assert.match(pkg, /scripts\/build-sheets-integration\.test\.mjs/)
   assert.match(pkg, /scripts\/build-sheets-persistence\.test\.mjs/)
-  for (const term of ["Doesn't match", "Working number", "Build Sheet", "Old numbers", "Paperwork"]) {
+  for (const term of ["Doesn't match", "Shop estimate", "Build Sheet", "Old numbers", "Paperwork"]) {
     assert.match(glossary, new RegExp(term))
   }
 })
