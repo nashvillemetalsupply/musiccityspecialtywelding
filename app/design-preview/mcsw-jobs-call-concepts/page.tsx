@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import {
-  Atkinson_Hyperlegible_Next,
   Commissioner,
+  IBM_Plex_Sans,
 } from "next/font/google"
 import { ConceptsClient } from "./concepts-client"
 import "./concepts.css"
@@ -15,7 +15,7 @@ const commissioner = Commissioner({
   preload: false,
 })
 
-const atkinson = Atkinson_Hyperlegible_Next({
+const atkinson = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-call-body",

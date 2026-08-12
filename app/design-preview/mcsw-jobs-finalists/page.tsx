@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
 import { Mic, Phone } from "lucide-react"
 import {
-  Atkinson_Hyperlegible_Next,
   Bitter,
   Commissioner,
+  IBM_Plex_Sans,
 } from "next/font/google"
 import "./finalists.css"
 
-const atkinson = Atkinson_Hyperlegible_Next({
+const atkinson = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-finalist-body",

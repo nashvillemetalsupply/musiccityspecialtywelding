@@ -2,7 +2,6 @@ import { ArrowUpRight, ChevronRight, Clock3, MoreHorizontal, Phone } from "lucid
 import {
   Alegreya,
   Alegreya_Sans,
-  Atkinson_Hyperlegible_Next,
   Azeret_Mono,
   Barlow,
   Bitter,
@@ -13,6 +12,7 @@ import {
   Funnel_Display,
   Funnel_Sans,
   Geologica,
+  IBM_Plex_Sans,
   Karla,
   Lexend,
   Newsreader,
@@ -23,7 +23,7 @@ import {
 } from "next/font/google"
 import "./directions.css"
 
-const atkinson = Atkinson_Hyperlegible_Next({
+const atkinson = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-direction-atkinson",
