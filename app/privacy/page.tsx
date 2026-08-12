@@ -23,12 +23,12 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="text-sm text-muted-foreground mb-10 sm:mb-12">
-              Last updated: August 8, 2026
+              Last updated: August 11, 2026
             </p>
 
             <div className="space-y-8 text-base text-foreground leading-relaxed">
               <p>
-                Music City Specialty Welding ("we," "us," or "our") values your privacy. This policy explains how we handle information when you visit our website, call or message our shop, exchange email with us, receive a customer job page, or hire us for welding services.
+                Music City Specialty Welding is operated by Neverlift Chassis Works, LLC ("we," "us," or "our"). We value your privacy. This policy explains how we handle information when you visit our website, call or message our shop, exchange email with us, receive a customer job page, or hire us for welding services.
               </p>
 
               <section>
@@ -215,6 +215,7 @@ export default function PrivacyPage() {
                 </p>
                 <div className="bg-muted/50 rounded-lg p-6 space-y-2">
                   <p className="font-semibold text-secondary">Music City Specialty Welding</p>
+                  <p className="text-muted-foreground">Operated by Neverlift Chassis Works, LLC</p>
                   <p>
                     <a href={shopPhone.href} className="text-primary hover:text-primary/80 transition-colors">
                       Phone: {shopPhone.display}

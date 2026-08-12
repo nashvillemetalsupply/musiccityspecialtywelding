@@ -23,12 +23,12 @@ export default function TermsPage() {
               Terms of Service
             </h1>
             <p className="text-sm text-muted-foreground mb-10 sm:mb-12">
-              Last updated: August 8, 2026
+              Last updated: August 11, 2026
             </p>
 
             <div className="space-y-8 text-base text-foreground leading-relaxed">
               <p>
-                By accessing or using this website, you agree to be bound by these Terms of Service. If you do not agree, please do not use the site.
+                Music City Specialty Welding is operated by Neverlift Chassis Works, LLC. By accessing or using this website, you agree to be bound by these Terms of Service. If you do not agree, please do not use the site.
               </p>
 
               <section>
@@ -160,6 +160,7 @@ export default function TermsPage() {
                 </p>
                 <div className="bg-muted/50 rounded-lg p-6 space-y-2">
                   <p className="font-semibold text-secondary">Music City Specialty Welding</p>
+                  <p className="text-muted-foreground">Operated by Neverlift Chassis Works, LLC</p>
                   <p>
                     <a href={shopPhone.href} className="text-primary hover:text-primary/80 transition-colors">
                       Phone: {shopPhone.display}
