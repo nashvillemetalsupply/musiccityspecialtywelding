@@ -754,14 +754,29 @@ const statements = [
     claim_id BIGINT NOT NULL REFERENCES claims(id),
     state TEXT NOT NULL,
     actor_id BIGINT NOT NULL REFERENCES operators(id),
+    proposer_type TEXT NOT NULL DEFAULT 'operator',
     purpose TEXT NOT NULL DEFAULT 'build-sheet',
     source_event_id BIGINT NOT NULL REFERENCES events(id),
     decision_key TEXT NOT NULL,
     is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
     decided_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT build_fact_decisions_state_check CHECK (state IN ('proposed','shop-confirmed','working-number','rejected','superseded')),
+    CONSTRAINT build_fact_decisions_proposer_check CHECK (proposer_type IN ('operator','system','customer')),
     UNIQUE (lead_id, decision_key)
   )`,
+  `ALTER TABLE build_fact_decisions ADD COLUMN IF NOT EXISTS proposer_type TEXT NOT NULL DEFAULT 'operator'`,
+  `DO $$
+  BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conname = 'build_fact_decisions_proposer_check'
+        AND conrelid = 'build_fact_decisions'::regclass
+    ) THEN
+      ALTER TABLE build_fact_decisions
+        ADD CONSTRAINT build_fact_decisions_proposer_check
+        CHECK (proposer_type IN ('operator','system','customer'));
+    END IF;
+  END $$`,
   `CREATE INDEX IF NOT EXISTS build_fact_decisions_claim_idx ON build_fact_decisions(lead_id, claim_id, decided_at DESC, id DESC)`,
   `CREATE TABLE IF NOT EXISTS build_sheet_sequences (
     lead_id BIGINT PRIMARY KEY REFERENCES leads(id),
@@ -982,6 +997,25 @@ if (buildFixture) {
   }
 
   await sql`
+    INSERT INTO build_fact_decisions (
+      lead_id, claim_id, state, actor_id, proposer_type, purpose,
+      source_event_id, decision_key, is_test, decided_at
+    )
+    SELECT l.id, c.id, 'proposed'::text, owner.id, 'system'::text,
+      'build-sheet'::text, ${sourceEventId}::bigint,
+      ('fixture-proposed:' || c.id::text)::text, true, e.occurred_at
+    FROM leads l
+    JOIN claims c ON c.subject_type = 'lead' AND c.subject_id = l.id
+    JOIN events e ON e.id = ${sourceEventId}::bigint AND e.lead_id = l.id
+    JOIN LATERAL (
+      SELECT id FROM operators WHERE role = 'owner' AND active = true
+      ORDER BY created_at ASC LIMIT 1
+    ) owner ON true
+    WHERE l.id = ${leadId}::bigint AND l.is_test = true
+      AND c.predicate = 'build_fact' AND c.source_event_id = ${sourceEventId}::bigint
+    ON CONFLICT (lead_id, decision_key) DO NOTHING`
+
+  await sql`
     INSERT INTO build_claim_conflicts (
       lead_id, conflict_key, kind, claim_ids, source_event_id, is_test
     )
@@ -1020,11 +1054,11 @@ if (buildFixture) {
   for (const factKey of fixtureDecisionFacts) {
     await sql`
       INSERT INTO build_fact_decisions (
-        lead_id, claim_id, state, actor_id, purpose, source_event_id,
+        lead_id, claim_id, state, actor_id, proposer_type, purpose, source_event_id,
         decision_key, is_test, decided_at
       )
       SELECT l.id, c.id, 'shop-confirmed'::text, o.id,
-        'build-sheet'::text, decision_event.id,
+        'operator'::text, 'build-sheet'::text, decision_event.id,
         ${`fixture-confirmed:${factKey}`}::text, true, now()
       FROM leads l
       JOIN claims c ON c.subject_type = 'lead' AND c.subject_id = l.id

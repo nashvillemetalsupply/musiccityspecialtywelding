@@ -57,6 +57,36 @@ test("different active values for the same referenced fact stay in conflict", ()
   assert.deepEqual(draft.conflicts[0].claimIds, [1, 2])
 })
 
+test("a proposed correction conflicts with the old Confirmed value until explicitly decided", () => {
+  const oldClaim = measurementClaim({ interpretationGroup: undefined, certainty: "stated" })
+  const proposedClaim = measurementClaim({ id: 2, value: 47.5, original: "Owner correction: 47.5 in", interpretationGroup: undefined, certainty: "corrected" })
+  const state = {
+    claims: [oldClaim, proposedClaim],
+    decisions: [
+      { id: 1, claimId: 1, state: "shop-confirmed", decidedAt: "2026-08-12T16:00:00.000Z" },
+      { id: 2, claimId: 2, state: "proposed", decidedAt: "2026-08-12T16:01:00.000Z" },
+    ],
+  }
+
+  const draft = deriveBuildDraft(state)
+  assert.equal(draft.conflicts[0].kind, "different-values")
+  assert.equal(draft.recommendedQuestion, null)
+  assert.throws(() => lockBuildSheet({
+    jobId: 42,
+    sequence: 2,
+    idempotencyKey: "lock-before-correction-review",
+    claims: state.claims,
+    decisions: state.decisions,
+  }), /doesn't match/i)
+
+  const accepted = applyBuildDecision(state, { kind: "confirm", claimId: 2, actorId: 7, decidedAt: "2026-08-12T17:00:00.000Z" })
+  assert.equal(accepted.draft.conflicts.length, 0)
+  assert.deepEqual(accepted.newDecisions.map(({ claimId, state: decisionState }) => [claimId, decisionState]), [
+    [2, "shop-confirmed"],
+    [1, "rejected"],
+  ])
+})
+
 test("confirming one interpretation explicitly rejects its competing reading", () => {
   const claims = [
     measurementClaim(),
@@ -175,6 +205,19 @@ test("releasing a changed Build Sheet marks all and only dependent Paperwork Old
   assert.deepEqual(paperwork.map(({ status }) => status), ["old-numbers", "old-numbers", "current"])
   assert.equal(paperwork[0].validForSource, true)
   assert.equal(paperwork[0].reason, "Finished width changed.")
+})
+
+test("equal measurements with a changed physical reference still stale dependent Paperwork", () => {
+  const source = measurementClaim({ id: 35, interpretationGroup: undefined, factKey: "gate_leaf.finished_width", subject: "gate_leaf", property: "finished_width", reference: "outside edge to outside edge" })
+  const changedReference = { ...source, id: 36, reference: "inside edge to inside edge" }
+  const [paperwork] = classifyPaperwork({
+    manifests: [{ id: 1, kind: "drawing", sourceBuildSheetNumber: 1, dependencies: ["gate_leaf.finished_width"] }],
+    sourceSheet: { number: 1, facts: [{ ...source, decisionState: "shop-confirmed" }] },
+    releasedSheet: { number: 2, facts: [{ ...changedReference, decisionState: "shop-confirmed" }] },
+  })
+
+  assert.equal(paperwork.status, "old-numbers")
+  assert.equal(paperwork.reason, "Finished width changed.")
 })
 
 test("normalized units compare without invented tolerance and different subjects remain compatible", () => {

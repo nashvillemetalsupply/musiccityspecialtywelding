@@ -11,6 +11,7 @@ import {
   type PaperworkManifest,
 } from "@/lib/build-sheets-domain.mjs"
 import type { CallSketchSpec } from "@/lib/call-sketch-live.mjs"
+import { persistLockedBuildSheet, persistObservedBuildFacts } from "@/lib/build-sheets-persistence.mjs"
 
 type StoredBuildClaimValue = Omit<BuildClaim, "id" | "sourceEventId">
 
@@ -38,67 +39,6 @@ type PaperworkRow = {
 
 function hashItem(value: string) {
   return createHash("sha256").update(value).digest("hex")
-}
-
-async function recordTestBuildEvent(input: {
-  leadId: number
-  operatorId: number
-  kind: string
-  externalId: string
-  body: string
-  detail: Record<string, unknown>
-}) {
-  const sql = getSql()
-  const detail = JSON.stringify({ ...input.detail, isTest: true, sensitivity: "owner" })
-  const inserted = (await sql`
-    INSERT INTO events (
-      occurred_at, kind, actor_type, actor_id, lead_id, external_id,
-      body, crew_body, detail
-    )
-    SELECT now(), ${input.kind}::text, 'operator'::text,
-      ${String(input.operatorId)}::text, l.id, ${input.externalId}::text,
-      ${input.body}::text, NULL::text, ${detail}::jsonb
-    FROM leads l
-    WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
-    ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
-    RETURNING id`) as { id: number }[]
-  if (inserted[0]) return Number(inserted[0].id)
-  const existing = (await sql`
-    SELECT e.id FROM events e JOIN leads l ON l.id = e.lead_id
-    WHERE e.kind = ${input.kind}::text AND e.external_id = ${input.externalId}::text
-      AND l.id = ${input.leadId}::bigint AND l.is_test = true
-    LIMIT 1`) as { id: number }[]
-  return Number(existing[0]?.id ?? 0)
-}
-
-async function insertBuildClaim(input: {
-  leadId: number
-  sourceEventId: number
-  fact: StoredBuildClaimValue
-  itemKey: string
-}) {
-  const sql = getSql()
-  const rows = (await sql`
-    INSERT INTO claims (
-      subject_type, subject_id, predicate, value, confidence,
-      source_event_id, extracted_by, item_key
-    )
-    SELECT 'lead'::text, l.id, 'build_fact'::text, ${JSON.stringify(input.fact)}::jsonb,
-      ${input.fact.certainty === "corrected" ? 1 : 0.85}::real,
-      ${input.sourceEventId}::bigint, 'build-sheets'::text, ${input.itemKey}::text
-    FROM leads l
-    WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
-    ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
-    RETURNING id`) as { id: number }[]
-  if (rows[0]) return Number(rows[0].id)
-  const existing = (await sql`
-    SELECT c.id FROM claims c
-    JOIN leads l ON l.id = c.subject_id AND c.subject_type = 'lead'
-    WHERE c.source_event_id = ${input.sourceEventId}::bigint
-      AND c.item_key = ${input.itemKey}::text
-      AND l.id = ${input.leadId}::bigint AND l.is_test = true
-    LIMIT 1`) as { id: number }[]
-  return Number(existing[0]?.id ?? 0)
 }
 
 function observedFacts(spec: CallSketchSpec, sourceEventId: number): StoredBuildClaimValue[] {
@@ -187,36 +127,16 @@ export async function ingestCallSketchBuildFacts(leadId: number) {
   const source = rows[0]
   if (!source) return []
   const facts = observedFacts(source.observed_spec, Number(source.source_event_id))
-  const inserted: Array<{ id: number; fact: StoredBuildClaimValue }> = []
-  for (const fact of facts) {
-    const id = await insertBuildClaim({
-      leadId,
-      sourceEventId: Number(source.source_event_id),
+  return persistObservedBuildFacts({
+    sql,
+    leadId,
+    callSid: source.call_sid,
+    sourceEventId: Number(source.source_event_id),
+    facts: facts.map((fact) => ({
       fact,
       itemKey: hashItem(`call-sketch:${source.call_sid}:${fact.factKey}:${fact.interpretationGroup ?? "direct"}`),
-    })
-    if (id) inserted.push({ id, fact })
-  }
-  const groups = new Map<string, number[]>()
-  for (const item of inserted) {
-    if (!item.fact.interpretationGroup) continue
-    const ids = groups.get(item.fact.interpretationGroup) ?? []
-    ids.push(item.id)
-    groups.set(item.fact.interpretationGroup, ids)
-  }
-  for (const [conflictKey, claimIds] of groups) {
-    if (claimIds.length < 2) continue
-    await sql`
-      INSERT INTO build_claim_conflicts (
-        lead_id, conflict_key, kind, claim_ids, source_event_id, is_test
-      )
-      SELECT l.id, ${conflictKey}::text, 'unresolved-reference'::text,
-        ${claimIds}::bigint[], ${source.source_event_id}::bigint, true
-      FROM leads l
-      WHERE l.id = ${leadId}::bigint AND l.is_test = true
-      ON CONFLICT (lead_id, conflict_key) DO NOTHING`
-  }
-  return inserted.map((item) => item.id)
+    })),
+  })
 }
 
 function toBuildClaim(row: { id: number; source_event_id: number; value: StoredBuildClaimValue }): BuildClaim {
@@ -241,45 +161,80 @@ export async function decideBuildFact(input: {
   )
   const decisionKey = input.decisionKey.trim().slice(0, 120)
   if (!decisionKey) throw new Error("The decision receipt is missing.")
-  const eventId = await recordTestBuildEvent({
-    leadId: input.leadId,
-    operatorId: input.operatorId,
-    kind: "build.fact-decided",
-    externalId: `build-decision:${input.leadId}:${decisionKey}`,
-    body: `${input.kind === "confirm" ? "Confirmed" : input.kind === "working" ? "Working number" : "Rejected"}: ${claim.factKey}`,
-    detail: { claimId: input.claimId, state: input.kind },
-  })
-  if (!eventId) throw new Error("The build decision could not be filed.")
+  const externalId = `build-decision:${input.leadId}:${decisionKey}`
+  const body = `${input.kind === "confirm" ? "Confirmed" : input.kind === "working" ? "Working number" : "Rejected"}: ${claim.factKey}`
+  const detail = JSON.stringify({ claimId: input.claimId, state: input.kind, isTest: true, sensitivity: "owner" })
+  const decisionsToWrite = transition.newDecisions.map((decision, index) => ({
+    claim_id: Number(decision.claimId),
+    state: decision.state,
+    decision_key: `${decisionKey}:${index}:${decision.claimId}:${decision.state}`,
+  }))
   const sql = getSql()
-  for (const [index, decision] of transition.newDecisions.entries()) {
-    await sql`
+  const receipts = (await sql`
+    WITH lead_scope AS (
+      SELECT l.id AS lead_id, o.id AS operator_id
+      FROM leads l JOIN operators o ON o.id = ${input.operatorId}::bigint
+        AND o.role = 'owner' AND o.active = true
+      WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
+    ), event_write AS (
+      INSERT INTO events (
+        occurred_at, kind, actor_type, actor_id, lead_id, external_id,
+        body, crew_body, detail
+      )
+      SELECT ${decidedAt}::timestamptz, 'build.fact-decided'::text,
+        'operator'::text, scope.operator_id::text, scope.lead_id,
+        ${externalId}::text, ${body}::text, NULL::text, ${detail}::jsonb
+      FROM lead_scope scope
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id, lead_id
+    ), event_scope AS (
+      SELECT id, lead_id FROM event_write
+      UNION ALL
+      SELECT e.id, e.lead_id FROM events e JOIN lead_scope scope ON scope.lead_id = e.lead_id
+      WHERE e.kind = 'build.fact-decided' AND e.external_id = ${externalId}::text
+        AND NOT EXISTS (SELECT 1 FROM event_write)
+      LIMIT 1
+    ), decision_input AS (
+      SELECT * FROM jsonb_to_recordset(${JSON.stringify(decisionsToWrite)}::jsonb)
+        AS decision(claim_id bigint, state text, decision_key text)
+    ), decision_write AS (
       INSERT INTO build_fact_decisions (
-        lead_id, claim_id, state, actor_id, purpose, source_event_id,
+        lead_id, claim_id, state, actor_id, proposer_type, purpose, source_event_id,
         decision_key, is_test, decided_at
       )
-      SELECT l.id, c.id, ${decision.state}::text, o.id,
-        ${decision.purpose}::text, ${eventId}::bigint,
-        ${`${decisionKey}:${index}:${decision.claimId}:${decision.state}`}::text,
-        true, ${decision.decidedAt}::timestamptz
-      FROM leads l JOIN claims c ON c.subject_type = 'lead' AND c.subject_id = l.id
-      JOIN operators o ON o.id = ${input.operatorId}::bigint AND o.role = 'owner' AND o.active = true
-      WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
-        AND c.id = ${decision.claimId}::bigint AND c.predicate = 'build_fact'
-      ON CONFLICT (lead_id, decision_key) DO NOTHING`
-  }
-  if (input.kind !== "reject") {
-    await sql`
+      SELECT scope.lead_id, c.id, decision.state, scope.operator_id,
+        'operator'::text, 'build-sheet'::text, event.id,
+        decision.decision_key, true, ${decidedAt}::timestamptz
+      FROM lead_scope scope JOIN event_scope event ON event.lead_id = scope.lead_id
+      JOIN decision_input decision ON true
+      JOIN claims c ON c.id = decision.claim_id AND c.subject_type = 'lead'
+        AND c.subject_id = scope.lead_id AND c.predicate = 'build_fact'
+      ON CONFLICT (lead_id, decision_key) DO NOTHING
+      RETURNING decision_key
+    ), decision_receipts AS (
+      SELECT decision_key FROM decision_write
+      UNION
+      SELECT stored.decision_key FROM build_fact_decisions stored
+      JOIN lead_scope scope ON scope.lead_id = stored.lead_id
+      JOIN decision_input expected ON expected.decision_key = stored.decision_key
+    ), superseded AS (
       UPDATE claims prior SET superseded_by = selected.id
-      FROM claims selected, leads l
+      FROM claims selected, lead_scope scope
       WHERE selected.id = ${input.claimId}::bigint
-        AND selected.subject_type = 'lead' AND selected.subject_id = l.id
+        AND selected.subject_type = 'lead' AND selected.subject_id = scope.lead_id
         AND selected.predicate = 'build_fact'
-        AND prior.subject_type = 'lead' AND prior.subject_id = l.id
+        AND prior.subject_type = 'lead' AND prior.subject_id = scope.lead_id
         AND prior.predicate = 'build_fact' AND prior.superseded_by IS NULL
         AND prior.id <> selected.id
         AND prior.value->>'factKey' = selected.value->>'factKey'
         AND COALESCE(prior.value->>'reference', '') = COALESCE(selected.value->>'reference', '')
-        AND l.id = ${input.leadId}::bigint AND l.is_test = true`
+        AND ${input.kind !== "reject"}::boolean
+        AND (SELECT count(*) FROM decision_receipts) = ${decisionsToWrite.length}::int
+      RETURNING prior.id
+    )
+    SELECT count(*)::int AS receipt_count FROM decision_receipts`) as { receipt_count: number }[]
+  if (Number(receipts[0]?.receipt_count ?? 0) !== decisionsToWrite.length) {
+    throw new Error("The complete build decision could not be filed.")
   }
   return transition.draft
 }
@@ -288,68 +243,131 @@ export async function proposeBuildFactChange(input: {
   leadId: number
   sourceClaimId: number
   operatorId: number
-  value: number
+  value: number | string
   actionKey: string
 }) {
-  if (!Number.isFinite(input.value) || input.value <= 0) throw new Error("Enter a positive shop number.")
   const workspace = await getBuildsWorkspace(input.leadId)
   if (!workspace) throw new Error("Builds only changes an [INTERNAL TEST] job.")
   const source = workspace.claims.find((claim) => Number(claim.id) === Number(input.sourceClaimId))
   if (!source) throw new Error("That source fact is no longer active.")
-  if (typeof source.value !== "number") throw new Error("This first correction slice accepts measured numbers only.")
+  let value: number | string
+  if (typeof source.value === "number") {
+    value = Number(input.value)
+    if (!Number.isFinite(value) || value <= 0) throw new Error("Enter a positive shop number.")
+  } else {
+    value = String(input.value).trim().slice(0, 120)
+    if (!value) throw new Error("Enter the corrected shop fact.")
+    if (["gate.hinge_side", "gate.latch_side"].includes(source.factKey)) {
+      value = value.toLowerCase()
+      if (!['left', 'right'].includes(value)) throw new Error("Choose left or right.")
+    }
+  }
+  if (value === source.value) throw new Error("Enter a different value before proposing a change.")
   const actionKey = input.actionKey.trim().slice(0, 120)
   if (!actionKey) throw new Error("The correction receipt is missing.")
-  const eventId = await recordTestBuildEvent({
-    leadId: input.leadId,
-    operatorId: input.operatorId,
-    kind: "build.fact-proposed",
-    externalId: `build-proposal:${input.leadId}:${actionKey}`,
-    body: `Proposed ${source.factKey}: ${input.value} ${source.unit}`.trim(),
-    detail: { sourceClaimId: source.id, factKey: source.factKey, value: input.value, unit: source.unit },
-  })
-  if (!eventId) throw new Error("The corrected number could not be filed.")
-  const { interpretationGroup: _discardedGroup, ...copy } = source
-  void _discardedGroup
-  const claimId = await insertBuildClaim({
-    leadId: input.leadId,
-    sourceEventId: eventId,
-    fact: {
-      factKey: copy.factKey,
-      subject: copy.subject,
-      property: copy.property,
-      value: input.value,
-      unit: copy.unit,
-      reference: copy.reference,
-      original: `Owner correction: ${input.value} ${copy.unit}`.trim(),
-      speaker: "owner",
-      certainty: "corrected",
-      critical: copy.critical,
-    },
-    itemKey: hashItem(`build-proposal:${input.leadId}:${actionKey}`),
-  })
-  if (!claimId) throw new Error("The corrected number could not be attached to the job.")
+  const fact: StoredBuildClaimValue = {
+    factKey: source.factKey,
+    subject: source.subject,
+    property: source.property,
+    value,
+    unit: source.unit,
+    reference: source.reference,
+    original: `Owner correction: ${value} ${source.unit}`.trim(),
+    speaker: "owner",
+    certainty: "corrected",
+    critical: source.critical,
+  }
+  const externalId = `build-proposal:${input.leadId}:${actionKey}`
+  const itemKey = hashItem(externalId)
+  const decisionKey = `${actionKey}:proposed`
+  const eventDetail = JSON.stringify({ sourceClaimId: source.id, factKey: source.factKey, value, unit: source.unit, isTest: true, sensitivity: "owner" })
   const sql = getSql()
-  await sql`
-    INSERT INTO build_fact_decisions (
-      lead_id, claim_id, state, actor_id, purpose, source_event_id,
-      decision_key, is_test, decided_at
+  const rows = (await sql`
+    WITH lead_scope AS (
+      SELECT l.id AS lead_id, o.id AS operator_id
+      FROM leads l JOIN operators o ON o.id = ${input.operatorId}::bigint
+        AND o.role = 'owner' AND o.active = true
+      WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
+    ), source_scope AS (
+      SELECT c.id FROM claims c JOIN lead_scope scope ON scope.lead_id = c.subject_id
+      WHERE c.id = ${input.sourceClaimId}::bigint AND c.subject_type = 'lead'
+        AND c.predicate = 'build_fact' AND c.superseded_by IS NULL
+    ), event_write AS (
+      INSERT INTO events (
+        occurred_at, kind, actor_type, actor_id, lead_id, external_id,
+        body, crew_body, detail
+      )
+      SELECT now(), 'build.fact-proposed'::text, 'operator'::text,
+        scope.operator_id::text, scope.lead_id, ${externalId}::text,
+        ${`Proposed ${source.factKey}: ${value} ${source.unit}`.trim()}::text,
+        NULL::text, ${eventDetail}::jsonb
+      FROM lead_scope scope JOIN source_scope source ON true
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id, lead_id
+    ), event_scope AS (
+      SELECT id, lead_id FROM event_write
+      UNION ALL
+      SELECT e.id, e.lead_id FROM events e JOIN lead_scope scope ON scope.lead_id = e.lead_id
+      WHERE e.kind = 'build.fact-proposed' AND e.external_id = ${externalId}::text
+        AND NOT EXISTS (SELECT 1 FROM event_write)
+      LIMIT 1
+    ), claim_write AS (
+      INSERT INTO claims (
+        subject_type, subject_id, predicate, value, confidence,
+        source_event_id, extracted_by, item_key
+      )
+      SELECT 'lead'::text, scope.lead_id, 'build_fact'::text,
+        ${JSON.stringify(fact)}::jsonb, 1::real, event.id,
+        'build-sheets'::text, ${itemKey}::text
+      FROM lead_scope scope JOIN event_scope event ON event.lead_id = scope.lead_id
+      ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
+      RETURNING id, source_event_id
+    ), claim_scope AS (
+      SELECT id, source_event_id FROM claim_write
+      UNION ALL
+      SELECT c.id, c.source_event_id FROM claims c
+      JOIN event_scope event ON event.id = c.source_event_id
+      WHERE c.item_key = ${itemKey}::text AND NOT EXISTS (SELECT 1 FROM claim_write)
+      LIMIT 1
+    ), decision_write AS (
+      INSERT INTO build_fact_decisions (
+        lead_id, claim_id, state, actor_id, proposer_type, purpose,
+        source_event_id, decision_key, is_test, decided_at
+      )
+      SELECT scope.lead_id, claim.id, 'proposed'::text, scope.operator_id,
+        'operator'::text, 'build-sheet'::text, claim.source_event_id,
+        ${decisionKey}::text, true, now()
+      FROM lead_scope scope JOIN claim_scope claim ON true
+      ON CONFLICT (lead_id, decision_key) DO NOTHING
+      RETURNING decision_key
+    ), decision_receipt AS (
+      SELECT decision_key FROM decision_write
+      UNION
+      SELECT stored.decision_key FROM build_fact_decisions stored
+      JOIN lead_scope scope ON scope.lead_id = stored.lead_id
+      WHERE stored.decision_key = ${decisionKey}::text
+    ), conflict_write AS (
+      INSERT INTO build_claim_conflicts (
+        lead_id, conflict_key, kind, claim_ids, source_event_id, is_test
+      )
+      SELECT scope.lead_id, ('proposal:' || claim.id::text)::text,
+        'different-values'::text, ARRAY[source.id, claim.id]::bigint[],
+        claim.source_event_id, true
+      FROM lead_scope scope JOIN source_scope source ON true JOIN claim_scope claim ON true
+      ON CONFLICT (lead_id, conflict_key) DO NOTHING
+      RETURNING conflict_key
+    ), conflict_receipt AS (
+      SELECT conflict_key FROM conflict_write
+      UNION
+      SELECT stored.conflict_key FROM build_claim_conflicts stored
+      JOIN lead_scope scope ON scope.lead_id = stored.lead_id
+      JOIN claim_scope claim ON stored.conflict_key = ('proposal:' || claim.id::text)
     )
-    SELECT l.id, c.id, 'proposed'::text, o.id, 'build-sheet'::text,
-      ${eventId}::bigint, ${`${actionKey}:proposed`}::text, true, now()
-    FROM leads l JOIN claims c ON c.subject_type = 'lead' AND c.subject_id = l.id
-    JOIN operators o ON o.id = ${input.operatorId}::bigint AND o.role = 'owner' AND o.active = true
-    WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
-      AND c.id = ${claimId}::bigint AND c.predicate = 'build_fact'
-    ON CONFLICT (lead_id, decision_key) DO NOTHING`
-  await sql`
-    INSERT INTO build_claim_conflicts (
-      lead_id, conflict_key, kind, claim_ids, source_event_id, is_test
-    )
-    SELECT l.id, ${`proposal:${claimId}`}::text, 'different-values'::text,
-      ${[Number(source.id), claimId]}::bigint[], ${eventId}::bigint, true
-    FROM leads l
-    WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
-    ON CONFLICT (lead_id, conflict_key) DO NOTHING`
+    SELECT claim.id FROM claim_scope claim
+    WHERE EXISTS (SELECT 1 FROM decision_receipt)
+      AND EXISTS (SELECT 1 FROM conflict_receipt)`) as { id: number }[]
+  const claimId = Number(rows[0]?.id ?? 0)
+  if (!claimId) throw new Error("The complete corrected fact could not be filed.")
   return claimId
 }
 
@@ -371,29 +389,84 @@ export async function addWorkingBuildFact(input: {
   if (!template || !Number.isFinite(input.value) || input.value <= 0) throw new Error("Enter a valid Working number.")
   const actionKey = input.actionKey.trim().slice(0, 120)
   if (!actionKey) throw new Error("The Working number receipt is missing.")
-  const eventId = await recordTestBuildEvent({
-    leadId: input.leadId,
-    operatorId: input.operatorId,
-    kind: "build.working-number",
-    externalId: `build-working:${input.leadId}:${actionKey}`,
-    body: `Working number for ${input.factKey}: ${input.value} ${template.unit}`.trim(),
-    detail: { factKey: input.factKey, value: input.value, unit: template.unit },
-  })
-  if (!eventId) throw new Error("The Working number could not be filed.")
-  const claimId = await insertBuildClaim({
-    leadId: input.leadId,
-    sourceEventId: eventId,
-    fact: { ...template, value: input.value, original: `Owner Working number: ${input.value} ${template.unit}`.trim() },
-    itemKey: hashItem(`build-working:${input.leadId}:${actionKey}`),
-  })
-  if (!claimId) throw new Error("The Working number could not be attached to the job.")
-  await decideBuildFact({
-    leadId: input.leadId,
-    claimId,
-    operatorId: input.operatorId,
-    kind: "working",
-    decisionKey: `${actionKey}:accept`,
-  })
+  const fact = { ...template, value: input.value, original: `Owner Working number: ${input.value} ${template.unit}`.trim() }
+  const externalId = `build-working:${input.leadId}:${actionKey}`
+  const itemKey = hashItem(externalId)
+  const decisionKey = `${actionKey}:working`
+  const detail = JSON.stringify({ factKey: input.factKey, value: input.value, unit: template.unit, isTest: true, sensitivity: "owner" })
+  const sql = getSql()
+  const rows = (await sql`
+    WITH lead_scope AS (
+      SELECT l.id AS lead_id, o.id AS operator_id
+      FROM leads l JOIN operators o ON o.id = ${input.operatorId}::bigint
+        AND o.role = 'owner' AND o.active = true
+      WHERE l.id = ${input.leadId}::bigint AND l.is_test = true
+        AND NOT EXISTS (
+          SELECT 1 FROM claims active
+          WHERE active.subject_type = 'lead' AND active.subject_id = l.id
+            AND active.predicate = 'build_fact' AND active.superseded_by IS NULL
+            AND active.value->>'factKey' = ${input.factKey}::text
+        )
+    ), event_write AS (
+      INSERT INTO events (
+        occurred_at, kind, actor_type, actor_id, lead_id, external_id,
+        body, crew_body, detail
+      )
+      SELECT now(), 'build.working-number'::text, 'operator'::text,
+        scope.operator_id::text, scope.lead_id, ${externalId}::text,
+        ${`Working number for ${input.factKey}: ${input.value} ${template.unit}`.trim()}::text,
+        NULL::text, ${detail}::jsonb
+      FROM lead_scope scope
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id, lead_id
+    ), event_scope AS (
+      SELECT id, lead_id FROM event_write
+      UNION ALL
+      SELECT e.id, e.lead_id FROM events e JOIN leads l ON l.id = e.lead_id
+      WHERE e.kind = 'build.working-number' AND e.external_id = ${externalId}::text
+        AND l.id = ${input.leadId}::bigint AND l.is_test = true
+        AND NOT EXISTS (SELECT 1 FROM event_write)
+      LIMIT 1
+    ), claim_write AS (
+      INSERT INTO claims (
+        subject_type, subject_id, predicate, value, confidence,
+        source_event_id, extracted_by, item_key
+      )
+      SELECT 'lead'::text, event.lead_id, 'build_fact'::text,
+        ${JSON.stringify(fact)}::jsonb, 1::real, event.id,
+        'build-sheets'::text, ${itemKey}::text
+      FROM event_scope event
+      ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
+      RETURNING id, subject_id, source_event_id
+    ), claim_scope AS (
+      SELECT id, subject_id, source_event_id FROM claim_write
+      UNION ALL
+      SELECT c.id, c.subject_id, c.source_event_id FROM claims c
+      JOIN event_scope event ON event.id = c.source_event_id
+      WHERE c.item_key = ${itemKey}::text AND NOT EXISTS (SELECT 1 FROM claim_write)
+      LIMIT 1
+    ), decision_write AS (
+      INSERT INTO build_fact_decisions (
+        lead_id, claim_id, state, actor_id, proposer_type, purpose,
+        source_event_id, decision_key, is_test, decided_at
+      )
+      SELECT claim.subject_id, claim.id, 'working-number'::text, scope.operator_id,
+        'operator'::text, 'build-sheet'::text, claim.source_event_id,
+        ${decisionKey}::text, true, now()
+      FROM claim_scope claim JOIN lead_scope scope ON scope.lead_id = claim.subject_id
+      ON CONFLICT (lead_id, decision_key) DO NOTHING
+      RETURNING claim_id
+    ), decision_receipt AS (
+      SELECT claim_id FROM decision_write
+      UNION
+      SELECT stored.claim_id FROM build_fact_decisions stored
+      JOIN claim_scope claim ON claim.id = stored.claim_id
+      WHERE stored.decision_key = ${decisionKey}::text
+    )
+    SELECT claim.id FROM claim_scope claim
+    WHERE EXISTS (SELECT 1 FROM decision_receipt)`) as { id: number }[]
+  const claimId = Number(rows[0]?.id ?? 0)
+  if (!claimId) throw new Error("The complete Working number could not be filed.")
   return claimId
 }
 
@@ -484,58 +557,10 @@ export async function lockCurrentBuildSheet(input: {
     decisions: workspace.decisions,
   })
   const sql = getSql()
-  await sql`
-    INSERT INTO build_sheet_sequences (lead_id, next_sequence, is_test)
-    SELECT l.id, 1::int, true FROM leads l
-    WHERE l.id = ${leadId}::bigint AND l.is_test = true
-    ON CONFLICT (lead_id) DO NOTHING`
-  const inserted = (await sql`
-    WITH lead_scope AS (
-      SELECT l.id FROM leads l
-      WHERE l.id = ${leadId}::bigint AND l.is_test = true
-    ), receipt AS (
-      INSERT INTO build_lock_receipts (lead_id, lock_key, is_test)
-      SELECT l.id, ${lockKey}::text, true FROM lead_scope l
-      ON CONFLICT (lead_id, lock_key) DO NOTHING
-      RETURNING lead_id, lock_key
-    ), allocated AS (
-      UPDATE build_sheet_sequences sequence
-      SET next_sequence = sequence.next_sequence + 1
-      FROM receipt
-      WHERE sequence.lead_id = receipt.lead_id AND sequence.is_test = true
-      RETURNING sequence.lead_id, sequence.next_sequence - 1 AS sheet_sequence
-    ), sheet AS (
-      INSERT INTO build_sheets (lead_id, sequence, snapshot, locked_by, locked_at, is_test)
-      SELECT allocated.lead_id, allocated.sheet_sequence,
-        jsonb_set(${JSON.stringify(candidate)}::jsonb, '{number}', to_jsonb(allocated.sheet_sequence), false),
-        ${input.operatorId}::bigint, ${candidate.lockedAt}::timestamptz, true
-      FROM allocated JOIN receipt ON true
-      RETURNING id, lead_id, sequence, snapshot, locked_at
-    ), linked AS (
-      UPDATE build_lock_receipts target SET build_sheet_id = sheet.id
-      FROM sheet
-      WHERE target.lead_id = sheet.lead_id AND target.lock_key = ${lockKey}::text
-        AND target.is_test = true
-      RETURNING sheet.id, sheet.sequence, sheet.snapshot, sheet.locked_at
-    )
-    SELECT id, sequence, snapshot, locked_at FROM linked`) as Array<{
-      id: number
-      sequence: number
-      snapshot: LockedBuildSheet
-      locked_at: string
-    }>
-  const rows = inserted.length ? inserted : (await sql`
-    SELECT s.id, s.sequence, s.snapshot, s.locked_at
-    FROM build_lock_receipts receipt
-    JOIN build_sheets s ON s.id = receipt.build_sheet_id AND s.is_test = true
-    JOIN leads l ON l.id = receipt.lead_id
-    WHERE receipt.lead_id = ${leadId}::bigint AND receipt.lock_key = ${lockKey}::text
-      AND receipt.is_test = true AND l.is_test = true
-    LIMIT 1`) as Array<{ id: number; sequence: number; snapshot: LockedBuildSheet; locked_at: string }>
-  const sheet = rows[0]
-  if (!sheet) throw new Error("The Build Sheet lock is still being filed. Tap once more.")
+  const persisted = await persistLockedBuildSheet({ sql, leadId, operatorId: input.operatorId, lockKey, candidate })
+  const sheet = persisted.sheet
   await ensurePaperworkForSheet({ leadId, sheetId: Number(sheet.id), snapshot: sheet.snapshot })
-  if (inserted.length) await markReleasedPaperwork(leadId, sheet.snapshot)
+  if (persisted.inserted) await markReleasedPaperwork(leadId, sheet.snapshot)
   return { id: Number(sheet.id), number: Number(sheet.sequence), snapshot: sheet.snapshot, lockedAt: sheet.locked_at }
 }
 
@@ -548,7 +573,6 @@ export async function getBuildsWorkspace(leadId: number) {
     LIMIT 1`) as BuildLead[]
   const lead = leads[0]
   if (!lead) return null
-  await ingestCallSketchBuildFacts(leadId)
   const [claimRows, decisionRows, sheetRows, paperworkRows] = await Promise.all([
     sql`
       SELECT c.id, c.source_event_id, c.value
@@ -557,7 +581,7 @@ export async function getBuildsWorkspace(leadId: number) {
         AND c.predicate = 'build_fact' AND c.superseded_by IS NULL
       ORDER BY c.created_at, c.id`,
     sql`
-      SELECT d.id, d.claim_id, d.state, d.actor_id, d.purpose, d.decided_at
+      SELECT d.id, d.claim_id, d.state, d.actor_id, d.proposer_type, d.purpose, d.decided_at
       FROM build_fact_decisions d JOIN leads l ON l.id = d.lead_id
       WHERE d.lead_id = ${leadId}::bigint AND d.is_test = true AND l.is_test = true
       ORDER BY d.decided_at, d.id`,
@@ -577,9 +601,9 @@ export async function getBuildsWorkspace(leadId: number) {
       ORDER BY p.created_at, p.id`,
   ])
   const claims = (claimRows as Array<{ id: number; source_event_id: number; value: StoredBuildClaimValue }>).map(toBuildClaim)
-  const decisions = (decisionRows as Array<{ id: number; claim_id: number; state: BuildDecision["state"]; actor_id: number; purpose: string; decided_at: string }>).map((row) => ({
+  const decisions = (decisionRows as Array<{ id: number; claim_id: number; state: BuildDecision["state"]; actor_id: number; proposer_type: "operator" | "system" | "customer"; purpose: string; decided_at: string }>).map((row) => ({
     id: Number(row.id), claimId: Number(row.claim_id), state: row.state,
-    actorId: Number(row.actor_id), purpose: row.purpose, decidedAt: row.decided_at,
+    actorId: Number(row.actor_id), proposerType: row.proposer_type, purpose: row.purpose, decidedAt: row.decided_at,
   }))
   const draft = deriveBuildDraft({ claims, decisions })
   const sheets = (sheetRows as Array<{ id: number; sequence: number; snapshot: LockedBuildSheet; locked_at: string; locked_by_name: string }>).map((row) => ({

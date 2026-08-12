@@ -18,6 +18,7 @@ export type BuildDecision = {
   id?: number
   claimId: number
   state: "proposed" | "shop-confirmed" | "working-number" | "rejected" | "superseded"
+  proposerType?: "operator" | "system" | "customer"
   decidedAt?: string
 }
 

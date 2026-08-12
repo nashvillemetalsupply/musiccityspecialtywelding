@@ -139,16 +139,18 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 </form>}
               </div>
 
-              {typeof fact.value === "number" && <details className="ops-builds-correct">
-                <summary>Correct this number</summary>
+              <details className="ops-builds-correct">
+                <summary>{typeof fact.value === "number" ? "Correct this number" : "Correct this fact"}</summary>
                 <form className="ops-builds-inline-form" action={proposeBuildFactChangeAction}>
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="actionKey" value={randomUUID()} />
-                  <label><span>New {fact.label.toLowerCase()}</span><input name="value" type="number" min="0.01" step="0.01" inputMode="decimal" defaultValue={fact.value} required /></label>
+                  <label><span>New {fact.label.toLowerCase()}</span>{["gate.hinge_side", "gate.latch_side"].includes(fact.factKey)
+                    ? <select name="value" defaultValue={String(fact.value)} required><option value="left">Left</option><option value="right">Right</option></select>
+                    : <input name="value" type={typeof fact.value === "number" ? "number" : "text"} min={typeof fact.value === "number" ? "0.01" : undefined} step={typeof fact.value === "number" ? "0.01" : undefined} inputMode={typeof fact.value === "number" ? "decimal" : undefined} defaultValue={fact.value} maxLength={typeof fact.value === "string" ? 120 : undefined} required />}</label>
                   <SafeSubmitButton pendingLabel="Filing…">Propose change</SafeSubmitButton>
                 </form>
-              </details>}
+              </details>
             </article>
           })}
         </div>

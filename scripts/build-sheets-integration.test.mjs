@@ -39,32 +39,39 @@ test("Builds is absent unless the feature is on for an owner viewing an internal
 })
 
 test("Call Sketch ingestion has an explicit test-only job bridge and converges on retry", async () => {
-  const [intake, store] = await Promise.all([
+  const [intake, store, persistence] = await Promise.all([
     read("lib/job-intake.ts"),
     read("lib/build-sheets.ts"),
+    read("lib/build-sheets-persistence.mjs"),
   ])
 
   assert.match(intake, /INSERT INTO build_sketch_job_links/)
   assert.match(intake, /WHERE l\.id = \$\{created\.id\}::bigint AND l\.is_test = true/)
-  assert.match(store, /ON CONFLICT \(source_event_id, item_key\).*DO NOTHING/s)
-  assert.match(store, /ON CONFLICT \(lead_id, conflict_key\) DO NOTHING/)
+  assert.match(persistence, /ON CONFLICT \(source_event_id, item_key\).*DO NOTHING/s)
+  assert.match(persistence, /ON CONFLICT \(lead_id, conflict_key\) DO NOTHING/)
   assert.match(store, /WHERE link\.lead_id = \$\{leadId\}::bigint AND link\.is_test = true/)
+  assert.match(persistence, /'system'::text/)
+  assert.match(persistence, /state, actor_id, proposer_type, purpose/)
+  assert.match(intake, /await ingestCallSketchBuildFacts\(created\.id\)/)
+  const workspaceReader = store.slice(store.indexOf("export async function getBuildsWorkspace"))
+  assert.doesNotMatch(workspaceReader, /ingestCallSketchBuildFacts/)
   assert.doesNotMatch(store, /notify|Needs Attention|Morning Brief/i)
 })
 
 test("lock retries return one immutable Build Sheet and allocate the next number without a gap", async () => {
-  const [store, migration] = await Promise.all([
+  const [store, persistence, migration] = await Promise.all([
     read("lib/build-sheets.ts"),
+    read("lib/build-sheets-persistence.mjs"),
     read("scripts/migrate.mjs"),
   ])
 
   assert.match(store, /export async function lockCurrentBuildSheet/)
-  assert.match(store, /INSERT INTO build_lock_receipts/)
-  assert.match(store, /ON CONFLICT \(lead_id, lock_key\) DO NOTHING/)
-  assert.match(store, /UPDATE build_sheet_sequences sequence/)
-  assert.match(store, /JOIN receipt ON true/)
-  assert.match(store, /UPDATE build_lock_receipts target SET build_sheet_id = sheet\.id/)
-  assert.match(store, /WHERE l\.id = \$\{leadId\}::bigint AND l\.is_test = true/)
+  assert.match(persistence, /INSERT INTO build_lock_receipts/)
+  assert.match(persistence, /pg_advisory_xact_lock/)
+  assert.match(persistence, /SET next_sequence = build_sheet_sequences\.next_sequence \+ 1/)
+  assert.match(persistence, /FROM sheet JOIN receipt ON receipt\.build_sheet_id = sheet\.id/)
+  assert.match(persistence, /false AS inserted/)
+  assert.match(persistence, /WHERE l\.id = \$\{leadId\}::bigint AND l\.is_test = true/)
   assert.match(migration, /UNIQUE \(lead_id, sequence\)/)
 })
 
@@ -82,8 +89,12 @@ test("every owner mutation is independently flag-gated, owner-gated, test-partit
     "addWorkingBuildFactAction",
     "lockBuildSheetAction",
   ]) assert.match(actions, new RegExp(`export async function ${action}`))
-  assert.match(store, /JOIN operators o ON o\.id = \$\{input\.operatorId\}::bigint AND o\.role = 'owner'/)
+  assert.match(store, /JOIN operators o ON o\.id = \$\{input\.operatorId\}::bigint\s+AND o\.role = 'owner'/)
   assert.match(store, /WHERE l\.id = \$\{input\.leadId\}::bigint AND l\.is_test = true/)
+  assert.match(store, /WITH lead_scope AS/)
+  assert.match(store, /decision_receipts AS/)
+  assert.match(store, /The complete build decision could not be filed/)
+  assert.match(store, /The complete corrected fact could not be filed/)
   assert.doesNotMatch(`${actions}\n${store}`, /INSERT INTO notifications|Needs Attention|Morning Brief/i)
 })
 
@@ -112,6 +123,8 @@ test("the owner workspace exposes evidence, decisions, immutable sheets, and dep
   assert.match(css, /min-height: 48px/)
   assert.match(css, /@media \(min-width: 880px\)/)
   assert.match(store, /kind: "material-note", label: "Material note", dependencies: material/)
+  assert.match(page, /Correct this fact/)
+  assert.match(page, /<select name="value"/)
 })
 
 test("migration seeds exactly one explicit internal fixture without changing notification state", async () => {
@@ -135,6 +148,7 @@ test("Build Sheets tests join the full gate and owner vocabulary is checked in",
 
   assert.match(pkg, /scripts\/build-sheets-domain\.test\.mjs/)
   assert.match(pkg, /scripts\/build-sheets-integration\.test\.mjs/)
+  assert.match(pkg, /scripts\/build-sheets-persistence\.test\.mjs/)
   for (const term of ["Doesn't match", "Working number", "Build Sheet", "Old numbers", "Paperwork"]) {
     assert.match(glossary, new RegExp(term))
   }

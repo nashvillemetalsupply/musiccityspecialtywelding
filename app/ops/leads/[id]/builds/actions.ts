@@ -54,7 +54,7 @@ export async function decideBuildFactAction(formData: FormData) {
 export async function proposeBuildFactChangeAction(formData: FormData) {
   const { operator, leadId } = await readOwnerBuild(formData)
   const sourceClaimId = Number(formData.get("claimId"))
-  const value = Number(formData.get("value"))
+  const value = String(formData.get("value") ?? "").trim()
   if (!Number.isInteger(sourceClaimId)) throw new Error("Choose the number being corrected.")
   await proposeBuildFactChange({
     leadId,

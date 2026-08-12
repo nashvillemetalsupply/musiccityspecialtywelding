@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { attachRecoveredCallArtifacts } from "@/lib/call-artifacts"
+import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { createLead } from "@/lib/leads"
@@ -273,6 +274,7 @@ export async function saveInboundCallAsJob(input: {
       WHERE l.id = ${created.id}::bigint AND l.is_test = true
       ON CONFLICT (lead_id) DO UPDATE SET call_sid = EXCLUDED.call_sid
       WHERE build_sketch_job_links.is_test = true`
+    if (leads[0]?.is_test) await ingestCallSketchBuildFacts(created.id)
     await attachRecoveredCallArtifacts(draft.call_sid, created.id, personId, leads[0]?.is_test ?? draft.is_test)
     await recordEvent({
       kind: "call.intake.saved",
