@@ -38,6 +38,20 @@ test("live transcript callbacks are signed, idempotent, and stored durably", asy
   assert.match(migration, /UNIQUE \(transcription_sid, sequence_id, track\)/)
 })
 
+test("the final transcript callback re-projects Build facts after the transcript receipt", async () => {
+  const store = await read("lib/call-sketch-store.ts")
+  const stopped = store.slice(store.indexOf('if (input.event === "transcription-stopped")'))
+  const receipt = stopped.indexOf("const transcriptEventId = await recordEvent({")
+  const ingestion = stopped.indexOf("await ingestCallSketchBuildFacts(Number(call.lead_id))")
+  const cleanup = stopped.indexOf("DELETE FROM call_live_transcript_items")
+
+  assert.match(store, /import \{ ingestCallSketchBuildFacts \} from "@\/lib\/build-sheets"/)
+  assert.match(stopped, /if \(call\.is_test && call\.lead_id !== null\) \{[\s\S]*?await ingestCallSketchBuildFacts\(Number\(call\.lead_id\)\)/)
+  assert.ok(receipt >= 0, "the final transcript receipt must be written")
+  assert.ok(ingestion > receipt, "Build facts must ingest after the transcript receipt exists")
+  assert.ok(cleanup > ingestion, "transcript cleanup must happen after Build-fact ingestion")
+})
+
 test("only an authenticated owner can confirm or export a call sketch", async () => {
   const [route, dxfRoute, component] = await Promise.all([
     read("app/api/ops/call-sketch/[draftId]/route.ts"),

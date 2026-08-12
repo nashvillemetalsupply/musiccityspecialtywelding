@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
+import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { buildClarificationForSketch } from "@/lib/build-sheets-continuation.mjs"
 import { confirmedCallSketch, deriveCallSketch, emptyCallSketchSpec, type CallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import { recordEvent } from "@/lib/events"
@@ -207,6 +208,12 @@ export async function recordLiveTranscriptionEvent(input: LiveTranscriptionEvent
           transcriptionSid: input.transcriptionSid,
         },
       })
+      // The call may have been attached to a test job before the final words
+      // arrived. Re-project the now-complete sketch after its transcript
+      // receipt exists; the projector is idempotent by source event and item.
+      if (call.is_test && call.lead_id !== null) {
+        await ingestCallSketchBuildFacts(Number(call.lead_id))
+      }
       await sql`
         DELETE FROM call_live_transcript_items
         WHERE call_sid = ${input.callSid}::text AND is_final = false`

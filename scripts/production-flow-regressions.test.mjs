@@ -42,6 +42,11 @@ test("existing and legacy Customer Pages load truthful owner controls", () => {
   assert.match(control, /Replace Customer Page/)
   assert.match(control, /role="alert"/)
   assert.match(control, /aria-live="polite"/)
+  assert.match(control, /className="ops-glass-link-wide"[\s\S]*Close Customer Page/)
+  const css = read("app/ops/jobs-brand.css")
+  assert.match(css, /ops-glass-link-wide[\s\S]*grid-column: 1 \/ -1/)
+  assert.match(css, /ops-glass-link > :is\(button, a, form > button\)[\s\S]*text-transform: none[\s\S]*white-space: normal/)
+  assert.match(css, /ops-glass-link > a[\s\S]*background: var\(--jobs-primary\)[\s\S]*color: var\(--jobs-on-primary\) !important/)
 })
 
 test("dynamic action labels and overdue disclosure stay bounded and touch safe", () => {

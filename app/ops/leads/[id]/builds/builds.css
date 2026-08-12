@@ -268,3 +268,875 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Builds route contract: the route owns every Build Sheets rule. */
+.jobs-root .ops-builds {
+  box-sizing: border-box;
+  width: min(100%, 78rem);
+  margin-inline: auto;
+  padding: 0 clamp(0.75rem, 3vw, 1.5rem) 3rem;
+  overflow-x: clip;
+  color: var(--jobs-ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.jobs-root .ops-builds *,
+.jobs-root .ops-builds *::before,
+.jobs-root .ops-builds *::after {
+  box-sizing: border-box;
+}
+
+.jobs-root .ops-builds :is(h1, h2, h3, p, dl, blockquote) {
+  margin-block-start: 0;
+}
+
+.jobs-root .ops-builds :is(h1, h2, h3) {
+  max-width: 30ch;
+  color: var(--jobs-ink);
+  font-family: var(--font-body);
+  font-stretch: normal;
+  font-weight: 680;
+  letter-spacing: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-transform: none;
+}
+
+.jobs-root .ops-builds h1 {
+  margin-block-end: 0;
+  font-size: clamp(1.75rem, 7vw, 2.5rem);
+}
+
+.jobs-root .ops-builds h2 {
+  margin-block-end: 0;
+  font-size: clamp(1.25rem, 4vw, 1.625rem);
+}
+
+.jobs-root .ops-builds h3 {
+  margin-block-end: 0;
+  font-size: 1.125rem;
+}
+
+.jobs-root .ops-builds :is(button, input, select, summary, a) {
+  font-family: var(--font-body);
+}
+
+.jobs-root .ops-builds :is(button, input, select) {
+  min-height: 3rem;
+}
+
+.jobs-root .ops-builds-header {
+  display: grid;
+  gap: 1rem;
+  padding-block: 1rem 1.25rem;
+  border-bottom: 1px solid var(--jobs-line-strong);
+}
+
+.jobs-root .ops-builds-back {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 3rem;
+  align-items: center;
+  color: var(--jobs-ink-soft);
+  font-size: 1rem;
+  font-weight: 650;
+  text-underline-offset: 0.2em;
+}
+
+.jobs-root .ops-builds-test {
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.jobs-root .ops-builds-header > div {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.jobs-root .ops-builds-header > div > div {
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-header p,
+.jobs-root .ops-builds-header span,
+.jobs-root .ops-builds-panel-head span,
+.jobs-root .ops-builds-question span,
+.jobs-root .ops-builds-fact-top span,
+.jobs-root .ops-builds-lock span,
+.jobs-root .ops-builds-canvas header span {
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.jobs-root .ops-builds-header p {
+  margin-block: 0 0.25rem;
+}
+
+.jobs-root .ops-builds-header .ops-builds-current {
+  flex: 0 0 auto;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 0.25rem solid var(--jobs-primary);
+  color: var(--jobs-ink);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  text-align: end;
+}
+
+.jobs-root .ops-builds-truth-banner {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--jobs-line-strong);
+  border-inline-start: 0.375rem solid var(--jobs-primary);
+  background: var(--jobs-surface);
+}
+
+.jobs-root .ops-builds-truth-banner.is-blocked {
+  border-color: var(--jobs-danger);
+  border-inline-start-color: var(--jobs-danger);
+  background: #fff7f5;
+}
+
+.jobs-root .ops-builds-truth-banner > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.jobs-root .ops-builds-truth-banner strong {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+}
+
+.jobs-root .ops-builds-truth-banner p {
+  max-width: 70ch;
+  margin-block: 0;
+  color: var(--jobs-ink-soft);
+}
+
+.jobs-root .ops-builds-grid {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-panel {
+  min-width: 0;
+  border: 1px solid var(--jobs-line-strong);
+  background: var(--jobs-surface);
+}
+
+.jobs-root .ops-builds-panel-head {
+  display: flex;
+  min-width: 0;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--jobs-line);
+  background: var(--jobs-surface-soft);
+}
+
+.jobs-root .ops-builds-panel-head > div {
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-panel-head strong {
+  flex: 0 0 auto;
+  color: var(--jobs-muted);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs-root .ops-builds-question {
+  display: grid;
+  gap: 0.375rem;
+  margin: 1rem;
+  padding: 0.875rem 1rem;
+  border-inline-start: 0.375rem solid var(--jobs-primary);
+  background: var(--jobs-attention);
+}
+
+.jobs-root .ops-builds-question strong {
+  font-size: 1.0625rem;
+  line-height: 1.35;
+}
+
+.jobs-root .ops-builds-question p {
+  margin-block: 0;
+  color: var(--jobs-ink-soft);
+}
+
+.jobs-root .ops-builds-facts {
+  padding-inline: 1rem;
+}
+
+.jobs-root .ops-builds-fact {
+  min-width: 0;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-fact.is-conflict {
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  border-inline-start: 0.375rem solid var(--jobs-danger);
+  background: #fff7f5;
+}
+
+.jobs-root .ops-builds-fact.is-missing {
+  background: #fafafa;
+}
+
+.jobs-root .ops-builds-fact-top {
+  display: flex;
+  min-width: 0;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.jobs-root .ops-builds-fact-top > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.jobs-root .ops-builds-fact-top strong {
+  color: var(--jobs-ink);
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.jobs-root .ops-builds-fact-top em,
+.jobs-root .ops-builds-paperwork-status {
+  display: inline-flex;
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0.35rem 0.625rem;
+  border: 1px solid var(--jobs-line-strong);
+  border-inline-start: 0.25rem solid var(--jobs-line-strong);
+  border-radius: 0;
+  background: var(--jobs-surface);
+  color: var(--jobs-ink-soft);
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.jobs-root .ops-builds-reference,
+.jobs-root .ops-builds-paperwork-reason {
+  margin-block: 0.75rem 0;
+  color: var(--jobs-ink-soft);
+  font-size: 0.9375rem;
+}
+
+.jobs-root .ops-builds-fact blockquote {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border-inline-start: 0.25rem solid var(--jobs-line-strong);
+  background: var(--jobs-bg);
+  color: var(--jobs-ink-soft);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.jobs-root .ops-builds-fact blockquote a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  margin-inline-start: 0.35rem;
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.jobs-root .ops-builds-actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-block-start: 0.875rem;
+}
+
+.jobs-root .ops-builds-actions form,
+.jobs-root .ops-builds-inline-form {
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-actions button,
+.jobs-root .ops-builds-inline-form button,
+.jobs-root .ops-builds-lock button,
+.jobs-root .ops-builds-paperwork form button {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--jobs-primary);
+  border-radius: var(--jobs-radius-control);
+  background: var(--jobs-primary);
+  color: var(--jobs-on-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.jobs-root .ops-builds-actions button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-items: start;
+  column-gap: 0.5rem;
+  text-align: start;
+}
+
+.jobs-root .ops-builds-actions button svg {
+  grid-row: span 2;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.jobs-root .ops-builds-action-label {
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-action-note {
+  color: rgb(255 255 255 / 0.82);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.jobs-root .ops-builds-actions .ops-builds-quiet {
+  border-color: var(--jobs-line-strong);
+  background: var(--jobs-surface);
+  color: var(--jobs-ink);
+}
+
+.jobs-root .ops-builds-actions .ops-builds-quiet .ops-builds-action-note {
+  color: var(--jobs-muted);
+}
+
+.jobs-root .ops-builds-inline-form {
+  display: grid;
+  gap: 0.625rem;
+  margin-block-start: 0.875rem;
+}
+
+.jobs-root .ops-builds-inline-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--jobs-ink-soft);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.jobs-root .ops-builds-inline-form :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--jobs-line-strong);
+  border-radius: var(--jobs-radius-control);
+  background: var(--jobs-surface);
+  color: var(--jobs-ink);
+  font-size: 1rem;
+}
+
+.jobs-root .ops-builds-correct {
+  margin-block-start: 0.75rem;
+}
+
+.jobs-root .ops-builds-correct summary {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  color: var(--jobs-ink-soft);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.jobs-root .ops-builds-lock {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+  background: var(--jobs-header);
+  color: var(--jobs-header-ink);
+}
+
+.jobs-root .ops-builds-lock > div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.jobs-root .ops-builds-lock :is(span, strong, p) {
+  color: inherit;
+}
+
+.jobs-root .ops-builds-lock strong {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+}
+
+.jobs-root .ops-builds-lock p {
+  margin-block: 0;
+  color: var(--jobs-header-muted);
+}
+
+.jobs-root .ops-builds-lock button:disabled {
+  border-color: #54504b;
+  background: #54504b;
+  color: #ddd6ca;
+  cursor: not-allowed;
+}
+
+.jobs-root .ops-builds-rail {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-empty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--jobs-muted);
+}
+
+.jobs-root .ops-builds-sheets,
+.jobs-root .ops-builds-paperwork {
+  display: grid;
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-sheets article,
+.jobs-root .ops-builds-paperwork article {
+  min-width: 0;
+  padding: 1rem;
+  border-bottom: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-sheets article:last-child,
+.jobs-root .ops-builds-paperwork article:last-child {
+  border-bottom: 0;
+}
+
+.jobs-root .ops-builds-sheets article.is-current {
+  border-inline-start: 0.375rem solid var(--jobs-primary);
+  background: var(--jobs-attention);
+}
+
+.jobs-root .ops-builds-sheets article > header,
+.jobs-root .ops-builds-paperwork article > div {
+  display: flex;
+  min-width: 0;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.jobs-root .ops-builds-sheets article > header > div {
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-sheets time,
+.jobs-root .ops-builds-sheets small,
+.jobs-root .ops-builds-paperwork small {
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.jobs-root .ops-builds-sheets time {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.jobs-root .ops-builds-sheets dl {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-sheets dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.75rem;
+}
+
+.jobs-root .ops-builds-sheets dt {
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.jobs-root .ops-builds-sheets dd {
+  margin: 0;
+  color: var(--jobs-ink);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.jobs-root .ops-builds-sheets article > p {
+  margin-block: 0 0.75rem;
+  color: var(--jobs-ink-soft);
+  font-size: 0.9375rem;
+}
+
+.jobs-root .ops-builds-sheets small,
+.jobs-root .ops-builds-paperwork small {
+  display: block;
+  margin-block-start: 0.75rem;
+}
+
+.jobs-root .ops-builds-paperwork article {
+  border-inline-start: 0.375rem solid var(--jobs-line-strong);
+}
+
+.jobs-root .ops-builds-paperwork article.is-old-numbers {
+  border-inline-start-color: var(--jobs-danger);
+  background: #fff7f5;
+}
+
+.jobs-root .ops-builds-paperwork article.is-needs-update,
+.jobs-root .ops-builds-paperwork article.is-hold {
+  border-inline-start-color: var(--jobs-primary);
+  background: var(--jobs-attention);
+}
+
+.jobs-root .ops-builds-paperwork article.is-current {
+  border-inline-start-color: #3f6b4d;
+}
+
+.jobs-root .ops-builds-paperwork article > div > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.jobs-root .ops-builds-paperwork article > div > div span {
+  color: var(--jobs-ink-soft);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.jobs-root .ops-builds-paperwork article > div > div strong {
+  font-size: 1rem;
+}
+
+.jobs-root .ops-builds-paperwork .ops-builds-paperwork-status {
+  justify-self: start;
+  margin-block-start: 0.75rem;
+}
+
+.jobs-root .ops-builds-paperwork .ops-builds-paperwork-status svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-inline-end: 0.35rem;
+  flex: 0 0 auto;
+  stroke-width: 2;
+}
+
+.jobs-root .ops-builds-paperwork form {
+  margin-block-start: 0.75rem;
+}
+
+.jobs-root .ops-builds-canvas {
+  margin-block-start: 1rem;
+}
+
+.jobs-root .ops-builds-canvas > header p {
+  margin-block: 0;
+}
+
+.jobs-root .ops-builds-canvas-grid > dl {
+  min-width: 0;
+}
+
+.jobs-root .ops-builds-canvas-empty {
+  color: var(--jobs-ink-soft);
+}
+
+@media (min-width: 55rem) {
+  .jobs-root .ops-builds-header {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .jobs-root .ops-builds-test {
+    justify-self: center;
+  }
+
+  .jobs-root .ops-builds-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(20rem, 0.85fr);
+    align-items: start;
+  }
+
+  .jobs-root .ops-builds-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .jobs-root .ops-builds-lock {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.42fr);
+    align-items: center;
+  }
+
+  .jobs-root .ops-builds-lock button {
+    width: 100%;
+  }
+
+  .jobs-root .ops-builds-canvas-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(15rem, 0.8fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jobs-root .ops-builds *,
+  .jobs-root .ops-builds *::before,
+  .jobs-root .ops-builds *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Final route-local cascade: these rules intentionally win over the legacy block above. */
+.jobs-root .ops-builds-header {
+  gap: 0.375rem;
+  padding-block: 0.75rem 1rem;
+}
+
+.jobs-root .ops-builds-header > div {
+  display: grid;
+  min-width: 0;
+  align-items: start;
+  justify-content: start;
+  gap: 0.125rem;
+}
+
+.jobs-root .ops-builds-header > div > span {
+  color: var(--jobs-ink-soft);
+}
+
+.jobs-root .ops-builds-truth-banner,
+.jobs-root .ops-builds-truth-banner.is-blocked {
+  border-inline-start: 1px solid var(--jobs-line-strong);
+}
+
+.jobs-root .ops-builds-question {
+  border: 1px solid var(--jobs-primary);
+}
+
+.jobs-root .ops-builds-fact.is-conflict {
+  border: 1px solid var(--jobs-danger);
+  border-radius: var(--jobs-radius-control);
+}
+
+.jobs-root .ops-builds-fact-top em,
+.jobs-root .ops-builds-paperwork-status {
+  border-inline-start: 1px solid var(--jobs-line-strong);
+}
+
+.jobs-root .ops-builds-fact blockquote {
+  border: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-sheets article.is-current,
+.jobs-root .ops-builds-paperwork article,
+.jobs-root .ops-builds-paperwork article.is-old-numbers,
+.jobs-root .ops-builds-paperwork article.is-needs-update,
+.jobs-root .ops-builds-paperwork article.is-hold,
+.jobs-root .ops-builds-paperwork article.is-current {
+  border-inline-start: 1px solid var(--jobs-line);
+}
+
+.jobs-root .ops-builds-paperwork article.is-old-numbers {
+  border: 1px solid var(--jobs-danger);
+}
+
+.jobs-root .ops-builds-paperwork article.is-needs-update,
+.jobs-root .ops-builds-paperwork article.is-hold {
+  border: 1px solid var(--jobs-primary);
+}
+
+.jobs-root .ops-builds-paperwork article.is-current {
+  border: 1px solid #3f6b4d;
+}
+
+.jobs-root .ops-builds-panel > .ops-builds-canvas {
+  display: block;
+  margin: 1rem;
+  padding: 0;
+  border-radius: var(--jobs-radius-control);
+}
+
+.jobs-root .ops-builds-canvas > summary {
+  display: flex;
+  min-width: 0;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.jobs-root .ops-builds-canvas > summary::-webkit-details-marker,
+.jobs-root .ops-builds-sheets article > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.jobs-root .ops-builds-canvas > summary::after {
+  color: var(--jobs-primary);
+  content: "⌄";
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.jobs-root .ops-builds-canvas[open] > summary::after {
+  content: "⌃";
+}
+
+.jobs-root .ops-builds-canvas > summary > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.125rem;
+}
+
+.jobs-root .ops-builds-canvas > summary strong {
+  color: var(--jobs-ink);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.jobs-root .ops-builds-canvas > summary small {
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.jobs-root .ops-builds-canvas > summary > b {
+  min-height: 2.75rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--jobs-line-strong);
+  border-radius: var(--jobs-radius-control);
+  color: var(--jobs-ink-soft);
+  font-size: 0.875rem;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.jobs-root .ops-builds-canvas > summary:focus-visible,
+.jobs-root .ops-builds-sheets article > details > summary:focus-visible {
+  outline: 3px solid var(--jobs-focus-ring);
+  outline-offset: 2px;
+}
+
+.jobs-root .ops-builds-canvas-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--jobs-line);
+}
+
+@media (min-width: 55rem) {
+  .jobs-root .ops-builds-panel > .ops-builds-canvas {
+    margin: 1.25rem;
+  }
+}
+
+/* Final density pass: the drawing is a key verification surface, not a disclosure. */
+.jobs-root .ops-builds-panel > .ops-builds-canvas {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--jobs-line-strong);
+  border-radius: var(--jobs-radius-control);
+  background: var(--jobs-surface);
+}
+
+.jobs-root .ops-builds-canvas > header {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.jobs-root .ops-builds-canvas > header h2,
+.jobs-root .ops-builds-canvas > header p {
+  margin: 0;
+}
+
+.jobs-root .ops-builds-canvas > header h2 {
+  color: var(--jobs-ink);
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+
+.jobs-root .ops-builds-canvas > header p {
+  flex: 0 0 auto;
+  color: var(--jobs-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: end;
+}
+
+.jobs-root .ops-builds-canvas-body {
+  min-width: 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--jobs-line);
+}
+
+/* Give each immutable record its own readable stop on narrow screens. */
+.jobs-root .ops-builds-sheets {
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.jobs-root .ops-builds-sheets article,
+.jobs-root .ops-builds-sheets article.is-current {
+  padding: 1rem;
+  border: 1px solid var(--jobs-line);
+  border-radius: var(--jobs-radius-control);
+  background: var(--jobs-surface);
+}
+
+.jobs-root .ops-builds-sheets article.is-current {
+  border-inline-start: 1px solid var(--jobs-line);
+  background: var(--jobs-attention);
+}
+
+@media (min-width: 55rem) {
+  .jobs-root .ops-builds-panel > .ops-builds-canvas {
+    margin: 1.25rem;
+  }
+
+  .jobs-root .ops-builds-sheets {
+    padding: 1rem;
+  }
+}

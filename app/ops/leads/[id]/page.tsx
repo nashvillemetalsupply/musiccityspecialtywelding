@@ -324,7 +324,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           <p className="ops-sub">
             Job <strong>#{lead.id}</strong>, opened {formatCentral(lead.created_at)}
           </p>
-          {operator.role === "owner" && lead.is_test && buildSheetsEnabled() && <Link className="ops-builds-link" href={`/ops/leads/${lead.id}/builds`}>Builds</Link>}
+          {operator.role === "owner" && lead.is_test && buildSheetsEnabled() && <Link className="ops-builds-link" href={`/ops/leads/${lead.id}/builds`} aria-label={`Open Builds workspace for Job #${lead.id}`}>
+            <strong>Builds</strong>
+            <span aria-hidden="true">Open →</span>
+          </Link>}
         </div>
         <div className={`ops-stamp-ink is-${lead.status} ops-stamp-hero`}>{visibleJobStatus}</div>
       </header>

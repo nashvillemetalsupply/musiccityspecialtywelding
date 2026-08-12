@@ -58,12 +58,12 @@ export function GlassControl({
           <SafeSubmitButton disabled={sending} pendingLabel="Sending…">Text from shop</SafeSubmitButton>
         </form>}
         <a href={state.url} target="_blank" rel="noreferrer">Preview</a>
-        <form action={action} onSubmit={() => setCopyMessage("")}>
+        <form className="ops-glass-link-wide" action={action} onSubmit={() => setCopyMessage("")}>
           <input type="hidden" name="leadId" value={leadId} />
           <input type="hidden" name="intent" value="rotate" />
           <SafeSubmitButton className="ops-glass-cut" disabled={pending}>Replace link</SafeSubmitButton>
         </form>
-        <form action={action} onSubmit={() => setCopyMessage("")}>
+        <form className="ops-glass-link-wide" action={action} onSubmit={() => setCopyMessage("")}>
           <input type="hidden" name="leadId" value={leadId} />
           <input type="hidden" name="intent" value="revoke" />
           <SafeSubmitButton className="ops-glass-revoke" disabled={pending}>Close Customer Page</SafeSubmitButton>

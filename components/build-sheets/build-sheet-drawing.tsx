@@ -26,9 +26,9 @@ export function BuildSheetDrawing({ drawing }: { drawing: BuildDrawingProjection
 
   return <figure className="ops-builds-drawing">
     <svg viewBox="0 0 320 282" role="img" aria-labelledby="build-drawing-title build-drawing-description">
-      <title id="build-drawing-title">Gate elevation from Build Sheet {drawing.sourceBuildSheetNumber}</title>
-      <desc id="build-drawing-description">Finished gate {drawing.width} inches wide by {drawing.height} inches high, with {drawing.railCount} inside rails. Hinges are on the {drawing.hingeSide}; latch is on the {drawing.latchSide}.</desc>
-      <text className="ops-builds-drawing-source" x="18" y="20">Locked Build Sheet {drawing.sourceBuildSheetNumber}</text>
+      <title id="build-drawing-title">{`Gate elevation from Build Sheet ${drawing.sourceBuildSheetNumber}`}</title>
+      <desc id="build-drawing-description">{`Finished gate ${drawing.width} inches wide by ${drawing.height} inches high, with ${drawing.railCount} inside rails. Hinges are on the ${drawing.hingeSide}; latch is on the ${drawing.latchSide}.`}</desc>
+      <text className="ops-builds-drawing-source" x="18" y="20">{`Locked Build Sheet ${drawing.sourceBuildSheetNumber}`}</text>
       <rect className="ops-builds-drawing-frame" x={geometry.left} y={geometry.top} width={geometry.width} height={geometry.height} />
       <rect className="ops-builds-drawing-frame" x={geometry.left + geometry.stock} y={geometry.top + geometry.stock} width={Math.max(0, geometry.width - geometry.stock * 2)} height={Math.max(0, geometry.height - geometry.stock * 2)} />
       {rails}
