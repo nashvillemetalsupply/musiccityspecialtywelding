@@ -37,6 +37,20 @@ async function loadPureTypescriptModule(path) {
   return import(`data:text/javascript;base64,${encoded}`)
 }
 
+test("design previews do not add build-time font fetches", () => {
+  const previewPages = [
+    "app/design-preview/mcsw-jobs-call-concepts/page.tsx",
+    "app/design-preview/mcsw-jobs-call-sketch/page.tsx",
+    "app/design-preview/mcsw-jobs-directions/page.tsx",
+    "app/design-preview/mcsw-jobs-finalists/page.tsx",
+    "app/design-preview/mcsw-jobs-hybrid-directions/page.tsx",
+  ]
+
+  for (const page of previewPages) {
+    assert.doesNotMatch(source(page), /from ["']next\/font\/google["']/)
+  }
+})
+
 test("Active Jobs clamps stale pages and renders the captured customer need", () => {
   const data = section(source("lib/ops-data.ts"), "export async function listBoardJobs", "export async function getLead")
   const row = section(source("app/ops/active-job-index.tsx"), "function JobRow", "export function ActiveJobIndex")

@@ -1,37 +1,6 @@
 import type { Metadata } from "next"
 import { Mic, Phone } from "lucide-react"
-import {
-  Atkinson_Hyperlegible_Next,
-  Bitter,
-  Commissioner,
-} from "next/font/google"
 import "./finalists.css"
-
-const atkinson = Atkinson_Hyperlegible_Next({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-finalist-body",
-  display: "swap",
-  adjustFontFallback: false,
-  preload: false,
-})
-
-const bitter = Bitter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-finalist-serif",
-  display: "swap",
-  preload: false,
-})
-
-const commissioner = Commissioner({
-  subsets: ["latin"],
-  weight: "variable",
-  axes: ["FLAR", "VOLM"],
-  variable: "--font-finalist-sans",
-  display: "swap",
-  preload: false,
-})
 
 export const metadata: Metadata = {
   title: "MCSW Jobs · Refined Finalists",
@@ -383,7 +352,7 @@ function FinalistSection({
 export default function MCSWJobsFinalistsPage() {
   return (
     <main
-      className={`${atkinson.variable} ${bitter.variable} ${commissioner.variable} finalists-page`}
+      className="finalists-page"
     >
       <nav className="finalists-nav" aria-label="Design review">
         <a href="/design-preview/mcsw-jobs-directions" aria-label="Previous MCSW Jobs design review">
