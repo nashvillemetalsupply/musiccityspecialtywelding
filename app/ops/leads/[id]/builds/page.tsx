@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { Check, PencilLine, X } from "lucide-react"
+import { Check, CircleCheck, CirclePause, History, PencilLine, RefreshCcw, X } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
@@ -38,6 +38,13 @@ function paperworkLabel(status: string) {
   if (status === "needs-update") return "Needs update"
   if (status === "hold") return "Hold — change needs review"
   return "Current"
+}
+
+function PaperworkStatusIcon({ status }: { status: string }) {
+  if (status === "old-numbers") return <History aria-hidden="true" />
+  if (status === "needs-update") return <RefreshCcw aria-hidden="true" />
+  if (status === "hold") return <CirclePause aria-hidden="true" />
+  return <CircleCheck aria-hidden="true" />
 }
 
 const workingNumberKeys = new Set([
@@ -244,7 +251,10 @@ export default async function BuildsPage({ params }: { params: Params }) {
           {workspace.paperwork.length === 0 ? <p className="ops-builds-empty">Lock a Build Sheet to file its drawing and DXF manifest.</p> : <div className="ops-builds-paperwork">
             {workspace.paperwork.map((item) => <article className={`is-${item.status}`} key={item.id}>
               <div><span>{item.label}</span><strong>Build Sheet {item.sourceBuildSheetNumber}</strong></div>
-              <em>{paperworkLabel(item.status)}</em>
+              <em className="ops-builds-paperwork-status">
+                <PaperworkStatusIcon status={item.status} />
+                <span>{paperworkLabel(item.status)}</span>
+              </em>
               {item.reason && <p>{item.reason}</p>}
               {item.issueState === "blocked" && item.status === "current" && <p>Issue blocked until critical numbers are Confirmed.</p>}
               {["drawing", "dxf"].includes(item.kind) && item.status === "current" && item.issueState === "current" && item.sourceBuildSheetNumber === latestSheet?.number && !drawing && <p>Issue blocked until the locked geometry is complete.</p>}

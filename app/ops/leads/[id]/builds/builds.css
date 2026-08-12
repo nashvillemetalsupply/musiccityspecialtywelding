@@ -200,6 +200,35 @@
   margin-top: 0.75rem;
 }
 
+.jobs-root .ops-builds-paperwork .ops-builds-paperwork-status {
+  display: inline-flex;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  align-self: start;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.jobs-root .ops-builds-paperwork .ops-builds-paperwork-status svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: 0 0 auto;
+  stroke-width: 2;
+}
+
+.jobs-root .ops-builds-paperwork .ops-builds-paperwork-status span {
+  color: currentColor;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
 .jobs-root .ops-builds-paperwork form button {
   width: 100%;
   min-height: 3rem;
