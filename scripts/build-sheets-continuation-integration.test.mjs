@@ -29,7 +29,16 @@ test("customer corrections create a proposed fact and never mutate a locked shee
   assert.match(store, /INSERT INTO build_fact_decisions/)
   assert.match(store, /keyed\.response_state <> 'accepted'/)
   assert.match(store, /keyed\.response_state <> 'corrected'/)
-  assert.match(store, /d\.claim_id = claim\.id/)
+  assert.match(store, /claim\.id = stored\.claim_id/)
+  const correctionStore = store.slice(
+    store.indexOf("const value = customerCorrectionValue"),
+    store.indexOf("export async function issueBuildPaperwork"),
+  )
+  assert.match(correctionStore, /decision_receipt AS/)
+  assert.match(correctionStore, /conflict_receipt AS/)
+  assert.match(correctionStore, /JOIN decision_receipt/)
+  assert.match(correctionStore, /JOIN conflict_receipt/)
+  assert.doesNotMatch(correctionStore, /corrected:\$\{hashItem\(JSON\.stringify\(value\)\)\}:\$\{responseKey\}/)
   assert.doesNotMatch(store.slice(store.indexOf("export async function respondToCustomerBuildFact")), /UPDATE build_sheets/)
   assert.match(page, /What We Understand/)
   assert.match(page, /CustomerBuildDrawing/)

@@ -789,9 +789,10 @@ export async function respondToCustomerBuildFact(input: {
     certainty: "corrected",
     critical: source.critical,
   }
-  const externalId = `build-customer:${input.leadId}:${input.buildSheetNumber}:${input.claimId}:corrected:${hashItem(JSON.stringify(value))}:${responseKey}`
+  const correctionHash = hashItem(JSON.stringify(value))
+  const externalId = `build-customer:${input.leadId}:${input.buildSheetNumber}:${input.claimId}:corrected:${correctionHash}`
   const itemKey = hashItem(`${externalId}:claim`)
-  const decisionKey = `${responseKey}:${input.buildSheetNumber}:${input.claimId}:${hashItem(JSON.stringify(value))}:customer-proposed`
+  const decisionKey = `customer-correction:${input.buildSheetNumber}:${input.claimId}:${correctionHash}`
   const corrections = (await sql`
     WITH scope AS (
       SELECT s.id AS build_sheet_id, s.lead_id, c.id AS claim_id, owner.id AS owner_id
@@ -878,6 +879,25 @@ export async function respondToCustomerBuildFact(input: {
       FROM scope JOIN claim_scope claim ON true
       ON CONFLICT (lead_id, conflict_key) DO NOTHING
       RETURNING conflict_key
+    ), decision_receipt AS (
+      SELECT claim_id FROM decision_write
+      UNION ALL
+      SELECT stored.claim_id FROM build_fact_decisions stored
+      JOIN scope ON scope.lead_id = stored.lead_id
+      JOIN claim_scope claim ON claim.id = stored.claim_id
+      WHERE stored.decision_key = ${decisionKey}::text
+        AND stored.state = 'proposed' AND stored.proposer_type = 'customer'
+        AND stored.purpose = 'customer-correction'
+        AND NOT EXISTS (SELECT 1 FROM decision_write)
+      LIMIT 1
+    ), conflict_receipt AS (
+      SELECT conflict_key FROM conflict_write
+      UNION ALL
+      SELECT stored.conflict_key FROM build_claim_conflicts stored
+      JOIN scope ON scope.lead_id = stored.lead_id
+      JOIN claim_scope claim ON stored.conflict_key = ('customer:' || claim.id::text)
+      WHERE stored.is_test = true AND NOT EXISTS (SELECT 1 FROM conflict_write)
+      LIMIT 1
     ), response_write AS (
       INSERT INTO build_customer_responses (
         lead_id, build_sheet_id, claim_id, response_state, proposed_claim_id,
@@ -886,8 +906,8 @@ export async function respondToCustomerBuildFact(input: {
       SELECT scope.lead_id, scope.build_sheet_id, scope.claim_id, 'corrected'::text,
         claim.id, claim.source_event_id, ${input.tokenHash}::text, ${responseKey}::text, true
       FROM scope JOIN claim_scope claim ON true
-      WHERE EXISTS (SELECT 1 FROM build_fact_decisions d WHERE d.lead_id = scope.lead_id AND d.claim_id = claim.id AND d.decision_key = ${decisionKey}::text)
-        AND EXISTS (SELECT 1 FROM build_claim_conflicts conflict WHERE conflict.lead_id = scope.lead_id AND conflict.conflict_key = ('customer:' || claim.id::text))
+      JOIN decision_receipt decision ON decision.claim_id = claim.id
+      JOIN conflict_receipt conflict ON conflict.conflict_key = ('customer:' || claim.id::text)
       ON CONFLICT (lead_id, response_key) DO NOTHING
       RETURNING id, proposed_claim_id
     )
