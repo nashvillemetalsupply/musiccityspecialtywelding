@@ -21,6 +21,9 @@ body:has(.finalists-page) nextjs-portal {
 }
 
 .finalists-page {
+  --font-finalist-body: var(--font-ms-sans);
+  --font-finalist-sans: var(--font-ms-sans);
+  --font-finalist-serif: Georgia, "Times New Roman";
   --review-paper: oklch(97.5% 0.006 245);
   --review-paper-2: oklch(94.5% 0.008 245);
   --review-ink: oklch(18% 0.014 245);

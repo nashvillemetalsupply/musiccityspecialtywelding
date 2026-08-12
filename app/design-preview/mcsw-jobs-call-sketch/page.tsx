@@ -1,14 +1,6 @@
 import type { Metadata } from "next"
-import { Chivo } from "next/font/google"
+import type { CSSProperties } from "react"
 import { CallSketchPrototype } from "@/components/call-sketch/call-sketch-prototype"
-
-const chivo = Chivo({
-  subsets: ["latin"],
-  weight: "variable",
-  variable: "--font-mcsw-jobs",
-  display: "swap",
-  preload: false,
-})
 
 export const metadata: Metadata = {
   title: "Call Sketch Prototype | MCSW Jobs",
@@ -17,7 +9,11 @@ export const metadata: Metadata = {
 }
 
 export default function MCSWJobsCallSketchPage() {
-  return <div className={chivo.variable}>
+  const previewFont = {
+    "--font-mcsw-jobs": "var(--font-ms-sans)",
+  } as CSSProperties
+
+  return <div style={previewFont}>
     <CallSketchPrototype compareHierarchy />
   </div>
 }

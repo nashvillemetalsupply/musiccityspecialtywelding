@@ -23,6 +23,7 @@ body:has(.hybrid-review) nextjs-portal {
 }
 
 .hybrid-review {
+  --font-hybrid-signal: var(--font-ms-sans);
   --review-paper: oklch(0.955 0.008 240);
   --review-surface: oklch(0.985 0.005 240);
   --review-ink: oklch(0.19 0.018 245);

@@ -50,6 +50,8 @@ body:has(.call-concepts-page) {
 }
 
 .call-concepts-page {
+  --font-call-display: var(--font-ms-sans);
+  --font-call-body: var(--font-ms-sans);
   min-height: 100dvh;
   padding-block-end: var(--cc-space-3xl);
   overflow-x: clip;

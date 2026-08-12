@@ -29,6 +29,26 @@ body:has(.jobs-directions-page) nextjs-portal {
 }
 
 .jobs-directions-page {
+  --font-direction-atkinson: var(--font-ms-sans);
+  --font-direction-familjen: var(--font-ms-sans);
+  --font-direction-geologica: var(--font-ms-sans);
+  --font-direction-newsreader: Georgia, "Times New Roman";
+  --font-direction-bitter: Georgia, "Times New Roman";
+  --font-direction-radio: var(--font-ms-sans);
+  --font-direction-commissioner: var(--font-ms-sans);
+  --font-direction-recursive: var(--font-ms-sans);
+  --font-direction-azeret: var(--font-ms-mono);
+  --font-direction-alegreya: Georgia, "Times New Roman";
+  --font-direction-alegreya-sans: var(--font-ms-sans);
+  --font-direction-chivo: var(--font-ms-sans);
+  --font-direction-karla: var(--font-ms-sans);
+  --font-direction-barlow: var(--font-ms-sans);
+  --font-direction-fraunces: Georgia, "Times New Roman";
+  --font-direction-suse: var(--font-ms-sans);
+  --font-direction-lexend: var(--font-ms-sans);
+  --font-direction-sometype: var(--font-ms-mono);
+  --font-direction-funnel-display: var(--font-ms-sans);
+  --font-direction-funnel-sans: var(--font-ms-sans);
   --space-3xs: 0.125rem;
   --space-2xs: 0.25rem;
   --space-xs: 0.5rem;

@@ -1,28 +1,6 @@
 import type { Metadata } from "next"
-import {
-  Commissioner,
-  IBM_Plex_Sans,
-} from "next/font/google"
 import { ConceptsClient } from "./concepts-client"
 import "./concepts.css"
-
-const commissioner = Commissioner({
-  subsets: ["latin"],
-  weight: "variable",
-  axes: ["FLAR", "VOLM"],
-  variable: "--font-call-display",
-  display: "swap",
-  preload: false,
-})
-
-const atkinson = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-call-body",
-  display: "swap",
-  adjustFontFallback: false,
-  preload: false,
-})
 
 export const metadata: Metadata = {
   title: "MCSW Jobs Call Concepts",
@@ -31,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function MCSWJobsCallConceptsPage() {
   return (
-    <main className={`${commissioner.variable} ${atkinson.variable} call-concepts-page`}>
+    <main className="call-concepts-page">
       <header className="review-head">
         <div>
           <a href="/design-preview/mcsw-jobs-finalists">MCSW Jobs</a>
