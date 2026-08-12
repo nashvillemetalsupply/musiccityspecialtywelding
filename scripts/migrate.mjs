@@ -797,11 +797,30 @@ const statements = [
   `CREATE TABLE IF NOT EXISTS build_lock_receipts (
     lead_id BIGINT NOT NULL REFERENCES leads(id),
     lock_key TEXT NOT NULL,
-    build_sheet_id BIGINT REFERENCES build_sheets(id),
+    build_sheet_id BIGINT,
     is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT build_lock_receipts_build_sheet_id_fkey
+      FOREIGN KEY (build_sheet_id) REFERENCES build_sheets(id)
+      DEFERRABLE INITIALLY DEFERRED,
     PRIMARY KEY (lead_id, lock_key)
   )`,
+  `DO $$
+  BEGIN
+    IF EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conname = 'build_lock_receipts_build_sheet_id_fkey'
+        AND conrelid = 'build_lock_receipts'::regclass
+        AND NOT condeferrable
+    ) THEN
+      ALTER TABLE build_lock_receipts
+        DROP CONSTRAINT build_lock_receipts_build_sheet_id_fkey;
+      ALTER TABLE build_lock_receipts
+        ADD CONSTRAINT build_lock_receipts_build_sheet_id_fkey
+        FOREIGN KEY (build_sheet_id) REFERENCES build_sheets(id)
+        DEFERRABLE INITIALLY DEFERRED;
+    END IF;
+  END $$`,
   `CREATE TABLE IF NOT EXISTS build_paperwork (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     lead_id BIGINT NOT NULL REFERENCES leads(id),

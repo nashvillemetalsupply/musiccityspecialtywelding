@@ -90,3 +90,81 @@ test("real persistence converges ingest retries and lock receipts without sequen
     await pool.end()
   }
 })
+
+test("simultaneous lock receipts converge across two database connections", { timeout: 60_000 }, async (t) => {
+  const url = databaseUrl()
+  if (!url) return t.skip("DATABASE_URL is not configured")
+  const pool = new Pool({ connectionString: url })
+  const setup = await pool.connect()
+  const firstClient = await pool.connect()
+  const secondClient = await pool.connect()
+  const schema = `build_lock_test_${randomUUID().replaceAll("-", "")}`
+  const searchPath = `SET search_path TO "${schema}"`
+  try {
+    await setup.query(`CREATE SCHEMA "${schema}"`)
+    await setup.query(searchPath)
+    await setup.query(`
+      CREATE TABLE operators (
+        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        role TEXT NOT NULL,
+        active BOOLEAN NOT NULL DEFAULT true
+      );
+      CREATE TABLE leads (
+        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true)
+      );
+      CREATE TABLE build_sheet_sequences (
+        lead_id BIGINT PRIMARY KEY REFERENCES leads(id),
+        next_sequence INTEGER NOT NULL,
+        is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true)
+      );
+      CREATE TABLE build_sheets (
+        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        lead_id BIGINT NOT NULL REFERENCES leads(id),
+        sequence INTEGER NOT NULL,
+        snapshot JSONB NOT NULL,
+        locked_by BIGINT NOT NULL REFERENCES operators(id),
+        locked_at TIMESTAMPTZ NOT NULL,
+        is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+        UNIQUE (lead_id, sequence)
+      );
+      CREATE TABLE build_lock_receipts (
+        lead_id BIGINT NOT NULL REFERENCES leads(id),
+        lock_key TEXT NOT NULL,
+        build_sheet_id BIGINT,
+        is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+        PRIMARY KEY (lead_id, lock_key),
+        CONSTRAINT build_lock_receipts_build_sheet_id_fkey
+          FOREIGN KEY (build_sheet_id) REFERENCES build_sheets(id)
+          DEFERRABLE INITIALLY DEFERRED
+      )`)
+    const owner = (await setup.query("INSERT INTO operators (role) VALUES ('owner') RETURNING id")).rows[0]
+    const lead = (await setup.query("INSERT INTO leads DEFAULT VALUES RETURNING id")).rows[0]
+    await firstClient.query(searchPath)
+    await secondClient.query(searchPath)
+    const candidate = { jobId: Number(lead.id), number: 1, idempotencyKey: "same-tap", lockedAt: "2026-08-12T18:00:00.000Z", facts: [], fabrication: { ready: false, blockers: ["test"] } }
+    const lockInput = { leadId: Number(lead.id), operatorId: Number(owner.id), lockKey: "same-tap", candidate }
+    const [first, second] = await Promise.all([
+      persistLockedBuildSheet({ ...lockInput, sql: clientSql(firstClient) }),
+      persistLockedBuildSheet({ ...lockInput, sql: clientSql(secondClient) }),
+    ])
+
+    assert.equal(Number(first.sheet.id), Number(second.sheet.id))
+    assert.equal(Number(first.sheet.sequence), 1)
+    assert.equal(Number(second.sheet.sequence), 1)
+    assert.equal(Number((await setup.query("SELECT count(*) AS count FROM build_sheets")).rows[0].count), 1)
+    assert.equal(Number((await setup.query("SELECT count(*) AS count FROM build_lock_receipts")).rows[0].count), 1)
+    assert.equal(Number((await setup.query("SELECT next_sequence FROM build_sheet_sequences WHERE lead_id = $1", [lead.id])).rows[0].next_sequence), 2)
+
+    const next = await persistLockedBuildSheet({ sql: clientSql(firstClient), leadId: Number(lead.id), operatorId: Number(owner.id), lockKey: "next-tap", candidate: { ...candidate, idempotencyKey: "next-tap" } })
+    assert.equal(Number(next.sheet.sequence), 2)
+    assert.equal(Number((await setup.query("SELECT next_sequence FROM build_sheet_sequences WHERE lead_id = $1", [lead.id])).rows[0].next_sequence), 3)
+  } finally {
+    firstClient.release()
+    secondClient.release()
+    await setup.query("SET search_path TO public")
+    await setup.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
+    setup.release()
+    await pool.end()
+  }
+})
