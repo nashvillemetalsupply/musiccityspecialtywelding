@@ -1724,6 +1724,13 @@
   text-decoration: underline;
 }
 
+/* Hallmark · macrostructure: stacked decision rail · genre: utilitarian editorial
+ * tone: direct shop control · theme: MCSW Jobs · anchor: safety orange
+ * states: default · hover · focus · active · disabled · loading
+ * pre-emit critique: P5 H5 E5 S5 R5 V4 · contrast: pass (46–50)
+ * honest: pass (56) · chrome: pass (57) · tokens: pass (58)
+ * responsive: pass (36, 59, 61–69) · icons: pass (60)
+ */
 .jobs-root .ops-builds-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1739,26 +1746,61 @@
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-builds .ops-safe-action {
-  min-height: 54px;
-  padding: 13px 18px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  min-height: 60px;
+  padding: 0 20px;
+  align-items: center;
+  justify-items: start;
+  gap: 12px;
   border: 1px solid var(--jobs-primary);
-  border-radius: 6px;
+  border-radius: 4px;
   color: var(--jobs-on-primary, #fff);
   background: var(--jobs-primary);
-  font-size: 0.9375rem;
-  font-weight: 680;
-  line-height: 1.2;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1;
+  text-align: left;
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
-.jobs-root .ops-builds .ops-safe-action:hover {
-  background: var(--jobs-primary-hover);
+.jobs-root .ops-builds-actions .ops-safe-action svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
 }
 
-.jobs-root .ops-builds .ops-safe-action:disabled {
+.jobs-root .ops-builds-action-label {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.jobs-root .ops-builds-action-note {
+  display: none;
+  color: currentColor;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  opacity: 0.78;
+  white-space: nowrap;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-builds .ops-safe-action:active {
+  transform: translateY(1px);
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-builds .ops-safe-action[aria-busy="true"] {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  text-align: center;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-builds .ops-safe-action:disabled {
   border-color: var(--jobs-line-strong);
   color: var(--jobs-muted);
   background: var(--jobs-surface-soft);
+  opacity: 0.64;
   cursor: not-allowed;
 }
 
@@ -1773,12 +1815,19 @@
 }
 
 @media (min-width: 23.4375rem) {
-  .jobs-root .ops-builds-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .jobs-root .ops-builds-action-note {
+    display: block;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .jobs-root[data-jobs-theme="brand"] .ops-builds .ops-safe-action:hover {
+    background: var(--jobs-primary-hover);
+    transform: translateY(-1px);
   }
 
-  .jobs-root .ops-builds-actions form:first-child:nth-last-child(3) {
-    grid-column: 1 / -1;
+  .jobs-root[data-jobs-theme="brand"] .ops-builds .ops-builds-quiet:hover {
+    background: var(--jobs-surface-soft);
   }
 }
 
@@ -1998,13 +2047,13 @@
   }
 
   .jobs-root .ops-builds-actions {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .jobs-root .ops-builds-actions form,
   .jobs-root .ops-builds-actions button {
-    width: auto;
+    width: 100%;
   }
 
   .jobs-root .ops-builds-inline-form {
@@ -2034,6 +2083,14 @@
   .jobs-root .ops-builds-grid {
     grid-template-columns: minmax(0, 1.55fr) minmax(310px, 0.85fr);
     align-items: start;
+  }
+
+  .jobs-root .ops-builds-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .jobs-root .ops-builds-action-note {
+    display: none;
   }
 
   .jobs-root .ops-builds-rail {

@@ -92,7 +92,7 @@ export default async function GlassPage({ params, searchParams }: { params: Prom
           const numberFact = ["opening.clear_width", "gate_leaf.finished_width", "gate_leaf.finished_height", "frame.stock_size", "frame.rail_count"].includes(fact.factKey)
           const sideFact = ["gate.hinge_side", "gate.latch_side"].includes(fact.factKey)
           return <article key={fact.claimId}>
-            <div className="glass-understanding-value"><span>{fact.label}</span><strong>{fact.value}</strong>{fact.reference && <small>{fact.reference}</small>}<small className={`glass-build-state is-${fact.state}`}>{fact.state === "working-number" ? "Shop working number — not fabrication-confirmed" : "Saved on this locked Build Sheet"}</small></div>
+            <div className="glass-understanding-value"><span>{fact.label}</span><strong>{fact.value}</strong>{fact.reference && <small>{fact.reference}</small>}<small className={`glass-build-state is-${fact.state}`}>{fact.state === "working-number" ? "Shop estimate — not confirmed for fabrication" : "Saved on this locked Build Sheet"}</small></div>
             <div className="glass-understanding-response">
               {fact.state === "customer-confirmed" ? <span className="is-confirmed"><Check aria-hidden="true" />You confirmed this</span>
                 : fact.state === "customer-correction-proposed" ? <span className="is-proposed">Shop review pending</span>

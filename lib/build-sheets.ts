@@ -164,7 +164,7 @@ export async function decideBuildFact(input: {
   const decisionKey = input.decisionKey.trim().slice(0, 120)
   if (!decisionKey) throw new Error("The decision receipt is missing.")
   const externalId = `build-decision:${input.leadId}:${decisionKey}`
-  const body = `${input.kind === "confirm" ? "Confirmed" : input.kind === "working" ? "Working number" : "Rejected"}: ${claim.factKey}`
+  const body = `${input.kind === "confirm" ? "Confirmed" : input.kind === "working" ? "Shop estimate" : "Rejected"}: ${claim.factKey}`
   const detail = JSON.stringify({ claimId: input.claimId, state: input.kind, isTest: true, sensitivity: "owner" })
   const decisionsToWrite = transition.newDecisions.map((decision, index) => ({
     claim_id: Number(decision.claimId),
@@ -388,10 +388,10 @@ export async function addWorkingBuildFact(input: {
   actionKey: string
 }) {
   const template = WORKING_FACTS[input.factKey]
-  if (!template || !Number.isFinite(input.value) || input.value <= 0) throw new Error("Enter a valid Working number.")
+  if (!template || !Number.isFinite(input.value) || input.value <= 0) throw new Error("Enter a valid shop estimate.")
   const actionKey = input.actionKey.trim().slice(0, 120)
-  if (!actionKey) throw new Error("The Working number receipt is missing.")
-  const fact = { ...template, value: input.value, original: `Owner Working number: ${input.value} ${template.unit}`.trim() }
+  if (!actionKey) throw new Error("The shop estimate receipt is missing.")
+  const fact = { ...template, value: input.value, original: `Owner shop estimate: ${input.value} ${template.unit}`.trim() }
   const externalId = `build-working:${input.leadId}:${actionKey}`
   const itemKey = hashItem(externalId)
   const decisionKey = `${actionKey}:working`
@@ -416,7 +416,7 @@ export async function addWorkingBuildFact(input: {
       )
       SELECT now(), 'build.working-number'::text, 'operator'::text,
         scope.operator_id::text, scope.lead_id, ${externalId}::text,
-        ${`Working number for ${input.factKey}: ${input.value} ${template.unit}`.trim()}::text,
+        ${`Shop estimate for ${input.factKey}: ${input.value} ${template.unit}`.trim()}::text,
         NULL::text, ${detail}::jsonb
       FROM lead_scope scope
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
@@ -468,7 +468,7 @@ export async function addWorkingBuildFact(input: {
     SELECT claim.id FROM claim_scope claim
     WHERE EXISTS (SELECT 1 FROM decision_receipt)`) as { id: number }[]
   const claimId = Number(rows[0]?.id ?? 0)
-  if (!claimId) throw new Error("The complete Working number could not be filed.")
+  if (!claimId) throw new Error("The complete shop estimate could not be filed.")
   return claimId
 }
 
