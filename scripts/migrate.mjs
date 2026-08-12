@@ -1,6 +1,7 @@
 // Idempotent schema migration for the custom lead CRM.
 // Usage: node scripts/migrate.mjs  (reads DATABASE_URL from env or .env.local)
 import { readFileSync, existsSync } from "node:fs"
+import { createHash } from "node:crypto"
 import { neon } from "@neondatabase/serverless"
 
 function resolveDatabaseUrl() {
@@ -730,6 +731,93 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS glass_uploads_batch_idx ON glass_uploads(token_hash, batch_id, created_at)`,
   `CREATE INDEX IF NOT EXISTS glass_uploads_recovery_idx ON glass_uploads(status, updated_at) WHERE status IN ('uploading','uploaded','projecting','unknown')`,
   `CREATE INDEX IF NOT EXISTS glass_uploads_pending_expiry_idx ON glass_uploads(created_at, id) WHERE status = 'pending' AND expired_at IS NULL`,
+  `CREATE TABLE IF NOT EXISTS build_sketch_job_links (
+    lead_id BIGINT PRIMARY KEY REFERENCES leads(id),
+    call_sid TEXT NOT NULL UNIQUE REFERENCES calls(twilio_sid),
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    linked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
+  `CREATE TABLE IF NOT EXISTS build_claim_conflicts (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    conflict_key TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    claim_ids BIGINT[] NOT NULL,
+    source_event_id BIGINT NOT NULL REFERENCES events(id),
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (lead_id, conflict_key)
+  )`,
+  `CREATE TABLE IF NOT EXISTS build_fact_decisions (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    claim_id BIGINT NOT NULL REFERENCES claims(id),
+    state TEXT NOT NULL,
+    actor_id BIGINT NOT NULL REFERENCES operators(id),
+    purpose TEXT NOT NULL DEFAULT 'build-sheet',
+    source_event_id BIGINT NOT NULL REFERENCES events(id),
+    decision_key TEXT NOT NULL,
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    decided_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT build_fact_decisions_state_check CHECK (state IN ('proposed','shop-confirmed','working-number','rejected','superseded')),
+    UNIQUE (lead_id, decision_key)
+  )`,
+  `CREATE INDEX IF NOT EXISTS build_fact_decisions_claim_idx ON build_fact_decisions(lead_id, claim_id, decided_at DESC, id DESC)`,
+  `CREATE TABLE IF NOT EXISTS build_sheet_sequences (
+    lead_id BIGINT PRIMARY KEY REFERENCES leads(id),
+    next_sequence INT NOT NULL DEFAULT 1,
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    CONSTRAINT build_sheet_sequences_positive_check CHECK (next_sequence > 0)
+  )`,
+  `CREATE TABLE IF NOT EXISTS build_sheets (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    sequence INT NOT NULL,
+    snapshot JSONB NOT NULL,
+    locked_by BIGINT NOT NULL REFERENCES operators(id),
+    locked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    UNIQUE (lead_id, sequence)
+  )`,
+  `CREATE TABLE IF NOT EXISTS build_lock_receipts (
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    lock_key TEXT NOT NULL,
+    build_sheet_id BIGINT REFERENCES build_sheets(id),
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (lead_id, lock_key)
+  )`,
+  `CREATE TABLE IF NOT EXISTS build_paperwork (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    build_sheet_id BIGINT NOT NULL REFERENCES build_sheets(id),
+    kind TEXT NOT NULL,
+    label TEXT NOT NULL,
+    dependency_fingerprint JSONB NOT NULL DEFAULT '[]'::jsonb,
+    valid_for_source BOOLEAN NOT NULL DEFAULT true,
+    current_status TEXT NOT NULL DEFAULT 'current',
+    current_reason TEXT NOT NULL DEFAULT '',
+    issue_state TEXT NOT NULL DEFAULT 'current',
+    is_test BOOLEAN NOT NULL DEFAULT true CHECK (is_test = true),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT build_paperwork_status_check CHECK (current_status IN ('current','old-numbers','needs-update')),
+    CONSTRAINT build_paperwork_issue_check CHECK (issue_state IN ('current','blocked')),
+    UNIQUE (build_sheet_id, kind)
+  )`,
+  `CREATE INDEX IF NOT EXISTS build_paperwork_lead_idx ON build_paperwork(lead_id, created_at DESC)`,
+  `CREATE OR REPLACE FUNCTION reject_build_sheet_mutation()
+    RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN
+      RAISE EXCEPTION 'locked Build Sheets are immutable';
+    END;
+    $$`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'build_sheets_immutable') THEN
+      CREATE TRIGGER build_sheets_immutable
+      BEFORE UPDATE OR DELETE ON build_sheets
+      FOR EACH ROW EXECUTE FUNCTION reject_build_sheet_mutation();
+    END IF;
+  END $$`,
 ]
 
 for (const statement of statements) {
@@ -761,6 +849,199 @@ await sql`
     ORDER BY created_at ASC LIMIT 1
   ) owner
   WHERE push_subscriptions.operator_id IS NULL`
+
+// Deterministic, silent Build Sheets kill-test fixture. All writes are new-table
+// rows or explicitly test-partitioned rows in the existing event/claim substrate.
+const buildFixturePublicId = "internal-build-sheets-fixture"
+const buildFixtureCallSid = "BUILD-SHEETS-FIXTURE-CALL"
+const buildFixtureTranscript = "I need a steel gate 48 inches wide, 42 inches tall, built from 2 inch square tube, with two rails, hinges left and latch right."
+const buildFixtureObservedSpec = {
+  version: 1,
+  kind: { value: "gate", truth: "stated", evidence: "steel gate", track: "inbound_track", sequenceId: 1 },
+  width: { value: 48, truth: "uncertain", evidence: "48 inches wide", track: "inbound_track", sequenceId: 1 },
+  height: { value: 42, truth: "stated", evidence: "42 inches tall", track: "inbound_track", sequenceId: 1 },
+  stockSize: { value: 2, truth: "stated", evidence: "2 inch square tube", track: "inbound_track", sequenceId: 1 },
+  railCount: { value: 2, truth: "stated", evidence: "two rails", track: "inbound_track", sequenceId: 1 },
+  hingeSide: { value: "left", truth: "stated", evidence: "hinges left", track: "inbound_track", sequenceId: 1 },
+  latchSide: { value: "right", truth: "stated", evidence: "latch right", track: "inbound_track", sequenceId: 1 },
+  swing: { value: null, truth: "unknown", evidence: "", track: "", sequenceId: null },
+  material: { value: "steel", truth: "stated", evidence: "steel gate", track: "inbound_track", sequenceId: 1 },
+  nextQuestion: "Is 48 inches the opening or the finished gate?",
+  readyForReview: true,
+}
+
+await sql`
+  INSERT INTO leads (
+    public_id, first_name, last_name, phone, email, service, message,
+    preferred_contact, source, is_test, status, email_delivery_status
+  ) VALUES (
+    ${buildFixturePublicId}::text, '[INTERNAL TEST] Gate Build'::text, ''::text,
+    '+16155550199'::text, ''::text, 'Gate fabrication'::text,
+    'Build Sheets kill-test fixture. Never contact.'::text, ''::text,
+    'internal-build-fixture'::text, true, 'qualified'::text, 'test'::text
+  )
+  ON CONFLICT (public_id) DO NOTHING`
+
+await sql`
+  INSERT INTO calls (
+    twilio_sid, direction, from_phone, to_phone, status, transcript,
+    transcript_status, lead_id, detail
+  )
+  SELECT ${buildFixtureCallSid}::text, 'inbound'::text, '+16155550199'::text,
+    '+16155550100'::text, 'completed'::text, ${buildFixtureTranscript}::text,
+    'complete'::text, l.id,
+    ${JSON.stringify({ isTest: true, fixture: "build-sheets" })}::jsonb
+  FROM leads l
+  WHERE l.public_id = ${buildFixturePublicId}::text AND l.is_test = true
+  ON CONFLICT (twilio_sid) DO NOTHING`
+
+await sql`
+  INSERT INTO call_intake_drafts (
+    public_id, call_sid, lead_id, caller_name, phone, need,
+    status, is_test, saved_at
+  )
+  SELECT 'internal-build-sheets-draft'::text, c.twilio_sid, l.id,
+    '[INTERNAL TEST] Gate Build'::text, '+16155550199'::text,
+    '48 inch steel gate'::text, 'saved'::text, true, now()
+  FROM leads l JOIN calls c ON c.lead_id = l.id
+  WHERE l.public_id = ${buildFixturePublicId}::text AND l.is_test = true
+    AND c.twilio_sid = ${buildFixtureCallSid}::text
+  ON CONFLICT (public_id) DO NOTHING`
+
+await sql`
+  INSERT INTO call_sketches (
+    call_sid, transcription_sid, status, observed_spec,
+    observed_through_sequence, revision, last_event_at
+  )
+  SELECT c.twilio_sid, 'BUILD-SHEETS-FIXTURE-TRANSCRIPTION'::text,
+    'review'::text, ${JSON.stringify(buildFixtureObservedSpec)}::jsonb,
+    1::int, 1::int, now()
+  FROM calls c JOIN leads l ON l.id = c.lead_id
+  WHERE c.twilio_sid = ${buildFixtureCallSid}::text AND l.is_test = true
+  ON CONFLICT (call_sid) DO NOTHING`
+
+await sql`
+  INSERT INTO build_sketch_job_links (lead_id, call_sid, is_test)
+  SELECT l.id, c.twilio_sid, true
+  FROM leads l JOIN calls c ON c.lead_id = l.id
+  WHERE l.public_id = ${buildFixturePublicId}::text AND l.is_test = true
+    AND c.twilio_sid = ${buildFixtureCallSid}::text
+  ON CONFLICT (lead_id) DO NOTHING`
+
+await sql`
+  INSERT INTO events (
+    occurred_at, kind, actor_type, actor_id, lead_id, external_id,
+    body, crew_body, detail
+  )
+  SELECT now(), 'call.transcript'::text, 'customer'::text, ''::text,
+    l.id, 'build-sheets-fixture-transcript'::text,
+    ${buildFixtureTranscript}::text, NULL::text,
+    ${JSON.stringify({ callSid: buildFixtureCallSid, isTest: true, sensitivity: "owner" })}::jsonb
+  FROM leads l
+  WHERE l.public_id = ${buildFixturePublicId}::text AND l.is_test = true
+  ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING`
+
+const buildFixtureRows = await sql`
+  SELECT l.id AS lead_id, e.id AS event_id
+  FROM leads l JOIN events e ON e.lead_id = l.id
+  WHERE l.public_id = ${buildFixturePublicId}::text AND l.is_test = true
+    AND e.kind = 'call.transcript' AND e.external_id = 'build-sheets-fixture-transcript'
+  LIMIT 1`
+const buildFixture = buildFixtureRows[0]
+
+if (buildFixture) {
+  const leadId = Number(buildFixture.lead_id)
+  const sourceEventId = Number(buildFixture.event_id)
+  const interpretationGroup = `event-${sourceEventId}-width`
+  const buildFacts = [
+    { factKey: "opening.clear_width", subject: "opening", property: "clear_width", value: 48, unit: "in", reference: "between posts", original: "48 inches wide", speaker: "customer", certainty: "interpreted", critical: true, interpretationGroup },
+    { factKey: "gate_leaf.finished_width", subject: "gate_leaf", property: "finished_width", value: 48, unit: "in", reference: "outside edge to outside edge", original: "48 inches wide", speaker: "customer", certainty: "interpreted", critical: true, interpretationGroup },
+    { factKey: "gate_leaf.finished_height", subject: "gate_leaf", property: "finished_height", value: 42, unit: "in", reference: "bottom edge to top edge", original: "42 inches tall", speaker: "customer", certainty: "stated", critical: true },
+    { factKey: "frame.stock_size", subject: "frame", property: "stock_size", value: 2, unit: "in", reference: "outside stock size", original: "2 inch square tube", speaker: "customer", certainty: "stated", critical: true },
+    { factKey: "frame.rail_count", subject: "frame", property: "rail_count", value: 2, unit: "count", reference: "inside frame", original: "two rails", speaker: "customer", certainty: "stated", critical: true },
+    { factKey: "gate.hinge_side", subject: "gate", property: "hinge_side", value: "left", unit: "", reference: "viewed from customer side", original: "hinges left", speaker: "customer", certainty: "stated", critical: true },
+    { factKey: "gate.latch_side", subject: "gate", property: "latch_side", value: "right", unit: "", reference: "viewed from customer side", original: "latch right", speaker: "customer", certainty: "stated", critical: true },
+    { factKey: "frame.material", subject: "frame", property: "material", value: "steel", unit: "", reference: "", original: "steel gate", speaker: "customer", certainty: "stated", critical: false },
+  ]
+  for (const fact of buildFacts) {
+    const itemKey = createHash("sha256")
+      .update(`call-sketch:${buildFixtureCallSid}:${fact.factKey}:${fact.interpretationGroup ?? "direct"}`)
+      .digest("hex")
+    await sql`
+      INSERT INTO claims (
+        subject_type, subject_id, predicate, value, confidence,
+        source_event_id, extracted_by, item_key
+      )
+      SELECT 'lead'::text, l.id, 'build_fact'::text,
+        ${JSON.stringify(fact)}::jsonb,
+        ${fact.certainty === "interpreted" ? 0.85 : 0.9}::real,
+        ${sourceEventId}::bigint, 'build-sheets-fixture'::text, ${itemKey}::text
+      FROM leads l
+      WHERE l.id = ${leadId}::bigint AND l.is_test = true
+      ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING`
+  }
+
+  await sql`
+    INSERT INTO build_claim_conflicts (
+      lead_id, conflict_key, kind, claim_ids, source_event_id, is_test
+    )
+    SELECT l.id, ${interpretationGroup}::text, 'unresolved-reference'::text,
+      array_agg(c.id ORDER BY c.id)::bigint[], ${sourceEventId}::bigint, true
+    FROM leads l JOIN claims c ON c.subject_type = 'lead' AND c.subject_id = l.id
+    WHERE l.id = ${leadId}::bigint AND l.is_test = true
+      AND c.source_event_id = ${sourceEventId}::bigint
+      AND c.predicate = 'build_fact'
+      AND c.value->>'interpretationGroup' = ${interpretationGroup}::text
+    GROUP BY l.id
+    HAVING count(*) = 2
+    ON CONFLICT (lead_id, conflict_key) DO NOTHING`
+
+  await sql`
+    INSERT INTO events (
+      occurred_at, kind, actor_type, actor_id, lead_id, external_id,
+      body, crew_body, detail
+    )
+    SELECT now(), 'build.fixture-confirmed'::text, 'system'::text, ''::text,
+      l.id, 'build-sheets-fixture-confirmed'::text,
+      'Known fixture facts confirmed for the owner kill test.'::text,
+      NULL::text, ${JSON.stringify({ isTest: true, sensitivity: "owner" })}::jsonb
+    FROM leads l
+    WHERE l.id = ${leadId}::bigint AND l.is_test = true
+    ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING`
+
+  const fixtureDecisionFacts = [
+    "gate_leaf.finished_height",
+    "frame.stock_size",
+    "frame.rail_count",
+    "gate.hinge_side",
+    "gate.latch_side",
+    "frame.material",
+  ]
+  for (const factKey of fixtureDecisionFacts) {
+    await sql`
+      INSERT INTO build_fact_decisions (
+        lead_id, claim_id, state, actor_id, purpose, source_event_id,
+        decision_key, is_test, decided_at
+      )
+      SELECT l.id, c.id, 'shop-confirmed'::text, o.id,
+        'build-sheet'::text, decision_event.id,
+        ${`fixture-confirmed:${factKey}`}::text, true, now()
+      FROM leads l
+      JOIN claims c ON c.subject_type = 'lead' AND c.subject_id = l.id
+      JOIN events decision_event ON decision_event.lead_id = l.id
+        AND decision_event.kind = 'build.fixture-confirmed'
+        AND decision_event.external_id = 'build-sheets-fixture-confirmed'
+      JOIN LATERAL (
+        SELECT id FROM operators WHERE role = 'owner' AND active = true
+        ORDER BY created_at ASC LIMIT 1
+      ) o ON true
+      WHERE l.id = ${leadId}::bigint AND l.is_test = true
+        AND c.predicate = 'build_fact' AND c.source_event_id = ${sourceEventId}::bigint
+        AND c.value->>'factKey' = ${factKey}::text
+      ON CONFLICT (lead_id, decision_key) DO NOTHING`
+  }
+  console.log(`Build Sheets fixture: /ops/leads/${leadId}/builds`)
+}
 
 const tables = await sql`
   SELECT table_name FROM information_schema.tables

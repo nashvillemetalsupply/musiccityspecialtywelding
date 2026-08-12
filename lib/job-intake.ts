@@ -266,6 +266,13 @@ export async function saveInboundCallAsJob(input: {
         detail = COALESCE(detail, '{}'::jsonb) || '{"intakeOutcome":"saved"}'::jsonb,
         updated_at = now()
       WHERE twilio_sid = ${draft.call_sid}::text`
+    await sql`
+      INSERT INTO build_sketch_job_links (lead_id, call_sid, is_test)
+      SELECT l.id, ${draft.call_sid}::text, true
+      FROM leads l
+      WHERE l.id = ${created.id}::bigint AND l.is_test = true
+      ON CONFLICT (lead_id) DO UPDATE SET call_sid = EXCLUDED.call_sid
+      WHERE build_sketch_job_links.is_test = true`
     await attachRecoveredCallArtifacts(draft.call_sid, created.id, personId, leads[0]?.is_test ?? draft.is_test)
     await recordEvent({
       kind: "call.intake.saved",

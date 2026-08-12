@@ -17,6 +17,7 @@ import { isReservedShopPhone } from "@/lib/people"
 import { normalizePage } from "@/lib/pagination"
 import { readableEmailText } from "@/lib/gmail-plaintext.mjs"
 import { getActiveGlassLinkState } from "@/lib/glass"
+import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { glassUrl } from "@/lib/glass-delivery"
 import { shopClaimLabel, shopClaimText, shopDeliveryLabel, shopEventLabel, shopJobStatusLabel, shopSourceLabel } from "@/lib/shop-language"
 import { projectClaimForRole, projectCommitmentForRole, projectEventForRole, redactCrewText } from "@/lib/visibility"
@@ -284,7 +285,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     : null
   const sourceEventById = new Map(safeUnifiedEvents.map((event) => [event.id, event]))
   const sourceCallBySid = new Map(calls.map((call) => [call.twilio_sid, call]))
-  const memoryClaims = safeClaims.filter((claim) => claim.predicate !== "quoted_price_cents").slice(0, 6)
+  const memoryClaims = safeClaims.filter((claim) => !["quoted_price_cents", "build_fact"].includes(claim.predicate)).slice(0, 6)
   const visibleJobStatus = lead.handed_off_at
     ? "Handed Off"
     : lead.completed_at
@@ -322,6 +323,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           <p className="ops-sub">
             Job <strong>#{lead.id}</strong>, opened {formatCentral(lead.created_at)}
           </p>
+          {operator.role === "owner" && lead.is_test && buildSheetsEnabled() && <Link className="ops-builds-link" href={`/ops/leads/${lead.id}/builds`}>Builds</Link>}
         </div>
         <div className={`ops-stamp-ink is-${lead.status} ops-stamp-hero`}>{visibleJobStatus}</div>
       </header>
