@@ -123,11 +123,17 @@ export async function GET(req: Request) {
     crewCredits.length ? `Yesterday: ${crewCredits.join(". ")}.` : "",
   ].filter(Boolean).join(" ")
   let text = `Morning. ${promises.length} promises need a look. ${unanswered.length} customers still need a first call. ${quotes.length} quotes are getting stale. ${invoices.length} invoices are still open.`
+  let briefModel = "deterministic"
   if (aiConfigured()) {
-    const result = await generateText({ model: AI_MODELS.reasoning, system: "Write a plainspoken morning shop brief in at most 200 words. Put urgent promises and uncalled customers first. Then stale quotes and invoices. Credit crew by first name only for completed work. Never invent. No greeting fluff, no management jargon, no markdown.", prompt: JSON.stringify(facts) })
-    text = result.text.trim().split(/\s+/).slice(0, 200).join(" ")
+    try {
+      const result = await generateText({ model: AI_MODELS.reasoning, system: "Write a plainspoken morning shop brief in at most 200 words. Put urgent promises and uncalled customers first. Then stale quotes and invoices. Credit crew by first name only for completed work. Never invent. No greeting fluff, no management jargon, no markdown.", prompt: JSON.stringify(facts) })
+      text = result.text.trim().split(/\s+/).slice(0, 200).join(" ")
+      briefModel = AI_MODELS.reasoning
+    } catch (error) {
+      console.error("Morning brief AI prose failed; using deterministic copy:", error)
+    }
   }
-  const eventId = await recordEvent({ kind: "brief.morning", actorType: "ai", externalId: `brief:${day}`, body: text, crewBody, detail: { facts, crewBody, daySheet, crewDaySheet, model: aiConfigured() ? AI_MODELS.reasoning : "deterministic" } })
+  const eventId = await recordEvent({ kind: "brief.morning", actorType: "ai", externalId: `brief:${day}`, body: text, crewBody, detail: { facts, crewBody, daySheet, crewDaySheet, model: briefModel } })
   if (eventId) await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: `${promises.length + unanswered.length + quotes.length} items · about 90 seconds`, url: "/ops#radio", sourceEventId: eventId, quietHoursExempt: true, capExempt: true })
   if (eventId) await shelveBriefAudio(eventId, day)
   await sql`INSERT INTO automation_runs (job, ok, detail) VALUES ('morning-brief'::text, true, ${JSON.stringify({ eventId, counts: { promises: promises.length, unanswered: unanswered.length, quotes: quotes.length, invoices: invoices.length } })}::jsonb)`

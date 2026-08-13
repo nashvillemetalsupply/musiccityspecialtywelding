@@ -67,3 +67,12 @@ test("empty activity pages keep a valid role-filtered count query", () => {
   assert.match(fallback, /\s{3}\)\)`\) as/)
   assert.doesNotMatch(fallback, /\s{3}\)\)\)`\) as/)
 })
+
+test("Morning Brief falls back to deterministic copy when AI prose is unavailable", () => {
+  const brief = read("app/api/ops/brief/route.ts")
+  assert.match(brief, /if \(aiConfigured\(\)\) \{\s*try \{/)
+  assert.match(brief, /catch \(error\) \{\s*console\.error\("Morning brief AI prose failed; using deterministic copy:"/)
+  assert.match(brief, /let text = `Morning\./)
+  assert.match(brief, /let briefModel = "deterministic"/)
+  assert.match(brief, /model: briefModel/)
+})
