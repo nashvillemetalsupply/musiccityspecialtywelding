@@ -15,7 +15,7 @@ These are the owner-approved words for the Builds workspace. Architecture and da
 | Stale after material, finish, or hardware change | Needs update | Paperwork needs a named non-dimensional change. |
 | Proposed change pending review | Hold — change needs review | Dependent Paperwork cannot be treated as current until the proposal is accepted or rejected. |
 | Artifact bundle | Paperwork | Drawings, DXF manifests, and other outputs tied to one named Build Sheet. |
-| Workspace | Builds | The owner-only internal-test page linked from a job. |
+| Workspace | Fabrication | The owner-only internal-test page linked from a job. |
 | Customer projection | What We Understand | A dedicated allowlist of customer-safe facts from one locked Build Sheet. It is not an owner screen with fields hidden. |
 | Customer acceptance | Looks right | The customer confirms one safe fact exactly as shown. |
 | Customer correction | Needs a correction | A proposed replacement fact for owner review. It starts a new draft and never changes a locked sheet. |

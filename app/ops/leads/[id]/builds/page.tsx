@@ -87,7 +87,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
     <header className="ops-builds-header">
       <div>
         <p>Job #{workspace.lead.id}</p>
-        <h1>Builds</h1>
+        <h1>Fabrication</h1>
         <span>{workspace.lead.first_name} {workspace.lead.last_name}</span>
       </div>
     </header>
@@ -96,7 +96,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
       <section className="ops-builds-panel" aria-labelledby="draft-heading">
         <header className="ops-builds-panel-head">
           <div>
-            <h2 id="draft-heading">{workspace.draft.conflicts.length ? "Doesn't match" : "Build facts"}</h2>
+            <h2 id="draft-heading">{workspace.draft.conflicts.length ? "Doesn't match" : "Shop facts"}</h2>
           </div>
           <strong>{workspace.draft.factRows.length} facts</strong>
         </header>
