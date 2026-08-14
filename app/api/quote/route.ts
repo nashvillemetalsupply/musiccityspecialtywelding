@@ -13,7 +13,14 @@ import {
   markLeadDelivery,
 } from "@/lib/leads";
 import { processEvent } from "@/lib/extract";
-import { normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs";
+import { getMessagingConsentState } from "@/lib/messaging-consent";
+import {
+  normalizeUsPhone,
+  QUOTE_CONSENT_DISCLOSURE_VERSION,
+  TEXT_CONSENT_REVOKED_WARNING,
+  TEXT_CONSENT_UNVERIFIED_WARNING,
+  webTextConsentResolution,
+} from "@/lib/shop-brain-invariants.mjs";
 
 export const runtime = "nodejs"; // important for email libs
 
@@ -299,6 +306,33 @@ export async function POST(req: Request) {
       );
     }
 
+    // A prior STOP still governs this number even if the customer re-checks the
+    // box on the web form. Resolve the durable consent state once so a web
+    // checkbox can never silently override a text STOP. Grant permission is
+    // tracked separately from any conflict: a lookup failure denies the grant
+    // (webTextConsent is omitted) without fabricating a STOP conflict.
+    let webTextGrant = true;
+    let consentConflict = false;
+    let consentWarning = "";
+    if (textConsent && !isTest && consentPhone) {
+      try {
+        const resolution = webTextConsentResolution(
+          await getMessagingConsentState(consentPhone)
+        );
+        webTextGrant = resolution.grant;
+        consentConflict = resolution.consentConflict;
+        if (consentConflict) consentWarning = TEXT_CONSENT_REVOKED_WARNING;
+      } catch (consentLookupError) {
+        // Consent lookup must never block intake. On a transient storage
+        // failure the lead still saves, but webTextConsent is omitted and the
+        // customer is told to opt in by text instead.
+        webTextGrant = false;
+        consentConflict = false;
+        consentWarning = TEXT_CONSENT_UNVERIFIED_WARNING;
+        console.error("Text-consent lookup error:", consentLookupError);
+      }
+    }
+
     // Durable cross-instance throttle. Never blocks a lead on DB failure.
     if (dbConfigured() && ip !== "unknown") {
       const limited = await isRateLimitedDurable(
@@ -344,13 +378,13 @@ export async function POST(req: Request) {
           },
           {
             intakeKey: `website:${intakeKey}`,
-            ...(textConsent && !isTest
+            ...(textConsent && !isTest && webTextGrant
               ? {
                 webTextConsent: {
                   phoneE164: consentPhone,
                   provenance: {
                     checked: true,
-                    disclosureVersion: "2026-08-08",
+                    disclosureVersion: QUOTE_CONSENT_DISCLOSURE_VERSION,
                     ip,
                     userAgent,
                     landingPage,
@@ -616,7 +650,18 @@ export async function POST(req: Request) {
 
     // The request succeeds when the lead is captured by at least one channel.
     if (emailSent || leadId !== null) {
-      return Response.json({ ok: true }, { status: 200 });
+      return Response.json(
+        consentWarning
+          ? {
+            ok: true,
+            // A conflict is only real for a prior STOP; a lookup failure
+            // denies the grant but must not claim a STOP occurred.
+            ...(consentConflict ? { consentConflict: true } : {}),
+            warning: consentWarning,
+          }
+          : { ok: true },
+        { status: 200 }
+      );
     }
 
     return Response.json(

@@ -1216,6 +1216,7 @@ html {
 
 .ms-form-status.is-success { background: #e2e8cf; }
 .ms-form-status.is-error { background: #f2d3c8; }
+.ms-form-status.is-warning { background: #f3e4bd; }
 
 .ms-submit {
   grid-column: 1 / -1;
