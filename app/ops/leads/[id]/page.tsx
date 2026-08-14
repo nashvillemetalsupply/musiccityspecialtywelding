@@ -357,7 +357,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
       {smsServiceReady && hasCustomerPhone && consentState === "unknown" && operator.role === "owner" && <details className="ops-text-consent">
         <summary>Enable customer texting</summary>
-        <p>Use this only after the customer clearly agrees to receive job-related texts. Message frequency varies; message and data rates may apply. They can reply STOP to opt out or HELP for help.</p>
+        <p>Before recording permission, tell the customer: “You agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this job. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase.” Use this only after the customer clearly says yes.</p>
         <form action={recordVerbalTextConsent}>
           <input type="hidden" name="leadId" value={lead.id} />
           <SafeSubmitButton pendingLabel="Recording…">Customer said yes</SafeSubmitButton>

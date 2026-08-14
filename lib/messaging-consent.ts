@@ -81,5 +81,5 @@ export async function customerSmsAllowed(phone: string) {
 }
 
 export function consentDisclosure() {
-  return "By checking this box, you agree to receive job-related texts from Music City Specialty Welding. Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is optional and is not a condition of purchase."
+  return "By checking this box, you agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this request. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase."
 }

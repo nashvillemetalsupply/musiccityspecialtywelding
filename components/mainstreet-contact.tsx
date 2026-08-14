@@ -246,7 +246,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
             checked={formData.textConsent}
             onChange={(event) => setFormData((current) => ({ ...current, textConsent: event.target.checked }))}
           />
-          <span><strong>Text me about this job <i>optional</i></strong><small>Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is not a condition of purchase. See our <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a>.</small></span>
+          <span><strong>Text me about this job <i>optional</i></strong><small>By checking this box, you agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this request. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase. See our <a href="/privacy">privacy policy</a> and <a href="/terms">terms</a>.</small></span>
         </label>
 
         {previews.length > 0 && (
