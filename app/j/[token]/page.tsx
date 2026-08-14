@@ -1,6 +1,6 @@
-import { randomUUID } from "node:crypto"
 import { notFound } from "next/navigation"
 import Image from "next/image"
+import { ActionKeyField } from "@/components/build-sheets/action-key-field"
 import { CustomerBuildDrawing } from "@/components/build-sheets/customer-build-drawing"
 import type { Viewport } from "next"
 import { Chivo } from "next/font/google"
@@ -100,7 +100,7 @@ export default async function GlassPage({ params, searchParams }: { params: Prom
                     <input type="hidden" name="intent" value="accept" />
                     <input type="hidden" name="buildSheetNumber" value={customerBuild.buildSheetNumber} />
                     <input type="hidden" name="claimId" value={fact.claimId} />
-                    <input type="hidden" name="responseKey" value={randomUUID()} />
+                    <ActionKeyField name="responseKey" scope={`customer:${token}:${customerBuild.buildSheetNumber}:${fact.claimId}:accept`} />
                     <button type="submit">Confirm</button>
                   </form>}
               <details>
@@ -109,7 +109,7 @@ export default async function GlassPage({ params, searchParams }: { params: Prom
                   <input type="hidden" name="intent" value="correct" />
                   <input type="hidden" name="buildSheetNumber" value={customerBuild.buildSheetNumber} />
                   <input type="hidden" name="claimId" value={fact.claimId} />
-                  <input type="hidden" name="responseKey" value={randomUUID()} />
+                  <ActionKeyField name="responseKey" scope={`customer:${token}:${customerBuild.buildSheetNumber}:${fact.claimId}:correct`} />
                   <label><span>What should this say?</span>{sideFact
                     ? <select name="correction" defaultValue="" required><option value="" disabled>Choose a side</option><option value="left">Left</option><option value="right">Right</option></select>
                     : <input name="correction" type={numberFact ? "number" : "text"} min={numberFact ? "0.01" : undefined} step={fact.factKey === "frame.rail_count" ? "1" : numberFact ? "0.01" : undefined} inputMode={numberFact ? "decimal" : undefined} maxLength={numberFact ? undefined : 120} required />}</label>

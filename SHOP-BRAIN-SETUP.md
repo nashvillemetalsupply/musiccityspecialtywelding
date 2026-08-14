@@ -57,24 +57,21 @@ Upgrade the Vercel project to Pro before commercial cutover.
 
 The owner must create the Primary Compliance Profile with the exact legal name from the IRS CP 575/147C letter, EIN, business address, business details, website, and authorized-representative information. The owner completes email/2FA verification and approves any paid Brand, Campaign, number, or billing action.
 
-### Plain checklist to send Philippe
+### Current owner gate — 2026-08-14
 
-Trust Hub has been submitted. There is nothing else to approve until Twilio finishes that review.
+The Primary Customer Profile and EIN-based A2P Brand are approved. The local 615 number has been purchased and configured, and the paid Low Volume Mixed Campaign has been submitted. Carrier review is still in progress.
 
-Please have these ready:
+Completed owner approvals:
 
-- The IRS CP 575 or 147C letter showing the legal business name and EIN.
-- The business street address, website, business email, and best owner cell number.
-- The name, title, email, and mobile number of the person authorized to act for the company.
-- A Twilio payment method for the phone number, Brand, Campaign, and monthly messaging charges.
+1. Verified the legal business and authorized-representative details.
+2. Approved and purchased `(615) 703-3296`.
+3. Approved the paid A2P Campaign submission.
 
-Philippe must personally do only these steps:
+The next owner-required steps are:
 
-1. Open any Trust Hub verification email and complete its email or two-factor check.
-2. Confirm the legal business details if Twilio asks for a correction.
-3. Review the available 615 numbers and explicitly approve one before it is purchased.
-4. Approve the paid Low-Volume Standard Brand and Campaign submission.
-5. Make and receive the final real-phone test calls and approve the Moto G experience.
+1. Answer the designated private acceptance call and approve the Moto G call experience after Call Sketch, transcript, and DXF receipts are verified.
+2. After the Campaign is **VERIFIED** and the shop number is **REGISTERED**, participate in the real-device opt-in, STOP, START, HELP, inbound, outbound, MMS, and failure-path tests.
+3. Approve public-number and Google Ads cutover only after those acceptance gates pass.
 
 The technical setup—webhooks, Messaging Service, Advanced Opt-Out, Vercel secrets, retry behavior, and test matrix—does not require Philippe to click through alone. Keep the existing Google call-ad number active and do not edit the campaigns; the private Twilio number stays separate until cutover testing is accepted.
 

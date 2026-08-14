@@ -42,6 +42,8 @@ test("customer corrections create a proposed fact and never mutate a locked shee
   assert.doesNotMatch(store.slice(store.indexOf("export async function respondToCustomerBuildFact")), /UPDATE build_sheets/)
   assert.match(page, /What We Understand/)
   assert.match(page, /CustomerBuildDrawing/)
+  assert.match(page, /ActionKeyField name="responseKey"/)
+  assert.doesNotMatch(page, /randomUUID\(\)/)
 })
 
 test("paperwork issue path recomputes staleness before filing an issue receipt", async () => {
@@ -76,4 +78,7 @@ test("closeout filing stores reviewed outcomes without payment coupling", async 
   assert.doesNotMatch(completion, /paid_at|invoice|payment/i)
   assert.match(component, /Review closeout/)
   assert.match(component, /One-breath closeout/)
+  const voiceControl = component.indexOf("<VoiceCaptureButton")
+  const keyboardControl = component.indexOf('id="closeout-source"')
+  assert.ok(voiceControl >= 0 && keyboardControl >= 0 && voiceControl < keyboardControl, "voice must precede keyboard in reviewed closeout")
 })

@@ -2430,6 +2430,57 @@
   }
 }
 
+/* Build Sheets entry point: an owner action should read like an action. */
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-builds-link {
+  width: min(100%, 17rem);
+  min-height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jobs-space-sm);
+  margin-top: var(--jobs-space-2xs);
+  padding: var(--jobs-space-xs) var(--jobs-space-sm);
+  border: 2px solid var(--jobs-primary);
+  border-radius: var(--jobs-radius-control);
+  background: var(--jobs-primary);
+  color: var(--jobs-on-primary) !important;
+  font-family: inherit;
+  line-height: 1.15;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-builds-link strong {
+  color: inherit;
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-builds-link span {
+  color: inherit;
+  font-size: 0.875rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-builds-link:focus-visible {
+  outline: 3px solid var(--jobs-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-builds-link:hover {
+    filter: brightness(0.92);
+  }
+}
+
+@media (max-width: 39.99rem) {
+  .jobs-root[data-jobs-theme="brand"] .ops-work-order-lead .ops-builds-link {
+    width: 100%;
+    max-width: none;
+  }
+}
+
 /* Retina/Moto optical polish: visual-only overrides, intentionally appended for rollback. */
 .jobs-root[data-jobs-theme="brand"] :is(
   .jobs-section-header h2,
@@ -3819,6 +3870,39 @@
   border-color: var(--jobs-danger) !important;
   background: var(--jobs-danger) !important;
   color: var(--jobs-on-primary) !important;
+}
+
+/* Customer Page actions: long labels must own a full mobile row. */
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-vnext .ops-glass-link > .ops-glass-link-wide {
+  grid-column: 1 / -1;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-vnext .ops-glass-link > :is(button, a, form > button) {
+  min-width: 0;
+  text-align: center;
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-vnext .ops-glass-link > a {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--jobs-space-sm);
+  border: 1px solid var(--jobs-primary);
+  border-radius: var(--jobs-radius-control);
+  background: var(--jobs-primary);
+  color: var(--jobs-on-primary) !important;
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.jobs-root[data-jobs-theme="brand"] .ops-work-order-vnext .ops-glass-link > form > button {
+  width: 100%;
 }
 
 .jobs-root[data-jobs-theme="brand"] .ops-work-order-vnext :is(button, input, select, textarea):disabled,

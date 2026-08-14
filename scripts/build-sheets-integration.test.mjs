@@ -104,9 +104,10 @@ test("every owner mutation is independently flag-gated, owner-gated, test-partit
 })
 
 test("the owner workspace exposes evidence, decisions, immutable sheets, and dependency-aware Paperwork", async () => {
-  const [page, css, store] = await Promise.all([
+  const [page, sharedCss, buildsCss, store] = await Promise.all([
     read("app/ops/leads/[id]/builds/page.tsx"),
     read("app/ops/jobs.css"),
+    read("app/ops/leads/[id]/builds/builds.css"),
     read("lib/build-sheets.ts"),
   ])
 
@@ -124,9 +125,12 @@ test("the owner workspace exposes evidence, decisions, immutable sheets, and dep
   ]) assert.match(page, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")))
   assert.match(page, /disabled=\{workspace\.draft\.conflicts\.length > 0 \|\| acceptedCount === 0\}/)
   assert.match(page, /This record cannot be edited\./)
-  assert.match(css, /\.jobs-root \.ops-builds/)
-  assert.match(css, /min-height: 48px/)
-  assert.match(css, /@media \(min-width: 880px\)/)
+  assert.doesNotMatch(sharedCss, /\.ops-builds/)
+  assert.match(buildsCss, /Builds route contract/)
+  assert.match(buildsCss, /\.jobs-root \.ops-builds/)
+  assert.match(buildsCss, /min-height: 3rem/)
+  assert.match(buildsCss, /@media \(min-width: 55rem\)/)
+  assert.match(buildsCss, /ops-builds-truth-banner/)
   assert.match(store, /kind: "material-note", label: "Material note", dependencies: material/)
   assert.match(page, /Correct this fact/)
   assert.match(page, /<select name="value"/)

@@ -104,18 +104,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       <input type="hidden" name="sourceWords" value={note} />
       <input type="hidden" name="voiceIntentId" value={voiceIntentId} />
       <label htmlFor="closeout-source">One-breath closeout</label>
-      <textarea
-        id="closeout-source"
-        value={note}
-        onChange={(event) => {
-          setNoteSource("typed")
-          setNote(event.target.value)
-          setReview(null)
-        }}
-        placeholder="Finished, fit good, no extra trip, no rework, nothing left."
-        maxLength={2000}
-      />
-      <div className="ops-closeout-capture">
+      <div className="ops-closeout-capture ops-closeout-voice">
         <VoiceCaptureButton
           available={voiceReady}
           recoveryKey={`closeout:${leadId}`}
@@ -129,6 +118,19 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
             setReview(null)
           }}
         />
+      </div>
+      <textarea
+        id="closeout-source"
+        value={note}
+        onChange={(event) => {
+          setNoteSource("typed")
+          setNote(event.target.value)
+          setReview(null)
+        }}
+        placeholder="Finished, fit good, no extra trip, no rework, nothing left."
+        maxLength={2000}
+      />
+      <div className="ops-closeout-capture">
         <button type="button" className="ops-closeout-review" disabled={!note.trim()} onClick={() => setReview({ ...deriveCloseoutDraft(note), reviewed: true })}>Review closeout</button>
       </div>
       {voiceError && <small className="ops-done-voice-error" role="alert">{voiceError}</small>}

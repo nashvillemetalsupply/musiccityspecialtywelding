@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto"
 import { Check, CircleCheck, CirclePause, History, PencilLine, RefreshCcw, X } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -14,6 +13,7 @@ import {
   lockBuildSheetAction,
   proposeBuildFactChangeAction,
 } from "./actions"
+import { ActionKeyField } from "./action-key"
 import "./builds.css"
 
 export const dynamic = "force-dynamic"
@@ -38,6 +38,14 @@ function paperworkLabel(status: string) {
   if (status === "needs-update") return "Needs update"
   if (status === "hold") return "Hold — change needs review"
   return "Current"
+}
+
+function paperworkNote(status: string, sourceBuildSheetNumber: number) {
+  if (status === "current") return ""
+  if (status === "old-numbers") return "Historical record only. Do not build from these numbers."
+  if (status === "needs-update") return "Historical record. Update the source facts before using it."
+  if (status === "hold") return "Wait for owner review. This is not current for fabrication."
+  return `Source record for Build Sheet ${sourceBuildSheetNumber}.`
 }
 
 function PaperworkStatusIcon({ status }: { status: string }) {
@@ -77,46 +85,18 @@ export default async function BuildsPage({ params }: { params: Params }) {
 
   return <main className="ops-builds">
     <header className="ops-builds-header">
-      <Link className="ops-builds-back" href={`/ops/leads/${workspace.lead.id}`}>← Job</Link>
-      <span className="ops-builds-test">[INTERNAL TEST] / Owner only</span>
       <div>
-        <div>
-          <p>Job #{workspace.lead.id}</p>
-          <h1>Builds</h1>
-          <span>{workspace.lead.first_name} {workspace.lead.last_name}</span>
-        </div>
-        {latestSheet && <strong className="ops-builds-current">Build Sheet {latestSheet.number}</strong>}
+        <p>Job #{workspace.lead.id}</p>
+        <h1>Fabrication</h1>
+        <span>{workspace.lead.first_name} {workspace.lead.last_name}</span>
       </div>
     </header>
-
-    <section className="ops-builds-canvas" aria-labelledby="build-canvas-heading">
-      <header>
-        <div>
-          <span>Current locked geometry</span>
-          <h2 id="build-canvas-heading">Build canvas</h2>
-        </div>
-        <p>{latestSheet ? `Build Sheet ${latestSheet.number}` : "No locked source yet"}</p>
-      </header>
-      {drawing ? <div className="ops-builds-canvas-grid">
-        <BuildSheetDrawing drawing={drawing} />
-        <dl>
-          <div><dt>Finished size</dt><dd>{drawing.width} × {drawing.height} in</dd></div>
-          <div><dt>Frame</dt><dd>{drawing.stockSize} in stock · {drawing.railCount} rails</dd></div>
-          <div><dt>Hardware</dt><dd>Hinges {drawing.hingeSide} · latch {drawing.latchSide}</dd></div>
-          <div><dt>Release</dt><dd>{drawing.fabricationReady ? "Fabrication outputs allowed" : "Preview only"}</dd></div>
-        </dl>
-      </div> : <div className="ops-builds-canvas-empty">
-        <strong>The drawing needs a complete locked geometry.</strong>
-        <p>Confirm the finished width, height, stock, rails, hinge side, and latch side. No dimensions are guessed.</p>
-      </div>}
-    </section>
 
     <div className="ops-builds-grid">
       <section className="ops-builds-panel" aria-labelledby="draft-heading">
         <header className="ops-builds-panel-head">
           <div>
-            <span>Current draft</span>
-            <h2 id="draft-heading">{workspace.draft.conflicts.length ? "Doesn't match" : "Build facts"}</h2>
+            <h2 id="draft-heading">{workspace.draft.conflicts.length ? "Doesn't match" : "Shop facts"}</h2>
           </div>
           <strong>{workspace.draft.factRows.length} facts</strong>
         </header>
@@ -137,7 +117,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
               {workingNumberKeys.has(fact.factKey) && <form className="ops-builds-inline-form" action={addWorkingBuildFactAction}>
                 <input type="hidden" name="leadId" value={leadId} />
                 <input type="hidden" name="factKey" value={fact.factKey} />
-                <input type="hidden" name="actionKey" value={randomUUID()} />
+                <ActionKeyField scope={`working:${leadId}:${fact.factKey}`} />
                 <label><span>Enter a shop estimate</span><input name="value" type="number" min="0.01" step="0.01" inputMode="decimal" required /></label>
                 <SafeSubmitButton pendingLabel="Filing…">Use estimate</SafeSubmitButton>
               </form>}
@@ -161,7 +141,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="confirm" />
-                  <input type="hidden" name="actionKey" value={randomUUID()} />
+                  <ActionKeyField scope={`decision:${leadId}:${fact.id}:confirm`} />
                   <SafeSubmitButton pendingLabel="Confirming…">
                     <Check aria-hidden="true" />
                     <span className="ops-builds-action-label">Confirm</span>
@@ -172,7 +152,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="working" />
-                  <input type="hidden" name="actionKey" value={randomUUID()} />
+                  <ActionKeyField scope={`decision:${leadId}:${fact.id}:working`} />
                   <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Filing…">
                     <PencilLine aria-hidden="true" />
                     <span className="ops-builds-action-label">Use estimate</span>
@@ -183,7 +163,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="reject" />
-                  <input type="hidden" name="actionKey" value={randomUUID()} />
+                  <ActionKeyField scope={`decision:${leadId}:${fact.id}:reject`} />
                   <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Rejecting…">
                     <X aria-hidden="true" />
                     <span className="ops-builds-action-label">Reject</span>
@@ -197,7 +177,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 <form className="ops-builds-inline-form" action={proposeBuildFactChangeAction}>
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
-                  <input type="hidden" name="actionKey" value={randomUUID()} />
+                  <ActionKeyField scope={`correction:${leadId}:${fact.id}:${fact.factKey}`} />
                   <label><span>New {fact.label.toLowerCase()}</span>{["gate.hinge_side", "gate.latch_side"].includes(fact.factKey)
                     ? <select name="value" defaultValue={String(fact.value)} required><option value="left">Left</option><option value="right">Right</option></select>
                     : <input name="value" type={typeof fact.value === "number" ? "number" : "text"} min={typeof fact.value === "number" ? "0.01" : undefined} step={typeof fact.value === "number" ? "0.01" : undefined} inputMode={typeof fact.value === "number" ? "decimal" : undefined} defaultValue={fact.value} maxLength={typeof fact.value === "string" ? 120 : undefined} required />}</label>
@@ -216,36 +196,63 @@ export default async function BuildsPage({ params }: { params: Params }) {
           </div>
           <form action={lockBuildSheetAction}>
             <input type="hidden" name="leadId" value={leadId} />
-            <input type="hidden" name="actionKey" value={randomUUID()} />
+            <ActionKeyField scope={`lock:${leadId}:${latestSheet?.id ?? "draft"}`} />
             <SafeSubmitButton disabled={workspace.draft.conflicts.length > 0 || acceptedCount === 0} pendingLabel="Locking…">
               Lock Build Sheet {Number(latestSheet?.number ?? 0) + 1}
             </SafeSubmitButton>
           </form>
         </footer>
+
+        <section className="ops-builds-canvas" aria-labelledby="build-canvas-heading">
+          <header>
+            <h2 id="build-canvas-heading">Build drawing</h2>
+            <p>{latestSheet ? `Build Sheet ${latestSheet.number}` : "No locked source yet"}</p>
+          </header>
+          <div className="ops-builds-canvas-body">
+            {drawing ? <div className="ops-builds-canvas-grid">
+              <BuildSheetDrawing drawing={drawing} />
+              <dl>
+                <div><dt>Finished size</dt><dd>{drawing.width} × {drawing.height} in</dd></div>
+                <div><dt>Frame</dt><dd>{drawing.stockSize} in stock · {drawing.railCount} rails</dd></div>
+                <div><dt>Hardware</dt><dd>Hinges {drawing.hingeSide} · latch {drawing.latchSide}</dd></div>
+              </dl>
+            </div> : <div className="ops-builds-canvas-empty">
+              <strong>The drawing needs a complete locked geometry.</strong>
+              <p>Confirm the finished width, height, stock, rails, hinge side, and latch side. No dimensions are guessed.</p>
+            </div>}
+          </div>
+        </section>
       </section>
 
       <div className="ops-builds-rail">
         <section className="ops-builds-panel" aria-labelledby="sheets-heading">
           <header className="ops-builds-panel-head">
-            <div><span>Read-only record</span><h2 id="sheets-heading">Build Sheets</h2></div>
+            <div><span>Read-only record</span><h2 id="sheets-heading">Locked history</h2></div>
             <strong>{workspace.sheets.length}</strong>
           </header>
           {workspace.sheets.length === 0 ? <p className="ops-builds-empty">No locked Build Sheet yet.</p> : <div className="ops-builds-sheets">
             {[...workspace.sheets].reverse().map((sheet, index) => <article className={index === 0 ? "is-current" : ""} key={sheet.id}>
-              <header>
-                <div><span>{index === 0 ? "Current" : "History"}</span><h3>Build Sheet {sheet.number}</h3></div>
-                <time>{new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }).format(new Date(sheet.lockedAt))}</time>
-              </header>
-              <dl>{sheet.snapshot.facts.map((fact) => <div key={`${sheet.id}-${fact.factKey}`}><dt>{fact.factKey.split(".").at(-1)?.replaceAll("_", " ")}</dt><dd>{formatValue(fact.value, fact.unit)}{fact.decisionState === "working-number" ? " / Shop estimate" : ""}</dd></div>)}</dl>
-              <p>{sheet.snapshot.fabrication.ready ? "Ready for fabrication outputs." : "Preview only — fabrication outputs blocked."}</p>
-              <small>Locked by {sheet.lockedBy}. This record cannot be edited.</small>
+              <details>
+                <summary>
+                  <span>
+                    <em>{index === 0 ? "Current" : "History"}</em>
+                    <strong>Build Sheet {sheet.number}</strong>
+                  </span>
+                  <time>{new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }).format(new Date(sheet.lockedAt))}</time>
+                </summary>
+                <div className="ops-builds-sheet-body">
+                  <dl>{sheet.snapshot.facts.map((fact) => <div key={`${sheet.id}-${fact.factKey}`}><dt>{fact.factKey.split(".").at(-1)?.replaceAll("_", " ")}</dt><dd>{formatValue(fact.value, fact.unit)}{fact.decisionState === "working-number" ? " / Shop estimate" : ""}</dd></div>)}</dl>
+                  <p>{sheet.snapshot.fabrication.ready ? "Ready for fabrication outputs." : "Preview only — fabrication outputs blocked."}</p>
+                  <small>Locked by {sheet.lockedBy}. This record cannot be edited.</small>
+                </div>
+              </details>
             </article>)}
           </div>}
         </section>
 
         <section className="ops-builds-panel" aria-labelledby="paperwork-heading">
           <header className="ops-builds-panel-head">
-            <div><span>Source numbers attached</span><h2 id="paperwork-heading">Paperwork</h2></div>
+            <div><h2 id="paperwork-heading">Paperwork</h2></div>
             <strong>{workspace.paperwork.length}</strong>
           </header>
           {workspace.paperwork.length === 0 ? <p className="ops-builds-empty">Lock a Build Sheet to file its drawing and DXF manifest.</p> : <div className="ops-builds-paperwork">
@@ -255,14 +262,14 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 <PaperworkStatusIcon status={item.status} />
                 <span>{paperworkLabel(item.status)}</span>
               </em>
-              {item.reason && <p>{item.reason}</p>}
+              {item.reason && <p className="ops-builds-paperwork-reason">{item.reason}</p>}
               {item.issueState === "blocked" && item.status === "current" && <p>Issue blocked until critical numbers are Confirmed.</p>}
               {["drawing", "dxf"].includes(item.kind) && item.status === "current" && item.issueState === "current" && item.sourceBuildSheetNumber === latestSheet?.number && !drawing && <p>Issue blocked until the locked geometry is complete.</p>}
               {["drawing", "dxf"].includes(item.kind) && item.status === "current" && item.issueState === "current" && item.sourceBuildSheetNumber === latestSheet?.number && drawing && <form action={`/api/ops/build-paperwork/${item.id}`} method="post">
-                <input type="hidden" name="issueKey" value={randomUUID()} />
+                <ActionKeyField name="issueKey" scope={`paperwork:${item.id}:${item.kind}`} />
                 <button type="submit">Issue current {item.kind === "dxf" ? "DXF" : "drawing"}</button>
               </form>}
-              <small>Still valid as the record for Build Sheet {item.sourceBuildSheetNumber}.</small>
+              {paperworkNote(item.status, item.sourceBuildSheetNumber) && <small>{paperworkNote(item.status, item.sourceBuildSheetNumber)}</small>}
             </article>)}
           </div>}
         </section>
