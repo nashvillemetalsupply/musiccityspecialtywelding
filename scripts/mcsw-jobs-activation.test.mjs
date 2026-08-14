@@ -209,7 +209,7 @@ test("text consent is immutable, explicit, keyword-aware, and enforced before ev
   assert.match(contact, /privacy policy/)
   assert.match(contact, /terms/)
   assert.match(contact, /By checking this box, you agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this request/)
-  for (const disclosure of [contact, consent, privacy, terms, ownerConsent]) {
+  for (const disclosure of [contact, privacy, terms, ownerConsent]) {
     assert.match(disclosure, /customer-care and job-update text messages from Music City Specialty Welding/)
     assert.match(disclosure, /Message frequency varies/)
     assert.match(disclosure, /Message and data rates may apply/)
@@ -312,6 +312,16 @@ test("Twilio webhooks survive an outbound pause and reconcile provider-first cal
   assert.match(health, /const shopBrainGateSatisfied = !shopBrainRequired \|\| shopBrainReady/)
   assert.match(health, /ready: shopBrainReady/)
   assert.match(health, /gateSatisfied: shopBrainGateSatisfied/)
+})
+
+test("provider readiness validates the Messaging Service outbound status callback", () => {
+  const twilio = source("lib/twilio.ts")
+  const health = source("app/api/health/route.ts")
+  assert.match(twilio, /status_callback\?: string/)
+  assert.match(twilio, /sameWebhookUrl\(service\?\.status_callback, twilioCallbackUrl\("\/api\/twilio\/sms-status"\)\)/)
+  assert.match(twilio, /messagingStatusCallbackMatches/)
+  assert.match(health, /twilioProvider\.messagingStatusCallbackMatches/)
+  assert.match(health, /messagingStatusCallbackMatches: twilioProvider\.messagingStatusCallbackMatches/)
 })
 
 test("voice cutover and customer texting are independent launch gates", () => {

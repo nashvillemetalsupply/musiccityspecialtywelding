@@ -79,7 +79,3 @@ export async function getMessagingConsentState(phoneValue: string): Promise<Mess
 export async function customerSmsAllowed(phone: string) {
   return (await getMessagingConsentState(phone)) === "granted"
 }
-
-export function consentDisclosure() {
-  return "By checking this box, you agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this request. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase."
-}

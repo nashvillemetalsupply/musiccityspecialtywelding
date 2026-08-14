@@ -32,7 +32,12 @@ export async function recordVerbalTextConsent(formData: FormData) {
     leadId,
     personId: lead.person_id,
     operatorId: operator.id,
-    provenance: { statement: "Customer verbally agreed to receive job-related texts.", recordedIn: "work-order" },
+    provenance: {
+      method: "verbal-owner-script",
+      disclosure: "You agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this job. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase.",
+      statement: "Customer verbally agreed after the owner read the text-consent disclosure.",
+      recordedIn: "work-order",
+    },
   })
   revalidatePath(`/ops/leads/${leadId}`)
 }
