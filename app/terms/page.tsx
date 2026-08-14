@@ -52,10 +52,10 @@ export default function TermsPage() {
                   Optional Job Texts
                 </h2>
                 <p className="mb-4">
-                  If you check “Text me about this job,” you agree to receive customer-care and job-update texts from Music City Specialty Welding at the number provided. Message frequency varies, and message and data rates may apply. Consent is optional and is not a condition of purchase.
+                  If you check “Text me about this job,” you agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding at the number provided. Message frequency varies. Message and data rates may apply. Consent is optional and is not a condition of purchase.
                 </p>
                 <p>
-                  Reply STOP to opt out, START to opt back in, or HELP for help. A STOP request overrides earlier permission until a later START. Carrier delivery is not guaranteed.
+                  Reply STOP to unsubscribe, START to opt back in, or HELP for help. A STOP request overrides earlier permission until a later START. Carrier delivery is not guaranteed.
                 </p>
               </section>
 

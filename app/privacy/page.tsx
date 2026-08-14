@@ -108,7 +108,7 @@ export default function PrivacyPage() {
                   Texts and multimedia messages sent to the shop number, including photos, may be copied into the applicable work order. Automated tools may extract proposed facts or commitments, but our crew remains responsible for the job record and can correct the source-backed information.
                 </p>
                 <p className="mt-4">
-                  If you optionally agree to job-related texts, we keep an append-only record of when and how that permission was given, along with later STOP, START, or HELP requests. Reply STOP to opt out or HELP for help. We do not sell or share mobile opt-in information for third-party marketing.
+                  If you optionally agree, you may receive recurring customer-care and job-update text messages from Music City Specialty Welding about your request. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase. We keep an append-only record of when and how permission was given, along with later STOP, START, or HELP requests. We do not sell or share mobile opt-in information for third-party marketing.
                 </p>
               </section>
 

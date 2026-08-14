@@ -203,12 +203,21 @@ test("text consent is immutable, explicit, keyword-aware, and enforced before ev
   const migration = source("scripts/migrate.mjs")
   const privacy = source("app/privacy/page.tsx")
   const terms = source("app/terms/page.tsx")
+  const ownerConsent = source("app/ops/leads/[id]/page.tsx")
 
   assert.match(contact, /Text me about this job/)
-  assert.match(contact, /Message frequency varies/)
-  assert.match(contact, /STOP to opt out or HELP for help/)
   assert.match(contact, /privacy policy/)
   assert.match(contact, /terms/)
+  assert.match(contact, /By checking this box, you agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this request/)
+  for (const disclosure of [contact, consent, privacy, terms, ownerConsent]) {
+    assert.match(disclosure, /customer-care and job-update text messages from Music City Specialty Welding/)
+    assert.match(disclosure, /Message frequency varies/)
+    assert.match(disclosure, /Message and data rates may apply/)
+    assert.match(disclosure, /STOP to unsubscribe/)
+    assert.match(disclosure, /HELP for help/)
+    assert.match(disclosure, /Consent is optional and is not a condition of purchase/)
+  }
+  assert.match(ownerConsent, /Use this only after the customer clearly says yes/)
   assert.match(quote, /const textConsent = .* === "yes"/)
   assert.match(quote, /if \(textConsent && !isTest\)/)
   assert.doesNotMatch(quote, /recordMessagingConsent/)
