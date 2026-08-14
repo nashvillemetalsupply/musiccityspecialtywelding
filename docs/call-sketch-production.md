@@ -36,15 +36,16 @@ The public phone, structured data, header, mobile action, contact section, and f
 9. Enable `TWILIO_PUBLIC_NUMBER_ENABLED` and `CALL_SKETCH_PUBLIC_ENABLED`, deploy the exact pushed commit, and verify every public phone surface plus structured data.
 10. In the exact **Music City Specialty Welding** Google Ads account, change only the call-forwarding destination to the verified Twilio number. Do not change campaign state, budgets, bidding, targeting, keywords, ads, assets, or conversion settings. Capture the account/customer ID and before/after destination. Google may display a Google forwarding number while routing calls to Twilio.
 
-## Current activation state — 2026-08-13
+## Current activation state — 2026-08-14
 
 - Twilio Primary Customer Profile `NCW LLC` is **Approved**. The verified legal business is Neverlift Chassis Works, LLC and the customer-facing Brand name is Music City Specialty Welding.
+- Local Voice/SMS/MMS number `(615) 703-3296` is purchased. Its primary Voice webhook is the canonical `/api/twilio/voice` POST URL, and the provider-hosted `MCSW Voice Fallback` directly dials the established owner line during a website or database outage.
+- Production has the shop number, private forwarding destination, and managed live transcription enabled. The canonical health check reports the number found, Voice-capable, webhook matched, provider-hosted fallback present, Voice ready, and live transcription configured.
 - Twilio Verify service `MCSW Jobs Login` is ready (`VA022c092763e0ac4ef1730dd9d03f6c40`).
-- Messaging Service `MCSW Job Updates` is ready (`MG7d1539f9d6d1a80e6a07912143c54138`). Its inbound webhook is `/api/twilio/sms`, its delivery callback is `/api/twilio/sms-status`, and Advanced Opt-Out handles STOP, START, and HELP. It intentionally has no sender until the shop number is purchased.
-- Provider-hosted fallback `MCSW Voice Fallback` is ready at `https://handler.twilio.com/twiml/EHcb418f82595cf09422afbc5a72461964`. It directly dials the established owner line during a website or database outage.
-- The Low Volume Standard A2P Brand form is complete but has not been submitted. Submission has a carrier fee and requires the owner's explicit approval. Customer SMS remains disabled until both Brand and Campaign are approved and the complete messaging acceptance matrix passes.
-- No 615 Voice/SMS/MMS number is currently available in Twilio's public Nashville or Lebanon inventory. No substitute number was purchased and no number charge was made.
-- Because no tested Twilio line exists, the established public number and Google Ads forwarding destination remain unchanged. `TWILIO_PUBLIC_NUMBER_ENABLED`, `TWILIO_SMS_ENABLED`, `CALL_SKETCH_PUBLIC_ENABLED`, and `SHOP_BRAIN_REQUIRED` stay false.
+- Messaging Service `MCSW Job Updates` is ready (`MG7d1539f9d6d1a80e6a07912143c54138`). The purchased number is in its sender pool, its inbound webhook is `/api/twilio/sms`, its delivery callback is `/api/twilio/sms-status`, and Advanced Opt-Out handles STOP, START, and HELP.
+- The EIN-based A2P Brand is **Approved**. The Low Volume Mixed Campaign was submitted with the owner's paid-action approval and is **In Review**. The Campaign must become **VERIFIED** and the specific shop number **REGISTERED** before customer SMS testing or launch. `TWILIO_SMS_ENABLED` remains false.
+- No designated real-phone acceptance call has yet proved phone receipt, signed transcript callbacks, durable utterances, live drawing, owner confirmation, and DXF download. `TWILIO_PUBLIC_NUMBER_ENABLED` and `CALL_SKETCH_PUBLIC_ENABLED` remain false until that matrix passes.
+- The established public number and the Music City Specialty Welding Google Ads forwarding destination remain unchanged. `SHOP_BRAIN_REQUIRED` remains false until all release dependencies and the independent acceptance review are green.
 
 ## Data and privacy
 
