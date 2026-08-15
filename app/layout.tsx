@@ -167,7 +167,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body className={`${_barlowCondensed.variable} ${_plexSans.variable} ${_plexMono.variable} ${_alfaSlab.variable} ${_marker.variable} font-sans antialiased`}>
         <script
           id="local-business-schema"
