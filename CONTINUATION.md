@@ -4,7 +4,7 @@ Release date: August 2, 2026 · CRM platform release: August 3, 2026
 
 Status: live at `https://musiccityspecialtywelding.com`, committed to `main`, and deployed through Vercel. GitHub → Vercel auto-deploy is now connected (pushes to `main` deploy production). Resume from this record instead of restarting the project.
 
-Follow-up — August 15, 2026: the owner approved production customer SMS, recorded/transcribed calls, and publication of `(615) 703-3296` plus Call Sketch. The public site and Shop Brain launch gate are green; Google Ads remains unchanged pending separate post-launch verification. The final human acceptance action is recorded in [`docs/mcsw-final-call-acceptance-2026-08-16.md`](docs/mcsw-final-call-acceptance-2026-08-16.md). Current provider and activation truth lives in `SHOP-BRAIN-SETUP.md` and `docs/call-sketch-production.md`.
+Follow-up — August 16, 2026: the owner approved production customer SMS, recorded/transcribed calls, and publication of `(615) 703-3296` plus Call Sketch. The final acceptance call was placed and verified on 2026-08-16 (started `2026-08-16T22:13:24.882Z`, completed, 42 seconds); primary production acceptance is complete and **no further owner action is required**. The public site and Shop Brain launch gate are green. Google Ads remains unchanged pending separate post-launch verification. Evidence and the accepted limitation are recorded in [`docs/mcsw-final-call-acceptance-2026-08-16.md`](docs/mcsw-final-call-acceptance-2026-08-16.md). Current provider and activation truth lives in `SHOP-BRAIN-SETUP.md` and `docs/call-sketch-production.md`.
 
 ## August 3, 2026 — custom CRM platform (Lead Operations)
 

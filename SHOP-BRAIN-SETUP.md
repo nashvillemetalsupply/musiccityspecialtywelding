@@ -58,7 +58,7 @@ Upgrade the Vercel project to Pro before commercial cutover.
 
 The owner must create the Primary Compliance Profile with the exact legal name from the IRS CP 575/147C letter, EIN, business address, business details, website, and authorized-representative information. The owner completes email/2FA verification and approves any paid Brand, Campaign, number, or billing action.
 
-### Current owner gate — 2026-08-15
+### Current owner gate — 2026-08-16 (complete)
 
 The Primary Customer Profile and EIN-based A2P Brand are approved. The local 615 number has been purchased and configured, and the paid Low Volume Mixed Campaign is **Verified** (approved) with the shop number **Registered** and assigned. The shop acceptance session passed for SMS, ringing, two-way audio, managed live transcription, Call Sketch, and DXF download. `TWILIO_PUBLIC_NUMBER_ENABLED`, `CALL_SKETCH_PUBLIC_ENABLED`, and `TWILIO_SMS_ENABLED` are now true in Production.
 
@@ -71,9 +71,7 @@ Completed owner approvals:
 5. Approved publishing `(615) 703-3296` and Call Sketch on owned website/app surfaces.
 6. Directed that Google Ads remain unchanged until separate post-launch verification.
 
-The only remaining owner action is:
-
-1. On August 16, place one 20–30 second call from the phone ending `8197` to `(615) 703-3296`, hang up, and report `final call done`. The technical verification then checks the bodyless live-transcript `204`, recording `200`, Deepgram request, transcript callback `200`, and absence of AI extraction errors. See `docs/mcsw-final-call-acceptance-2026-08-16.md`.
+The final acceptance call was placed on 2026-08-16 (started `2026-08-16T22:13:24.882Z`, completed, 42 seconds) from the caller ending `8197` to `(615) 703-3296`. Verification passed: bodyless live-transcript `204`s, recording `200`, durable recording/transcript events, `transcript_status=ready` with no error, and the live-transcription event processed at `2026-08-16T22:14:24Z` with `extraction_status=done`, `attempts=0`, no error, and an extraction result present under `google/gemini-2.5-flash-lite`. No post-call Deepgram request appeared, which is expected on a successfully live-transcribed call (the recording route preserves an already-ready live transcript and `submitCallRecording` only claims queued/failed/stale calls); it is duplicate suppression, not a provider failure. **No further owner action is required.**
 
 The technical setup—webhooks, Messaging Service, Advanced Opt-Out, Vercel secrets, retry behavior, and test matrix—is complete. Keep the existing Google call-ad number active and do not edit campaigns; Google Ads remains unchanged pending separate post-launch verification.
 
@@ -125,7 +123,7 @@ Create a signed Resend webhook for `/api/resend/webhook` and subscribe to `email
 
 **Accepted 2026-08-15:** the correct Resend team is **Music City Specialty Welding**, signed in as `sales@musiccityspecialtywelding.com`. A labeled internal quote notification was delivered, and its signed `email.delivered` webhook reached Production with HTTP `200 - OK` on the first attempt. The signing secret remains only in Vercel Production.
 
-Deepgram Production uses project `a953c9b4-767e-4715-a0a6-4d63a82a2164`; its API key and callback secret remain only in Vercel Production. The final post-call fallback acceptance is the single call in `docs/mcsw-final-call-acceptance-2026-08-16.md`.
+Deepgram Production uses project `a953c9b4-767e-4715-a0a6-4d63a82a2164`; its API key and callback secret remain only in Vercel Production. The final post-call fallback acceptance completed 2026-08-16 with no live Deepgram request, which is expected on a successfully live-transcribed call: the recording route preserves an already-ready live transcript and `submitCallRecording` only claims queued/failed/stale calls, so the fallback is intentionally suppressed (duplicate suppression, not a provider failure). The fallback remains configured and covered by recovery tests but was not force-exercised against the live provider; a future controlled failure-injection drill would be separate work and is not a launch blocker.
 
 ## Recovery and release gate
 
@@ -135,4 +133,4 @@ The Morning Brief cron runs at both possible Central-time UTC offsets and claims
 
 Set `SHOP_BRAIN_REQUIRED=true` only after `/api/health` reports the public number, Messaging Service, consent ledger, Blob uploads/recovery, Gmail, Deepgram, AI Gateway, Resend, security secrets, schedulers, and provider checks green; production mobile acceptance and the independent release review must also be complete.
 
-**Current state 2026-08-15:** `/api/health` reports `shopBrain.ready=true`, `shopBrain.gateSatisfied=true`, and a passed launch gate. `SHOP_BRAIN_REQUIRED` intentionally remains false; do not describe it as enabled. No backlog or delivery failure was reported in the final pre-call health check.
+**Current state 2026-08-16:** `/api/health` reports `shopBrain.ready=true`, `shopBrain.gateSatisfied=true`, and a passed launch gate. `SHOP_BRAIN_REQUIRED` intentionally remains false; do not describe it as enabled. No backlog or delivery failure was reported in the post-call health check after the final acceptance call.
