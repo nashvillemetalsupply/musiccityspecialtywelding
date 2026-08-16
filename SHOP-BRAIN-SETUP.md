@@ -28,13 +28,14 @@ TWILIO_VERIFY_SERVICE_SID (Verify service used only for operator sign-in)
 TWILIO_PHONE_NUMBER
 TWILIO_MESSAGING_SERVICE_SID
 TWILIO_WEBHOOK_BASE_URL
-TWILIO_PUBLIC_NUMBER_ENABLED (false through private voice acceptance)
-TWILIO_SMS_ENABLED (false through A2P approval and messaging smoke tests)
+TWILIO_PUBLIC_NUMBER_ENABLED (true; published after shop acceptance)
+TWILIO_SMS_ENABLED (true; owner approved customer SMS after the real-device matrix)
 OWNER_CELL_PHONE
 SHOP_BRAIN_REQUIRED (true only after every readiness check is green)
 DEEPGRAM_API_KEY
 DEEPGRAM_CALLBACK_SECRET (32+ random bytes)
 AI_GATEWAY_API_KEY
+AI_EXTRACTION_MODEL (google/gemini-2.5-flash-lite in Production as of 2026-08-15)
 AI_SPEECH_MODEL (optional; defaults to openai/tts-1)
 AI_SPEECH_VOICE (optional; defaults to onyx)
 GMAIL_CLIENT_ID
@@ -57,22 +58,24 @@ Upgrade the Vercel project to Pro before commercial cutover.
 
 The owner must create the Primary Compliance Profile with the exact legal name from the IRS CP 575/147C letter, EIN, business address, business details, website, and authorized-representative information. The owner completes email/2FA verification and approves any paid Brand, Campaign, number, or billing action.
 
-### Current owner gate — 2026-08-14
+### Current owner gate — 2026-08-15
 
-The Primary Customer Profile and EIN-based A2P Brand are approved. The local 615 number has been purchased and configured, and the paid Low Volume Mixed Campaign is **Verified** (approved) with the shop number **Registered** and assigned. `TWILIO_PUBLIC_NUMBER_ENABLED` and `TWILIO_SMS_ENABLED` remain false until the owner's single acceptance session passes.
+The Primary Customer Profile and EIN-based A2P Brand are approved. The local 615 number has been purchased and configured, and the paid Low Volume Mixed Campaign is **Verified** (approved) with the shop number **Registered** and assigned. The shop acceptance session passed for SMS, ringing, two-way audio, managed live transcription, Call Sketch, and DXF download. `TWILIO_PUBLIC_NUMBER_ENABLED`, `CALL_SKETCH_PUBLIC_ENABLED`, and `TWILIO_SMS_ENABLED` are now true in Production.
 
 Completed owner approvals:
 
 1. Verified the legal business and authorized-representative details.
 2. Approved and purchased `(615) 703-3296`.
 3. Approved the paid A2P Campaign submission.
+4. Approved customer SMS and use of the Twilio line for recorded/transcribed customer calls.
+5. Approved publishing `(615) 703-3296` and Call Sketch on owned website/app surfaces.
+6. Directed that Google Ads remain unchanged until separate post-launch verification.
 
-The next owner-required steps are:
+The only remaining owner action is:
 
-1. In one acceptance session, answer the designated private acceptance call and approve the Moto G call experience after Call Sketch, transcript, and DXF receipts are verified, then run the real-device opt-in, STOP, START, HELP, inbound, outbound, MMS, and failure-path SMS tests on the same device.
-2. Approve public-number and Google Ads cutover only after that single acceptance session passes.
+1. On August 16, place one 20–30 second call from the phone ending `8197` to `(615) 703-3296`, hang up, and report `final call done`. The technical verification then checks the bodyless live-transcript `204`, recording `200`, Deepgram request, transcript callback `200`, and absence of AI extraction errors. See `docs/mcsw-final-call-acceptance-2026-08-16.md`.
 
-The technical setup—webhooks, Messaging Service, Advanced Opt-Out, Vercel secrets, retry behavior, and test matrix—does not require Philippe to click through alone. Keep the existing Google call-ad number active and do not edit the campaigns; the private Twilio number stays separate until cutover testing is accepted.
+The technical setup—webhooks, Messaging Service, Advanced Opt-Out, Vercel secrets, retry behavior, and test matrix—is complete. Keep the existing Google call-ad number active and do not edit campaigns; Google Ads remains unchanged pending separate post-launch verification.
 
 Register an EIN-based Low-Volume Standard Brand and the approved low-volume job-update/customer-care Campaign. Keep customer Text hidden while the Campaign is pending. Operator phone login may run independently through Twilio Verify's managed sender pool.
 
@@ -97,8 +100,8 @@ After the owner approves a local 615 voice/SMS/MMS-capable number:
 4. Set the number’s primary voice webhook to `/api/twilio/voice` using HTTP POST.
 5. Create a Twilio-hosted TwiML Bin that directly `<Dial>`s the owner cell. Use that Bin as the number-level voice fallback so a Vercel outage cannot also remove fallback calling.
 6. Keep `/api/twilio/fallback` for application testing only.
-7. Keep `TWILIO_PUBLIC_NUMBER_ENABLED=false` for private real-device voice testing. Enable it only after Moto G acceptance and real incoming/outgoing calls pass.
-8. Keep `TWILIO_SMS_ENABLED=false` until A2P approval and the complete STOP/START/HELP, opt-in, inbound, outbound, MMS, retry, and blocked-send matrix passes.
+7. Keep `TWILIO_PUBLIC_NUMBER_ENABLED=false` for private real-device voice testing. Enable it only after Moto G acceptance and real incoming/outgoing calls pass. **Status 2026-08-15:** enabled after owner acceptance.
+8. Keep `TWILIO_SMS_ENABLED=false` until A2P approval and the complete STOP/START/HELP, opt-in, inbound, outbound, MMS, retry, and blocked-send matrix passes. **Status 2026-08-15:** enabled after owner acceptance.
 
 Use one canonical HTTPS origin in `TWILIO_WEBHOOK_BASE_URL`. Configure provider URLs from that same origin; do not mix preview domains, `www` variants, or arbitrary `Host` headers. Signed inbound messages and signed delivery callbacks remain accepted while outbound SMS is paused, so STOP and in-flight receipts are never lost.
 
@@ -118,7 +121,11 @@ Before either launch switch changes, verify in Twilio and on `/api/health`:
 
 Gmail uses `gmail.readonly`. Create an Internal Google Workspace OAuth client, set its client ID and secret locally, and run `node scripts/gmail-auth.mjs` while signed in to the shop mailbox. The owner performs Google password entry. Store the printed refresh token in Vercel; never commit it.
 
-Create a signed Resend webhook for `/api/resend/webhook` and subscribe to `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.failed`, and `email.suppressed`. Provider acceptance remains pending until the webhook records final delivery.
+Create a signed Resend webhook for `/api/resend/webhook` and subscribe to `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.failed`, and `email.suppressed`.
+
+**Accepted 2026-08-15:** the correct Resend team is **Music City Specialty Welding**, signed in as `sales@musiccityspecialtywelding.com`. A labeled internal quote notification was delivered, and its signed `email.delivered` webhook reached Production with HTTP `200 - OK` on the first attempt. The signing secret remains only in Vercel Production.
+
+Deepgram Production uses project `a953c9b4-767e-4715-a0a6-4d63a82a2164`; its API key and callback secret remain only in Vercel Production. The final post-call fallback acceptance is the single call in `docs/mcsw-final-call-acceptance-2026-08-16.md`.
 
 ## Recovery and release gate
 
@@ -127,3 +134,5 @@ The Morning Brief cron runs at both possible Central-time UTC offsets and claims
 `shopBrain.ready` always reports the real configuration state. `shopBrain.gateSatisfied` is the release-gate result and can remain true while `SHOP_BRAIN_REQUIRED=false`; this distinction prevents a disabled feature from appearing configured.
 
 Set `SHOP_BRAIN_REQUIRED=true` only after `/api/health` reports the public number, Messaging Service, consent ledger, Blob uploads/recovery, Gmail, Deepgram, AI Gateway, Resend, security secrets, schedulers, and provider checks green; production mobile acceptance and the independent release review must also be complete.
+
+**Current state 2026-08-15:** `/api/health` reports `shopBrain.ready=true`, `shopBrain.gateSatisfied=true`, and a passed launch gate. `SHOP_BRAIN_REQUIRED` intentionally remains false; do not describe it as enabled. No backlog or delivery failure was reported in the final pre-call health check.

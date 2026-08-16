@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     if (result?.transcriptEventId) {
       after(() => processEvent(result.transcriptEventId!).catch((error) => console.error("Live transcript extraction failed:", error)))
     }
-    return new Response("", { status: 204, headers: { "Cache-Control": "no-store" } })
+    return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
   } catch (error) {
     console.error("Live transcription callback failed:", error)
     return new Response("", { status: 500, headers: { "Cache-Control": "no-store" } })

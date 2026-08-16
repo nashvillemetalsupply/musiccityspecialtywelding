@@ -19,7 +19,7 @@ These production environment values are intentionally independent:
 - `TWILIO_LIVE_TRANSCRIPTION_ENABLED=true`: starts Twilio Real-Time Transcription on Voice calls.
 - `TWILIO_PUBLIC_NUMBER_ENABLED=true`: lets the site and structured data replace the established fallback number with the tested Twilio number.
 - `CALL_SKETCH_PUBLIC_ENABLED=true`: publishes the homepage Call Sketch showcase after the phone path is proven.
-- `TWILIO_SMS_ENABLED`: leave `false` until messaging registration, consent, and sender configuration are separately approved.
+- `TWILIO_SMS_ENABLED=true`: customer messaging is enabled after A2P registration, the real-device matrix, and owner approval.
 
 The public phone, structured data, header, mobile action, contact section, and footer all resolve through `getShopPhone()`. Do not hand-edit phone strings on the homepage.
 
@@ -36,16 +36,33 @@ The public phone, structured data, header, mobile action, contact section, and f
 9. Enable `TWILIO_PUBLIC_NUMBER_ENABLED` and `CALL_SKETCH_PUBLIC_ENABLED`, deploy the exact pushed commit, and verify every public phone surface plus structured data.
 10. In the exact **Music City Specialty Welding** Google Ads account, change only the call-forwarding destination to the verified Twilio number. Do not change campaign state, budgets, bidding, targeting, keywords, ads, assets, or conversion settings. Capture the account/customer ID and before/after destination. Google may display a Google forwarding number while routing calls to Twilio.
 
-## Current activation state — 2026-08-14
+## Current activation state — 2026-08-15
 
 - Twilio Primary Customer Profile `NCW LLC` is **Approved**. The verified legal business is Neverlift Chassis Works, LLC and the customer-facing Brand name is Music City Specialty Welding.
 - Local Voice/SMS/MMS number `(615) 703-3296` is purchased. Its primary Voice webhook is the canonical `/api/twilio/voice` POST URL, and the provider-hosted `MCSW Voice Fallback` directly dials the established owner line during a website or database outage.
 - Production has the shop number, private forwarding destination, and managed live transcription enabled. The canonical health check reports the number found, Voice-capable, webhook matched, provider-hosted fallback present, Voice ready, and live transcription configured.
 - Twilio Verify service `MCSW Jobs Login` is ready (`VA022c092763e0ac4ef1730dd9d03f6c40`).
 - Messaging Service `MCSW Job Updates` is ready (`MG7d1539f9d6d1a80e6a07912143c54138`). The purchased number is in its sender pool, its inbound webhook is `/api/twilio/sms`, and its outbound status callback is `/api/twilio/sms-status`. Advanced Opt-Out handles STOP, START, and HELP, but its state is not exposed by the automated readiness probe, so it remains a manual provider-console acceptance item.
-- The EIN-based A2P Brand is **Approved**. The Low Volume Mixed Campaign is **Verified** (approved), and the specific shop number is **Registered** and assigned to the Campaign. `TWILIO_SMS_ENABLED` remains false until the owner's single acceptance session passes.
-- No designated real-phone acceptance call has yet proved phone receipt, signed transcript callbacks, durable utterances, live drawing, owner confirmation, and DXF download. `TWILIO_PUBLIC_NUMBER_ENABLED` and `CALL_SKETCH_PUBLIC_ENABLED` remain false until the single owner acceptance session (private voice call plus the real-device SMS matrix) passes.
-- The established public number and the Music City Specialty Welding Google Ads forwarding destination remain unchanged. `SHOP_BRAIN_REQUIRED` remains false until all release dependencies and the independent acceptance review are green.
+- The EIN-based A2P Brand is **Approved**. The Low Volume Mixed Campaign is **Verified** (approved), and the specific shop number is **Registered** and assigned to the Campaign. `TWILIO_SMS_ENABLED=true`; the owner approved customer SMS after the real-device matrix passed.
+- The in-shop acceptance session proved SMS, ringing, two-way audio, signed managed live-transcript callbacks, durable utterances, live drawing, owner confirmation, and DXF download. The owner approved recorded/transcribed customer calls.
+- `TWILIO_PUBLIC_NUMBER_ENABLED=true` and `CALL_SKETCH_PUBLIC_ENABLED=true`. `(615) 703-3296` and the Call Sketch showcase are published on owned website/app surfaces.
+- The post-call Deepgram fallback remains a separate acceptance seam. Deepgram Production project `a953c9b4-767e-4715-a0a6-4d63a82a2164` has its key and callback secret configured in Vercel; no key is recorded here.
+- Resend is configured under the **Music City Specialty Welding** team at `sales@musiccityspecialtywelding.com`. A labeled internal quote notification was delivered, and its signed delivery webhook returned HTTP `200 - OK` in one attempt.
+- The live transcript success path now returns a bodyless `new Response(null, { status: 204 })`; `scripts/call-sketch-integration.test.mjs` contains the regression test.
+- `AI_EXTRACTION_MODEL=google/gemini-2.5-flash-lite` in Production. This replaced an OpenAI model that rejected the extractor's flexible JSON schema.
+- Production deployment `dpl_FAvRXqSdYrEFGXLPF7QXshP3su86` (`music-city-speciality-welding-l1hbkx8h9.vercel.app`) is Ready and aliased to `musiccityspecialtywelding.com` and `www.musiccityspecialtywelding.com`.
+- The final pre-call `/api/health` response reported `shopBrain.ready=true`, `gateSatisfied=true`, no delivery failures or transcript backlogs, and a passed launch gate. `SHOP_BRAIN_REQUIRED` intentionally remains false.
+- Google Ads remains unchanged pending separate post-launch verification. Do not change campaign state, budgets, bidding, targeting, keywords, ads, assets, conversions, or the call destination during this acceptance.
+
+## Final post-call acceptance — 2026-08-16
+
+The owner's only remaining action is the short call in [`mcsw-final-call-acceptance-2026-08-16.md`](mcsw-final-call-acceptance-2026-08-16.md). After the owner reports `final call done`, technical closeout must verify all five receipts before declaring the post-call fallback complete:
+
+1. `/api/twilio/live-transcript` returns bodyless HTTP `204` with no `Invalid response status code 204` error.
+2. `/api/twilio/recording` returns HTTP `200`.
+3. Deepgram project usage records the asynchronous transcription request.
+4. `/api/twilio/transcript` returns HTTP `200`; redact its callback token from any captured log.
+5. AI extraction records no unavailable-model or invalid-schema error.
 
 ## Data and privacy
 

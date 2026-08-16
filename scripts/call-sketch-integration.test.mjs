@@ -38,6 +38,12 @@ test("live transcript callbacks are signed, idempotent, and stored durably", asy
   assert.match(migration, /UNIQUE \(transcription_sid, sequence_id, track\)/)
 })
 
+test("the live transcript success acknowledgement is a bodyless 204 response", async () => {
+  const route = await read("app/api/twilio/live-transcript/route.ts")
+  assert.match(route, /new Response\(null, \{ status: 204/)
+  assert.doesNotMatch(route, /new Response\("", \{ status: 204/)
+})
+
 test("the final transcript callback re-projects Build facts after the transcript receipt", async () => {
   const store = await read("lib/call-sketch-store.ts")
   const stopped = store.slice(store.indexOf('if (input.event === "transcription-stopped")'))
