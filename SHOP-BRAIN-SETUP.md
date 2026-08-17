@@ -59,7 +59,7 @@ The owner must create the Primary Compliance Profile with the exact legal name f
 
 ### Current owner gate — 2026-08-14
 
-The Primary Customer Profile and EIN-based A2P Brand are approved. The local 615 number has been purchased and configured, and the paid Low Volume Mixed Campaign has been submitted. Carrier review is still in progress.
+The Primary Customer Profile and EIN-based A2P Brand are approved. The local 615 number has been purchased and configured, and the paid Low Volume Mixed Campaign is **Verified** (approved) with the shop number **Registered** and assigned. `TWILIO_PUBLIC_NUMBER_ENABLED` and `TWILIO_SMS_ENABLED` remain false until the owner's single acceptance session passes.
 
 Completed owner approvals:
 
@@ -69,9 +69,8 @@ Completed owner approvals:
 
 The next owner-required steps are:
 
-1. Answer the designated private acceptance call and approve the Moto G call experience after Call Sketch, transcript, and DXF receipts are verified.
-2. After the Campaign is **VERIFIED** and the shop number is **REGISTERED**, participate in the real-device opt-in, STOP, START, HELP, inbound, outbound, MMS, and failure-path tests.
-3. Approve public-number and Google Ads cutover only after those acceptance gates pass.
+1. In one acceptance session, answer the designated private acceptance call and approve the Moto G call experience after Call Sketch, transcript, and DXF receipts are verified, then run the real-device opt-in, STOP, START, HELP, inbound, outbound, MMS, and failure-path SMS tests on the same device.
+2. Approve public-number and Google Ads cutover only after that single acceptance session passes.
 
 The technical setup—webhooks, Messaging Service, Advanced Opt-Out, Vercel secrets, retry behavior, and test matrix—does not require Philippe to click through alone. Keep the existing Google call-ad number active and do not edit the campaigns; the private Twilio number stays separate until cutover testing is accepted.
 
@@ -108,7 +107,8 @@ Before either launch switch changes, verify in Twilio and on `/api/health`:
 - The purchased number is voice/SMS/MMS capable, is in the Messaging Service sender pool, the service's inbound webhook is the canonical `/api/twilio/sms` POST URL, and **Use inbound webhook on number** is off.
 - The number's primary voice webhook is the canonical `/api/twilio/voice` POST URL.
 - The number's fallback URL points directly to its Twilio-hosted TwiML Bin (`https://handler.twilio.com/twiml/EH…`), not this application or a generic Twilio webpage/API URL.
-- The health response reports provider credentials, number lookup, webhook matches, sender-pool membership, and provider-hosted fallback as ready. It reports booleans only; it never returns credentials, SIDs, or phone numbers.
+- The health response reports provider credentials, number lookup, webhook matches, sender-pool membership, the Messaging Service outbound status callback, and provider-hosted fallback as ready. It reports booleans only; it never returns credentials, SIDs, or phone numbers.
+- Advanced Opt-Out (STOP/START/HELP) is a provider-console acceptance item: the automated readiness probe does not expose it, so verify STOP, START, and HELP in the Twilio console manually before the SMS matrix.
 - With `TWILIO_SMS_ENABLED=false`, signed inbound SMS and signed status callbacks still return success, while every application-originated send remains blocked.
 - An unknown number texting exact STOP, START, or HELP creates consent/message receipts but no person and no work order. Conversational text still creates or attaches normal intake.
 - A checked web consent submission creates the lead and its consent ledger row in one database transaction; a consent persistence failure is surfaced and never silently accepted.

@@ -44,3 +44,7 @@ export function validateCustomerUploadMetadata(filenameValue: unknown, contentTy
   size: number
 }
 export function messagingConsentState(events: Array<{ source?: unknown }> | null | undefined): "granted" | "revoked" | "unknown"
+export const QUOTE_CONSENT_DISCLOSURE_VERSION: string
+export const TEXT_CONSENT_REVOKED_WARNING: string
+export const TEXT_CONSENT_UNVERIFIED_WARNING: string
+export function webTextConsentResolution(state: unknown): { grant: boolean; consentConflict: boolean }

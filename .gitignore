@@ -33,3 +33,5 @@ next-env.d.ts
 /GROWTH_GAPS_AUDIT_*.md
 /.preview-*.log
 /.tmp-*.log
+/.scratch/
+/error_discovery_data/

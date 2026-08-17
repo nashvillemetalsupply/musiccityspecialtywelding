@@ -191,6 +191,7 @@ export async function GET() {
       twilioProvider.mmsCapable &&
       twilioProvider.messagingServiceFound &&
       twilioProvider.messagingInboundWebhookMatches &&
+      twilioProvider.messagingStatusCallbackMatches &&
       twilioProvider.numberInSenderPool
   )
   const centralHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hourCycle: "h23" }).format(new Date()))
@@ -307,6 +308,7 @@ export async function GET() {
           voiceFallbackProviderHosted: twilioProvider.voiceFallbackProviderHosted,
           messagingServiceFound: twilioProvider.messagingServiceFound,
           messagingInboundWebhookMatches: twilioProvider.messagingInboundWebhookMatches,
+          messagingStatusCallbackMatches: twilioProvider.messagingStatusCallbackMatches,
           numberInSenderPool: twilioProvider.numberInSenderPool,
           voiceReady: providerVoiceReady,
           messagingReady: providerMessagingReady,

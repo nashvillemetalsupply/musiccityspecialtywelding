@@ -45,6 +45,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [warning, setWarning] = useState("")
   const previewsRef = useRef<string[]>([])
   // Keep one durable identity for every user submission attempt. A network
   // retry must resume the same job and provider sends, not manufacture a
@@ -121,6 +122,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
     setIsSubmitting(true)
     setStatus("idle")
     setMessage("")
+    setWarning("")
 
     const payload = new FormData()
     if (!intakeKeyRef.current) intakeKeyRef.current = crypto.randomUUID()
@@ -146,6 +148,12 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
       if (!contentType?.includes("application/json")) throw new Error("The server returned an invalid response.")
       const data = await response.json()
       if (!response.ok) throw new Error(data?.error || "The request did not go through.")
+
+      // The server suppresses text updates (prior STOP or unverifiable
+      // permission) and returns a phone-free warning with the success body.
+      if (data?.warning) {
+        setWarning(data.warning)
+      }
 
       if (GA_MEASUREMENT_ID && window.gtag) {
         window.gtag("event", "generate_lead", {
@@ -265,6 +273,10 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
 
         {status !== "idle" && (
           <p className={`ms-form-status ${status === "success" ? "is-success" : "is-error"}`} role={status === "error" ? "alert" : "status"}>{message}</p>
+        )}
+
+        {status === "success" && warning && (
+          <p className="ms-form-status is-warning" role="status">{warning}</p>
         )}
 
         <button className="ms-submit" type="submit" disabled={isSubmitting}>

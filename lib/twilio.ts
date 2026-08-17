@@ -139,6 +139,7 @@ export type TwilioProviderReadiness = {
   voiceFallbackProviderHosted: boolean
   messagingServiceFound: boolean
   messagingInboundWebhookMatches: boolean
+  messagingStatusCallbackMatches: boolean
   numberInSenderPool: boolean
 }
 
@@ -153,6 +154,7 @@ const EMPTY_PROVIDER_READINESS: TwilioProviderReadiness = {
   voiceFallbackProviderHosted: false,
   messagingServiceFound: false,
   messagingInboundWebhookMatches: false,
+  messagingStatusCallbackMatches: false,
   numberInSenderPool: false,
 }
 
@@ -223,6 +225,7 @@ async function inspectTwilioProviderReadiness(): Promise<TwilioProviderReadiness
 
   let messagingServiceFound = false
   let messagingInboundWebhookMatches = false
+  let messagingStatusCallbackMatches = false
   let numberInSenderPool = false
   if (/^MG[0-9a-f]{32}$/i.test(messagingServiceSid)) {
     const [service, senders] = await Promise.all([
@@ -231,6 +234,7 @@ async function inspectTwilioProviderReadiness(): Promise<TwilioProviderReadiness
         inbound_request_url?: string
         inbound_method?: string
         use_inbound_webhook_on_number?: boolean
+        status_callback?: string
       }>(
         `https://messaging.twilio.com/v1/Services/${encodeURIComponent(messagingServiceSid)}`
       ),
@@ -246,6 +250,10 @@ async function inspectTwilioProviderReadiness(): Promise<TwilioProviderReadiness
         (service?.inbound_method ?? "POST").toUpperCase() === "POST"
     )
     numberInSenderPool = Boolean(senders?.phone_numbers?.some((item) => normalizedE164(item.phone_number) === phone))
+    messagingStatusCallbackMatches = Boolean(
+      messagingServiceFound &&
+        sameWebhookUrl(service?.status_callback, twilioCallbackUrl("/api/twilio/sms-status"))
+    )
   }
 
   return {
@@ -259,6 +267,7 @@ async function inspectTwilioProviderReadiness(): Promise<TwilioProviderReadiness
     voiceFallbackProviderHosted: Boolean(number && isProviderHostedFallback(number.voice_fallback_url)),
     messagingServiceFound,
     messagingInboundWebhookMatches,
+    messagingStatusCallbackMatches,
     numberInSenderPool,
   }
 }

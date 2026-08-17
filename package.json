@@ -9,7 +9,7 @@
     "migrate": "node scripts/migrate.mjs",
     "start": "next start",
     "test:recent-regressions": "node --test scripts/recent-regressions.test.mjs",
-    "test:shop-brain": "node --test scripts/gmail-routing.test.mjs scripts/shop-brain-invariants.test.mjs scripts/shop-brain-boundaries.test.mjs scripts/mcsw-jobs-activation.test.mjs scripts/event-visibility.test.mjs scripts/glass-revoke-race.test.mjs scripts/glass-upload-expiry.test.mjs scripts/receipt-email-hardening.test.mjs scripts/job-handoff-lifecycle.test.mjs scripts/recent-regressions.test.mjs scripts/production-flow-regressions.test.mjs scripts/call-sketch-dxf.test.mjs scripts/call-sketch-live.test.mjs scripts/call-sketch-integration.test.mjs scripts/build-sheets-domain.test.mjs scripts/build-sheets-continuation.test.mjs scripts/build-sheets-integration.test.mjs scripts/build-sheets-persistence.test.mjs scripts/build-paperwork.test.mjs scripts/build-sheets-continuation-integration.test.mjs scripts/closeout-domain.test.mjs",
+    "test:shop-brain": "node --test scripts/gmail-routing.test.mjs scripts/shop-brain-invariants.test.mjs scripts/shop-brain-boundaries.test.mjs scripts/mcsw-jobs-activation.test.mjs scripts/event-visibility.test.mjs scripts/glass-revoke-race.test.mjs scripts/glass-upload-expiry.test.mjs scripts/receipt-email-hardening.test.mjs scripts/job-handoff-lifecycle.test.mjs scripts/recent-regressions.test.mjs scripts/production-flow-regressions.test.mjs scripts/call-sketch-dxf.test.mjs scripts/call-sketch-live.test.mjs scripts/call-sketch-integration.test.mjs scripts/build-sheets-domain.test.mjs scripts/build-sheets-continuation.test.mjs scripts/build-sheets-integration.test.mjs scripts/build-sheets-persistence.test.mjs scripts/build-paperwork.test.mjs scripts/build-sheets-continuation-integration.test.mjs scripts/closeout-domain.test.mjs scripts/quote-consent-conflict.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -85,7 +85,7 @@
     "ws": "^8.21.3"
   },
   "overrides": {
-    "nanoid": "3.3.17",
+    "nanoid": "3.3.18",
     "undici": "6.28.0",
     "next": {
       "sharp": "0.35.3"
@@ -94,6 +94,7 @@
   },
   "pnpm": {
     "overrides": {
+      "nanoid": "3.3.18",
       "postcss": "8.5.25",
       "sharp": "0.35.3"
     }
