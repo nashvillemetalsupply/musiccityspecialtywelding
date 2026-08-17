@@ -33,10 +33,24 @@
 > from these rejected drafts. `/ops` renders `ActiveJobIndex` and nothing else. Attempt
 > 8 builds its own harness — and gates the whole thing, not just the switcher UI.
 >
-> One genuinely useful finding survives the failure: **`/ops` loads only Chivo, while
-> the root layout already puts Barlow Condensed, IBM Plex Sans/Mono, Alfa Slab and
-> Permanent Marker on `<body>`.** The ops app has never had access to the site's own
-> type voice. That is worth revisiting at a smaller, quieter scale than attempt 4 used.
+> **The "ops has no type voice" finding was wrong. Checked 2026-08-17; do not act on
+> it.** `app/ops/layout.tsx` returns a `<div>`, not an `<html>`, so it nests under the
+> root layout and already inherits `--font-ms-display`, `--font-ms-sans`,
+> `--font-ms-mono`, `--font-ms-slab` and `--font-ms-marker` from `<body>`. Nothing is
+> locked out of `/ops`. The ops stylesheet simply never references them.
+>
+> There is also no cheap seam to flip. `jobs-brand.css` defines four type tokens, and
+> only `--font-body` is used (8 times); `--font-display`, `--font-outlier` and
+> `--font-receipt` have zero uses, and every other element is `font-family: inherit`.
+> Repointing those tokens changes nothing on screen. Giving `/ops` a display face means
+> adding `font-family` to heading rules across 5,800 lines of stylesheet — that is the
+> redesign itself, not a tidy-up, and it waits for the reference images like everything
+> else here.
+>
+> One real but not-worth-fixing defect noted while checking: `Barlow_Condensed` in
+> `app/layout.tsx` is the only font without `preload: false`, so `/ops` preloads a font
+> it never renders. Preloading it is correct for the public site, and `next/font`
+> preload is per-instance rather than per-route, so the fix costs more than the waste.
 
 The operations app follows one rule: **simple on the surface, rigorous underneath**. Reliability, privacy, consent, receipts, promises, roles, and idempotency stay in the system; the shop sees a short, plain workflow.
 
