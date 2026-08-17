@@ -1,5 +1,43 @@
 # Design — MCSW Jobs
 
+> **Active Jobs redesign — PARKED 2026-08-17. Nothing below is superseded; the shipped
+> flat styling this file describes is still what runs.** Owner will restart with
+> reference images when they have a clean head.
+>
+> Seven attempts, all rejected. Read this before generating an eighth.
+>
+> **What was tried and what the owner said**
+>
+> | Attempt | Direction | Verdict |
+> |---|---|---|
+> | A/B/C (`.scratch/active-jobs/a-wall,b-ledger,c-traveler.html`) | whiteboard columns / dense ledger table / work-order slips, all light | "very very basic, generic AI slop, formatting subpar" |
+> | 1/2/3 (Clock, One Job, Editorial) | age-scaled list / single-job focus / no-container editorial, all light | "they all look the same, same format as the old one" |
+> | 4 (Wall) | coal ground, Barlow Condensed 900 uppercase names ~68px, arc orange, letterpress plates | "way too big and bold. trash." |
+>
+> **What that rules out.** Both ends of the scale dial are rejected: timid flat-white
+> editorial *and* huge bold coal letterpress. The problem is therefore not type size,
+> not the light/dark choice, and not the list arrangement — attempts 1–3 proved that
+> rearranging a vertical list of text records changes nothing perceptible to the owner.
+>
+> **Known-good constraints (unchanged, still binding).** No glowing text, no candy
+> palette, no hazard stripes, no faint secondary copy, no section numbering ("no.01"
+> reads as an AI tell), nothing below 14px, high contrast for a full workday.
+>
+> **How to restart.** Do not generate variants from a text brief — it failed seven
+> times. Wait for the owner's reference images, and work from those. The owner judges
+> only rendered pixels in their own browser and cannot describe a target in advance.
+>
+> **Prototype harness removed.** The four variants lived behind `?variant=` on `/ops`
+> in an uncommitted working tree and were deleted, not merged: the render branch was
+> never gated for production, and the restart works from reference images rather than
+> from these rejected drafts. `/ops` renders `ActiveJobIndex` and nothing else. Attempt
+> 8 builds its own harness — and gates the whole thing, not just the switcher UI.
+>
+> One genuinely useful finding survives the failure: **`/ops` loads only Chivo, while
+> the root layout already puts Barlow Condensed, IBM Plex Sans/Mono, Alfa Slab and
+> Permanent Marker on `<body>`.** The ops app has never had access to the site's own
+> type voice. That is worth revisiting at a smaller, quieter scale than attempt 4 used.
+
 The operations app follows one rule: **simple on the surface, rigorous underneath**. Reliability, privacy, consent, receipts, promises, roles, and idempotency stay in the system; the shop sees a short, plain workflow.
 
 ## Primary workflow
