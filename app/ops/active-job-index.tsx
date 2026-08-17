@@ -79,7 +79,7 @@ export function ActiveJobIndex({
   resultTotal: number
   hasOlder: boolean
   trackedCallsReady: boolean
-  textReadyLeadIds: Set<number>
+  textReadyLeadIds?: Set<number>
 }) {
   const pageCount = Math.max(1, Math.ceil(resultTotal / pageSize))
   const start = resultTotal === 0 ? 0 : (page - 1) * pageSize + 1
@@ -104,7 +104,7 @@ export function ActiveJobIndex({
           key={lead.id}
           lead={lead}
           trackedCallsReady={trackedCallsReady}
-          textReady={textReadyLeadIds.has(lead.id)}
+          textReady={textReadyLeadIds?.has(lead.id) ?? false}
           priorJobs={Math.max(0, Number(repeatCounts.get(lead.person_id ?? 0) ?? 1) - 1)}
         />)}</div>}
     <nav className="jobs-index-pages" aria-label="Active Jobs pages">

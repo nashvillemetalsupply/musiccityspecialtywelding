@@ -324,3 +324,60 @@ test("phone login uses Twilio Verify without enabling customer SMS", () => {
   assertInOrder(verify, ["checkPhoneLoginVerification(phone, code)", "redeemSmsVerificationIntent(operator)"], "Provider approval must precede session creation")
   assert.match(install, /operators=\{operators\} smsReady=\{smsReady\}/)
 })
+
+test("Active Jobs tolerates a not-yet-ready text-ready set", () => {
+  const index = source("app/ops/active-job-index.tsx")
+
+  // textReadyLeadIds may not be populated on the first render; the map read
+  // must short-circuit instead of throwing "reading 'has' of undefined".
+  assert.match(index, /textReadyLeadIds\?\.has\(lead\.id\)\s*\?\?\s*false/)
+})
+
+test("lead summary groups source labels and wire body stays table-qualified", () => {
+  const summary = section(source("lib/ops-data.ts"), "export async function getTodayLeadSummary", "export async function getLeadEvents")
+  const wire = section(source("lib/notify.ts"), "export async function listWire", "export async function countUnreadWire")
+
+  // gclid is folded into a CASE source label and grouped by that label, so the
+  // aggregate no longer leaves a bare gclid column outside GROUP BY.
+  assert.match(summary, /END AS source/)
+  assert.match(summary, /count\(\*\)::int AS count/)
+  assert.match(summary, /GROUP BY 1/)
+
+  // The notifications/events join must qualify body/title so the column is not
+  // ambiguous across notifications and events.
+  assert.match(wire, /LEFT JOIN events source ON source\.id = n\.source_event_id/)
+  assert.match(wire, /n\.title ILIKE/)
+  assert.match(wire, /n\.body ILIKE/)
+})
+
+test("lead projection redacts money in place without a dangling redactMoney helper", () => {
+  const data = source("lib/ops-data.ts")
+  const lead = section(data, "export async function getLead", "export async function getRepeatJobCounts")
+
+  assert.doesNotMatch(data, /\bredactMoney\b/)
+  assert.match(lead, /projectLeadForRole\(rows\[0\], role\)/)
+})
+
+test("extract.ts parses and the ops feature modules resolve their exports", () => {
+  const result = ts.transpileModule(source("lib/extract.ts"), {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: "lib/extract.ts",
+    reportDiagnostics: true,
+  })
+  const errors = (result.diagnostics ?? []).filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)
+  assert.deepEqual(errors, [], "lib/extract.ts must not contain syntax errors")
+
+  const modules = [
+    ["app/ops/login-form.tsx", "OpsLoginForm"],
+    ["app/ops/leads/[id]/done-stamp.tsx", "DoneStamp"],
+    ["app/ops/leads/[id]/glass-control.tsx", "GlassControl"],
+    ["app/ops/ops-live.tsx", "OpsLive"],
+    ["app/ops/shop-dock.tsx", "ShopDock"],
+  ]
+  for (const [file, name] of modules) {
+    assert.match(source(file), new RegExp(`export function ${name}\\b`), `${file} must export ${name}`)
+  }
+})
