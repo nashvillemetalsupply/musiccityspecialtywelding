@@ -1,4 +1,4 @@
-# MCSW Shop Brain invariants
+# MCSW Shop Brain Invariants
 
 These are product rules, not suggestions.
 
@@ -15,17 +15,24 @@ These are product rules, not suggestions.
 - Call precedes Text. Voice precedes keyboard where configured providers and the browser support it.
 - Internal UI extends the physical Shop Wall vocabulary and remains high-contrast for a full workday: no glowing text, candy palette, hazard stripes, or faint secondary copy.
 
-# Model routing and delegation
+# Model Routing and Delegation
 
-The current working model is the **orchestrator**. It owns the plan, decides what to delegate, reviews results, keeps context coherent, and owns every merge. Delegate the work itself.
+The current working model is the **orchestrator**.
+It owns the plan, decides what to delegate, reviews results, keeps context coherent, and owns every merge. Delegate the actual work.
 
 ## Pi is the default
 
-Use the `delegate-to-pi` skill for reading, discovery, exploration, single-file or small localized edits, and straightforward implementation with clear acceptance criteria. Call Pi with `deepseek-v4-flash`, or `deepseek-v4-pro` for hard reasoning.
+Use the `delegate-to-pi` skill for:
+
+- Reading, discovery, and exploration
+- Single-file or small localized edits
+- Straightforward implementation with clear acceptance criteria
+
+Prefer `deepseek-v4-flash`. Use `deepseek-v4-pro` only for harder reasoning.
 
 Hand off explicitly: goal, relevant files, and acceptance criteria.
 
-## Escalate to Codex for review and high stakes
+## Escalate to Codex for review and high-stakes work
 
 Send to Codex `gpt-5.6-sol` at `xhigh` when:
 
@@ -33,14 +40,38 @@ Send to Codex `gpt-5.6-sol` at `xhigh` when:
 - There is a dispute, rebuttal, or argument to evaluate
 - Open questions remain after a cheap pass
 - The decision is architectural, correctness-sensitive, or security-sensitive
-- I ask for a strong review
+- I explicitly ask for a strong review
 
-Package tightly: goal, relevant files and diffs, the specific claims or open questions, and the output format you want. Send that package alone.
+Package tightly: goal, relevant files/diffs, the specific claims or open questions, and the desired output format. Send only that package.
 
-After a Codex review the orchestrator decides: accept, send a targeted follow-up to Pi, or escalate again.
+After a Codex review, the orchestrator decides: accept, send a targeted follow-up to Pi, or escalate again.
 
 ## Factory mode
 
-Use the `factory` skill only when there are **3 or more genuinely independent tasks**, or when I say "run the factory." It fans Codex `gpt-5.6-sol` at `xhigh` across isolated worktrees through Herdr, then reviews and merges serially. Cap is 4 implementers in flight — the most expensive configuration on this machine, so it stays off small work.
+Use the `factory` skill **only** when there are 3 or more genuinely independent tasks, or when I say "run the factory."
 
-Herdr must already be open before factory runs. Leave its server for me to start, and close only tabs and panes you created yourself.
+- Fans Codex `gpt-5.6-sol` at `xhigh` across isolated worktrees through Herdr
+- Reviews and merges serially
+- Hard cap: 4 implementers in flight
+- Most expensive configuration — do not use on small work
+
+Herdr must already be open. Never start its server. Only close tabs and panes you created yourself.
+
+## Communication & Completion
+
+All agents must speak in plain, direct English. No fluff.
+
+**When the task is fully done:**
+
+1. State what was done in 1–3 short sentences.
+2. End with exactly this line:
+   **This task is completely done. It is safe to clear this chat.**
+3. Optionally add one short recommendation.
+
+**When more information is needed:**
+
+- Ask clear, specific questions.
+- Give a recommendation on the best next step.
+- Do not add extra explanation.
+
+Keep the ending short and obvious. The owner should never have to dig or interpret what to do next.
