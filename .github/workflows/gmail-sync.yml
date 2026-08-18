@@ -7,8 +7,12 @@ on:
     # Every 15 minutes 12:00-23:59 UTC (7am-6pm Central), hourly overnight.
     # Minutes are aligned with health-monitor and follow-up-reminders so one Neon
     # compute wake serves all three. Neon free-plan compute suspends after 5 idle
-    # minutes, so the old */5 ping never let it sleep: 0.25 CU awake 24/7 is 182
-    # CU-hours/month against a 100 CU-hour allowance. This shape is ~40.
+    # minutes and 0.25 CU awake 24/7 would be 182 CU-hours/month against a 100
+    # CU-hour allowance. This shape is ~40.
+    #
+    # Measured 2026-08-18: this project was at 38.59/100, never close to the wall,
+    # because GitHub throttles scheduled runs and the old */5 really fired every
+    # 20-40 minutes. The alignment is still worth having; the urgency was not.
     - cron: "5,20,35,50 12-23 * * *"
     - cron: "5 0-11 * * *"
   workflow_dispatch:
