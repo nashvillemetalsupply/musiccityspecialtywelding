@@ -2,8 +2,10 @@ name: Follow-up reminders
 
 on:
   schedule:
-    # Hourly sweep so same-day follow-up picks fire on time.
-    - cron: "10 * * * *"
+    # Hourly sweep so same-day follow-up picks fire on time. Minute :05 lands on a
+    # wake gmail-sync and health-monitor already pay for, so this costs no extra
+    # Neon compute. See gmail-sync.yml.
+    - cron: "5 * * * *"
   workflow_dispatch:
 
 permissions:

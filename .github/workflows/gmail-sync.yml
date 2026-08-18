@@ -2,8 +2,15 @@ name: The Works Gmail sync
 
 on:
   schedule:
-    # Vercel Hobby is daily-only; this preserves the five-minute money/RFQ loop.
-    - cron: "*/5 * * * *"
+    # Vercel Hobby is daily-only; this carries the money/RFQ loop.
+    #
+    # Every 15 minutes 12:00-23:59 UTC (7am-6pm Central), hourly overnight.
+    # Minutes are aligned with health-monitor and follow-up-reminders so one Neon
+    # compute wake serves all three. Neon free-plan compute suspends after 5 idle
+    # minutes, so the old */5 ping never let it sleep: 0.25 CU awake 24/7 is 182
+    # CU-hours/month against a 100 CU-hour allowance. This shape is ~40.
+    - cron: "5,20,35,50 12-23 * * *"
+    - cron: "5 0-11 * * *"
   workflow_dispatch:
 
 permissions:

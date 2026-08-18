@@ -2,8 +2,13 @@ name: Production health monitor
 
 on:
   schedule:
-    # Every 5 minutes. GitHub may delay scheduled runs under load.
-    - cron: "*/5 * * * *"
+    # GitHub may delay scheduled runs under load.
+    #
+    # Same minutes as gmail-sync so both share one Neon compute wake instead of
+    # each paying its own. Offsetting them would double the wakes for no benefit.
+    # See gmail-sync.yml for the CU-hour arithmetic.
+    - cron: "5,20,35,50 12-23 * * *"
+    - cron: "5 0-11 * * *"
   workflow_dispatch:
 
 permissions:
