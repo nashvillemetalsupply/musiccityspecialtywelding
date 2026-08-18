@@ -13,7 +13,6 @@ These are product rules, not suggestions.
 - Roles are exactly `owner` and `crew`.
 - No worker surveillance. Never add per-worker hours, activity totals, response rankings, read receipts, leaderboards, location trails, or productivity reports—even behind an owner flag. Operator attribution is only a byline explaining who changed a customer record.
 - Call precedes Text. Voice precedes keyboard where configured providers and the browser support it.
-- Internal UI extends the physical Shop Wall vocabulary and remains high-contrast for a full workday: no glowing text, candy palette, hazard stripes, or faint secondary copy.
 
 # Model Routing and Delegation
 
