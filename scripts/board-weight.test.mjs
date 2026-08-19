@@ -1,8 +1,24 @@
 import test from "node:test"
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import {
   BOARD_WEIGHTS, signalWeight, scoreBoardJob, isBoardJobHot,
 } from "../lib/shop-brain-invariants.mjs"
+import {
+  aggregateNeedFromCandidates,
+  boardSignalsFromCandidates,
+  orderBoardFixtures,
+  sqlScoreParity,
+} from "../lib/ops-data-testkit.mjs"
+
+// Mirrors the five UNION ALL branches of the candidates CTE. If the SQL below
+// changes, this fixture changes with it and the parity test fails loudly.
+const CANDIDATES = [
+  { lead_id: 1, kind: "waiting", reason: "Customer email waiting", hours_late: 6, priority: 0, waiting_since: "2026-08-19T00:00:00.000Z" },
+  { lead_id: 1, kind: "promise", reason: "Promise overdue", hours_late: 72, priority: 1, waiting_since: "2026-08-16T00:00:00.000Z" },
+  { lead_id: 2, kind: "followup", reason: "Follow-up due", hours_late: 48, priority: 2, waiting_since: "2026-08-17T00:00:00.000Z" },
+]
+const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 test("a signal one hour late counts just over its base", () => {
   const w = signalWeight("waiting", 1)
@@ -55,4 +71,73 @@ test("the Real Floors case outranks the quiet handrail", () => {
 
 test("weights are frozen so nothing can drift them at runtime", () => {
   assert.throws(() => { BOARD_WEIGHTS.hotThreshold = 1 }, TypeError)
+})
+
+test("the aggregate keeps every signal, heaviest first", () => {
+  const signals = boardSignalsFromCandidates(CANDIDATES.filter((candidate) => candidate.lead_id === 1))
+  assert.equal(signals.length, 2)
+  assert.equal(signals[0].kind, "promise")
+  assert.equal(signals[1].kind, "waiting")
+})
+
+test("board_reason and board_since still match DISTINCT ON", () => {
+  const rows = CANDIDATES.filter((candidate) => candidate.lead_id === 1)
+  const legacy = rows.slice().sort((a, b) =>
+    a.priority - b.priority || a.waiting_since.localeCompare(b.waiting_since)
+  )[0]
+  const aggregate = aggregateNeedFromCandidates(rows)
+  assert.equal(aggregate.reason, legacy.reason)
+  assert.equal(aggregate.waitingSince, legacy.waiting_since)
+  assert.ok(OPS_DATA_SOURCE.includes(`CASE
+          WHEN l.completed_at IS NOT NULL THEN 'ready'
+          WHEN n.lead_id IS NOT NULL THEN 'attention'
+          WHEN l.work_started_at IS NOT NULL OR l.status = 'won' THEN 'shop'
+          ELSE 'waiting'
+        END AS board_stage`))
+  assert.ok(OPS_DATA_SOURCE.includes(`CASE
+          WHEN l.completed_at IS NOT NULL AND l.review_received THEN 'Review received'
+          WHEN l.completed_at IS NOT NULL AND l.review_requested_at IS NOT NULL THEN 'Review requested'
+          WHEN l.completed_at IS NOT NULL THEN 'Ready for customer'
+          WHEN n.lead_id IS NOT NULL THEN n.reason
+          WHEN l.work_started_at IS NOT NULL THEN 'Work underway'
+          WHEN l.status = 'won' THEN 'Booked'
+          WHEN l.status = 'quoted' THEN 'Quote sent'
+          WHEN l.status = 'qualified' THEN 'Pricing next'
+          WHEN l.status = 'contacted' THEN 'Customer contacted'
+          ELSE 'Waiting'
+        END AS board_reason`))
+})
+
+test("stage order remains the default and keeps every legacy ordering key", () => {
+  assert.match(OPS_DATA_SOURCE, /const order: BoardJobOrder = options\.order === "weight" \? "weight" : "stage"/)
+  assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'weight' THEN 0 ELSE\s+CASE f\.board_stage WHEN 'attention' THEN 0 WHEN 'shop' THEN 1 WHEN 'waiting' THEN 2 ELSE 3 END/)
+  assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'stage' AND f\.board_stage = 'attention' THEN f\.board_since END ASC NULLS LAST,\s+CASE WHEN \$\{order\}::text = 'stage' THEN f\.updated_at END DESC NULLS LAST,\s+f\.id DESC/)
+})
+
+test("ten jobs keep exact legacy order and get exact weighted order", () => {
+  const jobs = [
+    { id: 101, boardStage: "attention", boardSince: "2026-08-10", updatedAt: "2026-08-18", signals: [{ kind: "waiting", hoursLate: 24 }], valueCents: 0, priorJobs: 0 },
+    { id: 102, boardStage: "attention", boardSince: "2026-08-11", updatedAt: "2026-08-19", signals: [{ kind: "noreply", hoursLate: 10 }], valueCents: 0, priorJobs: 0 },
+    { id: 103, boardStage: "attention", boardSince: "2026-08-12", updatedAt: "2026-08-17", signals: [{ kind: "followup", hoursLate: 48 }], valueCents: 64000, priorJobs: 1 },
+    { id: 104, boardStage: "attention", boardSince: "2026-08-18", updatedAt: "2026-08-16", signals: [{ kind: "promise", hoursLate: 72 }, { kind: "waiting", hoursLate: 6 }], valueCents: 448500, priorJobs: 7 },
+    { id: 201, boardStage: "shop", boardSince: "2026-08-15", updatedAt: "2026-08-18", signals: [], valueCents: 1000000, priorJobs: 0 },
+    { id: 202, boardStage: "shop", boardSince: "2026-08-14", updatedAt: "2026-08-19", signals: [], valueCents: 190000, priorJobs: 2 },
+    { id: 301, boardStage: "waiting", boardSince: "2026-08-16", updatedAt: "2026-08-18", signals: [{ kind: "bounced", hoursLate: 0 }], valueCents: 0, priorJobs: 0 },
+    { id: 302, boardStage: "waiting", boardSince: "2026-08-17", updatedAt: "2026-08-19", signals: [], valueCents: 100000, priorJobs: 1 },
+    { id: 401, boardStage: "ready", boardSince: "2026-08-19", updatedAt: "2026-08-18", signals: [], valueCents: 0, priorJobs: 0 },
+    { id: 402, boardStage: "ready", boardSince: "2026-08-18", updatedAt: "2026-08-19", signals: [], valueCents: 0, priorJobs: 0 },
+  ]
+  assert.deepEqual(orderBoardFixtures(jobs, "stage"), [101, 102, 103, 104, 202, 201, 302, 301, 402, 401])
+  assert.deepEqual(orderBoardFixtures(jobs, "weight"), [104, 101, 102, 103, 202, 201, 301, 302, 402, 401])
+})
+
+test("SQL arithmetic and scoreBoardJob agree on every fixture", () => {
+  for (const job of [
+    { signals: [{ kind: "promise", hoursLate: 72 }, { kind: "waiting", hoursLate: 6 }], valueCents: 448500, priorJobs: 7 },
+    { signals: [{ kind: "noreply", hoursLate: 2.5 }], valueCents: 0, priorJobs: 0 },
+    { signals: [], valueCents: 190000, priorJobs: 2 },
+    { signals: [], valueCents: -1000, priorJobs: 0 },
+  ]) {
+    assert.equal(sqlScoreParity(job), scoreBoardJob(job), JSON.stringify(job))
+  }
 })
