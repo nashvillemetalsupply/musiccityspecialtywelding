@@ -112,6 +112,21 @@
   --status-info-ink:var(--info-ink); --status-info-sur:var(--info-sur); --status-info-mark:var(--info-mark);
   --status-idle-mark:var(--slate-58);
 
+  /* --- the three colour fields -------------------------------------------
+     The board's only saturated grounds, and the only thing read across a
+     room. Deliberately theme-invariant: each is already deep enough to hold
+     both inks above 4.5:1 in either theme, so a dark override would move a
+     measured number for no gain. The hook is here if that stops being true.
+
+     Two inks, not one. The session brief said "an on-field ink"; the design
+     contract specifies both #f4efe4 and #dcd6ca and cites the measurement
+     for each, so the quiet tier is contracted, not incidental.             */
+  --field-info:#2b4f75;      /* --color-blueprint, deepened · a count       */
+  --field-warn:#7d5100;      /* --color-warning,   deepened · wants him     */
+  --field-neutral:#2a2e32;   /* --color-wall-2 · money is not a state       */
+  --on-field:#f4efe4;        /* 5.86:1 on all three grounds                 */
+  --on-field-muted:#dcd6ca;  /* 7.40:1 on all three grounds                 */
+
   --sketch-ground:#12100d;             /* --color-wall     */
   --sketch-grid:#2a2e32;               /* --color-wall-2   */
   --sketch-line:var(--brand);
@@ -128,9 +143,11 @@
   /* --- type roles -------------------------------------------------------- */
   --font:'Golos Text',system-ui,-apple-system,Segoe UI,sans-serif;
   --font-display:'Chivo',system-ui,sans-serif;
-  --t-display:64px;  --lh-display:1.0;   /* the three numbers            */
+  /* display and title step up with the viewport; both are set for the
+     narrowest phone here and grow in the min-width layers at the end */
+  --t-display:40px;  --lh-display:1.0;   /* the three numbers            */
   --t-lede:22px;     --lh-lede:1.26;      /* the question worth asking    */
-  --t-title:22px;    --lh-title:1.24;     /* a card's name                */
+  --t-title:17px;    --lh-title:1.24;     /* a card's name                */
   --t-name:15px;     --lh-name:1.3;       /* a customer, a signal         */
   --t-sub:14px;      --lh-sub:1.35;       /* a sub-head inside a card     */
   --t-body:13.5px;   --lh-body:1.6;       /* running prose                */
@@ -211,19 +228,23 @@ svg{display:block}
 .stage-body p{font-variant-numeric:normal}
 
 /* ============================================================= shell ==== */
-.app{
-  height:100dvh;min-width:0;display:grid;
-  grid-template-columns:56px 300px minmax(0,1fr);
-  grid-template-rows:56px minmax(0,1fr);
-}
+/* PHONE FIRST. Everything from here down is the phone board; the desktop
+   shell is restored in the min-width layers at the end of the file. A rule
+   that carries no width-dependent value simply never appears down there. */
+.app{min-width:0;display:block;min-height:100dvh}
 
-.top{grid-column:1/4;display:flex;align-items:center;gap:var(--s3);
-  padding:0 var(--s5);background:var(--surface);border-bottom:1px solid var(--border)}
+/* the bar is sticky over a scrolling document on a phone, and a fixed grid
+   row on the desktop, where the whole app is 100dvh and nothing scrolls it */
+.top{display:flex;align-items:center;gap:var(--s3);position:sticky;top:0;z-index:20;
+  padding:0 var(--s4);background:var(--surface);border-bottom:1px solid var(--border)}
 /* The wordmark carries the name; setting the name in type beside it is two
    logotypes in a row, which is what was throwing this bar off. */
 .logo{height:30px;width:auto;flex:none;display:block}
-.top .when{color:var(--text-muted);font-size:var(--t-label);white-space:nowrap;
+/* the date and the search field are desk furniture; on a phone the bar has
+   room for the wordmark and the avatar and nothing else */
+.top .when{display:none;color:var(--text-muted);font-size:var(--t-label);white-space:nowrap;
   padding-left:var(--s3);border-left:1px solid var(--border)}
+.top .find{display:none}
 .find{flex:1;max-width:420px;display:flex;align-items:center;gap:var(--s2);
   height:var(--control);padding:0 var(--s3);border-radius:var(--r-md);
   background:var(--surface-raised);transition:box-shadow .15s var(--ease)}
@@ -248,13 +269,22 @@ svg{display:block}
   transition:background .15s var(--ease),color .15s var(--ease)}
 .icon:hover{background:var(--surface-raised);color:var(--text-primary)}
 
-.rail{background:var(--surface);border-right:1px solid var(--border);
-  padding:var(--s2) 0;display:flex;flex-direction:column;align-items:center;gap:var(--s1)}
+/* On a phone this is a real bottom bar — fixed, thumb-height, clear of the
+   gesture inset. On the desktop it is the left column of the shell. */
+.rail{position:fixed;left:0;right:0;bottom:0;z-index:20;height:56px;
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:0 var(--s2);padding-bottom:env(safe-area-inset-bottom,0px);
+  display:flex;flex-direction:row;justify-content:space-around;
+  align-items:center;gap:var(--s1)}
 .rl{width:36px;height:36px;border-radius:var(--r-md);display:grid;place-items:center;
   color:var(--text-muted);transition:background .15s var(--ease),color .15s var(--ease)}
 .rl:hover{background:var(--surface-raised);color:var(--text-secondary)}
 .rl[aria-current]{background:var(--action);color:var(--action-ink)}
-.rl-gap{flex:1}
+.rl-gap{flex:1;display:none}
+/* Seven destinations at a 44px target need 348px of bar; the phone has 320.
+   The rule is collapse the nav, not shrink the targets — so Quotes and Help
+   drop on the phone and the five he actually opens survive. */
+.rail .rl:nth-of-type(4),.rail .rl:nth-of-type(7){display:none}
 
 /* One neutral avatar treatment. These initials used to sit on status colours,
    which failed contrast (as low as 1.8:1) and made green mean "Dale". */
@@ -264,10 +294,19 @@ svg{display:block}
   box-shadow:inset 0 0 0 1px var(--border)}
 
 /* ========================================================== left pane ==== */
-.pane{background:var(--surface);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;min-height:0}
-.pane-body{flex:1;min-height:0;overflow-y:auto;padding:var(--s5)}
-.pane-foot{padding:var(--s4) var(--s5);border-top:1px solid var(--border)}
+/* The pane IS the product — it is the only thing that answers "what needs me,
+   and why". It used to be display:none on a phone. On a phone it now leads,
+   as a block in the document flow; on the desktop it is the middle column and
+   scrolls independently of the tracker beside it. Nothing in it is ever
+   hidden: an earlier pass hid the section after the first rule to save scroll
+   and took the Promises heading with it, leaving Kept/Open/Broken floating
+   with no name. All three are short and all three are why he opened it. */
+.pane{display:block;background:var(--surface);border-bottom:1px solid var(--border)}
+.pane-body{padding:var(--s5) var(--s4)}
+.pane-foot{padding:var(--s4) var(--s5);border-top:1px solid var(--border);
+  position:sticky;bottom:calc(56px + env(safe-area-inset-bottom,0px));
+  background:var(--surface);z-index:10;
+  box-shadow:0 -8px 16px -12px rgba(0,0,0,.4)}
 .pane-foot .btn{width:100%}
 
 .head{display:flex;align-items:baseline;gap:var(--s2);margin:0 0 var(--s3)}
@@ -326,20 +365,30 @@ svg{display:block}
 .trail i.warn{background:var(--status-warn-mark)}
 
 /* ============================================================== main ==== */
-.main{min-width:0;overflow-y:auto;padding:var(--s6) var(--s7) var(--s8)}
+/* On a phone the reading order is the order of his attention, not the order of
+   the DOM: the call he is in, then the job list, then the week's money last,
+   because money is never why he picked the phone up. A flex column reorders
+   without touching the markup; on the desktop `.main` is a block again and
+   `order` stops meaning anything, which is why it needs no counterpart below.
+   The gap does the spacing here, so `.card+.card` is desktop-only — that is
+   what the old `.main>*{margin:0!important}` was fighting. */
+.main{min-width:0;display:flex;flex-direction:column;gap:var(--s5);
+  padding:var(--s4) var(--s4) calc(64px + env(safe-area-inset-bottom,0px))}
+.main>.card:has(.call-top){order:1}
+.main>.card:has(.track-top){order:2}
+.main>.figures{order:3}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
-.card+.card{margin-top:var(--s5)}
 .card.figures{border:0;background:none}
 
 /* The three numbers are colour fields, not cards: the shop's own positive,
    warning and danger, deepened enough to hold bone text at 4.5:1. */
-.figures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:var(--s2);border:0;background:none}
-.figure{padding:var(--s6);min-width:0}
+.figures{display:grid;grid-template-columns:1fr;gap:1px;border:0;background:none}
+.figure+.figure{border-top:1px solid var(--border)}
+.figure{padding:var(--s4) var(--s5);min-width:0}
 .figure h4{font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
 .figure .n{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s3) 0 0}
 .figure .n span{color:var(--text-muted);font-size:var(--t-data)}
-.figure .under{display:flex;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
+.figure .under{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
   font-size:var(--t-caption);color:var(--text-secondary)}
 
 /* --- the three colour fields -----------------------------------------------
@@ -351,30 +400,32 @@ svg{display:block}
    that wants him, graphite for money. Money is not a state; it had been sitting
    on --color-danger, which the contract reserves for stopped. Green and red now
    belong to row states alone. */
-.figures .figure:nth-child(1){background:#2b4f75}   /* --color-blueprint, deepened */
-.figures .figure:nth-child(2){background:#7d5100}   /* --color-warning,   deepened */
-.figures .figure:nth-child(3){background:#2a2e32}   /* --color-wall-2 */
+.figures .figure:nth-child(1){background:var(--field-info)}
+.figures .figure:nth-child(2){background:var(--field-warn)}
+.figures .figure:nth-child(3){background:var(--field-neutral)}
 .figures .figure,
 .figures .figure h4,
 .figures .figure .n span,
 .figures .figure .under,
 .figures .figure .under b,
-.figures .figure .n b{color:#f4efe4}
+.figures .figure .n b{color:var(--on-field)}
 .figures .figure h4,
 .figures .figure .n span,
-.figures .figure .under{color:#dcd6ca}              /* 7.4:1 on all three fields */
-.figures .figure .under b{color:#f4efe4;font-weight:var(--w-semi)}
+.figures .figure .under{color:var(--on-field-muted)}
+.figures .figure .under b{color:var(--on-field);font-weight:var(--w-semi)}
 /* an outline rather than a translucent fill: white at 16% sits differently on
-   each of the three fields and cannot be measured honestly */
-.figures .figure .chip{background:transparent;color:#f4efe4;
+   each of the three fields and cannot be measured honestly. The alpha stays a
+   literal — it is a translucent mark over whichever field it lands on, not one
+   of the field colours, and turning it into a token would misname it. */
+.figures .figure .chip{background:transparent;color:var(--on-field);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
-.figures .figure .chip i{background:#f4efe4}
+.figures .figure .chip i{background:var(--on-field)}
 /* the two graphics inside the fields were tinted with status colours that only
    read on paper; on a saturated field they measured 1.16:1 */
-.figures .figure .spark polyline{stroke:#f4efe4}
-.figures .figure .spark circle{fill:#f4efe4;stroke:transparent}
+.figures .figure .spark polyline{stroke:var(--on-field)}
+.figures .figure .spark circle{fill:var(--on-field);stroke:transparent}
 .figures .figure .bar i{background:rgba(255,255,255,.28)}
-.figures .figure .bar i.good{background:#f4efe4}
+.figures .figure .bar i.good{background:var(--on-field)}
 .figures .figure .bar i.warn{background:rgba(255,255,255,.45)}
 .bar{display:flex;gap:2px;width:64px;flex:none}   /* 2px: a hairline gutter,
                                                      not a spacing step      */
@@ -382,22 +433,29 @@ svg{display:block}
 .bar i.good{background:var(--status-good-mark)} .bar i.warn{background:var(--status-warn-mark)}
 
 /* --- the live call sketch: the only place brand colour appears --- */
-.call-top{display:flex;align-items:center;gap:var(--s3);padding:var(--s4) var(--s6)}
-.call-top .sub{color:var(--text-muted);font-size:var(--t-label)}
-.call-top .end{margin-left:auto;display:flex;align-items:center;gap:var(--s3)}
-.call-cols{display:grid;grid-template-columns:280px minmax(0,1fr) 280px;
-  border-top:1px solid var(--border)}
-.call-cols>*{padding:var(--s5) var(--s6);min-width:0}
-.call-cols>*+*{border-left:1px solid var(--border)}
+/* Rendered at 360 this header never wrapped: the title was squeezed into a
+   three-line column and the un-shrinkable button pair pushed the document
+   sideways. On a phone it stacks, and the buttons go full-width. */
+.call-top{display:flex;flex-direction:column;flex-wrap:wrap;align-items:flex-start;
+  gap:var(--s2);padding:var(--s4)}
+.call-top h2{width:100%}
+.call-top .sub{width:100%;color:var(--text-muted);font-size:var(--t-label)}
+.call-top .end{margin:0;width:100%;display:flex;flex-direction:column;
+  flex-wrap:wrap;align-items:stretch;justify-content:flex-start;gap:var(--s2)}
+.call-top .end .btn{width:100%}
+.call-cols{display:grid;grid-template-columns:1fr;border-top:1px solid var(--border)}
+.call-cols>*{padding:var(--s4);min-width:0}
+.call-cols>*+*{border-top:1px solid var(--border)}
 
 .tile{background:var(--sketch-ground);border-radius:var(--r-md);overflow:hidden;margin:0}
 .tile svg{width:100%;height:auto}
 .tile figcaption{padding:var(--s2) var(--s3) var(--s3);font-size:var(--t-caption);
   line-height:var(--lh-label);color:var(--sketch-dim);font-weight:var(--w-med)}
 .ask{font-size:var(--t-caption);font-weight:var(--w-semi);color:var(--brand)}
-.ask+p{margin:var(--s2) 0 0;font-size:var(--t-lede);font-weight:var(--w-semi);
-  letter-spacing:-.02em;line-height:var(--lh-lede);text-wrap:balance;max-width:30ch}
-.slots{margin:var(--s5) 0 0;display:grid;grid-template-columns:1fr 1fr;gap:0 var(--s6)}
+/* the question he is being asked is the largest thing on a phone screen */
+.ask+p{margin:var(--s2) 0 0;font-size:22px;font-weight:var(--w-semi);
+  letter-spacing:-.02em;line-height:var(--lh-lede);text-wrap:balance;max-width:none}
+.slots{margin:var(--s5) 0 0;display:grid;grid-template-columns:1fr;gap:0 var(--s6)}
 .slot{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s2) 0;
   border-top:1px solid var(--border-subtle)}
 .slot .k{font-size:var(--t-label);color:var(--text-secondary);flex:1}
@@ -405,19 +463,24 @@ svg{display:block}
 .slot .v.none{color:var(--text-muted);font-weight:var(--w-reg)}
 .slot .v.said{color:var(--status-good-ink)}
 .slot .v.ambig{color:var(--status-warn-ink)}
-.call-end{display:flex;align-items:center;gap:var(--s3);margin:var(--s5) 0 0;
-  font-size:var(--t-caption);color:var(--text-muted)}
-.call-end .end{margin-left:auto}
+.call-end{display:flex;flex-direction:column;flex-wrap:wrap;align-items:stretch;
+  gap:var(--s3);margin:var(--s5) 0 0;font-size:var(--t-caption);color:var(--text-muted)}
+.call-end .end{margin:0;width:100%}
+.call-end .btn{width:100%}
 .spoke{display:flex;gap:var(--s3);padding:var(--s2) 0;font-size:var(--t-label)}
 .spoke b{font-weight:var(--w-med);color:var(--text-muted);width:64px;flex:none}
 .spoke span{color:var(--text-secondary);flex:1;min-width:0}
 .spoke.them b{color:var(--brand)}
 
 /* --- the tracker --- */
-.track-top{display:flex;align-items:center;gap:var(--s3);padding:var(--s4) var(--s6)}
-.track-top .count{color:var(--text-muted);font-size:var(--t-label)}
-.track-top .end{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
-.tabs{display:flex;align-items:center;gap:var(--s1);padding:0 var(--s5) var(--s3)}
+.track-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);
+  padding:var(--s4)}
+.track-top h2{width:100%}
+.track-top .count{width:100%;color:var(--text-muted);font-size:var(--t-label)}
+.track-top .end{margin-left:0;width:100%;display:flex;flex-wrap:wrap;
+  align-items:center;justify-content:flex-start;gap:var(--s2)}
+.tabs{display:flex;align-items:center;gap:var(--s1);padding:0 var(--s4) var(--s3);
+  overflow-x:auto;scrollbar-width:none}
 .tab{height:28px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
   font-weight:var(--w-med);color:var(--text-muted);white-space:nowrap}
 .tab:hover{color:var(--text-secondary)}
@@ -425,9 +488,21 @@ svg{display:block}
 .tab b{font-weight:var(--w-semi);color:var(--text-muted)}
 .tab b.hot{color:var(--status-stop-ink)}
 
-.cols{display:grid;align-items:center;gap:0 var(--s5);padding:0 var(--s6);min-width:0;
-  grid-template-columns:56px minmax(220px,1.8fr) 108px 120px 180px 116px}
-.colhead{padding:var(--s3) var(--s6);border-top:1px solid var(--border);
+/* A job row on a phone is a block with its action in the thumb zone: thumbnail
+   and customer on the first line, the state chip under the customer, and the
+   action full-width below both. The desktop board puts the action top-right of
+   the row, which is the furthest point from a right thumb.
+
+   Money goes first when space runs out, then waiting time. The state chip is
+   the last thing to go — it is the reason the job is on the board at all. */
+.cols{display:grid;align-items:center;gap:var(--s2) var(--s3);padding:var(--s3) var(--s4);
+  min-width:0;grid-template-columns:44px minmax(0,1fr)}
+.cols .c-wait,.cols .c-money{display:none}
+.cols .c-state{grid-column:2;grid-row:2;justify-self:start;margin:0}
+.cols .c-do{grid-column:1/3;margin-top:var(--s2)}
+.cols .c-do .btn{flex:1}
+.cols .c-do .icon{flex:none}
+.colhead{display:none;padding:var(--s3) var(--s6);border-top:1px solid var(--border);
   border-bottom:1px solid var(--border);background:var(--surface-raised);
   font-size:var(--t-label);font-weight:var(--w-med);color:var(--text-muted)}
 .colhead .right{text-align:right}
@@ -435,17 +510,17 @@ svg{display:block}
 .job{border-bottom:1px solid var(--border-subtle)}
 .job:last-child{border-bottom:0}
 .job[data-open]{background:var(--surface-raised)}
-.job-row{min-height:var(--row);padding:var(--s3) var(--s6);
+.job-row{min-height:var(--row);padding:var(--s4);
   transition:background .15s var(--ease)}
 
 
-.part{width:56px;height:40px;border-radius:var(--r-sm);background:var(--surface-raised);
+.part{width:44px;height:34px;border-radius:var(--r-sm);background:var(--surface-raised);
   display:grid;place-items:center}
 .job[data-open] .part{background:var(--surface)}
-.part svg{width:46px;height:32px}
+.part svg{width:38px;height:28px}
 
 .cust{min-width:0;display:flex;flex-direction:column;gap:2px}
-.cust b{font-size:var(--t-name);font-weight:var(--w-semi);line-height:var(--lh-name);
+.cust b{font-size:15px;font-weight:var(--w-semi);line-height:var(--lh-name);
   letter-spacing:-.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cust span{font-size:var(--t-data);color:var(--text-secondary);font-weight:var(--w-reg);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -456,12 +531,16 @@ svg{display:block}
 .doing{display:flex;justify-content:flex-end;gap:var(--s1)}
 
 /* --- the expanded job --- */
-.detail{padding:0 var(--s6) var(--s6);display:grid;
-  grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:var(--s7)}
+/* the expanded job on a phone: the drawing first, then the stages, then money */
+.detail{padding:0 var(--s4) var(--s4);display:grid;
+  grid-template-columns:1fr;gap:var(--s5)}
 .drawing{border-radius:var(--r-md);background:var(--surface);
   box-shadow:inset 0 0 0 1px var(--border);overflow:hidden}
-.drawing-top{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4)}
-.drawing-top .end{margin-left:auto;font-size:var(--t-caption);color:var(--text-muted)}
+/* every row that pairs a sentence with buttons stacks rather than squeezing
+   the sentence into a column two words wide */
+.drawing-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);
+  padding:var(--s3) var(--s4)}
+.drawing-top .end{margin-left:0;width:100%;font-size:var(--t-caption);color:var(--text-muted)}
 .drawing svg.plan{width:100%;height:auto;background:var(--draw-fill)}
 .spec{display:flex;flex-wrap:wrap;gap:var(--s2);padding:var(--s4)}
 .spec span{display:inline-flex;align-items:center;gap:var(--s2);height:var(--chip);
@@ -470,31 +549,33 @@ svg{display:block}
 .spec b{color:var(--text-primary);font-weight:var(--w-semi)}
 .drawing>p{padding:0 var(--s4) var(--s4)}
 
-.stages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:start}
+.stages{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s4);align-items:start}
 .stage-top{display:flex;align-items:center}
 .knot{width:20px;height:20px;border-radius:50%;flex:none;display:grid;place-items:center;
   background:var(--status-good-mark);color:var(--surface)}
 .knot.now{background:var(--surface);box-shadow:inset 0 0 0 2px var(--status-warn-mark);
   color:var(--status-warn-mark)}
 .knot.off{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--border-strong)}
-.wire{flex:1;height:2px;background:var(--status-good-mark);opacity:.4;margin:0 var(--s2)}
+/* five stages on two rows have no single line to run a wire along */
+.wire{display:none;flex:1;height:2px;background:var(--status-good-mark);opacity:.4;margin:0 var(--s2)}
 .wire.off{background:var(--border-strong);opacity:1}
-.stage-body{margin:var(--s3) 0 0;padding-right:var(--s4)}
+.stage-body{margin:var(--s3) 0 0;padding-right:0}
 .stage-body h5{margin:0;font-size:var(--t-name);font-weight:var(--w-semi);letter-spacing:-.01em}
 .stage-body p{margin:var(--s1) 0 0;font-size:var(--t-caption);color:var(--text-muted);
   display:flex;justify-content:space-between;gap:var(--s2)}
 .stage-body p b{color:var(--text-secondary);font-weight:var(--w-med)}
 .stage.off h5{color:var(--text-muted)}
 
-.why{display:grid;grid-template-columns:minmax(0,1fr) 292px;gap:var(--s7);
+.why{display:grid;grid-template-columns:1fr;gap:var(--s7);
   margin:var(--s6) 0 0;padding:var(--s5) 0 0;border-top:1px solid var(--border)}
 .why h5{margin:0;font-size:var(--t-sub);font-weight:var(--w-semi)}
 .why>div>p{margin:var(--s2) 0 0;font-size:var(--t-body);color:var(--text-secondary);
   line-height:var(--lh-body);max-width:58ch}
 .why b{color:var(--text-primary);font-weight:var(--w-semi)}
-.why-end{display:flex;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
+.why-end{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
   font-size:var(--t-caption);color:var(--text-muted)}
-.why-end .end{margin-left:auto;display:flex;gap:var(--s2)}
+.why-end .end{margin-left:0;width:100%;display:flex;gap:var(--s2)}
+.why-end .end .btn{flex:1}
 /* final.html has no doctype, so its table uses the UA's normal line height. */
 .sum{width:100%;border-collapse:collapse;font-size:var(--t-label);line-height:normal;margin:var(--s3) 0 0}
 .sum td{padding:var(--s1) 0;color:var(--text-secondary)}
@@ -502,6 +583,7 @@ svg{display:block}
 .sum .q{color:var(--text-muted)}
 .sum tr.total td{padding-top:var(--s2);border-top:1px solid var(--border);
   color:var(--text-primary);font-weight:var(--w-semi)}
+
 
 
 /* ===========================================================================
@@ -514,7 +596,15 @@ svg{display:block}
 /* 1 · Touch targets. On a coarse pointer every control has to clear 44px, and
    the shop's acceptance hardware is a phone. The row action buttons were 28px
    and the tab strip was 27px — both fine with a mouse, both a miss with a
-   glove on. Nothing moves on a fine pointer, so the desktop density survives. */
+   glove on. Nothing moves on a fine pointer, so the desktop density survives.
+
+   THIS IS NOT A WIDTH QUERY AND MUST NOT BE INVERTED. It is a pointer query
+   with a width arm: `(pointer:coarse)` has to keep firing on a touch device at
+   a wide viewport, which no min-width layer can express. Written the other way
+   round it needs `not (pointer:coarse)`, and a browser that fails to parse
+   that drops the whole condition — leaving desktop density permanently at
+   44px, silently, on exactly the browsers a desktop harness cannot see. The
+   rest of the sheet is min-width. This one stays. */
 @media (pointer:coarse),(max-width:55rem){
   .btn,.btn--sm{min-height:44px;padding-inline:var(--s4)}
   .icon,.rl{min-width:44px;min-height:44px}
@@ -530,16 +620,16 @@ svg{display:block}
 .ask+p,.due p,.why>div>p,.spoke span,.trail b{overflow-wrap:anywhere}
 
 /* 3 · Safe areas. On a phone with a gesture bar the rail sat under the system
-   inset, so the last 12-20px of it could not be tapped. */
-@media (max-width:55rem){
-  .rail{padding-bottom:env(safe-area-inset-bottom,0)}
-  .app{height:calc(100dvh - env(safe-area-inset-bottom,0px))}
-}
+   inset, so the last 12-20px of it could not be tapped. Both halves of that
+   fix now live with the rules they belong to — the rail carries its own inset
+   padding, and `.main` reserves the bar's height plus the inset at the bottom
+   of its padding. `.app` no longer needs a height correction, because on a
+   phone it is a document rather than a fixed-height shell. */
 
 /* 4 · Focus. The ring was defined once globally; these two needed their own
    because they sit on coloured or inverted ground where the default ring
    disappears. Never animated — it has to appear the instant focus lands. */
-.figure :focus-visible{outline:2px solid #f4efe4;outline-offset:2px}
+.figure :focus-visible{outline:2px solid var(--on-field);outline-offset:2px}
 .btn--go:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 
 /* 5 · Hover is a mouse affordance, not a state. Anything that only exists on
@@ -559,184 +649,142 @@ svg{display:block}
   .figures .figure h4,.figures .figure .n span,.figures .figure .under{color:#333!important}
 }
 
-
-
 @media (prefers-reduced-motion:reduce){*{transition-duration:.001ms !important}}
 
-/* ============================================================ narrow ==== */
-@media (max-width:82.5rem){
-  .call-cols{grid-template-columns:260px minmax(0,1fr)}
-  .call-cols>:last-child{grid-column:1/3;border-left:0;border-top:1px solid var(--border)}
-  .main{padding:var(--s5) var(--s6) var(--s7)}
+/* ===========================================================================
+   THE MIN-WIDTH LAYERS
+
+   Everything above is the phone board. It is the base, unconditionally, so a
+   phone parses no media query at all to get its own layout — which is the
+   point of writing it this way round.
+
+   Each layer below adds back what a wider viewport can afford, in the order
+   the design contract's §6 table gives:
+
+     26.25rem   display steps up; slots go two-up
+     55rem      the three-zone shell; rail returns to the left; pane docks
+     73.75rem   the money column earns its space back
+     82.5rem    the call sketch opens to three columns
+
+   These are the same six numbers as before and the exact complement of the
+   max-width queries they replace, not a re-tuning. The trailing .0001rem is
+   deliberate and load-bearing: `max-width:26.25rem` includes exactly 420px, so
+   the min-width that takes over has to begin just above it. Round numbers
+   would double-apply at every boundary.
+
+   Breakpoints stay in rem so they respect the reader's font size.
+   =========================================================================== */
+
+/* ----------------------------------------------------- 26.25rem · 420px ---- */
+@media (min-width:26.2501rem){
+  :root{--t-display:44px;--t-title:22px}
+  .slots{grid-template-columns:1fr 1fr;gap:0 var(--s4)}
+  .ask+p{font-size:24px}
+  .cust b{font-size:16px}
+  .stage-body{padding-right:var(--s4)}
 }
-@media (max-width:73.75rem){
+
+/* -------------------------------------------------------- 55rem · 880px ---- */
+/* The phone board becomes the three-zone shell. This is the one boundary where
+   the product changes shape rather than merely loosening. */
+@media (min-width:55.0001rem){
+  :root{--t-display:64px}
+
+  /* --- the shell -------------------------------------------------------- */
+  .app{display:grid;height:100dvh;
+    grid-template-columns:56px 300px minmax(0,1fr);
+    grid-template-rows:56px minmax(0,1fr)}
+  .top{grid-column:1/4;position:static;z-index:auto;padding:0 var(--s5)}
+  .top .when{display:block}
+  .top .find{display:flex}
+
+  .rail{position:static;height:auto;z-index:auto;
+    flex-direction:column;justify-content:normal;
+    border-top:0;border-right:1px solid var(--border);padding:var(--s2) 0}
+  .rl-gap{display:block}
+  .rail .rl:nth-of-type(4),.rail .rl:nth-of-type(7){display:grid}
+
+  .pane{display:flex;flex-direction:column;min-height:0;
+    border-bottom:0;border-right:1px solid var(--border)}
+  .pane-body{flex:1;min-height:0;overflow-y:auto;padding:var(--s5)}
+  .pane-foot{position:static;z-index:auto;box-shadow:none}
+
+  .main{display:block;overflow-y:auto;padding:var(--s5) var(--s6) var(--s7)}
+  .card+.card{margin-top:var(--s5)}
+
+  /* --- the three numbers go back to a row -------------------------------- */
+  .figures{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+  .figure+.figure{border-top:0}
+  .figure{padding:var(--s6)}
+  .figure .under{flex-wrap:nowrap}
+
+  /* --- the call sketch --------------------------------------------------- */
+  .call-top{flex-direction:row;flex-wrap:nowrap;align-items:center;
+    gap:var(--s3);padding:var(--s4) var(--s6)}
+  .call-top h2{width:auto}
+  .call-top .sub{width:auto}
+  .call-top .end{margin-left:auto;width:auto;flex-direction:row;flex-wrap:nowrap;
+    align-items:center;justify-content:normal;gap:var(--s3)}
+  .call-top .end .btn{width:auto}
+  .call-cols{grid-template-columns:260px minmax(0,1fr)}
+  .call-cols>*{padding:var(--s5) var(--s6)}
+  .call-cols>*+*{border-top:0;border-left:1px solid var(--border)}
+  .call-cols>:last-child{grid-column:1/3;border-left:0;border-top:1px solid var(--border)}
+  .ask+p{font-size:var(--t-lede);max-width:30ch}
+  .slots{gap:0 var(--s6)}
+  .call-end{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:var(--s3)}
+  .call-end .end{margin-left:auto;width:auto}
+  .call-end .btn{width:auto}
+
+  /* --- the tracker ------------------------------------------------------- */
+  .track-top{flex-wrap:nowrap;gap:var(--s3);padding:var(--s4) var(--s6)}
+  .track-top h2{width:auto}
+  .track-top .count{width:auto}
+  .track-top .end{margin-left:auto;width:auto;flex-wrap:nowrap;justify-content:normal}
+  .tabs{padding:0 var(--s5) var(--s3);overflow-x:visible;scrollbar-width:auto}
+
   /* Between 880 and 1180 the pane is still on screen, so the tracker has only
      ~670px to work with. A 190px floor under the customer column made the
      tracks sum to 750 and pushed the action button off the card. The name
      truncates instead — it is the one cell that can lose characters without
-     losing meaning. */
-  .cols{grid-template-columns:56px minmax(0,1.6fr) 100px 168px 116px;gap:0 var(--s4)}
-  .cols .c-money{display:none}   /* the button resolves the row; the number
-                                    does not. money goes before the action. */
-  .detail{grid-template-columns:1fr}
-  .why{grid-template-columns:1fr}
-}
-/* On the phone the LAST thing to go is the state — it is the reason the job is
-   on the board at all. Money goes first, then waiting-time. */
-@media (max-width:55rem){
-  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:56px minmax(0,1fr) 56px}
-  /* .top keeps grid-column:1/4 from the desktop shell; against a one-column
-     grid that conjures two implicit tracks sized by its content, and the app
-     silently rendered 348px wide inside a 320px window. overflow-x:clip hid
-     the scrollbar, so it read as a pass while the avatar sat off-screen. */
-  .top,.rail,.pane,.main{grid-column:1/2;min-width:0}
-  .rail{grid-row:3;flex-direction:row;justify-content:space-around;
-    border-right:0;border-top:1px solid var(--border);padding:0 var(--s2)}
-  .rail .rl-gap{display:none}
-  /* Seven destinations at a 44px target need 348px of bar; the phone has 320.
-     The rule is collapse the nav, not shrink the targets — so Quotes and Help
-     drop on the phone and the five he actually opens survive. */
-  .rail .rl:nth-of-type(4),.rail .rl:nth-of-type(7){display:none}
-  .pane{display:none}
-  .main{padding:var(--s4)}
-  .top{padding:0 var(--s4)}
-  .top .when,.top .find{display:none}
-  .figures{grid-template-columns:1fr}
-  .figure+.figure{border-left:0;border-top:1px solid var(--border)}
-  .call-cols{grid-template-columns:1fr}
-  .call-cols>*+*{border-left:0;border-top:1px solid var(--border)}
-  .call-cols>:last-child{grid-column:auto}
-  /* Rendered at 360 these two header rows never wrapped: the title was
-     squeezed into a three-line column and the un-shrinkable button pair
-     pushed the document sideways. They stack now. */
-  .call-top,.track-top{padding:var(--s4);flex-wrap:wrap;gap:var(--s2) var(--s3)}
-  .call-top h2,.track-top h2{width:100%}
-  .call-top .sub,.track-top .count{width:100%}
-  .call-top .end,.track-top .end{margin-left:0;width:100%;flex-wrap:wrap;
-    justify-content:flex-start}
-  .figure .under{flex-wrap:wrap}
-  /* every row that pairs a sentence with buttons stacks rather than squeezing
-     the sentence into a column two words wide */
-  .why-end,.call-end,.drawing-top{flex-wrap:wrap;gap:var(--s3)}
-  .why-end .end,.call-end .end,.drawing-top .end{margin-left:0;width:100%}
-  .cols{grid-template-columns:48px minmax(0,1fr) auto;gap:0 var(--s3);padding:0 var(--s4)}
-  .cols .c-wait,.cols .c-money{display:none}
-  .cols .c-state{grid-column:2;grid-row:2;justify-self:start;margin-top:var(--s2)}
-  .cols .c-do{display:flex}
-  .colhead{padding-left:var(--s4);padding-right:var(--s4)}
+     losing meaning, and money goes before the action does. */
+  .cols{gap:0 var(--s4);padding:0 var(--s6);
+    grid-template-columns:56px minmax(0,1.6fr) 100px 168px 116px}
+  .cols .c-wait{display:block}
+  .cols .c-state{grid-column:auto;grid-row:auto;justify-self:auto}
+  .cols .c-do{grid-column:auto;margin-top:0}
+  .cols .c-do .btn{flex:0 1 auto}
+  .colhead{display:grid}
   .colhead .c-state{display:none}
-  .tabs{padding:0 var(--s4) var(--s3);overflow-x:auto;scrollbar-width:none}
-  .part{width:48px;height:38px}.part svg{width:40px;height:30px}
-  .detail{padding:0 var(--s4) var(--s4);gap:var(--s5)}
-  .stages{grid-template-columns:repeat(2,1fr);gap:var(--s4)}
-  .wire{display:none}
-}
-@media (max-width:26.25rem){
-  :root{--t-display:28px;--t-title:17px;--t-lede:18px}
-  .stage-body{padding-right:0}
-  .slots{grid-template-columns:1fr}
-}
-/* ===========================================================================
-   THE PHONE BOARD
+  .job-row{padding:var(--s3) var(--s6)}
+  .part{width:56px;height:40px}
+  .part svg{width:46px;height:32px}
+  .cust b{font-size:var(--t-name)}
 
-   Everything above this comment is the desktop board and is untouched. This
-   block is additive and lives entirely inside the phone breakpoint.
-
-   The previous mobile pass made the desktop board survive a phone: nothing
-   overflowed, targets were 44px, columns dropped in a sensible order. That is
-   not the same as designing the phone board, and it showed in one fact — the
-   left pane was `display:none`, and the left pane is the product. On a phone
-   he got three numbers, a call sketch and a truncated list, and no answer to
-   the only question he opens this thing to ask.
-
-   So on a phone the order is the order of his attention, not the order of the
-   DOM:
-
-     1. Why 5 need you — the five weighted signals, and Promises. First.
-     2. The live call sketch — the moment he is actually in, holding the phone.
-     3. The job list.
-     4. The week's money. Last, because it is never why he picked the phone up.
-
-   And every primary action moves to the bottom of its block, full width, in
-   the thumb zone. On the desktop board the action sits top-right of a row,
-   which is the furthest point from a right thumb.
-   =========================================================================== */
-
-@media (max-width:55rem){
-
-  /* --- the shell becomes a document, not a fixed three-zone app ----------- */
-  .app{display:block;height:auto;min-height:100dvh}
-  .top{position:sticky;top:0;z-index:20}
-  .main{height:auto;overflow:visible;
-        padding:var(--s4) var(--s4) calc(64px + env(safe-area-inset-bottom,0px))}
-
-  /* the rail stops being a row in a grid and becomes a real bottom bar */
-  .rail{position:fixed;left:0;right:0;bottom:0;z-index:20;height:56px;
-        border-top:1px solid var(--border);
-        padding-bottom:env(safe-area-inset-bottom,0px)}
-
-  /* --- 1 · the pane comes back, and comes back first --------------------- */
-  .pane{display:block;border-right:0;border-bottom:1px solid var(--border);
-        background:var(--surface)}
-  .pane-body{overflow:visible;min-height:0;padding:var(--s5) var(--s4)}
-  .pane-foot{position:sticky;bottom:calc(56px + env(safe-area-inset-bottom,0px));
-             background:var(--surface);z-index:10;
-             box-shadow:0 -8px 16px -12px rgba(0,0,0,.4)}
-  /* Nothing in the pane is hidden. An earlier version hid the section after
-     the first rule to save scroll and took the Promises heading with it —
-     leaving Kept/Open/Broken floating with no name. All three sections are
-     short and all three are why he opened it. */
-
-  /* --- 2 · the reading order is attention order -------------------------- */
-  .main{display:flex;flex-direction:column;gap:var(--s5)}
-  .main>*{margin:0!important}
-  .main>.card:has(.call-top){order:1}
-  .main>.card:has(.track-top){order:2}
-  .main>.figures{order:3}
-
-  /* --- 3 · the call sketch is a screen, not a card ----------------------- */
-  .call-top{flex-direction:column;align-items:flex-start;gap:var(--s2)}
-  .call-top .end{width:100%;margin:0;flex-direction:column;align-items:stretch;
-                 gap:var(--s2)}
-  .call-top .end .btn{width:100%}
-  .call-cols>*{padding:var(--s4)}
-  .ask+p{font-size:24px;max-width:none}
-  .slots{grid-template-columns:1fr 1fr;gap:0 var(--s4)}
-  .call-end{flex-direction:column;align-items:stretch;gap:var(--s3)}
-  .call-end .end{width:100%;margin:0}
-  .call-end .btn{width:100%}
-
-  /* --- 4 · a job row is a block with its action in the thumb zone -------- */
-  .cols{grid-template-columns:44px minmax(0,1fr);gap:var(--s2) var(--s3);
-        padding:var(--s3) var(--s4)}
-  .colhead{display:none}                 /* column heads have no columns left */
-  .job-row{padding:var(--s4)}
-  .cols .c-wait,.cols .c-money{display:none}
-  .cols .c-state{grid-column:2;justify-self:start;margin:0}
-  .cols .c-do{grid-column:1/3;display:flex;margin-top:var(--s2)}
-  .cols .c-do .btn{flex:1}
-  .cols .c-do .icon{flex:none}
-  .part{width:44px;height:34px}
-  .part svg{width:38px;height:28px}
-  .cust b{font-size:16px}
-
-  /* the expanded job: the drawing first, then the stages, then the money */
-  .detail{padding:0 var(--s4) var(--s4);gap:var(--s5)}
-  .why-end .end{width:100%}
-  .why-end .end .btn{flex:1}
-
-  /* --- 5 · the week's money, compacted --------------------------------- */
-  .figures{gap:1px}
-  .figure{padding:var(--s4) var(--s5)}
-  :root{--t-display:44px}
-  .figure .under{flex-wrap:wrap}
+  /* --- the expanded job -------------------------------------------------- */
+  .detail{padding:0 var(--s6) var(--s6);gap:var(--s7)}
+  .drawing-top{flex-wrap:nowrap;gap:var(--s2)}
+  .drawing-top .end{margin-left:auto;width:auto}
+  .stages{grid-template-columns:repeat(5,minmax(0,1fr));gap:normal}
+  .wire{display:block}
+  .why-end{flex-wrap:nowrap}
+  .why-end .end{margin-left:auto;width:auto}
+  .why-end .end .btn{flex:0 1 auto}
 }
 
-/* A phone in a shop is held in one hand, so the reachable half of the screen
-   is the bottom. Below 26.25rem the two-up field list gives up and stacks. */
-@media (max-width:26.25rem){
-  .slots{grid-template-columns:1fr}
-  .ask+p{font-size:22px}
-  :root{--t-display:40px}
-  .cust b{font-size:15px}
+/* ----------------------------------------------------- 73.75rem · 1180px ---- */
+/* Money is the first thing to go and the last thing to come back. */
+@media (min-width:73.7501rem){
+  .cols{gap:0 var(--s5);
+    grid-template-columns:56px minmax(220px,1.8fr) 108px 120px 180px 116px}
+  .cols .c-money{display:block}
+  .detail{grid-template-columns:minmax(0,380px) minmax(0,1fr)}
+  .why{grid-template-columns:minmax(0,1fr) 292px}
+}
+
+/* ------------------------------------------------------ 82.5rem · 1320px ---- */
+@media (min-width:82.5001rem){
+  .call-cols{grid-template-columns:280px minmax(0,1fr) 280px}
+  .call-cols>:last-child{grid-column:auto;border-left:1px solid var(--border);border-top:0}
+  .main{padding:var(--s6) var(--s7) var(--s8)}
 }
