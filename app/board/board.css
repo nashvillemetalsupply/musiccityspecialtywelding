@@ -488,7 +488,10 @@ svg{display:block}
 .tab{height:28px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
   font-weight:var(--w-med);color:var(--text-muted);white-space:nowrap}
 /* the stage tabs are server-filtered links now, not toggle buttons */
-.tabs a.tab{display:inline-flex;align-items:center}
+/* The JSX puts a space between the label and the count, but a flex container
+   drops that whitespace text node, so "Attention" and "9" ran together. The
+   gap has to come from the container. Every tab, not just the hot one. */
+.tabs a.tab{display:inline-flex;align-items:center;gap:var(--s2)}
 .tab:hover{color:var(--text-secondary)}
 .tab[aria-pressed="true"],.tab[aria-current="page"]{background:var(--surface-raised);color:var(--text-primary)}
 .tab b{font-weight:var(--w-semi);color:var(--text-muted)}
