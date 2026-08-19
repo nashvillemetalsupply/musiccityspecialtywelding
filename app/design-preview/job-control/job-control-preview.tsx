@@ -1,8 +1,60 @@
 "use client"
 
 import { useEffect } from "react"
+import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
+import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
+import type { PromiseSummary } from "@/lib/commitments"
+import type { JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
 
-export function JobControlPreview() {
+export type BoardPaneData = {
+  counts: Record<JobBoardStage, number>
+  signalCounts: Record<BoardSignalKind, number>
+  promises: PromiseSummary
+  outTheDoor: OutTheDoorWeek
+  medianFirstResponseMinutes: number | null
+}
+
+// What a signed-out viewer sees: the whole board, real zeros, no names.
+export const EMPTY_BOARD: BoardPaneData = {
+  counts: { board: 0, attention: 0, shop: 0, waiting: 0, ready: 0 },
+  signalCounts: { waiting: 0, noreply: 0, promise: 0, followup: 0, bounced: 0 },
+  promises: { kept: 0, open: 0, broken: 0, overdue: null },
+  outTheDoor: { jobs: 0, paidJobs: 0, revenueCents: null, stillOutCents: null },
+  medianFirstResponseMinutes: null,
+}
+
+// Descending weight, which is also the order the mockup was approved in.
+const SIGNAL_ORDER = (Object.keys(BOARD_WEIGHTS.signal) as BoardSignalKind[])
+  .sort((a, b) => BOARD_WEIGHTS.signal[b] - BOARD_WEIGHTS.signal[a])
+
+const WORST_WEIGHT = Math.max(...Object.values(BOARD_WEIGHTS.signal))
+
+// The contract reserves red for signals weighted 50 and above; a count of zero
+// is not a state, so it goes quiet.
+function markFor(kind: BoardSignalKind, count: number) {
+  if (count === 0) return "var(--mark-quiet)"
+  return BOARD_WEIGHTS.signal[kind] >= 50 ? "var(--status-stop-mark)" : "var(--status-warn-mark)"
+}
+
+function money(cents: number | null) {
+  if (cents === null) return "—"
+  return `$${Math.round(cents / 100).toLocaleString("en-US")}`
+}
+
+function sinceInWords(iso: string) {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000))
+  if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`
+  const days = Math.floor(hours / 24)
+  return `${days} ${days === 1 ? "day" : "days"} ago`
+}
+
+export function JobControlPreview({ board }: { board: BoardPaneData }) {
+  const needsYou = board.counts.attention
+  const promises = board.promises
+  const outTheDoor = board.outTheDoor
+  const median = board.medianFirstResponseMinutes
   useEffect(() => {
     const root = document.documentElement
     const key = "mcsw-theme"
@@ -73,58 +125,39 @@ export function JobControlPreview() {
     
       <aside className="pane">
         <div className="pane-body">
-          <div className="head"><h3 className="t-sub">Why 5 need you</h3><span className="t-label end">now</span></div>
+          <div className="head"><h3 className="t-sub">Why {needsYou} need you</h3><span className="t-label end">now</span></div>
           <div className="signals">
-            <button className="signal" type="button">
-              <i style={{ "background": "var(--status-stop-mark)" }}></i>
-              <span>Needs a call</span><b>2</b><em>60</em>
-            </button>
-            <button className="signal" type="button">
-              <i style={{ "background": "var(--status-stop-mark)" }}></i>
-              <span>Customer waiting</span><b>1</b><em>50</em>
-            </button>
-            <button className="signal" type="button">
-              <i style={{ "background": "var(--status-warn-mark)" }}></i>
-              <span>Promise overdue</span><b>1</b><em>45</em>
-            </button>
-            <button className="signal" type="button">
-              <i style={{ "background": "var(--status-warn-mark)" }}></i>
-              <span>Email did not deliver</span><b>1</b><em>25</em>
-            </button>
-            <button className="signal none" type="button">
-              <i style={{ "background": "var(--mark-quiet)" }}></i>
-              <span>Follow-up due</span><b>0</b><em>20</em>
-            </button>
+            {SIGNAL_ORDER.map((kind) => {
+              const count = board.signalCounts[kind]
+              return <button className={`signal${count === 0 ? " none" : ""}`} type="button" key={kind}>
+                <i style={{ "background": markFor(kind, count) }}></i>
+                <span>{BOARD_SIGNAL_LABELS[kind]}</span><b>{count}</b><em>{BOARD_WEIGHTS.signal[kind]}</em>
+              </button>
+            })}
           </div>
-          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>How many jobs, then how bad it is. 60 is the worst it gets.</p>
+          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>How many jobs, then how bad it is — one job can carry more than one. {WORST_WEIGHT} is the worst it gets.</p>
     
           <div className="rule"></div>
     
-          <div className="head"><h3 className="t-sub">Promises</h3><span className="t-label end">this month</span></div>
+          <div className="head"><h3 className="t-sub">Promises</h3></div>
           <div className="keep">
-            <div className="keep-row"><span className="chip chip--good"><i></i>Kept</span><b>9</b></div>
-            <div className="keep-row"><span className="chip chip--info"><i></i>Open</span><b>3</b></div>
-            <div className="keep-row"><span className="chip chip--warn"><i></i>Broken</span><b>1</b></div>
+            <div className="keep-row"><span className="chip chip--good"><i></i>Kept</span><b>{promises.kept}</b></div>
+            <div className="keep-row"><span className="chip chip--info"><i></i>Open</span><b>{promises.open}</b></div>
+            <div className="keep-row"><span className="chip chip--warn"><i></i>Broken</span><b>{promises.broken}</b></div>
           </div>
-          <div className="due">
-            <p>You told Phil Lloyd a price by Friday.</p>
-            <span>Due 3 days ago · the price is worked out, not sent</span>
-          </div>
-    
-          <div className="rule"></div>
-    
-          <div className="head"><h3 className="t-sub">Today</h3></div>
-          <ul className="trail">
-            <li><i className="good"></i><time>13:29</time><b>Price worked out for Phil Lloyd</b></li>
-            <li><i className="warn"></i><time>13:01</time><b>Ray Colter called, sketch started</b></li>
-            <li><i></i><time>11:20</time><b>Denz automotive asked for Friday</b></li>
-            <li><i className="good"></i><time>09:15</time><b>Gerald Pace plate finished</b></li>
-          </ul>
+          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Open is right now. Kept and broken are this month.</p>
+          {promises.overdue && <div className="due">
+            <p>{promises.overdue.summary}</p>
+            <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
+          </div>}
+          {/* The Today trail is real data (the events table) but no session in
+              PHASE-1-SESSION-PLAN.md owns it, and hand-typed rows must not ship
+              on a wired board. It returns when its own session lands. */}
         </div>
     
         <div className="pane-foot">
           <button className="btn btn--go" type="button">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Work the 5 that need you</button>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Work the {needsYou} that {needsYou === 1 ? "needs" : "need"} you</button>
         </div>
       </aside>
     
@@ -133,30 +166,37 @@ export function JobControlPreview() {
         <section className="card figures">
           <div className="figure">
             <h4>Open jobs</h4>
-            <p className="n"><b className="t-display">21</b><span>on the books</span></p>
+            <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
             <div className="under">
-              <span className="chip chip--good"><i></i>3 in the shop</span>
-              <span>6 waiting on customers &middot; 5 ready</span>
+              <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
+              <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
             </div>
           </div>
           <div className="figure">
             <h4>Needs you</h4>
-            <p className="n"><b className="t-display">5</b><span>today</span></p>
+            <p className="n"><b className="t-display">{needsYou}</b><span>today</span></p>
             <div className="under">
-              <svg className="spark" width="88" height="24" viewBox="0 0 88 24" role="img" aria-label="Jobs needing you over the last seven days: 2, 3, 3, 4, 4, 6, 5">
-                <polyline points="4,18 17,14 30,14 43,10 56,10 69,4 82,7" fill="none"
-                          stroke="var(--status-warn-mark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="82" cy="7" r="3.2" fill="var(--status-warn-mark)" stroke="var(--surface)" strokeWidth="2"/>
-              </svg>
-              <span>median first reply <b>12 min</b></span>
+              {/* The seven-day sparkline is cut. Nothing stores a daily
+                  attention-count history, so the trend could only be guessed at
+                  by replaying the events table — a drawn line with no data
+                  behind it is the exact failure this board exists to fix. It
+                  returns if a daily snapshot ever ships. */}
+              <span>median first reply <b>{median === null ? "—" : `${Math.round(median)} min`}</b></span>
             </div>
           </div>
           <div className="figure">
             <h4>Out the door</h4>
-            <p className="n"><b className="t-display">$8,240</b><span>this week</span></p>
+            <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
             <div className="under">
-              <span className="bar" role="img" aria-label="Five jobs went out this week: four paid, one not"><i className="good"></i><i className="good"></i><i className="good"></i><i className="good"></i><i className="warn"></i></span>
-              <span>4 of 5 paid &middot; <b>$605</b> still out</span>
+              {outTheDoor.jobs > 0 && <span className="bar" role="img"
+                aria-label={`${outTheDoor.jobs} ${outTheDoor.jobs === 1 ? "job" : "jobs"} went out this week: ${outTheDoor.paidJobs} paid, ${outTheDoor.jobs - outTheDoor.paidJobs} not`}>
+                {/* One mark per job, capped so a heavy week cannot overrun the
+                    field. The count beside it stays exact. */}
+                {Array.from({ length: Math.min(outTheDoor.jobs, 10) }, (_, index) =>
+                  <i className={index < outTheDoor.paidJobs ? "good" : "warn"} key={index}></i>)}
+              </span>}
+              {outTheDoor.revenueCents !== null &&
+                <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
             </div>
           </div>
         </section>
