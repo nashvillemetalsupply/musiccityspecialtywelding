@@ -64,6 +64,8 @@ export type BoardWeights = {
 
 export const BOARD_WEIGHTS: Readonly<BoardWeights>
 
+export const BOARD_SIGNAL_LABELS: Readonly<Record<BoardSignalKind, string>>
+
 export function signalWeight(kind: string, hoursLate: number, weights?: BoardWeights): number
 
 export function scoreBoardJob(
