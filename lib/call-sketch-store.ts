@@ -182,9 +182,7 @@ export async function recordLiveTranscriptionEvent(input: LiveTranscriptionEvent
     await rebuildObservedSketch(input.callSid, "review", 0, input.transcriptionSid)
     const finalTranscript = (await finalTranscriptUtterances(input.callSid))
       .map((item) => {
-        const speaker = call.direction === "out"
-          ? item.track === "inbound_track" ? "Shop" : "Customer"
-          : item.track === "inbound_track" ? "Customer" : "Shop"
+        const speaker = speakerForTrack(call.direction, item.track)
         return `${speaker}: ${item.transcript}`
       })
       .join("\n")
@@ -280,9 +278,7 @@ export async function getCallSketchForDraft(publicId: string) {
     buildQuestion,
     utterances: utterances.map((item) => ({
       sequenceId: Number(item.sequence_id),
-      speaker: sketch.direction === "in"
-        ? item.track === "inbound_track" ? "Customer" : "Shop"
-        : item.track === "inbound_track" ? "Shop" : "Customer",
+      speaker: speakerForTrack(sketch.direction, item.track),
       transcript: item.transcript,
       final: item.is_final,
       stability: item.stability,
@@ -333,4 +329,93 @@ export async function getConfirmedCallSketchForDraft(publicId: string) {
     WHERE d.public_id = ${publicId.slice(0, 80)}::text AND s.status = 'confirmed'
     LIMIT 1`) as { confirmed_spec: CallSketchSpec }[]
   return rows[0]?.confirmed_spec ?? null
+}
+
+// Which side of the wire is the shop depends on who placed the call. Three
+// readers needed this answer and each had its own copy of the ternary.
+function speakerForTrack(direction: string, track: string) {
+  const shopTrack = direction === "out" ? "inbound_track" : "outbound_track"
+  return track === shopTrack ? "Shop" : "Customer"
+}
+
+export type BoardCallSketch = {
+  callerName: string
+  startedAt: string
+  endedAt: string | null
+  status: string
+  spec: CallSketchSpec
+  lines: { sequenceId: number; speaker: string; transcript: string }[]
+  unsketchedCalls: number
+}
+
+// The board's live call sketch: the most recent real call the shop has a
+// sketch for. Test calls never reach it — a fixture on this panel is the
+// failure the redesign exists to kill, and a test job is a fixture with a
+// database row.
+export async function getLatestBoardCallSketch(): Promise<BoardCallSketch | null> {
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT c.twilio_sid, c.direction, c.started_at, c.duration_sec,
+      COALESCE(NULLIF(d.caller_name, ''), NULLIF(p.display_name, ''), '') AS caller_name,
+      s.status, COALESCE(s.confirmed_spec, s.observed_spec) AS spec
+    FROM call_sketches s
+    JOIN calls c ON c.twilio_sid = s.call_sid
+    LEFT JOIN call_intake_drafts d ON d.call_sid = c.twilio_sid
+    LEFT JOIN leads l ON l.id = c.lead_id
+    LEFT JOIN people p ON p.id = c.person_id
+    WHERE lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true'
+      AND COALESCE(l.is_test, false) = false
+      AND COALESCE(p.is_test, false) = false
+      AND COALESCE(d.is_test, false) = false
+    ORDER BY COALESCE(s.last_event_at, s.updated_at) DESC, c.started_at DESC
+    LIMIT 1`) as Array<{
+      twilio_sid: string
+      direction: string
+      started_at: string
+      duration_sec: number | null
+      caller_name: string
+      status: string
+      spec: Partial<CallSketchSpec> | null
+    }>
+  const call = rows[0]
+  if (!call) return null
+
+  const [utterances, unsketchedRows] = await Promise.all([
+    sketchUtterances(call.twilio_sid),
+    sql`
+      SELECT count(*)::int AS count
+      FROM calls c
+      LEFT JOIN call_sketches s ON s.call_sid = c.twilio_sid
+      LEFT JOIN call_intake_drafts d ON d.call_sid = c.twilio_sid
+      LEFT JOIN leads l ON l.id = c.lead_id
+      LEFT JOIN people p ON p.id = c.person_id
+      WHERE s.call_sid IS NULL
+        AND c.started_at >= (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+        AND c.started_at < ((date_trunc('day', now() AT TIME ZONE 'America/Chicago') + interval '1 day') AT TIME ZONE 'America/Chicago')
+        AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true'
+        AND COALESCE(l.is_test, false) = false
+        AND COALESCE(p.is_test, false) = false
+        AND COALESCE(d.is_test, false) = false`,
+  ])
+  const unsketched = unsketchedRows as { count: number }[]
+
+  const startedAt = new Date(call.started_at).toISOString()
+  const seconds = Number(call.duration_sec)
+  return {
+    callerName: call.caller_name,
+    startedAt,
+    endedAt: Number.isFinite(seconds) && seconds > 0
+      ? new Date(new Date(startedAt).getTime() + seconds * 1_000).toISOString()
+      : null,
+    status: call.status,
+    // A sketch row written before a fact existed can be missing keys; the
+    // empty spec supplies every one of them so the panel never reads undefined.
+    spec: { ...emptyCallSketchSpec(), ...(call.spec ?? {}) } as CallSketchSpec,
+    lines: utterances.slice(-3).map((item) => ({
+      sequenceId: Number(item.sequence_id),
+      speaker: speakerForTrack(call.direction, item.track),
+      transcript: item.transcript,
+    })),
+    unsketchedCalls: Number(unsketched[0]?.count ?? 0),
+  }
 }
