@@ -79,6 +79,95 @@ export async function listCommitments(input: {
     LIMIT ${limit}::bigint`) as CommitmentRow[]
 }
 
+export type PromiseSummary = {
+  kept: number
+  open: number
+  broken: number
+  overdue: {
+    id: number
+    leadId: number | null
+    summary: string
+    dueAt: string
+    customerName: string
+    service: string
+  } | null
+}
+
+/**
+ * The board's Promises block. Three deliberate boundaries:
+ *
+ * - `we_promised` only. This is the shop's own reliability; counting what a
+ *   customer promised would put their flakiness in the owner's Broken column.
+ * - Two axes, and the pane says so. Kept and broken are scoped to the current
+ *   Central month by status_changed_at — this month's scorecard. Open is every
+ *   open promise right now, because a promise made last month and still owed is
+ *   still work, and scoping it would let the overdue callout name a promise the
+ *   Open count said did not exist.
+ * - `canceled` and `superseded` are counted nowhere. `superseded` is the
+ *   correction mechanism, so counting it and its replacement double-counts one
+ *   promise. Nothing on the pane claims the three sum to promises made.
+ *
+ * commitments carries no is_test of its own, so both possible owners are
+ * checked: a test lead or a test person disqualifies the row.
+ */
+export async function getPromiseSummary(): Promise<PromiseSummary> {
+  const sql = getSql()
+  const [counts, overdue] = await Promise.all([
+    sql`
+      SELECT
+        count(*) FILTER (
+          WHERE c.status = 'kept'
+            AND c.status_changed_at >= (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+            AND c.status_changed_at < ((date_trunc('month', now() AT TIME ZONE 'America/Chicago') + interval '1 month') AT TIME ZONE 'America/Chicago')
+        )::int AS kept,
+        count(*) FILTER (
+          WHERE c.status = 'broken'
+            AND c.status_changed_at >= (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+            AND c.status_changed_at < ((date_trunc('month', now() AT TIME ZONE 'America/Chicago') + interval '1 month') AT TIME ZONE 'America/Chicago')
+        )::int AS broken,
+        count(*) FILTER (WHERE c.status = 'open')::int AS open
+      FROM commitments c
+      LEFT JOIN leads l ON l.id = c.lead_id
+      LEFT JOIN people p ON p.id = c.person_id
+      WHERE c.direction = 'we_promised'
+        AND (l.id IS NULL OR l.is_test = false)
+        AND (p.id IS NULL OR p.is_test = false)`,
+    sql`
+      SELECT c.id, c.lead_id, c.summary, c.due_at,
+        btrim(COALESCE(l.first_name, '') || ' ' || COALESCE(l.last_name, '')) AS customer_name,
+        COALESCE(l.service, '') AS service
+      FROM commitments c
+      LEFT JOIN leads l ON l.id = c.lead_id
+      LEFT JOIN people p ON p.id = c.person_id
+      WHERE c.direction = 'we_promised'
+        AND c.status = 'open'
+        AND c.due_at IS NOT NULL AND c.due_at < now()
+        AND (l.id IS NULL OR l.is_test = false)
+        AND (p.id IS NULL OR p.is_test = false)
+      ORDER BY c.due_at ASC
+      LIMIT 1`,
+  ])
+  const summary = (counts as Array<{ kept: number; open: number; broken: number }>)[0]
+  const late = (overdue as Array<{
+    id: number; lead_id: number | null; summary: string; due_at: string; customer_name: string; service: string
+  }>)[0]
+  return {
+    kept: Number(summary?.kept ?? 0),
+    open: Number(summary?.open ?? 0),
+    broken: Number(summary?.broken ?? 0),
+    overdue: late
+      ? {
+          id: Number(late.id),
+          leadId: late.lead_id === null ? null : Number(late.lead_id),
+          summary: late.summary,
+          dueAt: late.due_at,
+          customerName: late.customer_name,
+          service: late.service,
+        }
+      : null,
+  }
+}
+
 export async function setCommitmentStatus(input: {
   id: number
   status: CommitmentStatus

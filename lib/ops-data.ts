@@ -37,6 +37,7 @@ export type BoardJobRow = LeadRow & {
 export type BoardJobPage = {
   items: BoardJobRow[]
   counts: Record<JobBoardStage, number>
+  signalCounts: Record<BoardSignalKind, number>
   resultTotal: number
   page: number
   pageSize: number
@@ -143,6 +144,16 @@ export async function listLeads(filter: LeadFilter = {}, role: OperatorRole = "c
     WHERE (${includeTests}::boolean OR l.is_test = false)
     ORDER BY l.created_at DESC LIMIT ${limit}::bigint OFFSET ${offset}::bigint`
   return (rows as LeadRow[]).map((lead) => projectLeadForRole(lead, role))
+}
+
+// jsonb_object_agg omits a kind entirely when no job carries it. A kind with
+// no jobs is a real zero the pane must still show, so every kind starts at 0.
+function emptySignalCounts(raw: Partial<Record<BoardSignalKind, number>> | undefined): Record<BoardSignalKind, number> {
+  const counts: Record<BoardSignalKind, number> = { waiting: 0, noreply: 0, promise: 0, followup: 0, bounced: 0 }
+  for (const kind of Object.keys(counts) as BoardSignalKind[]) {
+    counts[kind] = Number(raw?.[kind] ?? 0)
+  }
+  return counts
 }
 
 // The board vocabulary is intentionally operational rather than a mirror of
@@ -313,6 +324,17 @@ export async function listBoardJobs(
           OR (l.completed_at IS NOT NULL AND l.handed_off_at IS NULL)
         )
         AND (${includeTests}::boolean OR l.is_test = false)
+    ), signal_counts AS (
+      -- How many board jobs carry each signal kind. Counted off the same
+      -- candidates and board CTEs the rows are built from, so the pane and the
+      -- tracker can never disagree. DISTINCT because one job can raise the
+      -- same kind twice, and the pane counts jobs, not signals.
+      SELECT COALESCE(jsonb_object_agg(kind, jobs), '{}'::jsonb) AS signal_counts
+      FROM (
+        SELECT c.kind, count(DISTINCT c.lead_id)::int AS jobs
+        FROM candidates c JOIN board b ON b.id = c.lead_id
+        GROUP BY c.kind
+      ) per_kind
     ), board_counts AS (
       SELECT
         count(*)::int AS board_count,
@@ -350,9 +372,11 @@ export async function listBoardJobs(
         f.id DESC
       LIMIT ${pageSize + 1}::int OFFSET ${offset}::int
     )
-    SELECT p.*, (p.board_score >= ${w.hotThreshold}::int) AS board_hot, bc.*, rc.result_total
+    SELECT p.*, (p.board_score >= ${w.hotThreshold}::int) AS board_hot, bc.*, rc.result_total,
+      sc.signal_counts
     FROM board_counts bc
     CROSS JOIN result_count rc
+    CROSS JOIN signal_counts sc
     LEFT JOIN paged p ON true`) as Array<BoardJobRow & {
       board_count: number
       attention_count: number
@@ -360,6 +384,7 @@ export async function listBoardJobs(
       waiting_count: number
       ready_count: number
       result_total: number
+      signal_counts: Partial<Record<BoardSignalKind, number>>
     }>
 
   const countRow = rows[0]
@@ -381,6 +406,7 @@ export async function listBoardJobs(
       waiting: Number(countRow?.waiting_count ?? 0),
       ready: Number(countRow?.ready_count ?? 0),
     },
+    signalCounts: emptySignalCounts(countRow?.signal_counts),
     resultTotal,
     page,
     pageSize,
@@ -666,6 +692,41 @@ export async function getNeedsNow(options: { page?: number; pageSize?: number } 
     return getNeedsNow({ page: clampPageToTotal(requestedPage, firstPage.total, pageSize), pageSize }, role)
   }
   return { items: items.map((lead) => projectLeadForRole(lead, role)), total, page: requestedPage, pageSize }
+}
+
+export type OutTheDoorWeek = {
+  jobs: number
+  paidJobs: number
+  // Money is owner-only and removed here, not in the component. Crew sees null.
+  revenueCents: number | null
+  stillOutCents: number | null
+}
+
+// What actually left the shop this week, Central, and how much of it is paid.
+// completed_at is the door: won_at is when the job was sold, not when it left.
+export async function getOutTheDoorWeek(role: OperatorRole = "crew"): Promise<OutTheDoorWeek> {
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT
+      count(*)::int AS jobs,
+      count(*) FILTER (WHERE paid_at IS NOT NULL)::int AS paid_jobs,
+      COALESCE(sum(revenue_cents), 0)::bigint AS revenue_cents,
+      COALESCE(sum(GREATEST(0,
+        COALESCE(invoice_total_cents, revenue_cents, 0) - COALESCE(paid_amount_cents, 0)
+      )), 0)::bigint AS still_out_cents
+    FROM leads
+    WHERE completed_at >= (date_trunc('week', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+      AND completed_at < ((date_trunc('week', now() AT TIME ZONE 'America/Chicago') + interval '1 week') AT TIME ZONE 'America/Chicago')
+      AND is_test = false AND status NOT IN ('lost', 'spam')`) as Array<{
+        jobs: number; paid_jobs: number; revenue_cents: number; still_out_cents: number
+      }>
+  const row = rows[0]
+  return {
+    jobs: Number(row?.jobs ?? 0),
+    paidJobs: Number(row?.paid_jobs ?? 0),
+    revenueCents: role === "owner" ? Number(row?.revenue_cents ?? 0) : null,
+    stillOutCents: role === "owner" ? Number(row?.still_out_cents ?? 0) : null,
+  }
 }
 
 export async function getMonthRevenueCents(): Promise<number> {
