@@ -38,10 +38,10 @@ These ride along; none owns a session.
 
 | ID | Mission (plan task) | Session model | Effort | Size | Depends | Status |
 |---|---|---|---|---|---|---|
-| W1 | Task 1 — `BOARD_WEIGHTS`, pure scorer, tests, npm wiring | codex | medium | S | — | pending |
+| W1 | Task 1 — `BOARD_WEIGHTS`, pure scorer, tests, npm wiring | codex | medium | S | — | complete |
 | W2 | Task 2 — candidates weights, `needs` aggregate, board score, `order` option | codex | **xhigh** | M | W1 | complete |
-| W3 | Task 3 — `?board=v2` gate + `weighted-job-index.tsx` | codex | medium | S | W2 | pending |
-| W4 | Exit verification — both boards on real data, checklist ticked | codex | medium | S | W3 | pending |
+| W3 | Task 3 — `?board=v2` gate + `weighted-job-index.tsx` | codex | medium | S | W2 | complete |
+| W4 | Exit verification — both boards on real data, checklist ticked | codex | medium | S | W3 | complete |
 
 **Recommended order:** W1 → W2 → W3 → W4. No gap-fillers; the chain is strictly
 sequential because each session consumes the previous one's exports.
