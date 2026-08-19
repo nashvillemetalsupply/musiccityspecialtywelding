@@ -2,6 +2,12 @@
 
 import { useEffect } from "react"
 import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
+import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
+import {
+  PANEL_FACT_KEYS, PANEL_FACT_LABELS, answeredFactCount, dimensionMark,
+  factText, factTone, pricingSentence, sketchAriaLabel,
+} from "@/lib/call-sketch-panel.mjs"
+import type { BoardCallSketch } from "@/lib/call-sketch-store"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
@@ -21,6 +27,7 @@ export type BoardPaneData = {
   outTheDoor: OutTheDoorWeek
   medianFirstResponseMinutes: number | null
   todayTrail: TodayTrailItem[]
+  callSketch: BoardCallSketch | null
 }
 
 // What a signed-out viewer sees: the whole board, real zeros, no names.
@@ -31,6 +38,7 @@ export const EMPTY_BOARD: BoardPaneData = {
   outTheDoor: { jobs: 0, paidJobs: 0, revenueCents: null, stillOutCents: null },
   medianFirstResponseMinutes: null,
   todayTrail: [],
+  callSketch: null,
 }
 
 // Descending weight, which is also the order the mockup was approved in.
@@ -79,11 +87,27 @@ function sinceInWords(iso: string) {
   return `${days} ${days === 1 ? "day" : "days"} ago`
 }
 
+// What the panel says about the call itself. A call still on the line has no
+// end time to report, and a call with no duration on its receipt yet gets its
+// start rather than an invented finish.
+function callLine(sketch: BoardCallSketch) {
+  const name = sketch.callerName || "Unknown caller"
+  if (sketch.status === "listening") return `${name} · phone call, on the line now`
+  if (!sketch.endedAt) return `${name} · phone call, started ${TRAIL_TIME.format(new Date(sketch.startedAt))}`
+  return `${name} · phone call, ended ${TRAIL_TIME.format(new Date(sketch.endedAt))} · ${sinceInWords(sketch.endedAt)}`
+}
+
 export function JobControlPreview({ board }: { board: BoardPaneData }) {
   const needsYou = board.counts.attention
   const promises = board.promises
   const outTheDoor = board.outTheDoor
   const median = board.medianFirstResponseMinutes
+  const sketch = board.callSketch
+  // Signed out, or with nothing sketched yet, the panel renders the same
+  // frame against an empty spec: seven facts unstated, zero answered.
+  const spec = sketch?.spec ?? emptyCallSketchSpec()
+  const answered = answeredFactCount(spec)
+  const pricingGap = pricingSentence(spec)
   useEffect(() => {
     const root = document.documentElement
     const key = "mcsw-theme"
@@ -240,9 +264,10 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
         <section className="card">
           <div className="call-top">
             <h2 className="t-title">Live call sketch</h2>
-            <span className="sub">Ray Colter &middot; phone call, ended 13:01 &middot; 51m ago</span>
+            <span className="sub">{sketch ? callLine(sketch) : "No call sketched yet"}</span>
             <span className="end">
-              <span className="t-label">1 more call not sketched</span>
+              {sketch && sketch.unsketchedCalls > 0 &&
+                <span className="t-label">{sketch.unsketchedCalls} more call{sketch.unsketchedCalls === 1 ? "" : "s"} not sketched</span>}
               <button className="btn btn--sm btn--edge" type="button">Open the job</button>
             </span>
           </div>
@@ -250,8 +275,7 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
           <div className="call-cols">
             <div>
               <figure className="tile">
-                <svg viewBox="0 0 244 172" role="img"
-                     aria-label="Rough call sketch of a gate. Width, height, stock size, rail count, hinge side and latch side are all still unstated, marked with question marks.">
+                <svg viewBox="0 0 244 172" role="img" aria-label={sketchAriaLabel(spec)}>
                   <rect width="244" height="172" fill="var(--sketch-ground)"></rect>
                   <g stroke="var(--sketch-grid)" strokeWidth="1">
                     <path d="M0 24h244M0 48h244M0 72h244M0 96h244M0 120h244M0 144h244"></path>
@@ -266,40 +290,43 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
                     <path d="M34 40v92M26 40h16M26 132h16"></path>
                   </g>
                   <g fontFamily="Instrument Sans" fontSize="12" fontWeight="600" fill="var(--sketch-line)">
-                    <text x="124" y="166" textAnchor="middle">?</text>
-                    <text x="12" y="90">?</text>
-                    <text x="206" y="90">?</text>
+                    {/* Width along the bottom, height up the left, stock size
+                        outside the right rail — a fact that is not an answer
+                        stays a question mark on the paper. */}
+                    <text x="124" y="166" textAnchor="middle">{dimensionMark(spec.width)}</text>
+                    <text x="26" y="90" textAnchor="middle">{dimensionMark(spec.height)}</text>
+                    <text x="220" y="90" textAnchor="middle">{dimensionMark(spec.stockSize)}</text>
                   </g>
                 </svg>
                 <figcaption>ROUGH CALL SKETCH &middot;<br />NOT A FABRICATION DRAWING</figcaption>
               </figure>
-              <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Redrawn four times while he talked. Every answer that comes back edits it.</p>
+              <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Every answer that comes back edits it.</p>
             </div>
     
             <div>
               <p className="ask">Ask next</p>
-              <p>How wide does it need to finish, post to post?</p>
+              <p>{spec.nextQuestion}</p>
               <div className="slots">
-                <span className="slot"><span className="k">Kind</span><span className="v said">Gate</span></span>
-                <span className="slot"><span className="k">Width</span><span className="v ambig">Opening or finished?</span></span>
-                <span className="slot"><span className="k">Height</span><span className="v none">Not stated</span></span>
-                <span className="slot"><span className="k">Stock size</span><span className="v none">Not stated</span></span>
-                <span className="slot"><span className="k">Rails</span><span className="v none">Not stated</span></span>
-                <span className="slot"><span className="k">Hinge side</span><span className="v none">Not stated</span></span>
-                <span className="slot"><span className="k">Latch side</span><span className="v none">Not stated</span></span>
+                {PANEL_FACT_KEYS.map((key) =>
+                  <span className="slot" key={key}>
+                    <span className="k">{PANEL_FACT_LABELS[key]}</span>
+                    <span className={`v ${factTone(spec[key])}`}>{factText(key, spec[key])}</span>
+                  </span>)}
               </div>
               <div className="call-end">
-                <span>1 of 7 answered &middot; it needs kind, width, height and stock before it can be priced</span>
+                <span>{answered} of {PANEL_FACT_KEYS.length} answered{pricingGap && ` · ${pricingGap}`}</span>
                 <span className="end"><button className="btn btn--sm btn--go" type="button">Text him the three</button></span>
               </div>
             </div>
     
             <div>
               <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>Recent call language</p>
-              <p className="spoke"><b>Shop</b><span>Alright. That&rsquo;ll work.</span></p>
-              <p className="spoke them"><b>Customer</b><span>Yeah. I got a picture. Yeah.</span></p>
-              <p className="spoke"><b>Shop</b><span>Yeah. No problem. Bye.</span></p>
-              <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>The picture never arrived. The text asking for it is written and waiting on you.</p>
+              {sketch && sketch.lines.length > 0
+                ? sketch.lines.map((line) =>
+                  <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
+                    <b>{line.speaker}</b><span>{line.transcript}</span>
+                  </p>)
+                : <p className="t-caption">Nothing has been transcribed on this call yet.</p>}
             </div>
           </div>
         </section>
