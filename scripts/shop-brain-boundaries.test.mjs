@@ -344,10 +344,12 @@ test("time, transcript, and activity windows preserve current truth", () => {
   assert.match(events, /ORDER BY occurred_at DESC, id DESC[\s\S]{0,120}recent ORDER BY occurred_at ASC/)
 })
 
-test("deployed schedulers preserve five-minute Gmail and both Central brief offsets", () => {
+test("deployed schedulers preserve cost-aware Gmail cadence and both Central brief offsets", () => {
   const gmailWorkflow = source(".github/workflows/gmail-sync.yml")
   const briefWorkflow = source(".github/workflows/morning-brief.yml")
-  assert.match(gmailWorkflow, /cron: "\*\/5 \* \* \* \*"/)
+  assert.match(gmailWorkflow, /cron: "5,20,35,50 12-23 \* \* \*"/)
+  assert.match(gmailWorkflow, /cron: "5 0-11 \* \* \*"/)
+  assert.doesNotMatch(gmailWorkflow, /cron: "\*\/5 \* \* \* \*"/)
   assert.match(gmailWorkflow, /api\/ingest\/gmail/)
   assert.match(briefWorkflow, /cron: "30 11,12 \* \* \*"/)
   assert.match(briefWorkflow, /api\/ops\/brief/)
