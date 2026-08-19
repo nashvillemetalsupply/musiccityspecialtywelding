@@ -6,9 +6,9 @@ import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
-import { JobControlPreview } from "./job-control-preview"
-import type { BoardPaneData } from "./job-control-preview"
-import "./job-control.css"
+import { JobControl } from "./board"
+import type { BoardPaneData } from "./board"
+import "./board.css"
 
 export const metadata: Metadata = {
   title: "MCS Welding Job Control",
@@ -36,7 +36,7 @@ const EMPTY_BOARD: BoardPaneData = {
   stages: [...JOB_BOARD_STAGES],
 }
 
-export default async function JobControlPreviewPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function BoardPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
   // The stage tab is the only query input. It is validated strictly against
   // JOB_BOARD_STAGES — anything else falls back to the full board, so a
@@ -52,7 +52,7 @@ export default async function JobControlPreviewPage({ searchParams }: { searchPa
   // fixtures are never a fallback: a hand-typed number that survives onto a
   // wired page is exactly the failure this redesign exists to kill.
   const operator = dbConfigured() ? await getAuthenticatedOperator() : null
-  if (!operator) return <JobControlPreview board={{ ...EMPTY_BOARD, stage, stages: [...JOB_BOARD_STAGES] }} />
+  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, stages: [...JOB_BOARD_STAGES] }} />
 
   const role = operator.role
   const [page, promises, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
@@ -66,7 +66,7 @@ export default async function JobControlPreviewPage({ searchParams }: { searchPa
     getLatestBoardCallSketch(),
   ])
 
-  return <JobControlPreview board={{
+  return <JobControl board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,

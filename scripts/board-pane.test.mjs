@@ -7,8 +7,8 @@ import { signalCountsFromCandidates } from "../lib/ops-data-testkit.mjs"
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const COMMITMENTS_SOURCE = readFileSync(new URL("../lib/commitments.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const EVENTS_SOURCE = readFileSync(new URL("../lib/events.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
-const PAGE_SOURCE = readFileSync(new URL("../app/design-preview/job-control/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
-const PREVIEW_SOURCE = readFileSync(new URL("../app/design-preview/job-control/job-control-preview.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 // Four of the five labels must equal a reason string the board query already
 // emits. A previous design round was rejected for paraphrasing these, and a

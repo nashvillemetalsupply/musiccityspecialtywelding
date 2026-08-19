@@ -7,8 +7,8 @@ import {
   pricingSentence, sketchAriaLabel,
 } from "../lib/call-sketch-panel.mjs"
 
-const PREVIEW_SOURCE = readFileSync(new URL("../app/design-preview/job-control/job-control-preview.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
-const PAGE_SOURCE = readFileSync(new URL("../app/design-preview/job-control/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const STORE_SOURCE = readFileSync(new URL("../lib/call-sketch-store.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 // The call the mockup was drawn from: a gate is named, a width is heard as an

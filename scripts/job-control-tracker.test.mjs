@@ -2,13 +2,13 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 
-const PREVIEW_SOURCE = readFileSync(new URL("../app/design-preview/job-control/job-control-preview.tsx", import.meta.url), "utf8")
-const PAGE_SOURCE = readFileSync(new URL("../app/design-preview/job-control/page.tsx", import.meta.url), "utf8")
+const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8")
+const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8")
 const TRACKER_SOURCE = PREVIEW_SOURCE.slice(PREVIEW_SOURCE.indexOf('<h2 className="t-title">Job tracker</h2>'))
 
 test("tracker tabs use the canonical stages and refetch the requested stage", () => {
   assert.match(PREVIEW_SOURCE, /board\.stages\.map\(\(stage\) =>/)
-  assert.match(PREVIEW_SOURCE, /href=\{`\/design-preview\/job-control\?stage=\$\{stage\}`\}/)
+  assert.match(PREVIEW_SOURCE, /href=\{`\/board\?stage=\$\{stage\}`\}/)
   assert.match(PREVIEW_SOURCE, /board\.counts\[stage\]/)
   assert.match(PAGE_SOURCE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)
   assert.match(PAGE_SOURCE, /stages: \[\.\.\.JOB_BOARD_STAGES\]/)

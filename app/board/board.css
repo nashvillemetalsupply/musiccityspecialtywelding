@@ -240,6 +240,10 @@ svg{display:block}
 /* The wordmark carries the name; setting the name in type beside it is two
    logotypes in a row, which is what was throwing this bar off. */
 .logo{height:30px;width:auto;flex:none;display:block}
+/* The logo is a link back to /ops. It occupies exactly the space the bare
+   image did, so the top bar's fit at 320px is unchanged. */
+.logo-home{display:flex;align-items:center;flex:none;border-radius:var(--radius)}
+.logo-home:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 /* the date and the search field are desk furniture; on a phone the bar has
    room for the wordmark and the avatar and nothing else */
 .top .when{display:none;color:var(--text-muted);font-size:var(--t-label);white-space:nowrap;

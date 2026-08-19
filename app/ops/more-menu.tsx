@@ -53,6 +53,9 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
       <aside ref={panelRef} className="ops-more-panel" id="ops-more-panel" role="dialog" aria-modal="true" aria-labelledby="ops-more-title">
         <header><div><span>MCSW</span><h2 id="ops-more-title">Menu</h2></div></header>
         <nav aria-label="MCSW sections">
+          {/* The redesigned board. /ops is untouched and stays the default, so
+              going back is a matter of not following this link. */}
+          <Link href="/board" onClick={close}>Job Control (new)</Link>
           <Link href="/ops?view=updates" onClick={close}>Updates</Link>
           <Link href="/ops?view=promises" onClick={close}>Promises</Link>
           <Link href="/ops?view=regulars" onClick={close}>Regular Customers</Link>
