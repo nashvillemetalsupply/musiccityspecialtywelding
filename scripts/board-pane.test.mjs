@@ -6,6 +6,9 @@ import { signalCountsFromCandidates } from "../lib/ops-data-testkit.mjs"
 
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const COMMITMENTS_SOURCE = readFileSync(new URL("../lib/commitments.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const EVENTS_SOURCE = readFileSync(new URL("../lib/events.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const PAGE_SOURCE = readFileSync(new URL("../app/design-preview/job-control/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const PREVIEW_SOURCE = readFileSync(new URL("../app/design-preview/job-control/job-control-preview.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 // Four of the five labels must equal a reason string the board query already
 // emits. A previous design round was rejected for paraphrasing these, and a
@@ -92,4 +95,27 @@ test("out the door measures the door, not the sale, and removes money for crew",
   assert.match(OPS_DATA_SOURCE, /FROM leads\s+WHERE completed_at >= \(date_trunc\('week', now\(\) AT TIME ZONE 'America\/Chicago'\)/)
   assert.match(OPS_DATA_SOURCE, /revenueCents: role === "owner" \? Number\(row\?\.revenue_cents \?\? 0\) : null/)
   assert.match(OPS_DATA_SOURCE, /stillOutCents: role === "owner" \? Number\(row\?\.still_out_cents \?\? 0\) : null/)
+})
+
+test("the Today trail is the newest bounded slice of the Central calendar day", () => {
+  const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
+  assert.match(today, /e\.occurred_at >= \(date_trunc\('day', now\(\) AT TIME ZONE 'America\/Chicago'\) AT TIME ZONE 'America\/Chicago'\)/)
+  assert.match(today, /e\.occurred_at < \(\(date_trunc\('day', now\(\) AT TIME ZONE 'America\/Chicago'\) \+ interval '1 day'\) AT TIME ZONE 'America\/Chicago'\)/)
+  assert.match(today, /ORDER BY e\.occurred_at DESC, e\.id DESC\s+LIMIT \$\{bounded\}::bigint/)
+  assert.match(PAGE_SOURCE, /listTodayEvents\(role\)/)
+})
+
+test("the Today trail excludes every test identity and projects bodies for the operator role", () => {
+  const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
+  assert.match(today, /COALESCE\(l\.is_test, false\) = false/)
+  assert.match(today, /COALESCE\(p\.is_test, false\) = false/)
+  assert.match(today, /lower\(COALESCE\(e\.detail->>'isTest', 'false'\)\) <> 'true'/)
+  assert.match(today, /projectEventForRole\(event, role\)/)
+})
+
+test("the Today trail uses shop labels verbatim and has no signed-out fixtures", () => {
+  assert.match(PREVIEW_SOURCE, /shopEventLabel\(event\.kind\)/)
+  assert.match(PREVIEW_SOURCE, /timeZone: "America\/Chicago"/)
+  assert.match(PREVIEW_SOURCE, /todayTrail: \[\]/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /Price worked out for Phil Lloyd|Ray Colter called|Denz automotive asked|Gerald Pace plate finished/)
 })

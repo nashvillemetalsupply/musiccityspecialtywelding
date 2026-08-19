@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { dbConfigured } from "@/lib/db"
 import { getPromiseSummary } from "@/lib/commitments"
+import { listTodayEvents } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getOpsStats, getOutTheDoorWeek, listBoardJobs } from "@/lib/ops-data"
 import { JobControlPreview, EMPTY_BOARD } from "./job-control-preview"
@@ -23,11 +24,12 @@ export default async function JobControlPreviewPage() {
   if (!operator) return <JobControlPreview board={EMPTY_BOARD} />
 
   const role = operator.role
-  const [page, promises, outTheDoor, stats] = await Promise.all([
+  const [page, promises, outTheDoor, stats, todayEvents] = await Promise.all([
     listBoardJobs({ order: "weight" }, role),
     getPromiseSummary(),
     getOutTheDoorWeek(role),
     getOpsStats(role),
+    listTodayEvents(role),
   ])
 
   return <JobControlPreview board={{
@@ -36,5 +38,6 @@ export default async function JobControlPreviewPage() {
     promises,
     outTheDoor,
     medianFirstResponseMinutes: stats.medianFirstResponseMinutes,
+    todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body }) => ({ id, occurredAt, kind, body })),
   }} />
 }
