@@ -35,3 +35,38 @@ test("tracker has an honest empty state and the protected regions remain", () =>
   assert.match(PREVIEW_SOURCE, /<p className="ask">Ask next<\/p>/)
   assert.match(PREVIEW_SOURCE, /\{answered\} of \{PANEL_FACT_KEYS\.length\} answered/)
 })
+
+test("every service a form can write has a row mark", () => {
+  // The mark is keyed on `service`, which is TEXT. It only stays honest while
+  // the map covers what the forms actually write, so read the options back out
+  // of the forms rather than trusting a copy of the list.
+  const forms = [
+    "../components/mainstreet-contact.tsx",
+    "../app/ops/intake/job-intake-form.tsx",
+    "../app/ops/intake/inline-job-intake.tsx",
+  ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"))
+
+  const written = new Set()
+  for (const form of forms) {
+    // Only the service select. The same forms carry a referral select whose
+    // options are Google, Referral, Facebook — not services, and not marks.
+    const start = form.indexOf('name="service"')
+    assert.ok(start > -1, "a form stopped writing a service field")
+    const select = form.slice(start, form.indexOf("</select>", start))
+    for (const [, label] of select.matchAll(/<option(?![^>]*value=)[^>]*>([^<]+)<\/option>/g)) {
+      written.add(label.replace(/&amp;/g, "&").trim())
+    }
+  }
+  // "Not Sure / Other" is deliberately unmapped: it falls back to blank stock.
+  written.delete("Not Sure / Other")
+  assert.ok(written.size >= 6, `found only ${written.size} service options`)
+
+  const marks = PREVIEW_SOURCE.slice(
+    PREVIEW_SOURCE.indexOf("const SERVICE_MARKS"),
+    PREVIEW_SOURCE.indexOf("function serviceMark"),
+  )
+  for (const service of written) {
+    assert.ok(marks.includes(`"${service}"`), `no row mark for service ${service}`)
+  }
+  assert.match(PREVIEW_SOURCE, /SERVICE_MARKS\[service\.trim\(\)\] \?\?/)
+})

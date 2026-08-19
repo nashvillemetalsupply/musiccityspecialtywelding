@@ -103,6 +103,64 @@ const TAB_LABELS: Record<JobBoardStage, string> = {
   ready: "Ready",
 }
 
+// The row mark draws the SERVICE, which the schema actually stores, not the
+// part's geometry, which it does not. `service` is TEXT, but every writer picks
+// from a fixed list — the public form in components/mainstreet-contact.tsx and
+// both ops intake forms — so these keys are the values that exist. Anything
+// unrecognised, including "Not Sure / Other" and an empty column, falls back to
+// the blank sheet of stock. Guessing a part from free text is how a drawing
+// starts lying about a job.
+const SERVICE_MARKS: Record<string, React.ReactNode> = {
+  // A torch: nozzle and arc.
+  "Mobile Welding (On-Site)": <>
+    <path d="M12 22 20 14l4 4-8 8z" /><path d="M24 14l4-4" />
+    <path d="M30 9v-3M33 12h3M32.5 9.5l2-2" />
+  </>,
+  // A trailer: bed, tongue, two wheels.
+  "Trailer / Truck Welding Repair": <>
+    <path d="M11 12h20v7H11z" /><path d="M11 17 6 20" />
+    <circle cx="16" cy="23" r="3" /><circle cx="27" cy="23" r="3" />
+  </>,
+  // An I-beam, end on.
+  "Equipment & Structural Repair": <>
+    <path d="M14 9h18M14 25h18M23 9v16" />
+  </>,
+  // A railing: top rail and balusters.
+  "Architectural Welding & Fabrication": <>
+    <path d="M10 12h26M10 25h26M16 12v13M23 12v13M30 12v13" />
+  </>,
+  // A folded plate.
+  "Specialty Fabrication": <>
+    <path d="M9 24 17 11l9 9 8-6" />
+  </>,
+  // A hull on the water.
+  "Aluminum / Boat Welding": <>
+    <path d="M12 13h22l-4 8H16z" /><path d="M23 13V8" />
+    <path d="M8 26q4-3 8 0t8 0 8 0" />
+  </>,
+  // A mailbox on its post.
+  "Custom Wrought Iron Mailboxes": <>
+    <path d="M13 20v-4a6 6 0 0 1 12 0v4z" /><path d="M19 20v7" />
+    <path d="M25 18v-8M25 10h4v3h-4" />
+  </>,
+  // A tapered planter with its rim.
+  "Custom Metal Planter Boxes": <>
+    <path d="M13 13h20l-3 12H16z" /><path d="M11 13h24" />
+  </>,
+  // A countertop slab with a sink cutout.
+  "Stainless Countertops / Manifolds": <>
+    <path d="M8 12h30v10H8z" /><path d="M13 15h8v4h-8z" />
+    <path d="M8 25h30" />
+  </>,
+}
+
+function serviceMark(service: string) {
+  return SERVICE_MARKS[service.trim()] ?? (
+    // A blank sheet of stock. No part, dimension or count implied.
+    <rect x="10" y="10" width="26" height="14" />
+  )
+}
+
 function customerName(lead: BoardJobRow) {
   return `${lead.first_name} ${lead.last_name}`.trim() || "Customer"
 }
@@ -430,10 +488,13 @@ export function JobControl({ board }: { board: BoardPaneData }) {
                 return <article className="job" key={lead.id}>
                   <div className="cols job-row">
                     <span className="part">
-                      {/* One neutral mark for every job: a blank sheet of
-                          stock. No part, dimension or count is implied. */}
-                      <svg viewBox="0 0 46 34" aria-hidden="true">
-                        <rect x="10" y="10" width="26" height="14" fill="none" stroke="var(--draw-line)" strokeWidth="1.5" strokeLinejoin="round"/>
+                      {/* Keyed on the service the job was booked under. The
+                          stroke settings live here so each mark is only its
+                          own geometry. */}
+                      <svg viewBox="0 0 46 34" aria-hidden="true" fill="none"
+                        stroke="var(--draw-line)" strokeWidth="1.5"
+                        strokeLinejoin="round" strokeLinecap="round">
+                        {serviceMark(lead.service)}
                       </svg>
                     </span>
                     <span className="cust">
