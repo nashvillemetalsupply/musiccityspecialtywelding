@@ -490,10 +490,19 @@ export function JobControl({ board }: { board: BoardPaneData }) {
                     <span className="part">
                       {/* Keyed on the service the job was booked under. The
                           stroke settings live here so each mark is only its
-                          own geometry. */}
-                      <svg viewBox="0 0 46 34" aria-hidden="true" fill="none"
+                          own geometry.
+
+                          The row's second line prints the message when there
+                          is one, so on most rows this drawing is the only
+                          place the service appears. That makes it content,
+                          not decoration — it gets named. With no service to
+                          name it goes back to being decorative. */}
+                      <svg viewBox="0 0 46 34" fill="none"
                         stroke="var(--draw-line)" strokeWidth="1.5"
-                        strokeLinejoin="round" strokeLinecap="round">
+                        strokeLinejoin="round" strokeLinecap="round"
+                        {...(lead.service.trim()
+                          ? { role: "img", "aria-label": lead.service.trim() }
+                          : { "aria-hidden": true })}>
                         {serviceMark(lead.service)}
                       </svg>
                     </span>
