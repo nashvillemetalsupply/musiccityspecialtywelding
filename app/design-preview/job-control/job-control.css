@@ -483,8 +483,10 @@ svg{display:block}
   overflow-x:auto;scrollbar-width:none}
 .tab{height:28px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
   font-weight:var(--w-med);color:var(--text-muted);white-space:nowrap}
+/* the stage tabs are server-filtered links now, not toggle buttons */
+.tabs a.tab{display:inline-flex;align-items:center}
 .tab:hover{color:var(--text-secondary)}
-.tab[aria-pressed="true"]{background:var(--surface-raised);color:var(--text-primary)}
+.tab[aria-pressed="true"],.tab[aria-current="page"]{background:var(--surface-raised);color:var(--text-primary)}
 .tab b{font-weight:var(--w-semi);color:var(--text-muted)}
 .tab b.hot{color:var(--status-stop-ink)}
 
@@ -512,6 +514,9 @@ svg{display:block}
 .job[data-open]{background:var(--surface-raised)}
 .job-row{min-height:var(--row);padding:var(--s4);
   transition:background .15s var(--ease)}
+
+/* honest empty state for a stage with no jobs */
+.track-empty{padding:var(--s5) var(--s4);color:var(--text-muted);font-size:var(--t-caption)}
 
 
 .part{width:44px;height:34px;border-radius:var(--r-sm);background:var(--surface-raised);

@@ -109,9 +109,20 @@ test("board_reason and board_since still match DISTINCT ON", () => {
 })
 
 test("stage order remains the default and keeps every legacy ordering key", () => {
-  assert.match(OPS_DATA_SOURCE, /const order: BoardJobOrder = options\.order === "weight" \? "weight" : "stage"/)
-  assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'weight' THEN 0 ELSE\s+CASE f\.board_stage WHEN 'attention' THEN 0 WHEN 'shop' THEN 1 WHEN 'waiting' THEN 2 ELSE 3 END/)
+  assert.match(OPS_DATA_SOURCE, /const order: BoardJobOrder = options\.order === "weight" \? "weight" : options\.order === "oldest" \? "oldest" : "stage"/)
+  assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'stage' THEN\s+CASE f\.board_stage WHEN 'attention' THEN 0 WHEN 'shop' THEN 1 WHEN 'waiting' THEN 2 ELSE 3 END/)
   assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'stage' AND f\.board_stage = 'attention' THEN f\.board_since END ASC NULLS LAST,\s+CASE WHEN \$\{order\}::text = 'stage' THEN f\.updated_at END DESC NULLS LAST,\s+f\.id DESC/)
+})
+
+test("oldest order is global longest-waiting-first before pagination", () => {
+  assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'oldest' THEN f\.board_since END ASC NULLS LAST/)
+  const jobs = [
+    { id: 10, boardStage: "ready", boardSince: "2026-08-18", updatedAt: "2026-08-19", signals: [], valueCents: 0, priorJobs: 0 },
+    { id: 12, boardStage: "waiting", boardSince: "2026-08-10", updatedAt: "2026-08-11", signals: [], valueCents: 0, priorJobs: 0 },
+    { id: 11, boardStage: "attention", boardSince: "2026-08-10", updatedAt: "2026-08-12", signals: [], valueCents: 0, priorJobs: 0 },
+    { id: 13, boardStage: "shop", boardSince: null, updatedAt: "2026-08-09", signals: [], valueCents: 0, priorJobs: 0 },
+  ]
+  assert.deepEqual(orderBoardFixtures(jobs, "oldest"), [12, 11, 10, 13])
 })
 
 test("ten jobs keep exact legacy order and get exact weighted order", () => {
