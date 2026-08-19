@@ -24,6 +24,7 @@ import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getMessagingConsentState } from "@/lib/messaging-consent"
 import { OpsLoginForm } from "./login-form"
 import { ActiveJobIndex } from "./active-job-index"
+import { WeightedJobIndex } from "./weighted-job-index"
 import { InlineJobIntake } from "./intake/inline-job-intake"
 import { PaidMoment } from "./paid-moment"
 import { TrackedCallButton } from "./tracked-call-button"
@@ -151,6 +152,7 @@ type SearchParams = Promise<{
   accountQ?: string
   receipt?: string
   error?: string
+  board?: string
 }>
 
 export default async function OpsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -168,6 +170,7 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
     return <OpsLoginForm linkError={params.error === "link"} operators={punchCards} smsReady={smsLoginReady} />
   }
 
+  const weightedBoard = params.board === "v2"
   const allowedViews = new Set(["updates", "promises", "regulars"])
   const view = allowedViews.has(params.view ?? "") ? params.view ?? "" : ""
   const showAllCalls = params.calls === "all"
@@ -191,7 +194,9 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
   const requestedNeedsPage = normalizePage(params.needsPage)
   const callsPage = normalizePage(params.callsPage)
   const [boardPage, needs, callIntakes, todayLeads] = await Promise.all([
-    listBoardJobs({ stage: stageFilter, includeTests, query: searchQuery, page, pageSize: 5 }, operator.role),
+    weightedBoard
+      ? listBoardJobs({ stage: stageFilter, includeTests, query: searchQuery, page, pageSize: 5, order: "weight" }, operator.role)
+      : listBoardJobs({ stage: stageFilter, includeTests, query: searchQuery, page, pageSize: 5 }, operator.role),
     getNeedsNow({ page: showAllNeeds ? requestedNeedsPage : 1, pageSize: showAllNeeds ? 50 : 1 }, operator.role),
     listPendingCallIntakes({ page: showAllCalls ? callsPage : 1, pageSize: showAllCalls ? 20 : 3 }),
     operator.role === "owner" ? getTodayLeadSummary() : Promise.resolve(null),
@@ -322,19 +327,33 @@ export default async function OpsPage({ searchParams }: { searchParams: SearchPa
 
     {!view && !showAllNeeds && !showAllCalls && <div className="jobs-board-lane">
       {todayLeads && <TodaysLeads summary={todayLeads} />}
-      <ActiveJobIndex
-        leads={displayLeads}
-        counts={boardPage.counts}
-        repeatCounts={repeatCounts}
-        stage={stageFilter}
-        query={searchQuery}
-        page={boardPage.page}
-        pageSize={boardPage.pageSize}
-        resultTotal={boardPage.resultTotal}
-        hasOlder={boardPage.hasNext}
-        trackedCallsReady={twilioVoiceConfigured()}
-        textReadyLeadIds={textReadyLeadIds}
-      />
+      {weightedBoard
+        ? <WeightedJobIndex
+            leads={displayLeads}
+            counts={boardPage.counts}
+            repeatCounts={repeatCounts}
+            stage={stageFilter}
+            query={searchQuery}
+            page={boardPage.page}
+            pageSize={boardPage.pageSize}
+            resultTotal={boardPage.resultTotal}
+            hasOlder={boardPage.hasNext}
+            trackedCallsReady={twilioVoiceConfigured()}
+            textReadyLeadIds={textReadyLeadIds}
+          />
+        : <ActiveJobIndex
+            leads={displayLeads}
+            counts={boardPage.counts}
+            repeatCounts={repeatCounts}
+            stage={stageFilter}
+            query={searchQuery}
+            page={boardPage.page}
+            pageSize={boardPage.pageSize}
+            resultTotal={boardPage.resultTotal}
+            hasOlder={boardPage.hasNext}
+            trackedCallsReady={twilioVoiceConfigured()}
+            textReadyLeadIds={textReadyLeadIds}
+          />}
     </div>}
 
     {view === "updates" && <section className="ops-more-view"><header className="ops-page-heading"><h1>Updates</h1><Link href="/ops">Done</Link></header><WireStrip history={wireHistory} unreadTotal={unreadWireTotal} page={wirePage} hasOlder={wireHasOlder} query={wireQuery} slips={wire.map((slip) => ({ id: slip.id, stock: slip.stock, title: slip.title, body: slip.body, url: slip.url, age: ageInWords(slip.created_at), actionKind: slip.action_kind, actionDetail: slip.action_detail }))} />{Number.isInteger(receiptId) && receiptId > 0 && <section className="ops-receipt-drawer" id="receipt"><header><div><span>Source</span><h2>{receipt ? shopEventLabel(receipt.kind) : "Owner-only update"}</h2></div><Link href="/ops?view=updates">Close</Link></header>{receipt ? <><time>{formatCentral(receipt.occurred_at)}</time><p>{receipt.body}</p>{receiptCall[0] && operator.role === "owner" && <audio controls preload="none" src={`/api/ops/call/${receiptCall[0].id}`} />}{receipt.lead_id && <Link href={`/ops/leads/${receipt.lead_id}`}>Open job</Link>}</> : <p>This update is not available in your role.</p>}</section>}</section>}
