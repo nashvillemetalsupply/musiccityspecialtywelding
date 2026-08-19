@@ -50,7 +50,7 @@
   - `scoreBoardJob({ signals, valueCents, priorJobs }, weights?): number` — returns a rounded integer
   - `isBoardJobHot(score: number, weights?): boolean`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `scripts/board-weight.test.mjs`:
 
@@ -115,12 +115,12 @@ test("weights are frozen so nothing can drift them at runtime", () => {
 })
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test scripts/board-weight.test.mjs`
 Expected: FAIL — `SyntaxError: The requested module does not provide an export named 'BOARD_WEIGHTS'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Append to `lib/shop-brain-invariants.mjs`:
 
@@ -202,21 +202,21 @@ export function scoreBoardJob(
 export function isBoardJobHot(score: number, weights?: BoardWeights): boolean
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `node --test scripts/board-weight.test.mjs`
 Expected: PASS, 8 tests.
 
 Note: the frozen-object test relies on ES module strict mode, where assigning to a frozen property throws `TypeError`. `.mjs` files are always strict, so this holds.
 
-- [ ] **Step 5: Register the test**
+- [x] **Step 5: Register the test**
 
 In `package.json`, add `scripts/board-weight.test.mjs` to the end of the `test:shop-brain` file list.
 
 Run: `npm run test:shop-brain`
 Expected: the whole suite passes, including the new file.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/shop-brain-invariants.mjs lib/shop-brain-invariants.d.mts scripts/board-weight.test.mjs package.json
@@ -238,7 +238,7 @@ git commit -m "feat(board): weight constants and pure scorer"
   - `BoardJobRow` gains `board_signals: BoardSignal[]`, `board_score: number`, `board_hot: boolean`
   - `listBoardJobs(options & { order?: "stage" | "weight" }, role)` — `order` defaults to `"stage"`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `scripts/board-weight.test.mjs`:
 
@@ -306,19 +306,19 @@ export function sqlScoreParity(job, weights = BOARD_WEIGHTS) {
 }
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `node --test scripts/board-weight.test.mjs`
 Expected: FAIL — `Cannot find module '../lib/ops-data-testkit.mjs'`
 
-- [ ] **Step 3: Add the testkit, then run again**
+- [x] **Step 3: Add the testkit, then run again**
 
 Create the file as written in Step 1.
 
 Run: `node --test scripts/board-weight.test.mjs`
 Expected: PASS, 11 tests.
 
-- [ ] **Step 4: Add the types to `lib/ops-data.ts`**
+- [x] **Step 4: Add the types to `lib/ops-data.ts`**
 
 ```ts
 import { BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
@@ -347,7 +347,7 @@ export type BoardJobRow = LeadRow & {
 }
 ```
 
-- [ ] **Step 5: Give every candidate a kind, an age, and a weight**
+- [x] **Step 5: Give every candidate a kind, an age, and a weight**
 
 In `listBoardJobs`, bind the weights above the query:
 
@@ -394,7 +394,7 @@ FROM commitments c WHERE c.status = 'open' AND c.due_at < now()
 `GREATEST(0, ...)` is the SQL half of the "not yet due counts its base once"
 rule that Task 1 tested — a future `due_at` must not produce a negative.
 
-- [ ] **Step 6: Replace `DISTINCT ON` with an aggregate**
+- [x] **Step 6: Replace `DISTINCT ON` with an aggregate**
 
 ```sql
 , needs AS (
@@ -416,7 +416,7 @@ what `DISTINCT ON (lead_id) ... ORDER BY lead_id, priority, waiting_since ASC`
 selected. `board_reason` therefore does not change and today's board is
 unaffected.
 
-- [ ] **Step 7: Score the board rows**
+- [x] **Step 7: Score the board rows**
 
 In the `board` CTE, alongside `board_stage` / `board_reason` / `board_since`:
 
@@ -442,7 +442,7 @@ LEFT JOIN (
 
 Then derive `board_hot` in the outer select: `(board_score >= ${w.hotThreshold}::int) AS board_hot`.
 
-- [ ] **Step 8: Add the ordering mode**
+- [x] **Step 8: Add the ordering mode**
 
 In `paged`, keep today's branch as the default and add the weight branch:
 
@@ -460,7 +460,7 @@ ORDER BY
 Negating the score keeps a single `ASC` direction, which is what lets both modes
 share one `ORDER BY`.
 
-- [ ] **Step 9: Verify nothing regressed**
+- [x] **Step 9: Verify nothing regressed**
 
 ```bash
 npm run typecheck
@@ -472,7 +472,7 @@ Expected: all pass. Then load `/ops` on a dev server and confirm the board looks
 and orders **exactly** as before — `order` defaults to `"stage"`, so any visible
 change here is a bug in Step 6 or Step 8.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add lib/ops-data.ts lib/ops-data-testkit.mjs scripts/board-weight.test.mjs
@@ -491,7 +491,7 @@ git commit -m "feat(board): keep every signal and score jobs in the board query"
 - Consumes: `BoardJobRow.board_signals`, `.board_score`, `.board_hot`, and `listBoardJobs({ order })` from Task 2.
 - Produces: nothing downstream.
 
-- [ ] **Step 1: Read the switch server-side**
+- [x] **Step 1: Read the switch server-side**
 
 In `app/ops/page.tsx`, alongside the existing `searchParams` handling:
 
@@ -513,7 +513,7 @@ This sits inside the existing `requireOperator()`-gated page. There is no
 client-side switcher and no ungated render path — that is what got the previous
 prototype harness deleted.
 
-- [ ] **Step 2: Write the v2 component**
+- [x] **Step 2: Write the v2 component**
 
 Create `app/ops/weighted-job-index.tsx`. It reuses `ActiveJobIndex`'s props and
 differs in one way: it renders the whole signal stack instead of one string.
@@ -543,7 +543,7 @@ function formatLate(hours: number) {
 Styling is deliberately minimal and reuses existing `jobs-*` classes. **The
 visual treatment is a separate, live thread — do not invent one here.**
 
-- [ ] **Step 3: Verify both boards**
+- [x] **Step 3: Verify both boards**
 
 Run the dev server. Check:
 - `/ops` — unchanged from today, byte for byte in ordering and copy.
@@ -551,7 +551,7 @@ Run the dev server. Check:
 - `/ops?board=anythingelse` — falls back to today's board.
 - Signed out, both URLs redirect to sign-in.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/ops/page.tsx app/ops/weighted-job-index.tsx
