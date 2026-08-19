@@ -5,6 +5,14 @@ import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
+import { shopEventLabel } from "@/lib/shop-language"
+
+type TodayTrailItem = {
+  id: number
+  occurredAt: string
+  kind: string
+  body: string
+}
 
 export type BoardPaneData = {
   counts: Record<JobBoardStage, number>
@@ -12,6 +20,7 @@ export type BoardPaneData = {
   promises: PromiseSummary
   outTheDoor: OutTheDoorWeek
   medianFirstResponseMinutes: number | null
+  todayTrail: TodayTrailItem[]
 }
 
 // What a signed-out viewer sees: the whole board, real zeros, no names.
@@ -21,6 +30,7 @@ export const EMPTY_BOARD: BoardPaneData = {
   promises: { kept: 0, open: 0, broken: 0, overdue: null },
   outTheDoor: { jobs: 0, paidJobs: 0, revenueCents: null, stillOutCents: null },
   medianFirstResponseMinutes: null,
+  todayTrail: [],
 }
 
 // Descending weight, which is also the order the mockup was approved in.
@@ -28,6 +38,25 @@ const SIGNAL_ORDER = (Object.keys(BOARD_WEIGHTS.signal) as BoardSignalKind[])
   .sort((a, b) => BOARD_WEIGHTS.signal[b] - BOARD_WEIGHTS.signal[a])
 
 const WORST_WEIGHT = Math.max(...Object.values(BOARD_WEIGHTS.signal))
+
+const TRAIL_TIME = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Chicago",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+})
+
+const GOOD_TRAIL_EVENTS = new Set([
+  "call.answered", "contact.first-response", "contact.logged",
+  "email.delivered", "invoice.paid", "invoice.payment-received",
+  "job.completed", "job.handed-off", "promise.kept",
+])
+
+function trailMark(kind: string) {
+  if (GOOD_TRAIL_EVENTS.has(kind)) return "good"
+  if (kind === "call.missed" || kind === "attachment.needs-help" || kind.endsWith(".failed")) return "warn"
+  return undefined
+}
 
 // The contract reserves red for signals weighted 50 and above; a count of zero
 // is not a state, so it goes quiet.
@@ -150,9 +179,16 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
             <p>{promises.overdue.summary}</p>
             <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
           </div>}
-          {/* The Today trail is real data (the events table) but no session in
-              PHASE-1-SESSION-PLAN.md owns it, and hand-typed rows must not ship
-              on a wired board. It returns when its own session lands. */}
+          <div className="rule"></div>
+
+          <div className="head"><h3 className="t-sub">Today</h3></div>
+          <ul className="trail">
+            {board.todayTrail.map((event) => <li key={event.id}>
+              <i className={trailMark(event.kind)}></i>
+              <time dateTime={event.occurredAt}>{TRAIL_TIME.format(new Date(event.occurredAt))}</time>
+              <b>{shopEventLabel(event.kind)}{event.body && ` — ${event.body}`}</b>
+            </li>)}
+          </ul>
         </div>
     
         <div className="pane-foot">

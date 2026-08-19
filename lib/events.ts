@@ -5,6 +5,7 @@ import {
   OWNER_ONLY_EVENT_KINDS,
   OWNER_ONLY_EVENT_NAMESPACE_PATTERN,
   OWNER_ONLY_EVENT_SENSITIVITIES,
+  projectEventForRole,
 } from "@/lib/visibility"
 
 export type ActorType = "operator" | "customer" | "system" | "ai"
@@ -103,6 +104,32 @@ export async function listLeadEvents(leadId: number, limit = 300): Promise<Event
       ORDER BY occurred_at DESC, id DESC
       LIMIT ${Math.min(Math.max(limit, 1), 500)}::bigint
     ) recent ORDER BY occurred_at ASC, id ASC`) as EventRow[]
+}
+
+export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): Promise<EventRow[]> {
+  const sql = getSql()
+  const bounded = Math.min(Math.max(Math.floor(limit), 1), 12)
+  const rows = (await sql`
+    SELECT e.*
+    FROM events e
+    LEFT JOIN leads l ON l.id = e.lead_id
+    LEFT JOIN people p ON p.id = e.person_id
+    WHERE e.occurred_at >= (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+      AND e.occurred_at < ((date_trunc('day', now() AT TIME ZONE 'America/Chicago') + interval '1 day') AT TIME ZONE 'America/Chicago')
+      AND COALESCE(l.is_test, false) = false
+      AND COALESCE(p.is_test, false) = false
+      AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+      AND (${role}::text = 'owner' OR (
+        NOT (lower(e.kind) = ANY(${[...OWNER_ONLY_EVENT_KINDS]}::text[]))
+        AND lower(e.kind) !~ ${OWNER_ONLY_EVENT_NAMESPACE_PATTERN}::text
+        AND NOT (lower(COALESCE(e.detail->>'sensitivity', '')) = ANY(${[...OWNER_ONLY_EVENT_SENSITIVITIES]}::text[]))
+      ))
+    ORDER BY e.occurred_at DESC, e.id DESC
+    LIMIT ${bounded}::bigint`) as EventRow[]
+
+  return rows
+    .map((event) => projectEventForRole(event, role))
+    .filter((event): event is EventRow => Boolean(event))
 }
 
 export async function listLeadEventPage(leadId: number, page = 1, limit = 25, role: OperatorRole = "owner"): Promise<{ items: EventRow[]; total: number; page: number; pageSize: number }> {
