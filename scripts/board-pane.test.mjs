@@ -116,6 +116,6 @@ test("the Today trail excludes every test identity and projects bodies for the o
 test("the Today trail uses shop labels verbatim and has no signed-out fixtures", () => {
   assert.match(PREVIEW_SOURCE, /shopEventLabel\(event\.kind\)/)
   assert.match(PREVIEW_SOURCE, /timeZone: "America\/Chicago"/)
-  assert.match(PREVIEW_SOURCE, /todayTrail: \[\]/)
+  assert.match(PAGE_SOURCE, /todayTrail: \[\]/)
   assert.doesNotMatch(PREVIEW_SOURCE, /Price worked out for Phil Lloyd|Ray Colter called|Denz automotive asked|Gerald Pace plate finished/)
 })

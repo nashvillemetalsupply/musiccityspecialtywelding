@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import Link from "next/link"
 import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
@@ -10,7 +11,7 @@ import {
 import type { BoardCallSketch } from "@/lib/call-sketch-store"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
-import type { JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
+import type { BoardJobRow, JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
 import { shopEventLabel } from "@/lib/shop-language"
 
 type TodayTrailItem = {
@@ -28,17 +29,12 @@ export type BoardPaneData = {
   medianFirstResponseMinutes: number | null
   todayTrail: TodayTrailItem[]
   callSketch: BoardCallSketch | null
-}
-
-// What a signed-out viewer sees: the whole board, real zeros, no names.
-export const EMPTY_BOARD: BoardPaneData = {
-  counts: { board: 0, attention: 0, shop: 0, waiting: 0, ready: 0 },
-  signalCounts: { waiting: 0, noreply: 0, promise: 0, followup: 0, bounced: 0 },
-  promises: { kept: 0, open: 0, broken: 0, overdue: null },
-  outTheDoor: { jobs: 0, paidJobs: 0, revenueCents: null, stillOutCents: null },
-  medianFirstResponseMinutes: null,
-  todayTrail: [],
-  callSketch: null,
+  // The tracker: whichever stage the URL asked for, ordered oldest-first.
+  items: BoardJobRow[]
+  resultTotal: number
+  pageSize: number
+  stage: JobBoardStage
+  stages: JobBoardStage[]
 }
 
 // Descending weight, which is also the order the mockup was approved in.
@@ -97,6 +93,66 @@ function callLine(sketch: BoardCallSketch) {
   return `${name} · phone call, ended ${TRAIL_TIME.format(new Date(sketch.endedAt))} · ${sinceInWords(sketch.endedAt)}`
 }
 
+// The tracker's stage tabs are JOB_BOARD_STAGES in their canonical order.
+// Labels are the product's own stage names, declared here beside the type.
+const TAB_LABELS: Record<JobBoardStage, string> = {
+  board: "All jobs",
+  attention: "Attention",
+  shop: "In the shop",
+  waiting: "Waiting",
+  ready: "Ready",
+}
+
+function customerName(lead: BoardJobRow) {
+  return `${lead.first_name} ${lead.last_name}`.trim() || "Customer"
+}
+
+// The Waiting cell: how long this job has been sitting, and the date it
+// started sitting. Both come from board_since, never from a fixture.
+function waitingAge(iso: string) {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000))
+  if (!Number.isFinite(minutes)) return "—"
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ${String(Math.floor(minutes % 60)).padStart(2, "0")}m`
+  const days = Math.floor(hours / 24)
+  return `${days}d ${String(hours % 24).padStart(2, "0")}h`
+}
+
+function waitingDate(iso: string) {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
+
+// The money cell names the field it is showing, in the shop's own words:
+// paid, invoiced, booked, estimated — or honestly "no price". Crew rows
+// arrive with every money field nulled by projectLeadForRole, so a crew
+// member sees "— no price" on every job; the owner sees the real number.
+function moneyFor(lead: BoardJobRow): { value: string; note: string } {
+  if (lead.paid_at) {
+    const cents = lead.paid_amount_cents ?? lead.invoice_total_cents ?? lead.revenue_cents
+    return cents !== null ? { value: money(cents), note: "paid" } : { value: "—", note: "no price" }
+  }
+  if (lead.invoice_total_cents !== null) return { value: money(lead.invoice_total_cents), note: "invoiced" }
+  if (lead.status === "won" && lead.revenue_cents !== null) return { value: money(lead.revenue_cents), note: "booked" }
+  if (lead.estimate_value_cents !== null) return { value: money(lead.estimate_value_cents), note: "estimated" }
+  return { value: "—", note: "no price" }
+}
+
+// Tone comes from where the job sits and which signal raised it. The label
+// itself is lead.board_reason verbatim — never mapped, never paraphrased.
+function chipTone(lead: BoardJobRow): "stop" | "warn" | "good" | "info" {
+  if (lead.board_stage === "ready") return "good"
+  if (lead.board_stage === "attention") {
+    const stopKind = lead.board_signals.some((signal) => signal.kind === "waiting" || signal.kind === "noreply")
+    return stopKind ? "stop" : "warn"
+  }
+  return "info"
+}
+
+const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good", info: "chip--info" } as const
+
 export function JobControlPreview({ board }: { board: BoardPaneData }) {
   const needsYou = board.counts.attention
   const promises = board.promises
@@ -108,6 +164,9 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
   const spec = sketch?.spec ?? emptyCallSketchSpec()
   const answered = answeredFactCount(spec)
   const pricingGap = pricingSentence(spec)
+  const countLine = board.resultTotal === 0
+    ? "No jobs in this stage"
+    : `Showing ${board.items.length} of ${board.resultTotal}`
   useEffect(() => {
     const root = document.documentElement
     const key = "mcsw-theme"
@@ -120,7 +179,6 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
     if (saved) root.setAttribute("data-theme", saved)
 
     const themeButton = document.getElementById("theme")
-    const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".tab"))
 
     function toggleTheme() {
       const dark = root.getAttribute("data-theme") === "dark"
@@ -132,17 +190,13 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
       } catch {}
     }
 
-    function pressTab(event: MouseEvent) {
-      tabs.forEach((tab) => tab.setAttribute("aria-pressed", "false"))
-      ;(event.currentTarget as HTMLButtonElement).setAttribute("aria-pressed", "true")
-    }
-
     themeButton?.addEventListener("click", toggleTheme)
-    tabs.forEach((tab) => tab.addEventListener("click", pressTab))
 
+    // The tracker tabs used to toggle aria-pressed here. They are now real
+    // links that refetch the page server-side (?stage=...), so the pressed
+    // state comes from the server render (aria-current), not from a click.
     return () => {
       themeButton?.removeEventListener("click", toggleTheme)
-      tabs.forEach((tab) => tab.removeEventListener("click", pressTab))
     }
   }, [])
 
@@ -334,22 +388,26 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
         <section className="card">
           <div className="track-top">
             <h2 className="t-title">Job tracker</h2>
-            <span className="count">Showing 5 of 21</span>
+            <span className="count">{countLine}</span>
             <span className="end">
-              <button className="btn btn--sm" type="button">All customers
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 6.5 8 10.5l4-4"/></svg></button>
-              <button className="btn btn--sm btn--edge" type="button">Longest waiting first</button>
+              {/* The tracker is genuinely ordered oldest-first — the page asks
+                  for order:"oldest" — so the sort chip is an honest active
+                  label, not a button that claims a sort it does not perform. */}
+              <span className="chip chip--info track-sort" title="Jobs are ordered by how long each has waited">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5 6.5 12 13 4.5"/></svg>
+                Longest waiting first
+              </span>
             </span>
           </div>
-    
-          <div className="tabs">
-            <button className="tab" type="button" aria-pressed="true">All jobs <b>21</b></button>
-            <button className="tab" type="button" aria-pressed="false">Attention <b className="hot">5</b></button>
-            <button className="tab" type="button" aria-pressed="false">In the shop <b>3</b></button>
-            <button className="tab" type="button" aria-pressed="false">Waiting <b>6</b></button>
-            <button className="tab" type="button" aria-pressed="false">Ready <b>5</b></button>
+
+          <div className="tabs" aria-label="Job stages">
+            {board.stages.map((stage) => (
+              <Link className="tab" key={stage} href={`/design-preview/job-control?stage=${stage}`} aria-current={board.stage === stage ? "page" : undefined}>
+                {TAB_LABELS[stage]} <b className={stage === "attention" ? "hot" : undefined}>{board.counts[stage]}</b>
+              </Link>
+            ))}
           </div>
-    
+
           <div className="cols colhead">
             <span>Part</span>
             <span>Customer</span>
@@ -358,214 +416,35 @@ export function JobControlPreview({ board }: { board: BoardPaneData }) {
             <span className="c-state">Why it needs you</span>
             <span className="c-do"></span>
           </div>
-    
-          <article className="job" data-open>
-            <div className="cols job-row">
-              <span className="part">
-                <svg viewBox="0 0 46 34" role="img" aria-label="Sketch: stair stringer, five steps">
-                  <path d="M7 28V23h8v-5h8v-5h8V8h6v5L7 28z" fill="none" stroke="var(--draw-line)" strokeWidth="1.5" strokeLinejoin="round"/>
-                </svg>
-              </span>
-              <span className="cust">
-                <b>Phil Lloyd</b>
-                <span>18 stair stringers, 10 ga galvanized</span>
-              </span>
-              <span className="val right c-wait">6d 04h <em>Aug 12</em></span>
-              <span className="val right c-money">$4,180 <em>estimated</em></span>
-              <span className="c-state"><span className="chip chip--warn"><i></i>Promise overdue</span></span>
-              <span className="doing c-do">
-                <button className="btn btn--sm btn--go" type="button">Send it</button>
-                <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button" aria-label="Collapse this job"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 10 8 6l4 4"/></svg></button>
-              </span>
-            </div>
-    
-            <div className="detail">
-              <div className="drawing">
-                <div className="drawing-top">
-                  <span className="t-sub">The part</span>
-                  <span className="end">From Phil's two photos, Aug 13</span>
-                </div>
-                <svg className="plan" viewBox="0 0 380 244" role="img"
-                     aria-label="One stair stringer: five risers at seven and a half inches, five treads at ten and a half inches, a four foot four and a half inch run and a three foot one and a half inch rise, cut from 10 gauge galvanized, eighteen pieces.">
-                  <g stroke="var(--draw-thin)" strokeWidth="1">
-                    <path d="M70 178v32M272 84v126"/>
-                    <path d="M70 204h202"/>
-                    <path d="M42 174h24M42 52h216"/>
-                    <path d="M50 52v122"/>
-                  </g>
-                  <g fill="var(--draw-thin)">
-                    <path d="M70 204l8-3.5v7zM272 204l-8-3.5v7z"/>
-                    <path d="M50 52l-3.5 8h7zM50 174l-3.5-8h7z"/>
-                  </g>
-                  <path d="M70 174V150h45v-24h45v-25h45v-24h45v-25h22v25z"
-                        fill="var(--surface-raised)" stroke="var(--draw-line)" strokeWidth="2" strokeLinejoin="round"/>
-                  <g fontFamily="Instrument Sans" fontSize="11.5" fill="var(--text-secondary)">
-                    <text x="171" y="222" textAnchor="middle">4' 4-1/2" run</text>
-                  </g>
-                  <g fontFamily="Instrument Sans" fontSize="11.5" fill="var(--text-secondary)" transform="rotate(-90 30 113)">
-                    <text x="30" y="117" textAnchor="middle">3' 1-1/2" rise</text>
-                  </g>
-                  <g fontFamily="Instrument Sans" fontSize="11.5" fill="var(--text-muted)">
-                    <text x="288" y="48">10 ga galv</text>
-                    <text x="288" y="66">&times;18 pieces</text>
-                  </g>
-                </svg>
-                <div className="spec">
-                  <span>Riser <b>7-1/2"</b></span>
-                  <span>Tread <b>10-1/2"</b></span>
-                  <span>Clear <b>71-1/2"</b></span>
-                  <span>Stock <b>10 ga galv</b></span>
-                  <span>Count <b>18</b></span>
-                </div>
-                <p className="t-caption">Every dimension on this one is stated. Nothing here is still open.</p>
+
+          {board.items.length === 0
+            ? <div className="track-empty">
+                <p>No jobs in this stage right now.</p>
               </div>
-    
-              <div>
-                <div className="stages">
-                  <div className="stage">
-                    <div className="stage-top"><span className="knot"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span><span className="wire"></span></div>
-                    <div className="stage-body"><h5>Asked</h5>
-                      <p><span>Aug 12</span><b>Call</b></p>
-                      <p><span>First reply</span><b>9 min</b></p></div>
+            : board.items.map((lead) => {
+                const moneyCell = moneyFor(lead)
+                return <article className="job" key={lead.id}>
+                  <div className="cols job-row">
+                    <span className="part">
+                      {/* One neutral mark for every job: a blank sheet of
+                          stock. No part, dimension or count is implied. */}
+                      <svg viewBox="0 0 46 34" aria-hidden="true">
+                        <rect x="10" y="10" width="26" height="14" fill="none" stroke="var(--draw-line)" strokeWidth="1.5" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                    <span className="cust">
+                      <b>{customerName(lead)}</b>
+                      <span>{lead.message.trim() || lead.service}</span>
+                    </span>
+                    <span className="val right c-wait">{waitingAge(lead.board_since)} <em>{waitingDate(lead.board_since)}</em></span>
+                    <span className="val right c-money">{moneyCell.value} <em>{moneyCell.note}</em></span>
+                    <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
+                    <span className="doing c-do">
+                      <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}`}>Open job</Link>
+                    </span>
                   </div>
-                  <div className="stage">
-                    <div className="stage-top"><span className="knot"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span><span className="wire"></span></div>
-                    <div className="stage-body"><h5>Measured</h5>
-                      <p><span>Aug 13</span><b>Photos</b></p>
-                      <p><span>Claims</span><b>5 of 5</b></p></div>
-                  </div>
-                  <div className="stage">
-                    <div className="stage-top"><span className="knot now"><svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="4.5"/></svg></span><span className="wire off"></span></div>
-                    <div className="stage-body"><h5>Priced</h5>
-                      <p><span>Aug 13</span><b>$4,180</b></p>
-                      <p><span>Sitting</span><b style={{ "color": "var(--status-warn-ink)" }}>6 days</b></p></div>
-                  </div>
-                  <div className="stage off">
-                    <div className="stage-top"><span className="knot off"></span><span className="wire off"></span></div>
-                    <div className="stage-body"><h5>Booked</h5>
-                      <p><span>Promised</span><b>by Friday</b></p>
-                      <p><span>Status</span><b>Not booked</b></p></div>
-                  </div>
-                  <div className="stage off">
-                    <div className="stage-top"><span className="knot off"></span></div>
-                    <div className="stage-body"><h5>Paid</h5>
-                      <p><span>Terms</span><b>On pickup</b></p>
-                      <p><span>Prior jobs</span><b>2</b></p></div>
-                  </div>
-                </div>
-    
-                <div className="why">
-                  <div>
-                    <h5>How the shop got to $4,180</h5>
-                    <p>Off the <b>Cedar Ridge</b> job last March — same stock, same finish, 16 pieces at $3,720. Two more pieces and this year's steel put it at <b>$4,180</b>. Nothing has gone to him yet.</p>
-                    <div className="why-end">
-                      <span>You promised him a price by Friday. That promise is 3 days broken.</span>
-                      <span className="end">
-                        <button className="btn btn--sm btn--edge" type="button">Change the price</button>
-                        <button className="btn btn--sm btn--edge" type="button">Call him</button>
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <h5>What is in it</h5>
-                    <table className="sum">
-                      <tbody>
-                        <tr><td>Steel <span className="q">10 ga galv, 18 pcs</span></td><td>$1,860</td></tr>
-                        <tr><td>Cut and form <span className="q">6.5 hrs</span></td><td>$780</td></tr>
-                        <tr><td>Weld and fit <span className="q">9 hrs</span></td><td>$1,080</td></tr>
-                        <tr><td>Galv touch-up</td><td>$180</td></tr>
-                        <tr><td>Delivery <span className="q">Gallatin</span></td><td>$280</td></tr>
-                        <tr className="total"><td>Quoted</td><td>$4,180</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </article>
-    
-          <article className="job">
-            <div className="cols job-row">
-              <span className="part">
-                <svg viewBox="0 0 46 34" role="img" aria-label="Sketch: handrail with three posts">
-                  <g fill="none" stroke="var(--draw-line)" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M6 11h34"/><path d="M9 11v15M23 11v15M37 11v15"/><path d="M6 26h34"/>
-                  </g>
-                </svg>
-              </span>
-              <span className="cust"><b>Hendersonville Fab</b><span>Dock handrail, 34 ft</span></span>
-              <span className="val right c-wait">3d 06h <em>Aug 15</em></span>
-              <span className="val right c-money">$6,950 <em>quoted</em></span>
-              <span className="c-state"><span className="chip chip--warn"><i></i>Email did not deliver</span></span>
-              <span className="doing c-do">
-                <button className="btn btn--sm btn--go" type="button">Text instead</button>
-                <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button" aria-label="Expand this job"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 6 8 10l4-4"/></svg></button>
-              </span>
-            </div>
-          </article>
-    
-          <article className="job">
-            <div className="cols job-row">
-              <span className="part">
-                <svg viewBox="0 0 46 34" role="img" aria-label="Sketch: cross beam with two end plates">
-                  <g fill="none" stroke="var(--draw-line)" strokeWidth="1.5" strokeLinejoin="round">
-                    <path d="M10 14h26v6H10z"/><path d="M7 9h3v16H7zM36 9h3v16h-3z"/>
-                  </g>
-                </svg>
-              </span>
-              <span className="cust"><b>Wendy Cauthen</b><span>Cross beam, 2005 GMC Yukon frame</span></span>
-              <span className="val right c-wait">2d 11h <em>Aug 16</em></span>
-              <span className="val right c-money">$395 <em>unpaid</em></span>
-              <span className="c-state"><span className="chip chip--good"><i></i>Ready for customer</span></span>
-              <span className="doing c-do">
-                <button className="btn btn--sm btn--go" type="button">Text her</button>
-                <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button" aria-label="Expand this job"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 6 8 10l4-4"/></svg></button>
-              </span>
-            </div>
-          </article>
-    
-          <article className="job">
-            <div className="cols job-row">
-              <span className="part">
-                <svg viewBox="0 0 46 34" role="img" aria-label="Sketch: support post on a base plate with a cracked weld">
-                  <g fill="none" stroke="var(--draw-line)" strokeWidth="1.5" strokeLinejoin="round">
-                    <path d="M19 7h8v18h-8z"/><path d="M11 25h24v3H11z"/>
-                  </g>
-                  <path d="M19 16l4 2-4 2" fill="none" stroke="var(--status-stop-mark)" strokeWidth="1.5"/>
-                </svg>
-              </span>
-              <span className="cust"><b>Dock Repair</b><span>Broken post, cracked weld on the support</span></span>
-              <span className="val right c-wait">1d 22h <em>Aug 17</em></span>
-              <span className="val right c-money">$1,240 <em>booked</em></span>
-              <span className="c-state"><span className="chip chip--stop"><i></i>Customer text waiting</span></span>
-              <span className="doing c-do">
-                <button className="btn btn--sm btn--go" type="button">Read it</button>
-                <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button" aria-label="Expand this job"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 6 8 10l4-4"/></svg></button>
-              </span>
-            </div>
-          </article>
-    
-          <article className="job">
-            <div className="cols job-row">
-              <span className="part">
-                <svg viewBox="0 0 46 34" role="img" aria-label="Sketch: gate frame, three dimensions still unknown">
-                  <g fill="none" stroke="var(--draw-line)" strokeWidth="1.5"><path d="M9 9h29v18H9z"/></g>
-                  <g fill="none" stroke="var(--draw-thin)" strokeWidth="1.5" strokeDasharray="3 2.5">
-                    <path d="M17 9v18M24 9v18M31 9v18"/>
-                  </g>
-                </svg>
-              </span>
-              <span className="cust"><b>Ray Colter</b><span>Driveway gate &middot; on the call sketch above</span></span>
-              <span className="val right c-wait">51m <em>13:01</em></span>
-              <span className="val right c-money">&mdash; <em>no price</em></span>
-              <span className="c-state"><span className="chip chip--stop"><i></i>Needs a call</span></span>
-              <span className="doing c-do">
-                <button className="btn btn--sm btn--go" type="button">Ask the three</button>
-                <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button" aria-label="Expand this job"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M4 6 8 10l4-4"/></svg></button>
-              </span>
-            </div>
-          </article>
-    
+                </article>
+              })}
         </section>
       </main>
     </div>

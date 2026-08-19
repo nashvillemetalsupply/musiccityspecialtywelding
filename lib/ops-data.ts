@@ -24,7 +24,7 @@ export type BoardSignal = {
   hoursLate: number
   weight: number
 }
-export type BoardJobOrder = "stage" | "weight"
+export type BoardJobOrder = "stage" | "weight" | "oldest"
 export type BoardJobRow = LeadRow & {
   board_stage: Exclude<JobBoardStage, "board">
   board_reason: string
@@ -179,7 +179,7 @@ export async function listBoardJobs(
   const page = Math.max(1, Math.floor(options.page ?? 1))
   const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 5), 1), 12)
   const offset = (page - 1) * pageSize
-  const order: BoardJobOrder = options.order === "weight" ? "weight" : "stage"
+  const order: BoardJobOrder = options.order === "weight" ? "weight" : options.order === "oldest" ? "oldest" : "stage"
   const w = BOARD_WEIGHTS
   const cap = w.latenessCapMultiple
   const half = w.latenessHalfLifeHours
@@ -362,9 +362,12 @@ export async function listBoardJobs(
     ), paged AS (
       SELECT f.* FROM filtered f
       ORDER BY
-        CASE WHEN ${order}::text = 'weight' THEN 0 ELSE
+        CASE WHEN ${order}::text = 'stage' THEN
           CASE f.board_stage WHEN 'attention' THEN 0 WHEN 'shop' THEN 1 WHEN 'waiting' THEN 2 ELSE 3 END
         END,
+        -- oldest is one global queue: every other guarded key is NULL, so
+        -- board_since ASC NULLS LAST and id DESC are the complete ordering.
+        CASE WHEN ${order}::text = 'oldest' THEN f.board_since END ASC NULLS LAST,
         CASE WHEN ${order}::text = 'weight' THEN -f.board_score END ASC NULLS LAST,
         CASE WHEN ${order}::text = 'weight' THEN f.board_since END ASC NULLS LAST,
         CASE WHEN ${order}::text = 'stage' AND f.board_stage = 'attention' THEN f.board_since END ASC NULLS LAST,
