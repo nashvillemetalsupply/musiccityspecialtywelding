@@ -210,7 +210,12 @@ test("Full Record refetches and navigates with its role-filtered clamped page", 
 test("private missing routes stay inside the Jobs brand without marketing chrome", () => {
   const missing = source("app/ops/not-found.tsx")
 
-  assert.match(missing, /className="jobs-route-state"/)
+  // The surface is pinned by what it says and what it refuses to render, not by
+  // the stylesheet hook it happens to wear: `jobs-route-state` belonged to the
+  // sheets Task 7 deletes, so pinning it would have outlawed the conversion.
+  assert.match(missing, /<main\b/)
+  assert.match(missing, /Job or customer not found\./)
+  assert.doesNotMatch(missing, /jobs-route-state|jobs-panel|jobs-brand/)
   assert.match(missing, /Nothing was changed/)
   assert.match(missing, /href="\/ops"[^>]*>Back to Jobs<\/Link>/)
   assert.doesNotMatch(missing, /(?:import|<)(?:Navbar|Footer|MainstreetMenu|MainstreetContact)\b/)
