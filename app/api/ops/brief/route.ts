@@ -115,7 +115,20 @@ export async function GET(req: Request) {
     ...invoices.map((item) => ({ label: `${item.first_name || "Customer"}: invoice ${item.invoice_number || "open"}`, url: `/ops/leads/${item.id}`, ownerOnly: true })),
   ].slice(0, 24)
   const crewDaySheet = [...crewPromiseSheet, ...sharedDaySheet].slice(0, 24)
-  const facts = { promises, unanswered, stale_quotes: quotes, unpaid_invoices: invoices, yesterday_wins: wins, weather }
+  // `facts` is what the AI prompt stringifies into the owner-facing brief body.
+  // promises carries both the unredacted `summary` and the pre-redacted
+  // `crew_summary`; feeding the redacted copy through would leak the
+  // [owner-only money] marker into the owner's text. Rebuild the promise rows
+  // from `summary` alone. The crew promise sheet above still reads crew_summary.
+  const ownerPromiseFacts = promises.map((item) => ({
+    id: item.id,
+    lead_id: item.lead_id,
+    summary: item.summary,
+    due_at: item.due_at,
+    first_name: item.first_name,
+    service: item.service,
+  }))
+  const facts = { promises: ownerPromiseFacts, unanswered, stale_quotes: quotes, unpaid_invoices: invoices, yesterday_wins: wins, weather }
   const crewCredits = wins.map((item) => `${item.crew_name || "The crew"} closed ${item.first_name || "a job"}`).slice(0, 5)
   const crewBody = [
     `Morning. ${promises.length} promises need a look. ${unanswered.length} customers still need a first call.`,

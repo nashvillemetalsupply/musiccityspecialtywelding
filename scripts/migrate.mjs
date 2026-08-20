@@ -973,6 +973,21 @@ await sql`
   ) owner
   WHERE push_subscriptions.operator_id IS NULL`
 
+// Backfill: legacy notifications deep-linked to the retired /ops?view=updates
+// surface. Point them at /board/updates, keeping any remaining query params and
+// the hash. Idempotent — the WHERE matches only the stale prefix, so a re-run
+// touches nothing.
+const staleUpdateUrls = await sql`
+  SELECT id, url FROM notifications WHERE url LIKE '/ops?view=updates%'`
+for (const row of staleUpdateUrls) {
+  const next = row.url
+    .replace(/^\/ops\?view=updates/, "/board/updates")
+    .replace(/^\/board\/updates&/, "/board/updates?")
+  if (next !== row.url) {
+    await sql`UPDATE notifications SET url = ${next}::text WHERE id = ${row.id}::bigint`
+  }
+}
+
 // Deterministic, silent Build Sheets kill-test fixture. All writes are new-table
 // rows or explicitly test-partitioned rows in the existing event/claim substrate.
 const buildFixturePublicId = "internal-build-sheets-fixture"

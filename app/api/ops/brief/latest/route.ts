@@ -14,5 +14,9 @@ export async function GET() {
   const audioUrl = rows[0] && typeof audioPath === "string" ? `/api/ops/brief/audio?event=${rows[0].id}` : null
   const detail = rows[0]?.detail
   const daySheet = operator.role === "owner" ? detail?.daySheet : detail?.crewDaySheet
-  return Response.json({ brief, audioUrl, daySheet: Array.isArray(daySheet) ? daySheet : [] })
+  return Response.json({
+    brief: brief ? { id: brief.id, kind: brief.kind, body: brief.body, occurred_at: brief.occurred_at } : null,
+    audioUrl,
+    daySheet: Array.isArray(daySheet) ? daySheet : [],
+  })
 }
