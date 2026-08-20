@@ -82,6 +82,19 @@ for it. Crew money is removed server-side and stays covered by the `event-visibi
 `shop-brain-invariants` and `shop-brain-boundaries` suites inside the 298-test run. Re-walk
 as crew the first time a crew operator exists in production.
 
+**Second pass — final independent E2E, 2026-08-20, at `ad4d7a6`.** The three unwalked
+items above are now live-walked: `/ops/accounts/15`, `/ops/leads/34/builds` (the one job
+with build sheets; other leads correctly show the not-found guard), and an explicit
+sign-out → SMS-code sign-in cycle. The receipt drawer was walked at
+`/board/updates?receipt=<id>#receipt`. Four defects were found and fixed in `770b20b`
+(owner-brief redaction marker, satellite-page theme boot, a 74-row legacy notification
+URL backfill, and a `tsv` crew-projection leak caught by Codex review) — details in the
+"Second pass" section of `…-C8-FIXES.md`. Gates at `ad4d7a6`: typecheck 0, lint 0,
+shop-brain **303 tests, 301 pass, 2 skipped, 0 fail**, focused suites **65/65** (the new
+`board-final-polish` file adds 5), Shepherd `test.ps1` 12 suites exit 0, root turbopack
+build exit 0. Deployed as `dpl_4xNqFFF51jAewJiCvJ7uQqETT4YR`. The crew walk stays open —
+deferred by the owner (no crew users yet); no QA operator was created.
+
 **Recommended order:** C0 → C1 (owner gate) → C6, then C2/C3/C4/C5 in any order
 (independent gap-fillers, each behind the C1 approval) → C7 → C8.
 

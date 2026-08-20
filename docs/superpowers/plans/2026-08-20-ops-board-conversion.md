@@ -169,12 +169,22 @@ test("/ops front door is the board", () => {
   `/ops/leads/[id]/builds` page (the attempt on job 105 returned not found), and an
   explicit sign-out/sign-in cycle. Those three surfaces are covered by the suites and by
   the static class audit only — no live owner walk exists for them.
+  **Closed by the second pass, 2026-08-20 (verified at `ad4d7a6`):** `/ops/accounts/15`
+  renders live; `/ops/leads/34/builds` renders the full Fabrication workspace (leads
+  without build sheets show the graceful "Job or customer not found" guard — only job 34,
+  the internal-test gate build, has sheets); and an explicit sign-out → punch-card door →
+  SMS-code sign-in cycle ran against production. The receipt drawer was walked live at
+  `/board/updates?receipt=<id>#receipt`. The paid-moment slip has no runtime walk —
+  production has zero `invoice.paid` events — and stays covered by `board-updates-route`.
 - [ ] **Step 3b: Walk every route signed in as crew** — **could not run.** Production has no
   active crew account: Philippe Auguste and TJ Harahan are both `owner` role, so no credential
   exists that renders the crew projection. Crew money isolation remains covered server-side by
   the `event-visibility`, `shop-brain-invariants` and `shop-brain-boundaries` suites (part of
   the 298-test green run). This item stays open until a crew operator exists in production;
   it is not a conversion defect and does not block the plan.
+  **Deferred by the owner, 2026-08-20:** only the two owners use the app right now, so no
+  temporary QA crew operator is to be created. Run this walk the day the first real crew
+  operator is added.
 - [x] **Step 4: Owner gate on the whole app. Then commit** — `git commit -m "feat(ops): flip the layout to the board language and make /board the front door"`
 
 ### Task 8: Exit verification
