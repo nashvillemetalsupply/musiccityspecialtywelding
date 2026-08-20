@@ -653,6 +653,8 @@ svg{display:block}
   .job:not([data-open]) .job-row:hover{background:var(--surface-raised)}
 }
 .job:not([data-open]) .job-row{transition:background .15s var(--ease)}
+/* The row itself toggles the detail panel, so it advertises as clickable. */
+.job .job-row{cursor:pointer}
 
 /* 6 · Print. The owner prints the board for the wall on Mondays. */
 @media print{
