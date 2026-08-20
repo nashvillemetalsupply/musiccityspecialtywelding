@@ -37,7 +37,7 @@ their own):
 | W3 | Signal filter — `?signal=<kind>` through `listBoardJobs`, pane buttons, "Work the N" (plan §1 rows 13–14) | Codex `gpt-5.6-sol` | high | M | — | **done** |
 | W4 | Call sketch wiring — `leadId` on `BoardCallSketch`, "Open the job", "Text him the three" (rows 15–16) | Codex `gpt-5.6-sol` | medium | S | — | **done** |
 | W5 | Header and rail chrome — date, search, New job, who-dot, seven rail links (rows 1–12) | Codex `gpt-5.6-sol` | medium | S | — | **done** |
-| W6 | Exit verification — panel and control assertions in `job-control-tracker.test.mjs`, full suite, tick the plan | Codex `gpt-5.6-sol` | high | S | W2, W3, W4, W5 | todo |
+| W6 | Exit verification — panel and control assertions in `job-control-tracker.test.mjs`, full suite, tick the plan | Codex `gpt-5.6-sol` | high | S | W2, W3, W4, W5 | **done** |
 
 **Recommended order:** W0 → W1 → W2, then W5, W4, W3 in any order (all independent
 gap-fillers), then W6 last. W0 first because the owner is entering costs today and

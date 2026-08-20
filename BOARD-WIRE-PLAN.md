@@ -97,9 +97,9 @@ The panel needs claims, commitments and events per row. Fetched **batched by pag
 
 ## 3. Invariants this must not break
 
-- Crew rows arrive with every money field nulled. The panel shows "no price",
+- [x] Crew rows arrive with every money field nulled. The panel shows "no price",
   never a hidden-in-CSS number.
-- `[INTERNAL TEST]` / `is_test` rows stay excluded, as they already are.
-- No hand-typed fixture survives onto the page. `job-control-tracker.test.mjs`
+- [x] `[INTERNAL TEST]` / `is_test` rows stay excluded, as they already are.
+- [x] No hand-typed fixture survives onto the page. `job-control-tracker.test.mjs`
   already asserts the mockup names are gone — extend it to the panel.
-- No per-worker anything. Operator attribution stays a byline.
+- [x] No per-worker anything. Operator attribution stays a byline.
