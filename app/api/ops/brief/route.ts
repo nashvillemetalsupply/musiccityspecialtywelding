@@ -80,7 +80,7 @@ export async function GET(req: Request) {
   const existing = (await sql`
     SELECT id, body FROM events WHERE kind = 'brief.morning' AND external_id = ${`brief:${day}`}::text LIMIT 1`) as { id: number; body: string }[]
   if (existing[0]) {
-    await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: "Open today’s jobs and promises.", url: "/ops#radio", sourceEventId: existing[0].id, quietHoursExempt: true, capExempt: true })
+    await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: "Open today’s jobs and promises.", url: "/board#radio", sourceEventId: existing[0].id, quietHoursExempt: true, capExempt: true })
     const audio = await shelveBriefAudio(Number(existing[0].id), day)
     return Response.json({ ok: true, resumed: true, eventId: existing[0].id, audio })
   }
@@ -134,7 +134,7 @@ export async function GET(req: Request) {
     }
   }
   const eventId = await recordEvent({ kind: "brief.morning", actorType: "ai", externalId: `brief:${day}`, body: text, crewBody, detail: { facts, crewBody, daySheet, crewDaySheet, model: briefModel } })
-  if (eventId) await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: `${promises.length + unanswered.length + quotes.length} items · about 90 seconds`, url: "/ops#radio", sourceEventId: eventId, quietHoursExempt: true, capExempt: true })
+  if (eventId) await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: `${promises.length + unanswered.length + quotes.length} items · about 90 seconds`, url: "/board#radio", sourceEventId: eventId, quietHoursExempt: true, capExempt: true })
   if (eventId) await shelveBriefAudio(eventId, day)
   await sql`INSERT INTO automation_runs (job, ok, detail) VALUES ('morning-brief'::text, true, ${JSON.stringify({ eventId, counts: { promises: promises.length, unanswered: unanswered.length, quotes: quotes.length, invoices: invoices.length } })}::jsonb)`
   return Response.json({ ok: true, eventId, text })

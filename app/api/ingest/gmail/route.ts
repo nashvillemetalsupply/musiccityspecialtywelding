@@ -36,7 +36,7 @@ async function ingestPayment(messageId: string, occurredAt: string, subject: str
       stock: "red",
       title: `Invoice #${invoice} matches two jobs`,
       body: "Nothing was marked paid. Fix the duplicate invoice number first.",
-      url: "/ops?view=updates&wire=past#wire",
+      url: "/board/updates?wire=past#wire",
       sourceEventId: eventId,
       ownerOnly: true,
       dedupeKey: `payment-ambiguous:${messageId}`,
@@ -88,7 +88,7 @@ async function ingestDeposit(messageId: string, occurredAt: string, subject: str
   const cents = match ? Math.round(Number(match[1].replace(/,/g, "")) * 100) : null
   const company = body.match(/\bCompany\s+([^\n]+?)(?:\s+Deposit ID\b|$)/i)?.[1]?.trim() ?? ""
   const eventId = await recordEvent({ kind: "email.deposit", actorType: "system", externalId: messageId, occurredAt, body: `${cents ? `$${(cents / 100).toLocaleString("en-US")}` : "QuickBooks deposit"} is on the way`, detail: { amountCents: cents, company: company || null, isTest } })
-  if (eventId && !isTest) await notifyAll({ priority: "digest", stock: "green", title: `${cents ? `$${(cents / 100).toLocaleString("en-US")}` : "Money"} is on the way`, body: company || "QuickBooks deposit notice received.", url: "/ops?view=updates#wire", sourceEventId: eventId, ownerOnly: true })
+  if (eventId && !isTest) await notifyAll({ priority: "digest", stock: "green", title: `${cents ? `$${(cents / 100).toLocaleString("en-US")}` : "Money"} is on the way`, body: company || "QuickBooks deposit notice received.", url: "/board/updates#wire", sourceEventId: eventId, ownerOnly: true })
   return { deposit: true, duplicate: !eventId }
 }
 
@@ -139,7 +139,7 @@ export async function GET(req: Request) {
           const existing = (await sql`SELECT id FROM events WHERE kind = 'email.payment-rejected' AND external_id = ${id}::text LIMIT 1`) as { id: number }[]
           securityEventId = Number(existing[0]?.id) || null
         }
-        await notifyAll({ priority: "digest", stock: "red", title: "Payment email failed authentication", body: `${subject} was not allowed to change money records.`, crewBody: "A suspicious payment email was quarantined.", url: "/ops?view=updates#wire", sourceEventId: securityEventId, ownerOnly: true, dedupeKey: `payment-auth-rejected:${id}` })
+        await notifyAll({ priority: "digest", stock: "red", title: "Payment email failed authentication", body: `${subject} was not allowed to change money records.`, crewBody: "A suspicious payment email was quarantined.", url: "/board/updates#wire", sourceEventId: securityEventId, ownerOnly: true, dedupeKey: `payment-auth-rejected:${id}` })
         counters.skipped++
         continue
       }
@@ -224,7 +224,7 @@ export async function GET(req: Request) {
       if (attempts >= 5) {
         await sql`UPDATE gmail_ingest_failures SET dead_lettered_at = COALESCE(dead_lettered_at, now()) WHERE message_id = ${id}::text`
         const deadEventId = await recordEvent({ kind: "email.ingest-dead-letter", actorType: "system", externalId: `gmail-dead:${id}`, body: `Gmail message could not be filed after ${attempts} attempts`, detail: { messageId: id, error: message } })
-        await notifyAll({ priority: "digest", stock: "red", title: "One Gmail update needs a human", body: "MCSW Jobs held it after five safe retries.", url: "/ops?view=updates", sourceEventId: deadEventId, ownerOnly: true, dedupeKey: `gmail-dead:${id}` }).catch(() => undefined)
+        await notifyAll({ priority: "digest", stock: "red", title: "One Gmail update needs a human", body: "MCSW Jobs held it after five safe retries.", url: "/board/updates", sourceEventId: deadEventId, ownerOnly: true, dedupeKey: `gmail-dead:${id}` }).catch(() => undefined)
         counters.deadLettered++
       } else counters.failures++
       console.error(`Gmail message ${id} failed:`, error)

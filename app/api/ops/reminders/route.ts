@@ -87,7 +87,7 @@ export async function GET(req: Request) {
             extraction_next_attempt_at = CASE WHEN extraction_attempts + 1 >= 8 THEN NULL ELSE now() + (LEAST(360, (15 * power(2, extraction_attempts))::int) || ' minutes')::interval END
           WHERE id = ${event.id}::bigint
           RETURNING extraction_attempts, extraction_status`) as { extraction_attempts: number; extraction_status: string }[]
-        if (failed[0]?.extraction_status === "dead") await notifyAll({ priority: "digest", stock: "red", title: "One update needs review", body: "MCSW Jobs stopped after eight safe retries; the original record is intact.", url: `/ops?view=updates&receipt=${event.id}#receipt`, sourceEventId: Number(event.id), ownerOnly: true, dedupeKey: `extraction-dead:${event.id}` })
+        if (failed[0]?.extraction_status === "dead") await notifyAll({ priority: "digest", stock: "red", title: "One update needs review", body: "MCSW Jobs stopped after eight safe retries; the original record is intact.", url: `/board/updates?receipt=${event.id}#receipt`, sourceEventId: Number(event.id), ownerOnly: true, dedupeKey: `extraction-dead:${event.id}` })
         console.error(`Extraction retry ${event.id} failed:`, error)
       }
     }

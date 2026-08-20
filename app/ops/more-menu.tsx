@@ -20,7 +20,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
     if (!open) return
     const trigger = triggerRef.current
     const previous = document.body.style.overflow
-    const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".ops-shell main")]
+    const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".ops-shell main, .app main")]
     for (const surface of pageSurfaces) surface.inert = true
     document.body.style.overflow = "hidden"
     trigger?.focus()
@@ -55,6 +55,9 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
         <nav aria-label="MCSW sections">
           <Link href="/board" onClick={close}>Job Control</Link>
           <Link href="/ops/intake/new" onClick={close}>New Job</Link>
+          <Link href="/board/calls" onClick={close}>Calls</Link>
+          <Link href="/board/customers" onClick={close}>Customers</Link>
+          <Link href="/board/updates" onClick={close}>Updates</Link>
           <Link href="/board?signal=promise" onClick={close}>Promises</Link>
           <Link href="/board" onClick={close}>Search Jobs</Link>
           {role === "owner" && <Link href="/ops/analytics" onClick={close}>Analytics</Link>}

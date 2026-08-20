@@ -170,12 +170,14 @@ test("the board chrome and Ask Jobs sources point at destinations that still exi
   assert.match(PREVIEW_SOURCE, /className="logo-home" href="\/board" aria-label="Job Control home"/)
   assert.doesNotMatch(PREVIEW_SOURCE, /Back to the old board/)
 
-  // Rail entries that have a board equivalent use it. Customers and Leads
-  // still point at /ops — that pair is an open owner decision, not a bug.
+  // Rail entries that have a board equivalent use it. The owner decision
+  // landed: Customers goes to the board's own regulars index, and Leads is
+  // gone — the board is the job list, so that entry linked the page to itself.
   assert.match(PREVIEW_SOURCE, /href="\/board\?stage=waiting" aria-label="Quotes"/)
   assert.match(PREVIEW_SOURCE, /href="\/board\?signal=promise" aria-label="Promises"/)
-  assert.match(PREVIEW_SOURCE, /href="\/ops" aria-label="Leads"/)
-  assert.match(PREVIEW_SOURCE, /href="\/ops\?view=regulars" aria-label="Customers"/)
+  assert.match(PREVIEW_SOURCE, /href="\/board\/customers" aria-label="Customers"/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /aria-label="Leads"/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /view=regulars/)
 
   // The receipt drawer is gone. A source with a job opens the job; one
   // without a job must not render as a link at all.

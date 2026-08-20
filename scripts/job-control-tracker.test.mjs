@@ -102,9 +102,10 @@ test("crew board details contain no money for the expanded panel", () => {
 
 test("every left-rail link resolves to an existing app route", () => {
   const links = [...RAIL_SOURCE.matchAll(/<Link className="rl" href="([^"]+)" aria-label="([^"]+)"/g)]
+  // Leads left the rail with the final navigation pass: the board is the job
+  // list, so that entry only linked the page to itself.
   assert.deepEqual(links.map(([, , label]) => label), [
     "Board",
-    "Leads",
     "Customers",
     "Quotes",
     "Promises",

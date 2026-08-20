@@ -62,9 +62,12 @@ test("the stylesheet is control tokens only — it names no raw colour", () => {
   }
 })
 
-test("the board itself is untouched by this task", () => {
+test("the board rail now points its Customers entry here", () => {
+  // This assertion used to pin the opposite — the route shipped before its
+  // navigation. The navigation task landed: the rail entry is this page.
   const board = read("../app/board/board.tsx")
-  assert.ok(!board.includes("/board/customers"), "navigation to the customers route is a later task")
+  assert.match(board, /href="\/board\/customers" aria-label="Customers"/)
+  assert.ok(!board.includes("view=regulars"), "the retired /ops regulars view must not come back")
 })
 
 // Page one is the floor. A hand-typed ?accountPage=0 or =-4 must not walk the
