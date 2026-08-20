@@ -85,7 +85,9 @@ test("the owner can always open a truthful Call Sketch practice workspace inside
     read("app/ops/call-sketch/page.tsx"),
     read("components/call-sketch/call-sketch-prototype.tsx"),
   ])
-  assert.match(intake, /owner && <Link className="jobs-call-sketch-link" href="\/ops\/call-sketch"/)
+  // Pinned by the owner gate and the destination, not by the stylesheet hook:
+  // `jobs-call-sketch-link` belonged to the sheets Task 7 deletes.
+  assert.match(intake, /owner && <Link className="[^"]*intake-sketch-link" href="\/ops\/call-sketch"/)
   assert.match(page, /getAuthenticatedOperator\(\)/)
   assert.match(page, /operator\.role !== "owner"/)
   assert.match(page, /<CallSketchPrototype embedded \/>/)

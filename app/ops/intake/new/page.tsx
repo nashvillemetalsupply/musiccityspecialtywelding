@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { randomUUID } from "node:crypto"
 import { redirect } from "next/navigation"
+import "../../../../styles/control.css"
+import "../intake.css"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { InlineJobIntake } from "../inline-job-intake"
@@ -16,8 +18,8 @@ export default async function NewJobIntakePage({
   if (!operator) redirect("/ops")
   const query = await searchParams
   const source = query.source === "walk-in" ? "walk-in" : "phone-in"
-  return <main className="jobs-intake-page jobs-intake-parity">
-    <Link className="jobs-intake-back" href="/ops">Back to Jobs</Link>
+  return <main className="intake-page">
+    <Link className="btn btn--sm btn--edge intake-back" href="/ops">Back to Jobs</Link>
     <InlineJobIntake
       initialSource={source}
       intakeKey={randomUUID()}

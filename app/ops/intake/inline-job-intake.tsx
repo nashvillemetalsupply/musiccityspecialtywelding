@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useActionState, useState } from "react"
+import "../../../styles/control.css"
+import "./intake.css"
 import { SafeActionButton, SafeSubmitButton } from "../safe-action-controls"
 import { VoiceCaptureButton } from "../voice-capture-button"
 import { changeCallDraftDispositionAction, saveInlineJobAction, undoInlineJobAction, type InlineJobSaveState } from "./actions"
@@ -154,59 +156,59 @@ export function InlineJobIntake({
   if (savedJob) {
     const firstName = savedJob.name.trim().split(/\s+/)[0] || "customer"
     const callHref = `tel:${savedJob.phone.replace(/[^\d+]/g, "")}`
-    return <section className="jobs-panel jobs-inline-intake jobs-intake-result jobs-intake-saved" aria-live="polite">
+    return <section className="card intake intake-result" aria-live="polite">
       <div>
-        <p className="jobs-kicker">Job saved</p>
+        <p className="t-caption intake-kicker">Job saved</p>
         <h1>{savedJob.name}</h1>
         <p>{savedJob.need}</p>
       </div>
-      {actionError && <p className="jobs-inline-error" role="alert">{actionError}</p>}
-      <div className={`jobs-inline-actions${savedJob.phone ? "" : " is-single"}`}>
-        {savedJob.phone && <a className="jobs-primary-action" href={callHref} aria-label={`Call ${firstName}`}>Call customer</a>}
-        <Link className="jobs-secondary-action" href={`/ops/leads/${savedJob.leadId}`}>Open Job</Link>
-        <SafeActionButton className="jobs-text-action" busyLabel="Undoing..." onAction={undoSavedJob}>Undo</SafeActionButton>
-        <button type="button" className="jobs-text-action" onClick={continueAfterSaved}>{savedJob.source === "call" && draft?.publicId && draft.publicId !== savedJob.intakeRef ? "Next call" : "Done"}</button>
+      {actionError && <p className="intake-alert" role="alert">{actionError}</p>}
+      <div className={`intake-actions${savedJob.phone ? "" : " is-single"}`}>
+        {savedJob.phone && <a className="btn btn--sm btn--go" href={callHref} aria-label={`Call ${firstName}`}>Call customer</a>}
+        <Link className="btn btn--sm btn--edge" href={`/ops/leads/${savedJob.leadId}`}>Open Job</Link>
+        <SafeActionButton className="btn btn--sm btn--edge" busyLabel="Undoing..." onAction={undoSavedJob}>Undo</SafeActionButton>
+        <button type="button" className="btn btn--sm btn--edge" onClick={continueAfterSaved}>{savedJob.source === "call" && draft?.publicId && draft.publicId !== savedJob.intakeRef ? "Next call" : "Done"}</button>
       </div>
     </section>
   }
 
-  if (dismissedCall) return <section className="jobs-panel jobs-inline-intake jobs-intake-result" aria-live="polite">
-    <p className="jobs-kicker">Call cleared</p>
+  if (dismissedCall) return <section className="card intake intake-result" aria-live="polite">
+    <p className="t-caption intake-kicker">Call cleared</p>
     <h1>No job was created.</h1>
     <p>{dismissedCall.fields.name.trim() || "The caller"} can be restored if that was a mistake.</p>
-    {actionError && <p className="jobs-inline-error" role="alert">{actionError}</p>}
-    <div className="jobs-inline-actions is-single">
-      <SafeActionButton className="jobs-text-action" busyLabel="Restoring…" onAction={() => changeDisposition("restore")}>Undo</SafeActionButton>
-      <button type="button" className="jobs-text-action" onClick={continueAfterDismissed}>{draft?.publicId && draft.publicId !== dismissedCall.publicId ? "Next call" : "Done"}</button>
+    {actionError && <p className="intake-alert" role="alert">{actionError}</p>}
+    <div className="intake-actions is-single">
+      <SafeActionButton className="btn btn--sm btn--edge" busyLabel="Restoring…" onAction={() => changeDisposition("restore")}>Undo</SafeActionButton>
+      <button type="button" className="btn btn--sm btn--edge" onClick={continueAfterDismissed}>{draft?.publicId && draft.publicId !== dismissedCall.publicId ? "Next call" : "Done"}</button>
     </div>
   </section>
 
-  return <section className="jobs-panel jobs-inline-intake" aria-labelledby="jobs-home-intake-title">
-    <header className="jobs-inline-intake-head">
+  return <section className="card intake" aria-labelledby="jobs-home-intake-title">
+    <header className="intake-head">
       <div>
-        {source === "phone-in" && activeDraft && <p className="jobs-kicker">{`${callLabel(activeDraft.callStatus)} · ${formatTime(activeDraft.createdAt)}`}</p>}
-        <h1 id="jobs-home-intake-title">{source === "phone-in" ? "Phone call" : "Walk-in"}</h1>
+        {source === "phone-in" && activeDraft && <p className="t-caption intake-kicker">{`${callLabel(activeDraft.callStatus)} · ${formatTime(activeDraft.createdAt)}`}</p>}
+        <h1 className="t-title" id="jobs-home-intake-title">{source === "phone-in" ? "Phone call" : "Walk-in"}</h1>
       </div>
-      <div className="jobs-inline-intake-links">
-        {source === "phone-in" && pendingTotal > 1 && <Link href="/ops?calls=all">{pendingTotal - 1} more {pendingTotal - 1 === 1 ? "call" : "calls"}</Link>}
-        {owner && <Link className="jobs-call-sketch-link" href="/ops/call-sketch" aria-label="Open the Call Sketch practice workspace">Call Sketch</Link>}
-        <button type="button" className="jobs-text-action" onClick={() => switchSource(source === "phone-in" ? "walk-in" : "phone-in")}>{source === "phone-in" ? "Walk-in" : "Phone call"}</button>
+      <div className="intake-links">
+        {source === "phone-in" && pendingTotal > 1 && <Link className="btn btn--sm btn--edge" href="/ops?calls=all">{pendingTotal - 1} more {pendingTotal - 1 === 1 ? "call" : "calls"}</Link>}
+        {owner && <Link className="btn btn--sm btn--edge intake-sketch-link" href="/ops/call-sketch" aria-label="Open the Call Sketch practice workspace">Call Sketch</Link>}
+        <button type="button" className="btn btn--sm btn--edge" onClick={() => switchSource(source === "phone-in" ? "walk-in" : "phone-in")}>{source === "phone-in" ? "Walk-in" : "Phone call"}</button>
       </div>
     </header>
 
-    {(activeDraft?.lastError || actionError || saveState.status === "error") && <p className="jobs-inline-error" role="alert">{actionError || (saveState.status === "error" ? saveState.message : activeDraft?.lastError)}</p>}
+    {(activeDraft?.lastError || actionError || saveState.status === "error") && <p className="intake-alert" role="alert">{actionError || (saveState.status === "error" ? saveState.message : activeDraft?.lastError)}</p>}
 
     {owner && inbound && <LiveCallSketch draftId={activeDraft!.publicId} />}
 
-    <form action={saveAction} className="jobs-inline-form" aria-busy={savePending}>
+    <form action={saveAction} className="intake-form" aria-busy={savePending}>
       {inbound ? <input type="hidden" name="draftId" value={activeDraft!.publicId} /> : <>
         <input type="hidden" name="source" value={source} />
         <input type="hidden" name="intakeKey" value={manualIntakeKey} />
       </>}
 
-      <div className="jobs-inline-person">
-        <label className="jobs-inline-name">
-          <span className="jobs-sr-only">Customer or company name</span>
+      <div className="intake-person">
+        <label className="intake-name">
+          <span className="intake-sr-only">Customer or company name</span>
           <input
             name="firstName"
             value={fields.name}
@@ -217,10 +219,10 @@ export function InlineJobIntake({
             aria-required="true"
           />
         </label>
-        <div className={`jobs-inline-phone${source === "walk-in" ? " is-walk-in" : ""}`}>
+        <div className={`intake-phone${source === "walk-in" ? " is-walk-in" : ""}`}>
           <span>{source === "phone-in" ? "called from" : "Phone (optional)"}</span>
           <label>
-            <span className="jobs-sr-only">Phone number</span>
+            <span className="intake-sr-only">Phone number</span>
             <input
               name="phone"
               value={fields.phone}
@@ -234,7 +236,7 @@ export function InlineJobIntake({
         </div>
       </div>
 
-      <label className="jobs-inline-need">
+      <label className="intake-need">
         <span>Needs</span>
         <textarea
           name="message"
@@ -247,26 +249,26 @@ export function InlineJobIntake({
         />
       </label>
 
-      <div className="jobs-inline-tools">
+      <div className="intake-tools">
         <VoiceCaptureButton
           available={voiceReady}
-          className="jobs-inline-tool"
+          className="btn btn--sm btn--edge intake-tool"
           idleLabel="Speak"
           recoveryKey={`home-intake:${activeDraft?.publicId ?? manualIntakeKey}`}
           onTranscript={(transcript) => setFields((current) => ({ ...current, need: [current.need.trim(), transcript.trim()].filter(Boolean).join(" ") }))}
           onError={setActionError}
         />
-        <button type="button" className="jobs-inline-tool" aria-expanded={moreOpen} aria-controls="jobs-inline-more" onClick={() => setMoreOpen((current) => !current)}>{moreOpen ? "Close details" : "More details"}</button>
+        <button type="button" className="btn btn--sm btn--edge intake-tool" aria-expanded={moreOpen} aria-controls="jobs-inline-more" onClick={() => setMoreOpen((current) => !current)}>{moreOpen ? "Close details" : "More details"}</button>
       </div>
 
-      {moreOpen && <div className="jobs-inline-more" id="jobs-inline-more">
+      {moreOpen && <div className="intake-more" id="jobs-inline-more">
         <label><span>Service</span><select name="service" defaultValue=""><option value="">Not set</option><option>Mobile Welding (On-Site)</option><option>Trailer / Truck Welding Repair</option><option>Equipment &amp; Structural Repair</option><option>Architectural Welding &amp; Fabrication</option><option>Specialty Fabrication</option><option>Aluminum / Boat Welding</option><option>Not Sure / Other</option></select></label>
         <label><span>How they found us</span><select name="referral" defaultValue=""><option value="">Not asked</option><option>Google</option><option>Repeat customer</option><option>Referral</option><option>Facebook or Instagram</option><option>Other</option></select></label>
       </div>}
 
-      <div className="jobs-inline-actions">
-        {source === "walk-in" ? <button type="button" className="jobs-secondary-action" onClick={() => switchSource("phone-in")}>Cancel</button> : owner || !activeDraft ? <SafeActionButton className="jobs-secondary-action" busyLabel="Clearing…" onAction={() => changeDisposition("dismiss")}>Not a job</SafeActionButton> : <span />}
-        <SafeSubmitButton className="jobs-primary-action" pendingLabel="Saving job…" disabled={!canSave}>Save Job</SafeSubmitButton>
+      <div className="intake-actions">
+        {source === "walk-in" ? <button type="button" className="btn btn--sm btn--edge" onClick={() => switchSource("phone-in")}>Cancel</button> : owner || !activeDraft ? <SafeActionButton className="btn btn--sm btn--edge" busyLabel="Clearing…" onAction={() => changeDisposition("dismiss")}>Not a job</SafeActionButton> : <span />}
+        <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving job…" disabled={!canSave}>Save Job</SafeSubmitButton>
       </div>
     </form>
   </section>
