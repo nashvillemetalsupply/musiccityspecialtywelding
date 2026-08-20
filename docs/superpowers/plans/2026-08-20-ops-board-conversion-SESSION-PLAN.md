@@ -55,8 +55,11 @@ tasks, and the re-run is green. Live in production at
 | `npm run lint` | exit 0 |
 | `npm run test:shop-brain` | 298 tests, 296 pass, 2 skipped, 0 fail |
 | Focused route/conversion suites | 60 tests, 60 pass, 0 fail |
-| Shepherd `test.ps1` | 12 suites, exit 0 (owner-reported; not re-run in the closeout session) |
+| Shepherd `test.ps1` | 12 suites, exit 0 |
 | `npm run build` (production) | exit 0 — see the build footnote in `…-C8-FIXES.md` |
+
+Every gate above was re-run from a clean tree at `d3e7cd2` during the closeout session,
+Shepherd `test.ps1` included. None of these rows is a repeated owner report.
 
 The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
 `board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6),
