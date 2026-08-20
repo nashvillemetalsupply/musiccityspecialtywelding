@@ -140,9 +140,12 @@ export async function listPendingCallIntakes(options: { page?: number; pageSize?
   const sql = getSql()
   const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 3), 1), 20)
   const requestedPage = Math.max(1, Math.floor(options.page ?? 1))
+  // The count carries the same calls join as the page query below: a draft
+  // whose call row is missing never renders, so it must not be counted either.
   const totals = (await sql`
     SELECT count(*)::int AS total_count
     FROM call_intake_drafts d
+    JOIN calls c ON c.twilio_sid = d.call_sid
     WHERE d.status = ANY(ARRAY['pending','failed','unknown','saving']::text[])
       AND d.is_test = false`) as { total_count: number }[]
   const total = Number(totals[0]?.total_count ?? 0)

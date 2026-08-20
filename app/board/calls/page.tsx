@@ -38,18 +38,35 @@ function formatTime(iso: string) {
   })
 }
 
-function CallDraftRow({ draft }: { draft: CallIntakeDraft }) {
+// Both sides of the "is this today" comparison format in America/Chicago, so
+// the answer is the shop's, not whatever timezone happened to render the page.
+const CENTRAL_DAY: Intl.DateTimeFormatOptions = {
+  timeZone: "America/Chicago",
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+}
+
+function formatDay(iso: string, now: Date) {
+  const day = new Date(iso).toLocaleDateString("en-US", CENTRAL_DAY)
+  return day === now.toLocaleDateString("en-US", CENTRAL_DAY) ? "" : day
+}
+
+function CallDraftRow({ draft, now }: { draft: CallIntakeDraft; now: Date }) {
   const missed = MISSED.includes(draft.call_status)
   const ringing = draft.call_status === "ringing"
+  const day = formatDay(draft.created_at, now)
+  const need = draft.need.trim()
   return <article className="calls-row">
     <div className="calls-copy">
       <span className={`chip ${missed ? "chip--warn" : ringing ? "chip--info" : "chip--good"}`}>
         <i />
         {missed ? "Missed call" : ringing ? "On the phone now" : "Call ready"}
       </span>
-      <span className="t-caption">{formatTime(draft.created_at)}</span>
+      <span className="t-caption">{day ? `${day} · ${formatTime(draft.created_at)}` : formatTime(draft.created_at)}</span>
       <strong className="calls-who t-data">{draft.caller_name || formatPhone(draft.phone)}</strong>
       <p className="t-caption">{formatPhone(draft.phone)}</p>
+      {need && <p className="calls-need t-caption">{need}</p>}
     </div>
     <Link className="btn btn--go" href={`/ops/intake/${draft.public_id}`}>Finish</Link>
   </article>
@@ -68,6 +85,8 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
   // The rendered page is whatever the query settled on: an over-run page
   // number clamps back into range inside listPendingCallIntakes.
   const page = calls.page
+  // One clock reading for the whole page, so every row agrees on what today is.
+  const now = new Date()
 
   return (
     <main className="calls">
@@ -81,7 +100,7 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
         <p className="calls-empty t-data">No calls are waiting to be saved.</p>
       ) : (
         <div className="calls-list">
-          {calls.items.map((draft) => <CallDraftRow draft={draft} key={draft.id} />)}
+          {calls.items.map((draft) => <CallDraftRow draft={draft} now={now} key={draft.id} />)}
         </div>
       )}
 

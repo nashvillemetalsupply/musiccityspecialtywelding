@@ -24,6 +24,10 @@
 .calls-copy p{margin:0}
 /* A caller can hand over a shop name longer than the row is wide. */
 .calls-who{flex-basis:100%;font-weight:var(--w-semi);min-width:0;overflow-wrap:anywhere}
+/* The caller's own words about what they need, clamped so a long story never
+   pushes the next call off the screen. The full text lives behind Finish. */
+.calls-need{flex-basis:100%;min-width:0;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .calls-row .btn{flex:none;margin-left:auto}
 
 .calls-empty{padding:var(--s6) var(--s4);color:var(--text-muted)}

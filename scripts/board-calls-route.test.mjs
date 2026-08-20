@@ -8,6 +8,8 @@ const PAGE = read("../app/board/calls/page.tsx")
 const CSS = read("../app/board/calls/calls.css")
 const CONTROL = read("../styles/control.css")
 const INTAKE = read("../app/ops/intake/inline-job-intake.tsx")
+const JOB_INTAKE = read("../lib/job-intake.ts")
+const PACKAGE = read("../package.json")
 
 // The pending call queue was lost when /ops became the sign-in door. It comes
 // back as a board route, and the thing that makes it the same queue is the
@@ -60,6 +62,51 @@ test("the total and the Newer/Older pagination survive under /board/calls", () =
   // is never parsed here, and the page rendered is the one that came back.
   assert.ok(!/Number\(params\.callsPage\)/.test(PAGE), "the page param must never be parsed raw")
   assert.match(PAGE, /const page = calls\.page/)
+})
+
+// The caller's own words about what they need are context the row was hiding.
+// Shown only when they exist — an empty need renders nothing, not a fabricated
+// placeholder.
+test("the row shows the caller's need only when one was captured", () => {
+  assert.match(PAGE, /const need = draft\.need\.trim\(\)/)
+  assert.match(PAGE, /\{need && <p className="calls-need t-caption">\{need\}<\/p>\}/)
+  assert.match(CSS, /\.calls-need\{/)
+})
+
+// A call from an earlier day says which day, in the shop's timezone. Both the
+// call's day and "today" format in America/Chicago, so the comparison cannot
+// drift with whatever timezone the server or browser happens to sit in.
+test("a call from another day shows its Central date beside the familiar time", () => {
+  assert.match(PAGE, /timeZone: "America\/Chicago",\s*\n\s*year: "numeric",\s*\n\s*month: "short",\s*\n\s*day: "numeric",/)
+  assert.match(PAGE, /now\.toLocaleDateString\("en-US", CENTRAL_DAY\)/)
+  assert.match(PAGE, /formatDay\(draft\.created_at, now\)/)
+  // Today's calls keep the time-only display the queue has always had.
+  assert.match(PAGE, /day \? `\$\{day\} · \$\{formatTime\(draft\.created_at\)\}` : formatTime\(draft\.created_at\)/)
+  // One clock reading per page, shared by every row.
+  assert.match(PAGE, /const now = new Date\(\)/)
+  assert.ok(!/toLocaleDateString\("en-US", \{(?![^}]*timeZone)/.test(PAGE), "every date formatter must pin a timezone")
+})
+
+// The count and the page below it must agree on what a pending call is. The
+// page joins calls, so a draft whose call row is missing never renders — and
+// a count without the same join would say "3 total" over a two-row list.
+test("the pending total carries the same calls join as the items query", () => {
+  const listBody = JOB_INTAKE.slice(JOB_INTAKE.indexOf("export async function listPendingCallIntakes"), JOB_INTAKE.indexOf("export async function saveInboundCallAsJob"))
+  const joins = listBody.match(/JOIN calls c ON c\.twilio_sid = d\.call_sid/g) ?? []
+  assert.equal(joins.length, 2, "both the count and the items query must join calls")
+  const predicates = listBody.match(/d\.status = ANY\(ARRAY\['pending','failed','unknown','saving'\]::text\[\]\)\s*\n\s*AND d\.is_test = false/g) ?? []
+  assert.equal(predicates.length, 2, "both queries must share the same status and internal-test predicate")
+  // The casts that keep Neon from throwing 42P18 stay put.
+  assert.match(listBody, /count\(\*\)::int AS total_count/)
+  assert.match(listBody, /LIMIT \$\{pageSize\}::bigint OFFSET \$\{offset\}::bigint/)
+})
+
+// A test that is not in the suite is a test that does not run.
+test("the board route tests are registered in test:shop-brain", () => {
+  const script = JSON.parse(PACKAGE).scripts["test:shop-brain"]
+  for (const file of ["scripts/board-customers-route.test.mjs", "scripts/board-updates-route.test.mjs", "scripts/board-calls-route.test.mjs"]) {
+    assert.ok(script.includes(file), `${file} must run under test:shop-brain`)
+  }
 })
 
 test("the empty queue says so instead of showing an empty frame", () => {
