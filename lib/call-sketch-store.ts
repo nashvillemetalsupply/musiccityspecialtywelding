@@ -339,6 +339,7 @@ function speakerForTrack(direction: string, track: string) {
 }
 
 export type BoardCallSketch = {
+  leadId: number | null
   callerName: string
   startedAt: string
   endedAt: string | null
@@ -355,7 +356,7 @@ export type BoardCallSketch = {
 export async function getLatestBoardCallSketch(): Promise<BoardCallSketch | null> {
   const sql = getSql()
   const rows = (await sql`
-    SELECT c.twilio_sid, c.direction, c.started_at, c.duration_sec,
+    SELECT c.twilio_sid, c.direction, c.started_at, c.duration_sec, c.lead_id,
       COALESCE(NULLIF(d.caller_name, ''), NULLIF(p.display_name, ''), '') AS caller_name,
       s.status, COALESCE(s.confirmed_spec, s.observed_spec) AS spec
     FROM call_sketches s
@@ -373,6 +374,7 @@ export async function getLatestBoardCallSketch(): Promise<BoardCallSketch | null
       direction: string
       started_at: string
       duration_sec: number | null
+      lead_id: number | null
       caller_name: string
       status: string
       spec: Partial<CallSketchSpec> | null
@@ -402,6 +404,7 @@ export async function getLatestBoardCallSketch(): Promise<BoardCallSketch | null
   const startedAt = new Date(call.started_at).toISOString()
   const seconds = Number(call.duration_sec)
   return {
+    leadId: call.lead_id === null ? null : Number(call.lead_id),
     callerName: call.caller_name,
     startedAt,
     endedAt: Number.isFinite(seconds) && seconds > 0
