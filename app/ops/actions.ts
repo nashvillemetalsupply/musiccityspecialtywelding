@@ -20,6 +20,8 @@ import { deliverGlassClipboard, glassUrl as customerGlassUrl } from "@/lib/glass
 import { redactCrewText } from "@/lib/visibility"
 import { fileIdentityConflict, findOrCreatePerson, isReservedShopPhone, normalizeEmail, normalizePhone } from "@/lib/people"
 import { validateCloseoutReview } from "@/lib/closeout-domain.mjs"
+import { lineItemsTotalCents, parseLineItemsText } from "@/lib/job-line-items.mjs"
+import { replaceJobLineItems } from "@/lib/job-line-items"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 
 async function sendCustomerEmail(options: {
@@ -418,6 +420,38 @@ export async function saveEstimate(formData: FormData) {
   }
 
   revalidatePath("/ops")
+  revalidatePath(`/ops/leads/${leadId}`)
+}
+
+// What is in the price. The quoted number stays exactly where it was --
+// estimate_value_cents, saved by saveEstimate above. These lines explain it.
+// Nothing here recomputes the quote from the lines, because the two disagreeing
+// is a real thing worth showing the owner, not a bug to paper over.
+export async function saveJobLineItems(formData: FormData) {
+  const operator = await requireOperator()
+  requireOwner(operator)
+  const leadId = parseLeadId(formData.get("leadId"))
+  const { items, errors } = parseLineItemsText(String(formData.get("lineItems") ?? ""))
+  // A rejected line blocks the whole save. A partial write would leave a
+  // breakdown that is neither what was typed nor what was there before.
+  if (errors.length) throw new Error(errors.join(" "))
+
+  const sql = getSql()
+  const rows = (await sql`SELECT is_test FROM leads WHERE id = ${leadId}::bigint`) as { is_test: boolean }[]
+  if (!rows[0]) throw new Error("That job no longer exists.")
+
+  const count = await replaceJobLineItems({
+    leadId,
+    items,
+    operatorId: operator.id,
+    isTest: rows[0].is_test,
+  })
+  await recordLeadEvent(leadId, "line_items_saved", actorId(operator), {
+    count,
+    totalCents: lineItemsTotalCents(items),
+  })
+
+  revalidatePath("/board")
   revalidatePath(`/ops/leads/${leadId}`)
 }
 

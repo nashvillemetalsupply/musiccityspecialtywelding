@@ -908,6 +908,26 @@ const statements = [
     CONSTRAINT job_closeout_updates_rework_check CHECK (rework_state IN ('yes','no'))
   )`,
   `CREATE INDEX IF NOT EXISTS job_closeout_updates_lead_idx ON job_closeout_updates(lead_id, reviewed_at DESC)`,
+  // What is in the price. One row per line of the board panel's breakdown:
+  // label, the grey qualifier beside it, and the money. The quoted price stays
+  // on leads.estimate_value_cents -- these lines explain that number, they do
+  // not replace it, so a job whose lines do not add up says so out loud rather
+  // than quietly recomputing the quote.
+  `CREATE TABLE IF NOT EXISTS job_line_items (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    position INT NOT NULL DEFAULT 0,
+    label TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    amount_cents BIGINT NOT NULL DEFAULT 0,
+    entered_by BIGINT REFERENCES operators(id),
+    is_test BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT job_line_items_label_check CHECK (label <> ''),
+    CONSTRAINT job_line_items_position_check CHECK (position >= 0)
+  )`,
+  `CREATE INDEX IF NOT EXISTS job_line_items_lead_idx ON job_line_items(lead_id, position)`,
   `CREATE OR REPLACE FUNCTION reject_build_sheet_mutation()
     RETURNS trigger LANGUAGE plpgsql AS $$
     BEGIN
