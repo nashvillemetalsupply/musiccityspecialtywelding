@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&family=Chivo:wght@300..900&display=swap");
+@import "../../styles/control.css";
 
 /* ===========================================================================
    MCS Welding · Job Control — final
@@ -69,132 +69,6 @@
       20 · 34, each with its own line-height, tabular figures only in columns.
    =========================================================================== */
 
-:root{
-  /* --- raw palette · light -------------------------------------------------
-     Anchor hue 250 (cool slate). Neutrals are tinted, never flat grey.       */
-  /* Lifted from the shop's tokens.css, not chosen here. */
-  --slate-99:#f7f8f9;   /* --color-paper-2  */
-  --slate-97:#eff2f4;   /* --color-paper-3  */
-  --slate-95:#e9ecee;
-  --slate-92:#e4e8ea; --slate-88:#d9dde1;   /* --color-rule */
-  --slate-80:#9aa2a9;
-  --slate-58:#9aa2a9;   /* --color-machined, marks only */
-  --slate-47:#59626b;   /* --color-muted    */
-  --slate-40:#394047;   /* --color-ink-2    */
-  --slate-30:#232a30; --slate-24:#171a1d;   /* --color-ink */
-
-  /* Feedback. Marks are held at or above 3:1 on --surface; inks above 4.5:1
-     on their own tinted surface. warn-mark was 2.57:1 and is now a measured 3.5:1.     */
-  --good-ink:#1f6437; --good-sur:#e6f2ea; --good-mark:#287a44;  /* --color-positive */
-  --warn-ink:#6f4800; --warn-sur:#fbf1de; --warn-mark:#8a5a00;  /* --color-warning  */
-  --stop-ink:#8f1c13; --stop-sur:#fdecea; --stop-mark:#b42318;  /* --color-danger   */
-  --info-ink:#274d72; --info-sur:#e9f0f6; --info-mark:#315f8c;  /* --color-blueprint*/
-  --brand:#b34513;                                              /* --color-accent   */
-
-  /* --- semantic roles ---------------------------------------------------- */
-  --surface-sunken:var(--slate-95);    /* the desk the cards sit on          */
-  --surface:var(--slate-99);           /* a card. never #fff                 */
-  --surface-raised:var(--slate-97);    /* row hover, table head, wells       */
-  --border-subtle:var(--slate-92);
-  --border:var(--slate-88);
-  --border-strong:var(--slate-80);
-  --text-primary:var(--slate-24);
-  --text-secondary:var(--slate-40);
-  --text-muted:var(--slate-47);        /* the text floor                     */
-  --mark-quiet:var(--slate-58);        /* rules, inert dots, empty slots     */
-  --action:#b34513;                    /* --color-accent */
-  --action-ink:#ffffff;
-  --focus:#e8611c;                     /* --color-focus  */
-
-  --status-good-ink:var(--good-ink); --status-good-sur:var(--good-sur); --status-good-mark:var(--good-mark);
-  --status-warn-ink:var(--warn-ink); --status-warn-sur:var(--warn-sur); --status-warn-mark:var(--warn-mark);
-  --status-stop-ink:var(--stop-ink); --status-stop-sur:var(--stop-sur); --status-stop-mark:var(--stop-mark);
-  --status-info-ink:var(--info-ink); --status-info-sur:var(--info-sur); --status-info-mark:var(--info-mark);
-  --status-idle-mark:var(--slate-58);
-
-  /* --- the three colour fields -------------------------------------------
-     The board's only saturated grounds, and the only thing read across a
-     room. Deliberately theme-invariant: each is already deep enough to hold
-     both inks above 4.5:1 in either theme, so a dark override would move a
-     measured number for no gain. The hook is here if that stops being true.
-
-     Two inks, not one. The session brief said "an on-field ink"; the design
-     contract specifies both #f4efe4 and #dcd6ca and cites the measurement
-     for each, so the quiet tier is contracted, not incidental.             */
-  --field-info:#2b4f75;      /* --color-blueprint, deepened · a count       */
-  --field-warn:#7d5100;      /* --color-warning,   deepened · wants him     */
-  --field-neutral:#2a2e32;   /* --color-wall-2 · money is not a state       */
-  --on-field:#f4efe4;        /* 5.86:1 on all three grounds                 */
-  --on-field-muted:#dcd6ca;  /* 7.40:1 on all three grounds                 */
-
-  --sketch-ground:#12100d;             /* --color-wall     */
-  --sketch-grid:#2a2e32;               /* --color-wall-2   */
-  --sketch-line:var(--brand);
-  --sketch-dim:#c8bead;                /* --color-wall-muted */
-  --draw-line:var(--slate-40);         /* the measured part drawing          */
-  --draw-thin:var(--slate-80);
-  --draw-fill:var(--slate-97);
-
-  /* --- 8px rhythm -------------------------------------------------------- */
-  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:40px;
-  --r-sm:0; --r-md:0; --r-lg:0;   /* --radius: 0rem */
-  --row:56px; --control:32px; --chip:24px;
-
-  /* --- type roles -------------------------------------------------------- */
-  --font:'Golos Text',system-ui,-apple-system,Segoe UI,sans-serif;
-  --font-display:'Chivo',system-ui,sans-serif;
-  /* display and title step up with the viewport; both are set for the
-     narrowest phone here and grow in the min-width layers at the end */
-  --t-display:40px;  --lh-display:1.0;   /* the three numbers            */
-  --t-lede:22px;     --lh-lede:1.26;      /* the question worth asking    */
-  --t-title:17px;    --lh-title:1.24;     /* a card's name                */
-  --t-name:15px;     --lh-name:1.3;       /* a customer, a signal         */
-  --t-sub:14px;      --lh-sub:1.35;       /* a sub-head inside a card     */
-  --t-body:13.5px;   --lh-body:1.6;       /* running prose                */
-  --t-data:13.5px;   --lh-data:1.35;      /* anything in a column         */
-  --t-label:12px;    --lh-label:1.4;      /* column heads, keys, chips    */
-  --t-caption:11.5px;--lh-caption:1.5;    /* the quiet line under a thing */
-  /* the house ladder, heavy end reserved for display */
-  --w-reg:420; --w-med:500; --w-semi:640;
-  --ease:cubic-bezier(.2,.7,.3,1);
-}
-
-/* Dark is a coordinated tone map on the same hues. The font is loaded on its
-   variable axis (wght@350..600) so the lighter body weight below is real —
-   with static instances the browser snapped it straight back to 400. */
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --surface-sunken:#100f0d; --surface:#1a1917; --surface-raised:#232220;
-    --border-subtle:#2b2926; --border:#35322e; --border-strong:#4a463f;
-    --text-primary:#f1ebdc; --text-secondary:#cfc6b5; --text-muted:#a99f8e;
-    --mark-quiet:#4a463f;
-    --action:#e8611c; --action-ink:#12100d; --focus:#e8611c; --brand:#e8611c;
-    --status-good-ink:#7fd39d; --status-good-sur:#15301f; --status-good-mark:#3d9e5c;
-    --status-warn-ink:#e5ae4c; --status-warn-sur:#2f2410; --status-warn-mark:#b58224;
-    --status-stop-ink:#f0958a; --status-stop-sur:#331815; --status-stop-mark:#c9503f;
-    --status-info-ink:#94bce4; --status-info-sur:#16222e; --status-info-mark:#4c7fae;
-    --status-idle-mark:#4a463f;
-    --sketch-ground:#0d0c0a; --sketch-grid:#232220; --sketch-dim:#c8bead;
-    --draw-line:#cfc6b5; --draw-thin:#4a463f; --draw-fill:#232220;
-    --w-reg:400; --w-med:480; --w-semi:620;
-  }
-}
-:root[data-theme="dark"]{
-  --surface-sunken:#100f0d; --surface:#1a1917; --surface-raised:#232220;
-  --border-subtle:#2b2926; --border:#35322e; --border-strong:#4a463f;
-  --text-primary:#f1ebdc; --text-secondary:#cfc6b5; --text-muted:#a99f8e;
-  --mark-quiet:#4a463f;
-  --action:#e8611c; --action-ink:#12100d; --focus:#e8611c; --brand:#e8611c;
-  --status-good-ink:#7fd39d; --status-good-sur:#15301f; --status-good-mark:#3d9e5c;
-  --status-warn-ink:#e5ae4c; --status-warn-sur:#2f2410; --status-warn-mark:#b58224;
-  --status-stop-ink:#f0958a; --status-stop-sur:#331815; --status-stop-mark:#c9503f;
-  --status-info-ink:#94bce4; --status-info-sur:#16222e; --status-info-mark:#4c7fae;
-  --status-idle-mark:#4a463f;
-  --sketch-ground:#0d0c0a; --sketch-grid:#232220; --sketch-dim:#c8bead;
-  --draw-line:#cfc6b5; --draw-thin:#4a463f; --draw-fill:#232220;
-  --w-reg:400; --w-med:480; --w-semi:620;
-}
-
 /* ============================================================== base ==== */
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;overflow-x:clip}
@@ -207,21 +81,6 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 h1,h2,h3,h4,h5{margin:0;font-weight:var(--w-semi);letter-spacing:-.011em}
 p{margin:0}
 svg{display:block}
-:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
-
-/* Chivo carries anything that is seen rather than read, at the house's heavy
-   end. Everything at reading size stays on Golos at 420-640. */
-.t-display{font-family:var(--font-display);font-size:var(--t-display);
-  font-weight:760;letter-spacing:-.018em;line-height:var(--lh-display);
-  overflow-wrap:anywhere;min-width:0}
-.t-title{font-family:var(--font-display);font-size:var(--t-title);
-  font-weight:680;letter-spacing:-.01em;line-height:var(--lh-title);
-  overflow-wrap:anywhere;min-width:0}
-.t-sub{font-size:var(--t-sub);font-weight:var(--w-semi);line-height:var(--lh-sub)}
-.t-label{font-size:var(--t-label);font-weight:var(--w-med);color:var(--text-muted);
-  line-height:var(--lh-label)}
-.t-caption{font-size:var(--t-caption);color:var(--text-muted);line-height:var(--lh-caption)}
-.t-data{font-size:var(--t-data);font-weight:var(--w-med);line-height:var(--lh-data)}
 /* figures line up in columns and stay proportional in sentences */
 .t-display,.val,.sum,.signal b,.trail time,.figure .n,.colhead,.tab b,.keep b{
   font-variant-numeric:tabular-nums}
@@ -243,41 +102,18 @@ svg{display:block}
 /* The logo is a link back to /ops. It occupies exactly the space the bare
    image did, so the top bar's fit at 320px is unchanged. */
 .logo-home{display:flex;align-items:center;flex:none;border-radius:var(--radius)}
-.logo-home:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 /* the date and the search field are desk furniture; on a phone the bar has
    room for the wordmark and the avatar and nothing else */
 .top .when{display:none;color:var(--text-muted);font-size:var(--t-label);white-space:nowrap;
   padding-left:var(--s3);border-left:1px solid var(--border)}
 .top .find{display:none}
-.find{flex:1;max-width:420px;display:flex;align-items:center;gap:var(--s2);
-  height:var(--control);padding:0 var(--s3);border-radius:var(--r-md);
-  background:var(--surface-raised);transition:box-shadow .15s var(--ease)}
-.find:focus-within{box-shadow:0 0 0 2px var(--focus)}
-/* Preserve the standalone mockup's native input metrics after Tailwind preflight. */
-.find input{flex:1;border:0;padding:1px 2px;background:none;outline:none;font:inherit;color:var(--text-primary)}
-.find input::placeholder{color:var(--text-muted)}
 .top-end{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
-
-.btn{height:var(--control);padding:0 var(--s3);border-radius:var(--r-md);
-  font-size:var(--t-label);font-weight:var(--w-semi);white-space:nowrap;
-  display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
-  color:var(--text-secondary);transition:background .15s var(--ease),color .15s var(--ease)}
-.btn:hover{background:var(--surface-raised);color:var(--text-primary)}
-.btn:active{transform:translateY(.5px)}
-.btn--go{background:var(--action);color:var(--action-ink)}
-.btn--go:hover{background:var(--action);color:var(--action-ink);filter:brightness(1.16)}
-.btn--edge{box-shadow:inset 0 0 0 1px var(--border);color:var(--text-primary)}
-.btn--sm{height:28px;padding:0 var(--s3);font-size:var(--t-label)}
-.icon{width:var(--control);height:var(--control);border-radius:var(--r-md);
-  display:grid;place-items:center;color:var(--text-muted);
-  transition:background .15s var(--ease),color .15s var(--ease)}
-.icon:hover{background:var(--surface-raised);color:var(--text-primary)}
 
 /* On a phone this is a real bottom bar — fixed, thumb-height, clear of the
    gesture inset. On the desktop it is the left column of the shell. */
 .rail{position:fixed;left:0;right:0;bottom:0;z-index:20;height:56px;
   background:var(--surface);border-top:1px solid var(--border);
-  padding:0 var(--s2);padding-bottom:env(safe-area-inset-bottom,0px);
+  padding:0 var(--s2);padding-bottom:var(--safe-area-bottom);
   display:flex;flex-direction:row;justify-content:space-around;
   align-items:center;gap:var(--s1)}
 .rl{width:36px;height:36px;border-radius:var(--r-md);display:grid;place-items:center;
@@ -308,7 +144,7 @@ svg{display:block}
 .pane{display:block;background:var(--surface);border-bottom:1px solid var(--border)}
 .pane-body{padding:var(--s5) var(--s4)}
 .pane-foot{padding:var(--s4) var(--s5);border-top:1px solid var(--border);
-  position:sticky;bottom:calc(56px + env(safe-area-inset-bottom,0px));
+  position:sticky;bottom:calc(56px + var(--safe-area-bottom));
   background:var(--surface);z-index:10;
   box-shadow:0 -8px 16px -12px rgba(0,0,0,.4)}
 .pane-foot .btn{width:100%}
@@ -350,16 +186,6 @@ svg{display:block}
 .due span{display:block;margin-top:var(--s1);font-size:var(--t-caption);
   color:var(--status-warn-ink);opacity:.85}
 
-.chip{display:inline-flex;align-items:center;gap:var(--s2);height:var(--chip);
-  padding:0 var(--s2);border-radius:999px;font-size:var(--t-label);
-  font-weight:var(--w-med);white-space:nowrap;flex:none}
-.chip i{width:6px;height:6px;border-radius:50%;flex:none}
-/* only the states that demand an action today carry a tinted fill */
-.chip--stop{background:var(--status-stop-sur);color:var(--status-stop-ink)} .chip--stop i{background:var(--status-stop-mark)}
-.chip--warn{background:var(--status-warn-sur);color:var(--status-warn-ink)} .chip--warn i{background:var(--status-warn-mark)}
-.chip--good{background:var(--surface-raised);color:var(--text-secondary)}   .chip--good i{background:var(--status-good-mark)}
-.chip--info{background:var(--surface-raised);color:var(--text-secondary)}   .chip--info i{background:var(--status-info-mark)}
-
 .trail{margin:var(--s3) 0 0;padding:0;list-style:none}
 .trail li{display:flex;align-items:baseline;gap:var(--s2);padding:var(--s1) 0;
   font-size:var(--t-caption);color:var(--text-secondary)}
@@ -379,7 +205,7 @@ svg{display:block}
    The gap does the spacing here, so `.card+.card` is desktop-only — that is
    what the old `.main>*{margin:0!important}` was fighting. */
 .main{min-width:0;display:flex;flex-direction:column;gap:var(--s5);
-  padding:var(--s4) var(--s4) calc(64px + env(safe-area-inset-bottom,0px))}
+  padding:var(--s4) var(--s4) calc(64px + var(--safe-area-bottom))}
 .main>.card:has(.call-top){order:1}
 .main>.card:has(.track-top){order:2}
 .main>.figures{order:3}
@@ -620,10 +446,6 @@ svg{display:block}
    44px, silently, on exactly the browsers a desktop harness cannot see. The
    rest of the sheet is min-width. This one stays. */
 @media (pointer:coarse),(max-width:55rem){
-  .btn,.btn--sm{min-height:44px;padding-inline:var(--s4)}
-  .icon,.rl{min-width:44px;min-height:44px}
-  .tab,.signal{min-height:44px}
-  .find{height:44px}
   .doing{gap:var(--s2)}
 }
 
@@ -643,9 +465,6 @@ svg{display:block}
 /* 4 · Focus. The ring was defined once globally; these two needed their own
    because they sit on coloured or inverted ground where the default ring
    disappears. Never animated — it has to appear the instant focus lands. */
-.figure :focus-visible{outline:2px solid var(--on-field);outline-offset:2px}
-.btn--go:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-
 /* 5 · Hover is a mouse affordance, not a state. Anything that only exists on
    hover needs a touch equivalent; here hover is decoration over a row that is
    already fully readable, so it is simply scoped away from touch. */
