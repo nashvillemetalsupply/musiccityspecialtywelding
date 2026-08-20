@@ -42,7 +42,7 @@ export async function reconcileStaleOutboundCalls(limit = 20) {
       title: "Check this call before ringing again",
       body: "Twilio may have started it. Verify the call receipt first.",
       crewBody: "The call may have started. Verify before trying again.",
-      url: row.lead_id ? `/ops/leads/${row.lead_id}#spike` : "/ops?view=updates#wire",
+      url: row.lead_id ? `/ops/leads/${row.lead_id}#spike` : "/board/updates#wire",
       sourceEventId: eventId,
       dedupeKey: `call-out-unknown:${row.id}`,
     })
