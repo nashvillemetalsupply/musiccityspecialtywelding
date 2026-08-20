@@ -35,7 +35,7 @@
 - Produces: class vocabulary all later tasks consume — layout: `.app`, `.rail`, `.pane`, `.main`, `.top`; type: `.t-sub`, `.t-caption`; controls: `.btn`, `.btn--sm`, `.btn--go`, `.btn--edge`, `.icon`, `.chip`, `.chip--info` (+ tone variants), `.find`; surfaces: `.card`, `.job`, `.job-row`, `.detail`, `.sum`; tokens: every `--*` custom property board.css defines.
 - Consumes: nothing.
 
-- [ ] **Step 1: Write the failing test** — `scripts/control-css.test.mjs`:
+- [x] **Step 1: Write the failing test** — `scripts/control-css.test.mjs`:
 
 ```js
 import { test } from "node:test"
@@ -58,10 +58,10 @@ test("no component in control.css names a raw colour", () => {
 })
 ```
 
-- [ ] **Step 2: Run it** — `node --test scripts/control-css.test.mjs` — expect FAIL (file missing).
-- [ ] **Step 3: Extract.** Move from `board.css` into `control.css`: the font `@import`, the full `:root` token/role block, dark/light scheme blocks, `.btn*`, `.chip*`, `.icon`, `.find`, `.t-*` type classes, focus-visible rules, the touch-target and safe-area blocks. Leave in `board.css` everything board-page-specific (`.job`, `.stages`, `.why`, `.sum`, `.sketch`, pane/rail layout). Add the `@import` at the top of `board.css`.
-- [ ] **Step 4: Verify board unchanged** — `npm run typecheck && npm run lint && node --test scripts/job-control-tracker.test.mjs scripts/control-css.test.mjs`, then eyeball `/board` locally: identical before/after.
-- [ ] **Step 5: Commit** — `git commit -m "refactor(design): extract board language into styles/control.css"`
+- [x] **Step 2: Run it** — `node --test scripts/control-css.test.mjs` — expect FAIL (file missing).
+- [x] **Step 3: Extract.** Move from `board.css` into `control.css`: the font `@import`, the full `:root` token/role block, dark/light scheme blocks, `.btn*`, `.chip*`, `.icon`, `.find`, `.t-*` type classes, focus-visible rules, the touch-target and safe-area blocks. Leave in `board.css` everything board-page-specific (`.job`, `.stages`, `.why`, `.sum`, `.sketch`, pane/rail layout). Add the `@import` at the top of `board.css`.
+- [x] **Step 4: Verify board unchanged** — `npm run typecheck && npm run lint && node --test scripts/job-control-tracker.test.mjs scripts/control-css.test.mjs`, then eyeball `/board` locally: identical before/after.
+- [x] **Step 5: Commit** — `git commit -m "refactor(design): extract board language into styles/control.css"`
 
 ### Task 1: Job page — `/ops/leads/[id]`
 
@@ -76,8 +76,8 @@ The page "Open job" lands on; the highest-traffic mismatch. Convert first so boa
 - Consumes: Task 0's class vocabulary.
 - Produces: the conversion pattern every later page task copies — old `jobs.css` classes → board classes, section headed by `.t-sub`, actions as `.btn--sm .btn--edge`, money in Chivo via the token already set on `.sum`-style tables.
 
-- [ ] **Step 1: Map the page.** Read the full page. List every rendered section (customer header, estimate form, line-items form, photos, events trail, build-sheets link, claims, notify controls) and the class each currently wears.
-- [ ] **Step 2: Add a wrapper test** asserting the page module still exports its actions untouched and its markup carries board classes:
+- [x] **Step 1: Map the page.** Read the full page. List every rendered section (customer header, estimate form, line-items form, photos, events trail, build-sheets link, claims, notify controls) and the class each currently wears.
+- [x] **Step 2: Add a wrapper test** asserting the page module still exports its actions untouched and its markup carries board classes:
 
 ```js
 test("job page speaks board language", () => {
@@ -87,9 +87,9 @@ test("job page speaks board language", () => {
 })
 ```
 
-- [ ] **Step 3: Convert section by section** — classes and structure only; keep every `<form action={...}>`, `name=`, and conditional exactly. The line-items entry (W0) and estimate form get the board's `.sum` table treatment so "What is in it" on the board and the entry form on the job page read as the same object.
-- [ ] **Step 4: Verify** — `npm run typecheck && npm run lint && npm run test:shop-brain`; then owner opens a real job from the board at the preview URL. **Owner gate: approval before Task 2.**
-- [ ] **Step 5: Commit** — `git commit -m "feat(ops): convert the job page to the board language"`
+- [x] **Step 3: Convert section by section** — classes and structure only; keep every `<form action={...}>`, `name=`, and conditional exactly. The line-items entry (W0) and estimate form get the board's `.sum` table treatment so "What is in it" on the board and the entry form on the job page read as the same object.
+- [x] **Step 4: Verify** — `npm run typecheck && npm run lint && npm run test:shop-brain`; then owner opens a real job from the board at the preview URL. **Owner gate: approval before Task 2.**
+- [x] **Step 5: Commit** — `git commit -m "feat(ops): convert the job page to the board language"`
 
 ### Task 2: Intake — `/ops/intake/new` + `/ops/intake/[draftId]`
 
@@ -140,8 +140,13 @@ Only after Tasks 1–6: every child now speaks board vocabulary, so the shared c
 - Modify: `app/ops/page.tsx` — replace the dashboard body with `redirect("/board")`. The board is the front door; two job lists was always one too many. The weighted index components it rendered (`weighted-job-index`, `active-job-index`) are deleted **only if nothing else imports them** — `grep -rn "weighted-job-index\|active-job-index" app components` first.
 - Delete: `app/ops/jobs.css`, `app/ops/jobs-brand.css` (7,291 lines) — **only after** `grep -rn "jobs.css\|jobs-brand\|jobs-product-frame\|data-jobs-theme" app components lib` returns nothing outside the files being deleted this task.
 - Test: `scripts/ops-conversion-exit.test.mjs`
+- **As shipped:** all four files left the tree and a content-preserving copy of each was kept under
+  `archive/ops-legacy-2026-08-20/` (`jobs.css.txt`, `jobs-brand.css.txt`,
+  `weighted-job-index.tsx.txt`, `active-job-index.tsx.txt`, plus `active-job-controls.tsx.txt`
+  from the F8 cleanup). Do not delete that directory — it is the only remaining copy outside git
+  history.
 
-- [ ] **Step 1: Write the exit test:**
+- [x] **Step 1: Write the exit test:**
 
 ```js
 test("ops layout wears the board language and the old sheets are gone", () => {
@@ -155,16 +160,43 @@ test("/ops front door is the board", () => {
 })
 ```
 
-- [ ] **Step 2: Flip, redirect, delete, run everything** — full `npm run test:shop-brain` + typecheck + lint.
-- [ ] **Step 3: Walk every route signed in as owner AND as crew** at the preview: /board, a job, intake, accounts, analytics, call-sketch, shop, install, builds, sign-out/sign-in. Crew sees no money anywhere (server-side check unchanged — verify by eye anyway).
-- [ ] **Step 4: Owner gate on the whole app. Then commit** — `git commit -m "feat(ops): flip the layout to the board language and make /board the front door"`
+- [x] **Step 2: Flip, redirect, delete, run everything** — full `npm run test:shop-brain` + typecheck + lint.
+- [x] **Step 3a: Walk every route signed in as owner** — done by the owner in production
+  (`https://musiccityspecialtywelding.com`), 2026-08-20. Walked: `/board`,
+  `/board/customers`, `/board/updates`, `/board/calls`, intake, analytics, call-sketch,
+  shop, install, and job 105. Menu, money, `tests=1`, `#radio` and `#handset` all passed.
+  **Not walked, and not claimed:** an individual `/ops/accounts/[id]` page, a
+  `/ops/leads/[id]/builds` page (the attempt on job 105 returned not found), and an
+  explicit sign-out/sign-in cycle. Those three surfaces are covered by the suites and by
+  the static class audit only — no live owner walk exists for them.
+- [ ] **Step 3b: Walk every route signed in as crew** — **could not run.** Production has no
+  active crew account: Philippe Auguste and TJ Harahan are both `owner` role, so no credential
+  exists that renders the crew projection. Crew money isolation remains covered server-side by
+  the `event-visibility`, `shop-brain-invariants` and `shop-brain-boundaries` suites (part of
+  the 298-test green run). This item stays open until a crew operator exists in production;
+  it is not a conversion defect and does not block the plan.
+- [x] **Step 4: Owner gate on the whole app. Then commit** — `git commit -m "feat(ops): flip the layout to the board language and make /board the front door"`
 
 ### Task 8: Exit verification
 
-- [ ] `npm run typecheck && npm run lint && npm run test:shop-brain` — all green.
-- [ ] 320px/375px/768px pass on the three highest-traffic pages (board, job, intake): no horizontal scroll, 44px targets.
-- [ ] Print pass: the owner prints the board Mondays — `@media print` rules survived the extraction.
-- [ ] Mark this plan done; note in `MCSW-JOBS-BUILD-HANDOFF.md` that `jobs.css`/`jobs-brand.css` are retired.
+- [x] `npm run typecheck && npm run lint && npm run test:shop-brain` — all green (typecheck exit 0,
+  lint exit 0, shop-brain 298 tests: 296 pass, 2 skipped, 0 fail — both skips are the
+  pre-existing `SKIP DATABASE_URL is not configured` database tests), re-run at `d3e7cd2`
+  on 2026-08-20.
+- [x] 320px/375px/768px pass on the three highest-traffic pages (board, job 105, intake):
+  owner-verified in production. No horizontal overflow at any of the three widths. The only
+  controls under 44px are the two documented exemptions — the header logo link and the native
+  checkbox/radio inputs — neither of which is a primary operational target.
+- [x] Print pass: the `@media print` block survived the extraction intact at
+  `app/board/board.css:481`, and `app/board/page.tsx` still imports that sheet, so the Monday
+  board print is unaffected. Neither retired sheet carried a print block, so no `/ops` page lost
+  print behaviour.
+- [x] Mark this plan done; note in `MCSW-JOBS-BUILD-HANDOFF.md` that `jobs.css`/`jobs-brand.css`
+  are retired. Done — see "Ops → board conversion — 2026-08-20" in that file.
+
+**Plan status: done, 2026-08-20.** Shipped to production at
+`https://musiccityspecialtywelding.com`. The single open item is Step 3b above (crew route walk),
+which is blocked on production personnel, not on code.
 
 ## Self-Review
 
