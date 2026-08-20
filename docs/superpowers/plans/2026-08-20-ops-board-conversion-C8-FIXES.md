@@ -401,8 +401,12 @@ copy outside git history — do not delete it.
 | `npm run lint` | exit 0 |
 | `npm run test:shop-brain` | 298 tests, 298 pass, 0 fail |
 | Focused route/conversion suites | 60 tests, 60 pass, 0 fail |
-| Shepherd `test.ps1` | 12 suites, exit 0 |
+| Shepherd `test.ps1` | 12 suites, exit 0 (owner-reported; not re-run in the closeout session) |
 | `npm run build` (production) | exit 0 |
+
+Every gate above except the Shepherd suite was re-run from a clean tree at `d3e7cd2`
+during this closeout. The Shepherd row is the owner's reported result and is marked
+as such rather than repeated as a fresh measurement.
 
 The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
 `board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6),

@@ -55,7 +55,7 @@ tasks, and the re-run is green. Live in production at
 | `npm run lint` | exit 0 |
 | `npm run test:shop-brain` | 298 tests, 298 pass, 0 fail |
 | Focused route/conversion suites | 60 tests, 60 pass, 0 fail |
-| Shepherd `test.ps1` | 12 suites, exit 0 |
+| Shepherd `test.ps1` | 12 suites, exit 0 (owner-reported; not re-run in the closeout session) |
 | `npm run build` (production) | exit 0 |
 
 The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
