@@ -385,7 +385,8 @@ export function JobControl({ board }: { board: BoardPaneData }) {
             <span className="end">
               {sketch && sketch.unsketchedCalls > 0 &&
                 <span className="t-label">{sketch.unsketchedCalls} more call{sketch.unsketchedCalls === 1 ? "" : "s"} not sketched</span>}
-              <button className="btn btn--sm btn--edge" type="button">Open the job</button>
+              {sketch?.leadId != null &&
+                <Link className="btn btn--sm btn--edge" href={`/ops/leads/${sketch.leadId}`}>Open the job</Link>}
             </span>
           </div>
     
@@ -432,7 +433,8 @@ export function JobControl({ board }: { board: BoardPaneData }) {
               </div>
               <div className="call-end">
                 <span>{answered} of {PANEL_FACT_KEYS.length} answered{pricingGap && ` · ${pricingGap}`}</span>
-                <span className="end"><button className="btn btn--sm btn--go" type="button">Text him the three</button></span>
+                {sketch?.leadId != null &&
+                  <span className="end"><Link className="btn btn--sm btn--go" href={`/ops/leads/${sketch.leadId}#spike`}>Text him the three</Link></span>}
               </div>
             </div>
     
