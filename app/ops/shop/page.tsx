@@ -85,7 +85,7 @@ export default async function ShopPage() {
         <div className="shop-actions">
           <a className="btn btn--sm btn--edge" href="/api/ops/export">Export CSV</a>
           <a className="btn btn--sm btn--edge" href="/api/ops/export?format=google-oci">Ads conversions</a>
-          <Link className="btn btn--sm btn--edge" href="/ops?status=open&tests=1">Internal tests</Link>
+          <Link className="btn btn--sm btn--edge" href="/board?tests=1">Internal tests</Link>
         </div>
         <div className="shop-trust">
           <div><strong>Customer Page photo approval</strong><span className="t-caption">{operator.glass_clean_approvals} / 10 clean owner approvals</span><small className="t-caption">{operator.glass_auto_post ? "Trusted closeout photos post automatically." : "Owner still approves every customer-facing caption."}</small></div>

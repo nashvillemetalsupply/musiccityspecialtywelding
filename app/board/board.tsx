@@ -44,6 +44,9 @@ type BoardChrome = {
   operatorInitial: string
   owner: boolean
   query: string
+  // Resolved on the server from the session role. The board only ever carries
+  // this value forward; it never derives it from the URL it was rendered at.
+  includeTests: boolean
 }
 
 // Descending weight, which is also the order the mockup was approved in.
@@ -247,6 +250,10 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
     if (stage !== "board") params.set("stage", stage)
     if (chrome.query) params.set("q", chrome.query)
     if (signal) params.set("signal", signal)
+    // An owner who opened the board in test mode keeps it across every stage,
+    // signal and paging hop. Crew and signed-out renders never see true here,
+    // so the param cannot be manufactured by clicking around.
+    if (chrome.includeTests) params.set("tests", "1")
     const search = params.toString()
     return `/board${search ? `?${search}` : ""}`
   }
@@ -294,6 +301,7 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
         <form className="find" action="/board" method="get" role="search">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
           <input name="q" type="search" defaultValue={chrome.query} placeholder="Customer, job number, or what it is" aria-label="Search jobs" />
+          {chrome.includeTests && <input type="hidden" name="tests" value="1" />}
         </form>
         <div className="top-end">
           <Link className="btn btn--go" href="/ops/intake/new">
@@ -495,7 +503,7 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
 
           <div className="tabs" aria-label="Job stages">
             {board.stages.map((stage) => (
-              <Link className="tab" key={stage} href={`/board?stage=${stage}`} aria-current={board.stage === stage ? "page" : undefined}>
+              <Link className="tab" key={stage} href={`/board?stage=${stage}${chrome.includeTests ? "&tests=1" : ""}`} aria-current={board.stage === stage ? "page" : undefined}>
                 {TAB_LABELS[stage]} <b className={stage === "attention" ? "hot" : undefined}>{board.counts[stage]}</b>
               </Link>
             ))}
