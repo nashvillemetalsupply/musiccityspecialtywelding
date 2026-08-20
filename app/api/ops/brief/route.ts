@@ -103,8 +103,8 @@ export async function GET(req: Request) {
     sql`SELECT EXISTS(SELECT 1 FROM leads WHERE is_test = false AND completed_at IS NULL AND status NOT IN ('lost','spam') AND (scheduled_at IS NOT NULL OR work_started_at IS NOT NULL) AND service ~* '(mobile|on-site|onsite|outdoor|field|install)') AS needed`.then((rows) => Boolean(((rows as { needed?: boolean }[])[0])?.needed)),
   ])
   const weather = await nashvilleWeatherLine(outdoor)
-  const ownerPromiseSheet = promises.map((item) => ({ label: `${item.first_name || "Shop"}: ${item.summary || "promise due"}`, url: item.lead_id ? `/ops/leads/${item.lead_id}#promise-${item.id}` : "/ops?view=promises" }))
-  const crewPromiseSheet = promises.map((item) => ({ label: `${item.first_name || "Shop"}: ${item.crew_summary || redactCrewText(String(item.summary || "promise due"))}`, url: item.lead_id ? `/ops/leads/${item.lead_id}#promise-${item.id}` : "/ops?view=promises" }))
+  const ownerPromiseSheet = promises.map((item) => ({ label: `${item.first_name || "Shop"}: ${item.summary || "promise due"}`, url: item.lead_id ? `/ops/leads/${item.lead_id}#promise-${item.id}` : "/board?signal=promise" }))
+  const crewPromiseSheet = promises.map((item) => ({ label: `${item.first_name || "Shop"}: ${item.crew_summary || redactCrewText(String(item.summary || "promise due"))}`, url: item.lead_id ? `/ops/leads/${item.lead_id}#promise-${item.id}` : "/board?signal=promise" }))
   const sharedDaySheet = [
     ...unanswered.map((item) => ({ label: `${item.first_name || "Customer"}: first call`, url: `/ops/leads/${item.id}` })),
     ...quotes.map((item) => ({ label: `${item.first_name || "Customer"}: quote follow-up`, url: `/ops/leads/${item.id}` })),
