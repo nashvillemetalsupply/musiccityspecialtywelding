@@ -36,8 +36,8 @@ export function InstallAppButton() {
     setStatus(choice.outcome === "accepted" ? "MCSW Jobs is installing." : "Install canceled.")
     setPromptEvent(null)
   }
-  return <div className="ops-install-action">
-    <button type="button" disabled={installed} onClick={() => void install()}>{installed ? "MCSW Jobs installed" : "Install MCSW Jobs"}</button>
-    {status && <p role="status">{status}</p>}
+  return <div className="install-action">
+    <button className="btn btn--go" type="button" disabled={installed} onClick={() => void install()}>{installed ? "MCSW Jobs installed" : "Install MCSW Jobs"}</button>
+    {status && <p className="t-caption" role="status">{status}</p>}
   </div>
 }

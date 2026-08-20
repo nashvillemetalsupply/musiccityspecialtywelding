@@ -1,0 +1,106 @@
+.install-page {
+  --surface-sunken: var(--dark-surface-sunken);
+  --surface: var(--dark-surface);
+  --surface-raised: var(--dark-surface-raised);
+  --border-subtle: var(--dark-border-subtle);
+  --border: var(--dark-border);
+  --border-strong: var(--dark-border-strong);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --text-muted: var(--dark-text-muted);
+  --mark-quiet: var(--dark-mark-quiet);
+  --action: var(--dark-action);
+  --action-ink: var(--dark-action-ink);
+  --focus: var(--dark-focus);
+  --brand: var(--dark-brand);
+  width: min(100%, 40rem);
+  min-width: 0;
+  margin: 0 auto;
+  padding: var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  overflow-x: clip;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  font-family: var(--font);
+  font-size: var(--t-body);
+  font-weight: var(--w-reg);
+  line-height: var(--lh-body);
+}
+
+.install-page,
+.install-page *,
+.install-page *::before,
+.install-page *::after {
+  box-sizing: border-box;
+}
+
+.install-page > * { min-width: 0; max-width: 100%; }
+.install-page :is(h1, h2, p, ol) { margin: 0; }
+.install-page a { text-decoration: none; }
+.install-page :is(p, li, a, span, strong) { overflow-wrap: anywhere; }
+
+.install-page .card {
+  min-width: 0;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-lg) !important;
+  color: var(--text-primary) !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+
+.install-page .btn {
+  min-height: var(--control) !important;
+  border: 0 !important;
+  border-radius: var(--r-md) !important;
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: var(--font) !important;
+  font-size: var(--t-label) !important;
+  font-weight: var(--w-semi) !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.install-page .btn.btn--go {
+  color: var(--action-ink) !important;
+  background: var(--action) !important;
+}
+
+.install-page .btn:disabled { cursor: not-allowed; opacity: .52; }
+
+.install-state-page { min-height: 50dvh; justify-content: center; }
+.install-state { display: grid; gap: var(--s2); padding: var(--s4); }
+.install-state p { color: var(--text-secondary); }
+
+.install-head { display: grid; gap: var(--s2); padding: var(--s4); }
+.install-head .install-back { display: inline-flex; min-height: 44px; align-items: center; color: var(--text-secondary); }
+
+.install-action { display: grid; gap: var(--s2); }
+.install-action > .btn { width: 100%; }
+.install-action p { color: var(--text-secondary); }
+
+.install-steps { display: grid; gap: var(--s3); padding: var(--s4); }
+.install-steps ol { display: grid; gap: var(--s2); padding-left: 1.25rem; color: var(--text-secondary); }
+.install-steps strong { color: var(--text-primary); }
+
+.install-note { color: var(--text-muted); }
+
+@media (min-width: 40rem) {
+  .install-page { padding: var(--s5); gap: var(--s5); }
+}
+
+@media (pointer: coarse), (max-width: 55rem) {
+  .install-page .btn { min-height: 44px !important; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .install-page .btn.btn--go:hover { color: var(--action-ink) !important; background: var(--action) !important; filter: brightness(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-page * { transition-duration: .001ms !important; }
+}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import "../../../styles/control.css"
+import "./call-sketch.css"
 import { CallSketchPrototype } from "@/components/call-sketch/call-sketch-prototype"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 
@@ -17,12 +19,12 @@ export default async function OpsCallSketchPage() {
   if (!operator) redirect("/ops")
 
   if (operator.role !== "owner") {
-    return <main className="jobs-app-shell">
-      <section className="jobs-panel jobs-route-state">
-        <p className="jobs-kicker">Owner workspace</p>
-        <h1>Call Sketch</h1>
+    return <main className="sketch-gate-page">
+      <section className="card sketch-gate">
+        <p className="t-label">Owner workspace</p>
+        <h1 className="t-title">Call Sketch</h1>
         <p>The live sketch and its practice workspace are owner-only.</p>
-        <Link className="jobs-primary-action" href="/ops">Back to Jobs</Link>
+        <Link className="btn btn--edge" href="/ops">Back to Jobs</Link>
       </section>
     </main>
   }
