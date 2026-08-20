@@ -89,18 +89,17 @@ export function WireStrip({ slips, unreadTotal, history, page, hasOlder, query }
     </div>
     <details className="ops-wire-cabinet" open={history || Boolean(query) || page > 1}>
       <summary>All Updates <span>Search</span></summary>
-      <form className="ops-wire-search" action="/ops" method="get">
-        <input type="hidden" name="view" value="updates" />
+      <form className="ops-wire-search" action="/board/updates" method="get">
         <input type="hidden" name="wire" value={history ? "past" : "fresh"} />
         <input name="wireQ" type="search" defaultValue={query} placeholder="Search updates" aria-label="Search updates" />
         <SafeSubmitButton>Search</SafeSubmitButton>
       </form>
       <nav className="ops-wire-pages" aria-label="Update pages">
-        {page > 1 && <Link href={`/ops?view=updates&wire=${history ? "past" : "fresh"}&wirePage=${page - 1}${query ? `&wireQ=${encodeURIComponent(query)}` : ""}#wire`}>Newer</Link>}
+        {page > 1 && <Link href={`/board/updates?wire=${history ? "past" : "fresh"}&wirePage=${page - 1}${query ? `&wireQ=${encodeURIComponent(query)}` : ""}#wire`}>Newer</Link>}
         <span>Page {page}</span>
-        {hasOlder && <Link href={`/ops?view=updates&wire=${history ? "past" : "fresh"}&wirePage=${page + 1}${query ? `&wireQ=${encodeURIComponent(query)}` : ""}#wire`}>Older</Link>}
+        {hasOlder && <Link href={`/board/updates?wire=${history ? "past" : "fresh"}&wirePage=${page + 1}${query ? `&wireQ=${encodeURIComponent(query)}` : ""}#wire`}>Older</Link>}
       </nav>
-      <Link className="ops-wire-archive" href={history ? "/ops?view=updates#wire" : "/ops?view=updates&wire=past#wire"}>{history ? "Back to new updates" : "View past updates"}</Link>
+      <Link className="ops-wire-archive" href={history ? "/board/updates#wire" : "/board/updates?wire=past#wire"}>{history ? "Back to new updates" : "View past updates"}</Link>
     </details>
   </section>
 }
