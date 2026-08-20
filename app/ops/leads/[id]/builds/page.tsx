@@ -14,6 +14,7 @@ import {
   proposeBuildFactChangeAction,
 } from "./actions"
 import { ActionKeyField } from "./action-key"
+import "../../../../../styles/control.css"
 import "./builds.css"
 
 export const dynamic = "force-dynamic"
@@ -86,17 +87,17 @@ export default async function BuildsPage({ params }: { params: Params }) {
   return <main className="ops-builds">
     <header className="ops-builds-header">
       <div>
-        <p>Job #{workspace.lead.id}</p>
-        <h1>Fabrication</h1>
-        <span>{workspace.lead.first_name} {workspace.lead.last_name}</span>
+        <p className="t-caption">Job #{workspace.lead.id}</p>
+        <h1 className="t-title">Fabrication</h1>
+        <span className="t-caption">{workspace.lead.first_name} {workspace.lead.last_name}</span>
       </div>
     </header>
 
     <div className="ops-builds-grid">
-      <section className="ops-builds-panel" aria-labelledby="draft-heading">
+      <section className="card ops-builds-panel" aria-labelledby="draft-heading">
         <header className="ops-builds-panel-head">
           <div>
-            <h2 id="draft-heading">{workspace.draft.conflicts.length ? "Doesn't match" : "Shop facts"}</h2>
+            <h2 className="t-sub" id="draft-heading">{workspace.draft.conflicts.length ? "Doesn't match" : "Shop facts"}</h2>
           </div>
           <strong>{workspace.draft.factRows.length} facts</strong>
         </header>
@@ -119,7 +120,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 <input type="hidden" name="factKey" value={fact.factKey} />
                 <ActionKeyField scope={`working:${leadId}:${fact.factKey}`} />
                 <label><span>Enter a shop estimate</span><input name="value" type="number" min="0.01" step="0.01" inputMode="decimal" required /></label>
-                <SafeSubmitButton pendingLabel="Filing…">Use estimate</SafeSubmitButton>
+                <SafeSubmitButton className="btn btn--edge" pendingLabel="Filing…">Use estimate</SafeSubmitButton>
               </form>}
             </article>
 
@@ -142,7 +143,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="confirm" />
                   <ActionKeyField scope={`decision:${leadId}:${fact.id}:confirm`} />
-                  <SafeSubmitButton pendingLabel="Confirming…">
+                  <SafeSubmitButton className="btn btn--go" pendingLabel="Confirming…">
                     <Check aria-hidden="true" />
                     <span className="ops-builds-action-label">Confirm</span>
                     <span className="ops-builds-action-note" aria-hidden="true">Lock this value</span>
@@ -153,7 +154,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="working" />
                   <ActionKeyField scope={`decision:${leadId}:${fact.id}:working`} />
-                  <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Filing…">
+                  <SafeSubmitButton className="btn btn--edge" pendingLabel="Filing…">
                     <PencilLine aria-hidden="true" />
                     <span className="ops-builds-action-label">Use estimate</span>
                     <span className="ops-builds-action-note" aria-hidden="true">Not fab-ready</span>
@@ -164,7 +165,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="claimId" value={fact.id} />
                   <input type="hidden" name="kind" value="reject" />
                   <ActionKeyField scope={`decision:${leadId}:${fact.id}:reject`} />
-                  <SafeSubmitButton className="ops-builds-quiet" pendingLabel="Rejecting…">
+                  <SafeSubmitButton className="btn btn--edge" pendingLabel="Rejecting…">
                     <X aria-hidden="true" />
                     <span className="ops-builds-action-label">Reject</span>
                     <span className="ops-builds-action-note" aria-hidden="true">Drop this reading</span>
@@ -181,7 +182,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <label><span>New {fact.label.toLowerCase()}</span>{["gate.hinge_side", "gate.latch_side"].includes(fact.factKey)
                     ? <select name="value" defaultValue={String(fact.value)} required><option value="left">Left</option><option value="right">Right</option></select>
                     : <input name="value" type={typeof fact.value === "number" ? "number" : "text"} min={typeof fact.value === "number" ? "0.01" : undefined} step={typeof fact.value === "number" ? "0.01" : undefined} inputMode={typeof fact.value === "number" ? "decimal" : undefined} defaultValue={fact.value} maxLength={typeof fact.value === "string" ? 120 : undefined} required />}</label>
-                  <SafeSubmitButton pendingLabel="Filing…">Propose change</SafeSubmitButton>
+                  <SafeSubmitButton className="btn btn--edge" pendingLabel="Filing…">Propose change</SafeSubmitButton>
                 </form>
               </details>
             </article>
@@ -197,7 +198,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
           <form action={lockBuildSheetAction}>
             <input type="hidden" name="leadId" value={leadId} />
             <ActionKeyField scope={`lock:${leadId}:${latestSheet?.id ?? "draft"}`} />
-            <SafeSubmitButton disabled={workspace.draft.conflicts.length > 0 || acceptedCount === 0} pendingLabel="Locking…">
+            <SafeSubmitButton className="btn btn--go" disabled={workspace.draft.conflicts.length > 0 || acceptedCount === 0} pendingLabel="Locking…">
               Lock Build Sheet {Number(latestSheet?.number ?? 0) + 1}
             </SafeSubmitButton>
           </form>
@@ -205,7 +206,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
 
         <section className="ops-builds-canvas" aria-labelledby="build-canvas-heading">
           <header>
-            <h2 id="build-canvas-heading">Build drawing</h2>
+            <h2 className="t-sub" id="build-canvas-heading">Build drawing</h2>
             <p>{latestSheet ? `Build Sheet ${latestSheet.number}` : "No locked source yet"}</p>
           </header>
           <div className="ops-builds-canvas-body">
@@ -225,9 +226,9 @@ export default async function BuildsPage({ params }: { params: Params }) {
       </section>
 
       <div className="ops-builds-rail">
-        <section className="ops-builds-panel" aria-labelledby="sheets-heading">
+        <section className="card ops-builds-panel" aria-labelledby="sheets-heading">
           <header className="ops-builds-panel-head">
-            <div><span>Read-only record</span><h2 id="sheets-heading">Locked history</h2></div>
+            <div><span className="t-caption">Read-only record</span><h2 className="t-sub" id="sheets-heading">Locked history</h2></div>
             <strong>{workspace.sheets.length}</strong>
           </header>
           {workspace.sheets.length === 0 ? <p className="ops-builds-empty">No locked Build Sheet yet.</p> : <div className="ops-builds-sheets">
@@ -250,9 +251,9 @@ export default async function BuildsPage({ params }: { params: Params }) {
           </div>}
         </section>
 
-        <section className="ops-builds-panel" aria-labelledby="paperwork-heading">
+        <section className="card ops-builds-panel" aria-labelledby="paperwork-heading">
           <header className="ops-builds-panel-head">
-            <div><h2 id="paperwork-heading">Paperwork</h2></div>
+            <div><h2 className="t-sub" id="paperwork-heading">Paperwork</h2></div>
             <strong>{workspace.paperwork.length}</strong>
           </header>
           {workspace.paperwork.length === 0 ? <p className="ops-builds-empty">Lock a Build Sheet to file its drawing and DXF manifest.</p> : <div className="ops-builds-paperwork">
@@ -267,7 +268,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
               {["drawing", "dxf"].includes(item.kind) && item.status === "current" && item.issueState === "current" && item.sourceBuildSheetNumber === latestSheet?.number && !drawing && <p>Issue blocked until the locked geometry is complete.</p>}
               {["drawing", "dxf"].includes(item.kind) && item.status === "current" && item.issueState === "current" && item.sourceBuildSheetNumber === latestSheet?.number && drawing && <form action={`/api/ops/build-paperwork/${item.id}`} method="post">
                 <ActionKeyField name="issueKey" scope={`paperwork:${item.id}:${item.kind}`} />
-                <button type="submit">Issue current {item.kind === "dxf" ? "DXF" : "drawing"}</button>
+                <button className="btn btn--edge" type="submit">Issue current {item.kind === "dxf" ? "DXF" : "drawing"}</button>
               </form>}
               {paperworkNote(item.status, item.sourceBuildSheetNumber) && <small>{paperworkNote(item.status, item.sourceBuildSheetNumber)}</small>}
             </article>)}
