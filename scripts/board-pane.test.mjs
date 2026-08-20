@@ -158,3 +158,35 @@ test("photo dates use receipts only and each event trail keeps the newest four c
   assert.match(trails, /projectEventForRole\(event, role\)/)
   assert.match(trails, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
 })
+
+// C8: three links pointed at pages that no longer answer them. Nothing about
+// the fix is visible at runtime until someone taps the wrong one, so the
+// destinations are pinned here.
+test("the board chrome and Ask Jobs sources point at destinations that still exist", () => {
+  const dock = readFileSync(new URL("../app/ops/shop-dock.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  const brief = readFileSync(new URL("../app/api/ops/brief/route.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+
+  // The logo is home, and home is the board.
+  assert.match(PREVIEW_SOURCE, /className="logo-home" href="\/board" aria-label="Job Control home"/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /Back to the old board/)
+
+  // Rail entries that have a board equivalent use it. Customers and Leads
+  // still point at /ops — that pair is an open owner decision, not a bug.
+  assert.match(PREVIEW_SOURCE, /href="\/board\?stage=waiting" aria-label="Quotes"/)
+  assert.match(PREVIEW_SOURCE, /href="\/board\?signal=promise" aria-label="Promises"/)
+  assert.match(PREVIEW_SOURCE, /href="\/ops" aria-label="Leads"/)
+  assert.match(PREVIEW_SOURCE, /href="\/ops\?view=regulars" aria-label="Customers"/)
+
+  // The receipt drawer is gone. A source with a job opens the job; one
+  // without a job must not render as a link at all.
+  assert.doesNotMatch(dock, /\/ops\?receipt=/)
+  assert.match(dock, /item\.lead_id\s*\n?\s*\? <a href=\{`\/ops\/leads\/\$\{item\.lead_id\}`\} key=\{item\.id\}>/)
+  assert.match(dock, /: <span key=\{item\.id\}>/)
+
+  // Both halves of the promise sheet fall back to the board, and the split
+  // between owner text and crew text survives.
+  assert.doesNotMatch(brief, /\/ops\?view=promises/)
+  assert.equal((brief.match(/"\/board\?signal=promise"/g) ?? []).length, 2)
+  assert.match(brief, /const ownerPromiseSheet[\s\S]{0,240}"\/board\?signal=promise"/)
+  assert.match(brief, /const crewPromiseSheet[\s\S]{0,240}redactCrewText[\s\S]{0,120}"\/board\?signal=promise"/)
+})
