@@ -81,3 +81,9 @@ test("the migration is idempotent and the table is additive", () => {
   assert.match(migration, /CREATE INDEX IF NOT EXISTS job_line_items_lead_idx/)
   assert.match(migration, /job_line_items_label_check CHECK \(label <> ''\)/)
 })
+
+test("job page speaks board language", () => {
+  const src = readFileSync("app/ops/leads/[id]/page.tsx", "utf8")
+  assert.match(src, /className="t-sub"/)
+  assert.doesNotMatch(src, /jobs-brand/)
+})

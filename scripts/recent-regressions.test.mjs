@@ -191,7 +191,7 @@ test("account job history counts filtered rows before fetching its clamped page"
 test("Full Record refetches and navigates with its role-filtered clamped page", () => {
   const events = section(source("lib/events.ts"), "export async function listLeadEventPage", "export async function searchEvents")
   const page = source("app/ops/leads/[id]/page.tsx")
-  const record = section(page, "<details className=\"ops-full-record\"", "</details>")
+  const record = section(page, "<details className=\"job-record\"", "</details>")
 
   assertInOrder(events, [
     "const totalRows",

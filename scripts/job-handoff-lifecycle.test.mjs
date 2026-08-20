@@ -56,7 +56,7 @@ test("work order explains removal, preserves history, and exposes a thumb-safe r
 
   assert.match(page, /<HandoffControl/)
   assert.ok(page.indexOf("<DoneStamp") < page.indexOf("<HandoffControl"))
-  assert.ok(page.indexOf("<HandoffControl") < page.indexOf('className="ops-card ops-history ops-recent-activity"'))
+  assert.ok(page.indexOf("<HandoffControl") < page.indexOf('aria-label="Recent activity"'))
   assert.match(page, /lead\.handed_off_at\s+\? "Handed Off"/)
   assert.match(control, /Customer received it/)
   assert.match(control, /Nothing is deleted/)
