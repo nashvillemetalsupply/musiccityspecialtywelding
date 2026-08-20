@@ -8,6 +8,8 @@ import { getLead } from "@/lib/ops-data"
 import { listLeadMessages } from "@/lib/messages"
 import { listCommitments } from "@/lib/commitments"
 import { listActiveClaims } from "@/lib/claims"
+import { listJobLineItems } from "@/lib/job-line-items"
+import { formatLineItemsText, lineItemsTotalCents } from "@/lib/job-line-items.mjs"
 import { listLeadCalls } from "@/lib/calls"
 import { listLeadEventPage, listLeadEvents as listUnifiedEvents } from "@/lib/events"
 import { listOperators } from "@/lib/operators"
@@ -43,6 +45,7 @@ import {
   recordInvoice,
   resolveIdentityConflict,
   saveEstimate,
+  saveJobLineItems,
   saveNotes,
   saveOutcome,
   setPhotoShared,
@@ -171,7 +174,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   const operator = await getAuthenticatedOperator()
   if (!operator) return <OpsLoginForm linkError={false} />
 
-  const [lead, messages, promises, claims, calls, unifiedEvents, activityPage, operators] = await Promise.all([
+  const [lead, messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems] = await Promise.all([
     getLead(leadId, operator.role),
     listLeadMessages(leadId),
     listCommitments({ leadId, status: "open" }),
@@ -180,6 +183,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     listUnifiedEvents(leadId, 300),
     listLeadEventPage(leadId, requestedActivityPage, 25, operator.role),
     listOperators(),
+    listJobLineItems(leadId, operator.role),
   ])
   if (!lead) notFound()
   const activityPageNumber = activityPage.page
@@ -641,6 +645,33 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               {customerTextReady ? "create the Customer Page and text this quote" : "Customer Page texting requires consent and A2P approval"}
             </label>
             <SafeSubmitButton pendingLabel="Saving...">Save quote{customerTextReady ? " + send" : ""}</SafeSubmitButton>
+          </form>
+
+          {/* What is in the price. The board's expand panel reads these lines
+              back as the "What is in it" breakdown. The quote itself is the
+              field above -- when the lines do not add up to it, both numbers
+              are shown and neither is quietly adjusted. */}
+          <form action={saveJobLineItems} className="ops-inline-form">
+            <input type="hidden" name="leadId" value={lead.id} />
+            <label htmlFor="lead-line-items">
+              What is in the price. One line each: <code>Label | note | amount</code>, or <code>Label | amount</code>.
+            </label>
+            <textarea
+              id="lead-line-items"
+              name="lineItems"
+              rows={6}
+              defaultValue={formatLineItemsText(lineItems)}
+              placeholder={"Steel | 10 ga galv, 18 pcs | 1860\nCut and form | 6.5 hrs | 780\nGalv touch-up | 180"}
+            />
+            {lineItems.length > 0 && (
+              <span className="ops-followup-current">
+                {lineItems.length} {lineItems.length === 1 ? "line" : "lines"} adding to {money(lineItemsTotalCents(lineItems))}
+                {lead.estimate_value_cents !== null && lineItemsTotalCents(lineItems) !== lead.estimate_value_cents
+                  ? ` · the quote says ${money(lead.estimate_value_cents)}`
+                  : ""}
+              </span>
+            )}
+            <SafeSubmitButton pendingLabel="Saving...">Save what is in it</SafeSubmitButton>
           </form>
 
           <form action={saveOutcome} className="ops-inline-form">
