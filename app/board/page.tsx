@@ -4,6 +4,8 @@ import { getPromiseSummary } from "@/lib/commitments"
 import { listTodayEvents } from "@/lib/events"
 import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
+import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
+import { MoreMenu } from "@/app/ops/more-menu"
 import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
@@ -83,6 +85,10 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
 
   const role = operator.role
+  // The same menu and dock the /ops pages mount, so #radio and #handset open
+  // the Morning Brief and Ask Jobs here too. Signed out there is no menu,
+  // which is exactly the /ops layout's own gate.
+  const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} />
   const [page, promises, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.
@@ -95,7 +101,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   ])
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role)
 
-  return <JobControl chrome={chrome} board={{
+  return <JobControl chrome={chrome} menu={menu} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,

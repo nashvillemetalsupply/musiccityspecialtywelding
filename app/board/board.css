@@ -99,7 +99,7 @@ svg{display:block}
 /* The wordmark carries the name; setting the name in type beside it is two
    logotypes in a row, which is what was throwing this bar off. */
 .logo{height:30px;width:auto;flex:none;display:block}
-/* The logo is a link back to /ops. It occupies exactly the space the bare
+/* The logo is a link home to /board. It occupies exactly the space the bare
    image did, so the top bar's fit at 320px is unchanged. */
 .logo-home{display:flex;align-items:center;flex:none;border-radius:var(--radius)}
 /* the date and the search field are desk furniture; on a phone the bar has
@@ -121,10 +121,12 @@ svg{display:block}
 .rl:hover{background:var(--surface-raised);color:var(--text-secondary)}
 .rl[aria-current]{background:var(--action);color:var(--action-ink)}
 .rl-gap{flex:1;display:none}
-/* Seven destinations at a 44px target need 348px of bar; the phone has 320.
-   The rule is collapse the nav, not shrink the targets — so Quotes and Help
-   drop on the phone and the five he actually opens survive. */
-.rail .rl:nth-of-type(4),.rail .rl:nth-of-type(7){display:none}
+/* Six destinations at a 44px target need 264px of bar plus its gaps; the
+   phone has 320. The rule is collapse the nav, not shrink the targets — so
+   Quotes drops on the phone (its jobs live one tab away on the tracker) and
+   the five he actually opens survive. Leads is gone outright: the board IS
+   the job list now, so that entry only linked the page to itself. */
+.rail .rl:nth-of-type(3){display:none}
 
 /* One neutral avatar treatment. These initials used to sit on status colours,
    which failed contrast (as low as 1.8:1) and made green mean "Dale". */
@@ -537,7 +539,7 @@ svg{display:block}
     flex-direction:column;justify-content:normal;
     border-top:0;border-right:1px solid var(--border);padding:var(--s2) 0}
   .rl-gap{display:block}
-  .rail .rl:nth-of-type(4),.rail .rl:nth-of-type(7){display:grid}
+  .rail .rl:nth-of-type(3){display:grid}
 
   .pane{display:flex;flex-direction:column;min-height:0;
     border-bottom:0;border-right:1px solid var(--border)}
@@ -623,3 +625,59 @@ svg{display:block}
   .call-cols>:last-child{grid-column:auto;border-left:1px solid var(--border);border-top:0}
   .main{padding:var(--s6) var(--s7) var(--s8)}
 }
+
+/* ========================================================= more menu ==== */
+/* The /ops menu and dock (more-menu.tsx, shop-dock.tsx) mount in the board's
+   top bar so #radio and #handset work from /board. The component classes are
+   restyled here under .board-more — the board never imports the retired
+   ops-shell sheet, and these values are the same control.css tokens that
+   sheet uses, so the menu reads identically on both surfaces. */
+.board-more .ops-more-trigger{min-width:44px;min-height:44px;padding:0 var(--s3);
+  border:1px solid var(--border);border-radius:var(--r-md);
+  background:var(--surface-raised);color:var(--text-primary);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .15s var(--ease)}
+.board-more .ops-more-trigger:hover{background:var(--surface)}
+.board-more .ops-more-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* The open trigger stays put above the panel so Close is where Open was. */
+.board-more .ops-more-trigger[aria-expanded="true"]{position:fixed;z-index:122;
+  top:max(var(--s3),env(safe-area-inset-top,0px));
+  right:max(var(--s4),env(safe-area-inset-right,0px))}
+.board-more .ops-menu-icon{display:grid;place-items:center}
+.board-more .ops-menu-icon svg{width:22px;height:22px}
+.board-more .ops-more-trigger[aria-expanded="false"] .is-close,
+.board-more .ops-more-trigger:not([aria-expanded]) .is-close,
+.board-more .ops-more-trigger[aria-expanded="true"] .is-menu{display:none}
+.board-more .ops-more-backdrop{position:fixed;inset:0;z-index:120;
+  display:flex;justify-content:flex-end;
+  background:color-mix(in srgb,var(--surface-sunken) 62%,transparent)}
+.board-more .ops-more-panel{width:min(100%,30rem);height:100dvh;overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:max(var(--s4),env(safe-area-inset-top,0px)) max(var(--s4),env(safe-area-inset-right,0px)) max(var(--s4),var(--safe-area-bottom)) var(--s4);
+  background:var(--surface);color:var(--text-primary);border-left:1px solid var(--border)}
+.board-more .ops-more-panel>header{display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s3);padding-bottom:var(--s4);border-bottom:1px solid var(--border)}
+.board-more .ops-more-panel>header span{font-size:var(--t-label);font-weight:var(--w-med);
+  color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+.board-more .ops-more-panel>header h2{margin:var(--s1) 0 0;font-family:var(--font-display);
+  font-size:var(--t-lede);font-weight:680;letter-spacing:-.01em;line-height:var(--lh-lede)}
+.board-more .ops-more-panel>nav{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);padding:var(--s4) 0}
+.board-more .ops-more-panel>nav a{display:flex;align-items:center;min-height:44px;
+  padding:0 var(--s3);border:1px solid var(--border);border-radius:var(--r-md);
+  background:var(--surface-raised);color:var(--text-primary);
+  font-size:var(--t-data);font-weight:var(--w-med);text-decoration:none}
+.board-more .ops-more-panel>nav a:hover{border-color:var(--border-strong)}
+.board-more .ops-more-panel a:focus-visible,
+.board-more .ops-more-panel button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.board-more .ops-more-account{display:flex;flex-direction:column;gap:var(--s3);
+  margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--border)}
+.board-more .ops-more-account button{min-height:44px;padding:0 var(--s4);
+  border:1px solid var(--border);border-radius:var(--r-md);
+  background:var(--surface-raised);color:var(--text-primary);
+  font-size:var(--t-data);font-weight:var(--w-med);cursor:pointer}
+.board-more .ops-more-account form{display:flex}
+.board-more .ops-more-account form button{flex:1}
+/* shop-dock's live-region labels; the utility otherwise lives in the /ops
+   sheet, which this page does not load. */
+.board-more .jobs-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

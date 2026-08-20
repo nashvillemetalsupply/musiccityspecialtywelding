@@ -223,7 +223,7 @@ function chipTone(lead: BoardJobRow): "stop" | "warn" | "good" | "info" {
 
 const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good", info: "chip--info" } as const
 
-export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: BoardChrome }) {
+export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode }) {
   const [openJobId, setOpenJobId] = useState<number | null>(null)
   const { details: jobDetails } = board
   const needsYou = board.counts.attention
@@ -310,13 +310,13 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
           <button className="icon" id="theme" type="button" aria-label="Switch between the light and dark board">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2.2a5.8 5.8 0 1 0 5.8 5.8A4.4 4.4 0 0 1 8 2.2z"/></svg></button>
           {chrome.operatorInitial && <span className="who-dot" aria-label="Signed-in operator">{chrome.operatorInitial}</span>}
+          {menu && <div className="board-more">{menu}</div>}
         </div>
       </header>
     
       <nav className="rail" aria-label="Sections">
         <Link className="rl" href="/board" aria-label="Board" aria-current="page"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></Link>
-        <Link className="rl" href="/ops" aria-label="Leads"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2.5 4.5h11v8h-11z"/><path d="m2.5 5.5 5.5 4 5.5-4"/></svg></Link>
-        <Link className="rl" href="/ops?view=regulars" aria-label="Customers"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="6" r="2.4"/><path d="M3.2 13c.6-2.3 2.5-3.5 4.8-3.5S12.2 10.7 12.8 13"/></svg></Link>
+        <Link className="rl" href="/board/customers" aria-label="Customers"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="6" r="2.4"/><path d="M3.2 13c.6-2.3 2.5-3.5 4.8-3.5S12.2 10.7 12.8 13"/></svg></Link>
         <Link className="rl" href="/board?stage=waiting" aria-label="Quotes"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 6h5M5.5 9h3"/></svg></Link>
         <Link className="rl" href="/board?signal=promise" aria-label="Promises"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 8.5 6.5 12 13 4.5"/></svg></Link>
         {chrome.owner && <Link className="rl" href="/ops/analytics" aria-label="Money"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="4" width="12" height="8" rx="1.5"/><path d="M2 7h12"/></svg></Link>}
