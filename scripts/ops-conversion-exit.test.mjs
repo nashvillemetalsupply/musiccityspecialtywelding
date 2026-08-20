@@ -26,6 +26,22 @@ test("/ops front door is the board", () => {
   assert.match(home, /force-dynamic/)
 })
 
+test("/ops still holds the sign-in door for signed-out crew", () => {
+  const home = source("app/ops/page.tsx")
+  // C7 replaced the whole page with a bare redirect, which sent a signed-out
+  // operator to a board that renders its zero state instead of a login.
+  assert.match(home, /getAuthenticatedOperator\(\)/)
+  assert.match(home, /if \(await getAuthenticatedOperator\(\)\) redirect\("\/board"\)/)
+  assert.match(home, /<OpsLoginForm[^>]*linkError=\{params\.error === "link"\}/)
+  assert.match(home, /operators=\{punchCards\}/)
+  assert.match(home, /smsReady=\{smsLoginReady\}/)
+  assert.match(home, /twilioPhoneLoginConfigured\(\)/)
+  assert.match(home, /operatorPunchSelector\(person\.id\)/)
+  assert.match(home, /hasSms: smsLoginReady && Boolean\(person\.cell_phone\)/)
+  // the legacy dashboard body and its sheets stay archived
+  assert.doesNotMatch(home, /jobs-app-shell|ActiveJobIndex|WeightedJobIndex|jobs-panel/)
+})
+
 test("the two legacy job indexes are archived, not live", () => {
   assert.equal(exists("app/ops/weighted-job-index.tsx"), false)
   assert.equal(exists("app/ops/active-job-index.tsx"), false)
