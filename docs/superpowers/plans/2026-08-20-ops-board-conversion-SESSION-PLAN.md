@@ -53,10 +53,10 @@ tasks, and the re-run is green. Live in production at
 |---|---|
 | `npm run typecheck` | exit 0 |
 | `npm run lint` | exit 0 |
-| `npm run test:shop-brain` | 298 tests, 298 pass, 0 fail |
+| `npm run test:shop-brain` | 298 tests, 296 pass, 2 skipped, 0 fail |
 | Focused route/conversion suites | 60 tests, 60 pass, 0 fail |
 | Shepherd `test.ps1` | 12 suites, exit 0 (owner-reported; not re-run in the closeout session) |
-| `npm run build` (production) | exit 0 |
+| `npm run build` (production) | exit 0 — see the build footnote in `…-C8-FIXES.md` |
 
 The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
 `board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6),
@@ -65,13 +65,18 @@ The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
 **Owner runtime pass, production.** 320 / 375 / 768 on `/board`, job 105 and intake: no
 horizontal overflow at any width; the only sub-44px controls are the two documented
 exemptions, the header logo link and the native checkbox/radio inputs. Owner menu, money
-display, `tests=1`, `#radio` and `#handset` all passed.
+display, `tests=1`, `#radio` and `#handset` all passed. The broader owner walk covered
+`/board`, `/board/customers`, `/board/updates`, `/board/calls`, intake, analytics,
+call-sketch, shop, install and job 105. It did **not** cover an individual
+`/ops/accounts/[id]` page, a `/ops/leads/[id]/builds` page (job 105's builds route
+returned not found), or a sign-out/sign-in cycle — those three are test-covered and
+statically audited only, not live-walked.
 
 **One item could not be verified live: the crew route walk.** Production has no active
 crew account — Philippe Auguste and TJ Harahan are both `owner` role — so no credential
 exists that renders the crew projection, and walking the app as owner does not substitute
 for it. Crew money is removed server-side and stays covered by the `event-visibility`,
-`shop-brain-invariants` and `shop-brain-boundaries` suites inside the 298/298 run. Re-walk
+`shop-brain-invariants` and `shop-brain-boundaries` suites inside the 298-test run. Re-walk
 as crew the first time a crew operator exists in production.
 
 **Recommended order:** C0 → C1 (owner gate) → C6, then C2/C3/C4/C5 in any order

@@ -162,21 +162,27 @@ test("/ops front door is the board", () => {
 
 - [x] **Step 2: Flip, redirect, delete, run everything** — full `npm run test:shop-brain` + typecheck + lint.
 - [x] **Step 3a: Walk every route signed in as owner** — done by the owner in production
-  (`https://musiccityspecialtywelding.com`), 2026-08-20: /board, job 105, intake, accounts,
-  analytics, call-sketch, shop, install, builds, sign-out/sign-in. Menu, money, `tests=1`,
-  `#radio` and `#handset` all passed.
+  (`https://musiccityspecialtywelding.com`), 2026-08-20. Walked: `/board`,
+  `/board/customers`, `/board/updates`, `/board/calls`, intake, analytics, call-sketch,
+  shop, install, and job 105. Menu, money, `tests=1`, `#radio` and `#handset` all passed.
+  **Not walked, and not claimed:** an individual `/ops/accounts/[id]` page, a
+  `/ops/leads/[id]/builds` page (the attempt on job 105 returned not found), and an
+  explicit sign-out/sign-in cycle. Those three surfaces are covered by the suites and by
+  the static class audit only — no live owner walk exists for them.
 - [ ] **Step 3b: Walk every route signed in as crew** — **could not run.** Production has no
   active crew account: Philippe Auguste and TJ Harahan are both `owner` role, so no credential
   exists that renders the crew projection. Crew money isolation remains covered server-side by
   the `event-visibility`, `shop-brain-invariants` and `shop-brain-boundaries` suites (part of
-  the 298/298 green run). This item stays open until a crew operator exists in production; it
-  is not a conversion defect and does not block the plan.
+  the 298-test green run). This item stays open until a crew operator exists in production;
+  it is not a conversion defect and does not block the plan.
 - [x] **Step 4: Owner gate on the whole app. Then commit** — `git commit -m "feat(ops): flip the layout to the board language and make /board the front door"`
 
 ### Task 8: Exit verification
 
 - [x] `npm run typecheck && npm run lint && npm run test:shop-brain` — all green (typecheck exit 0,
-  lint exit 0, shop-brain 298/298 pass, 0 fail), re-run at `d3e7cd2` on 2026-08-20.
+  lint exit 0, shop-brain 298 tests: 296 pass, 2 skipped, 0 fail — both skips are the
+  pre-existing `SKIP DATABASE_URL is not configured` database tests), re-run at `d3e7cd2`
+  on 2026-08-20.
 - [x] 320px/375px/768px pass on the three highest-traffic pages (board, job 105, intake):
   owner-verified in production. No horizontal overflow at any of the three widths. The only
   controls under 44px are the two documented exemptions — the header logo link and the native

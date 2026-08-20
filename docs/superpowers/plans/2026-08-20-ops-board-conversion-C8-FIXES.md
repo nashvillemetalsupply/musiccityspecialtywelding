@@ -399,14 +399,24 @@ copy outside git history — do not delete it.
 |---|---|
 | `npm run typecheck` | exit 0 |
 | `npm run lint` | exit 0 |
-| `npm run test:shop-brain` | 298 tests, 298 pass, 0 fail |
+| `npm run test:shop-brain` | 298 tests, 296 pass, 2 skipped, 0 fail |
 | Focused route/conversion suites | 60 tests, 60 pass, 0 fail |
-| Shepherd `test.ps1` | 12 suites, exit 0 (owner-reported; not re-run in the closeout session) |
-| `npm run build` (production) | exit 0 |
+| Shepherd `test.ps1` | 12 suites, exit 0 |
+| `npm run build` (production) | exit 0, 51 pages — see the note below |
 
-Every gate above except the Shepherd suite was re-run from a clean tree at `d3e7cd2`
-during this closeout. The Shepherd row is the owner's reported result and is marked
-as such rather than repeated as a fresh measurement.
+Every gate above was re-run from a clean tree at `d3e7cd2` during this closeout.
+
+**The build row needs its footnote.** `npm run build` uses Turbopack, and Turbopack cannot
+build inside a Shepherd worktree at all: `node_modules` here is a junction to the root
+checkout and Turbopack rejects it — *Symlink [project]/node_modules is invalid, it points
+out of the filesystem root*. That is an environment limit, not a code failure, and it is
+the same one the first C8 pass hit. The build recorded above is therefore
+`next build --webpack` from this worktree: exit 0, compiled in 2.4min, TypeScript clean,
+51 pages generated. It emits four `Attempted import error` warnings against
+`@/lib/job-line-items`; those are a webpack resolution quirk rather than a real defect —
+`tsc --noEmit` resolves the same three exports without complaint. The owner's own
+`npm run build` at the root checkout, and the Vercel production build, are the authority
+for the default bundler.
 
 The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
 `board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6),
@@ -417,7 +427,11 @@ and the internal-test switch.
 Shop Brain grew from 260 tests (258 pass, 2 skipped) at `a99b4c6` to 298 here: the four
 board route suites the fixes added to `test:shop-brain` — `board-customers-route` (8),
 `board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6) — plus one
-new assertion in `board-pane`. Nothing is skipped any more.
+new assertion in `board-pane`. The same two tests skip as before and for the same reason:
+`real persistence converges ingest retries and lock receipts without sequence gaps` and
+`simultaneous lock receipts converge across two database connections`, both reporting
+`SKIP DATABASE_URL is not configured`. They need a live database, this worktree has no
+`.env`, and neither is a conversion test.
 
 ### Runtime pass — production, as owner
 
@@ -428,6 +442,17 @@ Walked at `https://musiccityspecialtywelding.com`, not a preview.
 - **Touch targets.** The only controls measuring under 44px are two documented
   exemptions: the header logo link, and the native checkbox and radio inputs. Neither is
   a primary operational target and neither is a conversion regression.
+- **Route walk.** Walked as owner: `/board`, `/board/customers`, `/board/updates`,
+  `/board/calls`, intake, analytics, call-sketch, shop, install and job 105.
+- **Not walked.** An individual `/ops/accounts/[id]` page, a `/ops/leads/[id]/builds` page
+  — the attempt on job 105 returned not found — and an explicit sign-out/sign-in cycle.
+  None of the three has a live production walk behind it. What they do have: the C3, C5
+  and C6 rows are marked done in the session plan, which carries the per-session owner
+  gate at preview; the five `build-sheets-*` suites and `ops-conversion-exit` are green;
+  and the coarse-pointer blocks are present at
+  `app/ops/accounts/[id]/account.css:247` and
+  `app/ops/leads/[id]/builds/builds.css:667`. That is static and test evidence, not a
+  runtime pass, and it is not recorded as one.
 - **Owner surfaces.** Menu opens and closes; money renders where the owner expects it;
   `tests=1` surfaces the `[INTERNAL TEST]` rows; `#radio` and `#handset` both open the
   dock from a cold load.
@@ -435,7 +460,9 @@ Walked at `https://musiccityspecialtywelding.com`, not a preview.
 ### The crew route walk could not run
 
 **Production has no active crew account.** Philippe Auguste and TJ Harahan are both
-`owner` role, so there is no credential in production that renders the crew projection.
+`owner` role — `scripts/upsert-phone-login-operators.mjs:15` and `:16` seed them that way
+and nothing since has changed it — so there is no credential in production that renders
+the crew projection.
 The crew arm of Task 7 Step 3 was therefore not walked — not skipped, not passed by
 proxy, and not satisfiable by walking as owner and reasoning about what crew would see.
 
@@ -444,15 +471,18 @@ in the conversion or the F1–F8 fixes touched that path. `git diff --stat 3cf58
 is empty for `lib/ops-data.ts` — which holds the crew redaction and the `redactCrewText`
 projections — and empty for `app/ops/actions.ts` and `scripts/migrate.mjs`. The
 `event-visibility`, `shop-brain-invariants` and `shop-brain-boundaries` suites assert the
-crew projection directly and are inside the 298/298 green run. That is test coverage of
+crew projection directly and are inside the 298-test green run. That is test coverage of
 the same guarantee, which is why this is a verification gap and not an exposure.
 
 **What did change under `lib/` and `app/api/`, and why it is not a data-layer change.**
 The original report recorded zero drift there across C0–C7. The F7 fixes then edited
-seven lines of notification copy — `lib/calls.ts`, `lib/messages.ts`, `lib/notify.ts`,
-`lib/people.ts`, `app/api/ingest/gmail/route.ts`, `app/api/ops/brief/route.ts`,
-`app/api/ops/reminders/route.ts` — each one a URL string being retargeted from a dead
-`/ops?…` destination to the board surface that answers it. `lib/job-intake.ts` also
+fourteen lines across seven files — `lib/calls.ts` (1), `lib/messages.ts` (1),
+`lib/notify.ts` (2), `lib/people.ts` (1), `app/api/ingest/gmail/route.ts` (4),
+`app/api/ops/brief/route.ts` (4) and `app/api/ops/reminders/route.ts` (1) — each one a
+URL string in notification, digest or Morning Brief copy, retargeted from a dead
+`/ops?…` destination to the board surface that answers it (`/ops?view=updates#wire` →
+`/board/updates#wire`, `/ops?view=promises` → `/board?signal=promise`, `/ops#radio` →
+`/board#radio`, and the phone search to `/board?q=`). `lib/job-intake.ts` also
 gained a `JOIN calls` in the pending-call count so the count matches the page query
 (`5097a9f`). No schema, no migration, no action signature, no query result shape. Both
 arms of the crew/owner split in `app/api/ops/brief/route.ts` — `crewPromiseSheet` and

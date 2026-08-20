@@ -41,7 +41,8 @@ Plans: `docs/superpowers/plans/2026-08-20-ops-board-conversion.md`, its session 
 `…-SESSION-PLAN.md`, and the exit report `…-C8-FIXES.md`.
 
 Closing gates, 2026-08-20: `npm run typecheck` exit 0; `npm run lint` exit 0;
-`npm run test:shop-brain` 298/298 pass; focused route/conversion suites 60/60 pass;
+`npm run test:shop-brain` 298 tests, 296 pass, 2 skipped (both database-gated), 0 fail;
+focused route/conversion suites 60/60 pass;
 Shepherd `test.ps1` 12 suites exit 0; `npm run build` exit 0. Deployed to
 `https://musiccityspecialtywelding.com`.
 
