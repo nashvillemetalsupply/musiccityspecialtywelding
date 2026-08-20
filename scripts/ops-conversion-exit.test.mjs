@@ -42,10 +42,34 @@ test("/ops still holds the sign-in door for signed-out crew", () => {
   assert.doesNotMatch(home, /jobs-app-shell|ActiveJobIndex|WeightedJobIndex|jobs-panel/)
 })
 
+
+test("the legacy job controls are archived, not live (F8)", () => {
+  // Orphaned once both job indexes were archived; /board owns search and stage
+  // filtering now. Kept as a reference copy because the archived indexes import it.
+  assert.equal(exists("app/ops/active-job-controls.tsx"), false)
+  const archived = source("archive/ops-legacy-2026-08-20/active-job-controls.tsx.txt")
+  assert.match(archived, /export function ActiveJobControls\(/)
+  assert.match(archived, /export function boardHref\(/)
+  const readme = source("archive/ops-legacy-2026-08-20/README.md")
+  assert.match(readme, /`active-job-controls\.tsx\.txt` \| `app\/ops\/active-job-controls\.tsx`/)
+  // nothing live may import it back
+  const offenders = []
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name)
+      if (statSync(full).isDirectory()) { walk(full); continue }
+      if (!/\.(tsx|ts)$/.test(name)) continue
+      if (/active-job-controls/.test(readFileSync(full, "utf8"))) offenders.push(full)
+    }
+  }
+  for (const dir of ["app", "components", "lib"]) walk(fileURLToPath(new URL(dir, root)))
+  assert.deepEqual(offenders, [])
+})
+
 test("the two legacy job indexes are archived, not live", () => {
   assert.equal(exists("app/ops/weighted-job-index.tsx"), false)
   assert.equal(exists("app/ops/active-job-index.tsx"), false)
-  for (const file of ["jobs.css.txt", "jobs-brand.css.txt", "weighted-job-index.tsx.txt", "active-job-index.tsx.txt", "README.md"]) {
+  for (const file of ["jobs.css.txt", "jobs-brand.css.txt", "weighted-job-index.tsx.txt", "active-job-index.tsx.txt", "active-job-controls.tsx.txt", "README.md"]) {
     assert.equal(exists(`archive/ops-legacy-2026-08-20/${file}`), true, `archive/ops-legacy-2026-08-20/${file} must exist`)
   }
 })
