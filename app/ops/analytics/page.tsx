@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import "../../../styles/control.css"
+import "./analytics.css"
 import { dbConfigured } from "@/lib/db"
 import {
   getOwnerAnalytics,
@@ -91,7 +93,7 @@ function sourceLabel(source: string) {
 
 export default async function OwnerAnalyticsPage({ searchParams }: { searchParams: SearchParams }) {
   if (!dbConfigured()) {
-    return <main className="ops-main ops-analytics-page"><section className="ops-card"><h1>Shop Analytics</h1><p>The operations database is not configured.</p></section></main>
+    return <main className="analytics-page analytics-state-page"><section className="card analytics-state"><h1 className="t-title">Shop Analytics</h1><p>The operations database is not configured.</p></section></main>
   }
 
   const operator = await getAuthenticatedOperator()
@@ -116,25 +118,25 @@ export default async function OwnerAnalyticsPage({ searchParams }: { searchParam
     { label: "Median first response", current: analytics.current.medianFirstResponseMinutes, prior: analytics.prior.medianFirstResponseMinutes, kind: "response" },
   ]
 
-  return <main className="ops-main ops-analytics-page">
-    <header className="ops-page-heading ops-analytics-heading">
-      <div><Link href="/ops">Back to Jobs</Link><span>Owner only</span><h1>Shop Analytics</h1><p>Business totals without crew rankings.</p></div>
+  return <main className="analytics-page">
+    <header className="card analytics-head">
+      <div><Link className="analytics-back t-caption" href="/ops">Back to Jobs</Link><span className="t-label">Owner only</span><h1 className="t-title">Shop Analytics</h1><p className="t-caption">Business totals without crew rankings.</p></div>
     </header>
 
-    <nav className="ops-analytics-ranges" aria-label="Analytics period">
+    <nav className="analytics-ranges" aria-label="Analytics period">
       {OWNER_ANALYTICS_RANGES.map((range) => <Link
         aria-current={range === days ? "page" : undefined}
-        className={range === days ? "is-active" : ""}
+        className={`btn btn--sm btn--edge${range === days ? " is-active" : ""}`}
         href={`/ops/analytics?range=${range}`}
         key={range}
       >{range} days</Link>)}
     </nav>
 
-    <section className="ops-card ops-analytics-ledger" aria-labelledby="period-totals-heading">
-      <header><div><span>{periodLabel(analytics.current)}</span><h2 id="period-totals-heading">Current vs prior period</h2></div><p>Compared with {periodLabel(analytics.prior)}</p></header>
-      <div className="ops-table-wrap">
-        <table className="ops-table">
-          <caption>Shop totals for equal lead-arrival periods</caption>
+    <section className="card analytics-card" aria-labelledby="period-totals-heading">
+      <header><div><span className="t-label">{periodLabel(analytics.current)}</span><h2 className="t-sub" id="period-totals-heading">Current vs prior period</h2></div><p className="t-caption">Compared with {periodLabel(analytics.prior)}</p></header>
+      <div className="analytics-table-wrap">
+        <table className="analytics-table">
+          <caption className="t-caption">Shop totals for equal lead-arrival periods</caption>
           <thead><tr><th scope="col">Measure</th><th scope="col">Current</th><th scope="col">Prior</th><th scope="col">Change</th></tr></thead>
           <tbody>{metricRows.map((metric) => <tr key={metric.label}>
             <th scope="row">{metric.label}</th>
@@ -146,11 +148,11 @@ export default async function OwnerAnalyticsPage({ searchParams }: { searchParam
       </div>
     </section>
 
-    <section className="ops-card ops-analytics-sources" aria-labelledby="lead-sources-heading">
-      <header><div><span>Top seven plus other</span><h2 id="lead-sources-heading">Lead sources</h2></div></header>
-      {analytics.sources.length === 0 ? <p className="ops-empty">No leads arrived in either period.</p> : <div className="ops-table-wrap">
-        <table className="ops-table">
-          <caption>Lead source and booking results</caption>
+    <section className="card analytics-card" aria-labelledby="lead-sources-heading">
+      <header><div><span className="t-label">Top seven plus other</span><h2 className="t-sub" id="lead-sources-heading">Lead sources</h2></div></header>
+      {analytics.sources.length === 0 ? <p className="analytics-empty t-caption">No leads arrived in either period.</p> : <div className="analytics-table-wrap">
+        <table className="analytics-table">
+          <caption className="t-caption">Lead source and booking results</caption>
           <thead><tr><th scope="col">Source</th><th scope="col">Current leads</th><th scope="col">Current booked</th><th scope="col">Conversion</th><th scope="col">Prior leads</th></tr></thead>
           <tbody>{analytics.sources.map((source) => <tr key={source.source}>
             <th scope="row">{sourceLabel(source.source)}</th>
@@ -163,8 +165,8 @@ export default async function OwnerAnalyticsPage({ searchParams }: { searchParam
       </div>}
     </section>
 
-    <aside className="ops-analytics-method" aria-label="How these numbers are calculated">
-      <h2>How this is counted</h2>
+    <aside className="card analytics-method" aria-label="How these numbers are calculated">
+      <h2 className="t-sub">How this is counted</h2>
       <p>Each window groups non-test, non-spam jobs by when the lead arrived. Booked means that lead has since reached booked status. Revenue uses recorded revenue only, never estimates. Paid is the amount recorded as paid; unpaid is the remaining recorded invoice balance. Response time excludes leads with no human response yet.</p>
     </aside>
   </main>

@@ -1,0 +1,190 @@
+.analytics-page {
+  --surface-sunken: var(--dark-surface-sunken);
+  --surface: var(--dark-surface);
+  --surface-raised: var(--dark-surface-raised);
+  --border-subtle: var(--dark-border-subtle);
+  --border: var(--dark-border);
+  --border-strong: var(--dark-border-strong);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --text-muted: var(--dark-text-muted);
+  --mark-quiet: var(--dark-mark-quiet);
+  --action: var(--dark-action);
+  --action-ink: var(--dark-action-ink);
+  --focus: var(--dark-focus);
+  --brand: var(--dark-brand);
+  --status-good-ink: var(--dark-good-ink);
+  --status-good-sur: var(--dark-good-sur);
+  --status-good-mark: var(--dark-good-mark);
+  --status-warn-ink: var(--dark-warn-ink);
+  --status-warn-sur: var(--dark-warn-sur);
+  --status-warn-mark: var(--dark-warn-mark);
+  --status-stop-ink: var(--dark-stop-ink);
+  --status-stop-sur: var(--dark-stop-sur);
+  --status-stop-mark: var(--dark-stop-mark);
+  --status-info-ink: var(--dark-info-ink);
+  --status-info-sur: var(--dark-info-sur);
+  --status-info-mark: var(--dark-info-mark);
+  --status-idle-mark: var(--dark-idle-mark);
+  width: min(100%, 72rem);
+  min-width: 0;
+  margin: 0 auto;
+  padding: var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  overflow-x: clip;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  font-family: var(--font);
+  font-size: var(--t-body);
+  font-weight: var(--w-reg);
+  line-height: var(--lh-body);
+}
+
+.analytics-page,
+.analytics-page *,
+.analytics-page *::before,
+.analytics-page *::after {
+  box-sizing: border-box;
+}
+
+.analytics-page > *,
+.analytics-page table,
+.analytics-page tbody,
+.analytics-page tr,
+.analytics-page :is(th, td) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.analytics-page :is(h1, h2, p) { margin: 0; }
+.analytics-page a { text-decoration: none; }
+.analytics-page :is(p, th, td, span, a, caption) { overflow-wrap: anywhere; }
+
+.analytics-page .card {
+  min-width: 0;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-lg) !important;
+  color: var(--text-primary) !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+
+.analytics-page .btn {
+  min-height: var(--control) !important;
+  border: 0 !important;
+  border-radius: var(--r-md) !important;
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: var(--font) !important;
+  font-size: var(--t-label) !important;
+  font-weight: var(--w-semi) !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.analytics-page .btn.btn--edge {
+  color: var(--text-primary) !important;
+  box-shadow: inset 0 0 0 1px var(--border) !important;
+}
+
+.analytics-page .btn.is-active {
+  color: var(--action-ink) !important;
+  background: var(--action) !important;
+  box-shadow: none !important;
+}
+
+.analytics-state-page { min-height: 50dvh; justify-content: center; }
+.analytics-state { display: grid; gap: var(--s2); padding: var(--s4); }
+.analytics-state p { color: var(--text-secondary); }
+
+.analytics-head { display: grid; gap: var(--s3); padding: var(--s4); }
+.analytics-head > div { display: grid; gap: var(--s2); min-width: 0; }
+.analytics-head .analytics-back { display: inline-flex; min-height: 44px; align-items: center; color: var(--text-secondary); }
+
+.analytics-ranges { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr)); gap: var(--s2); }
+.analytics-ranges > .btn { width: 100%; }
+
+.analytics-card { display: grid; min-width: 0; overflow: clip; }
+.analytics-card > header {
+  min-height: var(--row);
+  padding: var(--s3) var(--s4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+.analytics-card > header > div { display: grid; gap: var(--s1); min-width: 0; }
+
+.analytics-table-wrap { min-width: 0; padding: var(--s4); overflow-x: auto; }
+.analytics-empty { padding: var(--s4); color: var(--text-muted); }
+
+.analytics-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-family: var(--font-display);
+  font-size: var(--t-label);
+  line-height: normal;
+  font-variant-numeric: tabular-nums;
+}
+.analytics-table caption { padding-bottom: var(--s3); color: var(--text-muted); text-align: left; }
+.analytics-table :is(th, td) { padding: var(--s2) var(--s3) var(--s2) 0; text-align: left; vertical-align: top; color: var(--text-primary); }
+.analytics-table :is(th, td):last-child { padding-right: 0; }
+.analytics-table thead th { color: var(--text-muted); font-weight: var(--w-med); white-space: nowrap; }
+.analytics-table thead th,
+.analytics-table tbody tr + tr > :is(th, td) { border-top: 1px solid var(--border-subtle); }
+.analytics-table thead th { border-top: 0; border-bottom: 1px solid var(--border); }
+.analytics-table tbody th[scope="row"] { color: var(--text-secondary); font-weight: var(--w-med); }
+
+.analytics-method { display: grid; gap: var(--s2); padding: var(--s4); }
+.analytics-method p { max-width: 72ch; color: var(--text-secondary); }
+
+/* Below the first breakpoint the tables stack: each row becomes its own block
+   and every cell carries its column head from data-label, so nothing scrolls
+   sideways on a 320px phone. */
+@media (max-width: 40rem) {
+  .analytics-table,
+  .analytics-table thead,
+  .analytics-table tbody,
+  .analytics-table tr,
+  .analytics-table :is(th, td) { display: block; width: 100%; }
+  .analytics-table thead { border: 0; clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
+  .analytics-table tbody tr { padding: var(--s3) 0; border-top: 1px solid var(--border-subtle); }
+  .analytics-table tbody tr:first-child { padding-top: 0; border-top: 0; }
+  .analytics-table tbody tr + tr > :is(th, td) { border-top: 0; }
+  .analytics-table tbody th[scope="row"] { padding-right: 0; color: var(--text-primary); font-size: var(--t-sub); font-weight: var(--w-semi); }
+  .analytics-table td { padding-right: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s3); align-items: baseline; }
+  .analytics-table td::before { content: attr(data-label); color: var(--text-muted); font-family: var(--font); font-variant-numeric: normal; }
+}
+
+@media (min-width: 40rem) {
+  .analytics-page { padding: var(--s5); gap: var(--s5); }
+  .analytics-ranges { grid-auto-flow: column; grid-template-columns: none; justify-content: start; }
+  .analytics-ranges > .btn { width: auto; }
+  .analytics-table :is(th, td) { padding-right: var(--s4); }
+}
+
+@media (min-width: 56rem) {
+  .analytics-head { padding: var(--s5); }
+  .analytics-table-wrap { padding: var(--s5); }
+}
+
+@media (pointer: coarse), (max-width: 55rem) {
+  .analytics-page .btn,
+  .analytics-page .btn.btn--sm { min-height: 44px !important; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .analytics-page .btn:hover { color: var(--text-primary) !important; background: var(--surface-raised) !important; }
+  .analytics-page .btn.is-active:hover { color: var(--action-ink) !important; background: var(--action) !important; filter: brightness(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-page * { transition-duration: .001ms !important; }
+}
