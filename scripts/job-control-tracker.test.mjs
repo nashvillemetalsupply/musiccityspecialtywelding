@@ -27,7 +27,7 @@ test("tracker tabs use the canonical stages and refetch the requested stage", ()
   assert.match(PREVIEW_SOURCE, /board\.counts\[stage\]/)
   assert.match(PAGE_SOURCE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)
   assert.match(PAGE_SOURCE, /stages: \[\.\.\.JOB_BOARD_STAGES\]/)
-  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query \}, role\)/)
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests \}, role\)/)
 })
 
 test("tracker rows come from listBoardJobs and keep its reason string verbatim", () => {
@@ -121,7 +121,7 @@ test("every left-rail link resolves to an existing app route", () => {
 test("signal query values are strictly validated before filtering", () => {
   assert.match(PAGE_SOURCE, /const requestedSignal = params\.signal \?\? ""/)
   assert.match(PAGE_SOURCE, /const signal: BoardSignalKind \| undefined = BOARD_SIGNAL_KINDS\.includes\(requestedSignal as BoardSignalKind\)\s*\? \(requestedSignal as BoardSignalKind\)\s*: undefined/)
-  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query \}, role\)/)
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests \}, role\)/)
   assert.match(PREVIEW_SOURCE, /SIGNAL_ORDER\.map\(\(kind\) =>/)
   assert.match(PREVIEW_SOURCE, /href=\{boardHref\(\{ signal: kind \}\)\}/)
   assert.match(PREVIEW_SOURCE, /href=\{boardHref\(\{ signal: null \}\)\}>Clear signal filter<\/Link>/)
