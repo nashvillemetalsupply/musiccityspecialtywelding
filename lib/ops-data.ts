@@ -24,6 +24,9 @@ export type LeadFilter = {
 
 export const JOB_BOARD_STAGES = ["board", "attention", "shop", "waiting", "ready"] as const
 export type JobBoardStage = (typeof JOB_BOARD_STAGES)[number]
+export const BOARD_SIGNAL_KINDS = Object.freeze(
+  Object.keys(BOARD_WEIGHTS.signal) as BoardSignalKind[],
+)
 export type BoardSignal = {
   kind: BoardSignalKind
   reason: string
@@ -182,6 +185,7 @@ export async function listBoardJobs(
     page?: number
     pageSize?: number
     order?: BoardJobOrder
+    signal?: BoardSignalKind
   } = {},
   role: OperatorRole = "crew"
 ): Promise<BoardJobPage> {
@@ -194,6 +198,9 @@ export async function listBoardJobs(
   const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 5), 1), 12)
   const offset = (page - 1) * pageSize
   const order: BoardJobOrder = options.order === "weight" ? "weight" : options.order === "oldest" ? "oldest" : "stage"
+  const signal: BoardSignalKind | "" = options.signal && BOARD_SIGNAL_KINDS.includes(options.signal)
+    ? options.signal
+    : ""
   const w = BOARD_WEIGHTS
   const cap = w.latenessCapMultiple
   const half = w.latenessHalfLifeHours
@@ -360,6 +367,13 @@ export async function listBoardJobs(
     ), filtered AS (
       SELECT b.* FROM board b
       WHERE (${stage}::text = 'board' OR b.board_stage = ${stage}::text)
+        AND (
+          ${signal}::text = ''
+          OR EXISTS (
+            SELECT 1 FROM candidates c
+            WHERE c.lead_id = b.id AND c.kind = ${signal}::text
+          )
+        )
         AND (
           ${query}::text = ''
           OR b.first_name ILIKE ${pattern}::text

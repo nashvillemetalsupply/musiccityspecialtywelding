@@ -327,9 +327,11 @@ svg{display:block}
 .signals{display:flex;flex-direction:column}
 .signal{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;
   text-align:left;width:100%;border-radius:var(--r-sm);
-  transition:background .15s var(--ease)}
+  color:inherit;text-decoration:none;transition:background .15s var(--ease)}
 .signal+.signal{border-top:1px solid var(--border-subtle)}
 .signal:hover{background:var(--surface-raised)}
+.signal[aria-current="true"]{background:var(--surface-raised);
+  box-shadow:inset 0 0 0 1px var(--border-strong)}
 .signal i{width:8px;height:8px;border-radius:2px;flex:none}
 .signal span{flex:1;min-width:0;font-size:var(--t-data);color:var(--text-secondary)}
 .signal b{font-size:var(--t-name);font-weight:var(--w-semi);color:var(--text-primary)}
