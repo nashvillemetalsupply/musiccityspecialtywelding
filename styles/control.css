@@ -1,0 +1,203 @@
+@import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&family=Chivo:wght@300..900&display=swap");
+
+:root{
+  /* --- raw palette Â· light -------------------------------------------------
+     Anchor hue 250 (cool slate). Neutrals are tinted, never flat grey.       */
+  /* Lifted from the shop's tokens.css, not chosen here. */
+  --slate-99:#f7f8f9;   /* --color-paper-2  */
+  --slate-97:#eff2f4;   /* --color-paper-3  */
+  --slate-95:#e9ecee;
+  --slate-92:#e4e8ea; --slate-88:#d9dde1;   /* --color-rule */
+  --slate-80:#9aa2a9;
+  --slate-58:#9aa2a9;   /* --color-machined, marks only */
+  --slate-47:#59626b;   /* --color-muted    */
+  --slate-40:#394047;   /* --color-ink-2    */
+  --slate-30:#232a30; --slate-24:#171a1d;   /* --color-ink */
+
+  /* Feedback. Marks are held at or above 3:1 on --surface; inks above 4.5:1
+     on their own tinted surface. warn-mark was 2.57:1 and is now a measured 3.5:1.     */
+  --good-ink:#1f6437; --good-sur:#e6f2ea; --good-mark:#287a44;  /* --color-positive */
+  --warn-ink:#6f4800; --warn-sur:#fbf1de; --warn-mark:#8a5a00;  /* --color-warning  */
+  --stop-ink:#8f1c13; --stop-sur:#fdecea; --stop-mark:#b42318;  /* --color-danger   */
+  --info-ink:#274d72; --info-sur:#e9f0f6; --info-mark:#315f8c;  /* --color-blueprint*/
+  --brand:#b34513;                                              /* --color-accent   */
+
+  /* Dark raw palette. Theme rules below continue to map semantic roles. */
+  --dark-surface-sunken:#100f0d; --dark-surface:#1a1917; --dark-surface-raised:#232220;
+  --dark-border-subtle:#2b2926; --dark-border:#35322e; --dark-border-strong:#4a463f;
+  --dark-text-primary:#f1ebdc; --dark-text-secondary:#cfc6b5; --dark-text-muted:#a99f8e;
+  --dark-mark-quiet:#4a463f;
+  --dark-action:#e8611c; --dark-action-ink:#12100d; --dark-focus:#e8611c; --dark-brand:#e8611c;
+  --dark-good-ink:#7fd39d; --dark-good-sur:#15301f; --dark-good-mark:#3d9e5c;
+  --dark-warn-ink:#e5ae4c; --dark-warn-sur:#2f2410; --dark-warn-mark:#b58224;
+  --dark-stop-ink:#f0958a; --dark-stop-sur:#331815; --dark-stop-mark:#c9503f;
+  --dark-info-ink:#94bce4; --dark-info-sur:#16222e; --dark-info-mark:#4c7fae;
+  --dark-idle-mark:#4a463f;
+  --dark-sketch-ground:#0d0c0a; --dark-sketch-grid:#232220; --dark-sketch-dim:#c8bead;
+  --dark-draw-line:#cfc6b5; --dark-draw-thin:#4a463f; --dark-draw-fill:#232220;
+
+  /* --- semantic roles ---------------------------------------------------- */
+  --surface-sunken:var(--slate-95);    /* the desk the cards sit on          */
+  --surface:var(--slate-99);           /* a card. never #fff                 */
+  --surface-raised:var(--slate-97);    /* row hover, table head, wells       */
+  --border-subtle:var(--slate-92);
+  --border:var(--slate-88);
+  --border-strong:var(--slate-80);
+  --text-primary:var(--slate-24);
+  --text-secondary:var(--slate-40);
+  --text-muted:var(--slate-47);        /* the text floor                     */
+  --mark-quiet:var(--slate-58);        /* rules, inert dots, empty slots     */
+  --action:#b34513;                    /* --color-accent */
+  --action-ink:#ffffff;
+  --focus:#e8611c;                     /* --color-focus  */
+
+  --status-good-ink:var(--good-ink); --status-good-sur:var(--good-sur); --status-good-mark:var(--good-mark);
+  --status-warn-ink:var(--warn-ink); --status-warn-sur:var(--warn-sur); --status-warn-mark:var(--warn-mark);
+  --status-stop-ink:var(--stop-ink); --status-stop-sur:var(--stop-sur); --status-stop-mark:var(--stop-mark);
+  --status-info-ink:var(--info-ink); --status-info-sur:var(--info-sur); --status-info-mark:var(--info-mark);
+  --status-idle-mark:var(--slate-58);
+
+  /* --- the three colour fields -------------------------------------------
+     The board's only saturated grounds, and the only thing read across a
+     room. Deliberately theme-invariant: each is already deep enough to hold
+     both inks above 4.5:1 in either theme, so a dark override would move a
+     measured number for no gain. The hook is here if that stops being true.
+
+     Two inks, not one. The session brief said "an on-field ink"; the design
+     contract specifies both #f4efe4 and #dcd6ca and cites the measurement
+     for each, so the quiet tier is contracted, not incidental.             */
+  --field-info:#2b4f75;      /* --color-blueprint, deepened Â· a count       */
+  --field-warn:#7d5100;      /* --color-warning,   deepened Â· wants him     */
+  --field-neutral:#2a2e32;   /* --color-wall-2 Â· money is not a state       */
+  --on-field:#f4efe4;        /* 5.86:1 on all three grounds                 */
+  --on-field-muted:#dcd6ca;  /* 7.40:1 on all three grounds                 */
+
+  --sketch-ground:#12100d;             /* --color-wall     */
+  --sketch-grid:#2a2e32;               /* --color-wall-2   */
+  --sketch-line:var(--brand);
+  --sketch-dim:#c8bead;                /* --color-wall-muted */
+  --draw-line:var(--slate-40);         /* the measured part drawing          */
+  --draw-thin:var(--slate-80);
+  --draw-fill:var(--slate-97);
+
+  /* --- 8px rhythm -------------------------------------------------------- */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:40px;
+  --r-sm:0; --r-md:0; --r-lg:0;   /* --radius: 0rem */
+  --row:56px; --control:32px; --chip:24px;
+  --safe-area-bottom:env(safe-area-inset-bottom,0px);
+
+  /* --- type roles -------------------------------------------------------- */
+  --font:'Golos Text',system-ui,-apple-system,Segoe UI,sans-serif;
+  --font-display:'Chivo',system-ui,sans-serif;
+  /* display and title step up with the viewport; both are set for the
+     narrowest phone here and grow in the min-width layers at the end */
+  --t-display:40px;  --lh-display:1.0;   /* the three numbers            */
+  --t-lede:22px;     --lh-lede:1.26;      /* the question worth asking    */
+  --t-title:17px;    --lh-title:1.24;     /* a card's name                */
+  --t-name:15px;     --lh-name:1.3;       /* a customer, a signal         */
+  --t-sub:14px;      --lh-sub:1.35;       /* a sub-head inside a card     */
+  --t-body:13.5px;   --lh-body:1.6;       /* running prose                */
+  --t-data:13.5px;   --lh-data:1.35;      /* anything in a column         */
+  --t-label:12px;    --lh-label:1.4;      /* column heads, keys, chips    */
+  --t-caption:11.5px;--lh-caption:1.5;    /* the quiet line under a thing */
+  /* the house ladder, heavy end reserved for display */
+  --w-reg:420; --w-med:500; --w-semi:640;
+  --ease:cubic-bezier(.2,.7,.3,1);
+}
+
+/* Dark is a coordinated tone map on the same hues. The font is loaded on its
+   variable axis (wght@350..600) so the lighter body weight below is real â€”
+   with static instances the browser snapped it straight back to 400. */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --surface-sunken:var(--dark-surface-sunken); --surface:var(--dark-surface); --surface-raised:var(--dark-surface-raised);
+    --border-subtle:var(--dark-border-subtle); --border:var(--dark-border); --border-strong:var(--dark-border-strong);
+    --text-primary:var(--dark-text-primary); --text-secondary:var(--dark-text-secondary); --text-muted:var(--dark-text-muted);
+    --mark-quiet:var(--dark-mark-quiet);
+    --action:var(--dark-action); --action-ink:var(--dark-action-ink); --focus:var(--dark-focus); --brand:var(--dark-brand);
+    --status-good-ink:var(--dark-good-ink); --status-good-sur:var(--dark-good-sur); --status-good-mark:var(--dark-good-mark);
+    --status-warn-ink:var(--dark-warn-ink); --status-warn-sur:var(--dark-warn-sur); --status-warn-mark:var(--dark-warn-mark);
+    --status-stop-ink:var(--dark-stop-ink); --status-stop-sur:var(--dark-stop-sur); --status-stop-mark:var(--dark-stop-mark);
+    --status-info-ink:var(--dark-info-ink); --status-info-sur:var(--dark-info-sur); --status-info-mark:var(--dark-info-mark);
+    --status-idle-mark:var(--dark-idle-mark);
+    --sketch-ground:var(--dark-sketch-ground); --sketch-grid:var(--dark-sketch-grid); --sketch-dim:var(--dark-sketch-dim);
+    --draw-line:var(--dark-draw-line); --draw-thin:var(--dark-draw-thin); --draw-fill:var(--dark-draw-fill);
+    --w-reg:400; --w-med:480; --w-semi:620;
+  }
+}
+:root[data-theme="dark"]{
+  --surface-sunken:var(--dark-surface-sunken); --surface:var(--dark-surface); --surface-raised:var(--dark-surface-raised);
+  --border-subtle:var(--dark-border-subtle); --border:var(--dark-border); --border-strong:var(--dark-border-strong);
+  --text-primary:var(--dark-text-primary); --text-secondary:var(--dark-text-secondary); --text-muted:var(--dark-text-muted);
+  --mark-quiet:var(--dark-mark-quiet);
+  --action:var(--dark-action); --action-ink:var(--dark-action-ink); --focus:var(--dark-focus); --brand:var(--dark-brand);
+  --status-good-ink:var(--dark-good-ink); --status-good-sur:var(--dark-good-sur); --status-good-mark:var(--dark-good-mark);
+  --status-warn-ink:var(--dark-warn-ink); --status-warn-sur:var(--dark-warn-sur); --status-warn-mark:var(--dark-warn-mark);
+  --status-stop-ink:var(--dark-stop-ink); --status-stop-sur:var(--dark-stop-sur); --status-stop-mark:var(--dark-stop-mark);
+  --status-info-ink:var(--dark-info-ink); --status-info-sur:var(--dark-info-sur); --status-info-mark:var(--dark-info-mark);
+  --status-idle-mark:var(--dark-idle-mark);
+  --sketch-ground:var(--dark-sketch-ground); --sketch-grid:var(--dark-sketch-grid); --sketch-dim:var(--dark-sketch-dim);
+  --draw-line:var(--dark-draw-line); --draw-thin:var(--dark-draw-thin); --draw-fill:var(--dark-draw-fill);
+  --w-reg:400; --w-med:480; --w-semi:620;
+}
+
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
+
+/* Chivo carries anything that is seen rather than read, at the house's heavy
+   end. Everything at reading size stays on Golos at 420-640. */
+.t-display{font-family:var(--font-display);font-size:var(--t-display);
+  font-weight:760;letter-spacing:-.018em;line-height:var(--lh-display);
+  overflow-wrap:anywhere;min-width:0}
+.t-title{font-family:var(--font-display);font-size:var(--t-title);
+  font-weight:680;letter-spacing:-.01em;line-height:var(--lh-title);
+  overflow-wrap:anywhere;min-width:0}
+.t-sub{font-size:var(--t-sub);font-weight:var(--w-semi);line-height:var(--lh-sub)}
+.t-label{font-size:var(--t-label);font-weight:var(--w-med);color:var(--text-muted);
+  line-height:var(--lh-label)}
+.t-caption{font-size:var(--t-caption);color:var(--text-muted);line-height:var(--lh-caption)}
+.t-data{font-size:var(--t-data);font-weight:var(--w-med);line-height:var(--lh-data)}
+
+.find{flex:1;max-width:420px;display:flex;align-items:center;gap:var(--s2);
+  height:var(--control);padding:0 var(--s3);border-radius:var(--r-md);
+  background:var(--surface-raised);transition:box-shadow .15s var(--ease)}
+.find:focus-within{box-shadow:0 0 0 2px var(--focus)}
+/* Preserve the standalone mockup's native input metrics after Tailwind preflight. */
+.find input{flex:1;border:0;padding:1px 2px;background:none;outline:none;font:inherit;color:var(--text-primary)}
+.find input::placeholder{color:var(--text-muted)}
+
+.btn{height:var(--control);padding:0 var(--s3);border-radius:var(--r-md);
+  font-size:var(--t-label);font-weight:var(--w-semi);white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
+  color:var(--text-secondary);transition:background .15s var(--ease),color .15s var(--ease)}
+.btn:hover{background:var(--surface-raised);color:var(--text-primary)}
+.btn:active{transform:translateY(.5px)}
+.btn--go{background:var(--action);color:var(--action-ink)}
+.btn--go:hover{background:var(--action);color:var(--action-ink);filter:brightness(1.16)}
+.btn--edge{box-shadow:inset 0 0 0 1px var(--border);color:var(--text-primary)}
+.btn--sm{height:28px;padding:0 var(--s3);font-size:var(--t-label)}
+.icon{width:var(--control);height:var(--control);border-radius:var(--r-md);
+  display:grid;place-items:center;color:var(--text-muted);
+  transition:background .15s var(--ease),color .15s var(--ease)}
+.icon:hover{background:var(--surface-raised);color:var(--text-primary)}
+
+.chip{display:inline-flex;align-items:center;gap:var(--s2);height:var(--chip);
+  padding:0 var(--s2);border-radius:999px;font-size:var(--t-label);
+  font-weight:var(--w-med);white-space:nowrap;flex:none}
+.chip i{width:6px;height:6px;border-radius:50%;flex:none}
+/* only the states that demand an action today carry a tinted fill */
+.chip--stop{background:var(--status-stop-sur);color:var(--status-stop-ink)} .chip--stop i{background:var(--status-stop-mark)}
+.chip--warn{background:var(--status-warn-sur);color:var(--status-warn-ink)} .chip--warn i{background:var(--status-warn-mark)}
+.chip--good{background:var(--surface-raised);color:var(--text-secondary)}   .chip--good i{background:var(--status-good-mark)}
+.chip--info{background:var(--surface-raised);color:var(--text-secondary)}   .chip--info i{background:var(--status-info-mark)}
+
+/* Touch targets. This remains a pointer query with a width arm. */
+@media (pointer:coarse),(max-width:55rem){
+  .btn,.btn--sm{min-height:44px;padding-inline:var(--s4)}
+  .icon,.rl{min-width:44px;min-height:44px}
+  .tab,.signal{min-height:44px}
+  .find{height:44px}
+}
+
+.logo-home:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.figure :focus-visible{outline:2px solid var(--on-field);outline-offset:2px}
+.btn--go:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
