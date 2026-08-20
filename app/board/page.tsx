@@ -4,7 +4,7 @@ import { getPromiseSummary } from "@/lib/commitments"
 import { listTodayEvents } from "@/lib/events"
 import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
-import { getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
+import { getBoardJobDetails, getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
 import { JobControl } from "./board"
 import type { BoardPaneData } from "./board"
@@ -30,6 +30,7 @@ const EMPTY_BOARD: BoardPaneData = {
   todayTrail: [],
   callSketch: null,
   items: [],
+  details: new Map(),
   resultTotal: 0,
   pageSize: 5,
   stage: "board",
@@ -65,6 +66,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     listTodayEvents(role),
     getLatestBoardCallSketch(),
   ])
+  const details = await getBoardJobDetails(page.items.map((item) => item.id), role)
 
   return <JobControl board={{
     counts: page.counts,
@@ -75,6 +77,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body }) => ({ id, occurredAt, kind, body })),
     callSketch,
     items: page.items,
+    details,
     resultTotal: page.resultTotal,
     pageSize: page.pageSize,
     stage,

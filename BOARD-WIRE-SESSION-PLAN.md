@@ -32,7 +32,7 @@ their own):
 | ID | Mission (plan item) | Session model | Effort | Size | Depends on | Status |
 |----|---------------------|---------------|--------|------|------------|--------|
 | W0 | `job_line_items` store, owner entry on `/ops/leads/<id>`, crew stripped (plan §2 block C) | Opus | high | M | — | **done** |
-| W1 | Batched per-job detail query — `getBoardJobDetails(ids, role)` (plan §2 "Query cost") | Codex `gpt-5.6-sol` | xhigh | M | W0 | todo |
+| W1 | Batched per-job detail query — `getBoardJobDetails(ids, role)` (plan §2 "Query cost") | Codex `gpt-5.6-sol` | xhigh | M | W0 | **done** |
 | W2 | The expand panel: blocks A, B, C and the open/close interaction (plan §2) | Codex `gpt-5.6-sol` | xhigh | L | W1 | todo |
 | W3 | Signal filter — `?signal=<kind>` through `listBoardJobs`, pane buttons, "Work the N" (plan §1 rows 13–14) | Codex `gpt-5.6-sol` | high | M | — | todo |
 | W4 | Call sketch wiring — `leadId` on `BoardCallSketch`, "Open the job", "Text him the three" (rows 15–16) | Codex `gpt-5.6-sol` | medium | S | — | todo |
@@ -88,7 +88,7 @@ list and the action's authority check for sign-off before writing code.
 returning a `Map<number, BoardJobDetail>` covering, for every visible row: active
 claims, open/broken commitments, the newest photo date, a short event trail, and the
 job's line items (owner only — crew gets an empty list, stripped server-side).
-Four queries over the whole id list — never one per row. Call it from
+Five queries over the whole id list — never one per row. Call it from
 `app/board/page.tsx` beside the existing `Promise.all`, and add the result to
 `BoardPaneData`. Type the shape. Nothing renders yet.
 
@@ -104,7 +104,7 @@ into a second file.
 > Session W1 of `BOARD-WIRE-SESSION-PLAN.md`, splitting `BOARD-WIRE-PLAN.md`. Read
 > both first. Mission: add `getBoardJobDetails(ids, role)` to `lib/ops-data.ts` —
 > batched active claims, commitments, newest photo date, a short event trail and the
-> job's line items for a page of board rows, four queries total, plus the type and the call from
+> job's line items for a page of board rows, five queries total, plus the type and the call from
 > `app/board/page.tsx`. Do not touch `board.tsx` markup or `board.css`. Crew rows keep
 > their money nulled and test rows stay out. Present your plan and the query shapes
 > for sign-off before writing code.

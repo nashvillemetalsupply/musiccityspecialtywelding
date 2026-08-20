@@ -1,11 +1,17 @@
 import { getSql } from "@/lib/db"
+import type { ClaimRow } from "@/lib/claims"
+import type { CommitmentRow } from "@/lib/commitments"
+import { listBoardEventTrails } from "@/lib/events"
+import type { EventRow } from "@/lib/events"
+import { listJobLineItemsForLeads } from "@/lib/job-line-items"
+import type { JobLineItem } from "@/lib/job-line-items"
 import type { LeadEventRow, LeadRow, LeadStatus } from "@/lib/leads"
 import { LEAD_STATUSES } from "@/lib/leads"
 import type { OperatorRole } from "@/lib/operators"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
 import { BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
-import { redactCrewText } from "@/lib/visibility"
+import { projectClaimForRole, projectCommitmentForRole, redactCrewText } from "@/lib/visibility"
 
 export type LeadFilter = {
   status?: LeadStatus | "all" | "open"
@@ -42,6 +48,14 @@ export type BoardJobPage = {
   page: number
   pageSize: number
   hasNext: boolean
+}
+
+export type BoardJobDetail = {
+  activeClaims: ClaimRow[]
+  commitments: CommitmentRow[]
+  newestPhotoAt: string | null
+  eventTrail: EventRow[]
+  lineItems: JobLineItem[]
 }
 
 const OPEN_STATUSES = ["new", "contacted", "qualified", "quoted"] as const
@@ -415,6 +429,165 @@ export async function listBoardJobs(
     pageSize,
     hasNext: rows.filter((row) => Number.isInteger(Number(row.id)) && Number(row.id) > 0).length > pageSize,
   }
+}
+
+function boardDetailIds(leadIds: readonly number[]) {
+  return [...new Set(leadIds.filter((id) => Number.isInteger(id) && id > 0).map(Number))]
+}
+
+async function listBoardActiveClaims(
+  leadIds: readonly number[],
+  role: OperatorRole,
+): Promise<Map<number, ClaimRow[]>> {
+  const byLead = new Map<number, ClaimRow[]>()
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT c.*
+    FROM claims c
+    JOIN leads l ON l.id = c.subject_id AND c.subject_type = 'lead'
+    JOIN events source ON source.id = c.source_event_id
+    LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
+    LEFT JOIN people source_person ON source_person.id = source.person_id
+    WHERE c.subject_id = ANY(${leadIds}::bigint[])
+      AND c.subject_type = 'lead'
+      AND c.superseded_by IS NULL
+      AND l.is_test = false
+      AND COALESCE(source_lead.is_test, false) = false
+      AND COALESCE(source_person.is_test, false) = false
+      AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+      AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+        source.body, source.crew_body, source.detail::text, c.value::text) NOT ILIKE '%[INTERNAL TEST]%'
+    ORDER BY c.subject_id ASC, c.created_at DESC, c.id DESC`) as ClaimRow[]
+
+  for (const row of rows) {
+    const claim = projectClaimForRole(row, role)
+    if (!claim) continue
+    const leadId = Number(claim.subject_id)
+    const claims = byLead.get(leadId) ?? []
+    claims.push(claim)
+    byLead.set(leadId, claims)
+  }
+  return byLead
+}
+
+async function listBoardOpenOrBrokenCommitments(
+  leadIds: readonly number[],
+  role: OperatorRole,
+): Promise<Map<number, CommitmentRow[]>> {
+  const byLead = new Map<number, CommitmentRow[]>()
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT c.*
+    FROM commitments c
+    JOIN leads l ON l.id = c.lead_id
+    JOIN events source ON source.id = c.source_event_id
+    LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
+    LEFT JOIN people commitment_person ON commitment_person.id = c.person_id
+    LEFT JOIN people source_person ON source_person.id = source.person_id
+    WHERE c.lead_id = ANY(${leadIds}::bigint[])
+      AND c.status = ANY(ARRAY['open','broken']::text[])
+      AND l.is_test = false
+      AND COALESCE(source_lead.is_test, false) = false
+      AND COALESCE(commitment_person.is_test, false) = false
+      AND COALESCE(source_person.is_test, false) = false
+      AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+      AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+        c.summary, c.crew_summary, source.body, source.crew_body, source.detail::text)
+        NOT ILIKE '%[INTERNAL TEST]%'
+    ORDER BY c.lead_id ASC, c.due_at ASC NULLS LAST, c.created_at DESC, c.id DESC`) as CommitmentRow[]
+
+  for (const row of rows) {
+    if (row.lead_id === null) continue
+    const commitment = projectCommitmentForRole(row, role)
+    const leadId = Number(commitment.lead_id)
+    const commitments = byLead.get(leadId) ?? []
+    commitments.push(commitment)
+    byLead.set(leadId, commitments)
+  }
+  return byLead
+}
+
+async function listBoardNewestPhotoDates(leadIds: readonly number[]): Promise<Map<number, string>> {
+  const sql = getSql()
+  const rows = (await sql`
+    WITH visible_leads AS MATERIALIZED (
+      SELECT l.id, l.photos
+      FROM leads l
+      WHERE l.id = ANY(${leadIds}::bigint[])
+        AND l.is_test = false
+        AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes)
+          NOT ILIKE '%[INTERNAL TEST]%'
+    ), photo_receipts AS (
+      SELECT l.id AS lead_id, receipt.occurred_at AS photo_at
+      FROM visible_leads l
+      CROSS JOIN LATERAL jsonb_array_elements(COALESCE(l.photos, '[]'::jsonb)) photo
+      JOIN events receipt ON receipt.id = CASE
+        WHEN photo->>'sourceAddendumEventId' ~ '^[0-9]+$'
+          THEN (photo->>'sourceAddendumEventId')::bigint
+        ELSE NULL
+      END AND receipt.lead_id = l.id
+      LEFT JOIN people source_person ON source_person.id = receipt.person_id
+      WHERE COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
+      UNION ALL
+      SELECT l.id AS lead_id, receipt.occurred_at AS photo_at
+      FROM visible_leads l
+      CROSS JOIN LATERAL jsonb_array_elements(COALESCE(l.photos, '[]'::jsonb)) photo
+      JOIN events receipt ON receipt.id = CASE
+        WHEN photo->>'sourceCompletionEventId' ~ '^[0-9]+$'
+          THEN (photo->>'sourceCompletionEventId')::bigint
+        ELSE NULL
+      END AND receipt.lead_id = l.id
+      LEFT JOIN people source_person ON source_person.id = receipt.person_id
+      WHERE COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
+      UNION ALL
+      SELECT receipt.lead_id, receipt.occurred_at AS photo_at
+      FROM events receipt
+      JOIN visible_leads l ON l.id = receipt.lead_id
+      LEFT JOIN people source_person ON source_person.id = receipt.person_id
+      WHERE receipt.kind = 'photo.added'
+        AND COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
+    )
+    SELECT lead_id, max(photo_at) AS newest_photo_at
+    FROM photo_receipts
+    GROUP BY lead_id`) as Array<{ lead_id: number; newest_photo_at: string }>
+
+  return new Map(rows.map((row) => [Number(row.lead_id), row.newest_photo_at]))
+}
+
+// Five self-contained page-batched queries: active claims, open/broken
+// commitments, newest photo receipt, visible event trail, and owner-only line
+// items. The returned map is complete even when a job has no matching facts.
+export async function getBoardJobDetails(
+  leadIds: readonly number[],
+  role: OperatorRole,
+): Promise<Map<number, BoardJobDetail>> {
+  const ids = boardDetailIds(leadIds)
+  if (!ids.length) return new Map()
+
+  const [claims, commitments, newestPhotoDates, eventTrails, lineItems] = await Promise.all([
+    listBoardActiveClaims(ids, role),
+    listBoardOpenOrBrokenCommitments(ids, role),
+    listBoardNewestPhotoDates(ids),
+    listBoardEventTrails(ids, role),
+    listJobLineItemsForLeads(ids, role),
+  ])
+
+  return new Map(ids.map((leadId) => [leadId, {
+    activeClaims: claims.get(leadId) ?? [],
+    commitments: commitments.get(leadId) ?? [],
+    newestPhotoAt: newestPhotoDates.get(leadId) ?? null,
+    eventTrail: eventTrails.get(leadId) ?? [],
+    lineItems: lineItems.get(leadId) ?? [],
+  }]))
 }
 
 export async function getLead(id: number, role: OperatorRole = "crew"): Promise<LeadRow | null> {

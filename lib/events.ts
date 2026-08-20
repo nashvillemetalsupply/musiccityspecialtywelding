@@ -106,6 +106,58 @@ export async function listLeadEvents(leadId: number, limit = 300): Promise<Event
     ) recent ORDER BY occurred_at ASC, id ASC`) as EventRow[]
 }
 
+// One visibility-safe query for the short receipt trail behind every board
+// row. Rank newest-first so the limit keeps the right four, then return each
+// lead's retained slice oldest-first for chronological rendering.
+export async function listBoardEventTrails(
+  leadIds: readonly number[],
+  role: OperatorRole,
+  limit = 4,
+): Promise<Map<number, EventRow[]>> {
+  const byLead = new Map<number, EventRow[]>()
+  const ids = [...new Set(leadIds.filter((id) => Number.isInteger(id) && id > 0).map(Number))]
+  if (!ids.length) return byLead
+
+  const sql = getSql()
+  const bounded = Math.min(Math.max(Math.floor(limit), 1), 12)
+  const rows = (await sql`
+    WITH ranked AS (
+      SELECT e.*,
+        row_number() OVER (
+          PARTITION BY e.lead_id
+          ORDER BY e.occurred_at DESC, e.id DESC
+        ) AS trail_rank
+      FROM events e
+      JOIN leads l ON l.id = e.lead_id
+      LEFT JOIN people p ON p.id = e.person_id
+      WHERE e.lead_id = ANY(${ids}::bigint[])
+        AND l.is_test = false
+        AND COALESCE(p.is_test, false) = false
+        AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+          e.body, e.crew_body, e.detail::text) NOT ILIKE '%[INTERNAL TEST]%'
+        AND (${role}::text = 'owner' OR (
+          NOT (lower(e.kind) = ANY(${[...OWNER_ONLY_EVENT_KINDS]}::text[]))
+          AND lower(e.kind) !~ ${OWNER_ONLY_EVENT_NAMESPACE_PATTERN}::text
+          AND NOT (lower(COALESCE(e.detail->>'sensitivity', '')) = ANY(${[...OWNER_ONLY_EVENT_SENSITIVITIES]}::text[]))
+        ))
+    )
+    SELECT * FROM ranked
+    WHERE trail_rank <= ${bounded}::bigint
+    ORDER BY lead_id ASC, occurred_at ASC, id ASC`) as Array<EventRow & { trail_rank: number }>
+
+  for (const { trail_rank, ...event } of rows) {
+    void trail_rank
+    const projected = projectEventForRole(event, role)
+    if (!projected || projected.lead_id === null) continue
+    const leadId = Number(projected.lead_id)
+    const trail = byLead.get(leadId) ?? []
+    trail.push(projected)
+    byLead.set(leadId, trail)
+  }
+  return byLead
+}
+
 export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): Promise<EventRow[]> {
   const sql = getSql()
   const bounded = Math.min(Math.max(Math.floor(limit), 1), 12)

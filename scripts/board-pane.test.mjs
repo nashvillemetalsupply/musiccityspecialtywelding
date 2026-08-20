@@ -119,3 +119,42 @@ test("the Today trail uses shop labels verbatim and has no signed-out fixtures",
   assert.match(PAGE_SOURCE, /todayTrail: \[\]/)
   assert.doesNotMatch(PREVIEW_SOURCE, /Price worked out for Phil Lloyd|Ray Colter called|Denz automotive asked|Gerald Pace plate finished/)
 })
+
+test("board job details are typed, wired, and remain data-only in W1", () => {
+  assert.match(OPS_DATA_SOURCE, /export type BoardJobDetail = \{[\s\S]*activeClaims: ClaimRow\[\][\s\S]*newestPhotoAt: string \| null[\s\S]*eventTrail: EventRow\[\][\s\S]*lineItems: JobLineItem\[\]/)
+  assert.match(PREVIEW_SOURCE, /details: Map<number, BoardJobDetail>/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /board\.details/)
+  assert.match(PAGE_SOURCE, /getBoardJobDetails\(page\.items\.map\(\(item\) => item\.id\), role\)/)
+  assert.match(PAGE_SOURCE, /details: new Map\(\)/)
+})
+
+test("board job details compose five batched facts with server-side role projections", () => {
+  const details = OPS_DATA_SOURCE.slice(OPS_DATA_SOURCE.indexOf("async function listBoardActiveClaims"), OPS_DATA_SOURCE.indexOf("export async function getLead"))
+  assert.match(details, /c\.subject_id = ANY\(\$\{leadIds\}::bigint\[\]\)/)
+  assert.match(details, /c\.status = ANY\(ARRAY\['open','broken'\]::text\[\]\)/)
+  assert.match(details, /projectClaimForRole\(row, role\)/)
+  assert.match(details, /projectCommitmentForRole\(row, role\)/)
+  assert.match(details, /newestPhotoAt: newestPhotoDates\.get\(leadId\) \?\? null/)
+  for (const call of [
+    "listBoardActiveClaims(ids, role)",
+    "listBoardOpenOrBrokenCommitments(ids, role)",
+    "listBoardNewestPhotoDates(ids)",
+    "listBoardEventTrails(ids, role)",
+    "listJobLineItemsForLeads(ids, role)",
+  ]) assert.ok(details.includes(call), `${call} is missing from the five-query batch`)
+  assert.ok((details.match(/NOT ILIKE '%\[INTERNAL TEST\]%'/g) ?? []).length >= 5)
+})
+
+test("photo dates use receipts only and each event trail keeps the newest four chronologically", () => {
+  const photo = OPS_DATA_SOURCE.slice(OPS_DATA_SOURCE.indexOf("async function listBoardNewestPhotoDates"), OPS_DATA_SOURCE.indexOf("export async function getBoardJobDetails"))
+  assert.match(photo, /sourceAddendumEventId/)
+  assert.match(photo, /sourceCompletionEventId/)
+  assert.match(photo, /receipt\.kind = 'photo\.added'/)
+  assert.doesNotMatch(photo, /l\.updated_at|leads\.updated_at/)
+
+  const trails = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listBoardEventTrails"), EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
+  assert.match(trails, /PARTITION BY e\.lead_id\s+ORDER BY e\.occurred_at DESC, e\.id DESC/)
+  assert.match(trails, /WHERE trail_rank <= \$\{bounded\}::bigint\s+ORDER BY lead_id ASC, occurred_at ASC, id ASC/)
+  assert.match(trails, /projectEventForRole\(event, role\)/)
+  assert.match(trails, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
+})

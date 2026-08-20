@@ -58,6 +58,9 @@ test("line items are money: crew never reads them and the write is owner-gated",
   // empty list is authorization; hiding the table in CSS would not be.
   assert.match(store, /if \(role !== "owner"\) return \[\]/)
   assert.match(store, /if \(role !== "owner"\) return byLead/)
+  assert.match(store, /FROM job_line_items items\s+JOIN leads l ON l\.id = items\.lead_id/)
+  assert.match(store, /items\.is_test = false\s+AND l\.is_test = false/)
+  assert.match(store, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
   // Every interpolation carries an explicit Postgres cast (Neon 42P18).
   for (const cast of ["::bigint[]", "::bigint", "::int", "::text", "::boolean"]) {
     assert.ok(store.includes(cast), `${cast} missing from the line-item queries`)

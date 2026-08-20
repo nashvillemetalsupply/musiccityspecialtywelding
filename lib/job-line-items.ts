@@ -27,10 +27,15 @@ export async function listJobLineItemsForLeads(
 
   const sql = getSql()
   const rows = (await sql`
-    SELECT id, lead_id, position, label, note, amount_cents
-    FROM job_line_items
-    WHERE lead_id = ANY(${ids}::bigint[])
-    ORDER BY lead_id, position, id`) as {
+    SELECT items.id, items.lead_id, items.position, items.label, items.note, items.amount_cents
+    FROM job_line_items items
+    JOIN leads l ON l.id = items.lead_id
+    WHERE items.lead_id = ANY(${ids}::bigint[])
+      AND items.is_test = false
+      AND l.is_test = false
+      AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+        items.label, items.note) NOT ILIKE '%[INTERNAL TEST]%'
+    ORDER BY items.lead_id, items.position, items.id`) as {
     id: number
     lead_id: number
     position: number
