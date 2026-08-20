@@ -150,6 +150,7 @@
    sideways on a 320px phone. */
 @media (max-width: 40rem) {
   .analytics-table,
+  .analytics-table caption,
   .analytics-table thead,
   .analytics-table tbody,
   .analytics-table tr,
