@@ -183,7 +183,7 @@ export async function reconcileStaleSmsIntents(limit = 20) {
       title: "Check this text before retrying",
       body: "Twilio may have accepted it. Check Calls & Messages, then send a new reply only if needed.",
       crewBody: "The text may have sent. Check Calls & Messages before trying again.",
-      url: row.lead_id ? `/ops/leads/${row.lead_id}#spike` : "/ops?view=updates#wire",
+      url: row.lead_id ? `/ops/leads/${row.lead_id}#spike` : "/board/updates#wire",
       sourceEventId: eventId,
       dedupeKey: `sms-unknown:${row.id}`,
     }

@@ -65,7 +65,7 @@ export async function fileIdentityConflict(input: { phone: string; email: string
     stock: "red",
     title: "Two customer records disagree",
     body: "The new work is safe and unmerged. Pick the right customer.",
-    url: leadId ? `/ops/leads/${leadId}#identity-jig` : `/ops?search=${encodeURIComponent(input.phone || input.email)}`,
+    url: leadId ? `/ops/leads/${leadId}#identity-jig` : `/board?q=${encodeURIComponent(input.phone || input.email)}`,
     sourceEventId: eventId,
     ownerOnly: true,
     dedupeKey: externalId,

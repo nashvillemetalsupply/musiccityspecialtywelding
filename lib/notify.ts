@@ -175,7 +175,7 @@ export async function notify(input: {
         const push = await sendPushToOperator(input.operatorId, {
           title: "More happened. Check Updates.",
           body: "Updates has the details. Nothing was dropped.",
-          url: "/ops?view=updates",
+          url: "/board/updates",
         })
         if (push.sent > 0) {
           await sql`
@@ -307,7 +307,7 @@ export async function retryPendingInterrupts(limit = 10) {
           await sql`UPDATE notifications SET delivery_status = 'filed', delivery_error = 'Daily interrupt budget was already full.' WHERE id = ${row.id}::bigint`
           continue
         }
-        const summary = await sendPushToOperator(row.operator_id, { title: "More happened. Check Updates.", body: "The details are saved. Nothing was dropped.", url: "/ops?view=updates#wire" })
+        const summary = await sendPushToOperator(row.operator_id, { title: "More happened. Check Updates.", body: "The details are saved. Nothing was dropped.", url: "/board/updates#wire" })
         if (summary.sent > 0) {
           sent += 1
           await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL, delivery_status = 'sent',
