@@ -4,5 +4,5 @@ import { useFormStatus } from "react-dom"
 
 export function PaperworkSubmit() {
   const { pending } = useFormStatus()
-  return <button type="submit" disabled={pending}>{pending ? "Sending..." : "Send documents"}</button>
+  return <button className="btn btn--sm btn--go" type="submit" disabled={pending}>{pending ? "Sending..." : "Send documents"}</button>
 }
