@@ -11,7 +11,7 @@ import {
 import type { BoardCallSketch } from "@/lib/call-sketch-store"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
-import type { BoardJobRow, JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
+import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
 import { shopEventLabel } from "@/lib/shop-language"
 
 type TodayTrailItem = {
@@ -31,6 +31,7 @@ export type BoardPaneData = {
   callSketch: BoardCallSketch | null
   // The tracker: whichever stage the URL asked for, ordered oldest-first.
   items: BoardJobRow[]
+  details: Map<number, BoardJobDetail>
   resultTotal: number
   pageSize: number
   stage: JobBoardStage
