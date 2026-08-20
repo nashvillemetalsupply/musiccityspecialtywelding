@@ -20,7 +20,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
     if (!open) return
     const trigger = triggerRef.current
     const previous = document.body.style.overflow
-    const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".jobs-root main")]
+    const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".ops-shell main")]
     for (const surface of pageSurfaces) surface.inert = true
     document.body.style.overflow = "hidden"
     trigger?.focus()

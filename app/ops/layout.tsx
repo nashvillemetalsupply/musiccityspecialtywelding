@@ -6,8 +6,8 @@ import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { ConnectivityStatus } from "./connectivity-status"
 import { OpsLive } from "./ops-live"
 import { OpsCompactHeader } from "./ops-header"
-import "./jobs.css"
-import "./jobs-brand.css"
+import "../../styles/control.css"
+import "./ops-shell.css"
 
 const chivo = Chivo({
   subsets: ["latin"],
@@ -29,16 +29,16 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  colorScheme: "light",
-  themeColor: "#12100d",
+  colorScheme: "dark",
+  themeColor: "#100f0d",
 }
 
 export const dynamic = "force-dynamic"
 export default async function OpsLayout({ children }: { children: ReactNode }) {
   const operator = await getAuthenticatedOperator()
   const voiceReady = voiceTranscriptionConfigured()
-  return <div className={`${chivo.variable} jobs-root`} data-jobs-theme="brand">
-    <div className="jobs-product-frame">
+  return <div className={`${chivo.variable} ops-shell`}>
+    <div className="ops-frame">
       {operator && <OpsCompactHeader name={operator.name || operator.email} role={operator.role} voiceReady={voiceReady} />}
       {operator && <ConnectivityStatus />}
       {children}

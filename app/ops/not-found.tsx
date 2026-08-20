@@ -1,6 +1,5 @@
 import Link from "next/link"
 import type { CSSProperties } from "react"
-import "../../styles/control.css"
 
 /* The ops layout still loads the light sheets until Task 7 flips it, so this
    surface binds the board's dark roles on its own subtree. Roles, not hex. */

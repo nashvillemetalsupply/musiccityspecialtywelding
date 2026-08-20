@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useActionState, useState } from "react"
-import "../../../styles/control.css"
 import "./intake.css"
 import { SafeActionButton, SafeSubmitButton } from "../safe-action-controls"
 import { VoiceCaptureButton } from "../voice-capture-button"

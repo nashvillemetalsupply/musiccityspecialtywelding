@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import "../../../styles/control.css"
 import "./analytics.css"
 import { dbConfigured } from "@/lib/db"
 import {

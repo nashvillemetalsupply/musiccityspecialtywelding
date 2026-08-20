@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import "../../../../styles/control.css"
 import "../intake.css"
 import { getCallIntakeDraft } from "@/lib/job-intake"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"

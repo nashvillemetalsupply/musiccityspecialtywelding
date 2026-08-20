@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import "../../../styles/control.css"
 import "./call-sketch.css"
 import { CallSketchPrototype } from "@/components/call-sketch/call-sketch-prototype"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"

@@ -3,7 +3,6 @@
 import Image from "next/image"
 import type { CSSProperties } from "react"
 import { useState } from "react"
-import "../../styles/control.css"
 
 type PunchCard = { selector: string; name: string; hasEmail: boolean; hasSms: boolean }
 

@@ -52,7 +52,8 @@ test("work order explains removal, preserves history, and exposes a thumb-safe r
   const page = source("app/ops/leads/[id]/page.tsx")
   const control = source("app/ops/leads/[id]/handoff-control.tsx")
   const language = source("lib/shop-language.ts")
-  const css = source("app/ops/jobs-brand.css")
+  // C7 retired jobs-brand.css; the handoff touch rule lives in the page's job.css.
+  const css = source("app/ops/leads/[id]/job.css")
 
   assert.match(page, /<HandoffControl/)
   assert.ok(page.indexOf("<DoneStamp") < page.indexOf("<HandoffControl"))
@@ -68,7 +69,7 @@ test("work order explains removal, preserves history, and exposes a thumb-safe r
   assert.match(control, /handoffDisplayState/)
   assert.match(control, /expiredHandoffEventId !== handoffEventId/)
   assert.match(control, /isHandedOff && handoffState\.status === "handed-off"/)
-  assert.match(css, /\.ops-handoff-control form > button \{[^}]*min-height: 3rem;[^}]*white-space: normal;/s)
+  assert.match(css, /\.ops-done-bench, \.ops-handoff-control\) :is\(button, summary\) \{ min-height: 44px/)
   assert.match(language, /"job\.handed-off": "Customer handoff complete"/)
   assert.match(language, /"job\.handoff-undone": "Customer handoff undone"/)
 })

@@ -1,4 +1,3 @@
-import "../../../styles/control.css"
 import "./install.css"
 import { dbConfigured } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"

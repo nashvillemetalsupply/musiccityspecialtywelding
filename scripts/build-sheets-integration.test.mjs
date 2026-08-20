@@ -104,12 +104,15 @@ test("every owner mutation is independently flag-gated, owner-gated, test-partit
 })
 
 test("the owner workspace exposes evidence, decisions, immutable sheets, and dependency-aware Paperwork", async () => {
-  const [page, sharedCss, buildsCss, store] = await Promise.all([
+  // C7 retired app/ops/jobs.css; the shared sheets are now control.css + ops-shell.css.
+  const [page, controlCss, shellCss, buildsCss, store] = await Promise.all([
     read("app/ops/leads/[id]/builds/page.tsx"),
-    read("app/ops/jobs.css"),
+    read("styles/control.css"),
+    read("app/ops/ops-shell.css"),
     read("app/ops/leads/[id]/builds/builds.css"),
     read("lib/build-sheets.ts"),
   ])
+  const sharedCss = `${controlCss}\n${shellCss}`
 
   for (const label of [
     "Heard on call",
