@@ -184,7 +184,7 @@
   z-index: 120;
   display: flex;
   justify-content: flex-end;
-  background: rgb(0 0 0 / 0.62);
+  background: color-mix(in srgb, var(--surface-sunken) 62%, transparent);
 }
 
 .ops-shell .ops-more-panel {

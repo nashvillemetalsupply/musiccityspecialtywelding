@@ -26,7 +26,7 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(more, /<CloseIcon/)
   assert.doesNotMatch(header, /<strong>Jobs<\/strong>/)
   assert.doesNotMatch(layout, /ShopDock/)
-  for (const label of ["Updates", "Promises", "Regular Customers", "Install MCSW Jobs", "Settings", "Sign out"]) {
+  for (const label of ["Job Control", "New Job", "Promises", "Search Jobs", "Install MCSW Jobs", "Settings", "Sign out"]) {
     assert.match(more, new RegExp(label))
   }
   assert.match(dock, /Ask Jobs/)
