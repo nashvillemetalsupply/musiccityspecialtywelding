@@ -12,7 +12,7 @@ test("tracker tabs use the canonical stages and refetch the requested stage", ()
   assert.match(PREVIEW_SOURCE, /board\.counts\[stage\]/)
   assert.match(PAGE_SOURCE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)
   assert.match(PAGE_SOURCE, /stages: \[\.\.\.JOB_BOARD_STAGES\]/)
-  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, order: "oldest" \}, role\)/)
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, order: "oldest", query \}, role\)/)
 })
 
 test("tracker rows come from listBoardJobs and keep its reason string verbatim", () => {

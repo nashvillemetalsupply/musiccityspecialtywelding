@@ -17,7 +17,14 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic"
 
-type SearchParams = Promise<{ stage?: string }>
+type SearchParams = Promise<{ q?: string; stage?: string }>
+
+const BOARD_DATE = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Chicago",
+  weekday: "long",
+  month: "short",
+  day: "numeric",
+})
 
 // This value must stay in the server module. Exporting it from the client
 // component turns it into a client reference instead of serializable data.
@@ -39,7 +46,8 @@ const EMPTY_BOARD: BoardPaneData = {
 
 export default async function BoardPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
-  // The stage tab is the only query input. It is validated strictly against
+  const query = params.q?.trim().slice(0, 80) ?? ""
+  // The stage tab is validated strictly against
   // JOB_BOARD_STAGES — anything else falls back to the full board, so a
   // hand-typed ?stage= value can never manufacture a view that does not exist.
   const requested = params.stage ?? "board"
@@ -53,13 +61,19 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // fixtures are never a fallback: a hand-typed number that survives onto a
   // wired page is exactly the failure this redesign exists to kill.
   const operator = dbConfigured() ? await getAuthenticatedOperator() : null
-  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, stages: [...JOB_BOARD_STAGES] }} />
+  const chrome = {
+    date: BOARD_DATE.format(new Date()),
+    operatorInitial: (operator?.name || operator?.email || "").trim().charAt(0).toLocaleUpperCase("en-US"),
+    owner: operator?.role === "owner",
+    query,
+  }
+  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
 
   const role = operator.role
   const [page, promises, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.
-    listBoardJobs({ stage, order: "oldest" }, role),
+    listBoardJobs({ stage, order: "oldest", query }, role),
     getPromiseSummary(),
     getOutTheDoorWeek(role),
     getOpsStats(role),
@@ -68,7 +82,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   ])
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role)
 
-  return <JobControl board={{
+  return <JobControl chrome={chrome} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,
