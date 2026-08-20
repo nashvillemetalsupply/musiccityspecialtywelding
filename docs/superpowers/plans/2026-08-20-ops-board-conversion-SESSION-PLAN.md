@@ -31,15 +31,48 @@ completion on a red suite.
 
 | ID | Mission (plan task) | Session model | Effort | Size | Depends on | Status |
 |----|--------------------|---------------|--------|------|------------|--------|
-| C0 | Task 0: extract `styles/control.css`, board pixel-identical | Codex `gpt-5.6-sol` | high | M | — | pending |
-| C1 | Task 1: job page `/ops/leads/[id]` conversion | Codex `gpt-5.6-sol` | xhigh | L | C0 | pending |
-| C2 | Task 2: intake pages conversion | Codex `gpt-5.6-sol` | medium | M | C0, C1 approved | pending |
-| C3 | Task 3: accounts + analytics conversion | Codex `gpt-5.6-sol` | medium | S | C0, C1 approved | pending |
-| C4 | Task 4: call-sketch, shop, install pages | Codex `gpt-5.6-sol` | medium | S | C0, C1 approved | pending |
-| C5 | Task 5: build sheets conversion | Codex `gpt-5.6-sol` | high | M | C0, C1 approved | pending |
-| C6 | Task 6: sign-in + error surfaces | Codex `gpt-5.6-sol` | medium | S | C0 | pending |
-| C7 | Task 7: layout flip, `/ops` → `/board` front door, delete legacy CSS | Opus/Fable | high | M | C1–C6 | pending |
-| C8 | Task 8: exit verification — routes walked as owner and crew, breakpoints, print | Codex `gpt-5.6-sol` | high | S | C7 | pending |
+| C0 | Task 0: extract `styles/control.css`, board pixel-identical | Codex `gpt-5.6-sol` | high | M | — | done |
+| C1 | Task 1: job page `/ops/leads/[id]` conversion | Codex `gpt-5.6-sol` | xhigh | L | C0 | done |
+| C2 | Task 2: intake pages conversion | Codex `gpt-5.6-sol` | medium | M | C0, C1 approved | done |
+| C3 | Task 3: accounts + analytics conversion | Codex `gpt-5.6-sol` | medium | S | C0, C1 approved | done |
+| C4 | Task 4: call-sketch, shop, install pages | Codex `gpt-5.6-sol` | medium | S | C0, C1 approved | done |
+| C5 | Task 5: build sheets conversion | Codex `gpt-5.6-sol` | high | M | C0, C1 approved | done |
+| C6 | Task 6: sign-in + error surfaces | Codex `gpt-5.6-sol` | medium | S | C0 | done |
+| C7 | Task 7: layout flip, `/ops` → `/board` front door, delete legacy CSS | Opus/Fable | high | M | C1–C6 | done |
+| C8 | Task 8: exit verification — routes walked as owner and crew, breakpoints, print | Codex `gpt-5.6-sol` | high | S | C7 | done |
+
+**All nine sessions complete, 2026-08-20.** C8 ran twice: the first pass filed eight
+failures in `2026-08-20-ops-board-conversion-C8-FIXES.md` (the C7 front-door flip had
+dropped the sign-in surface and eight deep-link destinations), those landed as their own
+tasks, and the re-run is green. Live in production at
+`https://musiccityspecialtywelding.com`.
+
+**Closing gates.**
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0 |
+| `npm run test:shop-brain` | 298 tests, 298 pass, 0 fail |
+| Focused route/conversion suites | 60 tests, 60 pass, 0 fail |
+| Shepherd `test.ps1` | 12 suites, exit 0 |
+| `npm run build` (production) | exit 0 |
+
+The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
+`board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6),
+`board-final-navigation` (7), `board-internal-tests` (9).
+
+**Owner runtime pass, production.** 320 / 375 / 768 on `/board`, job 105 and intake: no
+horizontal overflow at any width; the only sub-44px controls are the two documented
+exemptions, the header logo link and the native checkbox/radio inputs. Owner menu, money
+display, `tests=1`, `#radio` and `#handset` all passed.
+
+**One item could not be verified live: the crew route walk.** Production has no active
+crew account — Philippe Auguste and TJ Harahan are both `owner` role — so no credential
+exists that renders the crew projection, and walking the app as owner does not substitute
+for it. Crew money is removed server-side and stays covered by the `event-visibility`,
+`shop-brain-invariants` and `shop-brain-boundaries` suites inside the 298/298 run. Re-walk
+as crew the first time a crew operator exists in production.
 
 **Recommended order:** C0 → C1 (owner gate) → C6, then C2/C3/C4/C5 in any order
 (independent gap-fillers, each behind the C1 approval) → C7 → C8.

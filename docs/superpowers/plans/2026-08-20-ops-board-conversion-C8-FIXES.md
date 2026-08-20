@@ -1,17 +1,24 @@
-# C8 exit verification — failures
+# C8 exit verification — findings and closeout
 
 Session C8 of `2026-08-20-ops-board-conversion-SESSION-PLAN.md`, executing Task 8 of
 `2026-08-20-ops-board-conversion.md`. Verification only; nothing in this session
 patched production code.
 
-**Verdict: blocked.** The suites are green and the stylesheet retirement is clean, but
-the `/ops` → `/board` front-door flip in C7 (`b675644`) replaced the old dashboard with
-a bare `redirect("/board")` that runs before any auth check and drops every query
-parameter and hash. Eight live destinations lost their intent, one of them the
-application's only full sign-in surface. The plan checklist stays unticked and
-`MCSW-JOBS-BUILD-HANDOFF.md` is unchanged until these land.
+> **Status: CLOSED, 2026-08-20 at `d3e7cd2`.** All eight findings below are fixed and
+> shipped. The plan and the session table are marked done and the stylesheet retirement
+> is recorded in `MCSW-JOBS-BUILD-HANDOFF.md`. The conversion is live at
+> `https://musiccityspecialtywelding.com`. Jump to **[Closeout](#closeout--2026-08-20)**
+> for the resolution table, the final gates, and the one item that could not be verified
+> live. Everything between here and there is the original failure report, kept unedited
+> as the record of what the front-door flip cost.
 
-Verified at `a99b4c6` (merge task/ops-board-c7-layout).
+**Original verdict (at `a99b4c6`, merge task/ops-board-c7-layout): blocked.** The suites
+are green and the stylesheet retirement is clean, but the `/ops` → `/board` front-door
+flip in C7 (`b675644`) replaced the old dashboard with a bare `redirect("/board")` that
+runs before any auth check and drops every query parameter and hash. Eight live
+destinations lost their intent, one of them the application's only full sign-in surface.
+The plan checklist stays unticked and `MCSW-JOBS-BUILD-HANDOFF.md` is unchanged until
+these land.
 
 ---
 
@@ -308,6 +315,11 @@ that decision lands. `wire-strip.tsx:99`, `:101` and `:103` also point at
 
 ## Pending — viewport and preview walkthrough (not a failure)
 
+> **Resolved in the closeout below.** The owner ran the breakpoint pass and the owner
+> route walk against production. The crew arm of the walk is the one item that stayed
+> open, and for a reason that is not about the code — see
+> [Closeout](#closeout--2026-08-20).
+
 Task 8 requires 320px / 375px / 768px passes on `/board`, a representative
 `/ops/leads/[id]`, and `/ops/intake/new`, plus the owner/crew route walk from Task 7
 Step 3. **Runtime verification is unavailable in this worktree and is recorded as
@@ -342,7 +354,7 @@ door.
 
 ---
 
-## Order to fix
+## Order to fix (original plan — followed as written)
 
 1. **F1** — nothing else can be walked until sign-in works.
 2. **F8** — the scope decision that determines the fix for F2 (Customers), F5, and
@@ -352,3 +364,103 @@ door.
 4. **F4**, **F6** — each needs one owner decision, then a one-line edit.
 5. Re-run C8: full suites, then the 320/375/768 and owner/crew passes against a preview
    with real credentials.
+
+---
+
+## Closeout — 2026-08-20
+
+Verified at `d3e7cd2` (merge task/ops-board-archive-controls) on `main`.
+
+The owner's answer to the F8 scope question was **re-home, don't retire**: the three lost
+surfaces came back as first-class board routes rather than being folded into the board
+page or deleted. That decision is what unblocked F2, F5 and F7.
+
+### Resolution
+
+| # | Finding | Resolution | Commits |
+|---|---|---|---|
+| F1 | Sign-in surface gone | `/ops` is the sign-in door again: it reads `getAuthenticatedOperator()` first and only `redirect("/board")` when an operator exists; signed out it renders `OpsLoginForm` with the punch-card list, `smsReady` and `linkError` | `499add5` |
+| F2 | Rail dropped its parameters | Quotes → `/board?stage=waiting`, Promises → `/board?signal=promise`, Customers → `/board/customers` (a real route, per F8) | `716abe4`, `eb00179`, `db60375` |
+| F3 | Logo and rail self-link, stale copy | Logo → `/board`, `aria-label="Job Control home"`, the false comment deleted; the Board rail entry now carries `aria-current="page"` | `716abe4`, `db60375` |
+| F4 | `tests=1` had no destination | Owner-only internal-test visibility restored on the board, and `tests=1` is carried across board links and search | `2b30852`, `d609e8c` |
+| F5 | Shop Brain receipts dead | Receipts point at `/board/updates`, which now hosts the receipt drawer | `af951c5`, `50f5bfd` |
+| F6 | Intake "more calls" dead | The pending call queue is back as `/board/calls`; the intake link points at it | `3bdb7bc`, `5097a9f` |
+| F7 | Notification and digest deep links | Push, digest and Morning Brief links retargeted at board surfaces; `#radio` / `#handset` work because `/board` mounts the same menu and dock the `/ops` pages do | `50f5bfd`, `db60375`, `ecbb5fc` |
+| F8 | Updates / receipt / paid-moment / customers removed | Updates → `/board/updates` (reusing `wire-strip.tsx` and `paid-moment.tsx`, which are imported again, not orphans); regulars → `/board/customers`; `active-job-controls.tsx` deliberately retired and archived | `eb00179`, `af951c5`, `9bf95b3` |
+
+`archive/ops-legacy-2026-08-20/` now holds five content-preserving copies:
+`jobs.css.txt`, `jobs-brand.css.txt`, `weighted-job-index.tsx.txt`,
+`active-job-index.tsx.txt` and `active-job-controls.tsx.txt`. That directory is the only
+copy outside git history — do not delete it.
+
+### Final gates
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0 |
+| `npm run test:shop-brain` | 298 tests, 298 pass, 0 fail |
+| Focused route/conversion suites | 60 tests, 60 pass, 0 fail |
+| Shepherd `test.ps1` | 12 suites, exit 0 |
+| `npm run build` (production) | exit 0 |
+
+The focused set is `ops-conversion-exit` (7), `board-customers-route` (8),
+`board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6),
+`board-final-navigation` (7), `board-internal-tests` (9) — 60 assertions covering the
+front door, the three restored routes, the retargeted deep links, the final navigation
+and the internal-test switch.
+
+Shop Brain grew from 260 tests (258 pass, 2 skipped) at `a99b4c6` to 298 here: the four
+board route suites the fixes added to `test:shop-brain` — `board-customers-route` (8),
+`board-updates-route` (9), `board-calls-route` (14), `board-push-links` (6) — plus one
+new assertion in `board-pane`. Nothing is skipped any more.
+
+### Runtime pass — production, as owner
+
+Walked at `https://musiccityspecialtywelding.com`, not a preview.
+
+- **Breakpoints.** 320 / 375 / 768 on `/board`, job 105 and intake. No horizontal
+  overflow at any of the three widths on any of the three pages.
+- **Touch targets.** The only controls measuring under 44px are two documented
+  exemptions: the header logo link, and the native checkbox and radio inputs. Neither is
+  a primary operational target and neither is a conversion regression.
+- **Owner surfaces.** Menu opens and closes; money renders where the owner expects it;
+  `tests=1` surfaces the `[INTERNAL TEST]` rows; `#radio` and `#handset` both open the
+  dock from a cold load.
+
+### The crew route walk could not run
+
+**Production has no active crew account.** Philippe Auguste and TJ Harahan are both
+`owner` role, so there is no credential in production that renders the crew projection.
+The crew arm of Task 7 Step 3 was therefore not walked — not skipped, not passed by
+proxy, and not satisfiable by walking as owner and reasoning about what crew would see.
+
+What still covers it: crew money is removed **server-side**, per `CLAUDE.md`, and nothing
+in the conversion or the F1–F8 fixes touched that path. `git diff --stat 3cf584a..HEAD`
+is empty for `lib/ops-data.ts` — which holds the crew redaction and the `redactCrewText`
+projections — and empty for `app/ops/actions.ts` and `scripts/migrate.mjs`. The
+`event-visibility`, `shop-brain-invariants` and `shop-brain-boundaries` suites assert the
+crew projection directly and are inside the 298/298 green run. That is test coverage of
+the same guarantee, which is why this is a verification gap and not an exposure.
+
+**What did change under `lib/` and `app/api/`, and why it is not a data-layer change.**
+The original report recorded zero drift there across C0–C7. The F7 fixes then edited
+seven lines of notification copy — `lib/calls.ts`, `lib/messages.ts`, `lib/notify.ts`,
+`lib/people.ts`, `app/api/ingest/gmail/route.ts`, `app/api/ops/brief/route.ts`,
+`app/api/ops/reminders/route.ts` — each one a URL string being retargeted from a dead
+`/ops?…` destination to the board surface that answers it. `lib/job-intake.ts` also
+gained a `JOIN calls` in the pending-call count so the count matches the page query
+(`5097a9f`). No schema, no migration, no action signature, no query result shape. Both
+arms of the crew/owner split in `app/api/ops/brief/route.ts` — `crewPromiseSheet` and
+`ownerPromiseSheet` — were preserved, as the original report required.
+
+**Do this the first time a crew operator exists in production:** sign in as them and walk
+/board, a job, intake, accounts, analytics, call-sketch, shop, install, builds, and
+sign-out/sign-in. Confirm no money renders anywhere. Then tick Step 3b in
+`2026-08-20-ops-board-conversion.md`.
+
+### Still out of scope
+
+`/j/[token]`, the customer-facing GLASS page, was excluded by the plan's Self-Review as a
+separate owner design decision. It was not converted, is unaffected by the stylesheet
+retirement, and remains on its own styling.

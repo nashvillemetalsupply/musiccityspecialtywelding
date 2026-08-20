@@ -1,7 +1,55 @@
 # MCSW Jobs — Full-Build Handoff
 
 Prepared: 2026-08-10
+Last updated: 2026-08-20 (ops → board conversion; see the next section)
 Status: production implementation complete, verified, and deployed to `https://musiccityspecialtywelding.com`.
+
+## Ops → board conversion — 2026-08-20 (read before the 2026-08-10 record below)
+
+**`app/ops/jobs.css` and `app/ops/jobs-brand.css` are retired.** Both files are deleted —
+7,291 lines between them. Every owner-facing `/ops` page now wears the `/board` design
+language: dark, Golos Text for prose, Chivo for numbers, square corners. The shared
+vocabulary lives in `styles/control.css`, extracted from `app/board/board.css`, and
+`app/ops/layout.tsx` imports it with `colorScheme: "dark"`.
+
+Everything below this section describing the light Signal + Chivo + MCSW Brand treatment
+on `/ops` — the `#b34513` CRM red, the `#fff1eb` attention surface, the white working
+surfaces — is **historical**. It documents what shipped on 2026-08-10 and was replaced on
+2026-08-20. The product thesis, the plain-language vocabulary, the touch-target floors and
+the privacy, role, receipt, promise, payment and consent rules all still hold; the palette
+and the stylesheets do not.
+
+Also gone from the tree, with the reasons:
+
+- `app/ops/weighted-job-index.tsx`, `app/ops/active-job-index.tsx` — rendered only by the
+  old `/ops` dashboard, which is now the sign-in door.
+- `app/ops/active-job-controls.tsx` — orphaned by the same change and deliberately
+  retired.
+
+**Content-preserving copies of all five files are kept in
+`archive/ops-legacy-2026-08-20/` as `.txt`. That directory is the only copy outside git
+history. Do not delete it.**
+
+`/ops` is now the sign-in door: signed out it renders the operator punch-card login;
+signed in it redirects to `/board`, which is the front door. `/board/customers`,
+`/board/updates` and `/board/calls` carry the regulars index, the Updates archive with its
+receipt drawer, and the pending call queue — the three surfaces the old dashboard owned.
+`/j/[token]`, the customer GLASS page, was deliberately excluded from the conversion and
+keeps its own styling.
+
+Plans: `docs/superpowers/plans/2026-08-20-ops-board-conversion.md`, its session split
+`…-SESSION-PLAN.md`, and the exit report `…-C8-FIXES.md`.
+
+Closing gates, 2026-08-20: `npm run typecheck` exit 0; `npm run lint` exit 0;
+`npm run test:shop-brain` 298/298 pass; focused route/conversion suites 60/60 pass;
+Shepherd `test.ps1` 12 suites exit 0; `npm run build` exit 0. Deployed to
+`https://musiccityspecialtywelding.com`.
+
+One verification remains open, and it is not a code gap: **the crew route walk has never
+run, because production has no active crew account** — Philippe Auguste and TJ Harahan are
+both `owner` role. Crew money is removed server-side and stays covered by the
+`event-visibility`, `shop-brain-invariants` and `shop-brain-boundaries` suites. Walk the
+app as crew the first time a crew operator exists.
 
 ## Final production record — 2026-08-10
 
