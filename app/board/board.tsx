@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
@@ -12,7 +12,7 @@ import type { BoardCallSketch } from "@/lib/call-sketch-store"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
-import { shopEventLabel } from "@/lib/shop-language"
+import { shopClaimLabel, shopClaimText, shopEventLabel, shopSourceLabel } from "@/lib/shop-language"
 
 type TodayTrailItem = {
   id: number
@@ -213,6 +213,8 @@ function chipTone(lead: BoardJobRow): "stop" | "warn" | "good" | "info" {
 const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good", info: "chip--info" } as const
 
 export function JobControl({ board }: { board: BoardPaneData }) {
+  const [openJobId, setOpenJobId] = useState<number | null>(null)
+  const { details: jobDetails } = board
   const needsYou = board.counts.attention
   const promises = board.promises
   const outTheDoor = board.outTheDoor
@@ -488,7 +490,119 @@ export function JobControl({ board }: { board: BoardPaneData }) {
               </div>
             : board.items.map((lead) => {
                 const moneyCell = moneyFor(lead)
-                return <article className="job" key={lead.id}>
+                const detail = jobDetails.get(lead.id)
+                const activeClaims = detail?.activeClaims ?? []
+                const commitments = detail?.commitments ?? []
+                const newestPhotoAt = detail?.newestPhotoAt ?? null
+                const lineItems = detail?.lineItems ?? []
+                const isOpen = openJobId === lead.id
+                const panelPhoto = lead.photos[lead.photos.length - 1]
+                const phone = lead.phone_is_placeholder ? "" : lead.phone.trim()
+                const brokenPromise = commitments.find((commitment) => commitment.status === "broken")
+                const datedCommitment = commitments.find((commitment) => commitment.due_at)
+                const bookedDate = datedCommitment?.due_at ?? lead.scheduled_at
+                const lineItemTotal = lineItems.reduce((total, item) => total + item.amountCents, 0)
+                const lineItemsMismatch = lineItems.length > 0
+                  && lead.estimate_value_cents !== null
+                  && lineItemTotal !== lead.estimate_value_cents
+                const personJobCount = Number(lead.person_job_count)
+                const priorJobs = Number.isFinite(personJobCount) ? Math.max(0, personJobCount - 1) : null
+
+                const centralDate = (iso: string | null) => {
+                  if (!iso) return "No date"
+                  const date = new Date(iso)
+                  if (Number.isNaN(date.getTime())) return "Date not recorded"
+                  return date.toLocaleDateString("en-US", {
+                    timeZone: "America/Chicago",
+                    month: "short",
+                    day: "numeric",
+                  })
+                }
+                const formatCents = (cents: number) => `$${(cents / 100).toLocaleString("en-US", {
+                  minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+                  maximumFractionDigits: 2,
+                })}`
+                const elapsed = (startIso: string, endIso: string | null) => {
+                  if (!endIso) return "none yet"
+                  const start = new Date(startIso).getTime()
+                  const end = new Date(endIso).getTime()
+                  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return "not recorded"
+                  const minutes = Math.floor((end - start) / 60_000)
+                  if (minutes < 60) return `${minutes} min`
+                  const hours = Math.floor(minutes / 60)
+                  const remainder = minutes % 60
+                  return remainder ? `${hours}h ${remainder}m` : `${hours}h`
+                }
+                const quotedDays = (() => {
+                  if (!lead.quoted_at) return "Not quoted"
+                  const quotedAt = new Date(lead.quoted_at).getTime()
+                  if (!Number.isFinite(quotedAt)) return "Date not recorded"
+                  const days = Math.max(0, Math.floor((Date.now() - quotedAt) / 86_400_000))
+                  return `${days} ${days === 1 ? "day" : "days"}`
+                })()
+                const stageMilestones = [
+                  lead.created_at,
+                  newestPhotoAt,
+                  lead.quoted_at,
+                  lead.won_at,
+                  lead.paid_at,
+                ]
+                const furthestStage = stageMilestones.reduce(
+                  (furthest, milestone, index) => milestone ? index : furthest,
+                  -1,
+                )
+                const stageState = (index: number): "done" | "now" | "off" => {
+                  if (!stageMilestones[index]) return "off"
+                  if (index < furthestStage || (index === stageMilestones.length - 1 && lead.paid_at)) return "done"
+                  return "now"
+                }
+                const stageFacts: Array<{
+                  name: string
+                  firstLabel: string
+                  firstValue: React.ReactNode
+                  secondLabel: string
+                  secondValue: React.ReactNode
+                }> = [
+                  {
+                    name: "Asked",
+                    firstLabel: centralDate(lead.created_at),
+                    firstValue: shopSourceLabel(lead.source),
+                    secondLabel: "First reply",
+                    secondValue: elapsed(lead.created_at, lead.first_response_at),
+                  },
+                  {
+                    name: "Measured",
+                    firstLabel: newestPhotoAt ? centralDate(newestPhotoAt) : "No photo date",
+                    firstValue: `${lead.photo_count} ${lead.photo_count === 1 ? "photo" : "photos"}`,
+                    secondLabel: "Active facts",
+                    secondValue: activeClaims.length,
+                  },
+                  {
+                    name: "Priced",
+                    firstLabel: lead.quoted_at ? centralDate(lead.quoted_at) : "Not quoted",
+                    firstValue: lead.estimate_value_cents === null
+                      ? "No price"
+                      : formatCents(lead.estimate_value_cents),
+                    secondLabel: "Since quote",
+                    secondValue: quotedDays,
+                  },
+                  {
+                    name: "Booked",
+                    firstLabel: datedCommitment ? "Promise due" : lead.scheduled_at ? "Scheduled" : "Date",
+                    firstValue: bookedDate ? centralDate(bookedDate) : "No date",
+                    secondLabel: "Status",
+                    secondValue: lead.won_at ? "Booked" : "Not booked",
+                  },
+                  {
+                    name: "Paid",
+                    firstLabel: "Terms",
+                    firstValue: lead.invoice_due_at ? `Due ${centralDate(lead.invoice_due_at)}` : "On pickup",
+                    secondLabel: "Prior jobs",
+                    secondValue: priorJobs ?? "—",
+                  },
+                ]
+
+                return <article className="job" data-open={isOpen ? "" : undefined} key={lead.id}>
                   <div className="cols job-row">
                     <span className="part">
                       {/* Keyed on the service the job was booked under. The
@@ -518,8 +632,127 @@ export function JobControl({ board }: { board: BoardPaneData }) {
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
                       <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}`}>Open job</Link>
+                      <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button"
+                        aria-label={`${isOpen ? "Collapse" : "Expand"} ${customerName(lead)} job details`}
+                        aria-expanded={isOpen} aria-controls={`job-detail-${lead.id}`}
+                        onClick={() => setOpenJobId((current) => current === lead.id ? null : lead.id)}>
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9">
+                          <path d={isOpen ? "M4 10 8 6l4 4" : "M4 6 8 10l4-4"}/>
+                        </svg>
+                      </button>
                     </span>
                   </div>
+
+                  {isOpen && <div className="detail" id={`job-detail-${lead.id}`}>
+                    <div className="drawing">
+                      <div className="drawing-top">
+                        <span className="t-sub">The part</span>
+                        <span className="end">
+                          {lead.photo_count > 0
+                            ? `${lead.photo_count} ${lead.photo_count === 1 ? "photo" : "photos"} · ${newestPhotoAt ? `newest ${centralDate(newestPhotoAt)}` : "newest date not recorded"}`
+                            : "No photos yet"}
+                        </span>
+                      </div>
+                      {panelPhoto
+                        ? <svg className="plan" viewBox="0 0 380 244" role="img"
+                            aria-label={`Job photo for ${customerName(lead)}`}>
+                            <rect width="380" height="244" fill="var(--draw-fill)" />
+                            <image href={`/api/ops/photo?lead=${lead.id}&path=${encodeURIComponent(panelPhoto.pathname)}`}
+                              width="380" height="244" preserveAspectRatio="xMidYMid slice" />
+                          </svg>
+                        : <svg className="plan" viewBox="0 0 380 244" fill="none" role="img"
+                            aria-label={lead.service.trim() || "Job part not yet identified"}>
+                            <rect width="380" height="244" fill="var(--draw-fill)" />
+                            <g transform="translate(79 35) scale(4.8)" stroke="var(--draw-line)" strokeWidth=".35"
+                              strokeLinejoin="round" strokeLinecap="round">
+                              {serviceMark(lead.service)}
+                            </g>
+                          </svg>}
+                      <div className="spec">
+                        {activeClaims.map((claim) => <span key={claim.id}>
+                          {shopClaimLabel(claim.predicate)} <b>{shopClaimText(claim.value)}</b>
+                        </span>)}
+                      </div>
+                      <p className="t-caption">
+                        {activeClaims.length} {activeClaims.length === 1 ? "fact is" : "facts are"} still open.
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="stages">
+                        {stageFacts.map((stage, index) => {
+                          const state = stageState(index)
+                          return <div className={`stage${state === "off" ? " off" : ""}`} key={stage.name}>
+                            <div className="stage-top">
+                              <span className={`knot${state === "now" ? " now" : state === "off" ? " off" : ""}`}>
+                                {state === "done"
+                                  ? <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg>
+                                  : state === "now"
+                                    ? <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="4.5"/></svg>
+                                    : null}
+                              </span>
+                              {index < stageFacts.length - 1 && <span className={`wire${state === "done" ? "" : " off"}`}></span>}
+                            </div>
+                            <div className="stage-body">
+                              <h5>{stage.name}</h5>
+                              <p><span>{stage.firstLabel}</span><b>{stage.firstValue}</b></p>
+                              <p><span>{stage.secondLabel}</span><b>{stage.secondValue}</b></p>
+                            </div>
+                          </div>
+                        })}
+                      </div>
+
+                      <div className="why">
+                        <div>
+                          <h5>Why it needs you</h5>
+                          <p>
+                            {moneyCell.value === "—"
+                              ? "No price is available for this job."
+                              : <>This job is <b>{moneyCell.value}</b> {moneyCell.note}.</>}
+                            {lead.status_reason.trim() && <> {lead.status_reason.trim()}</>}
+                            {lead.notes.trim() && <> {lead.notes.trim()}</>}
+                          </p>
+                          <div className="why-end">
+                            <span>
+                              {brokenPromise
+                                ? <>Broken promise: {brokenPromise.summary}{brokenPromise.due_at && ` · due ${centralDate(brokenPromise.due_at)}`}</>
+                                : "No broken promise is recorded."}
+                            </span>
+                            <span className="end">
+                              <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}`}>Open job</Link>
+                              {phone && <a className="btn btn--sm btn--edge" href={`tel:${phone}`}>Call</a>}
+                              {phone && <a className="btn btn--sm btn--edge" href={`sms:${phone}`}>Text</a>}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <h5>What is in it</h5>
+                          <table className="sum">
+                            <tbody>
+                              {lineItems.length > 0
+                                ? lineItems.map((item) => <tr key={item.id}>
+                                    <td>{item.label}{item.note && <> <span className="q">{item.note}</span></>}</td>
+                                    <td>{formatCents(item.amountCents)}</td>
+                                  </tr>)
+                                : <tr><td colSpan={2}>No line items entered. <Link href={`/ops/leads/${lead.id}#lead-line-items`}>Add them</Link></td></tr>}
+                              <tr className="total">
+                                <td>Quoted</td>
+                                <td>{lead.estimate_value_cents === null ? "No price" : formatCents(lead.estimate_value_cents)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          {lineItemsMismatch && <p className="t-caption">
+                            Entered lines total {formatCents(lineItemTotal)}; the quoted price is {formatCents(lead.estimate_value_cents!)}.
+                          </p>}
+                          <div className="why-end">
+                            <span className="end">
+                              <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}#lead-estimate`}>Change the price</Link>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>}
                 </article>
               })}
         </section>
