@@ -1,0 +1,32 @@
+@import "../../../styles/control.css";
+
+/* MCS Welding · Calls to Save — the board's pending call queue.
+
+   No new colour, no new type role, no new metric. Everything here is a token
+   or a component out of control.css; this file only lays them out. A row says
+   three things and no more: what kind of call it was and when, who it was,
+   and the number to call back. */
+
+.calls{min-height:100dvh;background:var(--surface-sunken);color:var(--text-primary);
+  font-family:var(--font);padding-bottom:var(--s7)}
+
+.calls-top{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;
+  padding:var(--s3) var(--s4);background:var(--surface);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.calls-count{margin-left:auto}
+
+.calls-list{background:var(--surface);border-bottom:1px solid var(--border)}
+.calls-row{display:flex;align-items:center;gap:var(--s3);min-height:var(--row);
+  padding:var(--s3) var(--s4);border-bottom:1px solid var(--border-subtle)}
+.calls-row:last-child{border-bottom:0}
+.calls-copy{display:flex;align-items:center;gap:var(--s2) var(--s3);flex-wrap:wrap;
+  min-width:0;flex:1}
+.calls-copy p{margin:0}
+/* A caller can hand over a shop name longer than the row is wide. */
+.calls-who{flex-basis:100%;font-weight:var(--w-semi);min-width:0;overflow-wrap:anywhere}
+.calls-row .btn{flex:none;margin-left:auto}
+
+.calls-empty{padding:var(--s6) var(--s4);color:var(--text-muted)}
+
+.calls-pages{display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s3);padding:var(--s4)}
