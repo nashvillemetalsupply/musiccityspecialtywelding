@@ -498,3 +498,74 @@ sign-out/sign-in. Confirm no money renders anywhere. Then tick Step 3b in
 `/j/[token]`, the customer-facing GLASS page, was excluded by the plan's Self-Review as a
 separate owner design decision. It was not converted, is unaffected by the stylesheet
 retirement, and remains on its own styling.
+
+---
+
+## Second pass — final independent E2E, 2026-08-20
+
+Run after the closeout above, against production, ending at `ad4d7a6`
+(merge task/perform-the-final-independent-e2, deployment
+`dpl_4xNqFFF51jAewJiCvJ7uQqETT4YR`, aliased to
+`https://musiccityspecialtywelding.com`).
+
+### Gates (re-run at `ad4d7a6`)
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0, 0 warnings |
+| `npm run test:shop-brain` | 303 tests, 301 pass, 2 skipped (both `SKIP DATABASE_URL`), 0 fail |
+| Focused route/conversion suites (8 files) | 65 tests, 65 pass, 0 fail |
+| Shepherd `test.ps1` | 12 suites, exit 0 |
+| `npm run build` (turbopack, root checkout) | exit 0, 51 pages |
+
+The suite grew 298 → 303: `scripts/board-final-polish.test.mjs` (5 tests) pins the
+fixes below and joined `test:shop-brain`.
+
+### What the walk closed
+
+- **The three gaps from the first pass are walked.** `/ops/accounts/15` renders live;
+  `/ops/leads/34/builds` renders the full Fabrication workspace (build sheets exist only
+  for job 34, the internal-test gate build — other leads correctly show the graceful
+  guard); explicit sign-out → punch-card door → SMS six-digit sign-in ran end to end
+  against production Twilio Verify. The TJ punch card correctly offers no email arm
+  (undeliverable address gating).
+- **Receipt drawer confirmed live** at `/board/updates?receipt=<event-id>#receipt` —
+  it is a deep-link surface, not a row-click one; update rows being inert is by design.
+- **Paid moment**: zero `invoice.paid` events exist in production, so it has no runtime
+  walk; it stays covered by `board-updates-route`.
+- **Responsive**: 320/375/768 on `/board`, job 105 and intake — 9/9 combinations, no
+  horizontal overflow, zero non-exempt controls under 44px (only the documented logo-link
+  and native checkbox/radio exemptions appeared). Measured at exact CSS viewport widths.
+- **Print**: `/board` print CSS hides `.rail`, `.pane`, `.top-end`, `.find`; menu, dock,
+  radio, handset and the tests toggle cannot print; card content stays printable.
+- **Crew walk**: deferred by the owner — no crew users exist yet; no QA operator was
+  created. Step 3b in the plan stays open with that note.
+
+### Defects found and fixed (`770b20b`)
+
+1. **Owner Morning Brief could show the literal `[owner-only money]`** — the AI prompt
+   facts carried the pre-redacted `crew_summary`. The prompt now gets the unredacted
+   `summary`; both crew arms untouched. Live body verifiable at the next brief
+   generation (today's brief already exists and `events` is immutable).
+2. **Satellite board pages flashed light on hard loads** — `/board/customers`,
+   `/board/calls`, `/board/updates` ignored the saved `mcsw-theme`. A shared pre-paint
+   `ThemeBoot` script stamps `data-theme` on all three. Verified dark on production
+   hard loads.
+3. **74 legacy notification URLs still pointed at `/ops?view=updates…`** — rows written
+   before `db60375`. An idempotent backfill in `scripts/migrate.mjs` retargeted them to
+   `/board/updates` (query params and hashes preserved). Ran against production: 0 stale
+   rows remain.
+4. **Codex review finding on fix 1:** the generated `events.tsv` column (a tsvector of
+   the owner body) survived every crew projection spread and left through the
+   `brief/latest` `SELECT *`. Crew projections now strip `tsv`/`crew_tsv` at the single
+   choke point in `projectEventForRole`, and `brief/latest` returns an allowlisted DTO.
+
+### Observed, not defects
+
+- **`PAYMENT EMAIL FAILED AUTHENTICATION` entries** (8+ invoices) are
+  `email.payment-rejected` working as designed: unauthenticated payment-looking email
+  must not change money records. The senders failing DMARC/auth is a provider
+  configuration question — an owner-gated item, not a code defect. Until it is settled,
+  paid totals stay at $0 even when payment emails arrive.
+- `/j/[token]` remains deliberately out of scope, as before.

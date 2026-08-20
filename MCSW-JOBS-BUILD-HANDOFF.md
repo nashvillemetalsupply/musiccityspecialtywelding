@@ -50,7 +50,25 @@ One verification remains open, and it is not a code gap: **the crew route walk h
 run, because production has no active crew account** — Philippe Auguste and TJ Harahan are
 both `owner` role. Crew money is removed server-side and stays covered by the
 `event-visibility`, `shop-brain-invariants` and `shop-brain-boundaries` suites. Walk the
-app as crew the first time a crew operator exists.
+app as crew the first time a crew operator exists. (Reaffirmed by the owner on
+2026-08-20 — no QA crew operator is to be created while only the two owners use the app.)
+
+**Final independent E2E second pass, 2026-08-20, at `ad4d7a6`
+(`dpl_4xNqFFF51jAewJiCvJ7uQqETT4YR`).** Closed the three previously unwalked owner items
+(`/ops/accounts/15`, `/ops/leads/34/builds`, an explicit sign-out → SMS-code sign-in
+cycle) and walked the receipt drawer at `/board/updates?receipt=<id>#receipt`. Four
+defects fixed in `770b20b`: the owner Morning Brief could echo the literal
+`[owner-only money]` marker (prompt now uses the unredacted summary); the satellite board
+pages (`/board/customers`, `/board/calls`, `/board/updates`) ignored the saved theme on
+hard loads (shared `ThemeBoot`); 74 legacy notification URLs still pointed at
+`/ops?view=updates…` (idempotent backfill in `migrate.mjs`, run against production, 0
+remain); and the generated `events.tsv` column leaked owner-body lexemes through crew
+projections (stripped in `projectEventForRole`; `brief/latest` now returns an allowlisted
+DTO). Gates: typecheck 0; lint 0; shop-brain 303 tests, 301 pass, 2 database-gated skips,
+0 fail; focused suites 65/65; Shepherd `test.ps1` 12 suites exit 0; root turbopack build
+exit 0. Note for the money pipeline: `PAYMENT EMAIL FAILED AUTHENTICATION` updates are
+`email.payment-rejected` hardening working as designed — the senders' DMARC/auth
+configuration is an owner-gated item, and paid totals stay $0 until it is settled.
 
 ## Final production record — 2026-08-10
 
