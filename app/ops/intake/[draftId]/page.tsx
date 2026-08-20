@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import "../../../../styles/control.css"
+import "../intake.css"
 import { getCallIntakeDraft } from "@/lib/job-intake"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
@@ -15,8 +17,8 @@ export default async function CallIntakePage({ params }: { params: Promise<{ dra
   if (!draft || draft.status === "dismissed") redirect("/ops")
   if (draft.status === "saved" && draft.lead_id) redirect(`/ops/leads/${draft.lead_id}`)
 
-  return <main className="jobs-intake-page jobs-intake-parity">
-    <Link className="jobs-intake-back" href="/ops">Back to Jobs</Link>
+  return <main className="intake-page">
+    <Link className="btn btn--sm btn--edge intake-back" href="/ops">Back to Jobs</Link>
     <InlineJobIntake
       intakeKey={`call-${draft.public_id}`}
       owner={operator.role === "owner"}

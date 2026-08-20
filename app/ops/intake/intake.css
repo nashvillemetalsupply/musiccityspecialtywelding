@@ -1,0 +1,242 @@
+/* Intake in the board language. Tokens are pinned dark on the page and on the
+   card itself, because the intake card also renders inside the still-light
+   /ops home until Task 7 flips the shared layout. */
+
+.intake-page,
+.intake {
+  --surface-sunken: var(--dark-surface-sunken);
+  --surface: var(--dark-surface);
+  --surface-raised: var(--dark-surface-raised);
+  --border-subtle: var(--dark-border-subtle);
+  --border: var(--dark-border);
+  --border-strong: var(--dark-border-strong);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --text-muted: var(--dark-text-muted);
+  --mark-quiet: var(--dark-mark-quiet);
+  --action: var(--dark-action);
+  --action-ink: var(--dark-action-ink);
+  --focus: var(--dark-focus);
+  --brand: var(--dark-brand);
+  --status-good-ink: var(--dark-good-ink);
+  --status-good-sur: var(--dark-good-sur);
+  --status-good-mark: var(--dark-good-mark);
+  --status-warn-ink: var(--dark-warn-ink);
+  --status-warn-sur: var(--dark-warn-sur);
+  --status-warn-mark: var(--dark-warn-mark);
+  --status-stop-ink: var(--dark-stop-ink);
+  --status-stop-sur: var(--dark-stop-sur);
+  --status-stop-mark: var(--dark-stop-mark);
+  --status-info-ink: var(--dark-info-ink);
+  --status-info-sur: var(--dark-info-sur);
+  --status-info-mark: var(--dark-info-mark);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: var(--t-body);
+  font-weight: var(--w-reg);
+  line-height: var(--lh-body);
+}
+
+.intake-page,
+.intake-page *,
+.intake-page *::before,
+.intake-page *::after,
+.intake,
+.intake *,
+.intake *::before,
+.intake *::after { box-sizing: border-box; }
+
+.intake-page {
+  width: min(100%, 48rem);
+  min-height: calc(100dvh - 3.75rem);
+  margin-inline: auto;
+  padding: var(--s4);
+  display: grid;
+  align-content: start;
+  gap: var(--s4);
+  overflow-x: clip;
+  background: var(--surface-sunken);
+}
+
+.intake-back { width: fit-content; }
+
+/* --- the card --------------------------------------------------------- */
+
+.intake {
+  min-width: 0;
+  padding: var(--s4);
+  display: grid;
+  gap: var(--s4);
+  overflow: clip;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-lg) !important;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+
+.intake > *,
+.intake form,
+.intake label { min-width: 0; max-width: 100%; }
+
+.intake :is(h1, h2, h3, p) { margin: 0; }
+.intake :is(a, button) { text-decoration: none; }
+.intake :is(p, span, a, strong, small, label, time) { overflow-wrap: anywhere; }
+
+.intake .btn {
+  min-height: var(--control) !important;
+  border: 0 !important;
+  border-radius: var(--r-md) !important;
+  color: var(--text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: var(--font) !important;
+  font-size: var(--t-label) !important;
+  font-weight: var(--w-semi) !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+.intake-back.btn {
+  min-height: var(--control) !important;
+  border: 0 !important;
+  border-radius: var(--r-md) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: var(--font) !important;
+  font-size: var(--t-label) !important;
+  font-weight: var(--w-semi) !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+.intake .btn.btn--edge,
+.intake-back.btn.btn--edge {
+  color: var(--text-primary) !important;
+  box-shadow: inset 0 0 0 1px var(--border) !important;
+}
+.intake .btn.btn--go {
+  color: var(--action-ink) !important;
+  background: var(--action) !important;
+}
+.intake .btn:disabled,
+.intake button:disabled { cursor: not-allowed; opacity: .52; }
+
+.intake :is(input:not([type="hidden"]), select, textarea) {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  font: inherit;
+}
+.intake textarea { resize: vertical; }
+.intake :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
+
+.intake-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- head ------------------------------------------------------------- */
+
+.intake-head {
+  display: grid;
+  gap: var(--s3);
+  align-items: start;
+}
+.intake-head > div:first-child { display: grid; gap: var(--s1); min-width: 0; }
+.intake-kicker { font-variant-numeric: tabular-nums; }
+.intake-links { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+
+.intake-alert {
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  border-left: 3px solid var(--status-stop-mark);
+  color: var(--status-stop-ink);
+  background: var(--status-stop-sur);
+}
+
+/* --- form ------------------------------------------------------------- */
+
+.intake-form { display: grid; gap: var(--s3); }
+.intake-person { display: grid; gap: var(--s3); }
+.intake-name { display: grid; }
+.intake-name input {
+  font-family: var(--font-display);
+  font-size: var(--t-title);
+  font-weight: 680;
+  letter-spacing: -.01em;
+}
+.intake-phone { display: grid; gap: var(--s1); }
+.intake-phone > span { color: var(--text-muted); font-size: var(--t-caption); }
+.intake-phone input { font-variant-numeric: tabular-nums; }
+.intake-need { display: grid; gap: var(--s1); }
+.intake-need > span,
+.intake-more label > span { color: var(--text-muted); font-size: var(--t-label); font-weight: var(--w-med); }
+
+.intake-tools { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.intake-tool[aria-expanded="true"],
+.intake-tool.is-listening {
+  color: var(--action-ink) !important;
+  background: var(--action) !important;
+  box-shadow: none !important;
+}
+
+.intake-more { display: grid; gap: var(--s3); padding: var(--s3); border: 1px solid var(--border); background: var(--surface-raised); }
+.intake-more label { display: grid; gap: var(--s1); }
+.intake-more select { background: var(--surface); }
+
+.intake-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); align-items: center; }
+.intake-actions.is-single { grid-template-columns: minmax(0, 1fr); }
+.intake-actions > .btn { width: 100%; }
+
+/* --- receipts --------------------------------------------------------- */
+
+.intake-result { gap: var(--s3); }
+.intake-result > div:first-child { display: grid; gap: var(--s1); min-width: 0; }
+.intake-result h1 { font-family: var(--font-display); font-size: var(--t-lede); font-weight: 680; letter-spacing: -.01em; line-height: var(--lh-lede); }
+.intake-result > p:not(.intake-kicker),
+.intake-result > div:first-child > p:not(.intake-kicker) { color: var(--text-secondary); }
+.intake-result .intake-actions { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+
+@media (min-width: 40rem) {
+  .intake-page { padding: var(--s5); gap: var(--s5); }
+  .intake { padding: var(--s5); }
+  .intake-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .intake-links { justify-content: flex-end; }
+  .intake-person { grid-template-columns: minmax(0, 1fr) minmax(0, 14rem); align-items: end; }
+  .intake-more { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 22rem) {
+  .intake-page { padding: var(--s2); }
+  .intake { padding: var(--s3); }
+  .intake-actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (pointer: coarse), (max-width: 55rem) {
+  .intake .btn,
+  .intake .btn.btn--sm,
+  .intake button,
+  .intake-back.btn { min-height: 44px !important; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .intake .btn:hover,
+  .intake-back.btn:hover { color: var(--text-primary) !important; background: var(--surface-raised) !important; }
+  .intake .btn.btn--go:hover { color: var(--action-ink) !important; background: var(--action) !important; filter: brightness(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intake-page *,
+  .intake * { transition-duration: .001ms !important; }
+}

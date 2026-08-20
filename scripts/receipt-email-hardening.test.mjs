@@ -24,7 +24,9 @@ test("inline job receipts defer interpretation and Undo is a guarded durable tra
   assert.match(intake, /intakeUndoDeferred/)
   assert.match(view, /Job saved/)
   assert.match(view, /undoInlineJobAction/)
-  assert.match(view, /<Link className="jobs-secondary-action" href=\{`\/ops\/leads\/\$\{savedJob\.leadId\}`\}>Open Job<\/Link>/)
+  // The receipt is pinned by where the link goes and what it says; the class
+  // moved to the board vocabulary when the legacy sheets were retired.
+  assert.match(view, /<Link className="[^"]*" href=\{`\/ops\/leads\/\$\{savedJob\.leadId\}`\}>Open Job<\/Link>/)
 })
 
 test("website quote retries reuse one lead, one provider intent, one alert, and deterministic photos", () => {
