@@ -631,7 +631,14 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
                 ]
 
                 return <article className="job" data-open={isOpen ? "" : undefined} key={lead.id}>
-                  <div className="cols job-row">
+                  {/* The whole row toggles the panel — the mockup's hover wash
+                      invites a row click, and the chevron alone was missed.
+                      Clicks on the row's own links and buttons keep their job. */}
+                  <div className="cols job-row"
+                    onClick={(event) => {
+                      if ((event.target as HTMLElement).closest("a, button")) return
+                      setOpenJobId((current) => current === lead.id ? null : lead.id)
+                    }}>
                     <span className="part">
                       {/* Keyed on the service the job was booked under. The
                           stroke settings live here so each mark is only its
