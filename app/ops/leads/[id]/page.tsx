@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { randomUUID } from "node:crypto"
 import { notFound } from "next/navigation"
-import "../../../../styles/control.css"
 import "./job.css"
 import { dbConfigured, getSql } from "@/lib/db"
 import { LEAD_STATUSES } from "@/lib/leads"

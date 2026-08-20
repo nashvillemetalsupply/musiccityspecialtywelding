@@ -52,8 +52,9 @@ test("design previews do not add build-time font fetches", () => {
 })
 
 test("Active Jobs clamps stale pages and renders the captured customer need", () => {
+  // C7 archived active-job-index; the board's tracker row is the live renderer.
   const data = section(source("lib/ops-data.ts"), "export async function listBoardJobs", "export async function getLead")
-  const row = section(source("app/ops/active-job-index.tsx"), "function JobRow", "export function ActiveJobIndex")
+  const row = source("app/board/board.tsx")
 
   assert.match(data, /const page\s*=\s*Math\.max\(1,\s*Math\.floor\(options\.page\s*\?\?\s*1\)\)/)
   assertInOrder(data, [
@@ -65,21 +66,22 @@ test("Active Jobs clamps stale pages and renders the captured customer need", ()
   ], "Stale-page correction must happen after the count and before rows are returned")
   assert.match(data, /return listBoardJobs\(\{\s*\.\.\.options,\s*page:\s*lastPage,\s*pageSize\s*\},\s*role\)/)
 
-  assert.match(row, /<p>\{lead\.message\.trim\(\)\s*\|\|\s*lead\.service\}<\/p>/)
-  assert.doesNotMatch(row, /<p>\{lead\.service\}<\/p>/)
+  assert.match(row, /<span>\{lead\.message\.trim\(\)\s*\|\|\s*lead\.service\}<\/span>/)
+  assert.doesNotMatch(row, /<span>\{lead\.service\}<\/span>/)
 })
 
-test("home lead snapshot stays truthful and row contact actions stay consent-gated", () => {
+test("lead snapshot stays truthful and contact actions stay consent-gated", () => {
+  // C7 retired the /ops home; the job page is where contact actions live, and
+  // they must still check the consent ledger before offering Text.
   const data = section(source("lib/ops-data.ts"), "export async function getTodayLeadSummary", "export async function getLeadEvents")
-  const home = source("app/ops/page.tsx")
-  const row = section(source("app/ops/active-job-index.tsx"), "function JobRow", "export function ActiveJobIndex")
+  const job = source("app/ops/leads/[id]/page.tsx")
 
   assert.match(data, /America\/Chicago/)
   assert.match(data, /is_test = false AND status <> 'spam'/)
   assert.match(data, /btrim\(gclid\) <> ''/)
-  assert.match(home, /operator\.role === "owner" \? getTodayLeadSummary\(\)/)
-  assert.match(home, /consent === "granted"/)
-  assertInOrder(row, ["<TrackedCallButton", ">Text</Link>", ">Open</Link>"], "Call and consented Text must stay left of Open")
+  assert.match(job, /getMessagingConsentState\(lead\.phone\)/)
+  assert.match(job, /hasCustomerPhone && <TrackedCallButton/)
+  assert.match(job, /customerTextReady && <Link[^>]*href="#spike">Text<\/Link>/)
 })
 
 test("shared pagination normalizes hostile inputs and makes empty data page one", async () => {
@@ -96,10 +98,10 @@ test("shared pagination normalizes hostile inputs and makes empty data page one"
   assert.equal(clampPageToTotal(2, 101, 50), 2)
 })
 
-test("pending calls use a bounded, clamped database page and navigable queue", () => {
+test("pending calls use a bounded, clamped database page", () => {
+  // C7 retired the /ops home and its calls queue view; the clamped query
+  // contract in lib/job-intake.ts is what still ships.
   const intake = section(source("lib/job-intake.ts"), "export async function listPendingCallIntakes", "export async function saveInboundCallAsJob")
-  const home = source("app/ops/page.tsx")
-  const queue = section(home, "{!view && showAllCalls", "{!view && !showAllNeeds && !showAllCalls")
 
   assert.match(intake, /const pageSize\s*=\s*Math\.min\(Math\.max\(Math\.floor\(options\.pageSize\s*\?\?\s*3\),\s*1\),\s*20\)/)
   assert.match(intake, /const requestedPage\s*=\s*Math\.max\(1,\s*Math\.floor\(options\.page\s*\?\?\s*1\)\)/)
@@ -113,26 +115,12 @@ test("pending calls use a bounded, clamped database page and navigable queue", (
     "OFFSET ${offset}",
     "return { items: rows, total, page, pageSize }",
   ], "Pending-call pagination must count, clamp, and then fetch the requested slice")
-
-  assert.match(home, /callsPage\?:\s*string/)
-  assert.match(home, /listPendingCallIntakes\(\{\s*page:\s*showAllCalls\s*\?\s*callsPage\s*:\s*1,\s*pageSize:\s*showAllCalls\s*\?\s*20\s*:\s*3\s*\}\)/)
-  assert.match(queue, /callIntakes\.items\.map/)
-  assert.match(queue, /callsPage=\$\{callIntakes\.page\s*-\s*1\}/)
-  assert.match(queue, /Page \{callIntakes\.page\} of \{Math\.ceil\(callIntakes\.total \/ callIntakes\.pageSize\)\}/)
-  assert.match(queue, /callsPage=\$\{callIntakes\.page\s*\+\s*1\}/)
-  assert.match(queue, /callIntakes\.items\.length\s*===\s*0\s*\?\s*<p[^>]*>No calls are waiting to be saved\.<\/p>/)
-
-  const callRow = section(home, "function CallDraftRow", "type SearchParams")
-  const css = source("app/ops/jobs.css")
-  assert.doesNotMatch(callRow, /jobs-call-mark/)
-  assert.doesNotMatch(css, /\.jobs-call-mark/)
-  assert.match(css, /\.jobs-call-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) auto/s)
 })
 
-test("Needs Attention clamps to its returned page and shows the captured need", () => {
+test("Needs Attention clamps to its returned page", () => {
+  // C7 retired the /ops home's Needs Attention panel; the board's attention
+  // stage renders from listBoardJobs. The clamped query contract still ships.
   const data = section(source("lib/ops-data.ts"), "export async function getNeedsNow", "export async function getMonthRevenueCents")
-  const home = source("app/ops/page.tsx")
-  const panel = section(home, "{!view && showAllNeeds", "{!view && !showAllNeeds && !showAllCalls && <div className=\"jobs-board-lane\">")
 
   assert.match(data, /count\(\*\) OVER\(\)::int AS total_count/)
   assertInOrder(data, [
@@ -141,33 +129,19 @@ test("Needs Attention clamps to its returned page and shows the captured need", 
     "clampPageToTotal(requestedPage, firstPage.total, pageSize)",
     "page: requestedPage",
   ], "Needs Attention must recover its count before returning an oversized page")
-  assert.match(home, /const needsPage\s*=\s*needs\.page/)
-  assert.match(panel, /<p>\{lead\.message\.trim\(\)\s*\|\|\s*lead\.service\}<\/p>/)
-  assert.match(panel, /needsPage=\$\{needsPage\s*-\s*1\}/)
-  assert.match(panel, /<span>Page \{needsPage\}<\/span>/)
-  assert.match(panel, /needsPage=\$\{needsPage\s*\+\s*1\}/)
 })
 
-test("Promises, Regular Customers, and Updates return and render clamped pages", () => {
+test("Promises, Regular Customers, and Updates return clamped pages", () => {
+  // C7 retired the /ops home's Updates/Promises/Regulars views; the clamped
+  // query contracts in lib remain the shipped behavior.
   const wall = source("lib/wall-data.ts")
   const wire = section(source("lib/notify.ts"), "export async function listWire", "export async function countUnreadWire")
-  const home = source("app/ops/page.tsx")
-  const wireView = source("app/ops/wire-strip.tsx")
 
   assert.ok((wall.match(/count\(\*\) OVER\(\)::int AS total_count/g) ?? []).length >= 2)
   assert.match(wall, /listWallCommitments\(role,\s*\{\s*page:\s*clampPageToTotal\(requestedPage, firstPage\.total, pageSize\),\s*pageSize\s*\}\)/)
   assert.match(wall, /listRegularAccounts\(\{\s*\.\.\.options,\s*page:\s*clampPageToTotal\(requestedPage, firstPage\.total, pageSize\),\s*pageSize\s*\}\)/)
   assert.match(wire, /count\(\*\) OVER\(\)::int AS total_count/)
   assert.match(wire, /listWire\(operatorId, role, \{ \.\.\.options, page: clampPageToTotal\(requestedPage, firstPage\.total, pageSize\), pageSize \}\)/)
-
-  assert.match(home, /const promisePage\s*=\s*promiseResult\?\.page\s*\?\?\s*1/)
-  assert.match(home, /const accountPage\s*=\s*regularsResult\?\.page\s*\?\?\s*1/)
-  assertInOrder(home, [
-    "wire = wireResult.items",
-    "wirePage = wireResult.page",
-    "wireHasOlder = wireResult.hasNext",
-  ], "Updates must render the page returned by its role- and query-filtered result")
-  assert.match(wireView, /<span>Page \{page\}<\/span>/)
 })
 
 test("account job history counts filtered rows before fetching its clamped page", () => {
@@ -330,13 +304,9 @@ test("phone login uses Twilio Verify without enabling customer SMS", () => {
   assert.match(install, /operators=\{operators\} smsReady=\{smsReady\}/)
 })
 
-test("Active Jobs tolerates a not-yet-ready text-ready set", () => {
-  const index = source("app/ops/active-job-index.tsx")
-
-  // textReadyLeadIds may not be populated on the first render; the map read
-  // must short-circuit instead of throwing "reading 'has' of undefined".
-  assert.match(index, /textReadyLeadIds\?\.has\(lead\.id\)\s*\?\?\s*false/)
-})
+// "Active Jobs tolerates a not-yet-ready text-ready set" was retired with
+// active-job-index in C7 (archive/ops-legacy-2026-08-20); the board tracker
+// does not carry a textReadyLeadIds prop.
 
 test("lead summary groups source labels and wire body stays table-qualified", () => {
   const summary = section(source("lib/ops-data.ts"), "export async function getTodayLeadSummary", "export async function getLeadEvents")

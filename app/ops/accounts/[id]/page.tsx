@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import "../../../../styles/control.css"
 import "./account.css"
 import { getAccount } from "@/lib/accounts"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"

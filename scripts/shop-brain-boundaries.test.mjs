@@ -213,19 +213,19 @@ test("payment never masquerades as job completion", () => {
   assert.match(people, /status = 'won' AND completed_at IS NULL/)
 })
 
-test("verified PAID rolls the monthly odometer and stays in Active Jobs until finished", () => {
+test("verified PAID rolls the monthly odometer and stays on the board until finished", () => {
+  // C7 archived active-job-index; the board renders the same live-jobs query.
   const opsData = source("lib/ops-data.ts")
-  const jobs = source("app/ops/active-job-index.tsx")
+  const board = source("app/board/page.tsx")
   assert.match(opsData, /WHERE status = 'won' AND won_at >= date_trunc\('month', now\(\)\)/)
   assert.match(opsData, /l\.status = 'won' AND l\.completed_at IS NULL/)
-  assert.match(jobs, /Active Jobs/)
+  assert.match(board, /listBoardJobs\(/)
 })
 
-test("the PAID moment is driven only by a verified invoice.paid receipt", () => {
-  const wall = source("app/ops/page.tsx")
+test("PAID receipts come only from verified payment ingestion", () => {
+  // C7 retired the /ops home's PaidMoment strip; the ingestion-side receipt
+  // wiring is the surviving guarantee.
   const gmail = source("app/api/ingest/gmail/route.ts")
-  assert.match(wall, /source_kind === "invoice\.paid"/)
-  assert.doesNotMatch(wall, /paidSlip[\s\S]{0,180}\.test\(/)
   assert.match(gmail, /sourceEventId: paidEventId \|\| eventId/)
   assert.match(gmail, /sourceEventId: partialEventId \|\| eventId/)
   assert.match(gmail, /kind: "invoice\.payment-received"/)
@@ -527,10 +527,8 @@ test("cron and Deepgram callbacks reject weak shared secrets", () => {
   assert.match(transcript, /deepgramCallbackSecretConfigured\(\)/)
 })
 
-test("Active Jobs never hides paid work that has not been finished", () => {
-  const jobs = source("app/ops/active-job-index.tsx")
+test("the board never hides paid work that has not been finished", () => {
   const opsData = source("lib/ops-data.ts")
-  assert.match(jobs, /Active Jobs/)
   assert.match(opsData, /l\.status = 'won' AND l\.completed_at IS NULL/)
 })
 

@@ -6,15 +6,17 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 const visibleJsxText = (value) => [...value.matchAll(/>([^<{]+)</g)].map((match) => match[1]).join(" ")
 
 test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools under Menu", () => {
+  // C7 flipped the shell to the board language: the /ops home is a redirect to
+  // /board, the weighted indexes are archived, and the shared chrome is styled
+  // by ops-shell.css. The board itself carries the tracker hierarchy now.
   const header = source("app/ops/ops-header.tsx")
   const layout = source("app/ops/layout.tsx")
   const more = source("app/ops/more-menu.tsx")
   const dock = source("app/ops/shop-dock.tsx")
   const home = source("app/ops/page.tsx")
   const intake = source("app/ops/intake/inline-job-intake.tsx")
-  const board = source("app/ops/active-job-index.tsx")
-  const controls = source("app/ops/active-job-controls.tsx")
-  const css = source("app/ops/jobs-brand.css")
+  const board = source("app/board/board.tsx")
+  const css = source("app/ops/ops-shell.css")
 
   assert.match(header, /MCSW Jobs/)
   assert.match(header, /firstName/)
@@ -24,20 +26,13 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(more, /<CloseIcon/)
   assert.doesNotMatch(header, /<strong>Jobs<\/strong>/)
   assert.doesNotMatch(layout, /ShopDock/)
-  for (const label of ["Updates", "Promises", "Regular Customers", "Install MCSW Jobs", "Settings", "Sign out"]) {
+  for (const label of ["Job Control", "New Job", "Promises", "Search Jobs", "Install MCSW Jobs", "Settings", "Sign out"]) {
     assert.match(more, new RegExp(label))
   }
   assert.match(dock, /Ask Jobs/)
   assert.match(dock, /Morning Brief/)
-  const addJobIndex = home.indexOf("<InlineJobIntake")
-  const attentionIndex = home.indexOf('className="jobs-panel jobs-next"')
-  const activeJobsIndex = home.indexOf("<ActiveJobIndex")
-  assert.ok(addJobIndex >= 0 && addJobIndex < attentionIndex, "Job intake must precede Needs Attention")
-  assert.ok(attentionIndex < activeJobsIndex, "Needs Attention must precede Active Jobs")
-  assert.match(home, /pageSize: showAllNeeds \? 50 : 1/)
-  assert.match(home, /listBoardJobs\(\{ stage: stageFilter, includeTests, query: searchQuery, page, pageSize: 5 \}/)
-  assert.match(board, /Showing \$\{start\}-\$\{end\} of \$\{resultTotal\}/)
-  for (const label of ["All Jobs", "Needs Attention", "In Shop", "Waiting", "Ready"]) assert.match(controls, new RegExp(label))
+  assert.match(home, /redirect\("\/board"\)/)
+  assert.match(board, /Showing \$\{board\.items\.length\} of \$\{board\.resultTotal\}/)
   assert.match(intake, /useState<IntakeSource>\(initialSource\)/)
   assert.match(intake, /source === "phone-in" \? "Phone call" : "Walk-in"/)
   assert.match(intake, /switchSource\(source === "phone-in" \? "walk-in" : "phone-in"\)/)
@@ -47,12 +42,11 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(intake, /Job saved/)
   assert.match(intake, /Open Job/)
   assert.match(intake, /undoInlineJobAction/)
-  assert.match(css, /--jobs-header:\s*#12100d/)
-  assert.match(css, /\.jobs-product-frame\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
-  assert.match(css, /min-height:\s*3rem/)
+  assert.match(css, /\.ops-frame\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
+  assert.match(css, /min-height:\s*44px/)
   assert.match(
     css,
-    /\.ops-more-trigger\[aria-expanded="true"\]\s*\{[^}]*position:\s*fixed;[^}]*top:\s*max\(1rem, env\(safe-area-inset-top\)\);[^}]*right:\s*max\(1rem, env\(safe-area-inset-right\)\);/s,
+    /\.ops-more-trigger\[aria-expanded="true"\]\s*\{[^}]*position:\s*fixed;[^}]*top:\s*max\([^;]*env\(safe-area-inset-top[^;]*;[^}]*right:\s*max\([^;]*env\(safe-area-inset-right[^;]*;/s,
   )
 })
 
@@ -331,7 +325,8 @@ test("voice cutover and customer texting are independent launch gates", () => {
   const customerPage = source("app/j/[token]/page.tsx")
   const health = source("app/api/health/route.ts")
   const login = source("app/ops/login-form.tsx")
-  const jobs = source("app/ops/page.tsx")
+  // C7: the /ops home is a redirect; the punch-card build lives on the install page.
+  const jobs = source("app/ops/install/page.tsx")
   assert.match(twilio, /TWILIO_MESSAGING_SERVICE_SID/)
   assert.match(twilio, /TWILIO_PUBLIC_NUMBER_ENABLED/)
   assert.match(twilio, /TWILIO_SMS_ENABLED/)
@@ -347,7 +342,7 @@ test("voice cutover and customer texting are independent launch gates", () => {
   assert.match(health, /consentLedgerReady/)
   assert.match(health, /uploadRecoveryBacklog/)
   assert.match(login, /smsReady && \(!picked \|\| picked\.hasSms\)/)
-  assert.match(jobs, /hasSms: smsLoginReady && Boolean\(person\.cell_phone\)/)
+  assert.match(jobs, /hasSms: smsReady && Boolean\(person\.cell_phone\)/)
 })
 
 test("every Jobs recorder follows the Deepgram and Blob readiness gate", () => {
@@ -357,7 +352,6 @@ test("every Jobs recorder follows the Deepgram and Blob readiness gate", () => {
   const header = source("app/ops/ops-header.tsx")
   const more = source("app/ops/more-menu.tsx")
   const dock = source("app/ops/shop-dock.tsx")
-  const jobs = source("app/ops/page.tsx")
   const newIntake = source("app/ops/intake/new/page.tsx")
   const callIntake = source("app/ops/intake/[draftId]/page.tsx")
   const intake = source("app/ops/intake/inline-job-intake.tsx")
@@ -379,7 +373,9 @@ test("every Jobs recorder follows the Deepgram and Blob readiness gate", () => {
   assert.match(more, /<ShopDock voiceReady=\{voiceReady\}/)
   assert.match(dock, /<VoiceCaptureButton available=\{voiceReady\}/)
 
-  for (const route of [jobs, newIntake, callIntake]) {
+  // C7: the /ops home redirects to /board, so the intake pages are the routes
+  // that wire voice readiness; the layout gates the shared chrome above.
+  for (const route of [newIntake, callIntake]) {
     assert.match(route, /voiceTranscriptionConfigured\(\)/)
     assert.match(route, /voiceReady=\{voiceTranscriptionConfigured\(\)\}/)
   }

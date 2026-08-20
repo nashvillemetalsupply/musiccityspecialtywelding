@@ -20,7 +20,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
     if (!open) return
     const trigger = triggerRef.current
     const previous = document.body.style.overflow
-    const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".jobs-root main")]
+    const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".ops-shell main")]
     for (const surface of pageSurfaces) surface.inert = true
     document.body.style.overflow = "hidden"
     trigger?.focus()
@@ -53,13 +53,10 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
       <aside ref={panelRef} className="ops-more-panel" id="ops-more-panel" role="dialog" aria-modal="true" aria-labelledby="ops-more-title">
         <header><div><span>MCSW</span><h2 id="ops-more-title">Menu</h2></div></header>
         <nav aria-label="MCSW sections">
-          {/* The redesigned board. /ops is untouched and stays the default, so
-              going back is a matter of not following this link. */}
-          <Link href="/board" onClick={close}>Job Control (new)</Link>
-          <Link href="/ops?view=updates" onClick={close}>Updates</Link>
-          <Link href="/ops?view=promises" onClick={close}>Promises</Link>
-          <Link href="/ops?view=regulars" onClick={close}>Regular Customers</Link>
-          <Link href="/ops#active-jobs" onClick={close}>Search Jobs</Link>
+          <Link href="/board" onClick={close}>Job Control</Link>
+          <Link href="/ops/intake/new" onClick={close}>New Job</Link>
+          <Link href="/board?signal=promise" onClick={close}>Promises</Link>
+          <Link href="/board" onClick={close}>Search Jobs</Link>
           {role === "owner" && <Link href="/ops/analytics" onClick={close}>Analytics</Link>}
           <Link href="/ops/install" onClick={close}>Install MCSW Jobs</Link>
           {role === "owner" && <Link href="/ops/shop" onClick={close}>Settings</Link>}

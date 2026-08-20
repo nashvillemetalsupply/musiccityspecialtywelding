@@ -17,5 +17,5 @@ export function ConnectivityStatus() {
   }, [])
 
   if (online) return null
-  return <p className="jobs-offline" role="status">Offline. Reconnect before saving, calling, or sending.</p>
+  return <p className="ops-offline" role="status">Offline. Reconnect before saving, calling, or sending.</p>
 }

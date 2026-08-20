@@ -3,11 +3,11 @@ import { MoreMenu } from "./more-menu"
 
 export function OpsCompactHeader({ name, role, voiceReady }: { name: string; role: "owner" | "crew"; voiceReady: boolean }) {
   const firstName = name.trim().split(/\s+/)[0] || "Crew"
-  return <header className="jobs-topbar">
-    <div className="jobs-topbar-inner">
-      <Link href="/ops" className="jobs-brand" aria-label="MCSW Jobs home">
+  return <header className="ops-top">
+    <div className="ops-top-inner">
+      <Link href="/ops" className="ops-logo-home" aria-label="MCSW Jobs home">
         <img
-          className="jobs-brand-logo"
+          className="ops-logo"
           src="/images/optimized/mcs_welding_logo.webp"
           alt="MCS Welding"
           width={72}
@@ -18,7 +18,7 @@ export function OpsCompactHeader({ name, role, voiceReady }: { name: string; rol
         />
       </Link>
       <nav aria-label="Account and menu">
-        <span className="jobs-person">{firstName}</span>
+        <span className="ops-person">{firstName}</span>
         <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceReady} />
       </nav>
     </div>

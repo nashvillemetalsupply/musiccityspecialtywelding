@@ -23,12 +23,13 @@ test("inline terminal actions do not refresh away the deep-link receipt", () => 
   assert.match(actions, /revalidatePath\("\/ops"\)/)
 })
 
-test("Active Jobs search keeps its mounted input and skips the hidden submit in tab order", () => {
-  const index = read("app/ops/active-job-index.tsx")
-  const controls = read("app/ops/active-job-controls.tsx")
-  assert.doesNotMatch(index, /<ActiveJobControls\s+key=/)
-  assert.match(controls, /sourceQuery: query/)
-  assert.match(controls, /tabIndex=\{-1\}/)
+test("job search keeps a mounted, labelled input on the board", () => {
+  // C7 archived active-job-index/-controls; the live search is the board's
+  // .find form, which must stay a plain GET form with a labelled input.
+  const board = read("app/board/board.tsx")
+  assert.match(board, /<form className="find" action="\/board" method="get" role="search">/)
+  assert.match(board, /name="q" type="search" defaultValue=\{chrome\.query\}/)
+  assert.match(board, /aria-label="Search jobs"/)
 })
 
 test("existing and legacy Customer Pages load truthful owner controls", () => {
@@ -43,22 +44,24 @@ test("existing and legacy Customer Pages load truthful owner controls", () => {
   assert.match(control, /role="alert"/)
   assert.match(control, /aria-live="polite"/)
   assert.match(control, /className="ops-glass-link-wide"[\s\S]*Close Customer Page/)
-  const css = read("app/ops/jobs-brand.css")
-  assert.match(css, /ops-glass-link-wide[\s\S]*grid-column: 1 \/ -1/)
-  assert.match(css, /ops-glass-link > :is\(button, a, form > button\)[\s\S]*text-transform: none[\s\S]*white-space: normal/)
-  assert.match(css, /ops-glass-link > a[\s\S]*background: var\(--jobs-primary\)[\s\S]*color: var\(--jobs-on-primary\) !important/)
+  // C7 retired jobs-brand.css; the glass controls' touch rules live in job.css.
+  const css = read("app/ops/leads/[id]/job.css")
+  assert.match(css, /\.job-page \.ops-glass-link \{ display: grid/)
+  assert.match(css, /\.ops-glass-link button, \.ops-glass-link a\) \{ min-height: 44px/)
 })
 
 test("dynamic action labels and overdue disclosure stay bounded and touch safe", () => {
   const intake = read("app/ops/intake/inline-job-intake.tsx")
   const wire = read("app/ops/wire-strip.tsx")
   const page = read("app/ops/leads/[id]/page.tsx")
-  const css = read("app/ops/jobs-brand.css")
+  // C7 retired jobs-brand.css; the touch floor for the job page's controls
+  // (promise disclosure included) lives in job.css.
+  const css = read("app/ops/leads/[id]/job.css")
   assert.match(intake, />Call customer<\/a>/)
   assert.match(wire, />Text contact<\/SafeActionButton>/)
   assert.match(wire, />Email contact<\/SafeActionButton>/)
   assert.match(page, />Use this customer<\/SafeSubmitButton>/)
-  assert.match(css, /\.ops-handle-promise > summary[\s\S]*min-height: 3rem[\s\S]*font-size: 0\.875rem/)
+  assert.match(css, /\.job-handle > summary[\s\S]{0,200}min-height: 44px/)
 })
 
 test("empty activity pages keep a valid role-filtered count query", () => {

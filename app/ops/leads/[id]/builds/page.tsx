@@ -14,7 +14,6 @@ import {
   proposeBuildFactChangeAction,
 } from "./actions"
 import { ActionKeyField } from "./action-key"
-import "../../../../../styles/control.css"
 import "./builds.css"
 
 export const dynamic = "force-dynamic"

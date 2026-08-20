@@ -1,5 +1,4 @@
 import Link from "next/link"
-import "../../../styles/control.css"
 import "./shop.css"
 import { dbConfigured } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"

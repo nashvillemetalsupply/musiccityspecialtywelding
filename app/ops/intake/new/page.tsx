@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { randomUUID } from "node:crypto"
 import { redirect } from "next/navigation"
-import "../../../../styles/control.css"
 import "../intake.css"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
