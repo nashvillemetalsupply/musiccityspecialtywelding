@@ -67,21 +67,22 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // fixtures are never a fallback: a hand-typed number that survives onto a
   // wired page is exactly the failure this redesign exists to kill.
   const operator = dbConfigured() ? await getAuthenticatedOperator() : null
+  // Internal test rows are owner-only. The flag is decided here, on the server,
+  // from the role the session resolved to -- a crew member or a signed-out
+  // request that hand-types ?tests=1 gets the ordinary board, because the URL
+  // never gets a vote. It rides in chrome so the board's own links and its
+  // search form can carry the mode forward without the client ever deciding it.
+  const includeTests = params.tests === "1" && operator?.role === "owner"
   const chrome = {
     date: BOARD_DATE.format(new Date()),
     operatorInitial: (operator?.name || operator?.email || "").trim().charAt(0).toLocaleUpperCase("en-US"),
     owner: operator?.role === "owner",
     query,
+    includeTests,
   }
   if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
 
   const role = operator.role
-  // Internal test rows are owner-only. The flag is decided here, on the server,
-  // from the role the session resolved to -- a crew member or a signed-out
-  // request that hand-types ?tests=1 gets the ordinary board, because the URL
-  // never gets a vote. Hiding the rows in the client would be the same failure
-  // as hiding crew money in CSS.
-  const includeTests = params.tests === "1" && role === "owner"
   const [page, promises, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.
