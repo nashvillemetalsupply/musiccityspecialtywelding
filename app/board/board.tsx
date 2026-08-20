@@ -310,7 +310,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
           <button className="icon" id="theme" type="button" aria-label="Switch between the light and dark board">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2.2a5.8 5.8 0 1 0 5.8 5.8A4.4 4.4 0 0 1 8 2.2z"/></svg></button>
           {chrome.operatorInitial && <span className="who-dot" aria-label="Signed-in operator">{chrome.operatorInitial}</span>}
-          {menu && <span className="board-more">{menu}</span>}
+          {menu && <div className="board-more">{menu}</div>}
         </div>
       </header>
     

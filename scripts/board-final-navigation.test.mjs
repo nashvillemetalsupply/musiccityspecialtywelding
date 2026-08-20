@@ -43,7 +43,9 @@ test("the signed-in board mounts the shared menu so #radio and #handset resolve"
   assert.ok(PAGE.indexOf("const menu = <MoreMenu") > PAGE.indexOf("if (!operator) return <JobControl"))
   // The board mounts it inside its own scope class, and never drags the
   // retired ops-shell sheet back in behind it.
-  assert.match(BOARD, /\{menu && <span className="board-more">\{menu\}<\/span>\}/)
+  // A div, not a span: MoreMenu renders div/aside descendants, and flow
+  // content inside phrasing content is invalid HTML.
+  assert.match(BOARD, /\{menu && <div className="board-more">\{menu\}<\/div>\}/)
   assert.doesNotMatch(PAGE, /ops-shell\.css/)
   assert.doesNotMatch(BOARD, /ops-shell/)
   assert.match(CSS, /\.board-more \.ops-more-trigger\{/)
