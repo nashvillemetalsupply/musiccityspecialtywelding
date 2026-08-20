@@ -15,6 +15,7 @@ import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { HomeCallSketch } from "@/components/call-sketch/home-call-sketch"
 import { getShopPhone } from "@/lib/shop-contact"
+import "./homepage-polish.css"
 
 export const metadata: Metadata = {
   title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
@@ -135,7 +136,7 @@ export default function Page() {
   const shopPhone = getShopPhone()
   const callSketchPublicEnabled = process.env.CALL_SKETCH_PUBLIC_ENABLED?.trim().toLowerCase() === "true"
   return (
-    <div className="ms-site">
+    <div className="ms-site ms-home">
       <a className="ms-skip" href="#main-content">Skip to the work</a>
 
       <header className="ms-nav" aria-label="Main navigation">
@@ -146,8 +147,7 @@ export default function Page() {
               alt=""
               width={240}
               height={160}
-              priority
-              fetchPriority="high"
+              loading="eager"
               sizes="64px"
               unoptimized
             />
@@ -190,7 +190,7 @@ export default function Page() {
               Metal problem? <em>We get it.</em>
             </p>
             <p className="ms-hero-deck">
-              24/7 mobile welding across Nashville and Middle Tennessee. Trucks, trailers, equipment, aluminum, structural steel, and built-to-spec shop fabrication.
+              Nashville mobile welding, 24/7. On-site welding &amp; repair across Middle Tennessee for trucks, trailers, equipment, aluminum, structural steel, and shop fabrication.
             </p>
             <div className="ms-hero-actions">
               <a className="sw-plank" href={shopPhone.href}>
@@ -212,12 +212,12 @@ export default function Page() {
               <span className="sw-tape-tl" aria-hidden="true" />
               <span className="sw-tape-tr" aria-hidden="true" />
               <Image
-                src="/images/welder.webp"
+                src="/images/optimized/welder-1280.webp"
                 alt="Music City Specialty Welding fabricating a steel frame in the shop"
                 fill
                 priority
                 fetchPriority="high"
-                sizes="(max-width: 900px) 94vw, 60vw"
+                unoptimized
               />
             </figure>
           </div>
@@ -245,27 +245,27 @@ export default function Page() {
 
           <div className="ms-work-grid">
             <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.jpg" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 767px) 88vw, 46vw" />
+              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.jpg" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Custom BBQ trailer — full steel build-out.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20260522_234850864_HDR.jpg" alt="Custom stainless steel sink fabricated to fit existing commercial equipment" fill sizes="(max-width: 767px) 70vw, 27vw" />
+              <Image src="/images/owner-work/IMG_20260522_234850864_HDR.jpg" alt="Custom stainless steel sink fabricated to fit existing commercial equipment" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Stainless sink, fitted to the existing line.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 767px) 78vw, 31vw" />
+              <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel frame, jigged square in our shop.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_3994.jpg" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 640px) 78vw, 34vw" />
+              <Image src="/images/owner-work/IMG_3994.jpg" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Commercial manifold, installed on-site.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20250527_141244.jpg" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 640px) 100vw, 50vw" />
+              <Image src="/images/owner-work/IMG_20250527_141244.jpg" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel gate, hung level where it sits.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.jpg" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 640px) 82vw, 46vw" />
+              <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.jpg" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Custom-cut letters, right off the table.</strong></figcaption>
             </figure>
           </div>
@@ -321,7 +321,7 @@ export default function Page() {
                   </Link>
                 </div>
                 <figure className="ms-service-image">
-                  <Image src={service.image} alt={service.alt} fill sizes="(max-width: 767px) 92vw, 32vw" />
+                  <Image src={service.image} alt={service.alt} fill sizes="(max-width: 859px) calc(100vw - 2rem), 26rem" />
                 </figure>
               </article>
             ))}
@@ -398,12 +398,12 @@ export default function Page() {
             <span className="ms-job-glass-clip" aria-hidden="true" />
             <figcaption><strong>Your private Customer Page</strong><small>No app · no password</small></figcaption>
             <div className="ms-job-glass-title"><small>Your job</small><strong>Driveway gate repair</strong><span>Lebanon · Tennessee</span></div>
-            <div className="ms-job-glass-promise"><small>The promise</small><strong>Ready Friday</strong><span>August 15</span></div>
+            <div className="ms-job-glass-promise"><small>The promise</small><strong>Ready Friday</strong><span>Promised date</span></div>
             <div className="ms-job-glass-route" aria-label="Job progress">
               <span className="is-done">Wrote it up</span><span className="is-done">Quoted</span><span className="is-now">On the schedule</span><span>On the job</span><span>Done</span>
             </div>
             <div className="ms-job-glass-progress">
-              <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 900px) 45vw, 18vw" />
+              <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 760px) 5.8rem, 7.5rem" />
               <p><small>Progress from the shop</small><strong>Frame fitted square. Hinge stock is next.</strong><span>Cody · today, 2:14 PM</span></p>
             </div>
             <div className="ms-job-glass-footer"><span>Something look wrong?</span><a href={shopPhone.href}>Call the shop</a></div>

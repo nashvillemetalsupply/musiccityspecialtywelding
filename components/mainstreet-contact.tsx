@@ -193,7 +193,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
         </a>
       </div>
 
-      <form className="ms-quote-form" onSubmit={submit} noValidate>
+      <form className="ms-quote-form" onSubmit={submit}>
         <div className="ms-form-heading">
           <span>Work order</span>
           <span className="wm-order-no">Nº assigned on receipt</span>

@@ -1,0 +1,147 @@
+/*
+ * Final public-homepage polish.
+ *
+ * These overrides stay deliberately separate from globals.css so the Shop
+ * Brain and customer-page surfaces are not affected by homepage refinements.
+ */
+
+/* Long hash jumps should feel immediate on a 10k+ pixel service page. */
+html:has(.ms-home) {
+  scroll-behavior: auto;
+}
+
+/* Keep every homepage anchor clear of the pinned shop navigation. */
+.ms-home :where(section[id]) {
+  scroll-margin-top: 5rem;
+}
+
+/* Gloved-thumb targets for the remaining compact text actions. */
+.ms-home .ms-menu summary {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  place-content: center;
+  padding: 0.55rem;
+}
+
+.ms-home .ms-brand-words span {
+  white-space: nowrap;
+}
+
+.ms-home .ms-text-link,
+.ms-home .ms-service-copy a,
+.ms-home .ms-badge-strip a,
+.ms-home .ms-footer-contact a,
+.ms-home .ms-footer-meta a {
+  min-height: 2.75rem;
+  align-items: center;
+}
+
+.ms-home .ms-text-link,
+.ms-home .ms-service-copy a {
+  padding-top: 0.45rem;
+}
+
+.ms-home .ms-footer-contact a,
+.ms-home .ms-footer-meta a {
+  display: inline-flex;
+}
+
+.ms-home .ms-footer-meta a {
+  padding-inline: 0.25rem;
+}
+
+.ms-home .ms-form-fallback a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding-inline: 0.15rem;
+}
+
+/* The order number is a small stamped detail, not a competing headline. */
+.ms-home .ms-form-heading .wm-order-no {
+  color: #625746;
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.14em;
+}
+
+/* Make the invisible file control and photo removal controls keyboard-clear. */
+.ms-home .ms-upload-field:focus-within .ms-upload {
+  outline: 3px solid var(--mx-arc);
+  outline-offset: 3px;
+}
+
+.ms-home .ms-previews button {
+  top: -1rem;
+  right: -1rem;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.ms-home .ms-previews button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Route labels are 10px text and need normal-text contrast on the paper. */
+.ms-home .ms-job-glass-route span:not(.is-done):not(.is-now) {
+  color: #5e5a4d;
+}
+
+/* Preserve the sharp tagline phrase instead of orphaning "Get it" at 320px. */
+.ms-home .sw-paint em {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .ms-home .ms-hero {
+    gap: 1.75rem;
+    padding-top: 2rem;
+  }
+
+  .ms-home .ms-hero-actions {
+    gap: 1.25rem;
+    margin-top: 1.6rem;
+  }
+
+  .ms-home .ms-hero-actions .sw-plank {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .ms-home .ms-hero-deck {
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+
+  .ms-home .sw-plank small {
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+  }
+
+  .ms-home .ms-brand {
+    gap: 0.55rem;
+  }
+
+  .ms-home .ms-brand-words span {
+    letter-spacing: 0.22em;
+  }
+}
+
+@media (max-width: 979px) {
+  .ms-home .ms-mobile-cta a {
+    padding-bottom: calc(0.95rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-home *,
+  .ms-home .ms-mobile-cta {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
