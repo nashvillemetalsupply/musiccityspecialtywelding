@@ -35,6 +35,7 @@ export type BoardPaneData = {
   resultTotal: number
   pageSize: number
   stage: JobBoardStage
+  signal?: BoardSignalKind
   stages: JobBoardStage[]
 }
 
@@ -235,6 +236,20 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
   const countLine = board.resultTotal === 0
     ? "No jobs in this stage"
     : `Showing ${board.items.length} of ${board.resultTotal}`
+  const boardHref = ({
+    stage = board.stage,
+    signal = board.signal,
+  }: {
+    stage?: JobBoardStage
+    signal?: BoardSignalKind | null
+  } = {}) => {
+    const params = new URLSearchParams()
+    if (stage !== "board") params.set("stage", stage)
+    if (chrome.query) params.set("q", chrome.query)
+    if (signal) params.set("signal", signal)
+    const search = params.toString()
+    return `/board${search ? `?${search}` : ""}`
+  }
   useEffect(() => {
     const root = document.documentElement
     const key = "mcsw-theme"
@@ -309,12 +324,17 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
           <div className="signals">
             {SIGNAL_ORDER.map((kind) => {
               const count = board.signalCounts[kind]
-              return <button className={`signal${count === 0 ? " none" : ""}`} type="button" key={kind}>
+              return <Link className={`signal${count === 0 ? " none" : ""}`}
+                href={boardHref({ signal: kind })}
+                aria-current={board.signal === kind ? "true" : undefined} key={kind}>
                 <i style={{ "background": markFor(kind, count) }}></i>
                 <span>{BOARD_SIGNAL_LABELS[kind]}</span><b>{count}</b><em>{BOARD_WEIGHTS.signal[kind]}</em>
-              </button>
+              </Link>
             })}
           </div>
+          {board.signal && <p style={{ "marginTop": "var(--s3)" }}>
+            <Link className="btn btn--sm btn--edge" href={boardHref({ signal: null })}>Clear signal filter</Link>
+          </p>}
           <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>How many jobs, then how bad it is — one job can carry more than one. {WORST_WEIGHT} is the worst it gets.</p>
     
           <div className="rule"></div>
@@ -343,8 +363,8 @@ export function JobControl({ board, chrome }: { board: BoardPaneData; chrome: Bo
         </div>
     
         <div className="pane-foot">
-          <button className="btn btn--go" type="button">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Work the {needsYou} that {needsYou === 1 ? "needs" : "need"} you</button>
+          <Link className="btn btn--go" href={boardHref({ stage: "attention", signal: null })}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Work the {needsYou} that {needsYou === 1 ? "needs" : "need"} you</Link>
         </div>
       </aside>
     

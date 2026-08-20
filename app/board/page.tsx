@@ -4,8 +4,9 @@ import { getPromiseSummary } from "@/lib/commitments"
 import { listTodayEvents } from "@/lib/events"
 import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
-import { getBoardJobDetails, getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
+import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
+import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { JobControl } from "./board"
 import type { BoardPaneData } from "./board"
 import "./board.css"
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic"
 
-type SearchParams = Promise<{ q?: string; stage?: string }>
+type SearchParams = Promise<{ q?: string; stage?: string; signal?: string }>
 
 const BOARD_DATE = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Chicago",
@@ -41,6 +42,7 @@ const EMPTY_BOARD: BoardPaneData = {
   resultTotal: 0,
   pageSize: 5,
   stage: "board",
+  signal: undefined,
   stages: [...JOB_BOARD_STAGES],
 }
 
@@ -54,6 +56,10 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   const stage: JobBoardStage = JOB_BOARD_STAGES.includes(requested as JobBoardStage)
     ? (requested as JobBoardStage)
     : "board"
+  const requestedSignal = params.signal ?? ""
+  const signal: BoardSignalKind | undefined = BOARD_SIGNAL_KINDS.includes(requestedSignal as BoardSignalKind)
+    ? (requestedSignal as BoardSignalKind)
+    : undefined
 
   // This route carries real customer names and real money, so it is gated the
   // way /ops is. Signed out, the board renders its structural zero state —
@@ -67,13 +73,13 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     owner: operator?.role === "owner",
     query,
   }
-  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
+  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
 
   const role = operator.role
   const [page, promises, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.
-    listBoardJobs({ stage, order: "oldest", query }, role),
+    listBoardJobs({ stage, signal, order: "oldest", query }, role),
     getPromiseSummary(),
     getOutTheDoorWeek(role),
     getOpsStats(role),
@@ -95,6 +101,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     resultTotal: page.resultTotal,
     pageSize: page.pageSize,
     stage,
+    signal,
     stages: [...JOB_BOARD_STAGES],
   }} />
 }
