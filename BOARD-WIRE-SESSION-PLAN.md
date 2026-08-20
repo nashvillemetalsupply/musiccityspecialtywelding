@@ -33,9 +33,9 @@ their own):
 |----|---------------------|---------------|--------|------|------------|--------|
 | W0 | `job_line_items` store, owner entry on `/ops/leads/<id>`, crew stripped (plan §2 block C) | Opus | high | M | — | **done** |
 | W1 | Batched per-job detail query — `getBoardJobDetails(ids, role)` (plan §2 "Query cost") | Codex `gpt-5.6-sol` | xhigh | M | W0 | **done** |
-| W2 | The expand panel: blocks A, B, C and the open/close interaction (plan §2) | Codex `gpt-5.6-sol` | xhigh | L | W1 | todo |
+| W2 | The expand panel: blocks A, B, C and the open/close interaction (plan §2) | Codex `gpt-5.6-sol` | xhigh | L | W1 | **done** |
 | W3 | Signal filter — `?signal=<kind>` through `listBoardJobs`, pane buttons, "Work the N" (plan §1 rows 13–14) | Codex `gpt-5.6-sol` | high | M | — | todo |
-| W4 | Call sketch wiring — `leadId` on `BoardCallSketch`, "Open the job", "Text him the three" (rows 15–16) | Codex `gpt-5.6-sol` | medium | S | — | todo |
+| W4 | Call sketch wiring — `leadId` on `BoardCallSketch`, "Open the job", "Text him the three" (rows 15–16) | Codex `gpt-5.6-sol` | medium | S | — | **done** |
 | W5 | Header and rail chrome — date, search, New job, who-dot, seven rail links (rows 1–12) | Codex `gpt-5.6-sol` | medium | S | — | todo |
 | W6 | Exit verification — panel and control assertions in `job-control-tracker.test.mjs`, full suite, tick the plan | Codex `gpt-5.6-sol` | high | S | W2, W3, W4, W5 | todo |
 

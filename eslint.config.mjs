@@ -16,6 +16,7 @@ export default defineConfig([
     "out/**",
     "build/**",
     ".backups/**",
+    ".worktrees/**",
     "next-env.d.ts",
     "components/ui/**",
     "hooks/**",
