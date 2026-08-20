@@ -10,6 +10,7 @@ import { shopEventLabel } from "@/lib/shop-language"
 import { projectEventForRole } from "@/lib/visibility"
 import { PaidMoment } from "@/app/ops/paid-moment"
 import { WireStrip } from "@/app/ops/wire-strip"
+import { ThemeBoot } from "../theme-boot"
 import "../board.css"
 import "./updates.css"
 
@@ -69,7 +70,9 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
 
   const paidSlip = wire.find((slip) => slip.source_kind === "invoice.paid")
 
-  return <main className="updates-page">
+  return <>
+    <ThemeBoot />
+    <main className="updates-page">
     {paidSlip && <PaidMoment slipId={paidSlip.id} title={paidSlip.title} body={paidSlip.body} />}
 
     <header className="updates-head">
@@ -113,5 +116,6 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
         {receipt.lead_id && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${receipt.lead_id}`}>Open job</Link>}
       </> : <p>This update is not available in your role.</p>}
     </section>}
-  </main>
+    </main>
+  </>
 }

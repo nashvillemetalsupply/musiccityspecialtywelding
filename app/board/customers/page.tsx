@@ -5,6 +5,7 @@ import { dbConfigured } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { normalizePage } from "@/lib/pagination"
 import { listRegularAccounts } from "@/lib/wall-data"
+import { ThemeBoot } from "../theme-boot"
 import "./customers.css"
 
 export const metadata: Metadata = {
@@ -43,7 +44,9 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
   const page = result.page
 
   return (
-    <main className="cust">
+    <>
+      <ThemeBoot />
+      <main className="cust">
       <header className="cust-top">
         <Link className="btn btn--edge" href="/board">Board</Link>
         <h1 className="t-title">Regular Customers</h1>
@@ -83,6 +86,7 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
           {result.hasNext ? <Link className="btn btn--edge" href={href(page + 1, query)}>Older</Link> : <span />}
         </nav>
       )}
-    </main>
+      </main>
+    </>
   )
 }

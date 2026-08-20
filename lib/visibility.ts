@@ -34,12 +34,19 @@ export function redactCrewText(value: string) {
 
 export function projectEventForRole(event: EventRow, role: OperatorRole): EventRow | null {
   if (role === "owner") return event
+  // The events table has two generated tsvector columns; tsv indexes the
+  // owner body. Both are search internals and would leak owner-body lexemes
+  // into every crew projection, so strip them once here and spread `safe` in
+  // every crew branch below. The owner early-return above stays untouched.
+  const safe = { ...event } as EventRow & { tsv?: unknown; crew_tsv?: unknown }
+  delete safe.tsv
+  delete safe.crew_tsv
   if (eventIsOwnerOnly(event.kind, event.detail)) return null
   if (event.kind === "brief.morning") {
     const crewBody = typeof event.detail?.crewBody === "string"
       ? event.detail.crewBody
       : "Your due work is waiting in Jobs."
-    return { ...event, body: crewBody, crew_body: crewBody, detail: null }
+    return { ...safe, body: crewBody, crew_body: crewBody, detail: null }
   }
   if (event.kind === "email.attachments") {
     const attachments = Array.isArray(event.detail?.attachments)
@@ -54,19 +61,19 @@ export function projectEventForRole(event: EventRow, role: OperatorRole): EventR
       })
       : []
     const body = attachments.length ? `${attachments.length} customer photo or drawing ${attachments.length === 1 ? "was" : "were"} filed.` : "Owner paperwork filed from email."
-    return { ...event, body: redactCrewText(body), crew_body: redactCrewText(body), detail: { attachments } }
+    return { ...safe, body: redactCrewText(body), crew_body: redactCrewText(body), detail: { attachments } }
   }
   if (event.kind === "email.failed" || event.kind === "email.delivered") {
-    return { ...event, body: redactCrewText(event.crew_body || (event.kind === "email.failed" ? "Email did not deliver." : "Email delivered.")), detail: { sourceEventId: event.detail?.sourceEventId ?? null } }
+    return { ...safe, body: redactCrewText(event.crew_body || (event.kind === "email.failed" ? "Email did not deliver." : "Email delivered.")), detail: { sourceEventId: event.detail?.sourceEventId ?? null } }
   }
   if (event.kind === "email.out") {
-    return { ...event, body: redactCrewText(event.crew_body || "Shop email saved. MCSW Jobs is preparing the crew-safe copy."), detail: { deliveryStatus: event.detail?.deliveryStatus ?? "pending" } }
+    return { ...safe, body: redactCrewText(event.crew_body || "Shop email saved. MCSW Jobs is preparing the crew-safe copy."), detail: { deliveryStatus: event.detail?.deliveryStatus ?? "pending" } }
   }
   if (event.kind === "job.completed") {
-    return { ...event, body: redactCrewText(event.crew_body || "Closeout note recorded. MCSW Jobs is preparing the crew-safe copy."), detail: { operatorName: event.detail?.operatorName ?? null, noteSource: event.detail?.noteSource ?? null } }
+    return { ...safe, body: redactCrewText(event.crew_body || "Closeout note recorded. MCSW Jobs is preparing the crew-safe copy."), detail: { operatorName: event.detail?.operatorName ?? null, noteSource: event.detail?.noteSource ?? null } }
   }
   return {
-    ...event,
+    ...safe,
     body: redactCrewText(event.crew_body || "Update recorded. MCSW Jobs is preparing the crew-safe copy."),
     detail: null,
   }
