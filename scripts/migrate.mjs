@@ -940,7 +940,7 @@ const statements = [
       BEFORE UPDATE OR DELETE ON build_sheets
       FOR EACH ROW EXECUTE FUNCTION reject_build_sheet_mutation();
     END IF;
-  END $`,
+  END $$`,
   // The owner's voice, kept as a corpus rather than a summary. Every line he
   // has said or written that the shop already stores lands here once, keyed by
   // where it came from, so the profile can be rebuilt from scratch whenever the
