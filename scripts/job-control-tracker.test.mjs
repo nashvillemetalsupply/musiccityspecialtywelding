@@ -144,8 +144,10 @@ test("tracker has an honest empty state and the protected regions remain", () =>
   assert.match(PREVIEW_SOURCE, /SIGNAL_ORDER\.map\(\(kind\) =>/)
   assert.match(PREVIEW_SOURCE, /<h3 className="t-sub">Promises<\/h3>/)
   assert.match(PREVIEW_SOURCE, /<h2 className="t-title">Live call sketch<\/h2>/)
-  assert.match(PREVIEW_SOURCE, /<p className="ask">Ask next<\/p>/)
-  assert.match(PREVIEW_SOURCE, /\{answered\} of \{PANEL_FACT_KEYS\.length\} answered/)
+  // Both regions survive, now behind the fallback a call that described no
+  // gate takes: the ask line and the answered count are still the panel's.
+  assert.match(PREVIEW_SOURCE, /className="ask">\{showHeard \? "What the call said" : "Ask next"\}<\/p>/)
+  assert.match(PREVIEW_SOURCE, /\$\{answered\} of \$\{PANEL_FACT_KEYS\.length\} answered/)
 })
 
 test("every service a form can write has a row mark", () => {

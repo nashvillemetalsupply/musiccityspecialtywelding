@@ -236,6 +236,20 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
   const spec = sketch?.spec ?? emptyCallSketchSpec()
   const answered = answeredFactCount(spec)
   const pricingGap = pricingSentence(spec)
+  // The sketch only understands gates and frames. A call about anything else
+  // answers none of its seven facts, and the panel used to print seven "Not
+  // stated" rows after a real conversation. When the drawing heard nothing,
+  // the slots carry what the call did say instead.
+  const heard = sketch?.heard ?? []
+  const showHeard = answered === 0 && heard.length > 0
+  const slots = showHeard
+    ? heard.map((fact) => ({ key: fact.predicate, label: fact.label, tone: "said", text: fact.text }))
+    : PANEL_FACT_KEYS.map((key) => ({
+      key,
+      label: PANEL_FACT_LABELS[key],
+      tone: factTone(spec[key]),
+      text: factText(key, spec[key]),
+    }))
   const countLine = board.resultTotal === 0
     ? "No jobs in this stage"
     : `Showing ${board.items.length} of ${board.resultTotal}`
@@ -458,17 +472,19 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             </div>
     
             <div>
-              <p className="ask">Ask next</p>
-              <p>{spec.nextQuestion}</p>
+              <p className="ask">{showHeard ? "What the call said" : "Ask next"}</p>
+              <p>{showHeard ? "No gate or frame was described, so the drawing stays blank." : spec.nextQuestion}</p>
               <div className="slots">
-                {PANEL_FACT_KEYS.map((key) =>
-                  <span className="slot" key={key}>
-                    <span className="k">{PANEL_FACT_LABELS[key]}</span>
-                    <span className={`v ${factTone(spec[key])}`}>{factText(key, spec[key])}</span>
+                {slots.map((slot) =>
+                  <span className="slot" key={slot.key}>
+                    <span className="k">{slot.label}</span>
+                    <span className={`v ${slot.tone}`}>{slot.text}</span>
                   </span>)}
               </div>
               <div className="call-end">
-                <span>{answered} of {PANEL_FACT_KEYS.length} answered{pricingGap && ` · ${pricingGap}`}</span>
+                <span>{showHeard
+                  ? `${heard.length} fact${heard.length === 1 ? "" : "s"} heard on this call`
+                  : `${answered} of ${PANEL_FACT_KEYS.length} answered${pricingGap && ` · ${pricingGap}`}`}</span>
                 {sketch?.leadId != null &&
                   <span className="end"><Link className="btn btn--sm btn--go" href={`/ops/leads/${sketch.leadId}#spike`}>Text him the three</Link></span>}
               </div>
