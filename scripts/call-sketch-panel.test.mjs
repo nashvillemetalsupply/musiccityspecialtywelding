@@ -137,3 +137,31 @@ test("the board shows the person's name over a ring-time placeholder", () => {
     "d.caller_name is frozen at ring time as `Caller 7021`; the person's name is the one the call gave up",
   )
 })
+
+// After hangup the last three lines are always the goodbye. "Bye bye" is what
+// the panel showed of a call that had named the customer, the two ductile iron
+// flanges, the pipe size and the lengths -- all of it in the first half.
+test("an ended call reads from the top, a live one from the tail", () => {
+  const reader = STORE_SOURCE.slice(STORE_SOURCE.indexOf("export async function getLatestBoardCallSketch"))
+  assert.match(reader, /const live = call\.status === "listening"/)
+  assert.match(reader, /live \? utterances\.slice\(-LIVE_LINES\) : utterances\.slice\(0, ENDED_LINES\)/)
+  assert.match(STORE_SOURCE, /const LIVE_LINES = 3/)
+  assert.match(STORE_SOURCE, /const ENDED_LINES = 14/)
+  // The count is what makes the truncation honest rather than silent.
+  assert.match(reader, /totalLines: utterances\.length/)
+  assert.match(PREVIEW_SOURCE, /\{unshownLines\} more line\{unshownLines === 1 \? "" : "s"\} on this call\./)
+  assert.match(PREVIEW_SOURCE, /onTheLine \? "Recent call language" : "How the call opened"/)
+})
+
+test("a call with no job yet offers the draft, and only while intake will open it", () => {
+  const reader = STORE_SOURCE.slice(STORE_SOURCE.indexOf("export async function getLatestBoardCallSketch"))
+  assert.match(
+    reader,
+    /WHEN d\.status = ANY\(ARRAY\['pending','saving','failed','unknown'\]::text\[\]\) THEN d\.public_id/,
+    "the same status guard getCallSketchForDraft uses, so the button cannot land on a 404",
+  )
+  const guard = STORE_SOURCE.slice(STORE_SOURCE.indexOf("export async function getCallSketchForDraft"))
+  assert.match(guard, /d\.status = ANY\(ARRAY\['pending','saving','failed','unknown'\]::text\[\]\)/)
+  assert.match(PREVIEW_SOURCE, /sketch\?\.leadId == null && sketch\?\.draftId &&/)
+  assert.match(PREVIEW_SOURCE, /href=\{`\/ops\/intake\/\$\{sketch\.draftId\}`\}>Save this call as a job<\/Link>/)
+})

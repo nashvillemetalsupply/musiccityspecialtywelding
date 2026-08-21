@@ -343,15 +343,26 @@ function speakerForTrack(direction: string, track: string) {
 
 export type BoardCallSketch = {
   leadId: number | null
+  draftId: string | null
   callerName: string
   startedAt: string
   endedAt: string | null
   status: string
   spec: CallSketchSpec
   lines: { sequenceId: number; speaker: string; transcript: string }[]
+  totalLines: number
   heard: { predicate: string; label: string; text: string }[]
   unsketchedCalls: number
 }
+
+// While the shop is still on the line the tail is the point: the last three
+// lines are what is being said now. Once the call ends the tail is always the
+// goodbye — "Bye bye" told the owner nothing about a job — so an ended call
+// reads from the top instead, where the customer says what they need. Fourteen
+// lines carried the whole of the first real call: who it was, the two ductile
+// iron flanges, the six inch pipe, the lengths, and that he would bring it in.
+const LIVE_LINES = 3
+const ENDED_LINES = 14
 
 // The caller line and the panel header already carry who called, so repeating
 // the identity as a fact wastes a slot the job needs.
@@ -405,6 +416,12 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
   const rows = (await sql`
     SELECT c.twilio_sid, c.direction, c.started_at, c.duration_sec, c.lead_id,
       COALESCE(NULLIF(p.display_name, ''), NULLIF(d.caller_name, ''), '') AS caller_name,
+      -- Only a draft the intake page will still open. Its status guard is the
+      -- one getCallSketchForDraft uses, so the button never lands on a 404.
+      CASE
+        WHEN d.status = ANY(ARRAY['pending','saving','failed','unknown']::text[]) THEN d.public_id
+        ELSE ''
+      END AS draft_public_id,
       s.status, COALESCE(s.confirmed_spec, s.observed_spec) AS spec
     FROM call_sketches s
     JOIN calls c ON c.twilio_sid = s.call_sid
@@ -423,6 +440,7 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
       duration_sec: number | null
       lead_id: number | null
       caller_name: string
+      draft_public_id: string
       status: string
       spec: Partial<CallSketchSpec> | null
     }>
@@ -451,8 +469,10 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
 
   const startedAt = new Date(call.started_at).toISOString()
   const seconds = Number(call.duration_sec)
+  const live = call.status === "listening"
   return {
     leadId: call.lead_id === null ? null : Number(call.lead_id),
+    draftId: call.draft_public_id || null,
     callerName: call.caller_name,
     startedAt,
     endedAt: Number.isFinite(seconds) && seconds > 0
@@ -462,11 +482,12 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
     // A sketch row written before a fact existed can be missing keys; the
     // empty spec supplies every one of them so the panel never reads undefined.
     spec: { ...emptyCallSketchSpec(), ...(call.spec ?? {}) } as CallSketchSpec,
-    lines: utterances.slice(-3).map((item) => ({
+    lines: (live ? utterances.slice(-LIVE_LINES) : utterances.slice(0, ENDED_LINES)).map((item) => ({
       sequenceId: Number(item.sequence_id),
       speaker: speakerForTrack(call.direction, item.track),
       transcript: item.transcript,
     })),
+    totalLines: utterances.length,
     heard,
     unsketchedCalls: Number(unsketched[0]?.count ?? 0),
   }
