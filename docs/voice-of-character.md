@@ -60,18 +60,79 @@ on record, **Learn from every call**, and **Hear it now**. The count going up
 after a call is the point — the preview is drawn from whatever the corpus says
 today, so it moves closer to him as the shop keeps working.
 
-## Next
+## Two layers, and only one of them evolves
 
-1. **Grow the corpus.** Eight lines is the floor, not a target. Press *Learn from
-   every call* once to sweep history, then paste in anything he has written that
-   sounds like him.
-2. **Convert the copy.** Website, ads, and email templates are hand-written today
-   and nothing AI-drafts customer copy yet. Converting them is a separate pass:
-   read the current copy, redraft it through `ownerVoiceGuide()`, and have him
-   approve each page — his voice is the input to a rewrite, never an excuse to
-   ship one unread.
-3. **An AI that answers the phone** is a further step and needs two things this
-   does not have: an audio clone of his actual voice, built from call recordings
-   with his explicit say-so, and a disclosure to the caller that they are talking
-   to a machine. What ships today is his *language*, read by a stock speech
-   voice.
+Keeping these apart prevents the confusion that cost an afternoon.
+
+- **The words** — the corpus above. It grows with every call, the profile
+  rebuilds, and copy written in his name reads more like him each month. This is
+  the layer that "moves closer" and the layer the website, ads and emails need.
+- **The sound** — a voice clone. Static by nature: a timbre, not a skill. Cloned
+  once and reused forever, and only re-done if the sample was poor. It matters
+  for spoken output only: voicemail, a phone greeting, an AI answering the line.
+
+## Who drafts the words
+
+`draftWithDeepSeek` in `lib/ai.ts` is preferred whenever `DEEPSEEK_API_KEY` is
+set, and the AI Gateway is the fallback. Two reasons: the gateway refuses every
+paid model on the shop's plan — *"Free tier users do not have access to this
+model"*, a 403 that produced three silent 500s before the error was surfaced —
+and the shop already pays DeepSeek for a key it uses elsewhere. DeepSeek speaks
+the OpenAI chat format, so one `fetch` reaches it: no provider package, no Vercel
+credit, no second bill. `DEEPSEEK_MODEL` defaults to `deepseek-chat`.
+
+The gateway stays the path for anything needing tools, streaming or structured
+output — extraction, Ask Jobs and the morning brief still run through it, and
+they are all still behind the same plan wall.
+
+Speech degrades in three steps, and the board always says which one it got:
+
+1. The gateway's speech model, when the plan allows it.
+2. No provider — his newly drafted words, read by the browser's own voice,
+   labelled as the browser's so a stock voice is never taken for a bought one.
+3. No draft at all — one of his own recorded sentences, rotating.
+
+## The clone
+
+Made 2026-08-21 at Higgsfield from a 27-second mono 16 kHz voice memo.
+
+```
+voice_id   daa7e1dd-a8de-4638-8d9a-82abeb5a0968
+voice_type element
+name       Phil
+```
+
+It is **not wired into the app**, and cannot be as things stand:
+
+- The MCP session that made it is an OAuth login, not a server credential.
+- Higgsfield does issue server keys (`Authorization: Key ${HF_API_KEY_ID}:${HF_API_KEY_SECRET}`,
+  from Higgsfield Cloud) and claims audio generation, but **no speech or voice
+  endpoint appears anywhere in their documentation index**, and nothing states
+  that a browser-made clone is addressable from a server key. Untested, not
+  impossible.
+- ElevenLabs is the dependable route for live cloned speech: documented TTS,
+  server keys, voices addressable by id. The same 27-second file re-clones there.
+
+Sample quality caveat: 16 kHz at 29 kbps is narrowband. The clone sounds like him
+*over a phone* — fine for voicemail and phone answering, thin for a website
+video. A clean 90-second recording would fix that without changing anything else.
+
+## Open, for whoever picks this up
+
+1. **Make *Hear it now* play his real voice.** Three routes: pre-render a dozen
+   lines through the Higgsfield MCP session and rotate them (works today, no key,
+   ~1 credit per line); an ElevenLabs key (live, reliable); or probe the
+   Higgsfield Cloud API to see whether the clone is reachable server-side (~20
+   minutes, may be a dead end). The fallback chain is already built, so any of
+   them is a small change at one call site.
+2. **Grow the corpus.** Eight lines is the floor, not a target. 301 lines across
+   23 calls and notes as of 2026-08-21. Pasting in anything he has written is the
+   fastest way to lengthen it.
+3. **Convert the copy.** Website, ads and email templates are hand-written and
+   nothing AI-drafts customer copy yet. That pass is: read the current copy,
+   redraft through `ownerVoiceGuide()`, and have him approve each page — his
+   voice is the input to a rewrite, never an excuse to ship one unread.
+4. **An AI that answers the phone** needs the clone wired, plus a disclosure to
+   the caller that they are talking to a machine. Call recordings are already
+   dual-channel (`record-from-answer-dual`), so his audio is separable if a
+   better training sample is ever wanted.
