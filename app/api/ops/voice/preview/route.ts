@@ -1,6 +1,6 @@
 import { gateway } from "@ai-sdk/gateway"
 import { experimental_generateSpeech, generateText } from "ai"
-import { AI_MODELS, aiConfigured } from "@/lib/ai"
+import { AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek } from "@/lib/ai"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getOwnerVoiceProfile, ownerVoiceGuide } from "@/lib/voice-of-character"
@@ -41,7 +41,13 @@ export async function POST(req: Request) {
       sourceCount: profile?.sourceCount ?? 0,
     }, { status: 409 })
   }
-  if (!aiConfigured()) return Response.json({ error: "The voice preview is waiting for AI Gateway access." }, { status: 503 })
+  // Either drafter will do. DeepSeek is preferred when the shop's own key is
+  // set: it is the one the shop already pays for, and the gateway's plan does
+  // not run paid models.
+  const drafter = deepseekConfigured() ? DEEPSEEK_MODEL : AI_MODELS.reasoning
+  if (!deepseekConfigured() && !aiConfigured()) {
+    return Response.json({ error: "The voice preview has no model to draft with." }, { status: 503 })
+  }
 
   // Intent before the provider call, the same order every other AI path here
   // keeps: the receipt exists whether or not the gateway answers.
@@ -54,56 +60,70 @@ export async function POST(req: Request) {
       scenario,
       lineCount: profile.lineCount,
       sourceCount: profile.sourceCount,
-      model: AI_MODELS.reasoning,
+      model: drafter,
       speechModel: AI_MODELS.speech,
     },
   })
 
-  // Both provider calls sit inside one guard. An unhandled throw here returns a
-  // 500 the browser cannot read, and the board printed "the preview could not be
-  // built" over a gateway that had said exactly what was wrong: the plan has no
-  // access to the model. A refusal the owner can act on is the whole difference
-  // between a bug and a bill.
-  let text = ""
-  let speech
-  try {
-    const draft = await generateText({
-      model: AI_MODELS.reasoning,
-      system: `${guide}\n\nYou are writing one short piece of copy in that voice. Under 45 words. No greeting the profile does not show him using, no marketing language, no invented prices, names, or dates -- say the thing plainly and stop.`,
-      prompt: `Write ${SCENARIOS[scenario]}. Use no customer name and no specific price; keep it to what he would actually say.`,
-    })
-    text = draft.text.replace(/\s+/g, " ").trim().slice(0, 600)
-    if (!text) return Response.json({ error: "The preview came back empty." }, { status: 502 })
+  const system = `${guide}\n\nYou are writing one short piece of copy in that voice. Under 45 words. No greeting the profile does not show him using, no marketing language, no invented prices, names, or dates -- say the thing plainly and stop.`
+  const ask = `Write ${SCENARIOS[scenario]}. Use no customer name and no specific price; keep it to what he would actually say.`
 
-    // The audio is the shop's stock speech voice reading his words. It is his
-    // language, not his throat -- a clone of the man's actual sound needs his
-    // recordings and his say-so, and is not what this button does.
-    speech = await experimental_generateSpeech({
+  // The words are the point, so a failure here is the end of the request. An
+  // unhandled throw would return a 500 the browser cannot read, and the board
+  // printed "the preview could not be built" over a gateway that had said
+  // exactly what was wrong. A refusal the owner can act on is the whole
+  // difference between a bug and a bill.
+  let text = ""
+  try {
+    text = deepseekConfigured()
+      ? await draftWithDeepSeek({ system, prompt: ask })
+      : (await generateText({ model: AI_MODELS.reasoning, system, prompt: ask })).text
+    text = text.replace(/\s+/g, " ").trim().slice(0, 600)
+    if (!text) return Response.json({ error: "The preview came back empty." }, { status: 502 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The model refused the request."
+    const restricted = /free tier|do not have access|no_providers_available|quota|credit|balance/i.test(message)
+    console.error("Voice preview draft failed:", error)
+    return Response.json({
+      error: restricted
+        ? `${drafter} will not run on the current plan or balance. ${message.slice(0, 160)}`
+        : message.slice(0, 300),
+      reason: restricted ? "model-plan" : "model",
+    }, { status: restricted ? 402 : 502 })
+  }
+
+  // Speech is the optional half. DeepSeek has no text-to-speech at all and the
+  // gateway's is behind the same plan wall, so a preview that cannot be spoken
+  // still returns his words -- the board reads them in the browser's own voice
+  // rather than throwing away a draft that came back fine.
+  let audio = ""
+  let audioType = ""
+  try {
+    if (!aiConfigured()) throw new Error("No speech provider is configured.")
+    const speech = await experimental_generateSpeech({
       model: gateway.speechModel(AI_MODELS.speech),
       text,
       voice: process.env.AI_SPEECH_VOICE?.trim() || "onyx",
       outputFormat: "mp3",
       speed: 1.02,
     })
+    audio = Buffer.from(speech.audio.uint8Array).toString("base64")
+    audioType = speech.audio.mediaType || "audio/mpeg"
   } catch (error) {
-    const message = error instanceof Error ? error.message : "The AI gateway refused the request."
-    const restricted = /free tier|do not have access|no_providers_available|quota|credit/i.test(message)
-    console.error("Voice preview failed:", error)
-    return Response.json({
-      error: restricted
-        ? `The AI gateway will not run ${AI_MODELS.reasoning} on this plan. Add credit at vercel.com — reading one of his own lines instead.`
-        : message.slice(0, 300),
-      reason: restricted ? "gateway-plan" : "gateway",
-    }, { status: restricted ? 402 : 502 })
+    console.error("Voice preview speech unavailable; returning text only:", error)
   }
 
   return Response.json({
     eventId,
     scenario,
     text,
+    drafter,
     lineCount: profile.lineCount,
     sourceCount: profile.sourceCount,
-    audio: Buffer.from(speech.audio.uint8Array).toString("base64"),
-    audioType: speech.audio.mediaType || "audio/mpeg",
+    audio,
+    audioType,
+    // The board says which voice the owner is about to hear, so a browser voice
+    // is never mistaken for the shop having bought one.
+    spokenBy: audio ? "provider" : "browser",
   }, { headers: { "Cache-Control": "no-store" } })
 }

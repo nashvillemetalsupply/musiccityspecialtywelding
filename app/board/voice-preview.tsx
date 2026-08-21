@@ -20,16 +20,23 @@ export function VoicePreview({ voice }: { voice: OwnerVoiceSnapshot | null }) {
   const sourceCount = voice?.sourceCount ?? 0
   const name = voice?.displayName || "the owner"
 
+  // The browser's own voice. It is nobody's clone and it is free, which is what
+  // makes it the right floor to fall to.
+  function speakLine(line: string) {
+    if (!line || typeof window === "undefined" || !window.speechSynthesis) return
+    setText(line)
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(line))
+  }
+
   // Rotates through his samples so pressing twice does not replay one sentence,
   // and so the corpus growing is audible: new calls put new lines in here.
   function speakHisOwnWords() {
     const samples = voice?.samples ?? []
-    if (!samples.length || typeof window === "undefined" || !window.speechSynthesis) return
+    if (!samples.length) return
     const line = samples[spoken.current % samples.length]
     spoken.current += 1
-    setText(line)
-    window.speechSynthesis.cancel()
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(line))
+    speakLine(line)
   }
 
   async function play() {
@@ -42,7 +49,15 @@ export function VoicePreview({ voice }: { voice: OwnerVoiceSnapshot | null }) {
         body: JSON.stringify({ scenario: "voicemail" }),
       })
       const result = await response.json().catch(() => ({})) as
-        { text?: string; audio?: string; audioType?: string; error?: string }
+        { text?: string; audio?: string; audioType?: string; error?: string; drafter?: string }
+      // A draft that came back without audio is still the thing worth hearing:
+      // his words, newly written. The browser reads them, and the note says so
+      // rather than letting a stock voice pass for one the shop paid for.
+      if (response.ok && result.text && !result.audio) {
+        setNote(`Written by ${result.drafter ?? "the model"}, read by your browser — no speech provider on this plan.`)
+        speakLine(result.text)
+        return
+      }
       if (!response.ok || !result.audio) {
         setNote(result.error ?? "The preview could not be built.")
         // The gateway drafting his voice is the nice version. The honest one
