@@ -195,7 +195,10 @@ export async function listBoardJobs(
   const query = options.query?.trim().slice(0, 80) ?? ""
   const pattern = `%${query.replace(/[%_\\]/g, "\\$&")}%`
   const page = Math.max(1, Math.floor(options.page ?? 1))
-  const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 5), 1), 12)
+  // The tracker is the front door and has no pager, so a page smaller than the
+  // stage hid jobs with no way to reach them: "Showing 5 of 24" and no sixth.
+  // One page holds the whole stage; the ceiling only guards the query.
+  const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 100), 1), 100)
   const offset = (page - 1) * pageSize
   const order: BoardJobOrder = options.order === "weight" ? "weight" : options.order === "oldest" ? "oldest" : "stage"
   const signal: BoardSignalKind | "" = options.signal && BOARD_SIGNAL_KINDS.includes(options.signal)
