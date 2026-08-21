@@ -146,7 +146,7 @@ test("an ended call reads from the top, a live one from the tail", () => {
   assert.match(reader, /const live = call\.status === "listening"/)
   assert.match(reader, /live \? utterances\.slice\(-LIVE_LINES\) : utterances\.slice\(0, ENDED_LINES\)/)
   assert.match(STORE_SOURCE, /const LIVE_LINES = 3/)
-  assert.match(STORE_SOURCE, /const ENDED_LINES = 14/)
+  assert.match(STORE_SOURCE, /const ENDED_LINES = 200/, "an ended call sends the whole conversation; the fold is the only thing hiding it")
   // The count is what makes the truncation honest rather than silent.
   assert.match(reader, /totalLines: utterances\.length/)
   assert.match(PREVIEW_SOURCE, /\{unshownLines\} more line\{unshownLines === 1 \? "" : "s"\} on this call\./)

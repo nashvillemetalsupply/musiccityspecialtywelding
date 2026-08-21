@@ -10,6 +10,8 @@ import {
   factText, factTone, pricingSentence, sketchAriaLabel,
 } from "@/lib/call-sketch-panel.mjs"
 import type { BoardCallSketch } from "@/lib/call-sketch-store"
+import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
+import { VoicePreview } from "./voice-preview"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
@@ -30,6 +32,8 @@ export type BoardPaneData = {
   medianFirstResponseMinutes: number | null
   todayTrail: TodayTrailItem[]
   callSketch: BoardCallSketch | null
+  // Null for crew, signed out, or before the first call has been learned from.
+  voice: OwnerVoiceSnapshot | null
   // The tracker: whichever stage the URL asked for, ordered oldest-first.
   items: BoardJobRow[]
   details: Map<number, BoardJobDetail>
@@ -563,6 +567,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                 <p className="t-caption" style={{ "marginTop": "var(--s2)" }}>{unshownLines} more line{unshownLines === 1 ? "" : "s"} on this call.</p>}
             </div>
           </div>
+          {chrome.owner && <VoicePreview voice={board.voice} />}
         </section>
     
         <section className="card">

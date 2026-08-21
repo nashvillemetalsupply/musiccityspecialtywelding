@@ -301,6 +301,14 @@ svg{display:block}
   gap:var(--s3);margin:var(--s5) 0 0;font-size:var(--t-caption);color:var(--text-muted)}
 .call-end .end{margin:0;width:100%}
 .call-end .btn{width:100%}
+/* The voice-of-character strip sits under the call it learns from, because
+   that is where the owner can see the two connected: a call ends, the count
+   goes up, and the preview reads back a little more like him. */
+.voice-strip{display:flex;flex-direction:column;gap:var(--s3);
+  padding:var(--s4);border-top:1px solid var(--border)}
+.voice-strip .end{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.voice-strip .btn{flex:1}
+.voice-said{margin:var(--s3) 0 0;font-size:var(--t-lede);color:var(--text-secondary);max-width:56ch}
 .spoke{display:flex;gap:var(--s3);padding:var(--s2) 0;font-size:var(--t-label)}
 .spoke b{font-weight:var(--w-med);color:var(--text-muted);width:64px;flex:none}
 .spoke span{color:var(--text-secondary);flex:1;min-width:0}
@@ -578,6 +586,9 @@ svg{display:block}
   .call-cols>:last-child{grid-column:1/3;border-left:0;border-top:1px solid var(--border)}
   .ask+p{font-size:var(--t-lede);max-width:30ch}
   .slots{gap:0 var(--s6)}
+  .voice-strip{flex-direction:row;align-items:center;gap:var(--s5);padding:var(--s4) var(--s6)}
+  .voice-strip .end{margin-left:auto;flex-wrap:nowrap}
+  .voice-strip .btn{flex:none}
   .call-end{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:var(--s3)}
   .call-end .end{margin-left:auto;width:auto}
   .call-end .btn{width:auto}

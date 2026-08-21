@@ -941,6 +941,36 @@ const statements = [
       FOR EACH ROW EXECUTE FUNCTION reject_build_sheet_mutation();
     END IF;
   END $$`,
+  // The owner's voice, kept as a corpus rather than a summary. Every line he
+  // has said or written that the shop already stores lands here once, keyed by
+  // where it came from, so the profile can be rebuilt from scratch whenever the
+  // derivation changes and the corpus keeps growing under it. `source_ref`
+  // holds the call SID or message SID the line came from, which is also how a
+  // future audio clone finds the recording of him saying it.
+  `CREATE TABLE IF NOT EXISTS voice_samples (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    speaker_key TEXT NOT NULL DEFAULT 'owner',
+    source_kind TEXT NOT NULL,
+    source_ref TEXT NOT NULL DEFAULT '',
+    sequence_id INT NOT NULL DEFAULT 0,
+    text TEXT NOT NULL,
+    spoken_at TIMESTAMPTZ,
+    is_test BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT voice_samples_source_check CHECK (source_kind IN ('call','sms','email','note','manual')),
+    UNIQUE (speaker_key, source_kind, source_ref, sequence_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS voice_samples_speaker_idx ON voice_samples(speaker_key, is_test, spoken_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS voice_profiles (
+    speaker_key TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL DEFAULT '',
+    profile JSONB NOT NULL DEFAULT '{}'::jsonb,
+    sample_count INT NOT NULL DEFAULT 0,
+    source_count INT NOT NULL DEFAULT 0,
+    built_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
 ]
 
 for (const statement of statements) {
