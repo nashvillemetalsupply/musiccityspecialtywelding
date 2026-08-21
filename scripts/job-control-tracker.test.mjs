@@ -184,3 +184,54 @@ test("every service a form can write has a row mark", () => {
   }
   assert.match(PREVIEW_SOURCE, /SERVICE_MARKS\[service\.trim\(\)\] \?\?/)
 })
+
+// The tracker has no pager. While its page size was 5 the board said
+// "Showing 5 of 24" and offered no sixth row anywhere in the UI, so nineteen
+// open jobs were unreachable from the front door.
+test("one tracker page holds the whole stage", () => {
+  const list = OPS_DATA_SOURCE.slice(
+    OPS_DATA_SOURCE.indexOf("export async function listBoardJobs"),
+    OPS_DATA_SOURCE.indexOf("function boardDetailIds"),
+  )
+  const clamp = list.match(/const pageSize = Math\.min\(Math\.max\(Math\.floor\(options\.pageSize \?\? (\d+)\), 1\), (\d+)\)/)
+  assert.ok(clamp, "listBoardJobs stopped clamping its page size")
+  const [, fallback, ceiling] = clamp
+  assert.ok(Number(fallback) >= 100, `the tracker defaults to ${fallback} rows a page and has no pager`)
+  assert.equal(fallback, ceiling, "the default page must be the whole ceiling while there is no pager")
+  // The honest count line stays: past the ceiling the board still says so.
+  assert.match(PREVIEW_SOURCE, /Showing \$\{board\.items\.length\} of \$\{board\.resultTotal\}/)
+})
+
+// Every field on the call panel comes from the server render. Without a timer
+// the panel labelled live never gained a line, and a call that arrived while
+// the board was open never appeared at all.
+test("the call panel refreshes itself, faster while a call is on the line", () => {
+  assert.match(PREVIEW_SOURCE, /import \{ useRouter \} from "next\/navigation"/)
+  assert.match(PREVIEW_SOURCE, /router\.refresh\(\)/)
+  const effect = PREVIEW_SOURCE.slice(
+    PREVIEW_SOURCE.indexOf("let timer: number | undefined"),
+    PREVIEW_SOURCE.indexOf("}, [router, onTheLine])"),
+  )
+  assert.ok(effect.length > 0, "the refresh effect lost its onTheLine dependency")
+  const delays = effect.match(/onTheLine \? ([\d_]+) : ([\d_]+)/)
+  assert.ok(delays, "the refresh interval stopped depending on whether a call is live")
+  assert.ok(Number(delays[1].replace(/_/g, "")) < Number(delays[2].replace(/_/g, "")),
+    "a live call must poll faster than an idle board")
+  // Neon is billed by compute time. A hidden tab must not hold it awake.
+  assert.match(effect, /document\.visibilityState !== "visible"/)
+  assert.match(effect, /visibilitychange/)
+})
+
+// Fourteen transcript lines pushed the tracker most of a screen down the page.
+test("an ended call folds everything past its opening", () => {
+  assert.match(PREVIEW_SOURCE, /const PANEL_OPEN_LINES = \d+/)
+  assert.match(PREVIEW_SOURCE, /sketch\?\.lines\.slice\(0, PANEL_OPEN_LINES\)/)
+  assert.match(PREVIEW_SOURCE, /sketch\?\.lines\.slice\(PANEL_OPEN_LINES\)/)
+  assert.match(PREVIEW_SOURCE, /<details className="spoke-more">/)
+  assert.match(PREVIEW_SOURCE, /more line\{foldedLines\.length === 1 \? "" : "s"\} of this call/)
+  // Nothing is dropped — the folded half renders the same line markup.
+  assert.match(PREVIEW_SOURCE, /foldedLines\.map\(\(line\) =>/)
+  const open = Number(PREVIEW_SOURCE.match(/const PANEL_OPEN_LINES = (\d+)/)[1])
+  const live = Number(CALL_SKETCH_SOURCE.match(/const LIVE_LINES = (\d+)/)[1])
+  assert.ok(open >= live, "a live call carries fewer lines than the fold, so it never folds")
+})

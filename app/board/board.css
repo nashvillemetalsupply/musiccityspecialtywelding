@@ -305,6 +305,15 @@ svg{display:block}
 .spoke b{font-weight:var(--w-med);color:var(--text-muted);width:64px;flex:none}
 .spoke span{color:var(--text-secondary);flex:1;min-width:0}
 .spoke.them b{color:var(--brand)}
+/* The rest of an ended call folds away so the tracker is not pushed off the
+   screen. Native <details> — no state, no script, and it stays open while the
+   owner reads it. */
+.spoke-more>summary{cursor:pointer;list-style:none;padding:var(--s2) 0;
+  color:var(--text-muted);font-size:var(--t-label);font-weight:var(--w-med)}
+.spoke-more>summary::-webkit-details-marker{display:none}
+.spoke-more>summary::before{content:"▸ ";display:inline-block;transition:transform .12s}
+.spoke-more[open]>summary::before{content:"▾ "}
+.spoke-more>summary:hover{color:var(--text-secondary)}
 
 /* --- the tracker --- */
 .track-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);

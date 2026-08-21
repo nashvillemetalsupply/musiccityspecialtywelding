@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
@@ -223,8 +224,13 @@ function chipTone(lead: BoardJobRow): "stop" | "warn" | "good" | "info" {
 
 const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good", info: "chip--info" } as const
 
+// How much of the call stays unfolded. Four lines is the opening exchange; a
+// live call only ever carries three, so it never folds at all.
+const PANEL_OPEN_LINES = 4
+
 export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode }) {
   const [openJobId, setOpenJobId] = useState<number | null>(null)
+  const router = useRouter()
   const { details: jobDetails } = board
   const needsYou = board.counts.attention
   const promises = board.promises
@@ -247,6 +253,11 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
   // about what the column left out.
   const onTheLine = sketch?.status === "listening"
   const unshownLines = Math.max(0, (sketch?.totalLines ?? 0) - (sketch?.lines.length ?? 0))
+  // An ended call brings fourteen lines, which pushed the tracker most of a
+  // screen down the page. The opening stays in the open — that is where the
+  // customer says what he needs — and the rest folds into a native disclosure.
+  const openLines = sketch?.lines.slice(0, PANEL_OPEN_LINES) ?? []
+  const foldedLines = sketch?.lines.slice(PANEL_OPEN_LINES) ?? []
   const slots = showHeard
     ? heard.map((fact) => ({ key: fact.predicate, label: fact.label, tone: "said", text: fact.text }))
     : PANEL_FACT_KEYS.map((key) => ({
@@ -276,6 +287,36 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
     const search = params.toString()
     return `/board${search ? `?${search}` : ""}`
   }
+  // The call panel was labelled live and was not. Every field on it comes from
+  // the server render, and the board mounted no timer at all, so a call that
+  // arrived while the owner was looking at the board never appeared, and a call
+  // in progress never gained a line until he reloaded the page.
+  //
+  // router.refresh() re-runs this route's server render, which is six queries.
+  // ponytail: whole-page refresh, not a sketch-only endpoint — one line here
+  // beats a second read path, and the two guards below keep it cheap. A call on
+  // the line ticks fast because that is the minute the panel is for; otherwise
+  // it ticks slowly, just often enough to notice a new call. Both stop dead
+  // while the tab is hidden, so a board left open overnight lets Neon suspend.
+  useEffect(() => {
+    let timer: number | undefined
+    function tick() {
+      if (document.visibilityState !== "visible") return
+      router.refresh()
+    }
+    function start() {
+      window.clearInterval(timer)
+      if (document.visibilityState !== "visible") return
+      timer = window.setInterval(tick, onTheLine ? 8_000 : 60_000)
+    }
+    start()
+    document.addEventListener("visibilitychange", start)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", start)
+    }
+  }, [router, onTheLine])
+
   useEffect(() => {
     const root = document.documentElement
     const key = "mcsw-theme"
@@ -503,10 +544,20 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             <div>
               <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>{onTheLine ? "Recent call language" : "How the call opened"}</p>
               {sketch && sketch.lines.length > 0
-                ? sketch.lines.map((line) =>
-                  <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
-                    <b>{line.speaker}</b><span>{line.transcript}</span>
-                  </p>)
+                ? <>
+                    {openLines.map((line) =>
+                      <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
+                        <b>{line.speaker}</b><span>{line.transcript}</span>
+                      </p>)}
+                    {foldedLines.length > 0 &&
+                      <details className="spoke-more">
+                        <summary>{foldedLines.length} more line{foldedLines.length === 1 ? "" : "s"} of this call</summary>
+                        {foldedLines.map((line) =>
+                          <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
+                            <b>{line.speaker}</b><span>{line.transcript}</span>
+                          </p>)}
+                      </details>}
+                  </>
                 : <p className="t-caption">Nothing has been transcribed on this call yet.</p>}
               {unshownLines > 0 &&
                 <p className="t-caption" style={{ "marginTop": "var(--s2)" }}>{unshownLines} more line{unshownLines === 1 ? "" : "s"} on this call.</p>}
