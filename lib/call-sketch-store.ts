@@ -6,6 +6,7 @@ import { confirmedCallSketch, deriveCallSketch, emptyCallSketchSpec, type CallSk
 import { recordEvent } from "@/lib/events"
 import type { OperatorRole } from "@/lib/operators"
 import { shopClaimText } from "@/lib/shop-language"
+import { captureCallVoiceSamples, rebuildOwnerVoiceProfile } from "@/lib/voice-of-character"
 import { projectClaimForRole } from "@/lib/visibility"
 
 export type LiveTranscriptionEvent = {
@@ -215,6 +216,18 @@ export async function recordLiveTranscriptionEvent(input: LiveTranscriptionEvent
       if (call.is_test && call.lead_id !== null) {
         await ingestCallSketchBuildFacts(Number(call.lead_id))
       }
+      // His half of the call is the shop's voice of character. It is captured
+      // before the partials are swept and while the row is still here to read,
+      // and a failure to learn how he talks must never fail the call receipt
+      // that has already been written.
+      try {
+        if (!call.is_test) {
+          await captureCallVoiceSamples(input.callSid)
+          await rebuildOwnerVoiceProfile()
+        }
+      } catch (error) {
+        console.error("Voice-of-character capture failed:", error)
+      }
       await sql`
         DELETE FROM call_live_transcript_items
         WHERE call_sid = ${input.callSid}::text AND is_final = false`
@@ -358,11 +371,13 @@ export type BoardCallSketch = {
 // While the shop is still on the line the tail is the point: the last three
 // lines are what is being said now. Once the call ends the tail is always the
 // goodbye — "Bye bye" told the owner nothing about a job — so an ended call
-// reads from the top instead, where the customer says what they need. Fourteen
-// lines carried the whole of the first real call: who it was, the two ductile
-// iron flanges, the six inch pipe, the lengths, and that he would bring it in.
+// reads from the top instead, where the customer says what they need. The
+// whole of it comes with it: cutting an ended call at fourteen put ten lines
+// behind a fold and eighteen more behind a caption that opened nothing, so one
+// call showed the owner two different "more" numbers and only one of them
+// could be read. The cap that is left is a payload guard, not an edit.
 const LIVE_LINES = 3
-const ENDED_LINES = 14
+const ENDED_LINES = 200
 
 // The caller line and the panel header already carry who called, so repeating
 // the identity as a fact wastes a slot the job needs.

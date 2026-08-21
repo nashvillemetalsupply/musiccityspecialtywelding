@@ -5,6 +5,7 @@ import { listTodayEvents } from "@/lib/events"
 import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
+import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character"
 import { MoreMenu } from "@/app/ops/more-menu"
 import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
@@ -39,6 +40,7 @@ const EMPTY_BOARD: BoardPaneData = {
   medianFirstResponseMinutes: null,
   todayTrail: [],
   callSketch: null,
+  voice: null,
   items: [],
   details: new Map(),
   resultTotal: 0,
@@ -99,6 +101,9 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     listTodayEvents(role),
     getLatestBoardCallSketch(role),
   ])
+  // How much of the owner is on record. Owner-only: it is his own language,
+  // and the preview it feeds is his own byline.
+  const voice = role === "owner" ? await getOwnerVoiceSnapshot() : null
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role)
 
   return <JobControl chrome={chrome} menu={menu} board={{
@@ -109,6 +114,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     medianFirstResponseMinutes: stats.medianFirstResponseMinutes,
     todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body }) => ({ id, occurredAt, kind, body })),
     callSketch,
+    voice,
     items: page.items,
     details,
     resultTotal: page.resultTotal,
