@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
 
 // Below this the profile refuses to draft, and the strip says so instead of
@@ -9,6 +10,7 @@ import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
 const VOICE_FLOOR = 8
 
 export function VoicePreview({ voice }: { voice: OwnerVoiceSnapshot | null }) {
+  const router = useRouter()
   const [text, setText] = useState("")
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState<"" | "preview" | "learn">("")
@@ -62,7 +64,12 @@ export function VoicePreview({ voice }: { voice: OwnerVoiceSnapshot | null }) {
         return
       }
       const lines = result.profile?.lineCount ?? 0
-      setNote(`${lines} of his own lines on record. Reload to update the count above.`)
+      setNote(`${lines} of his own line${lines === 1 ? "" : "s"} on record.`)
+      // The count and the button state are server-rendered from the profile the
+      // sweep just replaced. Without this the strip still reads "nothing on
+      // record" over a corpus of three hundred lines, and tells the owner to go
+      // reload the page himself.
+      router.refresh()
     } catch {
       setNote("The sweep did not finish.")
     } finally {
