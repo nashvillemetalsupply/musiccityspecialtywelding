@@ -72,10 +72,10 @@ test("only an authenticated owner can confirm or export a call sketch", async ()
   assert.match(component, /Rough call sketch · not a fabrication drawing/)
 })
 
-test("the public showcase is gated until the production phone path is enabled", async () => {
+test("the public homepage does not render the call sketch showcase", async () => {
   const [home, contact] = await Promise.all([read("app/page.tsx"), read("lib/shop-contact.ts")])
-  assert.match(home, /CALL_SKETCH_PUBLIC_ENABLED/)
-  assert.match(home, /callSketchPublicEnabled &&/)
+  assert.doesNotMatch(home, /CALL_SKETCH_PUBLIC_ENABLED/)
+  assert.doesNotMatch(home, /HomeCallSketch/)
   assert.match(contact, /twilioPublicNumberEnabled\(\) && twilioVoiceConfigured\(\)/)
 })
 

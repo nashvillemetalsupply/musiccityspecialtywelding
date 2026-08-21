@@ -18,7 +18,7 @@ These production environment values are intentionally independent:
 - `OWNER_CELL_PHONE`: private E.164 forwarding destination. Never use the public Twilio number here.
 - `TWILIO_LIVE_TRANSCRIPTION_ENABLED=true`: starts Twilio Real-Time Transcription on Voice calls.
 - `TWILIO_PUBLIC_NUMBER_ENABLED=true`: lets the site and structured data replace the established fallback number with the tested Twilio number.
-- `CALL_SKETCH_PUBLIC_ENABLED=true`: publishes the homepage Call Sketch showcase after the phone path is proven.
+- `CALL_SKETCH_PUBLIC_ENABLED`: no longer read anywhere. The homepage Call Sketch showcase was removed in the 2026-08-21 final homepage polish; Call Sketch remains an internal `/ops` tool.
 - `TWILIO_SMS_ENABLED=true`: customer messaging is enabled after A2P registration, the real-device matrix, and owner approval.
 
 The public phone, structured data, header, mobile action, contact section, and footer all resolve through `getShopPhone()`. Do not hand-edit phone strings on the homepage.
@@ -45,7 +45,7 @@ The public phone, structured data, header, mobile action, contact section, and f
 - Messaging Service `MCSW Job Updates` is ready (`MG7d1539f9d6d1a80e6a07912143c54138`). The purchased number is in its sender pool, its inbound webhook is `/api/twilio/sms`, and its outbound status callback is `/api/twilio/sms-status`. Advanced Opt-Out handles STOP, START, and HELP, but its state is not exposed by the automated readiness probe, so it remains a manual provider-console acceptance item.
 - The EIN-based A2P Brand is **Approved**. The Low Volume Mixed Campaign is **Verified** (approved), and the specific shop number is **Registered** and assigned to the Campaign. `TWILIO_SMS_ENABLED=true`; the owner approved customer SMS after the real-device matrix passed.
 - The in-shop acceptance session proved SMS, ringing, two-way audio, signed managed live-transcript callbacks, durable utterances, live drawing, owner confirmation, and DXF download. The owner approved recorded/transcribed customer calls.
-- `TWILIO_PUBLIC_NUMBER_ENABLED=true` and `CALL_SKETCH_PUBLIC_ENABLED=true`. `(615) 703-3296` and the Call Sketch showcase are published on owned website/app surfaces.
+- `TWILIO_PUBLIC_NUMBER_ENABLED=true` and `CALL_SKETCH_PUBLIC_ENABLED=true`. `(615) 703-3296` is published on owned website/app surfaces. (The homepage Call Sketch showcase was later removed on 2026-08-21; the env flag is now inert.)
 - The post-call Deepgram fallback is configured in Production (project `a953c9b4-767e-4715-a0a6-4d63a82a2164`; key and callback secret remain only in Vercel; no key is recorded here). It is covered by recovery tests but was not force-exercised against the live provider; a future controlled failure-injection drill would be separate work and is not a launch blocker.
 - Resend is configured under the **Music City Specialty Welding** team at `sales@musiccityspecialtywelding.com`. A labeled internal quote notification was delivered, and its signed delivery webhook returned HTTP `200 - OK` in one attempt.
 - The live transcript success path now returns a bodyless `new Response(null, { status: 204 })`; `scripts/call-sketch-integration.test.mjs` contains the regression test.

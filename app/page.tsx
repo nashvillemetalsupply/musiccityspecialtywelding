@@ -13,7 +13,6 @@ import {
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
-import { HomeCallSketch } from "@/components/call-sketch/home-call-sketch"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./homepage-polish.css"
 
@@ -132,11 +131,25 @@ function FrameGussets() {
   )
 }
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+}
+
 export default function Page() {
   const shopPhone = getShopPhone()
-  const callSketchPublicEnabled = process.env.CALL_SKETCH_PUBLIC_ENABLED?.trim().toLowerCase() === "true"
   return (
     <div className="ms-site ms-home">
+      <script
+        id="faq-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <a className="ms-skip" href="#main-content">Skip to the work</a>
 
       <header className="ms-nav" aria-label="Main navigation">
@@ -376,11 +389,6 @@ export default function Page() {
 
         <WeldSeam />
 
-        {callSketchPublicEnabled && <>
-          <HomeCallSketch phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
-          <WeldSeam />
-        </>}
-
         <section className="ms-job-glass" id="job-glass" aria-labelledby="job-glass-title">
           <div className="ms-job-glass-copy ms-reveal">
             <span className="ms-job-glass-kicker">Customer Page</span>
@@ -398,9 +406,9 @@ export default function Page() {
             <span className="ms-job-glass-clip" aria-hidden="true" />
             <figcaption><strong>Your private Customer Page</strong><small>No app · no password</small></figcaption>
             <div className="ms-job-glass-title"><small>Your job</small><strong>Driveway gate repair</strong><span>Lebanon · Tennessee</span></div>
-            <div className="ms-job-glass-promise"><small>The promise</small><strong>Ready Friday</strong><span>Promised date</span></div>
+            <div className="ms-job-glass-promise"><small>Timing</small><strong>Ready Friday</strong><span>Promised date</span></div>
             <div className="ms-job-glass-route" aria-label="Job progress">
-              <span className="is-done">Wrote it up</span><span className="is-done">Quoted</span><span className="is-now">On the schedule</span><span>On the job</span><span>Done</span>
+              <span className="is-done">Received</span><span className="is-done">Quoted</span><span className="is-now">Scheduled</span><span>In progress</span><span>Finished</span>
             </div>
             <div className="ms-job-glass-progress">
               <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 760px) 5.8rem, 7.5rem" />
