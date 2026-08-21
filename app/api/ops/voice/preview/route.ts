@@ -59,24 +59,43 @@ export async function POST(req: Request) {
     },
   })
 
-  const draft = await generateText({
-    model: AI_MODELS.reasoning,
-    system: `${guide}\n\nYou are writing one short piece of copy in that voice. Under 45 words. No greeting the profile does not show him using, no marketing language, no invented prices, names, or dates -- say the thing plainly and stop.`,
-    prompt: `Write ${SCENARIOS[scenario]}. Use no customer name and no specific price; keep it to what he would actually say.`,
-  })
-  const text = draft.text.replace(/\s+/g, " ").trim().slice(0, 600)
-  if (!text) return Response.json({ error: "The preview came back empty." }, { status: 502 })
+  // Both provider calls sit inside one guard. An unhandled throw here returns a
+  // 500 the browser cannot read, and the board printed "the preview could not be
+  // built" over a gateway that had said exactly what was wrong: the plan has no
+  // access to the model. A refusal the owner can act on is the whole difference
+  // between a bug and a bill.
+  let text = ""
+  let speech
+  try {
+    const draft = await generateText({
+      model: AI_MODELS.reasoning,
+      system: `${guide}\n\nYou are writing one short piece of copy in that voice. Under 45 words. No greeting the profile does not show him using, no marketing language, no invented prices, names, or dates -- say the thing plainly and stop.`,
+      prompt: `Write ${SCENARIOS[scenario]}. Use no customer name and no specific price; keep it to what he would actually say.`,
+    })
+    text = draft.text.replace(/\s+/g, " ").trim().slice(0, 600)
+    if (!text) return Response.json({ error: "The preview came back empty." }, { status: 502 })
 
-  // The audio is the shop's stock speech voice reading his words. It is his
-  // language, not his throat -- a clone of the man's actual sound needs his
-  // recordings and his say-so, and is not what this button does.
-  const speech = await experimental_generateSpeech({
-    model: gateway.speechModel(AI_MODELS.speech),
-    text,
-    voice: process.env.AI_SPEECH_VOICE?.trim() || "onyx",
-    outputFormat: "mp3",
-    speed: 1.02,
-  })
+    // The audio is the shop's stock speech voice reading his words. It is his
+    // language, not his throat -- a clone of the man's actual sound needs his
+    // recordings and his say-so, and is not what this button does.
+    speech = await experimental_generateSpeech({
+      model: gateway.speechModel(AI_MODELS.speech),
+      text,
+      voice: process.env.AI_SPEECH_VOICE?.trim() || "onyx",
+      outputFormat: "mp3",
+      speed: 1.02,
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The AI gateway refused the request."
+    const restricted = /free tier|do not have access|no_providers_available|quota|credit/i.test(message)
+    console.error("Voice preview failed:", error)
+    return Response.json({
+      error: restricted
+        ? `The AI gateway will not run ${AI_MODELS.reasoning} on this plan. Add credit at vercel.com — reading one of his own lines instead.`
+        : message.slice(0, 300),
+      reason: restricted ? "gateway-plan" : "gateway",
+    }, { status: restricted ? 402 : 502 })
+  }
 
   return Response.json({
     eventId,

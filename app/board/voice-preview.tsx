@@ -15,9 +15,22 @@ export function VoicePreview({ voice }: { voice: OwnerVoiceSnapshot | null }) {
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState<"" | "preview" | "learn">("")
   const audio = useRef<HTMLAudioElement | null>(null)
+  const spoken = useRef(0)
   const lineCount = voice?.lineCount ?? 0
   const sourceCount = voice?.sourceCount ?? 0
   const name = voice?.displayName || "the owner"
+
+  // Rotates through his samples so pressing twice does not replay one sentence,
+  // and so the corpus growing is audible: new calls put new lines in here.
+  function speakHisOwnWords() {
+    const samples = voice?.samples ?? []
+    if (!samples.length || typeof window === "undefined" || !window.speechSynthesis) return
+    const line = samples[spoken.current % samples.length]
+    spoken.current += 1
+    setText(line)
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(line))
+  }
 
   async function play() {
     setBusy("preview")
@@ -28,9 +41,15 @@ export function VoicePreview({ voice }: { voice: OwnerVoiceSnapshot | null }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario: "voicemail" }),
       })
-      const result = await response.json() as { text?: string; audio?: string; audioType?: string; error?: string }
+      const result = await response.json().catch(() => ({})) as
+        { text?: string; audio?: string; audioType?: string; error?: string }
       if (!response.ok || !result.audio) {
         setNote(result.error ?? "The preview could not be built.")
+        // The gateway drafting his voice is the nice version. The honest one
+        // needs no gateway at all: his own recorded sentence, read by the
+        // browser. It costs nothing, works on any plan, and is the half of the
+        // preview that was never invented in the first place.
+        speakHisOwnWords()
         return
       }
       setText(result.text ?? "")
@@ -42,6 +61,7 @@ export function VoicePreview({ voice }: { voice: OwnerVoiceSnapshot | null }) {
       await player.play()
     } catch {
       setNote("The preview could not be built.")
+      speakHisOwnWords()
     } finally {
       setBusy("")
     }

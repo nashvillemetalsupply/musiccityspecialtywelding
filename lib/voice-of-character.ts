@@ -192,6 +192,10 @@ export type OwnerVoiceSnapshot = {
   sourceCount: number
   usable: boolean
   builtAt: string | null
+  // A few of his own sentences, verbatim. The board reads one of these aloud
+  // when the AI gateway will not draft -- his real words in a stock voice beat
+  // a dead button, and they are the honest half of the preview anyway.
+  samples: string[]
 }
 
 export async function getOwnerVoiceSnapshot(): Promise<OwnerVoiceSnapshot | null> {
@@ -213,6 +217,7 @@ export async function getOwnerVoiceSnapshot(): Promise<OwnerVoiceSnapshot | null
     sourceCount: Number(row.source_count ?? 0),
     usable: voiceProfileIsUsable(row.profile),
     builtAt: row.built_at ? new Date(row.built_at).toISOString() : null,
+    samples: (row.profile?.samples ?? []).slice(0, 6),
   }
 }
 
