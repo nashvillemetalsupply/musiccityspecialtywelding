@@ -242,6 +242,11 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
   // the slots carry what the call did say instead.
   const heard = sketch?.heard ?? []
   const showHeard = answered === 0 && heard.length > 0
+  // A call still on the line shows its tail; an ended one shows its opening,
+  // where the customer says what they need. Either way the count is honest
+  // about what the column left out.
+  const onTheLine = sketch?.status === "listening"
+  const unshownLines = Math.max(0, (sketch?.totalLines ?? 0) - (sketch?.lines.length ?? 0))
   const slots = showHeard
     ? heard.map((fact) => ({ key: fact.predicate, label: fact.label, tone: "said", text: fact.text }))
     : PANEL_FACT_KEYS.map((key) => ({
@@ -437,6 +442,11 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                 <span className="t-label">{sketch.unsketchedCalls} more call{sketch.unsketchedCalls === 1 ? "" : "s"} not sketched</span>}
               {sketch?.leadId != null &&
                 <Link className="btn btn--sm btn--edge" href={`/ops/leads/${sketch.leadId}`}>Open the job</Link>}
+              {/* A call with no job yet is the one the board could not act on:
+                  it showed the conversation and offered nothing to do with it.
+                  The draft is only linked while intake will still open it. */}
+              {sketch?.leadId == null && sketch?.draftId &&
+                <Link className="btn btn--sm btn--edge" href={`/ops/intake/${sketch.draftId}`}>Save this call as a job</Link>}
             </span>
           </div>
     
@@ -491,13 +501,15 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             </div>
     
             <div>
-              <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>Recent call language</p>
+              <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>{onTheLine ? "Recent call language" : "How the call opened"}</p>
               {sketch && sketch.lines.length > 0
                 ? sketch.lines.map((line) =>
                   <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
                     <b>{line.speaker}</b><span>{line.transcript}</span>
                   </p>)
                 : <p className="t-caption">Nothing has been transcribed on this call yet.</p>}
+              {unshownLines > 0 &&
+                <p className="t-caption" style={{ "marginTop": "var(--s2)" }}>{unshownLines} more line{unshownLines === 1 ? "" : "s"} on this call.</p>}
             </div>
           </div>
         </section>
