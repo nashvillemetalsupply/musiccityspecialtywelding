@@ -4,6 +4,9 @@ import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { buildClarificationForSketch } from "@/lib/build-sheets-continuation.mjs"
 import { confirmedCallSketch, deriveCallSketch, emptyCallSketchSpec, type CallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import { recordEvent } from "@/lib/events"
+import type { OperatorRole } from "@/lib/operators"
+import { shopClaimText } from "@/lib/shop-language"
+import { projectClaimForRole } from "@/lib/visibility"
 
 export type LiveTranscriptionEvent = {
   callSid: string
@@ -346,18 +349,62 @@ export type BoardCallSketch = {
   status: string
   spec: CallSketchSpec
   lines: { sequenceId: number; speaker: string; transcript: string }[]
+  heard: { predicate: string; label: string; text: string }[]
   unsketchedCalls: number
+}
+
+// The caller line and the panel header already carry who called, so repeating
+// the identity as a fact wastes a slot the job needs.
+const HEARD_SKIP = new Set(["customer_name", "caller_name", "company", "customer_company"])
+
+function heardLabel(predicate: string) {
+  const words = predicate.replace(/_/g, " ").trim()
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+function heardText(value: unknown) {
+  return shopClaimText(value).replace(/\s+/g, " ").trim().slice(0, 120)
+}
+
+// What the call itself said. `deriveCallSketch` only understands gate and
+// frame geometry, so a call about anything else — a pipe weld, a repair, a
+// handrail — leaves every slot on the panel unstated even though the
+// extractor filled the person's record. These are that record, scoped to
+// this call, so the board stops showing a blank sheet after a real call.
+async function heardOnCall(callSid: string, role: OperatorRole) {
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT predicate, value FROM (
+      SELECT DISTINCT ON (c.predicate) c.id, c.predicate, c.value
+      FROM claims c
+      JOIN events e ON e.id = c.source_event_id
+      WHERE e.detail->>'callSid' = ${callSid}::text
+        AND c.superseded_by IS NULL
+        AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+      ORDER BY c.predicate, c.id DESC
+    ) latest
+    ORDER BY latest.id ASC`) as { predicate: string; value: unknown }[]
+  return rows
+    .filter((row) => !HEARD_SKIP.has(row.predicate.toLowerCase()))
+    .map((row) => projectClaimForRole(row, role))
+    .filter((row): row is { predicate: string; value: unknown } => Boolean(row))
+    .map((row) => ({ predicate: row.predicate, label: heardLabel(row.predicate), text: heardText(row.value) }))
+    .filter((fact) => fact.text !== "")
+    .slice(0, 6)
 }
 
 // The board's live call sketch: the most recent real call the shop has a
 // sketch for. Test calls never reach it — a fixture on this panel is the
 // failure the redesign exists to kill, and a test job is a fixture with a
 // database row.
-export async function getLatestBoardCallSketch(): Promise<BoardCallSketch | null> {
+export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Promise<BoardCallSketch | null> {
   const sql = getSql()
+  // The person's name wins. A draft's caller_name is written at ring time from
+  // Twilio's CallerName or a "Caller 7021" placeholder and is never rewritten,
+  // so preferring it hid every name the call itself gave up.
   const rows = (await sql`
     SELECT c.twilio_sid, c.direction, c.started_at, c.duration_sec, c.lead_id,
-      COALESCE(NULLIF(d.caller_name, ''), NULLIF(p.display_name, ''), '') AS caller_name,
+      COALESCE(NULLIF(p.display_name, ''), NULLIF(d.caller_name, ''), '') AS caller_name,
       s.status, COALESCE(s.confirmed_spec, s.observed_spec) AS spec
     FROM call_sketches s
     JOIN calls c ON c.twilio_sid = s.call_sid
@@ -382,8 +429,9 @@ export async function getLatestBoardCallSketch(): Promise<BoardCallSketch | null
   const call = rows[0]
   if (!call) return null
 
-  const [utterances, unsketchedRows] = await Promise.all([
+  const [utterances, heard, unsketchedRows] = await Promise.all([
     sketchUtterances(call.twilio_sid),
+    heardOnCall(call.twilio_sid, role),
     sql`
       SELECT count(*)::int AS count
       FROM calls c
@@ -419,6 +467,7 @@ export async function getLatestBoardCallSketch(): Promise<BoardCallSketch | null
       speaker: speakerForTrack(call.direction, item.track),
       transcript: item.transcript,
     })),
+    heard,
     unsketchedCalls: Number(unsketched[0]?.count ?? 0),
   }
 }

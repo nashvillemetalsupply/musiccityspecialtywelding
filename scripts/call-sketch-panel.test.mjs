@@ -78,7 +78,9 @@ test("the drawing's label names the facts it is still missing", () => {
 })
 
 test("the ask-next question is the engine's own, never the panel's", () => {
-  assert.match(PREVIEW_SOURCE, /\{spec\.nextQuestion\}/)
+  // The panel renders the engine's string. The only prose beside it is the
+  // fallback that explains a blank drawing, which is not a question at all.
+  assert.match(PREVIEW_SOURCE, /: spec\.nextQuestion\}/)
   // questionFor() emits these; a paraphrase typed into the panel would drift.
   assert.doesNotMatch(PREVIEW_SOURCE, /How wide does it need to finish, post to post\?/)
 })
@@ -95,7 +97,7 @@ test("no fixture survives on the wired panel", () => {
 })
 
 test("the board's sketch is a real call, and never a test one", () => {
-  assert.match(PAGE_SOURCE, /getLatestBoardCallSketch\(\)/)
+  assert.match(PAGE_SOURCE, /getLatestBoardCallSketch\(role\)/, "the reader is told the role so crew never reads an owner-only claim")
   const reader = STORE_SOURCE.slice(STORE_SOURCE.indexOf("export async function getLatestBoardCallSketch"))
   assert.match(reader, /lower\(COALESCE\(c\.detail->>'isTest', 'false'\)\) <> 'true'/)
   assert.match(reader, /COALESCE\(l\.is_test, false\) = false/)
@@ -105,4 +107,33 @@ test("the board's sketch is a real call, and never a test one", () => {
   // unsketched calls beside it.
   assert.equal((reader.match(/COALESCE\(l\.is_test, false\) = false/g) ?? []).length, 2)
   assert.match(reader, /COALESCE\(s\.confirmed_spec, s\.observed_spec\)/, "an owner-confirmed sketch outranks the observed one")
+})
+
+// The first real call into the board was a pipe weld, not a gate. Every one of
+// the seven facts stayed unstated, so the panel printed seven "Not stated" rows
+// beside a drawing of a gate nobody had mentioned — after a call the extractor
+// had in fact understood in full. These pin the two repairs.
+test("a call that answered no gate fact falls back to what the call said", () => {
+  assert.match(PREVIEW_SOURCE, /const showHeard = answered === 0 && heard\.length > 0/)
+  assert.match(PREVIEW_SOURCE, /showHeard \? "What the call said" : "Ask next"/)
+  // One loop draws both. A second hand-written slot list is how the two drift.
+  assert.equal((PREVIEW_SOURCE.match(/className="slots"/g) ?? []).length, 1)
+  assert.match(PREVIEW_SOURCE, /slots\.map\(\(slot\) =>/)
+})
+
+test("the heard facts are this call's own, role-projected, and never a test call's", () => {
+  const reader = STORE_SOURCE.slice(STORE_SOURCE.indexOf("async function heardOnCall"))
+  assert.match(reader, /e\.detail->>'callSid' = \$\{callSid\}::text/, "claims are scoped to this call, not the person's whole history")
+  assert.match(reader, /c\.superseded_by IS NULL/)
+  assert.match(reader, /lower\(COALESCE\(e\.detail->>'isTest', 'false'\)\) <> 'true'/)
+  assert.match(reader, /projectClaimForRole\(row, role\)/, "crew money is removed server-side, not in CSS")
+})
+
+test("the board shows the person's name over a ring-time placeholder", () => {
+  const reader = STORE_SOURCE.slice(STORE_SOURCE.indexOf("export async function getLatestBoardCallSketch"))
+  assert.match(
+    reader,
+    /COALESCE\(NULLIF\(p\.display_name, ''\), NULLIF\(d\.caller_name, ''\), ''\) AS caller_name/,
+    "d.caller_name is frozen at ring time as `Caller 7021`; the person's name is the one the call gave up",
+  )
 })

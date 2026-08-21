@@ -97,7 +97,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     getOutTheDoorWeek(role),
     getOpsStats(role),
     listTodayEvents(role),
-    getLatestBoardCallSketch(),
+    getLatestBoardCallSketch(role),
   ])
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role)
 
