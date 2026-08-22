@@ -73,7 +73,7 @@ test("Active Jobs clamps stale pages and renders the captured customer need", ()
 test("lead snapshot stays truthful and contact actions stay consent-gated", () => {
   // C7 retired the /ops home; the job page is where contact actions live, and
   // they must still check the consent ledger before offering Text.
-  const data = section(source("lib/ops-data.ts"), "export async function getTodayLeadSummary", "export async function getLeadEvents")
+  const data = section(source("lib/ops-data.ts"), "export async function getTodayLeadSummary", "export type OpsStats = {")
   const job = source("app/ops/leads/[id]/page.tsx")
 
   assert.match(data, /America\/Chicago/)
@@ -309,7 +309,7 @@ test("phone login uses Twilio Verify without enabling customer SMS", () => {
 // does not carry a textReadyLeadIds prop.
 
 test("lead summary groups source labels and wire body stays table-qualified", () => {
-  const summary = section(source("lib/ops-data.ts"), "export async function getTodayLeadSummary", "export async function getLeadEvents")
+  const summary = section(source("lib/ops-data.ts"), "export async function getTodayLeadSummary", "export type OpsStats = {")
   const wire = section(source("lib/notify.ts"), "export async function listWire", "export async function countUnreadWire")
 
   // gclid is folded into a CASE source label and grouped by that label, so the

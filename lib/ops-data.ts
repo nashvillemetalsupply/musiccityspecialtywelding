@@ -718,8 +718,6 @@ export async function getTodayLeadSummary(): Promise<TodayLeadSummary> {
   }
 }
 
-// Static source-section boundary retained for pre-retirement regression suites:
-// export async function getLeadEvents was retired; events is the only journal.
 export type OpsStats = {
   totalLeads: number
   newLeads: number
