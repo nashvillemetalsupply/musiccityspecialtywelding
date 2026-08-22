@@ -131,11 +131,19 @@ export type PromiseSummary = {
  *
  * - `we_promised` only. This is the shop's own reliability; counting what a
  *   customer promised would put their flakiness in the owner's Broken column.
- * - Two axes, and the pane says so. Kept and broken are scoped to the current
- *   Central month by status_changed_at — this month's scorecard. Open is every
- *   open promise right now, because a promise made last month and still owed is
- *   still work, and scoping it would let the overdue callout name a promise the
- *   Open count said did not exist.
+ * - Two axes, and the pane says so. Kept is scoped to the current Central month
+ *   by status_changed_at — this month's scorecard. Open and broken are both
+ *   right now, because a promise made last month and still owed is still work,
+ *   and scoping it would let the overdue callout name a promise the Open count
+ *   said did not exist.
+ * - Broken is derived, not stored. Nothing in this codebase ever wrote
+ *   `status = 'broken'` — the counter read a status no path set, so the board
+ *   reported a shop that had never missed once. A promise is broken when its
+ *   date has passed and it is still owed: `open` and past due. Open counts the
+ *   rest, so the two split every open promise and never double-count one.
+ *   Keeping it late still moves it to `kept`, which is the truth — the shop did
+ *   the thing. If lateness needs its own number, `status_changed_at > due_at`
+ *   on a kept row is already the whole answer.
  * - `canceled` and `superseded` are counted nowhere. `superseded` is the
  *   correction mechanism, so counting it and its replacement double-counts one
  *   promise. Nothing on the pane claims the three sum to promises made.
@@ -154,11 +162,11 @@ export async function getPromiseSummary(): Promise<PromiseSummary> {
             AND c.status_changed_at < ((date_trunc('month', now() AT TIME ZONE 'America/Chicago') + interval '1 month') AT TIME ZONE 'America/Chicago')
         )::int AS kept,
         count(*) FILTER (
-          WHERE c.status = 'broken'
-            AND c.status_changed_at >= (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
-            AND c.status_changed_at < ((date_trunc('month', now() AT TIME ZONE 'America/Chicago') + interval '1 month') AT TIME ZONE 'America/Chicago')
+          WHERE c.status = 'open' AND c.due_at IS NOT NULL AND c.due_at < now()
         )::int AS broken,
-        count(*) FILTER (WHERE c.status = 'open')::int AS open
+        count(*) FILTER (
+          WHERE c.status = 'open' AND (c.due_at IS NULL OR c.due_at >= now())
+        )::int AS open
       FROM commitments c
       LEFT JOIN leads l ON l.id = c.lead_id
       LEFT JOIN people p ON p.id = c.person_id

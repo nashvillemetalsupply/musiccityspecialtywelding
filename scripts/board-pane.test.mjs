@@ -73,10 +73,30 @@ test("a kind no job carries still reports a zero", () => {
 test("the promises block counts the shop's own promises, on the two axes the pane names", () => {
   assert.ok(COMMITMENTS_SOURCE.includes("c.direction = 'we_promised'"))
   assert.ok(!/direction = 'they_promised'/.test(COMMITMENTS_SOURCE.split("getPromiseSummary")[1] ?? ""))
-  // Kept and broken are this month; open is every open promise right now.
+  // Kept is this month; open and broken are both right now.
   assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'kept'\s+AND c\.status_changed_at >= \(date_trunc\('month', now\(\) AT TIME ZONE 'America\/Chicago'\)/)
-  assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'broken'\s+AND c\.status_changed_at >= \(date_trunc\('month', now\(\) AT TIME ZONE 'America\/Chicago'\)/)
-  assert.match(COMMITMENTS_SOURCE, /count\(\*\) FILTER \(WHERE c\.status = 'open'\)::int AS open/)
+  assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'open' AND c\.due_at IS NOT NULL AND c\.due_at < now\(\)\s+\)::int AS broken/)
+  assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'open' AND \(c\.due_at IS NULL OR c\.due_at >= now\(\)\)\s+\)::int AS open/)
+})
+
+// Nothing in this codebase ever wrote `status = 'broken'`. The counter read a
+// status no path set, so the board reported a shop that had never missed a
+// promise in its life. Broken is derived from the promise itself: past its
+// date and still owed. Open counts the rest, so the two split every open
+// promise between them and neither can double-count one.
+test("broken promises are counted, and no promise is counted twice", () => {
+  const summary = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function getPromiseSummary"),
+    COMMITMENTS_SOURCE.indexOf("export async function setCommitmentStatus"),
+  )
+  assert.ok(
+    !/status = 'broken'/.test(summary),
+    "broken has no writer anywhere in the app, so the summary must not read it as a stored status",
+  )
+  const writesBroken = [COMMITMENTS_SOURCE, EVENTS_SOURCE, EXTRACT_SOURCE]
+    .some((source) => /SET[\s\S]{0,80}status = 'broken'/.test(source))
+  assert.ok(!writesBroken, "if something starts storing 'broken', this counter has to be revisited")
+  assert.match(PREVIEW_SOURCE, /broken is past its date and still owed/)
 })
 
 test("canceled and superseded promises are counted nowhere", () => {

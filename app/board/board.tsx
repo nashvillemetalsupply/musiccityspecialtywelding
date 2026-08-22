@@ -456,7 +456,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             <div className="keep-row"><span className="chip chip--info"><i></i>Open</span><b>{promises.open}</b></div>
             <div className="keep-row"><span className="chip chip--warn"><i></i>Broken</span><b>{promises.broken}</b></div>
           </div>
-          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Open is right now. Kept and broken are this month.</p>
+          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Open and broken are right now — broken is past its date and still owed. Kept is this month.</p>
           {promises.overdue && <div className="due">
             <p>{promises.overdue.summary}</p>
             <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
@@ -680,7 +680,14 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                 const isOpen = openJobId === lead.id
                 const panelPhoto = lead.photos[lead.photos.length - 1]
                 const phone = lead.phone_is_placeholder ? "" : lead.phone.trim()
-                const brokenPromise = commitments.find((commitment) => commitment.status === "broken")
+                // Same rule the pane's Broken count uses: nothing ever stores
+                // `status = 'broken'`, so a promise is broken when its date has
+                // passed and it is still owed. Reading the status here is what
+                // made this row say "No broken promise is recorded" forever.
+                const brokenPromise = commitments.find((commitment) =>
+                  commitment.status === "open"
+                  && commitment.due_at !== null
+                  && new Date(commitment.due_at).getTime() < Date.now())
                 const datedCommitment = commitments.find((commitment) => commitment.due_at)
                 const bookedDate = datedCommitment?.due_at ?? lead.scheduled_at
                 const lineItemTotal = lineItems.reduce((total, item) => total + item.amountCents, 0)
