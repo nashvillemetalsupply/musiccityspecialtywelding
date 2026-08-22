@@ -104,6 +104,68 @@ export async function GET(req: Request) {
     RETURNING key`) as { key: string }[]
   if (!lease[0]) return Response.json({ ok: true, skipped: "Gmail sync already in progress." }, { status: 202 })
   const token = await gmailAccessToken()
+  // One-time repair hatch. Gmail hands the sweep only new mail, so receipts that a
+  // broken auth check quarantined are invisible to it forever. The done marker is
+  // written after ingestion returns, never before: keying off the email.payment
+  // event instead would strand any message that crashed between recording the
+  // event and projecting it onto the lead, and stranding money silently is the
+  // exact failure that made this endpoint necessary.
+  if (new URL(req.url).searchParams.get("replay") === "quarantined") {
+    const replay = { scanned: 0, payments: 0, deposits: 0, stillRejected: 0, failures: 0 }
+    try {
+      const rejected = (await sql`
+        SELECT rejected.external_id FROM events rejected
+        WHERE rejected.kind = 'email.payment-rejected'::text
+          AND COALESCE(rejected.external_id, ''::text) <> ''::text
+          AND NOT EXISTS (
+            SELECT 1 FROM events done
+            WHERE done.external_id = rejected.external_id
+              AND done.kind = 'email.payment-replayed'::text
+          )
+        ORDER BY rejected.occurred_at ASC
+        LIMIT 200`) as { external_id: string }[]
+      replay.scanned = rejected.length
+      for (const row of rejected) {
+        try {
+          const message = await getGmailMessage(token, row.external_id)
+          const headers = gmailHeaders(message)
+          const subject = headers.subject || "(no subject)"
+          const from = emailAddress(headers.from)
+          const body = gmailPlaintext(message)
+          const isTest = `${subject}\n${body}`.includes("[INTERNAL TEST]")
+          const occurredAt = new Date(Number(message.internalDate)).toISOString()
+          if (!isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body, recipients: gmailHeaderValues(message, "to"), dkimSignatures: gmailHeaderValues(message, "dkim-signature") })) {
+            replay.stillRejected++
+            continue
+          }
+          const deposit = /money on the way/i.test(subject)
+          if (deposit) {
+            await ingestDeposit(row.external_id, occurredAt, subject, body, isTest)
+            replay.deposits++
+          } else {
+            await ingestPayment(row.external_id, occurredAt, subject, body, isTest)
+            replay.payments++
+          }
+          await recordEvent({ kind: "email.payment-replayed", actorType: "system", externalId: row.external_id, occurredAt, body: "Quarantined receipt reapplied after the authentication fix.", detail: { deposit, isTest } })
+        } catch (error) {
+          // Counted and logged, never swallowed. No done marker was written, so the
+          // next call picks this message up again. A retry can repeat a digest
+          // notification; it cannot double the money, because the payment event is
+          // unique per Gmail id and the lead columns take GREATEST/COALESCE.
+          replay.failures++
+          console.error(`Gmail replay ${row.external_id} failed:`, error)
+        }
+      }
+      await sql`
+        INSERT INTO automation_runs (job, ok, detail)
+        VALUES ('gmail-replay-quarantined'::text, ${replay.failures === 0}::boolean, ${JSON.stringify(replay)}::jsonb)`
+    } finally {
+      // The sweep releases the lease on its way out; an early return has to as well,
+      // or the next cron tick is locked out for the full eight minutes.
+      await sql`UPDATE sync_state SET updated_at = 'epoch'::timestamptz WHERE key = 'gmail-ingest-lease'::text`
+    }
+    return Response.json({ ok: replay.failures === 0, replay })
+  }
   const state = (await sql`SELECT value FROM sync_state WHERE key = 'gmail'::text LIMIT 1`) as { value: { historyId?: string } }[]
   let listing
   try { listing = await listGmailMessageIds(token, state[0]?.value?.historyId ?? null) }
@@ -128,7 +190,7 @@ export async function GET(req: Request) {
           || (label === "DRAFT" && !sent)
       )
       const paymentEnvelope = looksLikeIntuitPaymentEnvelope({ from, subject, body })
-      if (isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body })) {
+      if (isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body, recipients: gmailHeaderValues(message, "to"), dkimSignatures: gmailHeaderValues(message, "dkim-signature") })) {
         const result = /money on the way/i.test(subject) ? await ingestDeposit(id, occurredAt, subject, body, isTest) : await ingestPayment(id, occurredAt, subject, body, isTest)
         if (!result.duplicate) counters.payments++
         continue
