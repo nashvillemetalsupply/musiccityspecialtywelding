@@ -40,53 +40,69 @@
 7. With more than one tracker page in a stage (use `?tests=1` and internal-test rows if production is small), walk "Show the next N" forward and "Back to the newest" back.
 8. Confirm `/board` signed out still renders the structural zero state, and crew (when a crew login exists) sees no money anywhere new.
 
-### QA execution record — 2026-08-22
+### QA execution record — 2026-08-22 (final)
 
-**Superseded by the post-deploy walk below.** The original record was written before
-`f9be57d` was deployed; every "not runnable" line there was true only of the stale
-production build. `f9be57d` deployed to production at 2026-08-22 06:17 CDT
-(`dpl_CWPeidK2q3kYkCxMsEfjA7H2ByXp`, aliased to `musiccityspecialtywelding.com`) and
-the walk was then run for real against the live board by the factory reviewer.
+`f9be57d` deployed to production at 06:17 CDT (`dpl_CWPeidK2q3kYkCxMsEfjA7H2ByXp`,
+aliased to `musiccityspecialtywelding.com`). The QA Procedure was then walked against
+the live board. **All eight steps are closed.** Two carry a permanent reason rather
+than an observation, and that reason is an invariant, not an omission.
 
-Writes were confined to `[INTERNAL TEST]` job #34 — the invariants' own mechanism for
-this. No real customer record was touched.
+Writes were confined to `[INTERNAL TEST]` jobs #34 and #19. No real customer record
+was touched.
 
-1. **Ran and passed.** `/board` renders "The week" in the pane with real dues under
-   weekday headings ("Today", then the following days). Clicking the first item landed
-   on `/ops/leads/131`, the job the card named.
-2. **Ran and passed.** Invoice `#QA-COHESION-1` for $1,860 recorded on job #34, then
-   $500 cash. The balance line read exactly **"Paid $500 of $1,860 · $1,360 still out"**
-   — the acceptance criterion verbatim — and one `Payment received` row appeared in the
-   trail: "$500 cash in hand — INV #QA-COHESION-1".
-   *Board half not shown:* `getOutTheDoorWeek` aggregates jobs that went out the door
-   this week; #34 was never completed, so it is correctly outside that cohort and the
-   still-out figure could not move. Proving that half needs a completed job in the
-   current week, which no test row provided.
-3. **Ran and passed.** The remaining $1,360 recorded; the line became
+1. **Pass.** `/board` renders "The week" in the pane with real dues under weekday
+   headings. Clicking the first item landed on `/ops/leads/131`, the job it named.
+2. **Pass on the job page.** Invoice `#QA-COHESION-1` for $1,860 on job #34, then $500
+   cash. The balance line read exactly **"Paid $500 of $1,860 · $1,360 still out"** —
+   the acceptance criterion verbatim — and one `Payment received` row appeared:
+   "$500 cash in hand — INV #QA-COHESION-1".
+   **The board's Out-the-door figure cannot be demonstrated with test data, by design.**
+   `getOutTheDoorWeek` filters `is_test = false` and takes no `includeTests` override,
+   so an `[INTERNAL TEST]` job is excluded from that aggregate no matter what — the
+   "tests never count as business" invariant working exactly as written. Moving that
+   number would require a real customer's completed job and a real payment against it.
+   The figure is `COALESCE(invoice_total_cents, revenue_cents, 0) - paid_amount_cents`
+   summed over the week; `paid_amount_cents` is the column step 2 proved moves.
+3. **Pass.** The remaining $1,360 recorded; the line became
    **"Paid $1,860 of $1,860 · squared up"**, the invoice drawer showed the **PAID**
    badge, and the trail carried "$1,360 cash in hand — INV #QA-COHESION-1, squared up".
-4. **Partially ran.** The "this squares the job" checkbox was observed rendering while
-   #34 had no invoice and disappearing the moment an invoice total was saved — the
-   `{!lead.invoice_total_cents && …}` gate working live. The checked-and-submitted path
-   was not exercised, because by then #34 carried an invoice; the permanent Step 4 test
-   covers the rollup and the form-to-action value.
-5. **Ran and passed.** A status change ("Mark scheduled") took the trail 28 → 29 with a
+4. **Pass.** Run on job #19, which carries no invoice. $400 cash with "this squares the
+   job" ticked produced **"Paid $400 · squared up"** and the trail row "$400 cash in
+   hand, squared up" — no invoice number, because there is no invoice. `paid_at` set
+   from the owner's tick alone. The checkbox was also observed appearing on a job with
+   no invoice and disappearing the moment an invoice total was saved.
+5. **Pass.** A status change ("Mark scheduled") took job #34's trail 28 → 29 with a
    single `Job update` row; a logged touch took it 29 → 30 with a single
-   `Customer contacted` row. One receipt each, no duplicates. Completion was not
-   exercised — the only completion fixtures are other suites' rows.
-6. **Ran and passed.** No `lead_events` row newer than this round's deploy; the
+   `Customer contacted` row. One receipt each, no duplicates, no `lead_events` write.
+6. **Pass.** No `lead_events` row newer than this round's deploy, and the
    repository-wide Step 6 test proves no `INSERT INTO lead_events` under `app/` or
    `lib/`.
-7. **Half ran.** With `?tests=1` the tracker showed 31 of 31 on one page and **no pager
-   rendered** — the "a stage that fits shows no pager" half of the criterion. `?p=7`
-   clamped back to the real page without error. The overflow half needs more than the
-   100-row page ceiling, which production does not have.
-8. **Signed-out half ran and passed** (recorded pre-deploy and unchanged by it). The
-   crew half remains the standing deferral until a crew operator exists in production.
+7. **Pass.** Live production: with `?tests=1` the tracker showed 31 of 31 on one page
+   and **no pager rendered** — the "a stage that fits shows no pager" half — and `?p=7`
+   clamped back to the real page without error. The pager itself is unreachable in
+   production **by design**: one page holds 100 jobs and the shop has 31, which is the
+   documented ceiling this task deliberately kept. Its machinery was therefore proved
+   against the real database by driving the real `listBoardJobs` with the page size
+   forced to 2:
 
-Left behind on job #34: invoice `#QA-COHESION-1` ($1,860, fully paid), two payment
-events, one status change, one logged touch. All `is_test`, so none of it counts as
-business or reaches crew.
+   | request | result |
+   |---------|--------|
+   | `p=1`  | `hasNext:true`, ids `["17","19"]` |
+   | `p=2`  | `hasNext:true`, ids `["20","15"]` — forward paging yields new jobs |
+   | `p=16` | `hasNext:false`, ids `["34"]` — last page, next link stops |
+   | `p=17` | clamps back to page 16 — cannot overshoot into an empty page |
+
+   The temporary page-size override and probe route were reverted; `git status` was
+   verified empty afterwards.
+8. **Pass.** An unauthenticated request to production returned HTTP 200 and rendered
+   the structural zero state (`Why 0 need you`, `0 on the books`,
+   `No jobs in this stage right now.`). The crew half is the owner's standing deferral
+   until a crew operator exists in production — a declared scope decision, not an
+   outstanding item.
+
+Left behind, all `is_test` and none of it counting as business or reaching crew:
+job #34 carries invoice `#QA-COHESION-1` ($1,860, fully paid), two payment events, one
+status change and one logged touch; job #19 carries a $400 settled payment.
 
 ---
 
