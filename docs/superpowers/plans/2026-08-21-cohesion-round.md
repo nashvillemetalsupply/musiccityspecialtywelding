@@ -42,14 +42,51 @@
 
 ### QA execution record — 2026-08-22
 
-1. **Not runnable against this round's UI.** Vercel's newest deployment was created 2026-08-21 at 15:52:44 CDT; K4 landed on the local `main` tree on 2026-08-22 at 05:32:27 CDT. The available owner session therefore showed the older board with no "The week" card. The deterministic Step 1 contract passes in `scripts/cohesion-round-qa.test.mjs`, but no current deployed item existed to click.
-2. **Not runnable against this round's UI.** The only deployed owner surface predates `recordPayment`, so no partial payment was submitted on stale code. The permanent Step 2 test proves the partial rollup, event-before-update ordering, and the paid/of/still-out rendering contract.
-3. **Not runnable against this round's UI.** For the same deployment reason, no remaining-balance payment was submitted. The permanent Step 3 test proves the remainder settles, `paid_at` is set by the settled rollup, and paid/squared-up rendering is wired.
-4. **Not runnable against this round's UI.** The deployed job form has no manual-payment action. The permanent Step 4 test proves that a checked no-invoice payment sets `fullyPaid` and that the checkbox value reaches the action.
-5. **Not rerun destructively on stale production code.** Status, interaction, and completion writes were not manufactured against the pre-round deployment. The permanent Step 5 test scopes all three actions: one `events` receipt path each and no `lead_events` write.
-6. **Ran against the shared database.** `SELECT max(created_at) AS latest FROM lead_events` returned `2026-08-21T20:25:06.108Z`, older than the latest production deployment at `2026-08-21T20:52:44Z`. There is no cohesion-round deployment to compare against, so the exact post-round-deploy half remains unavailable; the repository-wide Step 6 test proves there is no `INSERT INTO lead_events` under `app/` or `lib/`.
-7. **Not runnable against this round's UI.** The deployed board showed 26 of 26 jobs on one page and predates the pager. The permanent Step 7 test proves the overflow-only render gate, forward/back links, and canonical omission of `?p=1`.
-8. **Signed-out half ran and passed.** An unauthenticated request to production returned HTTP 200 and rendered `Why 0 need you`, `0 on the books`, and `No jobs in this stage right now.` The available browser was owner-authenticated, so it was not signed out or repurposed. The crew half remains the standing deferral until a crew operator exists in production; this is not a release failure. The permanent Step 8 test pins the structural zero route and server-side nulling of `paid_amount_cents`, `invoice_total_cents`, and `paid_at` for crew.
+**Superseded by the post-deploy walk below.** The original record was written before
+`f9be57d` was deployed; every "not runnable" line there was true only of the stale
+production build. `f9be57d` deployed to production at 2026-08-22 06:17 CDT
+(`dpl_CWPeidK2q3kYkCxMsEfjA7H2ByXp`, aliased to `musiccityspecialtywelding.com`) and
+the walk was then run for real against the live board by the factory reviewer.
+
+Writes were confined to `[INTERNAL TEST]` job #34 — the invariants' own mechanism for
+this. No real customer record was touched.
+
+1. **Ran and passed.** `/board` renders "The week" in the pane with real dues under
+   weekday headings ("Today", then the following days). Clicking the first item landed
+   on `/ops/leads/131`, the job the card named.
+2. **Ran and passed.** Invoice `#QA-COHESION-1` for $1,860 recorded on job #34, then
+   $500 cash. The balance line read exactly **"Paid $500 of $1,860 · $1,360 still out"**
+   — the acceptance criterion verbatim — and one `Payment received` row appeared in the
+   trail: "$500 cash in hand — INV #QA-COHESION-1".
+   *Board half not shown:* `getOutTheDoorWeek` aggregates jobs that went out the door
+   this week; #34 was never completed, so it is correctly outside that cohort and the
+   still-out figure could not move. Proving that half needs a completed job in the
+   current week, which no test row provided.
+3. **Ran and passed.** The remaining $1,360 recorded; the line became
+   **"Paid $1,860 of $1,860 · squared up"**, the invoice drawer showed the **PAID**
+   badge, and the trail carried "$1,360 cash in hand — INV #QA-COHESION-1, squared up".
+4. **Partially ran.** The "this squares the job" checkbox was observed rendering while
+   #34 had no invoice and disappearing the moment an invoice total was saved — the
+   `{!lead.invoice_total_cents && …}` gate working live. The checked-and-submitted path
+   was not exercised, because by then #34 carried an invoice; the permanent Step 4 test
+   covers the rollup and the form-to-action value.
+5. **Ran and passed.** A status change ("Mark scheduled") took the trail 28 → 29 with a
+   single `Job update` row; a logged touch took it 29 → 30 with a single
+   `Customer contacted` row. One receipt each, no duplicates. Completion was not
+   exercised — the only completion fixtures are other suites' rows.
+6. **Ran and passed.** No `lead_events` row newer than this round's deploy; the
+   repository-wide Step 6 test proves no `INSERT INTO lead_events` under `app/` or
+   `lib/`.
+7. **Half ran.** With `?tests=1` the tracker showed 31 of 31 on one page and **no pager
+   rendered** — the "a stage that fits shows no pager" half of the criterion. `?p=7`
+   clamped back to the real page without error. The overflow half needs more than the
+   100-row page ceiling, which production does not have.
+8. **Signed-out half ran and passed** (recorded pre-deploy and unchanged by it). The
+   crew half remains the standing deferral until a crew operator exists in production.
+
+Left behind on job #34: invoice `#QA-COHESION-1` ($1,860, fully paid), two payment
+events, one status change, one logged touch. All `is_test`, so none of it counts as
+business or reaches crew.
 
 ---
 
