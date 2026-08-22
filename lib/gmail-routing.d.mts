@@ -15,6 +15,8 @@ export function isAuthenticatedIntuitPayment(input: {
   body?: string
   /** Every To: header value. All must be at the shop domain, or the receipt is refused. */
   recipients?: string | string[]
+  /** Raw DKIM-Signature headers. Intuit's must cover to: and subject: and carry no l= tag. */
+  dkimSignatures?: string | string[]
 }): boolean
 export function looksLikeIntuitPaymentEnvelope(input: { from: string; subject?: string; body?: string }): boolean
 export function paymentCompletesInvoice(input: {
