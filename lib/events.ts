@@ -182,6 +182,11 @@ export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): P
       AND COALESCE(l.is_test, false) = false
       AND COALESCE(p.is_test, false) = false
       AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+      -- The marker check the per-job trail already does. Without it a
+      -- marker-only test identity reaches the live board, and this row now
+      -- prints the customer's name.
+      AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+        e.body, e.crew_body, e.detail::text) NOT ILIKE '%[INTERNAL TEST]%'
       AND (${role}::text = 'owner' OR (
         NOT (lower(e.kind) = ANY(${[...OWNER_ONLY_EVENT_KINDS]}::text[]))
         AND lower(e.kind) !~ ${OWNER_ONLY_EVENT_NAMESPACE_PATTERN}::text

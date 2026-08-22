@@ -52,22 +52,25 @@ export async function addCommitment(input: {
   // words, same due instant, still open. Nothing is lost by dropping the
   // restatement — a promise made twice is still one promise.
   //
-  // ponytail: read-then-insert, not one statement. Two extractions racing the
-  // same lead could still both pass the check; give this a partial unique index
-  // if that ever happens. Extraction is one AI call per event, serialized per
-  // event, so today it cannot.
+  // The read below is not atomic with the insert, and extraction is NOT
+  // serialized across events — a text, an email and a transcript can be
+  // extracted at the same moment for one job, and both could pass this check.
+  // So `commitments_open_promise_unique` (scripts/migrate.mjs) is the real
+  // guard and this read is the cheap path that avoids hitting it. The insert
+  // takes a bare ON CONFLICT DO NOTHING so losing that race is not an error.
   const restated = (await sql`
     SELECT id FROM commitments
     WHERE status = 'open'
       AND direction = ${input.direction}::text
       AND btrim(lower(summary)) = btrim(lower(${input.summary}::text))
       AND due_at IS NOT DISTINCT FROM ${input.dueAt ?? null}::timestamptz
-      AND (
-        (${input.leadId ?? null}::bigint IS NOT NULL AND lead_id = ${input.leadId ?? null}::bigint)
-        OR (${input.leadId ?? null}::bigint IS NULL
-            AND ${input.personId ?? null}::bigint IS NOT NULL
-            AND person_id = ${input.personId ?? null}::bigint)
-      )
+      -- Both owners must match, not either. Matching on the person alone
+      -- would collapse the same sentence across two of that customer's jobs,
+      -- which are two real promises. A subjectless commitment (both null)
+      -- matches nothing here and keeps only the same-event key below.
+      AND (${input.leadId ?? null}::bigint IS NOT NULL OR ${input.personId ?? null}::bigint IS NOT NULL)
+      AND lead_id IS NOT DISTINCT FROM ${input.leadId ?? null}::bigint
+      AND person_id IS NOT DISTINCT FROM ${input.personId ?? null}::bigint
     ORDER BY id ASC LIMIT 1`) as { id: number }[]
   if (restated[0]) return Number(restated[0].id)
   const rows = (await sql`
@@ -86,12 +89,26 @@ export async function addCommitment(input: {
       ${input.confidence}::real,
       ${input.visibleOnGlass ?? false}::boolean,
       ${itemKey}::text
-    ) ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
+    ) ON CONFLICT DO NOTHING
     RETURNING id`) as { id: number }[]
   if (rows[0]) return Number(rows[0].id)
+  // Nothing inserted: either this event was already extracted (same-event key)
+  // or another event won the race and its row now holds the promise. Ask for
+  // both, same-event first, and hand back whichever exists.
   const existing = (await sql`
     SELECT id FROM commitments
-    WHERE source_event_id = ${input.sourceEventId}::bigint AND item_key = ${itemKey}::text LIMIT 1`) as { id: number }[]
+    WHERE (source_event_id = ${input.sourceEventId}::bigint AND item_key = ${itemKey}::text)
+      OR (
+        status = 'open'
+        AND direction = ${input.direction}::text
+        AND btrim(lower(summary)) = btrim(lower(${input.summary}::text))
+        AND due_at IS NOT DISTINCT FROM ${input.dueAt ?? null}::timestamptz
+        AND (${input.leadId ?? null}::bigint IS NOT NULL OR ${input.personId ?? null}::bigint IS NOT NULL)
+        AND lead_id IS NOT DISTINCT FROM ${input.leadId ?? null}::bigint
+        AND person_id IS NOT DISTINCT FROM ${input.personId ?? null}::bigint
+      )
+    ORDER BY (source_event_id = ${input.sourceEventId}::bigint) DESC, id ASC
+    LIMIT 1`) as { id: number }[]
   return existing[0] ? Number(existing[0].id) : null
 }
 
@@ -107,7 +124,19 @@ export async function listCommitments(input: {
     SELECT * FROM commitments
     WHERE (${input.leadId ?? null}::bigint IS NULL OR lead_id = ${input.leadId ?? null}::bigint)
       AND (${input.personId ?? null}::bigint IS NULL OR person_id = ${input.personId ?? null}::bigint)
-      AND (${input.status ?? null}::text IS NULL OR status = ${input.status ?? null}::text)
+      -- 'broken' is derived, not stored (see getPromiseSummary). Asked for it
+      -- literally, this returned nothing forever, so Ask Jobs could answer
+      -- "no broken promises" while the board showed several.
+      -- 'open' stays every open promise, overdue included: the work order's
+      -- promise list is built from it, and that is where an overdue promise
+      -- gets handled. Open is a superset of broken here, deliberately.
+      AND (
+        ${input.status ?? null}::text IS NULL
+        OR (${input.status ?? null}::text = 'broken'
+            AND status = 'open' AND due_at IS NOT NULL AND due_at < now())
+        OR (${input.status ?? null}::text <> 'broken'
+            AND status = ${input.status ?? null}::text)
+      )
     ORDER BY due_at ASC NULLS LAST, created_at DESC
     LIMIT ${limit}::bigint`) as CommitmentRow[]
 }

@@ -184,6 +184,57 @@ test("a restated promise is not a second promise", () => {
     "the duplicate check has to run before the insert",
   )
   assert.match(EXTRACT_SOURCE, /A promise already in open_commitments is on the books/)
+  // The prompt may only name states `marks_existing_as` can actually carry.
+  const marksExisting = EXTRACT_SOURCE.match(/marks_existing_as: z\.enum\(\[([^\]]*)\]\)/)?.[1] ?? ""
+  assert.ok(marksExisting.includes("kept") && marksExisting.includes("superseded"))
+  assert.doesNotMatch(EXTRACT_SOURCE, /matches_existing_commitment_id when this event kept, broke, or canceled it/)
+})
+
+// Both owners have to match, not either. A promise is filed under a lead and a
+// person; matching the person alone collapses the same sentence across two of
+// that customer's jobs, which are two real promises. The same scoping has to
+// hold for the context handed to extraction, because the prompt now tells it
+// not to re-emit anything it is shown.
+test("a promise is deduped against its own job, not the whole customer", () => {
+  const add = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function addCommitment"),
+    COMMITMENTS_SOURCE.indexOf("export async function listCommitments"),
+  )
+  for (const source of [add, EXTRACT_SOURCE]) {
+    assert.match(source, /lead_id IS NOT DISTINCT FROM/)
+    assert.match(source, /person_id IS NOT DISTINCT FROM/)
+  }
+  assert.doesNotMatch(EXTRACT_SOURCE, /IS NOT NULL AND lead_id = \$\{event\.lead_id/)
+  // The database holds the rule, because the read above is not atomic with the
+  // insert and extractions for one job overlap.
+  const MIGRATE_SOURCE = readFileSync(new URL("../scripts/migrate.mjs", import.meta.url), "utf8")
+  assert.match(MIGRATE_SOURCE, /CREATE UNIQUE INDEX IF NOT EXISTS commitments_open_promise_unique/)
+  assert.match(MIGRATE_SOURCE, /SET status = 'superseded'/)
+  assert.ok(
+    MIGRATE_SOURCE.indexOf("SET status = 'superseded'") < MIGRATE_SOURCE.indexOf("commitments_open_promise_unique"),
+    "duplicates must be retired before the unique index is built, or it cannot be built",
+  )
+  assert.match(add, /ON CONFLICT DO NOTHING/)
+})
+
+// The job row loads both directions. Without the direction check the shop gets
+// blamed for a promise the customer made and missed.
+test("only the shop's own promises can be called broken", () => {
+  assert.match(PREVIEW_SOURCE, /commitment\.direction === "we_promised"\s*\n\s*&& commitment\.status === "open"/)
+  const list = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function listCommitments"),
+    COMMITMENTS_SOURCE.indexOf("export type PromiseSummary"),
+  )
+  // Asked for 'broken' literally this returned nothing forever, so Ask Jobs
+  // could answer "no broken promises" while the board showed several.
+  assert.match(list, /= 'broken'\s*\n\s*AND status = 'open' AND due_at IS NOT NULL AND due_at < now\(\)/)
+})
+
+// A marker-only test identity reaches the live board without this, and the
+// trail row now prints the customer's name.
+test("the Today trail honours the [INTERNAL TEST] marker", () => {
+  const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
+  assert.match(today, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
 })
 
 test("board job details are typed, wired, and remain data-only in W1", () => {

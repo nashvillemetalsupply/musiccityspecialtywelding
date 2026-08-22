@@ -695,8 +695,12 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                 // `status = 'broken'`, so a promise is broken when its date has
                 // passed and it is still owed. Reading the status here is what
                 // made this row say "No broken promise is recorded" forever.
+                // `we_promised` only, the same boundary the pane's count uses.
+                // This row loads both directions, so without it the shop gets
+                // blamed for a promise the *customer* made and missed.
                 const brokenPromise = commitments.find((commitment) =>
-                  commitment.status === "open"
+                  commitment.direction === "we_promised"
+                  && commitment.status === "open"
                   && commitment.due_at !== null
                   && new Date(commitment.due_at).getTime() < Date.now())
                 const datedCommitment = commitments.find((commitment) => commitment.due_at)

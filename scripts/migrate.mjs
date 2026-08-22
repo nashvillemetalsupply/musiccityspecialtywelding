@@ -1231,6 +1231,40 @@ if (buildFixture) {
   console.log(`Build Sheets fixture: /ops/leads/${leadId}/builds`)
 }
 
+// One promise, one row. Extraction is handed the open commitments as context
+// and restates them, so the same promise arrived again under the next event's
+// id -- a call and the customer's follow-up text put the same two promises on
+// the board twice. `addCommitment` now checks for the restatement before it
+// inserts, but that read is not atomic with the insert and extractions for one
+// job genuinely overlap, so the database holds the rule.
+//
+// Order matters: the duplicates already on the books are retired first, or the
+// index cannot be built. Oldest row of each group is the promise; the rest are
+// restatements of it and go to 'superseded', which every board counter
+// excludes. Both statements are safe to run again -- the second time there is
+// nothing left to retire and the index already exists.
+await sql`
+  UPDATE commitments c SET status = 'superseded', status_changed_at = now()
+  WHERE c.status = 'open'
+    AND (c.lead_id IS NOT NULL OR c.person_id IS NOT NULL)
+    AND EXISTS (
+      SELECT 1 FROM commitments keeper
+      WHERE keeper.status = 'open'
+        AND keeper.id < c.id
+        AND keeper.lead_id IS NOT DISTINCT FROM c.lead_id
+        AND keeper.person_id IS NOT DISTINCT FROM c.person_id
+        AND keeper.direction = c.direction
+        AND btrim(lower(keeper.summary)) = btrim(lower(c.summary))
+        AND keeper.due_at IS NOT DISTINCT FROM c.due_at
+    )`
+await sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS commitments_open_promise_unique
+    ON commitments (
+      COALESCE(lead_id, -1), COALESCE(person_id, -1), direction,
+      btrim(lower(summary)), COALESCE(due_at, '-infinity'::timestamptz)
+    )
+    WHERE status = 'open' AND (lead_id IS NOT NULL OR person_id IS NOT NULL)`
+
 const tables = await sql`
   SELECT table_name FROM information_schema.tables
   WHERE table_schema = 'public' ORDER BY table_name`
