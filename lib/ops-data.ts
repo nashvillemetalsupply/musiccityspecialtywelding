@@ -22,7 +22,11 @@ export type LeadFilter = {
   includeNext?: boolean
 }
 
-export const JOB_BOARD_STAGES = ["board", "attention", "shop", "waiting", "ready"] as const
+// Tab order, left to right. The working stages come first, then the two
+// look-back views: Closed is finished-and-handed-off work, and "All jobs" is
+// everything still open. "board" is still the stage a bare /board resolves to,
+// so the default view is unchanged — only its place in the tab strip moved.
+export const JOB_BOARD_STAGES = ["attention", "shop", "waiting", "ready", "closed", "board"] as const
 export type JobBoardStage = (typeof JOB_BOARD_STAGES)[number]
 export const BOARD_SIGNAL_KINDS = Object.freeze(
   Object.keys(BOARD_WEIGHTS.signal) as BoardSignalKind[],
@@ -367,8 +371,43 @@ export async function listBoardJobs(
         count(*) FILTER (WHERE board_stage = 'waiting')::int AS waiting_count,
         count(*) FILTER (WHERE board_stage = 'ready')::int AS ready_count
       FROM board
+    ), closed_jobs AS (
+      -- The Closed tab, and nothing else. Handed-off jobs are the one thing the
+      -- board deliberately drops, so they are read through their own CTE rather
+      -- than by widening the board CTE: board_counts reads that one, and
+      -- "Open jobs" must never count work already out the door. The stage guard
+      -- keeps this scan off every other tab. Column list and order match the
+      -- board CTE exactly, because the two are unioned below.
+      SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name,
+        'closed'::text AS board_stage,
+        CASE
+          WHEN l.review_received THEN 'Review received'
+          WHEN l.review_requested_at IS NOT NULL THEN 'Review requested'
+          ELSE 'Handed off'
+        END AS board_reason,
+        l.handed_off_at AS board_since,
+        '[]'::jsonb AS board_signals,
+        0 AS board_score
+      FROM leads l
+      LEFT JOIN operators o ON o.id = l.assigned_operator_id
+      WHERE ${stage}::text = 'closed'
+        AND l.handed_off_at IS NOT NULL
+        AND l.status NOT IN ('lost','spam')
+        AND (${includeTests}::boolean OR l.is_test = false)
+    ), closed_count AS (
+      -- Counted every time so the tab can carry its number, and counted apart
+      -- from board_counts so it can never reach the Open jobs figure.
+      SELECT count(*)::int AS closed_count
+      FROM leads l
+      WHERE l.handed_off_at IS NOT NULL
+        AND l.status NOT IN ('lost','spam')
+        AND (${includeTests}::boolean OR l.is_test = false)
     ), filtered AS (
-      SELECT b.* FROM board b
+      SELECT b.* FROM (
+        SELECT * FROM board WHERE ${stage}::text <> 'closed'
+        UNION ALL
+        SELECT * FROM closed_jobs
+      ) b
       WHERE (${stage}::text = 'board' OR b.board_stage = ${stage}::text)
         AND (
           ${signal}::text = ''
@@ -407,16 +446,18 @@ export async function listBoardJobs(
       LIMIT ${pageSize + 1}::int OFFSET ${offset}::int
     )
     SELECT p.*, (p.board_score >= ${w.hotThreshold}::int) AS board_hot, bc.*, rc.result_total,
-      sc.signal_counts
+      sc.signal_counts, cc.closed_count
     FROM board_counts bc
     CROSS JOIN result_count rc
     CROSS JOIN signal_counts sc
+    CROSS JOIN closed_count cc
     LEFT JOIN paged p ON true`) as Array<BoardJobRow & {
       board_count: number
       attention_count: number
       shop_count: number
       waiting_count: number
       ready_count: number
+      closed_count: number
       result_total: number
       signal_counts: Partial<Record<BoardSignalKind, number>>
     }>
@@ -439,6 +480,7 @@ export async function listBoardJobs(
       shop: Number(countRow?.shop_count ?? 0),
       waiting: Number(countRow?.waiting_count ?? 0),
       ready: Number(countRow?.ready_count ?? 0),
+      closed: Number(countRow?.closed_count ?? 0),
     },
     signalCounts: emptySignalCounts(countRow?.signal_counts),
     resultTotal,

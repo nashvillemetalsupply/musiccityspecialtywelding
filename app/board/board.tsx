@@ -1,8 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useActionState, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
+import { markJobHandedOff } from "@/app/ops/leads/[id]/handoff-actions"
+import type { HandoffActionState } from "@/app/ops/leads/[id]/handoff-actions"
 import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
@@ -113,14 +116,43 @@ function callLine(sketch: BoardCallSketch) {
   return `${name} · phone call, ended ${TRAIL_TIME.format(new Date(sketch.endedAt))} · ${sinceInWords(sketch.endedAt)}`
 }
 
+// A finished job only leaves the board when someone records the pickup or
+// delivery. That button lived only on the job's own page, so Ready filled with
+// work the shop already considered done and "Open jobs" counted all of it. Same
+// server action, moved to the row it belongs to.
+const HANDOFF_IDLE: HandoffActionState = {
+  status: "idle", message: "", handoffEventId: null, undoUntil: null,
+}
+
+function HandoffButton({ leadId, customer }: { leadId: number; customer: string }) {
+  const router = useRouter()
+  const [state, action] = useActionState(markJobHandedOff, HANDOFF_IDLE)
+  useEffect(() => {
+    // The row leaves the board on success, so the list has to refetch. Undo
+    // still lives on the job page, which is where the receipt is shown.
+    if (state.status === "handed-off") router.refresh()
+  }, [state.status, router])
+  return <>
+    <form action={action}>
+      <input type="hidden" name="leadId" value={leadId} />
+      <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording…"
+        aria-label={`Record that ${customer} received their job`}>
+        Customer received it
+      </SafeSubmitButton>
+    </form>
+    {state.status === "error" && <span className="t-caption" role="alert">{state.message}</span>}
+  </>
+}
+
 // The tracker's stage tabs are JOB_BOARD_STAGES in their canonical order.
 // Labels are the product's own stage names, declared here beside the type.
 const TAB_LABELS: Record<JobBoardStage, string> = {
-  board: "All jobs",
   attention: "Attention",
   shop: "In the shop",
   waiting: "Waiting",
   ready: "Ready",
+  closed: "Closed",
+  board: "All jobs",
 }
 
 // The row mark draws the SERVICE, which the schema actually stores, not the
@@ -785,6 +817,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                     <span className="val right c-money">{moneyCell.value} <em>{moneyCell.note}</em></span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
+                      {lead.board_stage === "ready" && <HandoffButton leadId={lead.id} customer={customerName(lead)} />}
                       <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}`}>Open job</Link>
                       <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button"
                         aria-label={`${isOpen ? "Collapse" : "Expand"} ${customerName(lead)} job details`}

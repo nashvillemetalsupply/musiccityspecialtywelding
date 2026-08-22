@@ -23,6 +23,9 @@ function undoDeadline(occurredAt: string) {
 
 function refreshHandoff(leadId: number) {
   revalidatePath("/ops")
+  // The board is the front door, and a handoff recorded from the work order
+  // has to drop the job off it too, not only off the old Active Jobs list.
+  revalidatePath("/board")
   revalidatePath(`/ops/leads/${leadId}`)
 }
 

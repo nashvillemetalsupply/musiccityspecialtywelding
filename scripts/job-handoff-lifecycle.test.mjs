@@ -73,3 +73,72 @@ test("work order explains removal, preserves history, and exposes a thumb-safe r
   assert.match(language, /"job\.handed-off": "Customer handoff complete"/)
   assert.match(language, /"job\.handoff-undone": "Customer handoff undone"/)
 })
+
+test("the board clears a Ready job without leaving the board", () => {
+  // Handoff was reachable only from the work order, so Ready accumulated jobs
+  // the shop had already finished and "Open jobs" counted every one of them.
+  const board = source("app/board/board.tsx")
+  const css = source("app/board/board.css")
+
+  assert.match(board, /import \{ markJobHandedOff \} from "@\/app\/ops\/leads\/\[id\]\/handoff-actions"/)
+  assert.match(board, /useActionState\(markJobHandedOff, HANDOFF_IDLE\)/)
+  assert.match(board, /lead\.board_stage === "ready" && <HandoffButton/)
+  assert.match(board, /Customer received it/)
+  // The row toggles the panel on click and exempts anything inside a button;
+  // SafeSubmitButton renders one, so the submit must not also expand the row.
+  assert.match(board, /SafeSubmitButton/)
+  assert.match(board, /closest\("a, button"\)/)
+  // The removed row has to disappear, and only a refetch does that.
+  assert.match(board, /if \(state\.status === "handed-off"\) router\.refresh\(\)/)
+  assert.match(board, /state\.status === "error" && <span className="t-caption" role="alert">/)
+  assert.match(css, /\.doing form\{display:contents\}/)
+})
+
+test("Closed is its own tab and can never reach the Open jobs figure", () => {
+  const data = source("lib/ops-data.ts")
+  const board = source("app/board/board.tsx")
+
+  // Tab order: working stages, then the two look-back views, All jobs last.
+  assert.match(
+    data,
+    /JOB_BOARD_STAGES = \["attention", "shop", "waiting", "ready", "closed", "board"\] as const/,
+  )
+  assert.ok(
+    board.indexOf('closed: "Closed"') < board.indexOf('board: "All jobs"'),
+    "the Closed tab must sit before All jobs",
+  )
+
+  // The whole point of the separate CTE: board_counts, which feeds "Open jobs",
+  // still reads only the open-work CTE. Widening that one would put finished
+  // work back into the headline number.
+  const countsCte = data.slice(
+    data.indexOf("), board_counts AS ("),
+    data.indexOf("), closed_jobs AS ("),
+  )
+  assert.ok(countsCte.includes("count(*)::int AS board_count"))
+  assert.ok(
+    countsCte.trimEnd().endsWith("FROM board"),
+    "board_counts must read the open-work CTE, not the union",
+  )
+  assert.ok(
+    !countsCte.includes("SELECT * FROM board"),
+    "board_counts must not be computed over the board/closed union",
+  )
+
+  // Closed reads handed-off jobs only, and only when that tab is open.
+  assert.match(data, /\), closed_jobs AS \(/)
+  assert.match(data, /WHERE \$\{stage\}::text = 'closed'\s*\n\s*AND l\.handed_off_at IS NOT NULL/)
+  assert.match(data, /SELECT \* FROM board WHERE \$\{stage\}::text <> 'closed'\s*\n\s*UNION ALL\s*\n\s*SELECT \* FROM closed_jobs/)
+
+  // Its count is computed apart from board_counts, and honours the test flag
+  // like every other lane.
+  assert.match(data, /\), closed_count AS \([\s\S]*?count\(\*\)::int AS closed_count/)
+  assert.match(data, /closed_count AS \([\s\S]*?\$\{includeTests\}::boolean OR l\.is_test = false/)
+  assert.match(data, /closed: Number\(countRow\?\.closed_count \?\? 0\)/)
+
+  // Every interpolation in the new SQL carries its Postgres cast (42P18).
+  const closedSql = data.slice(data.indexOf("), closed_jobs AS ("), data.indexOf("), filtered AS ("))
+  for (const hole of closedSql.match(/\$\{[^}]+\}(::\w+)?/g) ?? []) {
+    assert.match(hole, /::(text|boolean)$/, `uncast interpolation in closed_jobs: ${hole}`)
+  }
+})

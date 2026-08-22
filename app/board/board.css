@@ -401,6 +401,9 @@ svg{display:block}
 .val em{font-style:normal;color:var(--text-muted);font-weight:var(--w-reg);font-size:var(--t-label)}
 .right{text-align:right}
 .doing{display:flex;justify-content:flex-end;gap:var(--s1)}
+/* The handoff form is a wrapper, not a control: contents lets its button take
+   the row's own button sizing instead of a second box around it. */
+.doing form{display:contents}
 
 /* --- the expanded job --- */
 /* the expanded job on a phone: the drawing first, then the stages, then money */
