@@ -46,6 +46,27 @@ test("QuickBooks money requires aligned Google authentication and exact domain b
   assert.equal(isAuthenticatedIntuitPayment({ from: "notice@intuit.com", labels: ["INBOX"], authenticationResults: ["mx.google.com; dkim=fail; spf=fail; dmarc=fail", spoof], subject: "Payment received: Invoice #1332" }), false)
 })
 
+// Copied out of Show original on two real messages in sales@musiccityspecialtywelding.com
+// (invoice #1357, 2026-08-21; deposit notice, 2026-08-21), signatures redacted.
+// Gmail writes header.i=, never header.d=. The invented fixture above hid that
+// for the life of the feature while production rejected every real receipt.
+test("real Gmail receipts on Intuit mail authenticate", () => {
+  const invoiceReceipt = 'mx.google.com; dkim=pass header.i=@n.intuit.com header.s=s1 header.b=REDACTED; spf=pass (google.com: domain of bounces+8551759-1cb7-sales=musiccityspecialtywelding.com@sg1.n.intuit.com designates 1.2.3.4 as permitted sender) smtp.mailfrom="bounces+8551759-1cb7-sales=musiccityspecialtywelding.com@sg1.n.intuit.com"; dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=notification.intuit.com'
+  const depositNotice = 'mx.google.com; dkim=pass header.i=@intuit.com header.s=s1 header.b=REDACTED; spf=pass (google.com: domain of bounce@em8721.intuit.com designates 1.2.3.4 as permitted sender) smtp.mailfrom=bounce@em8721.intuit.com; dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], authenticationResults: [invoiceReceipt], subject: "Payment received: Invoice #1357-(josh@runclubcreative.com)" }), true)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "businessservices@intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], authenticationResults: [depositNotice], subject: "Money on the way!" }), true)
+  // Widening to header.i must not widen the domain boundary.
+  const lookalike = invoiceReceipt.replace("header.i=@n.intuit.com", "header.i=@n.intuit.com.payments-verify.net")
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [lookalike], subject: "Payment received: Invoice #1357" }), false)
+  // Replace only the smtp.mailfrom copy; the SPF parenthetical repeats the domain.
+  const spfLookalike = invoiceReceipt.replace('smtp.mailfrom="bounces+8551759-1cb7-sales=musiccityspecialtywelding.com@sg1.n.intuit.com"', 'smtp.mailfrom="bounces@sg1.n.intuit.com.payments-verify.net"')
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [spfLookalike], subject: "Payment received: Invoice #1357" }), false)
+  const dmarcLookalike = invoiceReceipt.replace("header.from=notification.intuit.com", "header.from=notification.intuit.com.payments-verify.net")
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [dmarcLookalike], subject: "Payment received: Invoice #1357" }), false)
+  const unsigned = invoiceReceipt.replace("dkim=pass", "dkim=none")
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [unsigned], subject: "Payment received: Invoice #1357" }), false)
+})
+
 test("partial payments stay open and unknown sent mail must look like sold work", () => {
   assert.equal(paymentCompletesInvoice({ text: "Payment received", amountCents: 20000, invoiceTotalCents: 50000 }), false)
   assert.equal(paymentCompletesInvoice({ text: "Paid in full", amountCents: 20000, invoiceTotalCents: 50000 }), true)
