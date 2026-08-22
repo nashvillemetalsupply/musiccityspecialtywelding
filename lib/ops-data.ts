@@ -887,6 +887,94 @@ export async function getNeedsNow(options: { page?: number; pageSize?: number } 
   return { items: items.map((lead) => projectLeadForRole(lead, role)), total, page: requestedPage, pageSize }
 }
 
+export type WeekAheadItem = { leadId: number | null; label: string; customer: string }
+
+export type WeekAheadDay = {
+  date: string
+  dow: string
+  promises: WeekAheadItem[]
+  invoices: WeekAheadItem[]
+  followUps: WeekAheadItem[]
+}
+
+const WEEK_DOW = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", weekday: "short" })
+const WEEK_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }) // YYYY-MM-DD
+
+// The coming seven days, day by day: promises we made, invoices coming due,
+// follow-ups on the calendar. Crew never gets the invoice lane — it is not
+// queried for them at all, the same server-side rule as every other money path.
+export async function getWeekAhead(role: OperatorRole, includeTests = false): Promise<WeekAheadDay[]> {
+  const sql = getSql()
+  const dues = (await sql`
+    SELECT 'promise'::text AS lane,
+      to_char(c.due_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS day,
+      c.lead_id::bigint AS lead_id,
+      c.summary, c.crew_summary,
+      btrim(COALESCE(l.first_name, '') || ' ' || COALESCE(l.last_name, '')) AS customer
+    FROM commitments c
+    LEFT JOIN leads l ON l.id = c.lead_id
+    LEFT JOIN people p ON p.id = c.person_id
+    WHERE c.status = 'open' AND c.direction = 'we_promised' AND c.due_at IS NOT NULL
+      AND c.due_at >= now() AND c.due_at < now() + interval '7 days'
+      AND (l.id IS NULL OR l.is_test = false OR ${includeTests}::boolean)
+      AND (p.id IS NULL OR p.is_test = false OR ${includeTests}::boolean)
+    UNION ALL
+    SELECT 'followup'::text AS lane,
+      to_char(l.next_follow_up_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS day,
+      l.id::bigint AS lead_id,
+      ('Follow up — ' || l.service)::text AS summary, NULL::text AS crew_summary,
+      btrim(COALESCE(l.first_name, '') || ' ' || COALESCE(l.last_name, '')) AS customer
+    FROM leads l
+    WHERE l.next_follow_up_at IS NOT NULL
+      AND l.next_follow_up_at >= now() AND l.next_follow_up_at < now() + interval '7 days'
+      AND l.status NOT IN ('lost', 'spam') AND l.completed_at IS NULL
+      AND (l.is_test = false OR ${includeTests}::boolean)
+    ORDER BY day ASC`) as Array<{
+      lane: string; day: string; lead_id: number | null
+      summary: string; crew_summary: string | null; customer: string
+    }>
+
+  const invoiceDues = role === "owner" ? (await sql`
+    SELECT to_char(l.invoice_due_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS day,
+      l.id::bigint AS lead_id,
+      ('INV #' || l.invoice_number || ' due')::text AS summary,
+      btrim(COALESCE(l.first_name, '') || ' ' || COALESCE(l.last_name, '')) AS customer
+    FROM leads l
+    WHERE l.invoice_due_at IS NOT NULL AND l.paid_at IS NULL
+      AND l.invoice_due_at >= now() AND l.invoice_due_at < now() + interval '7 days'
+      AND (l.is_test = false OR ${includeTests}::boolean)
+    ORDER BY day ASC`) as Array<{ day: string; lead_id: number; summary: string; customer: string }> : []
+
+  const days: WeekAheadDay[] = []
+  const byDate = new Map<string, WeekAheadDay>()
+  for (let i = 0; i < 7; i++) {
+    const at = new Date(Date.now() + i * 86_400_000)
+    const day: WeekAheadDay = {
+      date: WEEK_DAY.format(at),
+      dow: i === 0 ? "Today" : WEEK_DOW.format(at),
+      promises: [], invoices: [], followUps: [],
+    }
+    days.push(day)
+    byDate.set(day.date, day)
+  }
+  for (const row of dues) {
+    const day = byDate.get(row.day)
+    if (!day) continue
+    const label = role === "owner"
+      ? row.summary
+      : (row.crew_summary?.trim() || (row.lane === "promise" ? "A promise on the books" : row.summary))
+    const item = { leadId: row.lead_id === null ? null : Number(row.lead_id), label, customer: row.customer || "Unknown" }
+    if (row.lane === "promise") day.promises.push(item)
+    else day.followUps.push(item)
+  }
+  for (const row of invoiceDues) {
+    const day = byDate.get(row.day)
+    if (!day) continue
+    day.invoices.push({ leadId: Number(row.lead_id), label: row.summary, customer: row.customer || "Unknown" })
+  }
+  return days
+}
+
 export type OutTheDoorWeek = {
   jobs: number
   paidJobs: number

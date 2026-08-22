@@ -188,6 +188,18 @@ svg{display:block}
 .due span{display:block;margin-top:var(--s1);font-size:var(--t-caption);
   color:var(--status-warn-ink);opacity:.85}
 
+/* The week is the pane's short day-by-day ledger, not another dashboard. */
+.week{margin-top:var(--s4);padding:var(--s3)}
+.week h4{margin:0 0 var(--s3);font-size:var(--t-sub);font-weight:var(--w-semi)}
+.week-day{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--s3)}
+.week-day+.week-day{margin-top:var(--s3)}
+.week-dow{min-width:var(--s7);text-align:right}
+.week ul{margin:0;padding:0;list-style:none}
+.week li{font-size:var(--t-data);line-height:var(--lh-data)}
+.week li+li{margin-top:var(--s2)}
+.week a{color:inherit;text-decoration:none;font-weight:var(--w-med)}
+.week a:hover{text-decoration:underline;text-underline-offset:2px}
+
 .trail{margin:var(--s3) 0 0;padding:0;list-style:none}
 .trail li{display:flex;align-items:baseline;gap:var(--s2);padding:var(--s1) 0;
   font-size:var(--t-caption);color:var(--text-secondary)}

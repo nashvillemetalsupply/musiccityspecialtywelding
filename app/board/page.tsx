@@ -7,7 +7,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character"
 import { MoreMenu } from "@/app/ops/more-menu"
-import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
+import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, getWeekAhead, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { JobControl } from "./board"
@@ -36,6 +36,7 @@ const EMPTY_BOARD: BoardPaneData = {
   counts: { board: 0, attention: 0, shop: 0, waiting: 0, ready: 0 },
   signalCounts: { waiting: 0, noreply: 0, promise: 0, followup: 0, bounced: 0 },
   promises: { kept: 0, open: 0, broken: 0, overdue: null },
+  week: [],
   outTheDoor: { jobs: 0, paidJobs: 0, revenueCents: null, stillOutCents: null },
   medianFirstResponseMinutes: null,
   todayTrail: [],
@@ -91,11 +92,12 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // the Morning Brief and Ask Jobs here too. Signed out there is no menu,
   // which is exactly the /ops layout's own gate.
   const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} />
-  const [page, promises, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
+  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.
     listBoardJobs({ stage, signal, order: "oldest", query, includeTests }, role),
     getPromiseSummary(),
+    getWeekAhead(role, includeTests),
     getOutTheDoorWeek(role),
     getOpsStats(role),
     listTodayEvents(role),
@@ -110,6 +112,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,
+    week,
     outTheDoor,
     medianFirstResponseMinutes: stats.medianFirstResponseMinutes,
     todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body }) => ({ id, occurredAt, kind, body })),

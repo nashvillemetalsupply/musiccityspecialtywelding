@@ -14,7 +14,7 @@ import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
 import { VoicePreview } from "./voice-preview"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
-import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek } from "@/lib/ops-data"
+import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
 import { shopClaimLabel, shopClaimText, shopEventLabel, shopSourceLabel } from "@/lib/shop-language"
 
 type TodayTrailItem = {
@@ -28,6 +28,7 @@ export type BoardPaneData = {
   counts: Record<JobBoardStage, number>
   signalCounts: Record<BoardSignalKind, number>
   promises: PromiseSummary
+  week: WeekAheadDay[]
   outTheDoor: OutTheDoorWeek
   medianFirstResponseMinutes: number | null
   todayTrail: TodayTrailItem[]
@@ -420,6 +421,29 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             <p>{promises.overdue.summary}</p>
             <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
           </div>}
+
+          <section className="card week">
+            <h4>The week</h4>
+            {board.week.every((d) => !d.promises.length && !d.invoices.length && !d.followUps.length)
+              ? <p className="t-caption">Nothing due in the next seven days.</p>
+              : board.week
+                  .filter((d) => d.promises.length || d.invoices.length || d.followUps.length)
+                  .map((d) => (
+                    <div key={d.date} className="week-day">
+                      <span className="week-dow t-caption">{d.dow}</span>
+                      <ul>
+                        {[...d.promises, ...d.invoices, ...d.followUps].map((item, i) => (
+                          <li key={`${d.date}-${i}`}>
+                            {item.leadId
+                              ? <Link href={`/ops/leads/${item.leadId}`}>{item.label}</Link>
+                              : <span>{item.label}</span>}
+                            <span className="t-caption"> · {item.customer}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+          </section>
           <div className="rule"></div>
 
           <div className="head"><h3 className="t-sub">Today</h3></div>
