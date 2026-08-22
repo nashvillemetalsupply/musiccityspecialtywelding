@@ -110,6 +110,12 @@ test("a genuine receipt addressed to someone else is refused", () => {
   assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ['"Welding, Sales" <sales@musiccityspecialtywelding.com>'] }), true)
   // A present-but-empty To: is malformed, not absent.
   assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ["sales@musiccityspecialtywelding.com", ""] }), false)
+  // Codex probe: the shop address hidden inside a quoted display name. Intuit signs
+  // this to attacker@example.com; reading the first <...> would call it the shop.
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ['"MCS <sales@musiccityspecialtywelding.com>" <attacker@example.com>'] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ['"sales@musiccityspecialtywelding.com" <attacker@example.com>'] }), false)
+  // Stray brackets that are not a terminal angle-address are malformed.
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ["<sales@musiccityspecialtywelding.com> junk"] }), false)
 })
 
 // Authentication-Results reports that a signature passed, never what it covered.
@@ -134,6 +140,16 @@ test("an Intuit signature that does not cover the recipient or bounds the body i
   const ses = "v=1; a=rsa-sha256; c=relaxed/simple; d=amazonses.com; s=hsbnp7p3; h=subject:from:to; b=REDACTED"
   assert.equal(isAuthenticatedIntuitPayment({ ...receipt, dkimSignatures: [SIGS[0], ses] }), true)
   assert.equal(isAuthenticatedIntuitPayment({ ...receipt, dkimSignatures: [noTo, ses] }), false)
+  // Codex probe: RFC 6376 permits whitespace around "=", so matching "l=" literally
+  // missed "l = 1024", and matching "d=" missed a weak "d = n.intuit.com" signature
+  // that then escaped the coverage rule entirely.
+  const spacedLength = SIGS[0].replace("; b=REDACTED", "; l = 1024; b=REDACTED")
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, dkimSignatures: [spacedLength] }), false)
+  const spacedWeak = noTo.replace("d=n.intuit.com", "d = n.intuit.com")
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, dkimSignatures: [spacedWeak, SIGS[0]] }), false)
+  // A repeated tag is malformed, so that signature is not read as Intuit's.
+  const repeated = SIGS[0].replace("s=s1;", "s=s1; d=attacker.example;")
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, dkimSignatures: [repeated] }), false)
 })
 
 // Codex review, 2026-08-22. The gate used to run three regexes over the whole
