@@ -50,23 +50,18 @@ export async function markJobHandedOff(
           AND completed_at IS NOT NULL
           AND handed_off_at IS NULL
         FOR UPDATE
-      ), legacy_receipt AS (
-        INSERT INTO lead_events (lead_id, actor, type, detail)
-        SELECT id, ${String(operator.id)}::text, 'handoff_completed'::text, ${JSON.stringify(detail)}::jsonb
-        FROM target
-        RETURNING id, created_at
       ), immutable_receipt AS (
         INSERT INTO events (
           occurred_at, kind, actor_type, actor_id, lead_id, person_id,
           external_id, body, crew_body, detail
         )
-        SELECT lr.created_at, 'job.handed-off'::text, 'operator'::text,
+        SELECT now(), 'job.handed-off'::text, 'operator'::text,
           ${String(operator.id)}::text, t.id, t.person_id,
-          ('lead_event:' || lr.id::text),
+          ''::text,
           'Pickup or delivery handoff recorded. Job removed from Active Jobs.'::text,
           'Pickup or delivery handoff recorded. Job removed from Active Jobs.'::text,
-          ${JSON.stringify({ ...detail, legacyType: "handoff_completed" })}::jsonb
-        FROM legacy_receipt lr CROSS JOIN target t
+          ${JSON.stringify(detail)}::jsonb || jsonb_build_object('legacyType', 'handoff_completed'::text)
+        FROM target t
         RETURNING id, occurred_at
       ), lead_update AS (
         UPDATE leads l SET
@@ -170,23 +165,18 @@ export async function undoJobHandedOff(
           AND receipt.actor_id = ${String(operator.id)}::text
           AND receipt.occurred_at >= now() - interval '10 seconds'
         FOR UPDATE OF l
-      ), legacy_receipt AS (
-        INSERT INTO lead_events (lead_id, actor, type, detail)
-        SELECT id, ${String(operator.id)}::text, 'handoff_undone'::text, ${JSON.stringify(detail)}::jsonb
-        FROM target
-        RETURNING id, created_at
       ), immutable_receipt AS (
         INSERT INTO events (
           occurred_at, kind, actor_type, actor_id, lead_id, person_id,
           external_id, body, crew_body, detail
         )
-        SELECT lr.created_at, 'job.handoff-undone'::text, 'operator'::text,
+        SELECT now(), 'job.handoff-undone'::text, 'operator'::text,
           ${String(operator.id)}::text, t.id, t.person_id,
-          ('lead_event:' || lr.id::text),
+          ''::text,
           'Customer handoff undone. Job returned to Active Jobs.'::text,
           'Customer handoff undone. Job returned to Active Jobs.'::text,
-          ${JSON.stringify({ ...detail, legacyType: "handoff_undone" })}::jsonb
-        FROM legacy_receipt lr CROSS JOIN target t
+          ${JSON.stringify(detail)}::jsonb || jsonb_build_object('legacyType', 'handoff_undone'::text)
+        FROM target t
         RETURNING id
       ), lead_update AS (
         UPDATE leads l SET handed_off_at = NULL, updated_at = now()

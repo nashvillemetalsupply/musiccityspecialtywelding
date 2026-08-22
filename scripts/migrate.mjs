@@ -971,6 +971,7 @@ const statements = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
+  `COMMENT ON TABLE lead_events IS 'Frozen 2026-08-21. The journal is events; this table is retained history only. Do not write.'`,
 ]
 
 for (const statement of statements) {

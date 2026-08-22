@@ -420,10 +420,10 @@ export async function undoSavedJobIntake(input: {
           AND l.created_at >= now() - interval '10 minutes'
           AND (
             ${input.operatorRole === "owner"}::boolean OR EXISTS (
-              SELECT 1 FROM lead_events created
+              SELECT 1 FROM events created
               WHERE created.lead_id = l.id
-                AND created.type = ANY(ARRAY['created','intake_restored']::text[])
-                AND created.actor = ${String(input.operatorId)}::text
+                AND created.kind = ANY(ARRAY['form.quote','lead.intake.restored']::text[])
+                AND created.actor_id = ${String(input.operatorId)}::text
             )
           )
           AND NOT EXISTS (

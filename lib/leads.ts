@@ -81,15 +81,6 @@ export type LeadRow = {
   intake_key: string
 }
 
-export type LeadEventRow = {
-  id: number
-  lead_id: number
-  created_at: string
-  actor: string
-  type: string
-  detail: Record<string, unknown> | null
-}
-
 export type NewLeadInput = {
   firstName: string
   lastName: string
@@ -318,7 +309,7 @@ export async function createLead(
   })
   if (person) await attachLeadToPerson(id!, person.id)
   const priorCreated = reused ? (await sql`
-    SELECT id FROM lead_events WHERE lead_id = ${id!}::bigint AND type = 'created' LIMIT 1`) as { id: number }[] : []
+    SELECT id FROM events WHERE lead_id = ${id!}::bigint AND kind = 'form.quote' LIMIT 1`) as { id: number }[] : []
   const eventId = priorCreated[0] ? null : await recordLeadEvent(id!, "created", options.actor ?? "system", {
     source: existingSnapshot?.source ?? source,
     isTest: existingSnapshot?.is_test ?? input.isTest,
@@ -373,14 +364,6 @@ export async function recordLeadEvent(
   detail: Record<string, unknown> | null = null
 ): Promise<number | null> {
   const sql = getSql()
-  const rows = (await sql`
-    INSERT INTO lead_events (lead_id, actor, type, detail)
-    VALUES (
-      ${leadId}::bigint,
-      ${actor}::text,
-      ${type}::text,
-      ${detail ? JSON.stringify(detail) : null}::jsonb
-    ) RETURNING id, created_at`) as { id: number; created_at: string }[]
   const people = (await sql`
     SELECT person_id FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as {
     person_id: number | null
@@ -412,12 +395,11 @@ export async function recordLeadEvent(
   }
   return recordEvent({
     kind: kindMap[type] ?? `lead.${type.replace(/_/g, ".")}`,
-    occurredAt: rows[0]?.created_at,
     actorType: actor === "system" ? "system" : "operator",
     actorId: actor === "system" ? "" : actor,
     leadId,
     personId: people[0]?.person_id ?? null,
-    externalId: rows[0] ? `lead_event:${rows[0].id}` : "",
+    externalId: "",
     body,
     detail: { ...(detail ?? {}), legacyType: type },
   })

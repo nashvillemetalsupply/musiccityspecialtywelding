@@ -7,7 +7,7 @@ These are product rules, not suggestions.
 - Persist intent or provider payload before any email, SMS, push, Blob upload, AI call, or other side effect.
 - Every SQL interpolation must carry an explicit Postgres cast (`::bigint`, `::boolean`, `::text`, `::timestamptz`, `::jsonb`, etc.). This prevents Neon `42P18` failures.
 - `[INTERNAL TEST]` and `is_test` survive every intake, person match, event, notification, extraction, digest, brief, and export path. Tests never alert crew or count as business.
-- `events` is immutable. Correct `claims` with a replacement plus `superseded_by`. `lead_events` remains only as a compatibility journal while the app dual-writes.
+- `events` is immutable. Correct `claims` with a replacement plus `superseded_by`. `lead_events` is frozen history — never written, never dropped; `events` is the only journal.
 - Provider ingestion is idempotent by external ID. Twilio webhooks reject missing or invalid signatures.
 - Crew money is removed server-side. Hiding it in CSS or React is not authorization.
 - Roles are exactly `owner` and `crew`.
