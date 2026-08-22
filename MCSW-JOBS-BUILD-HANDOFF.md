@@ -1,8 +1,10 @@
 # MCSW Jobs — Full-Build Handoff
 
 Prepared: 2026-08-10
-Last updated: 2026-08-20 (ops → board conversion; see the next section)
+Last updated: 2026-08-22 (cohesion round closeout; see the dated note below)
 Status: production implementation complete, verified, and deployed to `https://musiccityspecialtywelding.com`.
+
+**2026-08-22 cohesion-round closeout.** In the completed cohesion-round tree, the journal is unified on immutable `events`, with `lead_events` retained as frozen history; owner-recorded manual payments are live; the seven-day "The week" card is live; and the tracker pager is live, so jobs past the first page remain reachable. The current Vercel production deployment predates this round and still needs the normal post-merge deployment.
 
 ## Ops → board conversion — 2026-08-20 (read before the 2026-08-10 record below)
 

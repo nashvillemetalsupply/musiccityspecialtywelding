@@ -18,11 +18,11 @@ Standing notes:
 
 | ID | Mission (plan task) | Session model | Effort | Size | Depends on | Status |
 |----|---------------------|---------------|--------|------|------------|--------|
-| K1 | Task 1 — retire the `lead_events` dual-write | Codex `gpt-5.6-sol` | xhigh | M | — | pending |
-| K2 | Task 2 — record money in hand | Codex `gpt-5.6-sol` | xhigh | M | K1 (shares `app/ops/actions.ts`) | pending |
-| K3 | Task 3 — "The week" on the board | Codex `gpt-5.6-sol` | high | M | — | pending |
-| K4 | Task 4 — overflow pager + board fetch tidy-up | Codex `gpt-5.6-sol` | medium | S | K3 (shares `board.tsx` / `page.tsx`) | pending |
-| K5 | Task 5 — exit verification + docs | Codex `gpt-5.6-sol` | high | S | K1–K4 | pending |
+| K1 | Task 1 — retire the `lead_events` dual-write | Codex `gpt-5.6-sol` | xhigh | M | — | done |
+| K2 | Task 2 — record money in hand | Codex `gpt-5.6-sol` | xhigh | M | K1 (shares `app/ops/actions.ts`) | done |
+| K3 | Task 3 — "The week" on the board | Codex `gpt-5.6-sol` | high | M | — | done |
+| K4 | Task 4 — overflow pager + board fetch tidy-up | Codex `gpt-5.6-sol` | medium | S | K3 (shares `board.tsx` / `page.tsx`) | done |
+| K5 | Task 5 — exit verification + docs | Codex `gpt-5.6-sol` | high | S | K1–K4 | done |
 
 **Recommended order:** K1 → K2 → K3 → K4 → K5. (K3 may run before K2 if a
 conflict-free window matters; K2 and K3 share no files.)
