@@ -81,9 +81,28 @@ test("a crafted Authentication-Results cannot borrow another clause's result", (
   // intuit.com sitting in the local part is an attacker identity, not an Intuit one.
   const localPartLookalike = 'mx.google.com; dkim=pass header.i=intuit.com@evil.example; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
   assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [localPartLookalike] }), false)
-  // Two dkim clauses must not let the sender choose which one is read.
-  const doubled = 'mx.google.com; dkim=fail header.i=@attacker.example; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [doubled] }), false)
+  // Two DKIM signatures are normal (ESP plus brand) and Gmail writes one clause per
+  // signature, so a verified Intuit signature counts even beside a failed one.
+  // Rejecting duplicate methods outright would have re-broken real receipts.
+  const twoSignatures = 'mx.google.com; dkim=fail header.i=@esp.example; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [twoSignatures] }), true)
+  // No DKIM signature from Intuit at all, however many others verified.
+  const noIntuitSignature = 'mx.google.com; dkim=pass header.i=@esp.example; dkim=fail header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [noIntuitSignature] }), false)
+  // spf and dmarc are single by definition; a second copy is someone guessing.
+  const doubledSpf = 'mx.google.com; dkim=pass header.i=@intuit.com; spf=fail smtp.mailfrom=bounce@attacker.example; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [doubledSpf] }), false)
+  // A result token has to end at a delimiter, and a bare backslash is malformed.
+  const suffixedResult = 'mx.google.com; dkim=pass/garbage header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [suffixedResult] }), false)
+  const escapedResult = 'mx.google.com; dkim=pa\\ss header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [escapedResult] }), false)
+  // A property has to start at a boundary, not ride along inside another token.
+  const smuggledProperty = 'mx.google.com; dkim=pass x/header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [smuggledProperty] }), false)
+  // Repeating a property inside one clause must not let the first copy win.
+  const duplicateProperty = 'mx.google.com; dkim=pass header.i=@intuit.com header.i=@attacker.example; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [duplicateProperty] }), false)
   // Only the header Gmail prepended counts; a later sender-supplied copy is unreachable.
   const spoofSecond = 'mx.google.com; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=intuit.com'
   assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: ["mx.google.com; dkim=fail; spf=fail; dmarc=fail", spoofSecond] }), false)
