@@ -6,6 +6,7 @@ import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character"
+import { normalizePage } from "@/lib/pagination"
 import { MoreMenu } from "@/app/ops/more-menu"
 import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, getWeekAhead, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic"
 
-type SearchParams = Promise<{ q?: string; stage?: string; signal?: string; tests?: string }>
+type SearchParams = Promise<{ q?: string; stage?: string; signal?: string; tests?: string; p?: string }>
 
 const BOARD_DATE = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Chicago",
@@ -46,6 +47,8 @@ const EMPTY_BOARD: BoardPaneData = {
   details: new Map(),
   resultTotal: 0,
   pageSize: 5,
+  page: 1,
+  hasNext: false,
   stage: "board",
   signal: undefined,
   stages: [...JOB_BOARD_STAGES],
@@ -54,6 +57,7 @@ const EMPTY_BOARD: BoardPaneData = {
 export default async function BoardPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
   const query = params.q?.trim().slice(0, 80) ?? ""
+  const requestedPage = normalizePage(params.p)
   // The stage tab is validated strictly against
   // JOB_BOARD_STAGES — anything else falls back to the full board, so a
   // hand-typed ?stage= value can never manufacture a view that does not exist.
@@ -92,20 +96,18 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // the Morning Brief and Ask Jobs here too. Signed out there is no menu,
   // which is exactly the /ops layout's own gate.
   const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} />
-  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch] = await Promise.all([
+  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice] = await Promise.all([
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.
-    listBoardJobs({ stage, signal, order: "oldest", query, includeTests }, role),
+    listBoardJobs({ stage, signal, order: "oldest", query, includeTests, page: requestedPage }, role),
     getPromiseSummary(),
     getWeekAhead(role, includeTests),
     getOutTheDoorWeek(role),
     getOpsStats(role),
     listTodayEvents(role),
     getLatestBoardCallSketch(role),
+    role === "owner" ? getOwnerVoiceSnapshot() : Promise.resolve(null),
   ])
-  // How much of the owner is on record. Owner-only: it is his own language,
-  // and the preview it feeds is his own byline.
-  const voice = role === "owner" ? await getOwnerVoiceSnapshot() : null
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role)
 
   return <JobControl chrome={chrome} menu={menu} board={{
@@ -122,6 +124,8 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     details,
     resultTotal: page.resultTotal,
     pageSize: page.pageSize,
+    page: page.page,
+    hasNext: page.hasNext,
     stage,
     signal,
     stages: [...JOB_BOARD_STAGES],

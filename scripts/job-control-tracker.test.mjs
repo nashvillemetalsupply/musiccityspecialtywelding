@@ -27,7 +27,7 @@ test("tracker tabs use the canonical stages and refetch the requested stage", ()
   assert.match(PREVIEW_SOURCE, /board\.counts\[stage\]/)
   assert.match(PAGE_SOURCE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)
   assert.match(PAGE_SOURCE, /stages: \[\.\.\.JOB_BOARD_STAGES\]/)
-  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests \}, role\)/)
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests, page: requestedPage \}, role\)/)
 })
 
 test("tracker rows come from listBoardJobs and keep its reason string verbatim", () => {
@@ -122,7 +122,7 @@ test("every left-rail link resolves to an existing app route", () => {
 test("signal query values are strictly validated before filtering", () => {
   assert.match(PAGE_SOURCE, /const requestedSignal = params\.signal \?\? ""/)
   assert.match(PAGE_SOURCE, /const signal: BoardSignalKind \| undefined = BOARD_SIGNAL_KINDS\.includes\(requestedSignal as BoardSignalKind\)\s*\? \(requestedSignal as BoardSignalKind\)\s*: undefined/)
-  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests \}, role\)/)
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests, page: requestedPage \}, role\)/)
   assert.match(PREVIEW_SOURCE, /SIGNAL_ORDER\.map\(\(kind\) =>/)
   assert.match(PREVIEW_SOURCE, /href=\{boardHref\(\{ signal: kind \}\)\}/)
   assert.match(PREVIEW_SOURCE, /href=\{boardHref\(\{ signal: null \}\)\}>Clear signal filter<\/Link>/)
@@ -185,10 +185,9 @@ test("every service a form can write has a row mark", () => {
   assert.match(PREVIEW_SOURCE, /SERVICE_MARKS\[service\.trim\(\)\] \?\?/)
 })
 
-// The tracker has no pager. While its page size was 5 the board said
-// "Showing 5 of 24" and offered no sixth row anywhere in the UI, so nineteen
-// open jobs were unreachable from the front door.
-test("one tracker page holds the whole stage", () => {
+// One tracker page carries the documented 100-row ceiling; the pager below it
+// is what makes any remaining stage rows reachable.
+test("one tracker page holds the documented ceiling", () => {
   const list = OPS_DATA_SOURCE.slice(
     OPS_DATA_SOURCE.indexOf("export async function listBoardJobs"),
     OPS_DATA_SOURCE.indexOf("function boardDetailIds"),
@@ -196,9 +195,10 @@ test("one tracker page holds the whole stage", () => {
   const clamp = list.match(/const pageSize = Math\.min\(Math\.max\(Math\.floor\(options\.pageSize \?\? (\d+)\), 1\), (\d+)\)/)
   assert.ok(clamp, "listBoardJobs stopped clamping its page size")
   const [, fallback, ceiling] = clamp
-  assert.ok(Number(fallback) >= 100, `the tracker defaults to ${fallback} rows a page and has no pager`)
-  assert.equal(fallback, ceiling, "the default page must be the whole ceiling while there is no pager")
-  // The honest count line stays: past the ceiling the board still says so.
+  assert.ok(Number(fallback) >= 100, `the tracker defaults to only ${fallback} rows a page`)
+  assert.equal(fallback, ceiling, "the default page must use the documented ceiling")
+  // The honest count line stays: past the ceiling the board still says so and
+  // the pager offers the remaining rows.
   assert.match(PREVIEW_SOURCE, /Showing \$\{board\.items\.length\} of \$\{board\.resultTotal\}/)
 })
 
@@ -234,4 +234,18 @@ test("an ended call folds everything past its opening", () => {
   const open = Number(PREVIEW_SOURCE.match(/const PANEL_OPEN_LINES = (\d+)/)[1])
   const live = Number(CALL_SKETCH_SOURCE.match(/const LIVE_LINES = (\d+)/)[1])
   assert.ok(open >= live, "a live call carries fewer lines than the fold, so it never folds")
+})
+
+test("the tracker paginates honestly past a full page", () => {
+  const board = readFileSync("app/board/board.tsx", "utf8")
+  assert.match(board, /hasNext/)
+  assert.match(board, /Show the next/)
+  const page = readFileSync("app/board/page.tsx", "utf8")
+  assert.match(page, /params\.p\b/)
+})
+
+test("the voice snapshot rides the parallel fetch", () => {
+  const page = readFileSync("app/board/page.tsx", "utf8")
+  const all = page.slice(page.indexOf("Promise.all"), page.indexOf("])", page.indexOf("Promise.all")))
+  assert.match(all, /getOwnerVoiceSnapshot/)
 })
