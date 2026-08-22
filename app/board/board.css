@@ -383,6 +383,7 @@ svg{display:block}
 
 /* honest empty state for a stage with no jobs */
 .track-empty{padding:var(--s5) var(--s4);color:var(--text-muted);font-size:var(--t-caption)}
+.pager{display:flex;align-items:center;gap:var(--s3);margin:var(--s3) var(--s4)}
 
 
 .part{width:44px;height:34px;border-radius:var(--r-sm);background:var(--surface-raised);

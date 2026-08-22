@@ -40,6 +40,8 @@ export type BoardPaneData = {
   details: Map<number, BoardJobDetail>
   resultTotal: number
   pageSize: number
+  page: number
+  hasNext: boolean
   stage: JobBoardStage
   signal?: BoardSignalKind
   stages: JobBoardStage[]
@@ -277,14 +279,17 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
   const boardHref = ({
     stage = board.stage,
     signal = board.signal,
+    page,
   }: {
     stage?: JobBoardStage
     signal?: BoardSignalKind | null
+    page?: number
   } = {}) => {
     const params = new URLSearchParams()
     if (stage !== "board") params.set("stage", stage)
     if (chrome.query) params.set("q", chrome.query)
     if (signal) params.set("signal", signal)
+    if (page !== undefined && page > 1) params.set("p", String(page))
     // An owner who opened the board in test mode keeps it across every stage,
     // signal and paging hop. Crew and signed-out renders never see true here,
     // so the param cannot be manufactured by clicking around.
@@ -904,6 +909,18 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                   </div>}
                 </article>
               })}
+          {(board.hasNext || board.page > 1) && (
+            <nav className="pager" aria-label="More jobs">
+              {board.page > 1 && (
+                <Link className="btn btn--sm" href={boardHref({ page: board.page - 1 })}>Back</Link>
+              )}
+              {board.hasNext && (
+                <Link className="btn btn--sm btn--edge" href={boardHref({ page: board.page + 1 })}>
+                  Show the next {Math.min(board.pageSize, board.resultTotal - board.page * board.pageSize)}
+                </Link>
+              )}
+            </nav>
+          )}
         </section>
       </main>
     </div>
