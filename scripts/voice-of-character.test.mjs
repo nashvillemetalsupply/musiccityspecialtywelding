@@ -136,3 +136,46 @@ test("normalizing a line is what makes two of the same greeting one", () => {
   assert.equal(normalizeLine("Music City Specialty Welding, this is Philip."), "music city specialty welding this is philip")
   assert.equal(normalizeLine("  MUSIC city   Specialty Welding this is Philip  "), "music city specialty welding this is philip")
 })
+
+const DRAFT_SOURCE = readFileSync(new URL("../app/api/ops/promises/draft/route.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const BOX_SOURCE = readFileSync(new URL("../app/ops/leads/[id]/voice-draft.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const PROMISE_ACTIONS_SOURCE = readFileSync(new URL("../app/ops/leads/[id]/promise-actions.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+
+// An AI sentence going to a real customer under the owner's name. Every
+// assertion here is a way that can go wrong, not a style preference.
+test("the late-promise draft cannot send, invent a date, or carry money", () => {
+  // Nothing leaves the shop from the draft route. The form around the box is
+  // still the only path to the customer.
+  assert.doesNotMatch(DRAFT_SOURCE, /sendSmsPersisted|sendSms|notifyAll|notify\(/)
+  assert.match(BOX_SOURCE, /type="button"/)
+
+  // The model is handed the crew-safe wording, which was already redacted for
+  // exactly this reason, and the redactor when extraction wrote none.
+  assert.match(DRAFT_SOURCE, /crew_summary\?\.trim\(\) \|\| redactCrewText\(promise\.summary\)/)
+
+  // The date is the one fact a drafted sentence could get wrong in a way the
+  // customer would act on. The model is forbidden it; the server appends it.
+  assert.match(DRAFT_SOURCE, /Never write a date, a day, a time, or a price/)
+  assert.match(PROMISE_ACTIONS_SOURCE, /New promised date: \$\{dateLabel\} CT\./)
+
+  // Intent before the provider call, the order every AI path here keeps.
+  const record = DRAFT_SOURCE.indexOf("recordEvent(")
+  const model = DRAFT_SOURCE.indexOf("draftWithDeepSeek(")
+  assert.ok(record > 0 && record < model, "intent is written before the model runs")
+
+  // The promise has to be the shop's own, still owed, and actually late --
+  // a hand-posted id cannot make the shop apologise for something else.
+  for (const guard of [/c\.status = 'open'/, /c\.direction = 'we_promised'/, /c\.due_at < now\(\)/, /c\.lead_id = \$\{leadId\}::bigint/]) {
+    assert.match(DRAFT_SOURCE, guard)
+  }
+})
+
+test("a thin voice leaves the plain sentence alone", () => {
+  // Refused, not padded out: an invented voice presented as his is worse than
+  // no draft at all. The box keeps the static default either way.
+  assert.match(DRAFT_SOURCE, /reason: "voice-thin"/)
+  assert.match(DRAFT_SOURCE, /if \(!guide\)/)
+  assert.match(BOX_SOURCE, /useState\(fallback\)/)
+  // The reason is shown rather than swallowed.
+  assert.match(BOX_SOURCE, /result\.error \|\|/)
+})

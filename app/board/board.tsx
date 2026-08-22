@@ -25,6 +25,9 @@ type TodayTrailItem = {
   occurredAt: string
   kind: string
   body: string
+  // Several kinds carry a fixed body, so the customer is what tells two of
+  // them apart. Null for shop-wide events like the morning brief.
+  customer: string | null
 }
 
 export type BoardPaneData = {
@@ -453,11 +456,22 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             <div className="keep-row"><span className="chip chip--info"><i></i>Open</span><b>{promises.open}</b></div>
             <div className="keep-row"><span className="chip chip--warn"><i></i>Broken</span><b>{promises.broken}</b></div>
           </div>
-          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Open is right now. Kept and broken are this month.</p>
-          {promises.overdue && <div className="due">
-            <p>{promises.overdue.summary}</p>
-            <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
-          </div>}
+          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Open and broken are right now — broken is past its date and still owed. Kept is this month.</p>
+          {/* The callout named the shop's oldest broken promise and then went
+              nowhere, so the one thing on the pane that says "you are late on
+              this" could not be acted on. It links to the promise on its own
+              work order — where the customer's last message and the call
+              button are both in reach, which is the order the shop works in.
+              A promise with no lead behind it has no work order to open. */}
+          {promises.overdue && (promises.overdue.leadId
+            ? <Link className="due" href={`/ops/leads/${promises.overdue.leadId}#promise-${promises.overdue.id}`}>
+                <p>{promises.overdue.summary}</p>
+                <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
+              </Link>
+            : <div className="due">
+                <p>{promises.overdue.summary}</p>
+                <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
+              </div>)}
 
           <section className="card week">
             <h4>The week</h4>
@@ -488,7 +502,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             {board.todayTrail.map((event) => <li key={event.id}>
               <i className={trailMark(event.kind)}></i>
               <time dateTime={event.occurredAt}>{TRAIL_TIME.format(new Date(event.occurredAt))}</time>
-              <b>{shopEventLabel(event.kind)}{event.body && ` — ${event.body}`}</b>
+              <b>{shopEventLabel(event.kind)}{event.customer && ` · ${event.customer}`}{event.body && ` — ${event.body}`}</b>
             </li>)}
           </ul>
         </div>
@@ -677,7 +691,18 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                 const isOpen = openJobId === lead.id
                 const panelPhoto = lead.photos[lead.photos.length - 1]
                 const phone = lead.phone_is_placeholder ? "" : lead.phone.trim()
-                const brokenPromise = commitments.find((commitment) => commitment.status === "broken")
+                // Same rule the pane's Broken count uses: nothing ever stores
+                // `status = 'broken'`, so a promise is broken when its date has
+                // passed and it is still owed. Reading the status here is what
+                // made this row say "No broken promise is recorded" forever.
+                // `we_promised` only, the same boundary the pane's count uses.
+                // This row loads both directions, so without it the shop gets
+                // blamed for a promise the *customer* made and missed.
+                const brokenPromise = commitments.find((commitment) =>
+                  commitment.direction === "we_promised"
+                  && commitment.status === "open"
+                  && commitment.due_at !== null
+                  && new Date(commitment.due_at).getTime() < Date.now())
                 const datedCommitment = commitments.find((commitment) => commitment.due_at)
                 const bookedDate = datedCommitment?.due_at ?? lead.scheduled_at
                 const lineItemTotal = lineItems.reduce((total, item) => total + item.amountCents, 0)

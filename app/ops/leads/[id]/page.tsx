@@ -18,6 +18,7 @@ import { twilioSmsConfigured } from "@/lib/twilio"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getMessagingConsentState } from "@/lib/messaging-consent"
 import { isReservedShopPhone } from "@/lib/people"
+import { LatePromiseMessage } from "./voice-draft"
 import { normalizePage } from "@/lib/pagination"
 import { readableEmailText } from "@/lib/gmail-plaintext.mjs"
 import { getActiveGlassLinkState } from "@/lib/glass"
@@ -439,7 +440,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               <form action={keepPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Mark kept</SafeSubmitButton></form>
               {operator.role === "owner" && promise.direction === "we_promised" && promise.due_at && <form action={publishPromiseToGlass}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Adding...">Add to Customer Page</SafeSubmitButton></form>}
             </div>
-            {promise.due_at && isPast(promise.due_at) && customerTextReady && <details className="job-handle"><summary>Handle it</summary><form action={handlePromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><textarea name="body" rows={3} defaultValue={`Running behind on your ${lead.service.toLowerCase()}. I’m sorry.`} aria-label="Message to customer about the delayed promise" /><input name="reason" defaultValue="Running behind — new date confirmed with the shop." aria-label="Reason shown on Customer Page" /><label>New promise<select name="quickDue" defaultValue="tomorrow-am"><option value="tomorrow-am">Tomorrow morning</option><option value="two-days-am">In two mornings</option><option value="next-monday-am">Next Monday morning</option></select></label><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sending...">Text + update date</SafeSubmitButton></form></details>}
+            {promise.due_at && isPast(promise.due_at) && customerTextReady && <details className="job-handle"><summary>Handle it</summary><form action={handlePromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><LatePromiseMessage leadId={lead.id} commitmentId={promise.id} fallback={`Running behind on your ${lead.service.toLowerCase()}. I’m sorry.`} /><input name="reason" defaultValue="Running behind — new date confirmed with the shop." aria-label="Reason shown on Customer Page" /><label>New promise<select name="quickDue" defaultValue="tomorrow-am"><option value="tomorrow-am">Tomorrow morning</option><option value="two-days-am">In two mornings</option><option value="next-monday-am">Next Monday morning</option></select></label><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sending...">Text + update date</SafeSubmitButton></form></details>}
             {promise.due_at && isPast(promise.due_at) && !customerTextReady && <p className="job-empty t-caption">Texting is unavailable until the customer has consented.</p>}
           </article>
         ))}</div>

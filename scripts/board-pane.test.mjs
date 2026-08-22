@@ -7,6 +7,7 @@ import { signalCountsFromCandidates } from "../lib/ops-data-testkit.mjs"
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const COMMITMENTS_SOURCE = readFileSync(new URL("../lib/commitments.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const EVENTS_SOURCE = readFileSync(new URL("../lib/events.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const EXTRACT_SOURCE = readFileSync(new URL("../lib/extract.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
@@ -72,10 +73,43 @@ test("a kind no job carries still reports a zero", () => {
 test("the promises block counts the shop's own promises, on the two axes the pane names", () => {
   assert.ok(COMMITMENTS_SOURCE.includes("c.direction = 'we_promised'"))
   assert.ok(!/direction = 'they_promised'/.test(COMMITMENTS_SOURCE.split("getPromiseSummary")[1] ?? ""))
-  // Kept and broken are this month; open is every open promise right now.
+  // Kept is this month; open and broken are both right now.
   assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'kept'\s+AND c\.status_changed_at >= \(date_trunc\('month', now\(\) AT TIME ZONE 'America\/Chicago'\)/)
-  assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'broken'\s+AND c\.status_changed_at >= \(date_trunc\('month', now\(\) AT TIME ZONE 'America\/Chicago'\)/)
-  assert.match(COMMITMENTS_SOURCE, /count\(\*\) FILTER \(WHERE c\.status = 'open'\)::int AS open/)
+  assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'open' AND c\.due_at IS NOT NULL AND c\.due_at < now\(\)\s+\)::int AS broken/)
+  assert.match(COMMITMENTS_SOURCE, /WHERE c\.status = 'open' AND \(c\.due_at IS NULL OR c\.due_at >= now\(\)\)\s+\)::int AS open/)
+})
+
+// Nothing in this codebase ever wrote `status = 'broken'`. The counter read a
+// status no path set, so the board reported a shop that had never missed a
+// promise in its life. Broken is derived from the promise itself: past its
+// date and still owed. Open counts the rest, so the two split every open
+// promise between them and neither can double-count one.
+test("broken promises are counted, and no promise is counted twice", () => {
+  const summary = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function getPromiseSummary"),
+    COMMITMENTS_SOURCE.indexOf("export async function setCommitmentStatus"),
+  )
+  assert.ok(
+    !/status = 'broken'/.test(summary),
+    "broken has no writer anywhere in the app, so the summary must not read it as a stored status",
+  )
+  const writesBroken = [COMMITMENTS_SOURCE, EVENTS_SOURCE, EXTRACT_SOURCE]
+    .some((source) => /SET[\s\S]{0,80}status = 'broken'/.test(source))
+  assert.ok(!writesBroken, "if something starts storing 'broken', this counter has to be revisited")
+  assert.match(PREVIEW_SOURCE, /broken is past its date and still owed/)
+})
+
+// The pane's one "you are late on this" line went nowhere. It opens the
+// promise on its own work order, where the customer's last message and the
+// call button are both in reach — the order the shop works in.
+test("the overdue callout opens the promise it names", () => {
+  const JOB_PAGE_SOURCE = readFileSync(new URL("../app/ops/leads/[id]/page.tsx", import.meta.url), "utf8")
+  assert.match(PREVIEW_SOURCE, /<Link className="due" href=\{`\/ops\/leads\/\$\{promises\.overdue\.leadId\}#promise-\$\{promises\.overdue\.id\}`\}>/)
+  // The anchor has to exist on the other end, or the link lands on a page and stops.
+  assert.match(JOB_PAGE_SOURCE, /id=\{`promise-\$\{promise\.id\}`\}/)
+  // A promise with no lead behind it has no work order to open.
+  assert.match(PREVIEW_SOURCE, /promises\.overdue\.leadId\s*\?/)
+  assert.match(PREVIEW_SOURCE, /: <div className="due">/)
 })
 
 test("canceled and superseded promises are counted nowhere", () => {
@@ -118,6 +152,89 @@ test("the Today trail uses shop labels verbatim and has no signed-out fixtures",
   assert.match(PREVIEW_SOURCE, /timeZone: "America\/Chicago"/)
   assert.match(PAGE_SOURCE, /todayTrail: \[\]/)
   assert.doesNotMatch(PREVIEW_SOURCE, /Price worked out for Phil Lloyd|Ray Colter called|Denz automotive asked|Gerald Pace plate finished/)
+})
+
+// Several kinds carry a fixed body — every handoff reads the same sentence —
+// so four jobs handed off in a minute printed four identical lines and read as
+// a duplication bug. The customer is the only thing separating them.
+test("each Today trail line names its customer", () => {
+  const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
+  assert.match(today, /AS customer/)
+  assert.match(today, /customer: event\.customer/)
+  assert.match(PAGE_SOURCE, /todayTrail: todayEvents\.map\(\(\{[^}]*customer[^}]*\}\)/)
+  assert.match(PREVIEW_SOURCE, /event\.customer && ` · \$\{event\.customer\}`/)
+})
+
+// Extraction is handed the open commitments as context and restates them:
+// one call produced two promises, the customer's next text restated both, and
+// the week printed four. `ON CONFLICT (source_event_id, item_key)` cannot see
+// it — a second event is a second key — so the promise itself is the key.
+test("a restated promise is not a second promise", () => {
+  const add = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function addCommitment"),
+    COMMITMENTS_SOURCE.indexOf("export async function listCommitments"),
+  )
+  assert.match(add, /status = 'open'/)
+  assert.match(add, /btrim\(lower\(summary\)\) = btrim\(lower\(\$\{input\.summary\}::text\)\)/)
+  assert.match(add, /due_at IS NOT DISTINCT FROM \$\{input\.dueAt \?\? null\}::timestamptz/)
+  assert.match(add, /if \(restated\[0\]\) return Number\(restated\[0\]\.id\)/)
+  // The guard runs before the insert, not after it.
+  assert.ok(
+    add.indexOf("if (restated[0])") < add.indexOf("INSERT INTO commitments"),
+    "the duplicate check has to run before the insert",
+  )
+  assert.match(EXTRACT_SOURCE, /A promise already in open_commitments is on the books/)
+  // The prompt may only name states `marks_existing_as` can actually carry.
+  const marksExisting = EXTRACT_SOURCE.match(/marks_existing_as: z\.enum\(\[([^\]]*)\]\)/)?.[1] ?? ""
+  assert.ok(marksExisting.includes("kept") && marksExisting.includes("superseded"))
+  assert.doesNotMatch(EXTRACT_SOURCE, /matches_existing_commitment_id when this event kept, broke, or canceled it/)
+})
+
+// Both owners have to match, not either. A promise is filed under a lead and a
+// person; matching the person alone collapses the same sentence across two of
+// that customer's jobs, which are two real promises. The same scoping has to
+// hold for the context handed to extraction, because the prompt now tells it
+// not to re-emit anything it is shown.
+test("a promise is deduped against its own job, not the whole customer", () => {
+  const add = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function addCommitment"),
+    COMMITMENTS_SOURCE.indexOf("export async function listCommitments"),
+  )
+  for (const source of [add, EXTRACT_SOURCE]) {
+    assert.match(source, /lead_id IS NOT DISTINCT FROM/)
+    assert.match(source, /person_id IS NOT DISTINCT FROM/)
+  }
+  assert.doesNotMatch(EXTRACT_SOURCE, /IS NOT NULL AND lead_id = \$\{event\.lead_id/)
+  // The database holds the rule, because the read above is not atomic with the
+  // insert and extractions for one job overlap.
+  const MIGRATE_SOURCE = readFileSync(new URL("../scripts/migrate.mjs", import.meta.url), "utf8")
+  assert.match(MIGRATE_SOURCE, /CREATE UNIQUE INDEX IF NOT EXISTS commitments_open_promise_unique/)
+  assert.match(MIGRATE_SOURCE, /SET status = 'superseded'/)
+  assert.ok(
+    MIGRATE_SOURCE.indexOf("SET status = 'superseded'") < MIGRATE_SOURCE.indexOf("commitments_open_promise_unique"),
+    "duplicates must be retired before the unique index is built, or it cannot be built",
+  )
+  assert.match(add, /ON CONFLICT DO NOTHING/)
+})
+
+// The job row loads both directions. Without the direction check the shop gets
+// blamed for a promise the customer made and missed.
+test("only the shop's own promises can be called broken", () => {
+  assert.match(PREVIEW_SOURCE, /commitment\.direction === "we_promised"\s*\n\s*&& commitment\.status === "open"/)
+  const list = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function listCommitments"),
+    COMMITMENTS_SOURCE.indexOf("export type PromiseSummary"),
+  )
+  // Asked for 'broken' literally this returned nothing forever, so Ask Jobs
+  // could answer "no broken promises" while the board showed several.
+  assert.match(list, /= 'broken'\s*\n\s*AND status = 'open' AND due_at IS NOT NULL AND due_at < now\(\)/)
+})
+
+// A marker-only test identity reaches the live board without this, and the
+// trail row now prints the customer's name.
+test("the Today trail honours the [INTERNAL TEST] marker", () => {
+  const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
+  assert.match(today, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
 })
 
 test("board job details are typed, wired, and remain data-only in W1", () => {
