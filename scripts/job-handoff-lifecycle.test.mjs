@@ -83,7 +83,15 @@ test("the board clears a Ready job without leaving the board", () => {
   assert.match(board, /import \{ markJobHandedOff \} from "@\/app\/ops\/leads\/\[id\]\/handoff-actions"/)
   assert.match(board, /useActionState\(markJobHandedOff, HANDOFF_IDLE\)/)
   assert.match(board, /lead\.board_stage === "ready" && <HandoffButton/)
-  assert.match(board, /Customer received it/)
+  // The row shares a line with the reason chip, so the visible label is short
+  // and the whole sentence lives in the accessible name. A long label here is
+  // what overran the chip the first time this shipped.
+  assert.ok(board.includes(">\n        Received\n      </SafeSubmitButton>"))
+  assert.match(board, /aria-label=\{`Record that \$\{customer\} received their job`\}/)
+  assert.match(board, /title=\{`Record that \$\{customer\} received their job`\}/)
+  // The actions column sizes to its contents; a fixed track is what it spilled
+  // out of. Both row breakpoints must stay content-sized.
+  assert.equal((css.match(/max-content\}/g) ?? []).length, 2)
   // The row toggles the panel on click and exempts anything inside a button;
   // SafeSubmitButton renders one, so the submit must not also expand the row.
   assert.match(board, /SafeSubmitButton/)

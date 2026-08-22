@@ -400,7 +400,7 @@ svg{display:block}
   overflow:hidden;text-overflow:ellipsis}
 .val em{font-style:normal;color:var(--text-muted);font-weight:var(--w-reg);font-size:var(--t-label)}
 .right{text-align:right}
-.doing{display:flex;justify-content:flex-end;gap:var(--s1)}
+.doing{display:flex;justify-content:flex-end;gap:var(--s1);min-width:0}
 /* The handoff form is a wrapper, not a control: contents lets its button take
    the row's own button sizing instead of a second box around it. */
 .doing form{display:contents}
@@ -622,7 +622,7 @@ svg{display:block}
      truncates instead — it is the one cell that can lose characters without
      losing meaning, and money goes before the action does. */
   .cols{gap:0 var(--s4);padding:0 var(--s6);
-    grid-template-columns:56px minmax(0,1.6fr) 100px 168px 116px}
+    grid-template-columns:56px minmax(0,1.6fr) 100px 168px max-content}
   .cols .c-wait{display:block}
   .cols .c-state{grid-column:auto;grid-row:auto;justify-self:auto}
   .cols .c-do{grid-column:auto;margin-top:0}
@@ -649,7 +649,7 @@ svg{display:block}
 /* Money is the first thing to go and the last thing to come back. */
 @media (min-width:73.7501rem){
   .cols{gap:0 var(--s5);
-    grid-template-columns:56px minmax(220px,1.8fr) 108px 120px 180px 116px}
+    grid-template-columns:56px minmax(0,1.8fr) 108px 120px 180px max-content}
   .cols .c-money{display:block}
   .detail{grid-template-columns:minmax(0,380px) minmax(0,1fr)}
   .why{grid-template-columns:minmax(0,1fr) 292px}

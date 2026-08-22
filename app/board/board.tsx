@@ -135,9 +135,13 @@ function HandoffButton({ leadId, customer }: { leadId: number; customer: string 
   return <>
     <form action={action}>
       <input type="hidden" name="leadId" value={leadId} />
+      {/* "Received" in the row, the whole sentence in the accessible name —
+          the actions cell shares a line with the reason chip and a long label
+          pushed straight over it. */}
       <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording…"
+        title={`Record that ${customer} received their job`}
         aria-label={`Record that ${customer} received their job`}>
-        Customer received it
+        Received
       </SafeSubmitButton>
     </form>
     {state.status === "error" && <span className="t-caption" role="alert">{state.message}</span>}
