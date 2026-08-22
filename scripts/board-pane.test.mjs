@@ -7,6 +7,7 @@ import { signalCountsFromCandidates } from "../lib/ops-data-testkit.mjs"
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const COMMITMENTS_SOURCE = readFileSync(new URL("../lib/commitments.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const EVENTS_SOURCE = readFileSync(new URL("../lib/events.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const EXTRACT_SOURCE = readFileSync(new URL("../lib/extract.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
@@ -118,6 +119,38 @@ test("the Today trail uses shop labels verbatim and has no signed-out fixtures",
   assert.match(PREVIEW_SOURCE, /timeZone: "America\/Chicago"/)
   assert.match(PAGE_SOURCE, /todayTrail: \[\]/)
   assert.doesNotMatch(PREVIEW_SOURCE, /Price worked out for Phil Lloyd|Ray Colter called|Denz automotive asked|Gerald Pace plate finished/)
+})
+
+// Several kinds carry a fixed body — every handoff reads the same sentence —
+// so four jobs handed off in a minute printed four identical lines and read as
+// a duplication bug. The customer is the only thing separating them.
+test("each Today trail line names its customer", () => {
+  const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
+  assert.match(today, /AS customer/)
+  assert.match(today, /customer: event\.customer/)
+  assert.match(PAGE_SOURCE, /todayTrail: todayEvents\.map\(\(\{[^}]*customer[^}]*\}\)/)
+  assert.match(PREVIEW_SOURCE, /event\.customer && ` · \$\{event\.customer\}`/)
+})
+
+// Extraction is handed the open commitments as context and restates them:
+// one call produced two promises, the customer's next text restated both, and
+// the week printed four. `ON CONFLICT (source_event_id, item_key)` cannot see
+// it — a second event is a second key — so the promise itself is the key.
+test("a restated promise is not a second promise", () => {
+  const add = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function addCommitment"),
+    COMMITMENTS_SOURCE.indexOf("export async function listCommitments"),
+  )
+  assert.match(add, /status = 'open'/)
+  assert.match(add, /btrim\(lower\(summary\)\) = btrim\(lower\(\$\{input\.summary\}::text\)\)/)
+  assert.match(add, /due_at IS NOT DISTINCT FROM \$\{input\.dueAt \?\? null\}::timestamptz/)
+  assert.match(add, /if \(restated\[0\]\) return Number\(restated\[0\]\.id\)/)
+  // The guard runs before the insert, not after it.
+  assert.ok(
+    add.indexOf("if (restated[0])") < add.indexOf("INSERT INTO commitments"),
+    "the duplicate check has to run before the insert",
+  )
+  assert.match(EXTRACT_SOURCE, /A promise already in open_commitments is on the books/)
 })
 
 test("board job details are typed, wired, and remain data-only in W1", () => {

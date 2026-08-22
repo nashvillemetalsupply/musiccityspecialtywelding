@@ -158,11 +158,22 @@ export async function listBoardEventTrails(
   return byLead
 }
 
-export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): Promise<EventRow[]> {
+export type TodayEventRow = EventRow & { customer: string | null }
+
+// The trail prints one line per event, and several kinds carry a fixed body —
+// a handoff always reads "Pickup or delivery handoff recorded." So four jobs
+// handed off in a minute rendered as the same sentence four times, which reads
+// as a duplication bug and hides which four jobs moved. The customer is the
+// only thing that tells them apart, so it travels with the row.
+export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): Promise<TodayEventRow[]> {
   const sql = getSql()
   const bounded = Math.min(Math.max(Math.floor(limit), 1), 12)
   const rows = (await sql`
-    SELECT e.*
+    SELECT e.*, NULLIF(btrim(COALESCE(
+      NULLIF(btrim(COALESCE(l.first_name, '') || ' ' || COALESCE(l.last_name, '')), ''),
+      NULLIF(btrim(p.display_name), ''),
+      ''
+    )), '') AS customer
     FROM events e
     LEFT JOIN leads l ON l.id = e.lead_id
     LEFT JOIN people p ON p.id = e.person_id
@@ -177,11 +188,14 @@ export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): P
         AND NOT (lower(COALESCE(e.detail->>'sensitivity', '')) = ANY(${[...OWNER_ONLY_EVENT_SENSITIVITIES]}::text[]))
       ))
     ORDER BY e.occurred_at DESC, e.id DESC
-    LIMIT ${bounded}::bigint`) as EventRow[]
+    LIMIT ${bounded}::bigint`) as TodayEventRow[]
 
   return rows
-    .map((event) => projectEventForRole(event, role))
-    .filter((event): event is EventRow => Boolean(event))
+    .map((event) => {
+      const projected = projectEventForRole(event, role)
+      return projected ? { ...projected, customer: event.customer } : null
+    })
+    .filter((event): event is TodayEventRow => Boolean(event))
 }
 
 export async function listLeadEventPage(leadId: number, page = 1, limit = 25, role: OperatorRole = "owner"): Promise<{ items: EventRow[]; total: number; page: number; pageSize: number }> {

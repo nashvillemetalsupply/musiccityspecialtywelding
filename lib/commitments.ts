@@ -38,6 +38,38 @@ export async function addCommitment(input: {
 }) {
   const sql = getSql()
   const itemKey = input.itemKey || `${input.direction}:${input.summary.trim().toLowerCase()}:${input.dueAt ?? ""}`
+  // Two dedupe keys, because one message is not the unit of a promise.
+  //
+  // `ON CONFLICT (source_event_id, item_key)` only catches the same event
+  // extracted twice. Extraction is handed the open commitments as context and
+  // will happily restate one it was shown, so the same promise arrives again
+  // under the next event id and that key never fires: Yiorgos's call produced
+  // two promises, his follow-up text restated both, and the board printed four.
+  // `item_key` cannot catch it either — it hashes the raw due-date string, so
+  // the same instant written `…T16:00:00.000Z` and `…-05:00` hashes differently.
+  //
+  // So the real key is the promise itself: same customer, same direction, same
+  // words, same due instant, still open. Nothing is lost by dropping the
+  // restatement — a promise made twice is still one promise.
+  //
+  // ponytail: read-then-insert, not one statement. Two extractions racing the
+  // same lead could still both pass the check; give this a partial unique index
+  // if that ever happens. Extraction is one AI call per event, serialized per
+  // event, so today it cannot.
+  const restated = (await sql`
+    SELECT id FROM commitments
+    WHERE status = 'open'
+      AND direction = ${input.direction}::text
+      AND btrim(lower(summary)) = btrim(lower(${input.summary}::text))
+      AND due_at IS NOT DISTINCT FROM ${input.dueAt ?? null}::timestamptz
+      AND (
+        (${input.leadId ?? null}::bigint IS NOT NULL AND lead_id = ${input.leadId ?? null}::bigint)
+        OR (${input.leadId ?? null}::bigint IS NULL
+            AND ${input.personId ?? null}::bigint IS NOT NULL
+            AND person_id = ${input.personId ?? null}::bigint)
+      )
+    ORDER BY id ASC LIMIT 1`) as { id: number }[]
+  if (restated[0]) return Number(restated[0].id)
   const rows = (await sql`
     INSERT INTO commitments (
       lead_id, person_id, direction, operator_id, summary, crew_summary, due_at,
@@ -58,8 +90,9 @@ export async function addCommitment(input: {
     RETURNING id`) as { id: number }[]
   if (rows[0]) return Number(rows[0].id)
   const existing = (await sql`
-    SELECT id FROM commitments WHERE source_event_id = ${input.sourceEventId}::bigint AND item_key = ${itemKey}::text LIMIT 1`) as { id: number }[]
-  return Number(existing[0].id)
+    SELECT id FROM commitments
+    WHERE source_event_id = ${input.sourceEventId}::bigint AND item_key = ${itemKey}::text LIMIT 1`) as { id: number }[]
+  return existing[0] ? Number(existing[0].id) : null
 }
 
 export async function listCommitments(input: {

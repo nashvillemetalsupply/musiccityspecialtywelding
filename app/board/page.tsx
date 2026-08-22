@@ -117,7 +117,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     week,
     outTheDoor,
     medianFirstResponseMinutes: stats.medianFirstResponseMinutes,
-    todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body }) => ({ id, occurredAt, kind, body })),
+    todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body, customer }) => ({ id, occurredAt, kind, body, customer })),
     callSketch,
     voice,
     items: page.items,

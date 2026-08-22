@@ -25,6 +25,9 @@ type TodayTrailItem = {
   occurredAt: string
   kind: string
   body: string
+  // Several kinds carry a fixed body, so the customer is what tells two of
+  // them apart. Null for shop-wide events like the morning brief.
+  customer: string | null
 }
 
 export type BoardPaneData = {
@@ -488,7 +491,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             {board.todayTrail.map((event) => <li key={event.id}>
               <i className={trailMark(event.kind)}></i>
               <time dateTime={event.occurredAt}>{TRAIL_TIME.format(new Date(event.occurredAt))}</time>
-              <b>{shopEventLabel(event.kind)}{event.body && ` — ${event.body}`}</b>
+              <b>{shopEventLabel(event.kind)}{event.customer && ` · ${event.customer}`}{event.body && ` — ${event.body}`}</b>
             </li>)}
           </ul>
         </div>
