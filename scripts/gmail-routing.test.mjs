@@ -67,6 +67,34 @@ test("real Gmail receipts on Intuit mail authenticate", () => {
   assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [unsigned], subject: "Payment received: Invoice #1357" }), false)
 })
 
+// Codex review, 2026-08-22. The gate used to run three regexes over the whole
+// flattened header, so any clause could satisfy another clause's requirement.
+// Every fixture here authenticated as Intuit before the header was parsed.
+test("a crafted Authentication-Results cannot borrow another clause's result", () => {
+  const real = { from: "quickbooks@notification.intuit.com", labels: ["INBOX"], subject: "Payment received: Invoice #1357" }
+  // dmarc genuinely failed; the text that satisfied it lived inside the spf value.
+  const borrowedDmarc = 'mx.google.com; dkim=pass header.i=@n.intuit.com; spf=pass smtp.mailfrom="dmarc=pass header.from=intuit.com@attacker.example"; dmarc=fail header.from=intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [borrowedDmarc] }), false)
+  // The SPF parenthetical is free text the sending side influences.
+  const borrowedFromComment = 'mx.google.com; dkim=fail header.i=@attacker.example; spf=pass (google.com: dkim=pass header.i=@intuit.com) smtp.mailfrom=bounce@attacker.example; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [borrowedFromComment] }), false)
+  // intuit.com sitting in the local part is an attacker identity, not an Intuit one.
+  const localPartLookalike = 'mx.google.com; dkim=pass header.i=intuit.com@evil.example; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [localPartLookalike] }), false)
+  // Two dkim clauses must not let the sender choose which one is read.
+  const doubled = 'mx.google.com; dkim=fail header.i=@attacker.example; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [doubled] }), false)
+  // Only the header Gmail prepended counts; a later sender-supplied copy is unreachable.
+  const spoofSecond = 'mx.google.com; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: ["mx.google.com; dkim=fail; spf=fail; dmarc=fail", spoofSecond] }), false)
+  // An unbalanced comment is malformed, and malformed must fail closed.
+  const unbalanced = 'mx.google.com; dkim=pass header.i=@n.intuit.com; spf=pass (unclosed smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [unbalanced] }), false)
+  // A non-Google authserv-id is never trusted, however well-formed the rest is.
+  const wrongAuthserv = 'mx.attacker.example; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [wrongAuthserv] }), false)
+})
+
 test("partial payments stay open and unknown sent mail must look like sold work", () => {
   assert.equal(paymentCompletesInvoice({ text: "Payment received", amountCents: 20000, invoiceTotalCents: 50000 }), false)
   assert.equal(paymentCompletesInvoice({ text: "Paid in full", amountCents: 20000, invoiceTotalCents: 50000 }), true)

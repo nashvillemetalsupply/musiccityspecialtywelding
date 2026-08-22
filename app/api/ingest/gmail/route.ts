@@ -104,44 +104,61 @@ export async function GET(req: Request) {
     RETURNING key`) as { key: string }[]
   if (!lease[0]) return Response.json({ ok: true, skipped: "Gmail sync already in progress." }, { status: 202 })
   const token = await gmailAccessToken()
-  // One-time repair hatch. Gmail only hands us new mail, so receipts quarantined by
-  // a broken auth check are invisible to the normal sweep forever. Re-running is
-  // safe: every write below is keyed by the Gmail message id, so a second pass
-  // records duplicates and changes nothing.
+  // One-time repair hatch. Gmail hands the sweep only new mail, so receipts that a
+  // broken auth check quarantined are invisible to it forever. Selection skips any
+  // message that already produced a payment or deposit event, so re-running after a
+  // partial failure cannot apply money twice or fire a second "landed" notice.
   if (new URL(req.url).searchParams.get("replay") === "quarantined") {
-    const rejected = (await sql`
-      SELECT external_id FROM events
-      WHERE kind = 'email.payment-rejected'::text AND external_id IS NOT NULL
-      ORDER BY occurred_at ASC`) as { external_id: string }[]
-    const replay = { scanned: rejected.length, payments: 0, deposits: 0, stillRejected: 0, duplicates: 0, failures: 0 }
-    for (const row of rejected) {
-      try {
-        const message = await getGmailMessage(token, row.external_id)
-        const headers = gmailHeaders(message)
-        const subject = headers.subject || "(no subject)"
-        const from = emailAddress(headers.from)
-        const body = gmailPlaintext(message)
-        const isTest = `${subject}
-${body}`.includes("[INTERNAL TEST]")
-        const occurredAt = new Date(Number(message.internalDate)).toISOString()
-        if (!isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body })) {
-          replay.stillRejected++
-          continue
+    const replay = { scanned: 0, payments: 0, deposits: 0, stillRejected: 0, failures: 0 }
+    try {
+      const rejected = (await sql`
+        SELECT rejected.external_id FROM events rejected
+        WHERE rejected.kind = 'email.payment-rejected'::text
+          AND COALESCE(rejected.external_id, ''::text) <> ''::text
+          AND NOT EXISTS (
+            SELECT 1 FROM events applied
+            WHERE applied.external_id = rejected.external_id
+              AND applied.kind IN ('email.payment'::text, 'email.deposit'::text)
+          )
+        ORDER BY rejected.occurred_at ASC
+        LIMIT 200`) as { external_id: string }[]
+      replay.scanned = rejected.length
+      for (const row of rejected) {
+        try {
+          const message = await getGmailMessage(token, row.external_id)
+          const headers = gmailHeaders(message)
+          const subject = headers.subject || "(no subject)"
+          const from = emailAddress(headers.from)
+          const body = gmailPlaintext(message)
+          const isTest = `${subject}\n${body}`.includes("[INTERNAL TEST]")
+          const occurredAt = new Date(Number(message.internalDate)).toISOString()
+          if (!isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body })) {
+            replay.stillRejected++
+            continue
+          }
+          if (/money on the way/i.test(subject)) {
+            await ingestDeposit(row.external_id, occurredAt, subject, body, isTest)
+            replay.deposits++
+          } else {
+            await ingestPayment(row.external_id, occurredAt, subject, body, isTest)
+            replay.payments++
+          }
+        } catch (error) {
+          // Counted and logged, never swallowed. Safe to re-run: this message wrote
+          // no payment event, so the next call selects it again.
+          replay.failures++
+          console.error(`Gmail replay ${row.external_id} failed:`, error)
         }
-        const deposit = /money on the way/i.test(subject)
-        const result = deposit
-          ? await ingestDeposit(row.external_id, occurredAt, subject, body, isTest)
-          : await ingestPayment(row.external_id, occurredAt, subject, body, isTest)
-        if (result.duplicate) replay.duplicates++
-        else if (deposit) replay.deposits++
-        else replay.payments++
-      } catch {
-        // Counted, not swallowed: the caller sees failures in the response body and
-        // can re-run, since the pass is idempotent.
-        replay.failures++
       }
+      await sql`
+        INSERT INTO automation_runs (job, ok, detail)
+        VALUES ('gmail-replay-quarantined'::text, ${replay.failures === 0}::boolean, ${JSON.stringify(replay)}::jsonb)`
+    } finally {
+      // The sweep releases the lease on its way out; an early return has to as well,
+      // or the next cron tick is locked out for the full eight minutes.
+      await sql`UPDATE sync_state SET updated_at = 'epoch'::timestamptz WHERE key = 'gmail-ingest-lease'::text`
     }
-    return Response.json({ ok: true, replay })
+    return Response.json({ ok: replay.failures === 0, replay })
   }
   const state = (await sql`SELECT value FROM sync_state WHERE key = 'gmail'::text LIMIT 1`) as { value: { historyId?: string } }[]
   let listing
