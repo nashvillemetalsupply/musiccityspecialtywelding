@@ -99,6 +99,19 @@ test("broken promises are counted, and no promise is counted twice", () => {
   assert.match(PREVIEW_SOURCE, /broken is past its date and still owed/)
 })
 
+// The pane's one "you are late on this" line went nowhere. It opens the
+// promise on its own work order, where the customer's last message and the
+// call button are both in reach — the order the shop works in.
+test("the overdue callout opens the promise it names", () => {
+  const JOB_PAGE_SOURCE = readFileSync(new URL("../app/ops/leads/[id]/page.tsx", import.meta.url), "utf8")
+  assert.match(PREVIEW_SOURCE, /<Link className="due" href=\{`\/ops\/leads\/\$\{promises\.overdue\.leadId\}#promise-\$\{promises\.overdue\.id\}`\}>/)
+  // The anchor has to exist on the other end, or the link lands on a page and stops.
+  assert.match(JOB_PAGE_SOURCE, /id=\{`promise-\$\{promise\.id\}`\}/)
+  // A promise with no lead behind it has no work order to open.
+  assert.match(PREVIEW_SOURCE, /promises\.overdue\.leadId\s*\?/)
+  assert.match(PREVIEW_SOURCE, /: <div className="due">/)
+})
+
 test("canceled and superseded promises are counted nowhere", () => {
   const summary = COMMITMENTS_SOURCE.slice(COMMITMENTS_SOURCE.indexOf("export async function getPromiseSummary"))
   const body = summary.slice(0, summary.indexOf("export async function setCommitmentStatus"))

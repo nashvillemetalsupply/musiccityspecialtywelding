@@ -457,10 +457,21 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             <div className="keep-row"><span className="chip chip--warn"><i></i>Broken</span><b>{promises.broken}</b></div>
           </div>
           <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Open and broken are right now — broken is past its date and still owed. Kept is this month.</p>
-          {promises.overdue && <div className="due">
-            <p>{promises.overdue.summary}</p>
-            <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
-          </div>}
+          {/* The callout named the shop's oldest broken promise and then went
+              nowhere, so the one thing on the pane that says "you are late on
+              this" could not be acted on. It links to the promise on its own
+              work order — where the customer's last message and the call
+              button are both in reach, which is the order the shop works in.
+              A promise with no lead behind it has no work order to open. */}
+          {promises.overdue && (promises.overdue.leadId
+            ? <Link className="due" href={`/ops/leads/${promises.overdue.leadId}#promise-${promises.overdue.id}`}>
+                <p>{promises.overdue.summary}</p>
+                <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
+              </Link>
+            : <div className="due">
+                <p>{promises.overdue.summary}</p>
+                <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
+              </div>)}
 
           <section className="card week">
             <h4>The week</h4>
