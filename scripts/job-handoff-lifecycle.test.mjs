@@ -73,3 +73,23 @@ test("work order explains removal, preserves history, and exposes a thumb-safe r
   assert.match(language, /"job\.handed-off": "Customer handoff complete"/)
   assert.match(language, /"job\.handoff-undone": "Customer handoff undone"/)
 })
+
+test("the board clears a Ready job without leaving the board", () => {
+  // Handoff was reachable only from the work order, so Ready accumulated jobs
+  // the shop had already finished and "Open jobs" counted every one of them.
+  const board = source("app/board/board.tsx")
+  const css = source("app/board/board.css")
+
+  assert.match(board, /import \{ markJobHandedOff \} from "@\/app\/ops\/leads\/\[id\]\/handoff-actions"/)
+  assert.match(board, /useActionState\(markJobHandedOff, HANDOFF_IDLE\)/)
+  assert.match(board, /lead\.board_stage === "ready" && <HandoffButton/)
+  assert.match(board, /Customer received it/)
+  // The row toggles the panel on click and exempts anything inside a button;
+  // SafeSubmitButton renders one, so the submit must not also expand the row.
+  assert.match(board, /SafeSubmitButton/)
+  assert.match(board, /closest\("a, button"\)/)
+  // The removed row has to disappear, and only a refetch does that.
+  assert.match(board, /if \(state\.status === "handed-off"\) router\.refresh\(\)/)
+  assert.match(board, /state\.status === "error" && <span className="t-caption" role="alert">/)
+  assert.match(css, /\.doing form\{display:contents\}/)
+})
