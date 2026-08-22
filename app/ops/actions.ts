@@ -23,6 +23,7 @@ import { validateCloseoutReview } from "@/lib/closeout-domain.mjs"
 import { lineItemsTotalCents, parseLineItemsText } from "@/lib/job-line-items.mjs"
 import { replaceJobLineItems } from "@/lib/job-line-items"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
+import { paymentRollup } from "@/lib/payments.mjs"
 
 async function sendCustomerEmail(options: {
   leadId: number
@@ -612,6 +613,68 @@ export async function recordInvoice(formData: FormData) {
   }
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
+}
+
+// Money in hand. Cash and checks never reach the QuickBooks ingest, so without
+// this the job stays "still out" forever. The event is the receipt and lands
+// first; the rollup on leads follows. DONE and PAID stay separate truths.
+export async function recordPayment(formData: FormData) {
+  const operator = await requireOperator()
+  requireOwner(operator)
+  const leadId = parseLeadId(formData.get("leadId"))
+  const amountCents = parseDollarsToCents(formData.get("paymentAmount"))
+  if (!amountCents || amountCents <= 0) throw new Error("Enter the amount that changed hands.")
+  const methodRaw = String(formData.get("paymentMethod") ?? "")
+  const method = ["cash", "check", "card", "other"].includes(methodRaw) ? methodRaw : "other"
+  const settles = String(formData.get("settles") ?? "") === "1"
+  const receiptKey = String(formData.get("receiptKey") ?? "").trim().slice(0, 80)
+
+  const sql = getSql()
+  const current = (await sql`
+    SELECT person_id, paid_amount_cents, invoice_total_cents, invoice_number
+    FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as Array<{
+    person_id: number | null
+    paid_amount_cents: number | null
+    invoice_total_cents: number | null
+    invoice_number: string
+  }>
+  if (!current[0]) throw new Error("Work order not found.")
+
+  const { paidTotalCents, fullyPaid } = paymentRollup({
+    currentPaidCents: current[0].paid_amount_cents === null ? null : Number(current[0].paid_amount_cents),
+    amountCents,
+    invoiceTotalCents: current[0].invoice_total_cents === null ? null : Number(current[0].invoice_total_cents),
+    settles,
+  })
+
+  const eventId = await recordEvent({
+    kind: fullyPaid ? "invoice.paid" : "invoice.payment-received",
+    actorType: "operator",
+    actorId: operator.id,
+    leadId,
+    personId: current[0].person_id,
+    externalId: receiptKey ? `manual-payment:${receiptKey}` : "",
+    body: `$${(amountCents / 100).toLocaleString("en-US")} ${method} in hand${current[0].invoice_number ? ` — INV #${current[0].invoice_number}` : ""}${fullyPaid ? ", squared up" : ""}`,
+    detail: { amountCents, method, paidTotalCents, fullyPaid, manual: true },
+  })
+  // A duplicate receiptKey means this exact payment already landed (double
+  // submit); do not add it twice. ponytail: a crash between receipt and rollup
+  // needs the owner to re-enter with a fresh page load — visible, not silent.
+  if (eventId === null && receiptKey) {
+    revalidatePath(`/ops/leads/${leadId}`)
+    revalidatePath("/board")
+    return
+  }
+
+  await sql`
+    UPDATE leads SET
+      paid_amount_cents = ${paidTotalCents}::bigint,
+      paid_at = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(paid_at, now()) ELSE paid_at END,
+      updated_at = now()
+    WHERE id = ${leadId}::bigint`
+
+  revalidatePath(`/ops/leads/${leadId}`)
+  revalidatePath("/board")
 }
 
 export async function resolveIdentityConflict(formData: FormData) {

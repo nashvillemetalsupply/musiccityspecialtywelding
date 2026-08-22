@@ -44,6 +44,7 @@ import {
   markFirstResponse,
   markReviewRequested,
   recordInvoice,
+  recordPayment,
   resolveIdentityConflict,
   saveEstimate,
   saveJobLineItems,
@@ -731,6 +732,39 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                 </span>
             <SafeSubmitButton name="clear" value="1" className="btn btn--sm btn--edge" pendingLabel="Clearing...">Clear</SafeSubmitButton>
               </>
+            )}
+          </form>
+
+          <form action={recordPayment} className="job-form">
+            <input type="hidden" name="leadId" value={lead.id} />
+            <input type="hidden" name="receiptKey" value={randomUUID()} />
+            <label htmlFor="payment-amount">
+              Money in hand. Cash and checks never hit QuickBooks on their own.
+            </label>
+            <input id="payment-amount" name="paymentAmount" inputMode="decimal" placeholder="Amount received" aria-label="Payment amount" />
+            <select name="paymentMethod" defaultValue="cash" aria-label="How it was paid">
+              <option value="cash">cash</option>
+              <option value="check">check</option>
+              <option value="card">card</option>
+              <option value="other">other</option>
+            </select>
+            {!lead.invoice_total_cents && (
+              <label className="job-check">
+                <input type="checkbox" name="settles" value="1" />
+                this squares the job
+              </label>
+            )}
+            <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording...">Record payment</SafeSubmitButton>
+            {Number(lead.paid_amount_cents ?? 0) > 0 && (
+              <span className="job-current t-caption">
+                Paid {money(lead.paid_amount_cents)}
+                {lead.invoice_total_cents ? ` of ${money(lead.invoice_total_cents)}` : ""}
+                {lead.paid_at
+                  ? " · squared up"
+                  : lead.invoice_total_cents
+                    ? ` · ${money(Math.max(0, Number(lead.invoice_total_cents) - Number(lead.paid_amount_cents ?? 0)))} still out`
+                    : ""}
+              </span>
             )}
           </form>
 
