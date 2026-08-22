@@ -58,9 +58,19 @@ test("real Gmail receipts on Intuit mail authenticate", () => {
   // Widening to header.i must not widen the domain boundary.
   const lookalike = invoiceReceipt.replace("header.i=@n.intuit.com", "header.i=@n.intuit.com.payments-verify.net")
   assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [lookalike], subject: "Payment received: Invoice #1357" }), false)
-  // Replace only the smtp.mailfrom copy; the SPF parenthetical repeats the domain.
-  const spfLookalike = invoiceReceipt.replace('smtp.mailfrom="bounces+8551759-1cb7-sales=musiccityspecialtywelding.com@sg1.n.intuit.com"', 'smtp.mailfrom="bounces@sg1.n.intuit.com.payments-verify.net"')
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [spfLookalike], subject: "Payment received: Invoice #1357" }), false)
+  // Invoice #1354, the one message the 2026-08-22 replay could not recover, copied
+  // from Show original. Intuit relayed it through Amazon SES: two DKIM signatures,
+  // and an SPF envelope on amazonses.com rather than intuit.com. Requiring SPF to
+  // align with Intuit is stricter than DMARC and rejected a genuine receipt.
+  const relayedThroughSes = 'mx.google.com; dkim=pass header.i=@intuit.com header.s=s1 header.b=REDACTED; dkim=pass header.i=@amazonses.com header.s=hsbnp7p3 header.b=REDACTED; spf=pass (google.com: domain of 010101a01fb5ac44-c51e4cfd-501c-4530-ae5f-c2e6933cf873-000000@us-west-2.amazonses.com designates 1.2.3.4 as permitted sender) smtp.mailfrom=010101a01fb5ac44-c51e4cfd-501c-4530-ae5f-c2e6933cf873-000000@us-west-2.amazonses.com; dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=notification.intuit.com'
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], authenticationResults: [relayedThroughSes], subject: "Payment received: Invoice #1354-(mobilemom18@gmail.com)" }), true)
+  // The relay only loosens SPF. A message whose Intuit DKIM signature does not
+  // verify is still refused however the envelope was routed.
+  const sesButUnsigned = relayedThroughSes.replace("dkim=pass header.i=@intuit.com", "dkim=fail header.i=@intuit.com")
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [sesButUnsigned], subject: "Payment received: Invoice #1354" }), false)
+  // And DMARC still has to pass over an Intuit From:.
+  const sesButUnaligned = relayedThroughSes.replace("dmarc=pass", "dmarc=fail")
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [sesButUnaligned], subject: "Payment received: Invoice #1354" }), false)
   const dmarcLookalike = invoiceReceipt.replace("header.from=notification.intuit.com", "header.from=notification.intuit.com.payments-verify.net")
   assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [dmarcLookalike], subject: "Payment received: Invoice #1357" }), false)
   const unsigned = invoiceReceipt.replace("dkim=pass", "dkim=none")
@@ -127,6 +137,21 @@ test("trusted QuickBooks templates expose labeled payment, total, and balance fa
   assert.deepEqual(extractQuickBooksPaymentFacts({ subject: "Payment received: Invoice 1333", body: "Amount paid: $75.00\nInvoice total: $300.00\nRemaining balance: $225.00" }), { invoiceNumber: "1333", paymentAmountCents: 7500, invoiceTotalCents: 30000, balanceCents: 22500 })
   assert.deepEqual(extractQuickBooksPaymentFacts({ subject: "Payment received: Invoice #1317", body: "$700.00 Payment has been received\nInvoice amount $700.00" }), { invoiceNumber: "1317", paymentAmountCents: 70000, invoiceTotalCents: 70000, balanceCents: null })
   assert.deepEqual(extractQuickBooksPaymentFacts({ subject: "Unfamiliar receipt: Invoice #9", body: "Invoice amount $500.00\nUnlabeled $200.00" }), { invoiceNumber: "9", paymentAmountCents: null, invoiceTotalCents: 50000, balanceCents: null })
+})
+
+// Every subject above is invented, and every real one names the customer after the
+// number: "Invoice #1357-(josh@runclubcreative.com)". The separating hyphen was
+// captured as part of the number, so all 15 receipts replayed on 2026-08-22 recorded
+// "1357-" -- which would never match a job numbered 1357. Same shape of miss as the
+// header.d fixture: the test agreed with the code instead of with the mailbox.
+test("the customer parenthetical in a real subject is not part of the invoice number", () => {
+  const number = (subject) => extractQuickBooksPaymentFacts({ subject, body: "$54.88 Payment has been received" }).invoiceNumber
+  assert.equal(number("Payment received: Invoice #1357-(josh@runclubcreative.com)"), "1357")
+  assert.equal(number("Payment received: Invoice #1348-(concrete strategies)"), "1348")
+  assert.equal(number("Payment received: Invoice #1345-(BRUCE HEIGHTS)"), "1345")
+  // A hyphen inside the number belongs to it; only a trailing separator is trimmed.
+  assert.equal(number("Payment received: Invoice #INV-1357-(a@b.com)"), "INV-1357")
+  assert.equal(number("Payment received: Invoice #1332"), "1332")
 })
 
 test("only the newly authored email survives Gmail, Outlook, and mobile reply tails", () => {
