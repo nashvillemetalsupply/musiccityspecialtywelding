@@ -104,6 +104,45 @@ export async function GET(req: Request) {
     RETURNING key`) as { key: string }[]
   if (!lease[0]) return Response.json({ ok: true, skipped: "Gmail sync already in progress." }, { status: 202 })
   const token = await gmailAccessToken()
+  // One-time repair hatch. Gmail only hands us new mail, so receipts quarantined by
+  // a broken auth check are invisible to the normal sweep forever. Re-running is
+  // safe: every write below is keyed by the Gmail message id, so a second pass
+  // records duplicates and changes nothing.
+  if (new URL(req.url).searchParams.get("replay") === "quarantined") {
+    const rejected = (await sql`
+      SELECT external_id FROM events
+      WHERE kind = 'email.payment-rejected'::text AND external_id IS NOT NULL
+      ORDER BY occurred_at ASC`) as { external_id: string }[]
+    const replay = { scanned: rejected.length, payments: 0, deposits: 0, stillRejected: 0, duplicates: 0, failures: 0 }
+    for (const row of rejected) {
+      try {
+        const message = await getGmailMessage(token, row.external_id)
+        const headers = gmailHeaders(message)
+        const subject = headers.subject || "(no subject)"
+        const from = emailAddress(headers.from)
+        const body = gmailPlaintext(message)
+        const isTest = `${subject}
+${body}`.includes("[INTERNAL TEST]")
+        const occurredAt = new Date(Number(message.internalDate)).toISOString()
+        if (!isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body })) {
+          replay.stillRejected++
+          continue
+        }
+        const deposit = /money on the way/i.test(subject)
+        const result = deposit
+          ? await ingestDeposit(row.external_id, occurredAt, subject, body, isTest)
+          : await ingestPayment(row.external_id, occurredAt, subject, body, isTest)
+        if (result.duplicate) replay.duplicates++
+        else if (deposit) replay.deposits++
+        else replay.payments++
+      } catch {
+        // Counted, not swallowed: the caller sees failures in the response body and
+        // can re-run, since the pass is idempotent.
+        replay.failures++
+      }
+    }
+    return Response.json({ ok: true, replay })
+  }
   const state = (await sql`SELECT value FROM sync_state WHERE key = 'gmail'::text LIMIT 1`) as { value: { historyId?: string } }[]
   let listing
   try { listing = await listGmailMessageIds(token, state[0]?.value?.historyId ?? null) }
