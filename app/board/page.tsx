@@ -34,7 +34,7 @@ const BOARD_DATE = new Intl.DateTimeFormat("en-US", {
 // This value must stay in the server module. Exporting it from the client
 // component turns it into a client reference instead of serializable data.
 const EMPTY_BOARD: BoardPaneData = {
-  counts: { board: 0, attention: 0, shop: 0, waiting: 0, ready: 0 },
+  counts: { board: 0, attention: 0, shop: 0, waiting: 0, ready: 0, closed: 0 },
   signalCounts: { waiting: 0, noreply: 0, promise: 0, followup: 0, bounced: 0 },
   promises: { kept: 0, open: 0, broken: 0, overdue: null },
   week: [],

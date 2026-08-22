@@ -147,11 +147,12 @@ function HandoffButton({ leadId, customer }: { leadId: number; customer: string 
 // The tracker's stage tabs are JOB_BOARD_STAGES in their canonical order.
 // Labels are the product's own stage names, declared here beside the type.
 const TAB_LABELS: Record<JobBoardStage, string> = {
-  board: "All jobs",
   attention: "Attention",
   shop: "In the shop",
   waiting: "Waiting",
   ready: "Ready",
+  closed: "Closed",
+  board: "All jobs",
 }
 
 // The row mark draws the SERVICE, which the schema actually stores, not the
