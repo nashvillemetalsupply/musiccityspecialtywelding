@@ -82,16 +82,21 @@ test("the board clears a Ready job without leaving the board", () => {
 
   assert.match(board, /import \{ markJobHandedOff \} from "@\/app\/ops\/leads\/\[id\]\/handoff-actions"/)
   assert.match(board, /useActionState\(markJobHandedOff, HANDOFF_IDLE\)/)
-  assert.match(board, /lead\.board_stage === "ready" && <HandoffButton/)
-  // The row shares a line with the reason chip, so the visible label is short
-  // and the whole sentence lives in the accessible name. A long label here is
-  // what overran the chip the first time this shipped.
-  assert.ok(board.includes(">\n        Received\n      </SafeSubmitButton>"))
+  // Handoff belongs in the opened panel, never in the row. The row's actions
+  // cell is a fixed track sharing a line with the reason chip, and a third
+  // control there painted straight over it. Both directions are pinned.
+  const cellStart = board.indexOf('<span className="doing c-do">')
+  const rowCell = board.slice(cellStart, board.indexOf("</span>", cellStart))
+  assert.ok(!rowCell.includes("HandoffButton"), "handoff must not sit in the row")
+  assert.ok(
+    board.indexOf("<HandoffButton") > board.indexOf("job-detail-"),
+    "handoff must render inside the opened detail panel",
+  )
+  assert.match(board, /Customer received it/)
   assert.match(board, /aria-label=\{`Record that \$\{customer\} received their job`\}/)
-  assert.match(board, /title=\{`Record that \$\{customer\} received their job`\}/)
-  // The actions column sizes to its contents; a fixed track is what it spilled
-  // out of. Both row breakpoints must stay content-sized.
-  assert.equal((css.match(/max-content\}/g) ?? []).length, 2)
+  // The row tracks stay exactly as the locked layout had them.
+  assert.ok(css.includes("56px minmax(0,1.6fr) 100px 168px 116px"))
+  assert.ok(css.includes("56px minmax(220px,1.8fr) 108px 120px 180px 116px"))
   // The row toggles the panel on click and exempts anything inside a button;
   // SafeSubmitButton renders one, so the submit must not also expand the row.
   assert.match(board, /SafeSubmitButton/)
@@ -99,7 +104,7 @@ test("the board clears a Ready job without leaving the board", () => {
   // The removed row has to disappear, and only a refetch does that.
   assert.match(board, /if \(state\.status === "handed-off"\) router\.refresh\(\)/)
   assert.match(board, /state\.status === "error" && <span className="t-caption" role="alert">/)
-  assert.match(css, /\.doing form\{display:contents\}/)
+  assert.match(css, /\.why-end \.end form\{display:contents\}/)
 })
 
 test("Closed is its own tab and can never reach the Open jobs figure", () => {

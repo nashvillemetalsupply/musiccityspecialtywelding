@@ -400,10 +400,7 @@ svg{display:block}
   overflow:hidden;text-overflow:ellipsis}
 .val em{font-style:normal;color:var(--text-muted);font-weight:var(--w-reg);font-size:var(--t-label)}
 .right{text-align:right}
-.doing{display:flex;justify-content:flex-end;gap:var(--s1);min-width:0}
-/* The handoff form is a wrapper, not a control: contents lets its button take
-   the row's own button sizing instead of a second box around it. */
-.doing form{display:contents}
+.doing{display:flex;justify-content:flex-end;gap:var(--s1)}
 
 /* --- the expanded job --- */
 /* the expanded job on a phone: the drawing first, then the stages, then money */
@@ -450,6 +447,9 @@ svg{display:block}
 .why-end{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
   font-size:var(--t-caption);color:var(--text-muted)}
 .why-end .end{margin-left:0;width:100%;display:flex;gap:var(--s2)}
+/* The handoff form is a wrapper, not a control: contents lets its button sit
+   in the action row exactly like the links beside it. */
+.why-end .end form{display:contents}
 .why-end .end .btn{flex:1}
 /* final.html has no doctype, so its table uses the UA's normal line height. */
 .sum{width:100%;border-collapse:collapse;font-size:var(--t-label);line-height:normal;margin:var(--s3) 0 0}
@@ -622,7 +622,7 @@ svg{display:block}
      truncates instead — it is the one cell that can lose characters without
      losing meaning, and money goes before the action does. */
   .cols{gap:0 var(--s4);padding:0 var(--s6);
-    grid-template-columns:56px minmax(0,1.6fr) 100px 168px max-content}
+    grid-template-columns:56px minmax(0,1.6fr) 100px 168px 116px}
   .cols .c-wait{display:block}
   .cols .c-state{grid-column:auto;grid-row:auto;justify-self:auto}
   .cols .c-do{grid-column:auto;margin-top:0}
@@ -649,7 +649,7 @@ svg{display:block}
 /* Money is the first thing to go and the last thing to come back. */
 @media (min-width:73.7501rem){
   .cols{gap:0 var(--s5);
-    grid-template-columns:56px minmax(0,1.8fr) 108px 120px 180px max-content}
+    grid-template-columns:56px minmax(220px,1.8fr) 108px 120px 180px 116px}
   .cols .c-money{display:block}
   .detail{grid-template-columns:minmax(0,380px) minmax(0,1fr)}
   .why{grid-template-columns:minmax(0,1fr) 292px}

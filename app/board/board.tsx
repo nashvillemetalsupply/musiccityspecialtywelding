@@ -135,13 +135,9 @@ function HandoffButton({ leadId, customer }: { leadId: number; customer: string 
   return <>
     <form action={action}>
       <input type="hidden" name="leadId" value={leadId} />
-      {/* "Received" in the row, the whole sentence in the accessible name —
-          the actions cell shares a line with the reason chip and a long label
-          pushed straight over it. */}
       <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording…"
-        title={`Record that ${customer} received their job`}
         aria-label={`Record that ${customer} received their job`}>
-        Received
+        Customer received it
       </SafeSubmitButton>
     </form>
     {state.status === "error" && <span className="t-caption" role="alert">{state.message}</span>}
@@ -821,7 +817,6 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                     <span className="val right c-money">{moneyCell.value} <em>{moneyCell.note}</em></span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
-                      {lead.board_stage === "ready" && <HandoffButton leadId={lead.id} customer={customerName(lead)} />}
                       <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}`}>Open job</Link>
                       <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button"
                         aria-label={`${isOpen ? "Collapse" : "Expand"} ${customerName(lead)} job details`}
@@ -910,6 +905,12 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                                 : "No broken promise is recorded."}
                             </span>
                             <span className="end">
+                              {/* Handoff belongs with the actions, not in the row: the row's
+                                  cell is a fixed track shared with the reason chip, and a
+                                  third control there overran it. Opening the job is the
+                                  look before the click anyway. */}
+                              {lead.board_stage === "ready" &&
+                                <HandoffButton leadId={lead.id} customer={customerName(lead)} />}
                               <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}`}>Open job</Link>
                               {phone && <a className="btn btn--sm btn--edge" href={`tel:${phone}`}>Call</a>}
                               {phone && <a className="btn btn--sm btn--edge" href={`sms:${phone}`}>Text</a>}
