@@ -13,6 +13,8 @@ export function isAuthenticatedIntuitPayment(input: {
   authenticationResults?: string | string[]
   subject?: string
   body?: string
+  /** Every To: header value. All must be at the shop domain, or the receipt is refused. */
+  recipients?: string | string[]
 }): boolean
 export function looksLikeIntuitPaymentEnvelope(input: { from: string; subject?: string; body?: string }): boolean
 export function paymentCompletesInvoice(input: {

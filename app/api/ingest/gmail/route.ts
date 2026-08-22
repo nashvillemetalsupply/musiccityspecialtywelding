@@ -134,7 +134,7 @@ export async function GET(req: Request) {
           const body = gmailPlaintext(message)
           const isTest = `${subject}\n${body}`.includes("[INTERNAL TEST]")
           const occurredAt = new Date(Number(message.internalDate)).toISOString()
-          if (!isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body })) {
+          if (!isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body, recipients: gmailHeaderValues(message, "to") })) {
             replay.stillRejected++
             continue
           }
@@ -190,7 +190,7 @@ export async function GET(req: Request) {
           || (label === "DRAFT" && !sent)
       )
       const paymentEnvelope = looksLikeIntuitPaymentEnvelope({ from, subject, body })
-      if (isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body })) {
+      if (isAuthenticatedIntuitPayment({ from, labels: message.labelIds ?? [], authenticationResults: gmailHeaderValues(message, "authentication-results"), subject, body, recipients: gmailHeaderValues(message, "to") })) {
         const result = /money on the way/i.test(subject) ? await ingestDeposit(id, occurredAt, subject, body, isTest) : await ingestPayment(id, occurredAt, subject, body, isTest)
         if (!result.duplicate) counters.payments++
         continue

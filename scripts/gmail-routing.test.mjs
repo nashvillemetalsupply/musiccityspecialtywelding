@@ -3,6 +3,9 @@ import test from "node:test"
 import { extractQuickBooksPaymentFacts, isAuthenticatedIntuitPayment, paymentCompletesInvoice, sentMessageMayStartWork, shouldSkipGmailMessage } from "../lib/gmail-routing.mjs"
 import { readableEmailText, stripQuotedReply } from "../lib/gmail-plaintext.mjs"
 
+// Intuit addresses these to the shop, and its DKIM signature covers To:.
+const SHOP = ["sales@musiccityspecialtywelding.com"]
+
 test("sales sent mail is never swallowed by the own-domain noise rule", () => {
   assert.equal(shouldSkipGmailMessage({
     sent: true,
@@ -40,10 +43,10 @@ test("real customer RFQs survive Gmail noise screening", () => {
 test("QuickBooks money requires aligned Google authentication and exact domain boundaries", () => {
   const trusted = "mx.google.com; dkim=pass header.d=notify.intuit.com; spf=pass smtp.mailfrom=payments@intuit.com; dmarc=pass header.from=intuit.com"
   const spoof = "mx.google.com; dkim=pass header.d=intuit.com; spf=pass smtp.mailfrom=pay@intuit.com; dmarc=pass header.from=intuit.com"
-  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@notify.intuit.com", labels: ["INBOX"], authenticationResults: [trusted], subject: "Payment received: Invoice #1332" }), true)
-  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@evilintuit.com", labels: ["INBOX"], authenticationResults: [trusted], subject: "Payment received: Invoice #1332" }), false)
-  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@intuit.com", labels: ["SPAM"], authenticationResults: [trusted], subject: "Payment received: Invoice #1332" }), false)
-  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@intuit.com", labels: ["INBOX"], authenticationResults: ["mx.google.com; dkim=fail; spf=fail; dmarc=fail", spoof], subject: "Payment received: Invoice #1332" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@notify.intuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: [trusted], subject: "Payment received: Invoice #1332" }), true)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@evilintuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: [trusted], subject: "Payment received: Invoice #1332" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@intuit.com", labels: ["SPAM"], recipients: SHOP, authenticationResults: [trusted], subject: "Payment received: Invoice #1332" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "notice@intuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: ["mx.google.com; dkim=fail; spf=fail; dmarc=fail", spoof], subject: "Payment received: Invoice #1332" }), false)
 })
 
 // Copied out of Show original on two real messages in sales@musiccityspecialtywelding.com
@@ -53,75 +56,99 @@ test("QuickBooks money requires aligned Google authentication and exact domain b
 test("real Gmail receipts on Intuit mail authenticate", () => {
   const invoiceReceipt = 'mx.google.com; dkim=pass header.i=@n.intuit.com header.s=s1 header.b=REDACTED; spf=pass (google.com: domain of bounces+8551759-1cb7-sales=musiccityspecialtywelding.com@sg1.n.intuit.com designates 1.2.3.4 as permitted sender) smtp.mailfrom="bounces+8551759-1cb7-sales=musiccityspecialtywelding.com@sg1.n.intuit.com"; dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=notification.intuit.com'
   const depositNotice = 'mx.google.com; dkim=pass header.i=@intuit.com header.s=s1 header.b=REDACTED; spf=pass (google.com: domain of bounce@em8721.intuit.com designates 1.2.3.4 as permitted sender) smtp.mailfrom=bounce@em8721.intuit.com; dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], authenticationResults: [invoiceReceipt], subject: "Payment received: Invoice #1357-(josh@runclubcreative.com)" }), true)
-  assert.equal(isAuthenticatedIntuitPayment({ from: "businessservices@intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], authenticationResults: [depositNotice], subject: "Money on the way!" }), true)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], recipients: SHOP, authenticationResults: [invoiceReceipt], subject: "Payment received: Invoice #1357-(josh@runclubcreative.com)" }), true)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "businessservices@intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], recipients: SHOP, authenticationResults: [depositNotice], subject: "Money on the way!" }), true)
   // Widening to header.i must not widen the domain boundary.
   const lookalike = invoiceReceipt.replace("header.i=@n.intuit.com", "header.i=@n.intuit.com.payments-verify.net")
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [lookalike], subject: "Payment received: Invoice #1357" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: [lookalike], subject: "Payment received: Invoice #1357" }), false)
   // Invoice #1354, the one message the 2026-08-22 replay could not recover, copied
   // from Show original. Intuit relayed it through Amazon SES: two DKIM signatures,
   // and an SPF envelope on amazonses.com rather than intuit.com. Requiring SPF to
   // align with Intuit is stricter than DMARC and rejected a genuine receipt.
   const relayedThroughSes = 'mx.google.com; dkim=pass header.i=@intuit.com header.s=s1 header.b=REDACTED; dkim=pass header.i=@amazonses.com header.s=hsbnp7p3 header.b=REDACTED; spf=pass (google.com: domain of 010101a01fb5ac44-c51e4cfd-501c-4530-ae5f-c2e6933cf873-000000@us-west-2.amazonses.com designates 1.2.3.4 as permitted sender) smtp.mailfrom=010101a01fb5ac44-c51e4cfd-501c-4530-ae5f-c2e6933cf873-000000@us-west-2.amazonses.com; dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], authenticationResults: [relayedThroughSes], subject: "Payment received: Invoice #1354-(mobilemom18@gmail.com)" }), true)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["UNREAD", "CATEGORY_UPDATES", "INBOX"], recipients: SHOP, authenticationResults: [relayedThroughSes], subject: "Payment received: Invoice #1354-(mobilemom18@gmail.com)" }), true)
   // The relay only loosens SPF. A message whose Intuit DKIM signature does not
   // verify is still refused however the envelope was routed.
   const sesButUnsigned = relayedThroughSes.replace("dkim=pass header.i=@intuit.com", "dkim=fail header.i=@intuit.com")
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [sesButUnsigned], subject: "Payment received: Invoice #1354" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: [sesButUnsigned], subject: "Payment received: Invoice #1354" }), false)
   // And DMARC still has to pass over an Intuit From:.
   const sesButUnaligned = relayedThroughSes.replace("dmarc=pass", "dmarc=fail")
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [sesButUnaligned], subject: "Payment received: Invoice #1354" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: [sesButUnaligned], subject: "Payment received: Invoice #1354" }), false)
   const dmarcLookalike = invoiceReceipt.replace("header.from=notification.intuit.com", "header.from=notification.intuit.com.payments-verify.net")
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [dmarcLookalike], subject: "Payment received: Invoice #1357" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: [dmarcLookalike], subject: "Payment received: Invoice #1357" }), false)
   const unsigned = invoiceReceipt.replace("dkim=pass", "dkim=none")
-  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [unsigned], subject: "Payment received: Invoice #1357" }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ from: "quickbooks@notification.intuit.com", labels: ["INBOX"], recipients: SHOP, authenticationResults: [unsigned], subject: "Payment received: Invoice #1357" }), false)
+})
+
+// Codex review, 2026-08-22, fourth round. dkim=pass and dmarc=pass prove Intuit
+// signed the message. They do not prove Intuit sent it to THIS shop. Someone can
+// take a real receipt from their own QuickBooks tenant, for an invoice number they
+// chose, and re-send the signed bytes here -- both checks still pass. Intuit's h=
+// tag covers to: and oversigns it, so the signed recipient is the thing a replay
+// cannot change.
+test("a genuine receipt addressed to someone else is refused", () => {
+  const genuine = 'mx.google.com; dkim=pass header.i=@n.intuit.com header.s=s1 header.b=REDACTED; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
+  const receipt = { from: "quickbooks@notification.intuit.com", labels: ["INBOX"], authenticationResults: [genuine], subject: "Payment received: Invoice #1311-(attacker@example.com)" }
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: SHOP }), true)
+  // Intuit signed it, but signed it to the attacker's own mailbox.
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ["books@attacker.example"] }), false)
+  // An unsigned second To: appended by the replayer must not override the signed one.
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ["sales@musiccityspecialtywelding.com", "books@attacker.example"] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ["sales@musiccityspecialtywelding.com, books@attacker.example"] }), false)
+  // No recipient at all fails closed rather than skipping the binding.
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: [] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: [""] }), false)
+  // A lookalike of the shop domain is not the shop.
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ["sales@musiccityspecialtywelding.com.attacker.example"] }), false)
+  // Display-name form and casing are still the shop.
+  assert.equal(isAuthenticatedIntuitPayment({ ...receipt, recipients: ["MCS Welding <Sales@MusicCitySpecialtyWelding.com>"] }), true)
 })
 
 // Codex review, 2026-08-22. The gate used to run three regexes over the whole
 // flattened header, so any clause could satisfy another clause's requirement.
 // Every fixture here authenticated as Intuit before the header was parsed.
 test("a crafted Authentication-Results cannot borrow another clause's result", () => {
-  const real = { from: "quickbooks@notification.intuit.com", labels: ["INBOX"], subject: "Payment received: Invoice #1357" }
+  const real = { from: "quickbooks@notification.intuit.com", labels: ["INBOX"], recipients: SHOP, subject: "Payment received: Invoice #1357" }
   // dmarc genuinely failed; the text that satisfied it lived inside the spf value.
   const borrowedDmarc = 'mx.google.com; dkim=pass header.i=@n.intuit.com; spf=pass smtp.mailfrom="dmarc=pass header.from=intuit.com@attacker.example"; dmarc=fail header.from=intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [borrowedDmarc] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [borrowedDmarc] }), false)
   // The SPF parenthetical is free text the sending side influences.
   const borrowedFromComment = 'mx.google.com; dkim=fail header.i=@attacker.example; spf=pass (google.com: dkim=pass header.i=@intuit.com) smtp.mailfrom=bounce@attacker.example; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [borrowedFromComment] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [borrowedFromComment] }), false)
   // intuit.com sitting in the local part is an attacker identity, not an Intuit one.
   const localPartLookalike = 'mx.google.com; dkim=pass header.i=intuit.com@evil.example; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [localPartLookalike] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [localPartLookalike] }), false)
   // Two DKIM signatures are normal (ESP plus brand) and Gmail writes one clause per
   // signature, so a verified Intuit signature counts even beside a failed one.
   // Rejecting duplicate methods outright would have re-broken real receipts.
   const twoSignatures = 'mx.google.com; dkim=fail header.i=@esp.example; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [twoSignatures] }), true)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [twoSignatures] }), true)
   // No DKIM signature from Intuit at all, however many others verified.
   const noIntuitSignature = 'mx.google.com; dkim=pass header.i=@esp.example; dkim=fail header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [noIntuitSignature] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [noIntuitSignature] }), false)
   // spf and dmarc are single by definition; a second copy is someone guessing.
   const doubledSpf = 'mx.google.com; dkim=pass header.i=@intuit.com; spf=fail smtp.mailfrom=bounce@attacker.example; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [doubledSpf] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [doubledSpf] }), false)
   // A result token has to end at a delimiter, and a bare backslash is malformed.
   const suffixedResult = 'mx.google.com; dkim=pass/garbage header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [suffixedResult] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [suffixedResult] }), false)
   const escapedResult = 'mx.google.com; dkim=pa\\ss header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [escapedResult] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [escapedResult] }), false)
   // A property has to start at a boundary, not ride along inside another token.
   const smuggledProperty = 'mx.google.com; dkim=pass x/header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [smuggledProperty] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [smuggledProperty] }), false)
   // Repeating a property inside one clause must not let the first copy win.
   const duplicateProperty = 'mx.google.com; dkim=pass header.i=@intuit.com header.i=@attacker.example; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [duplicateProperty] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [duplicateProperty] }), false)
   // Only the header Gmail prepended counts; a later sender-supplied copy is unreachable.
   const spoofSecond = 'mx.google.com; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: ["mx.google.com; dkim=fail; spf=fail; dmarc=fail", spoofSecond] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: ["mx.google.com; dkim=fail; spf=fail; dmarc=fail", spoofSecond] }), false)
   // An unbalanced comment is malformed, and malformed must fail closed.
   const unbalanced = 'mx.google.com; dkim=pass header.i=@n.intuit.com; spf=pass (unclosed smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [unbalanced] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [unbalanced] }), false)
   // A non-Google authserv-id is never trusted, however well-formed the rest is.
   const wrongAuthserv = 'mx.attacker.example; dkim=pass header.i=@intuit.com; spf=pass smtp.mailfrom=bounce@sg1.n.intuit.com; dmarc=pass header.from=notification.intuit.com'
-  assert.equal(isAuthenticatedIntuitPayment({ ...real, authenticationResults: [wrongAuthserv] }), false)
+  assert.equal(isAuthenticatedIntuitPayment({ ...real, recipients: SHOP, authenticationResults: [wrongAuthserv] }), false)
 })
 
 test("partial payments stay open and unknown sent mail must look like sold work", () => {
@@ -152,6 +179,11 @@ test("the customer parenthetical in a real subject is not part of the invoice nu
   // A hyphen inside the number belongs to it; only a trailing separator is trimmed.
   assert.equal(number("Payment received: Invoice #INV-1357-(a@b.com)"), "INV-1357")
   assert.equal(number("Payment received: Invoice #1332"), "1332")
+  // Only the template's delimiter goes. A number that really ends in a hyphen keeps
+  // it, because pointing a payment at the wrong job is worse than an odd-looking id.
+  assert.equal(number("Payment received: Invoice #INV-1357-"), "INV-1357-")
+  assert.equal(number("Payment received: Invoice #2024.11-(a@b.com)"), "2024.11")
+  assert.equal(number("Payment received: Invoice #JOB_88-(a@b.com)"), "JOB_88")
 })
 
 test("only the newly authored email survives Gmail, Outlook, and mobile reply tails", () => {
