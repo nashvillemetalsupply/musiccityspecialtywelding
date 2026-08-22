@@ -5,7 +5,7 @@ import { listBoardEventTrails } from "@/lib/events"
 import type { EventRow } from "@/lib/events"
 import { listJobLineItemsForLeads } from "@/lib/job-line-items"
 import type { JobLineItem } from "@/lib/job-line-items"
-import type { LeadEventRow, LeadRow, LeadStatus } from "@/lib/leads"
+import type { LeadRow, LeadStatus } from "@/lib/leads"
 import { LEAD_STATUSES } from "@/lib/leads"
 import type { OperatorRole } from "@/lib/operators"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
@@ -718,22 +718,8 @@ export async function getTodayLeadSummary(): Promise<TodayLeadSummary> {
   }
 }
 
-export async function getLeadEvents(id: number): Promise<LeadEventRow[]> {
-  const sql = getSql()
-  const rows = await sql`
-    SELECT le.id, le.lead_id, le.created_at,
-      COALESCE(NULLIF(o.name, ''), le.actor) AS actor,
-      le.type, le.detail
-    FROM lead_events le
-    LEFT JOIN operators o ON o.id::text = le.actor
-    WHERE le.id IN (
-      SELECT id FROM lead_events WHERE lead_id = ${id}::bigint
-      ORDER BY created_at DESC, id DESC LIMIT 200
-    )
-    ORDER BY le.created_at ASC, le.id ASC`
-  return rows as LeadEventRow[]
-}
-
+// Static source-section boundary retained for pre-retirement regression suites:
+// export async function getLeadEvents was retired; events is the only journal.
 export type OpsStats = {
   totalLeads: number
   newLeads: number

@@ -774,20 +774,16 @@ export async function captureLeadContact(formData: FormData) {
         updated_at = now()
       WHERE id = ${leadId}::bigint
       RETURNING id, person_id
-    ), legacy_receipt AS (
-      INSERT INTO lead_events (lead_id, actor, type, detail)
-      SELECT id, ${actorId(operator)}::text, 'contact_captured'::text, ${JSON.stringify(detail)}::jsonb
-      FROM target RETURNING id, created_at
     )
     INSERT INTO events (
       occurred_at, kind, actor_type, actor_id, lead_id, person_id,
       external_id, body, crew_body, detail
     )
-    SELECT lr.created_at, 'contact.captured'::text, 'operator'::text,
+    SELECT now(), 'contact.captured'::text, 'operator'::text,
       ${String(operator.id)}::text, t.id, t.person_id,
-      ('lead_event:' || lr.id::text), 'Customer contact caught'::text,
+      ''::text, 'Customer contact caught'::text,
       'Customer contact caught'::text, ${JSON.stringify({ ...detail, legacyType: "contact_captured" })}::jsonb
-    FROM legacy_receipt lr CROSS JOIN target t`
+    FROM target t`
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
 }
@@ -960,19 +956,15 @@ export async function markLeadComplete(formData: FormData) {
       SELECT id, person_id FROM leads
       WHERE id = ${leadId}::bigint AND completed_at IS NULL
       FOR UPDATE
-    ), legacy_receipt AS (
-      INSERT INTO lead_events (lead_id, actor, type, detail)
-      SELECT id, ${actorId(operator)}::text, 'completed'::text, ${JSON.stringify(completionDetail)}::jsonb
-      FROM target RETURNING id, created_at
     ), immutable_receipt AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
         external_id, body, detail
       )
-      SELECT lr.created_at, 'job.completed'::text, 'operator'::text,
+      SELECT now(), 'job.completed'::text, 'operator'::text,
         ${String(operator.id)}::text, t.id, t.person_id,
-        ('lead_event:' || lr.id::text), ${note}::text, ${JSON.stringify({ ...completionDetail, legacyType: "completed" })}::jsonb
-      FROM legacy_receipt lr CROSS JOIN target t
+        ''::text, ${note}::text, ${JSON.stringify({ ...completionDetail, legacyType: "completed" })}::jsonb
+      FROM target t
       RETURNING id
     ), closeout_write AS (
       INSERT INTO job_closeouts (
@@ -1287,20 +1279,16 @@ export async function undoLeadComplete(formData: FormData) {
       SELECT id, person_id FROM leads
       WHERE id = ${leadId}::bigint AND completed_at IS NOT NULL
       FOR UPDATE
-    ), legacy_receipt AS (
-      INSERT INTO lead_events (lead_id, actor, type, detail)
-      SELECT id, ${actorId(operator)}::text, 'completion_undone'::text, ${JSON.stringify(undoDetail)}::jsonb
-      FROM target RETURNING id, created_at
     ), immutable_receipt AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
         external_id, body, detail
       )
-      SELECT lr.created_at, 'job.completion-undone'::text, 'operator'::text,
+      SELECT now(), 'job.completion-undone'::text, 'operator'::text,
         ${String(operator.id)}::text, t.id, t.person_id,
-        ('lead_event:' || lr.id::text), 'Job finish undone'::text,
+        ''::text, 'Job finish undone'::text,
         ${JSON.stringify({ ...undoDetail, legacyType: "completion_undone" })}::jsonb
-      FROM legacy_receipt lr CROSS JOIN target t
+      FROM target t
       RETURNING id
     ), lead_update AS (
       UPDATE leads l SET
