@@ -1,0 +1,6 @@
+interface:
+  display_name: "MCSW Weekly Optimization"
+  short_description: "Audit, improve, and verify MCSW growth weekly"
+  default_prompt: "Use $mcsw-weekly-optimization to run this week's evidence-driven optimization pass across the complete MCSW acquisition and operations system."
+policy:
+  allow_implicit_invocation: true
