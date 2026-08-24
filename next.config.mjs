@@ -10,6 +10,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/home",
+        destination: "https://musiccityspecialtywelding.com/",
+        permanent: true,
+      },
+      {
         source: "/:path*",
         has: [{ type: "host", value: "www.musiccityspecialtywelding.com" }],
         destination: "https://musiccityspecialtywelding.com/:path*",

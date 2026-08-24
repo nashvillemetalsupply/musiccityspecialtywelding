@@ -51,6 +51,39 @@ test("design previews do not add build-time font fetches", () => {
   }
 })
 
+test("the sitemap does not manufacture a fresh last-modified date on every build", () => {
+  const sitemap = source("app/sitemap.ts")
+
+  assert.doesNotMatch(sitemap, /lastModified\s*:\s*new Date\(\)/)
+  assert.doesNotMatch(sitemap, /const lastModified\s*=\s*new Date\(\)/)
+})
+
+test("the legacy home URL permanently redirects to the canonical homepage", () => {
+  const nextConfig = source("next.config.mjs")
+
+  assert.match(nextConfig, /source: "\/home"[\s\S]*destination: "https:\/\/musiccityspecialtywelding\.com\/"[\s\S]*permanent: true/)
+})
+
+test("health distinguishes exhausted call transcriptions from retryable backlog", () => {
+  const health = source("app/api/health/route.ts")
+
+  assert.match(health, /transcript_attempts >= 8/)
+  assert.match(health, /callTranscriptExhausted: database\.callTranscriptExhausted/)
+})
+
+test("public analytics excludes every private and internal review surface", () => {
+  const analytics = source("components/public-analytics.tsx")
+  const deferredTag = source("components/deferred-google-tag.tsx")
+
+  for (const prefix of ["/ops", "/board", "/j", "/design-preview"]) {
+    assert.match(analytics, new RegExp(`"${prefix.replace("/", "\\/")}"`))
+  }
+  for (const marker of ["internal-verify", "e2e"]) {
+    assert.match(analytics, new RegExp(marker))
+    assert.match(deferredTag, new RegExp(marker))
+  }
+})
+
 test("Active Jobs clamps stale pages and renders the captured customer need", () => {
   // C7 archived active-job-index; the board's tracker row is the live renderer.
   const data = section(source("lib/ops-data.ts"), "export async function listBoardJobs", "export async function getLead")

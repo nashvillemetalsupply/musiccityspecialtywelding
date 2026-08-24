@@ -8,6 +8,9 @@ type DeferredGoogleTagProps = {
 
 export function DeferredGoogleTag({ containerId }: DeferredGoogleTagProps) {
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("utm_source") === "internal-verify" || params.get("utm_medium") === "e2e") return
+
     const scriptId = "deferred-google-tag"
     let loaded = false
 

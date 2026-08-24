@@ -17,6 +17,7 @@ import {
 } from "@/lib/twilio"
 import { callTranscriptionConfigured, deepgramCallbackSecretConfigured } from "@/lib/call-transcription"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
+import { automationRunIsStale, gmailFreshnessWindowMs } from "@/lib/automation-health.mjs"
 
 export const dynamic = "force-dynamic"
 
@@ -47,6 +48,7 @@ type DatabaseHealth = {
   lastBriefAt: string | null
   lastBriefOk: boolean | null
   callTranscriptBacklog: number | null
+  callTranscriptExhausted: number | null
   voiceTranscriptBacklog: number | null
   uploadRecoveryBacklog: number | null
   consentRecordCount: number | null
@@ -68,6 +70,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     lastBriefAt: null,
     lastBriefOk: null,
     callTranscriptBacklog: null,
+    callTranscriptExhausted: null,
     voiceTranscriptBacklog: null,
     uploadRecoveryBacklog: null,
     consentRecordCount: null,
@@ -84,6 +87,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         (SELECT count(*)::int FROM calls
           WHERE recording_sid <> '' AND transcript_status IN ('queued','failed','submitting','submitted')
             AND updated_at < now() - interval '30 minutes') AS call_transcript_backlog,
+        (SELECT count(*)::int FROM calls
+          WHERE recording_sid <> '' AND transcript_status IN ('queued','failed','submitting','submitted')
+            AND transcript_attempts >= 8
+            AND updated_at < now() - interval '30 minutes') AS call_transcript_exhausted,
         (SELECT count(*)::int FROM voice_transcription_intents
           WHERE status IN ('persisted','queued','failed','submitting')
             AND updated_at < now() - interval '20 minutes') AS voice_transcript_backlog,
@@ -96,6 +103,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       lead_count: number
       failed_deliveries: number
       call_transcript_backlog: number
+      call_transcript_exhausted: number
       voice_transcript_backlog: number
       upload_recovery_backlog: number
       consent_record_count: number
@@ -105,6 +113,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.leadCount = counts.lead_count
     result.failedDeliveries = counts.failed_deliveries
     result.callTranscriptBacklog = counts.call_transcript_backlog
+    result.callTranscriptExhausted = counts.call_transcript_exhausted
     result.voiceTranscriptBacklog = counts.voice_transcript_backlog
     result.uploadRecoveryBacklog = counts.upload_recovery_backlog
     result.consentRecordCount = counts.consent_record_count
@@ -197,7 +206,11 @@ export async function GET() {
   const centralHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hourCycle: "h23" }).format(new Date()))
   const reminderStale = database.lastReminderAt === null ? centralHour >= 2 : Date.now() - new Date(database.lastReminderAt).getTime() > 3 * 60 * 60 * 1000
   const digestStale = database.lastDigestAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastDigestAt).getTime() > 26 * 60 * 60 * 1000
-  const gmailStale = database.lastGmailAt === null || Date.now() - new Date(database.lastGmailAt).getTime() > 20 * 60 * 1000
+  // GitHub schedules Gmail every 15 minutes from 12:00-23:59 UTC and hourly
+  // overnight. Scheduled runs can be delayed under load, so the readiness
+  // window must follow the real cadence instead of declaring a healthy hourly
+  // run stale after 20 minutes.
+  const gmailStale = automationRunIsStale(database.lastGmailAt, gmailFreshnessWindowMs())
   const morningBriefStale = database.lastBriefAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastBriefAt).getTime() > 26 * 60 * 60 * 1000
   const reminderHealthy = !reminderStale && (database.lastReminderOk === true || database.lastReminderAt === null)
   const digestHealthy = !digestStale && (database.lastDigestOk === true || database.lastDigestAt === null)
@@ -321,6 +334,7 @@ export async function GET() {
         callTranscriptionConfigured: callTranscriptionConfigured(),
         voiceTranscriptionConfigured: voiceTranscriptionConfigured(),
         callTranscriptBacklog: database.callTranscriptBacklog,
+        callTranscriptExhausted: database.callTranscriptExhausted,
         voiceTranscriptBacklog: database.voiceTranscriptBacklog,
         gmailConfigured: gmailConfigured(),
         aiGatewayConfigured: aiConfigured(),
