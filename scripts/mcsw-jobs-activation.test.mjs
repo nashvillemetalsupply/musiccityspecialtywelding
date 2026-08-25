@@ -76,6 +76,23 @@ test("mobile side effects use centered scroll-safe controls with busy-state prot
   assert.match(css, /\.ops-safe-action\s*\{\s*touch-action:\s*pan-y;/)
 })
 
+test("mobile quick replies leave a separate usable free-form composer", () => {
+  const reply = source("app/ops/leads/[id]/spike-reply.tsx")
+  const css = source("app/ops/leads/[id]/job.css")
+
+  assert.match(reply, /aria-label=\{channel === "email" \? "Email reply" : "Text reply"\}/)
+  assert.match(reply, /aria-label="Quick replies"/)
+  assert.match(reply, /onClick=\{\(\) => setBody\(copy\)\}/)
+  assert.match(
+    css,
+    /\.job-page \.ops-spike-reply\s*\{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\) auto;[^}]*\}[\s\S]*?\.job-page \.ops-spike-reply > input\[name="body"\]\s*\{[^}]*grid-column:\s*2;[^}]*grid-row:\s*2;[^}]*\}[\s\S]*?\.job-page \.ops-spike-reply > button\[type="submit"\]\s*\{[^}]*grid-column:\s*3;[^}]*grid-row:\s*2;[^}]*\}/,
+  )
+  assert.match(
+    css,
+    /@media \(max-width: 40rem\) \{[\s\S]*?\.job-page \.ops-spike-reply\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*\}[\s\S]*?\.job-page \.ops-spike-reply > input\[name="body"\]\s*\{[^}]*grid-column:\s*1;[^}]*grid-row:\s*4;[^}]*\}[\s\S]*?\.job-page \.ops-spike-reply > button\[type="submit"\]\s*\{[^}]*grid-column:\s*1;[^}]*grid-row:\s*5;[^}]*\}/,
+  )
+})
+
 test("Swipe to Finish is deliberate, scroll-canceling, single-submit, accessible, and undoable", () => {
   const done = source("app/ops/leads/[id]/done-stamp.tsx")
   const actions = source("app/ops/actions.ts")
