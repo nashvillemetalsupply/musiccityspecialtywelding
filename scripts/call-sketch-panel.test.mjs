@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs"
 import { deriveCallSketch, emptyCallSketchSpec } from "../lib/call-sketch-live.mjs"
 import {
   PANEL_FACT_KEYS, answeredFactCount, dimensionMark, factText, factTone,
-  pricingSentence, sketchAriaLabel,
+  hasDrawing, pricingSentence, sketchAriaLabel, sketchGeometry,
 } from "../lib/call-sketch-panel.mjs"
 
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
@@ -35,7 +35,8 @@ test("an uncertain width is an ambiguity flag, not an eighth answered fact", () 
   assert.equal(answeredFactCount(spec), 1, "kind is answered; the flagged width is not")
   assert.equal(factTone(spec.width), "ambig")
   assert.equal(factText("width", spec.width), "Opening or finished?")
-  assert.equal(dimensionMark(spec.width), "?", "an unanswered width stays a question mark on the drawing")
+  assert.equal(dimensionMark(spec.width), "≈ 144\"", "the number was heard, so the paper carries it as an approximation")
+  assert.equal(dimensionMark(spec.height), "?", "a height nobody gave stays a question mark")
 })
 
 test("a stated fact is answered, an unstated one is not", () => {
@@ -114,7 +115,8 @@ test("the board's sketch is a real call, and never a test one", () => {
 // beside a drawing of a gate nobody had mentioned — after a call the extractor
 // had in fact understood in full. These pin the two repairs.
 test("a call that answered no gate fact falls back to what the call said", () => {
-  assert.match(PREVIEW_SOURCE, /const showHeard = answered === 0 && heard\.length > 0/)
+  assert.match(PREVIEW_SOURCE, /const showHeard = !drawing\.hasDrawing && heard\.length > 0/)
+  assert.match(PREVIEW_SOURCE, /const drawing = sketchGeometry\(spec\)/)
   assert.match(PREVIEW_SOURCE, /showHeard \? "What the call said" : "Ask next"/)
   // One loop draws both. A second hand-written slot list is how the two drift.
   assert.equal((PREVIEW_SOURCE.match(/className="slots"/g) ?? []).length, 1)
@@ -122,7 +124,7 @@ test("a call that answered no gate fact falls back to what the call said", () =>
 })
 
 test("the heard facts are this call's own, role-projected, and never a test call's", () => {
-  const reader = STORE_SOURCE.slice(STORE_SOURCE.indexOf("async function heardOnCall"))
+  const reader = STORE_SOURCE.slice(STORE_SOURCE.indexOf("async function claimsOnCall"))
   assert.match(reader, /e\.detail->>'callSid' = \$\{callSid\}::text/, "claims are scoped to this call, not the person's whole history")
   assert.match(reader, /c\.superseded_by IS NULL/)
   assert.match(reader, /lower\(COALESCE\(e\.detail->>'isTest', 'false'\)\) <> 'true'/)
@@ -164,4 +166,109 @@ test("a call with no job yet offers the draft, and only while intake will open i
   assert.match(guard, /d\.status = ANY\(ARRAY\['pending','saving','failed','unknown'\]::text\[\]\)/)
   assert.match(PREVIEW_SOURCE, /sketch\?\.leadId == null && sketch\?\.draftId &&/)
   assert.match(PREVIEW_SOURCE, /href=\{`\/ops\/intake\/\$\{sketch\.draftId\}`\}>Save this call as a job<\/Link>/)
+})
+
+// The four-minute call of 2026-08-24 was about a trailer axle ground off its
+// spindle. It said "on the outside of the frame", the sketch claimed a
+// rectangular frame, and the board drew one — over seven facts the extractor
+// had understood and the panel then refused to show.
+test("an ordinary mention of a frame does not claim the sketch", () => {
+  const trailer = deriveCallSketch([
+    { sequenceId: 71, track: "outbound_track", transcript: "Like, on the outside of the frame, or is it still" },
+    { sequenceId: 72, track: "inbound_track", transcript: "The axle's completely off the trailer." },
+  ])
+  assert.equal(trailer.kind.value, null, "no gate or frame was described on that call")
+  assert.equal(answeredFactCount(trailer), 0)
+
+  // A frame someone is actually having built still lands.
+  const built = deriveCallSketch([
+    { sequenceId: 1, track: "inbound_track", transcript: "I need a rectangular frame welded up." },
+  ])
+  assert.equal(built.kind.value, "frame")
+  const measured = deriveCallSketch([
+    { sequenceId: 1, track: "inbound_track", transcript: "The frame is 36 inches wide by 24 inches high." },
+  ])
+  assert.equal(measured.kind.value, "frame")
+  assert.equal(measured.width.value, 36)
+})
+
+// Every coordinate in the board's sketch tile used to be a literal, so the
+// same box with the same two rails was drawn for every call ever made.
+test("the sketch tile is drawn from the call, not from constants", () => {
+  const blank = sketchGeometry(emptyCallSketchSpec())
+  assert.deepEqual(
+    { x: blank.x, y: blank.y, w: blank.w, h: blank.h, stroke: blank.stroke },
+    { x: 52, y: 40, w: 144, h: 92, stroke: 3 },
+    "an unstated call keeps the mockup's box",
+  )
+  assert.equal(blank.railsStated, false, "unstated rails stay dashed ghosts")
+  assert.equal(blank.rails.length, 2)
+  assert.equal(blank.hinge, null)
+  assert.equal(blank.latch, null)
+
+  const tall = sketchGeometry(deriveCallSketch([
+    { sequenceId: 1, track: "inbound_track", transcript: "The gate itself is 24 inches wide." },
+    { sequenceId: 2, track: "inbound_track", transcript: "Make it 96 inches tall with 2 inch square tubing." },
+    { sequenceId: 3, track: "inbound_track", transcript: "Three rails, hinges on the left, latch on the right." },
+  ]))
+  assert.ok(tall.h > tall.w, "a tall narrow gate is drawn tall and narrow")
+  assert.equal(tall.railsStated, true)
+  assert.equal(tall.rails.length, 3)
+  const heavyStock = sketchGeometry(deriveCallSketch([
+    { sequenceId: 1, track: "inbound_track", transcript: "The gate itself is 48 inches wide." },
+    { sequenceId: 2, track: "inbound_track", transcript: "Make it 42 inches tall with 3 inch square tubing." },
+  ]))
+  const lightStock = sketchGeometry(deriveCallSketch([
+    { sequenceId: 1, track: "inbound_track", transcript: "The gate itself is 48 inches wide." },
+    { sequenceId: 2, track: "inbound_track", transcript: "Make it 42 inches tall with 1 inch square tubing." },
+  ]))
+  assert.ok(heavyStock.stroke > lightStock.stroke, "heavier stock draws a heavier wall")
+  assert.ok(tall.hinge && tall.hinge.x < tall.x, "hinges hang off the left edge")
+  assert.ok(tall.latch && tall.latch.x > tall.x + tall.w, "the latch hangs off the right edge")
+
+  // Frame exports never invent gate hardware. Neither does the picture.
+  const frame = sketchGeometry(deriveCallSketch([
+    { sequenceId: 1, track: "inbound_track", transcript: "A rectangular frame, hinges on the left, latch on the right." },
+  ]))
+  assert.equal(frame.isGate, false)
+  assert.equal(frame.hinge, null)
+  assert.equal(frame.latch, null)
+})
+
+// Both of these are transcripts out of production, and the panel got both
+// wrong in opposite directions: it drew for the one that described nothing,
+// and blanked for the one that described a gate.
+test("the drawing turns on what was described, not on what counts as answered", () => {
+  // 2026-08-24, four minutes about a trailer axle ground off its spindle. The
+  // only shop-shaped word in it is "frame", in a sentence about a trailer.
+  const axle = deriveCallSketch([
+    { sequenceId: 71, track: "outbound_track", transcript: "Like, on the outside of the frame, or is it still" },
+    { sequenceId: 72, track: "inbound_track", transcript: "He ground it all off. The axle's completely off the trailer." },
+  ])
+  assert.equal(hasDrawing(axle), false, "nothing was described, so the tile stays the blank grid")
+  assert.equal(sketchGeometry(axle).hasDrawing, false)
+  assert.match(sketchAriaLabel(axle), /^Empty call sketch\./)
+
+  // A real customer gate, measured out loud but hedged. Every fact on it is
+  // "uncertain", so the answered count is one — and the drawing used to be
+  // thrown away entirely.
+  const gate = deriveCallSketch([
+    { sequenceId: 1, track: "inbound_track", transcript: "special gate. It's gonna be about 26 inches wide." },
+    { sequenceId: 2, track: "inbound_track", transcript: "With about eight inches tall." },
+  ])
+  assert.equal(gate.width.truth, "uncertain")
+  assert.equal(answeredFactCount(gate), 1, "only the kind is an answer")
+  assert.equal(hasDrawing(gate), true, "a hedged measurement is still a measurement")
+  const drawn = sketchGeometry(gate)
+  assert.equal(drawn.outlineUncertain, true, "and it is drawn as the hedge it is")
+  assert.ok(drawn.w > drawn.h, "26 by 8 is drawn wide and low")
+  assert.equal(dimensionMark(gate.width), "\u2248 26\"")
+  assert.equal(factText("width", gate.width), "\u2248 26\"", "nobody called this an opening")
+
+  // The shop reaching for a word is not the customer specifying a job.
+  const reaching = deriveCallSketch([
+    { sequenceId: 1, track: "outbound_track", transcript: "That's a very kind of gate." },
+  ])
+  assert.equal(reaching.kind.value, null)
+  assert.equal(hasDrawing(reaching), false)
 })

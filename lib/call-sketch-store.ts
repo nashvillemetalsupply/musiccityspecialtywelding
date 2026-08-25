@@ -3,6 +3,7 @@ import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { buildClarificationForSketch } from "@/lib/build-sheets-continuation.mjs"
 import { confirmedCallSketch, deriveCallSketch, emptyCallSketchSpec, type CallSketchSpec } from "@/lib/call-sketch-live.mjs"
+import { mergeClaimFacts } from "@/lib/call-sketch-claims.mjs"
 import { recordEvent } from "@/lib/events"
 import type { OperatorRole } from "@/lib/operators"
 import { shopClaimText } from "@/lib/shop-language"
@@ -276,16 +277,24 @@ export async function getCallSketchForDraft(publicId: string) {
     }>
   const sketch = rows[0]
   if (!sketch) return null
-  const utterances = (await sketchUtterances(sketch.call_sid)).slice(-24)
+  // This route is owner-only, so the claims are read at owner visibility. The
+  // same merge the board does: what the extractor heard fills the slots the
+  // regexes left unknown, always as uncertain, so the export stays locked
+  // until the owner confirms the numbers himself.
+  const [utterances, claims] = await Promise.all([
+    sketchUtterances(sketch.call_sid).then((items) => items.slice(-24)),
+    claimsOnCall(sketch.call_sid, "owner"),
+  ])
+  const observedSpec = mergeClaimFacts(sketch.observed_spec, claims)
   const buildQuestion = buildSheetsEnabled() && sketch.is_test && !sketch.confirmed_spec
-    ? buildClarificationForSketch(sketch.observed_spec)
+    ? buildClarificationForSketch(observedSpec)
     : null
   return {
     callerName: sketch.caller_name,
     phone: sketch.phone,
     callStatus: sketch.call_status,
     status: sketch.sketch_status,
-    observedSpec: sketch.observed_spec,
+    observedSpec,
     confirmedSpec: sketch.confirmed_spec,
     revision: sketch.revision,
     confirmedAt: sketch.confirmed_at,
@@ -397,7 +406,11 @@ function heardText(value: unknown) {
 // handrail — leaves every slot on the panel unstated even though the
 // extractor filled the person's record. These are that record, scoped to
 // this call, so the board stops showing a blank sheet after a real call.
-async function heardOnCall(callSid: string, role: OperatorRole) {
+// One read of a call's extracted facts, used twice: the geometry among them
+// goes into the drawing, and the rest becomes the panel's fallback list. They
+// were never two queries and must not become two — a claim the sketch drew
+// and the slot list also printed is the same fact told twice.
+async function claimsOnCall(callSid: string, role: OperatorRole) {
   const sql = getSql()
   const rows = (await sql`
     SELECT predicate, value FROM (
@@ -410,10 +423,15 @@ async function heardOnCall(callSid: string, role: OperatorRole) {
       ORDER BY c.predicate, c.id DESC
     ) latest
     ORDER BY latest.id ASC`) as { predicate: string; value: unknown }[]
+  // Crew money is removed server-side, before anything reads a value.
   return rows
-    .filter((row) => !HEARD_SKIP.has(row.predicate.toLowerCase()))
     .map((row) => projectClaimForRole(row, role))
     .filter((row): row is { predicate: string; value: unknown } => Boolean(row))
+}
+
+function heardFromClaims(rows: { predicate: string; value: unknown }[]) {
+  return rows
+    .filter((row) => !HEARD_SKIP.has(row.predicate.toLowerCase()))
     .map((row) => ({ predicate: row.predicate, label: heardLabel(row.predicate), text: heardText(row.value) }))
     .filter((fact) => fact.text !== "")
     .slice(0, 6)
@@ -462,9 +480,9 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
   const call = rows[0]
   if (!call) return null
 
-  const [utterances, heard, unsketchedRows] = await Promise.all([
+  const [utterances, claims, unsketchedRows] = await Promise.all([
     sketchUtterances(call.twilio_sid),
-    heardOnCall(call.twilio_sid, role),
+    claimsOnCall(call.twilio_sid, role),
     sql`
       SELECT count(*)::int AS count
       FROM calls c
@@ -496,14 +514,16 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
     status: call.status,
     // A sketch row written before a fact existed can be missing keys; the
     // empty spec supplies every one of them so the panel never reads undefined.
-    spec: { ...emptyCallSketchSpec(), ...(call.spec ?? {}) } as CallSketchSpec,
+    // The extractor's own reading of the same call fills what the regexes
+    // never heard, as uncertain, and never over the call's own stated word.
+    spec: mergeClaimFacts({ ...emptyCallSketchSpec(), ...(call.spec ?? {}) } as CallSketchSpec, claims),
     lines: (live ? utterances.slice(-LIVE_LINES) : utterances.slice(0, ENDED_LINES)).map((item) => ({
       sequenceId: Number(item.sequence_id),
       speaker: speakerForTrack(call.direction, item.track),
       transcript: item.transcript,
     })),
     totalLines: utterances.length,
-    heard,
+    heard: heardFromClaims(claims),
     unsketchedCalls: Number(unsketched[0]?.count ?? 0),
   }
 }

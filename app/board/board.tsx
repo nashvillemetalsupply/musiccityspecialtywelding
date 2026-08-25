@@ -10,7 +10,7 @@ import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
   PANEL_FACT_KEYS, PANEL_FACT_LABELS, answeredFactCount, dimensionMark,
-  factText, factTone, pricingSentence, sketchAriaLabel,
+  factText, factTone, pricingSentence, sketchAriaLabel, sketchGeometry,
 } from "@/lib/call-sketch-panel.mjs"
 import type { BoardCallSketch } from "@/lib/call-sketch-store"
 import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
@@ -289,7 +289,14 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
   // stated" rows after a real conversation. When the drawing heard nothing,
   // the slots carry what the call did say instead.
   const heard = sketch?.heard ?? []
-  const showHeard = answered === 0 && heard.length > 0
+  // The fallback opens on whether there is anything to draw, not on the
+  // answered count. "Frame" in a sentence about a trailer axle used to count
+  // as an answered fact, which held it shut and printed six "Not stated" rows
+  // beside a rectangle nobody had described; and a gate the customer had in
+  // fact measured — "about 26 inches wide" — counted as nothing at all,
+  // because a hedged measurement is not an answer. Both are drawings.
+  const drawing = sketchGeometry(spec)
+  const showHeard = !drawing.hasDrawing && heard.length > 0
   // A call still on the line shows its tail; an ended one shows its opening,
   // where the customer says what they need. Either way the count is honest
   // about what the column left out.
@@ -579,22 +586,43 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                     <path d="M0 24h244M0 48h244M0 72h244M0 96h244M0 120h244M0 144h244"></path>
                     <path d="M24 0v172M48 0v172M72 0v172M96 0v172M120 0v172M144 0v172M168 0v172M192 0v172M216 0v172"></path>
                   </g>
-                  <rect x="52" y="40" width="144" height="92" fill="none" stroke="var(--sketch-line)" strokeWidth="3"></rect>
-                  <g stroke="var(--sketch-line)" strokeWidth="1.6" strokeDasharray="4 4" opacity=".45">
-                    <path d="M52 70h144M52 102h144"></path>
-                  </g>
-                  <g stroke="var(--sketch-dim)" strokeWidth="1">
-                    <path d="M52 150h144M52 142v16M196 142v16"></path>
-                    <path d="M34 40v92M26 40h16M26 132h16"></path>
-                  </g>
-                  <g fontFamily="Instrument Sans" fontSize="12" fontWeight="600" fill="var(--sketch-line)">
-                    {/* Width along the bottom, height up the left, stock size
-                        outside the right rail — a fact that is not an answer
-                        stays a question mark on the paper. */}
-                    <text x="124" y="166" textAnchor="middle">{dimensionMark(spec.width)}</text>
-                    <text x="26" y="90" textAnchor="middle">{dimensionMark(spec.height)}</text>
-                    <text x="220" y="90" textAnchor="middle">{dimensionMark(spec.stockSize)}</text>
-                  </g>
+                  {/* The copy beside this tile says the drawing stays blank on
+                      a call that described no gate or frame. Until this guard
+                      it said that over a full elevation. */}
+                  {!showHeard && <>
+                    {/* A box drawn from hedged numbers is drawn as a hedge. */}
+                    <rect x={drawing.x} y={drawing.y} width={drawing.w} height={drawing.h}
+                      fill="none" stroke="var(--sketch-line)" strokeWidth={drawing.stroke}
+                      strokeDasharray={drawing.outlineUncertain ? "6 4" : undefined}></rect>
+                    <g stroke="var(--sketch-line)"
+                      strokeWidth={drawing.railsStated ? drawing.stroke * 0.7 : 1.6}
+                      strokeDasharray={drawing.railsStated ? undefined : "4 4"}
+                      opacity={drawing.railsStated ? 1 : .45}>
+                      {drawing.rails.map((railY) =>
+                        <path key={railY} d={`M${drawing.x} ${railY}h${drawing.w}`}></path>)}
+                    </g>
+                    {/* A frame export never invents gate hardware, and neither
+                        does the picture of one. */}
+                    {drawing.hinge && <g fill="var(--sketch-line)">
+                      {drawing.hinge.ys.map((hingeY) =>
+                        <circle key={hingeY} cx={drawing.hinge!.x} cy={hingeY} r={drawing.hinge!.r}></circle>)}
+                    </g>}
+                    {drawing.latch && <rect fill="var(--sketch-line)"
+                      x={drawing.latch.x - drawing.latch.size / 2} y={drawing.latch.y - drawing.latch.size}
+                      width={drawing.latch.size} height={drawing.latch.size * 2}></rect>}
+                    <g stroke="var(--sketch-dim)" strokeWidth="1">
+                      <path d={drawing.widthDim}></path>
+                      <path d={drawing.heightDim}></path>
+                    </g>
+                    <g fontFamily="Instrument Sans" fontSize="12" fontWeight="600" fill="var(--sketch-line)">
+                      {/* Width along the bottom, height up the left, stock size
+                          outside the right rail — a fact that is not an answer
+                          stays a question mark on the paper. */}
+                      <text x={drawing.widthText.x} y={drawing.widthText.y} textAnchor="middle">{dimensionMark(spec.width)}</text>
+                      <text x={drawing.heightText.x} y={drawing.heightText.y} textAnchor="middle">{dimensionMark(spec.height)}</text>
+                      <text x={drawing.stockText.x} y={drawing.stockText.y} textAnchor="middle">{dimensionMark(spec.stockSize)}</text>
+                    </g>
+                  </>}
                 </svg>
                 <figcaption>ROUGH CALL SKETCH &middot;<br />NOT A FABRICATION DRAWING</figcaption>
               </figure>
