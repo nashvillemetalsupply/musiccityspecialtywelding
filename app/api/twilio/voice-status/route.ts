@@ -110,7 +110,7 @@ export async function POST(req: Request) {
       personId: call.person_id,
       externalId: `${sid}:missed`,
       body: "Customer call was missed",
-      detail: { status },
+      detail: { status, isTest: call.is_test },
     })
     if (!eventId) {
       const prior = (await sql`SELECT id FROM events WHERE kind = 'call.missed' AND external_id = ${`${sid}:missed`}::text LIMIT 1`) as { id: number }[]

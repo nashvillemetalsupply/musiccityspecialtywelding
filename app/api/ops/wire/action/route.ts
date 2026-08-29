@@ -10,6 +10,7 @@ import { isReservedShopPhone, normalizeEmail, normalizePhone } from "@/lib/peopl
 import { storeQueuedAttachment } from "@/lib/attachment-retry"
 import { Resend } from "resend"
 import { operatorSignature } from "@/lib/operators"
+import { createHash } from "node:crypto"
 
 export async function POST(req: Request) {
   const operator = await getAuthenticatedOperator()
@@ -34,7 +35,9 @@ export async function POST(req: Request) {
   if (!slip?.action_kind) return Response.json({ error: "That update is already handled." }, { status: 409 })
   try {
   if (slip.action_kind === "usual-paperwork") {
-    const form = new FormData(); form.set("personId", String(slip.action_detail.personId ?? "")); form.set("idempotencyKey", `wire:${notificationId}:paperwork`)
+    const intentHex = createHash("sha256").update(`wire:${notificationId}:paperwork`).digest("hex")
+    const paperworkIntent = `${intentHex.slice(0, 8)}-${intentHex.slice(8, 12)}-${intentHex.slice(12, 16)}-${intentHex.slice(16, 20)}-${intentHex.slice(20, 32)}`
+    const form = new FormData(); form.set("personId", String(slip.action_detail.personId ?? "")); form.set("idempotencyKey", paperworkIntent)
     await sendUsualPaperwork(form)
   } else if (slip.action_kind === "quote-capture") {
     if (operator.role !== "owner") throw new Error("Owner access required.")

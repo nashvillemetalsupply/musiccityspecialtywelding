@@ -1,22 +1,21 @@
-import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
+import { createPublicMetadata } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 
-export const metadata: Metadata = {
+export const metadata = createPublicMetadata({
   title: "Terms of Service",
   description: "Website and quote-request terms for Music City Specialty Welding.",
-  alternates: { canonical: "/terms" },
-  openGraph: { url: "/terms" },
-}
+  canonical: "/terms",
+})
 
 export default function TermsPage() {
   const shopPhone = getShopPhone()
   return (
     <>
       <Navbar />
-      <main className="ms-site ms-legal">
+      <main id="main-content" className="ms-site ms-legal">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 max-w-4xl">
           <div className="prose prose-lg max-w-none">
             <h1 className="font-serif font-bold text-3xl sm:text-4xl text-secondary mb-3 sm:mb-4">

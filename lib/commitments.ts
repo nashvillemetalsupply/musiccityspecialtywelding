@@ -117,13 +117,27 @@ export async function listCommitments(input: {
   personId?: number | null
   status?: CommitmentStatus | null
   limit?: number
+  includeTests?: boolean
 }): Promise<CommitmentRow[]> {
   const sql = getSql()
   const limit = Math.min(Math.max(input.limit ?? 100, 1), 300)
+  const includeTests = input.includeTests ?? false
   return (await sql`
-    SELECT * FROM commitments
-    WHERE (${input.leadId ?? null}::bigint IS NULL OR lead_id = ${input.leadId ?? null}::bigint)
-      AND (${input.personId ?? null}::bigint IS NULL OR person_id = ${input.personId ?? null}::bigint)
+    SELECT c.* FROM commitments c
+    LEFT JOIN leads l ON l.id = c.lead_id
+    LEFT JOIN people p ON p.id = COALESCE(c.person_id, l.person_id)
+    LEFT JOIN events source ON source.id = c.source_event_id
+    LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
+    LEFT JOIN people source_person ON source_person.id = source.person_id
+    WHERE (${input.leadId ?? null}::bigint IS NULL OR c.lead_id = ${input.leadId ?? null}::bigint)
+      AND (${input.personId ?? null}::bigint IS NULL OR c.person_id = ${input.personId ?? null}::bigint)
+      AND (${includeTests}::boolean OR (
+        COALESCE(l.is_test, false) = false
+        AND COALESCE(p.is_test, false) = false
+        AND COALESCE(source_lead.is_test, false) = false
+        AND COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+      ))
       -- 'broken' is derived, not stored (see getPromiseSummary). Asked for it
       -- literally, this returned nothing forever, so Ask Jobs could answer
       -- "no broken promises" while the board showed several.
@@ -133,11 +147,11 @@ export async function listCommitments(input: {
       AND (
         ${input.status ?? null}::text IS NULL
         OR (${input.status ?? null}::text = 'broken'
-            AND status = 'open' AND due_at IS NOT NULL AND due_at < now())
+            AND c.status = 'open' AND c.due_at IS NOT NULL AND c.due_at < now())
         OR (${input.status ?? null}::text <> 'broken'
-            AND status = ${input.status ?? null}::text)
+            AND c.status = ${input.status ?? null}::text)
       )
-    ORDER BY due_at ASC NULLS LAST, created_at DESC
+    ORDER BY c.due_at ASC NULLS LAST, c.created_at DESC
     LIMIT ${limit}::bigint`) as CommitmentRow[]
 }
 

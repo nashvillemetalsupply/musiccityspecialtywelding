@@ -135,7 +135,8 @@ export async function handlePromise(formData: FormData) {
   const quickDueAt = new Date(localTarget.getTime() - offsetHours * 60 * 60 * 1000).toISOString()
   const resolvedDueAt = dueAt && !Number.isNaN(new Date(dueAt).getTime()) ? new Date(dueAt).toISOString() : quickDueAt
   if (!draftBody) throw new Error("An honest text is required.")
-  const lead = await getLead(leadId, operator.role)
+  const lead = await getLead(leadId, operator.role, { includeTests: true })
+  if (lead?.is_test) throw new Error("Internal test jobs never send customer promise updates.")
   if (!lead?.phone || lead.phone_is_placeholder || isReservedShopPhone(lead.phone)) throw new Error("This job needs a real customer phone number.")
   const sql = getSql()
   const rows = (await sql`

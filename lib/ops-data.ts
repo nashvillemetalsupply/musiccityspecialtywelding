@@ -649,8 +649,13 @@ export async function getBoardJobDetails(
   }]))
 }
 
-export async function getLead(id: number, role: OperatorRole = "crew"): Promise<LeadRow | null> {
+export async function getLead(
+  id: number,
+  role: OperatorRole = "crew",
+  options: { includeTests?: boolean } = {},
+): Promise<LeadRow | null> {
   const sql = getSql()
+  const includeTests = options.includeTests ?? false
   const rows = (await sql`
     SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name,
       CASE WHEN l.person_id IS NULL THEN 1 ELSE (
@@ -658,7 +663,9 @@ export async function getLead(id: number, role: OperatorRole = "crew"): Promise<
         WHERE sibling.person_id = l.person_id AND sibling.is_test = l.is_test
       ) END AS person_job_count
     FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
-    WHERE l.id = ${id}::bigint LIMIT 1`) as LeadRow[]
+    WHERE l.id = ${id}::bigint
+      AND (${includeTests}::boolean OR l.is_test = false)
+    LIMIT 1`) as LeadRow[]
   return rows[0] ? projectLeadForRole(rows[0], role) : null
 }
 

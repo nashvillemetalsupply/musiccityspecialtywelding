@@ -63,8 +63,15 @@ export function projectEventForRole(event: EventRow, role: OperatorRole): EventR
     const body = attachments.length ? `${attachments.length} customer photo or drawing ${attachments.length === 1 ? "was" : "were"} filed.` : "Owner paperwork filed from email."
     return { ...safe, body: redactCrewText(body), crew_body: redactCrewText(body), detail: { attachments } }
   }
-  if (event.kind === "email.failed" || event.kind === "email.delivered") {
-    return { ...safe, body: redactCrewText(event.crew_body || (event.kind === "email.failed" ? "Email did not deliver." : "Email delivered.")), detail: { sourceEventId: event.detail?.sourceEventId ?? null } }
+  if (["email.accepted", "email.failed", "email.unknown", "email.delivered"].includes(event.kind)) {
+    const body = event.kind === "email.failed"
+      ? "Email did not deliver."
+      : event.kind === "email.unknown"
+        ? "Email may have sent. Check delivery before retrying."
+        : event.kind === "email.accepted"
+          ? "Email accepted for delivery."
+          : "Email delivered."
+    return { ...safe, body: redactCrewText(event.crew_body || body), detail: { sourceEventId: event.detail?.sourceEventId ?? null, providerType: event.detail?.providerType ?? null } }
   }
   if (event.kind === "email.out") {
     return { ...safe, body: redactCrewText(event.crew_body || "Shop email saved. MCSW Jobs is preparing the crew-safe copy."), detail: { deliveryStatus: event.detail?.deliveryStatus ?? "pending" } }

@@ -93,9 +93,11 @@ export async function POST(req: Request) {
         description: "Get one work order plus its strongest recent receipts.",
         inputSchema: z.object({ id: z.number().int().positive() }),
         execute: async ({ id }) => {
+          const lead = await getLead(id, operator.role)
+          if (!lead) return { lead: null, receipts: [] }
           const receipts = (await listLeadEvents(id, 20)).map((event) => projectEventForRole(event, operator.role)).filter((event): event is NonNullable<typeof event> => Boolean(event))
           receipts.forEach((event) => allowedReceipts.add(Number(event.id)))
-          return { lead: await getLead(id, operator.role), receipts: receipts.map((event) => ({ receipt: `e:${event.id}`, occurred_at: event.occurred_at, kind: event.kind, body: event.body })) }
+          return { lead, receipts: receipts.map((event) => ({ receipt: `e:${event.id}`, occurred_at: event.occurred_at, kind: event.kind, body: event.body })) }
         },
       }),
       get_person_history: tool({

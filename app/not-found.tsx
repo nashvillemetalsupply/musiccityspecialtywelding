@@ -17,7 +17,7 @@ export default function NotFound() {
   return (
     <>
       <Navbar />
-      <main className="ms-site ms-lost">
+      <main id="main-content" className="ms-site ms-lost">
         <div className="ms-lost-ticket">
           <span className="ms-lost-kicker">Wrong turn // no job ticket here</span>
           <p className="ms-lost-code" aria-hidden="true">404</p>

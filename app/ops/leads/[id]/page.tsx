@@ -25,6 +25,7 @@ import { getActiveGlassLinkState } from "@/lib/glass"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { glassUrl } from "@/lib/glass-delivery"
 import { shopClaimLabel, shopClaimText, shopDeliveryLabel, shopEventLabel, shopJobStatusLabel, shopSourceLabel } from "@/lib/shop-language"
+import { strongestEmailReceiptStatus } from "@/lib/email-provider-truth.mjs"
 import { projectClaimForRole, projectCommitmentForRole, projectEventForRole, redactCrewText } from "@/lib/visibility"
 import { OpsLoginForm } from "../../login-form"
 import { DoneStamp } from "./done-stamp"
@@ -178,9 +179,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   if (!operator) return <OpsLoginForm linkError={false} />
 
   const [lead, messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems] = await Promise.all([
-    getLead(leadId, operator.role),
+    getLead(leadId, operator.role, { includeTests: true }),
     listLeadMessages(leadId),
-    listCommitments({ leadId, status: "open" }),
+    listCommitments({ leadId, status: "open", includeTests: true }),
     listActiveClaims("lead", leadId),
     listLeadCalls(leadId),
     listUnifiedEvents(leadId, 300),
@@ -310,10 +311,18 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     ...messages.map((message) => ({ kind: "message" as const, at: message.sent_at, id: `message-${message.id}`, message })),
     ...spikeEvents.map((event) => ({ kind: "event" as const, at: event.occurred_at, id: `event-${event.id}`, event })),
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-  const emailDelivery = new Map<number, "failed" | "delivered">()
+  const emailReceipts = new Map<number, Array<{ kind: string; providerType: string | null }>>()
   for (const event of safeUnifiedEvents) {
     const sourceId = Number(event.detail?.sourceEventId)
-    if (Number.isInteger(sourceId) && sourceId > 0 && (event.kind === "email.failed" || event.kind === "email.delivered")) emailDelivery.set(sourceId, event.kind === "email.failed" ? "failed" : "delivered")
+    if (!Number.isInteger(sourceId) || sourceId <= 0 || !["email.accepted", "email.failed", "email.unknown", "email.delivered"].includes(event.kind)) continue
+    const receipts = emailReceipts.get(sourceId) ?? []
+    receipts.push({ kind: event.kind, providerType: typeof event.detail?.providerType === "string" ? event.detail.providerType : null })
+    emailReceipts.set(sourceId, receipts)
+  }
+  const emailDelivery = new Map<number, "failed" | "unknown" | "accepted" | "delivered">()
+  for (const [sourceId, receipts] of emailReceipts) {
+    const status = strongestEmailReceiptStatus(receipts)
+    if (status) emailDelivery.set(sourceId, status)
   }
 
   return (

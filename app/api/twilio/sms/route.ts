@@ -9,6 +9,7 @@ import { isMetaVerificationSms, isUsNumericShortCode } from "@/lib/shop-brain-in
 import { processEvent } from "@/lib/extract"
 import { queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-retry"
 import { classifyTwilioConsentKeyword, recordMessagingConsent } from "@/lib/messaging-consent"
+import { resumeSmsProjection } from "@/lib/sms-provider-truth.mjs"
 
 export const runtime = "nodejs"
 
@@ -37,18 +38,83 @@ export async function POST(req: Request) {
   if (!sid || !from || !to) return twiml("")
   if (!isConfiguredTwilioNumber(to)) return twiml("", 403)
 
+  const rawMedia = Array.from({ length: mediaCount }, (_, index) => ({
+    url: params.get(`MediaUrl${index}`) ?? "",
+    contentType: params.get(`MediaContentType${index}`) ?? "application/octet-stream",
+    state: "pending",
+  }))
+  const sql = getSql()
+  const eventKind = systemSms
+    ? "sms.system.in"
+    : consentKeyword
+      ? `sms.consent.${consentKeyword.toLowerCase()}`
+      : "sms.in"
+
+  // First durable boundary after signature and destination validation: file
+  // exactly what Twilio sent, without depending on customer matching, consent,
+  // lead creation, attachment copying, extraction, or notification. A crash
+  // after this insert is resumed by the signed webhook retry below.
+  const inserted = (await sql`
+    INSERT INTO messages (
+      twilio_sid, direction, from_phone, to_phone, body, media, status,
+      lead_id, person_id
+    ) VALUES (
+      ${sid}::text, 'in', ${from}::text, ${to}::text, ${body}::text,
+      ${JSON.stringify(rawMedia)}::jsonb, 'received',
+      NULL::bigint, NULL::bigint
+    ) ON CONFLICT (twilio_sid) DO NOTHING
+    RETURNING id, lead_id, person_id`) as { id: number; lead_id: number | null; person_id: number | null }[]
+  const existing = inserted[0] ? [] : (await sql`SELECT id, lead_id, person_id FROM messages WHERE twilio_sid = ${sid}::text LIMIT 1`) as { id: number; lead_id: number | null; person_id: number | null }[]
+  const receipt = inserted[0] ?? existing[0]
+  const messageId = Number(receipt?.id)
+  if (!messageId) return twiml("")
+
+  // A completed event is the strongest projection receipt. A linked messages
+  // row covers the narrower crash window after conversation resolution but
+  // before the immutable event. Either one pins a signed replay to its
+  // original job instead of resolving against whatever happens to be open now.
+  const priorProjection = inserted[0] ? [] : (await sql`
+    SELECT lead_id, person_id, detail FROM events
+    WHERE kind = ${eventKind}::text AND external_id = ${sid}::text
+    ORDER BY id ASC LIMIT 1`) as { lead_id: number | null; person_id: number | null; detail: { createdLead?: boolean } | null }[]
+  const {
+    projected: persistedProjection,
+    leadId: persistedLeadId,
+    personId: persistedPersonId,
+    createdLead: persistedCreatedLead,
+  } = resumeSmsProjection({
+    messageReceipt: { leadId: receipt?.lead_id, personId: receipt?.person_id },
+    priorEvent: priorProjection[0]
+      ? { leadId: priorProjection[0].lead_id, personId: priorProjection[0].person_id, createdLead: priorProjection[0].detail?.createdLead }
+      : null,
+  })
+  const persistedPeople = persistedPersonId
+    ? (await sql`SELECT id, display_name, is_test FROM people WHERE id = ${persistedPersonId}::bigint LIMIT 1`) as { id: number; display_name: string; is_test: boolean }[]
+    : []
+  if (persistedPersonId && !persistedPeople[0]) throw new Error("The persisted SMS customer could not be resumed.")
+
   // Consent-control messages are compliance events, not job intake. Look up an
   // existing customer when possible, but never create a person or work order.
   // System SMS creates nothing at all: no person, no lead, no consent record.
-  const conversation = consentKeyword || systemSms
-    ? await (async () => {
+  const conversation = persistedProjection
+    ? { person: persistedPeople[0] ?? null, leadId: persistedLeadId, createdLead: persistedCreatedLead }
+    : consentKeyword || systemSms
+      ? await (async () => {
         if (systemSms) return { person: null, leadId: null, createdLead: false }
         const person = await findPersonByPhone(from)
         const leadId = person ? await findRecentOpenLeadForPerson(person.id, person.is_test) : null
         return { person, leadId, createdLead: false }
       })()
-    : await resolvePhoneConversation({ phone: from, body, source: "sms-in" })
+      : await resolvePhoneConversation({ phone: from, body, source: "sms-in" })
   const personId = conversation.person?.id ?? null
+
+  // Persist the chosen link immediately. COALESCE makes duplicate webhook
+  // projection monotonic and prevents a replay from replacing the original.
+  await sql`
+    UPDATE messages SET lead_id = COALESCE(lead_id, ${conversation.leadId ?? null}::bigint),
+      person_id = COALESCE(person_id, ${personId}::bigint)
+    WHERE id = ${messageId}::bigint AND twilio_sid = ${sid}::text`
+
   if (!systemSms) {
     await recordMessagingConsent({
       phone: from,
@@ -65,33 +131,6 @@ export async function POST(req: Request) {
       },
     })
   }
-  const rawMedia = Array.from({ length: mediaCount }, (_, index) => ({
-    url: params.get(`MediaUrl${index}`) ?? "",
-    contentType: params.get(`MediaContentType${index}`) ?? "application/octet-stream",
-    state: "pending",
-  }))
-  const sql = getSql()
-
-  // Provider truth and immutable event exist before media copying or notification.
-  const inserted = (await sql`
-    INSERT INTO messages (
-      twilio_sid, direction, from_phone, to_phone, body, media, status,
-      lead_id, person_id
-    ) VALUES (
-      ${sid}::text, 'in', ${from}::text, ${to}::text, ${body}::text,
-      ${JSON.stringify(rawMedia)}::jsonb, 'received',
-      ${conversation.leadId ?? null}::bigint, ${personId}::bigint
-    ) ON CONFLICT (twilio_sid) DO NOTHING
-    RETURNING id`) as { id: number }[]
-  const existing = inserted[0] ? [] : (await sql`SELECT id FROM messages WHERE twilio_sid = ${sid}::text LIMIT 1`) as { id: number }[]
-  const messageId = Number(inserted[0]?.id ?? existing[0]?.id)
-  if (!messageId) return twiml("")
-
-  const eventKind = systemSms
-    ? "sms.system.in"
-    : consentKeyword
-      ? `sms.consent.${consentKeyword.toLowerCase()}`
-      : "sms.in"
   // The immutable system event is keyed by the external SID and carries a
   // neutral constant body -- the code lives only in the messages row (provider
   // truth) and the owner's cell, never in the journal, Wire, or logs.

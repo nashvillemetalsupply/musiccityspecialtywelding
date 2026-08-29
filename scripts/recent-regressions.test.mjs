@@ -366,6 +366,69 @@ test("lead projection redacts money in place without a dangling redactMoney help
   assert.match(lead, /projectLeadForRole\(rows\[0\], role\)/)
 })
 
+test("internal test call receipts and Ask Jobs stay in the test partition", () => {
+  const voiceStatus = source("app/api/twilio/voice-status/route.ts")
+  const missed = section(voiceStatus, 'if (call && ["no-answer", "busy", "failed", "canceled"].includes(status))', "if (!eventId) {")
+  assert.match(missed, /detail: \{ status, isTest: call\.is_test \}/)
+
+  const ingest = section(source("lib/ingest.ts"), "export async function reconcileRawInboundCalls", "return { scanned: rows.length, recovered }")
+  assertInOrder(ingest, [
+    "const isTest = Boolean",
+    "isTest,",
+    "detail: { recovered: true, intake: prepared.kind, isTest }",
+  ], "recovered calls must carry the same test marker through intake and receipt")
+
+  const data = section(source("lib/ops-data.ts"), "export async function getLead", "export async function getRepeatJobCounts")
+  assert.match(data, /options: \{ includeTests\?: boolean \} = \{\}/)
+  assert.match(data, /AND \(\$\{includeTests\}::boolean OR l\.is_test = false\)/)
+
+  const commitments = section(source("lib/commitments.ts"), "export async function listCommitments", "export type PromiseSummary")
+  assert.match(commitments, /includeTests\?: boolean/)
+  assert.match(commitments, /LEFT JOIN events source ON source\.id = c\.source_event_id/)
+  assert.match(commitments, /COALESCE\(l\.is_test, false\) = false[\s\S]*COALESCE\(p\.is_test, false\) = false[\s\S]*COALESCE\(source_lead\.is_test, false\) = false[\s\S]*COALESCE\(source_person\.is_test, false\) = false[\s\S]*source\.detail->>'isTest'/)
+
+  const ask = source("app/api/ops/ask/route.ts")
+  const getLeadTool = section(ask, "get_lead: tool", "get_person_history: tool")
+  assertInOrder(getLeadTool, ["const lead = await getLead(id, operator.role)", "if (!lead) return", "listLeadEvents(id, 20)"], "Ask must reject a test lead before loading its receipts")
+  const commitmentTool = section(ask, "list_commitments: tool", "search_leads: tool")
+  assert.doesNotMatch(commitmentTool, /includeTests:\s*true/)
+
+  const workOrder = source("app/ops/leads/[id]/page.tsx")
+  assert.match(workOrder, /getLead\(leadId, operator\.role, \{ includeTests: true \}\)/)
+  assert.match(workOrder, /listCommitments\(\{ leadId, status: "open", includeTests: true \}\)/)
+  assert.match(source("app/ops/leads/[id]/promise-actions.ts"), /if \(lead\?\.is_test\) throw new Error\("Internal test jobs never send customer promise updates\."\)/)
+})
+
+test("Customer Page corrections require origin and a one-render replay key", () => {
+  const route = source("app/j/[token]/correct/route.ts")
+  assertInOrder(route, [
+    "if (!sameOrigin(req))",
+    "await req.formData()",
+    "const job = await getGlassJob(token)",
+    "const correctionKey = createHash",
+    "externalId,",
+  ], "the request boundary and action key must precede the correction receipt")
+  assert.match(route, /\^glass-correction:\[a-z0-9-\]\{36\}\$/i)
+  assert.match(route, /detail: \{ actionKeyHash: correctionKey \}/)
+  assert.doesNotMatch(route, /const bucket =/)
+
+  const page = source("app/j/[token]/page.tsx")
+  assert.match(page, /name="actionKey" value=\{`glass-correction:\$\{randomUUID\(\)\}`\}/)
+})
+
+test("operator role migration fails closed and can run repeatedly", () => {
+  const migration = source("scripts/migrate.mjs")
+  const operators = section(migration, "CREATE TABLE IF NOT EXISTS operators", "ALTER TABLE ops_tokens")
+  assertInOrder(operators, [
+    "UPDATE operators SET role = 'crew'::text WHERE role NOT IN ('owner','crew')",
+    "IF NOT EXISTS (",
+    "conname = 'operators_role_check' AND conrelid = 'operators'::regclass",
+    "ADD CONSTRAINT operators_role_check",
+    "CHECK (role IN ('owner','crew'))",
+  ], "legacy roles must be fail-closed before the repeat-safe constraint")
+  assert.doesNotMatch(operators, /DROP\s+(?:TABLE|COLUMN|CONSTRAINT)/i)
+})
+
 test("extract.ts parses and the ops feature modules resolve their exports", () => {
   const result = ts.transpileModule(source("lib/extract.ts"), {
     compilerOptions: {

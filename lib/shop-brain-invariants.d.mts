@@ -11,6 +11,7 @@ export type GlassStageJob = {
 export function normalizeUsPhone(value: unknown): string
 export function isUsNumericShortCode(value: unknown): boolean
 export function isMetaVerificationSms(body: unknown): boolean
+export function isGmailMessageGone(error: unknown): boolean
 export function isReservedCustomerPhone(value: unknown, reservedValues: unknown[]): boolean
 export function selectBriefAudioPath(role: "owner" | "crew", detail: Record<string, unknown> | null | undefined): string | null
 export function countsAsHumanResponse(kind: string, actorType: string): boolean

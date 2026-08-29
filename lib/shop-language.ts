@@ -15,6 +15,7 @@ const EVENT_LABELS: Record<string, string> = {
   "email.accepted": "Shop email sent",
   "email.delivered": "Shop email delivered",
   "email.failed": "Shop email failed",
+  "email.unknown": "Shop email needs checking",
   "email.in": "Customer email",
   "email.out": "Shop email",
   "form.quote": "Quote request",
@@ -123,6 +124,7 @@ const DELIVERY_LABELS: Record<string, string> = {
   read: "Read",
   delayed: "Delayed",
   failed: "Failed",
+  unknown: "Check before retrying",
   undelivered: "Not delivered",
   resolved: "Handled",
 }

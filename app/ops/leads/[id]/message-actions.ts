@@ -14,6 +14,7 @@ import { getSql } from "@/lib/db"
 import { operatorSignature } from "@/lib/operators"
 import { isDefinitiveTwilioError } from "@/lib/twilio"
 import { getMessagingConsentState, recordMessagingConsent } from "@/lib/messaging-consent"
+import { EmailProviderError, isDefinitiveEmailProviderError, sendEmailWithProviderTruth, strongestEmailReceiptStatus } from "@/lib/email-provider-truth.mjs"
 
 export async function recordVerbalTextConsent(formData: FormData) {
   const operator = await getAuthenticatedOperator()
@@ -99,24 +100,27 @@ export async function sendLeadReply(formData: FormData) {
       const prior = (await sql`SELECT id FROM events WHERE kind = 'email.out' AND external_id = ${persistedId}::text LIMIT 1`) as { id: number }[]
       eventId = Number(prior[0]?.id) || null
       if (eventId) {
-        const accepted = (await sql`
-          SELECT id FROM events WHERE kind = ANY(ARRAY['email.accepted','email.delivered']::text[])
-            AND detail->>'sourceEventId' = ${String(eventId)}::text LIMIT 1`) as { id: number }[]
-        if (accepted[0]) {
+        const receipts = (await sql`
+          SELECT kind, detail->>'providerType' AS provider_type FROM events
+          WHERE kind = ANY(ARRAY['email.accepted','email.delivered','email.failed','email.unknown']::text[])
+            AND detail->>'sourceEventId' = ${String(eventId)}::text`) as { kind: string; provider_type: string | null }[]
+        const receiptStatus = strongestEmailReceiptStatus(receipts.map((receipt) => ({ kind: receipt.kind, providerType: receipt.provider_type })))
+        if (receiptStatus === "accepted" || receiptStatus === "delivered") {
           revalidatePath(`/ops/leads/${leadId}`)
           return
         }
+        if (receiptStatus === "unknown") throw new EmailProviderError("Resend may have accepted this email. Check Calls & Messages before retrying.", false)
+        if (receiptStatus === "failed") throw new EmailProviderError("That email attempt failed. File a fresh retry attempt.", true)
       }
     }
     if (!eventId) throw new Error("The email intent could not be filed.")
     try {
-      const sent = await new Resend(apiKey).emails.send({
-        from,
-        to: replyEmail,
-        subject: `Re: ${lead.service || "your MCSW job"}`,
-        text: signedBody,
-      }, { idempotencyKey: persistedId })
-      if (sent.error || !sent.data?.id) throw new Error(sent.error?.message || "Email provider did not accept the message.")
+      const sent = await sendEmailWithProviderTruth(() => new Resend(apiKey).emails.send({
+          from,
+          to: replyEmail,
+          subject: `Re: ${lead.service || "your MCSW job"}`,
+          text: signedBody,
+        }, { idempotencyKey: persistedId }))
       // Provider acceptance is not delivery. A signed webhook promotes this
       // persisted letter to delivered/failed later.
       await recordEvent({
@@ -124,16 +128,18 @@ export async function sendLeadReply(formData: FormData) {
         actorType: "system",
         leadId,
         personId: replyPersonId,
-        externalId: sent.data.id,
+        externalId: sent.id,
         body: "Email accepted by the delivery provider.",
         crewBody: "Email accepted by the delivery provider.",
-        detail: { sourceEventId: eventId, providerEmailId: sent.data.id },
+        detail: { sourceEventId: eventId, providerEmailId: sent.id },
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Email provider rejected the message."
-      const failureEventId = await recordEvent({ kind: "email.failed", actorType: "system", leadId, personId: replyPersonId, externalId: `failed:${persistedId}`, body: message, crewBody: "Email did not send.", detail: { sourceEventId: eventId } })
-      await notify({ operatorId: operator.id, priority: "digest", stock: "red", title: "Email failed", body: message, crewBody: "Customer email did not send.", url: `/ops/leads/${leadId}#spike`, sourceEventId: failureEventId || eventId })
-      throw new Error(message)
+      const message = error instanceof Error ? error.message : "Email provider response was lost."
+      const definitive = isDefinitiveEmailProviderError(error)
+      const kind = definitive ? "email.failed" : "email.unknown"
+      const failureEventId = await recordEvent({ kind, actorType: "system", leadId, personId: replyPersonId, externalId: `${definitive ? "failed" : "unknown"}:${persistedId}`, body: message, crewBody: definitive ? "Email did not send." : "Email may have sent. Check delivery before retrying.", detail: { sourceEventId: eventId, ambiguous: !definitive } })
+      await notify({ operatorId: operator.id, priority: "digest", stock: "red", title: definitive ? "Email failed" : "Check this email before retrying", body: message, crewBody: definitive ? "Customer email did not send." : "Customer email may have sent. Check delivery before retrying.", url: `/ops/leads/${leadId}#spike`, sourceEventId: failureEventId || eventId })
+      throw error instanceof Error ? error : new EmailProviderError(message, false)
     }
   } else {
     if (!replyPhone) throw new Error("This account contact has no validated mobile number.")
@@ -165,6 +171,6 @@ export async function sendLeadReplyState(_state: ReplyActionState, formData: For
     await sendLeadReply(formData)
     return { status: "sent", message: `${channel === "email" ? "Email" : "Text"} added to Calls & Messages.`, sentAt: Date.now() }
   } catch (error) {
-    return { status: "error", message: error instanceof Error ? error.message : "Reply failed.", sentAt: 0, retryable: isDefinitiveTwilioError(error) }
+    return { status: "error", message: error instanceof Error ? error.message : "Reply failed.", sentAt: 0, retryable: isDefinitiveTwilioError(error) || isDefinitiveEmailProviderError(error) }
   }
 }

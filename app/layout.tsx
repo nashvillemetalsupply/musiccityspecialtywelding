@@ -1,46 +1,23 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Alfa_Slab_One, Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans, Permanent_Marker } from "next/font/google"
+import { Barlow_Condensed, Permanent_Marker } from "next/font/google"
 import { PublicAnalytics } from "@/components/public-analytics"
+import { publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./globals.css"
 
 const _barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
-  weight: ["800", "900"],
+  weight: "900",
   variable: "--font-ms-display",
-  display: "swap",
-})
-
-const _plexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-ms-sans",
-  display: "swap",
-  preload: false,
-})
-
-const _plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["500", "600"],
-  variable: "--font-ms-mono",
-  display: "swap",
-  preload: false,
+  display: "optional",
 })
 
 const _marker = Permanent_Marker({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-ms-marker",
-  display: "swap",
-  preload: false,
-})
-
-const _alfaSlab = Alfa_Slab_One({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-ms-slab",
-  display: "swap",
+  display: "optional",
   preload: false,
 })
 
@@ -50,34 +27,10 @@ const googleAnalyticsMeasurementId =
 export const metadata: Metadata = {
   metadataBase: new URL("https://musiccityspecialtywelding.com"),
   title: {
-    default: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
+    default: publicDefaultTitle,
     template: "%s | Music City Specialty Welding",
   },
-  description:
-    "Open 24/7 for mobile and shop welding, trailer and equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee.",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "Music City Specialty Welding",
-    title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
-    description:
-      "Mobile welding, equipment repair, architectural metalwork, and custom fabrication across Middle Tennessee.",
-    images: [
-      {
-        url: "/images/optimized/welder.webp",
-        width: 1200,
-        height: 630,
-        alt: "Music City Specialty Welding at work",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
-    description:
-      "Mobile welding, equipment repair, architectural metalwork, and custom fabrication across Middle Tennessee.",
-    images: ["/images/optimized/welder.webp"],
-  },
+  description: publicDefaultDescription,
   robots: {
     index: true,
     follow: true,
@@ -89,7 +42,7 @@ export const metadata: Metadata = {
         type: "image/png",
       },
     ],
-    apple: "/images/optimized/mcs welding logo.png",
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
 }
 
@@ -141,6 +94,7 @@ const localBusinessSchema = {
     "Gallatin, Tennessee",
     "Hendersonville, Tennessee",
     "Clarksville, Tennessee",
+    "Antioch, Tennessee",
   ],
   hasOfferCatalog: {
     "@type": "OfferCatalog",
@@ -168,7 +122,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={`${_barlowCondensed.variable} ${_plexSans.variable} ${_plexMono.variable} ${_alfaSlab.variable} ${_marker.variable} font-sans antialiased`}>
+      <body className={`${_barlowCondensed.variable} ${_marker.variable} font-sans antialiased`}>
         <script
           id="local-business-schema"
           type="application/ld+json"

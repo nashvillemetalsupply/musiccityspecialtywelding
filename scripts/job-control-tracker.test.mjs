@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { QUOTE_SERVICE_OPTIONS } from "../lib/public-quote.mjs"
 
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8")
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8")
@@ -161,6 +162,8 @@ test("every service a form can write has a row mark", () => {
   ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"))
 
   const written = new Set()
+  for (const service of QUOTE_SERVICE_OPTIONS) written.add(service)
+  assert.match(forms[0], /QUOTE_SERVICE_OPTIONS\.map/)
   for (const form of forms) {
     // Only the service select. The same forms carry a referral select whose
     // options are Google, Referral, Facebook — not services, and not marks.
@@ -168,7 +171,8 @@ test("every service a form can write has a row mark", () => {
     assert.ok(start > -1, "a form stopped writing a service field")
     const select = form.slice(start, form.indexOf("</select>", start))
     for (const [, label] of select.matchAll(/<option(?![^>]*value=)[^>]*>([^<]+)<\/option>/g)) {
-      written.add(label.replace(/&amp;/g, "&").trim())
+      const service = label.replace(/&amp;/g, "&").trim()
+      if (!service.includes("{")) written.add(service)
     }
   }
   // "Not Sure / Other" is deliberately unmapped: it falls back to blank stock.

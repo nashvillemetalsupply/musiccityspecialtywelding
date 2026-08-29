@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { formatSmsBody, isMetaVerificationSms, isUsNumericShortCode } from "../lib/shop-brain-invariants.mjs"
+import { formatSmsBody, isGmailMessageGone, isMetaVerificationSms, isUsNumericShortCode } from "../lib/shop-brain-invariants.mjs"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
@@ -135,7 +135,50 @@ test("durable interrupt intents retry through the same quiet-hour and budget gat
   assert.doesNotMatch(notify, /sendSms\([\s\S]{0,180}\.then\(\(\) => true\)\.catch\(\(\) => false\)/)
   assert.match(notify, /smsDeliveryUnknown = !isDefinitiveTwilioError\(error\)/)
   assert.match(notify, /delivery_status = 'unknown'[\s\S]{0,260}automatic repeat is quarantined/)
+  const initialClaim = notify.indexOf("delivery_status = 'sending', delivery_attempts = delivery_attempts + 1")
+  const initialPush = notify.indexOf("await sendPushToOperator(input.operatorId")
+  assert.ok(initialClaim >= 0 && initialClaim < initialPush, "the durable alert row must be claimed before the first provider call")
+  assert.match(notify, /provider may have accepted it, so automatic repeat is quarantined/)
+  assert.match(notify, /WHERE priority = 'interrupt' AND sent_at IS NULL AND delivery_status = 'sending'/)
+  assert.doesNotMatch(notify, /OR \(delivery_status = 'sending' AND delivery_last_attempt_at < now\(\) - interval '10 minutes'\)/)
   assert.doesNotMatch(notify, /Â·/)
+})
+
+test("operator SMS alerts reconcile signed provider delivery callbacks", () => {
+  const notify = source("lib/notify.ts")
+  const callback = source("app/api/twilio/notification-status/route.ts")
+  const migration = source("scripts/migrate.mjs")
+  assert.match(migration, /provider_message_sid TEXT/)
+  assert.match(migration, /provider_status TEXT/)
+  assert.match(notify, /twilioCallbackUrl\(`\/api\/twilio\/notification-status\?notification=\$\{(?:id|row\.id)\}`\)/)
+  assert.match(callback, /readTwilioForm\(req\)/)
+  assert.match(callback, /provider_message_sid = \$\{sid\}::text/)
+  assert.match(callback, /delivery_status = CASE[\s\S]{0,500}'delivered'/)
+  assert.match(callback, /WHEN delivery_status IN \('delivered','dead'\) THEN delivery_status/)
+  assert.match(notify, /provider_status = COALESCE\(provider_status, \$\{sms\.status\}::text\)/)
+  assert.match(notify, /delivery_status = CASE WHEN delivery_status IN \('delivered','dead'\) THEN delivery_status ELSE 'accepted' END/)
+})
+
+test("the database protects immutable event truth while allowing one-way enrichment", () => {
+  const migration = source("scripts/migrate.mjs")
+  const manualIntake = source("app/ops/actions.ts")
+  const callIntake = source("lib/job-intake.ts")
+  const recoveredCalls = source("lib/call-artifacts.ts")
+  const extraction = source("lib/extract.ts")
+  assert.match(migration, /CREATE OR REPLACE FUNCTION protect_event_journal_truth\(\)/)
+  for (const column of ["occurred_at", "recorded_at", "kind", "actor_type", "actor_id", "external_id", "body"]) {
+    assert.match(migration, new RegExp(`NEW\\.${column} IS DISTINCT FROM OLD\\.${column}`))
+  }
+  assert.match(migration, /OLD\.lead_id IS NOT NULL AND NEW\.lead_id IS DISTINCT FROM OLD\.lead_id/)
+  assert.match(migration, /OLD\.person_id IS NOT NULL AND NEW\.person_id IS DISTINCT FROM OLD\.person_id/)
+  assert.match(migration, /OLD\.detail IS NOT NULL AND NOT \(COALESCE\(NEW\.detail, '\{\}'::jsonb\) @> OLD\.detail\)/)
+  assert.match(migration, /CREATE TRIGGER events_truth_immutable/)
+  assert.match(manualIntake, /UPDATE events SET processed_at = NULL, extraction_status = 'pending'/)
+  assert.match(callIntake, /UPDATE events SET processed_at = NULL, extraction_status = 'pending'/)
+  assert.doesNotMatch(manualIntake, /detail\s*=\s*COALESCE\(detail, '\{\}'::jsonb\)\s*-\s*'intakeUndoDeferred'/)
+  assert.doesNotMatch(callIntake, /detail\s*=\s*COALESCE\(detail, '\{\}'::jsonb\)\s*-\s*'intakeUndoDeferred'/)
+  assert.doesNotMatch(recoveredCalls, /UPDATE events[\s\S]{0,250}actor_id\s*=/)
+  assert.match(extraction, /UPDATE events SET crew_body = COALESCE\(crew_body, \$\{crewSafeBody\}::text\)/)
 })
 
 test("unlinked INTERNAL TEST receipts never enter Handset search", () => {
@@ -193,6 +236,25 @@ test("every real inbound Gmail reply reaches the capped interrupt gate", () => {
   assert.match(inboundNotify, /capExempt: conversation\.createdLead/)
   assert.match(inboundNotify, /quietHoursExempt: conversation\.createdLead/)
   assert.match(inboundNotify, /sourceEventId: eventId/)
+})
+
+test("Gmail tombstones advance the checkpoint without retries or false-green schedulers", () => {
+  assert.equal(isGmailMessageGone(Object.assign(new Error("Gmail API 404"), { status: 404 })), true)
+  assert.equal(isGmailMessageGone(Object.assign(new Error("Gmail API 429"), { status: 429 })), false)
+  assert.equal(isGmailMessageGone(new Error("Gmail API 404")), false, "status text alone is not trusted")
+  assert.equal(isGmailMessageGone(null), false)
+
+  const ingest = source("app/api/ingest/gmail/route.ts")
+  const fetchStart = ingest.indexOf("getGmailMessage(token, id)")
+  const routeEnd = ingest.indexOf("const headers = gmailHeaders(message)", fetchStart)
+  const fetchBoundary = ingest.slice(fetchStart, routeEnd)
+  assert.match(fetchBoundary, /isGmailMessageGone\(error\)/)
+  assert.match(fetchBoundary, /counters\.gone\+\+/)
+  assert.doesNotMatch(fetchBoundary, /gmail_ingest_failures/)
+
+  const workflow = source(".github/workflows/gmail-sync.yml")
+  assert.match(workflow, /jq -e '\.ok == true'/)
+  assert.match(workflow, /Gmail sync returned ok=false/)
 })
 
 test("every real inbound SMS persists an owner-cell copy without test or routing loops", () => {
@@ -381,9 +443,9 @@ test("full-trust GLASS is owner-only in UI and server actions", () => {
 test("customer email truth is intent, acceptance, then signed delivery", () => {
   const messageActions = source("app/ops/leads/[id]/message-actions.ts")
   const webhook = source("app/api/resend/webhook/route.ts")
-  assert.ok(messageActions.indexOf("eventId = await recordEvent") < messageActions.indexOf("await new Resend(apiKey).emails.send"), "email intent must persist before Resend")
+  assert.ok(messageActions.indexOf("eventId = await recordEvent") < messageActions.indexOf("await sendEmailWithProviderTruth"), "email intent must persist before the provider handoff")
   assert.match(messageActions, /kind: "email\.accepted"/)
-  assert.match(messageActions, /kind: "email\.failed"/)
+  assert.match(messageActions, /kind = definitive \? "email\.failed" : "email\.unknown"/)
   assert.match(webhook, /\.webhooks\.verify/)
   assert.match(webhook, /"email\.delivered"/)
   assert.match(webhook, /"email\.bounced"/)
@@ -392,9 +454,14 @@ test("customer email truth is intent, acceptance, then signed delivery", () => {
 
 test("Wire one-tap actions claim durable work before external effects", () => {
   const wire = source("app/api/ops/wire/action/route.ts")
+  const paperwork = source("app/ops/accounts/[id]/actions.ts")
   assert.match(wire, /action_status = 'processing'/)
   assert.ok(wire.indexOf("action_status = 'processing'") < wire.indexOf("await sendSmsPersisted"), "Wire action must claim before SMS")
   assert.ok(wire.indexOf("action_status = 'processing'") < wire.indexOf("await sendUsualPaperwork"), "Wire action must claim before email")
+  assert.match(paperwork, /\^\[a-f0-9-\]\{36\}\$/i)
+  assert.match(wire, /createHash\("sha256"\)\.update\(`wire:\$\{notificationId\}:paperwork`\)\.digest\("hex"\)/)
+  assert.match(wire, /form\.set\("idempotencyKey", paperworkIntent\)/)
+  assert.doesNotMatch(wire, /form\.set\("idempotencyKey", `wire:\$\{notificationId\}:paperwork`\)/)
   assert.match(wire, /action_status = 'done'/)
   assert.match(wire, /action_status = 'failed'/)
 })
@@ -459,14 +526,19 @@ test("time, transcript, and activity windows preserve current truth", () => {
 
 test("deployed schedulers preserve cost-aware Gmail cadence and both Central brief offsets", () => {
   const gmailWorkflow = source(".github/workflows/gmail-sync.yml")
+  const remindersWorkflow = source(".github/workflows/follow-up-reminders.yml")
   const briefWorkflow = source(".github/workflows/morning-brief.yml")
   assert.match(gmailWorkflow, /cron: "5,20,35,50 12-23 \* \* \*"/)
   assert.match(gmailWorkflow, /cron: "5 0-11 \* \* \*"/)
   assert.doesNotMatch(gmailWorkflow, /cron: "\*\/5 \* \* \* \*"/)
   assert.match(gmailWorkflow, /api\/ingest\/gmail/)
+  assert.match(remindersWorkflow, /cron: "5,20,35,50 12-23 \* \* \*"/)
+  assert.match(remindersWorkflow, /cron: "5 0-11 \* \* \*"/)
+  assert.match(remindersWorkflow, /jq -e '\.ok == true'/)
   assert.match(briefWorkflow, /cron: "30 11,12 \* \* \*"/)
   assert.match(briefWorkflow, /api\/ops\/brief/)
   assert.doesNotMatch(gmailWorkflow, /echo "\$body"/)
+  assert.doesNotMatch(remindersWorkflow, /echo "\$body"/)
   assert.doesNotMatch(briefWorkflow, /echo "\$body"/)
 })
 

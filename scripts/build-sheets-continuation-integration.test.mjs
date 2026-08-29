@@ -43,7 +43,8 @@ test("customer corrections create a proposed fact and never mutate a locked shee
   assert.match(page, /What We Understand/)
   assert.match(page, /CustomerBuildDrawing/)
   assert.match(page, /ActionKeyField name="responseKey"/)
-  assert.doesNotMatch(page, /randomUUID\(\)/)
+  const understanding = page.slice(page.indexOf("{customerBuild &&"), page.indexOf("{sharedPhotos.length"))
+  assert.doesNotMatch(understanding, /randomUUID\(\)/)
 })
 
 test("paperwork issue path recomputes staleness before filing an issue receipt", async () => {

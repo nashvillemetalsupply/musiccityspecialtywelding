@@ -1,4 +1,3 @@
-import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowDownRight, ArrowUpRight, MapPin, Phone } from "lucide-react"
@@ -13,16 +12,16 @@ import {
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
+import { PublicSkipLink } from "@/components/public-skip-link"
+import { createPublicMetadata, publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./homepage-polish.css"
 
-export const metadata: Metadata = {
-  title: "Mobile Welding & Fabrication | Nashville & Lebanon, TN",
-  description:
-    "Open 24/7 for mobile and shop welding, trailer and equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee.",
-  alternates: { canonical: "/" },
-  openGraph: { url: "/" },
-}
+export const metadata = createPublicMetadata({
+  title: publicDefaultTitle,
+  description: publicDefaultDescription,
+  canonical: "/",
+})
 
 const services = [
   {
@@ -31,17 +30,26 @@ const services = [
     line: "The metal stays put. We bring the rig.",
     detail: "On-site welding and repair for trucks, trailers, equipment, aluminum, structures, and working metal across Middle Tennessee. No towing required.",
     href: "/services/mobile-welding",
-    image: "/images/owner-work/IMG_20260225_135845.jpg",
+    image: "/images/owner-work/IMG_20260225_135845.webp",
     alt: "Installed steel balcony railing completed on-site by Music City Specialty Welding",
   },
   {
-    title: "Trailer & equipment repair",
-    mobileTitleLines: ["Trailer & equipment", "repair"],
-    line: "Downtime costs more than steel.",
-    detail: "Frames, ramps, liftgates, failed brackets, machinery, and attachments repaired around the real damage and the work they still have to do.",
-    href: "/services/equipment-repair",
-    image: "/images/owner-work/IMG_20250809_180018.jpg",
+    title: "Trailer welding & repair",
+    mobileTitleLines: ["Trailer welding", "& repair"],
+    line: "Repair the failure, not just the crack.",
+    detail: "Frames, crossmembers, ramps, fenders, brackets, and attachment points evaluated around the load they still have to carry.",
+    href: "/services/trailer-welding-repair",
+    image: "/images/owner-work/IMG_20250809_180018.webp",
     alt: "Trailer frame and axle exposed during structural welding repair",
+  },
+  {
+    title: "Equipment repair",
+    mobileTitleLines: ["Equipment", "repair"],
+    line: "Downtime costs more than steel.",
+    detail: "Failed brackets, machinery frames, guards, supports, and attachments repaired around how the equipment moves, mounts, and works.",
+    href: "/services/equipment-repair",
+    image: "/images/optimized/Service 04.webp",
+    alt: "Welding repair on working industrial equipment",
   },
   {
     title: "Architectural metal",
@@ -150,7 +158,7 @@ export default function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <a className="ms-skip" href="#main-content">Skip to the work</a>
+      <PublicSkipLink label="Skip to the work" />
 
       <header className="ms-nav" aria-label="Main navigation">
         <Link className="ms-brand" href="#home">
@@ -203,7 +211,7 @@ export default function Page() {
               Metal problem? <em>We get it.</em>
             </p>
             <p className="ms-hero-deck">
-              Nashville mobile welding, 24/7. On-site welding &amp; repair across Middle Tennessee for trucks, trailers, equipment, aluminum, structural steel, and shop fabrication.
+              Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee&mdash;24 hours a day.
             </p>
             <div className="ms-hero-actions">
               <a className="sw-plank" href={shopPhone.href}>
@@ -225,7 +233,7 @@ export default function Page() {
               <span className="sw-tape-tl" aria-hidden="true" />
               <span className="sw-tape-tr" aria-hidden="true" />
               <Image
-                src="/images/optimized/welder-1280.webp"
+                src="/images/optimized/welder.webp"
                 alt="Music City Specialty Welding fabricating a steel frame in the shop"
                 fill
                 priority
@@ -258,27 +266,27 @@ export default function Page() {
 
           <div className="ms-work-grid">
             <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.jpg" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.webp" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Custom BBQ trailer — full steel build-out.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20260522_234850864_HDR.jpg" alt="Custom stainless steel sink fabricated to fit existing commercial equipment" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
-              <figcaption><strong>Stainless sink, fitted to the existing line.</strong></figcaption>
+              <Image src="/images/owner-work/stainless-worktable.webp" alt="Finished custom stainless steel worktable and sink installed in a Middle Tennessee workspace" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <figcaption><strong>Stainless worktable and sink, fitted to the room.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/IMG_20250723_161108.webp" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel frame, jigged square in our shop.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_3994.jpg" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/IMG_3994.webp" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Commercial manifold, installed on-site.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20250527_141244.jpg" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/IMG_20250527_141244.webp" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel gate, hung level where it sits.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.jpg" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.webp" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Custom-cut letters, right off the table.</strong></figcaption>
             </figure>
           </div>
@@ -318,7 +326,7 @@ export default function Page() {
               <article className="ms-service-row ms-reveal" key={service.title}>
                 <div className="ms-service-copy">
                   <h3
-                    className={service.title === "Trailer & equipment repair" ? "ms-service-title-long" : undefined}
+                    className={service.mobileTitleLines.length > 1 ? "ms-service-title-long" : undefined}
                     aria-label={service.title}
                   >
                     {service.mobileTitleLines.map((line, index) => (
@@ -411,7 +419,7 @@ export default function Page() {
               <span className="is-done">Received</span><span className="is-done">Quoted</span><span className="is-now">Scheduled</span><span>In progress</span><span>Finished</span>
             </div>
             <div className="ms-job-glass-progress">
-              <Image src="/images/owner-work/IMG_20250723_161108.jpg" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 760px) 5.8rem, 7.5rem" />
+              <Image src="/images/owner-work/IMG_20250723_161108.webp" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 760px) 5.8rem, 7.5rem" />
               <p><small>Progress from the shop</small><strong>Frame fitted square. Hinge stock is next.</strong><span>Cody · today, 2:14 PM</span></p>
             </div>
             <div className="ms-job-glass-footer"><span>Something look wrong?</span><a href={shopPhone.href}>Call the shop</a></div>

@@ -1,7 +1,7 @@
 import { getSql } from "@/lib/db"
 import { listOperators } from "@/lib/operators"
 import { sendPushToOperator } from "@/lib/push"
-import { isDefinitiveTwilioError, sendSms, twilioSmsConfigured } from "@/lib/twilio"
+import { isDefinitiveTwilioError, sendSms, twilioCallbackUrl, twilioSmsConfigured } from "@/lib/twilio"
 import { getOperatorById, getOperatorByPhone } from "@/lib/operators"
 import { formatSmsBody, normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
@@ -177,6 +177,12 @@ export async function notify(input: {
           )
         RETURNING id`) as { id: number }[]
       if (coalesced[0]) {
+        const claimed = (await sql`
+          UPDATE notifications SET delivery_status = 'sending', delivery_attempts = delivery_attempts + 1,
+            delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
+          WHERE id = ${id}::bigint AND sent_at IS NULL AND delivery_status = 'pending'
+          RETURNING id`) as { id: number }[]
+        if (!claimed[0]) return { id, sent: false, reason: "already-claimed" as const }
         const push = await sendPushToOperator(input.operatorId, {
           title: "More happened. Check Updates.",
           body: "Updates has the details. Nothing was dropped.",
@@ -185,12 +191,13 @@ export async function notify(input: {
         if (push.sent > 0) {
           await sql`
             UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
-              delivery_status = 'sent', delivery_attempts = delivery_attempts + 1, delivery_last_attempt_at = now()
+              delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'accepted' END,
+              delivery_last_attempt_at = now()
             WHERE id = ${id}::bigint`
         } else {
           await sql`
             UPDATE notifications SET coalesced = false, interrupt_reserved_at = NULL,
-              delivery_status = 'retry', delivery_attempts = delivery_attempts + 1,
+              delivery_status = 'retry',
               delivery_last_attempt_at = now(), delivery_next_attempt_at = now() + interval '10 minutes',
               delivery_error = 'No registered push channel accepted the coalesced alert.'
             WHERE id = ${id}::bigint`
@@ -201,6 +208,13 @@ export async function notify(input: {
       return { id, sent: false, reason: "daily-cap" as const }
     }
   }
+
+  const claimed = (await sql`
+    UPDATE notifications SET delivery_status = 'sending', delivery_attempts = delivery_attempts + 1,
+      delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
+    WHERE id = ${id}::bigint AND sent_at IS NULL AND delivery_status = 'pending'
+    RETURNING id`) as { id: number }[]
+  if (!claimed[0]) return { id, sent: false, reason: "already-claimed" as const }
 
   const push = input.smsOnly
     ? { sent: 0 }
@@ -218,10 +232,13 @@ export async function notify(input: {
     if (operator?.cell_phone) {
       const smsBody = formatSmsBody({ title: input.title, body: storedBody, url: input.url, smsOnly: input.smsOnly })
       try {
-        await sendSms({
+        const sms = await sendSms({
           to: operator.cell_phone,
           body: smsBody,
+          statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${id}`),
         })
+        await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${sms.sid}::text),
+          provider_status = COALESCE(provider_status, ${sms.status}::text) WHERE id = ${id}::bigint`
         sent = true
       } catch (error) {
         smsDeliveryUnknown = !isDefinitiveTwilioError(error)
@@ -230,7 +247,7 @@ export async function notify(input: {
   }
   if (smsDeliveryUnknown) {
     await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
-      delivery_status = 'unknown', delivery_attempts = delivery_attempts + 1,
+      delivery_status = 'unknown',
       delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
       delivery_error = 'SMS fallback may have been accepted; automatic repeat is quarantined.',
       stock = 'red', title = left('Check alert delivery - ' || title, 120)
@@ -238,11 +255,13 @@ export async function notify(input: {
     return { id, sent: false, reason: "delivery-unknown" as const }
   } else if (sent) {
     await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
-      delivery_status = 'sent', delivery_attempts = delivery_attempts + 1, delivery_last_attempt_at = now(), delivery_error = ''
+      delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'accepted' END,
+      delivery_last_attempt_at = now(),
+      delivery_error = CASE WHEN delivery_status = 'dead' THEN delivery_error ELSE '' END
       WHERE id = ${id}::bigint`
   } else {
     await sql`UPDATE notifications SET interrupt_reserved_at = NULL, delivery_status = 'retry',
-      delivery_attempts = delivery_attempts + 1, delivery_last_attempt_at = now(),
+      delivery_last_attempt_at = now(),
       delivery_next_attempt_at = now() + interval '10 minutes',
       delivery_error = 'No registered push or SMS fallback channel accepted the alert.'
       WHERE id = ${id}::bigint`
@@ -281,6 +300,13 @@ export async function notifyAll(input: Omit<Parameters<typeof notify>[0], "opera
 
 export async function retryPendingInterrupts(limit = 10) {
   const sql = getSql()
+  await sql`
+    UPDATE notifications SET sent_at = COALESCE(sent_at, now()), interrupt_reserved_at = NULL,
+      delivery_status = 'unknown', delivery_next_attempt_at = NULL,
+      delivery_error = 'A delivery attempt stopped before acknowledgement; the provider may have accepted it, so automatic repeat is quarantined.',
+      stock = 'red', title = left('Check alert delivery - ' || title, 120)
+    WHERE priority = 'interrupt' AND sent_at IS NULL AND delivery_status = 'sending'
+      AND delivery_last_attempt_at < now() - interval '10 minutes'`
   const candidates = (await sql`
     SELECT id, operator_id, title, body, url, budget_exempt, quiet_hours_exempt, sms_fallback, sms_only
     FROM notifications
@@ -288,7 +314,6 @@ export async function retryPendingInterrupts(limit = 10) {
       AND (
         (delivery_status = 'retry' AND (delivery_next_attempt_at IS NULL OR delivery_next_attempt_at <= now()))
         OR (delivery_status = 'pending' AND created_at < now() - interval '10 minutes')
-        OR (delivery_status = 'sending' AND delivery_last_attempt_at < now() - interval '10 minutes')
       )
     ORDER BY COALESCE(delivery_next_attempt_at, created_at) ASC
     LIMIT ${Math.min(Math.max(limit, 1), 20)}::bigint`) as Array<{
@@ -302,10 +327,10 @@ export async function retryPendingInterrupts(limit = 10) {
     const minute = centralMinuteOfDay()
     if (!row.quiet_hours_exempt && (minute >= 19 * 60 || minute < 6 * 60 + 30)) continue
     const claimed = (await sql`
-      UPDATE notifications SET delivery_status = 'sending', delivery_last_attempt_at = now(), delivery_error = ''
+      UPDATE notifications SET delivery_status = 'sending', delivery_attempts = delivery_attempts + 1,
+        delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
       WHERE id = ${row.id}::bigint AND sent_at IS NULL AND delivery_attempts < 5
-        AND (delivery_status = 'retry' OR (delivery_status = 'pending' AND created_at < now() - interval '10 minutes')
-          OR (delivery_status = 'sending' AND delivery_last_attempt_at < now() - interval '10 minutes'))
+        AND (delivery_status = 'retry' OR (delivery_status = 'pending' AND created_at < now() - interval '10 minutes'))
       RETURNING id`) as { id: number }[]
     if (!claimed[0]) continue
     if (!row.budget_exempt) {
@@ -343,16 +368,17 @@ export async function retryPendingInterrupts(limit = 10) {
         const summary = await sendPushToOperator(row.operator_id, { title: "More happened. Check Updates.", body: "The details are saved. Nothing was dropped.", url: "/board/updates#wire" })
         if (summary.sent > 0) {
           sent += 1
-          await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL, delivery_status = 'sent',
-            delivery_attempts = delivery_attempts + 1, delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
+          await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
+            delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'accepted' END,
+            delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
             WHERE id = ${row.id}::bigint`
         } else {
           const summaryFailed = (await sql`UPDATE notifications SET coalesced = false, interrupt_reserved_at = NULL,
-            delivery_attempts = delivery_attempts + 1, delivery_last_attempt_at = now(),
-            delivery_status = CASE WHEN delivery_attempts + 1 >= 5 THEN 'dead' ELSE 'retry' END,
-            delivery_next_attempt_at = CASE WHEN delivery_attempts + 1 >= 5 THEN NULL ELSE now() + interval '30 minutes' END,
+            delivery_last_attempt_at = now(),
+            delivery_status = CASE WHEN delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
+            delivery_next_attempt_at = CASE WHEN delivery_attempts >= 5 THEN NULL ELSE now() + interval '30 minutes' END,
             delivery_error = 'The coalesced alert could not reach a registered push channel.',
-            stock = CASE WHEN delivery_attempts + 1 >= 5 THEN 'red' ELSE stock END
+            stock = CASE WHEN delivery_attempts >= 5 THEN 'red' ELSE stock END
             WHERE id = ${row.id}::bigint RETURNING delivery_status`) as { delivery_status: string }[]
           if (summaryFailed[0]?.delivery_status === "dead") dead += 1
         }
@@ -370,7 +396,13 @@ export async function retryPendingInterrupts(limit = 10) {
       if (recipient?.cell_phone) {
         const smsBody = formatSmsBody({ title: row.title, body: row.body, url: row.url, smsOnly: row.sms_only })
         try {
-          await sendSms({ to: recipient.cell_phone, body: smsBody })
+          const sms = await sendSms({
+            to: recipient.cell_phone,
+            body: smsBody,
+            statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${row.id}`),
+          })
+          await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${sms.sid}::text),
+            provider_status = COALESCE(provider_status, ${sms.status}::text) WHERE id = ${row.id}::bigint`
           delivered = true
         } catch (error) {
           smsDeliveryUnknown = !isDefinitiveTwilioError(error)
@@ -379,24 +411,26 @@ export async function retryPendingInterrupts(limit = 10) {
     }
     if (smsDeliveryUnknown) {
       await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
-        delivery_status = 'unknown', delivery_attempts = delivery_attempts + 1,
+        delivery_status = 'unknown',
         delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
         delivery_error = 'SMS fallback may have been accepted; automatic repeat is quarantined.',
         stock = 'red', title = left('Check alert delivery - ' || title, 120)
         WHERE id = ${row.id}::bigint`
     } else if (delivered) {
       sent += 1
-      await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL, delivery_status = 'sent',
-        delivery_attempts = delivery_attempts + 1, delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
+      await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
+        delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'accepted' END,
+        delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
+        delivery_error = CASE WHEN delivery_status = 'dead' THEN delivery_error ELSE '' END
         WHERE id = ${row.id}::bigint`
     } else {
       const failed = (await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
-        delivery_attempts = delivery_attempts + 1, delivery_last_attempt_at = now(),
-        delivery_status = CASE WHEN delivery_attempts + 1 >= 5 THEN 'dead' ELSE 'retry' END,
-        delivery_next_attempt_at = CASE WHEN delivery_attempts + 1 >= 5 THEN NULL ELSE now() + (LEAST(240, 10 * power(2, delivery_attempts))::int || ' minutes')::interval END,
+        delivery_last_attempt_at = now(),
+        delivery_status = CASE WHEN delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
+        delivery_next_attempt_at = CASE WHEN delivery_attempts >= 5 THEN NULL ELSE now() + (LEAST(240, 10 * power(2, delivery_attempts - 1))::int || ' minutes')::interval END,
         delivery_error = 'No configured alert channel accepted this retry.',
-        stock = CASE WHEN delivery_attempts + 1 >= 5 THEN 'red' ELSE stock END,
-        title = CASE WHEN delivery_attempts + 1 >= 5 THEN left('Alert delivery failed · ' || title, 120) ELSE title END
+        stock = CASE WHEN delivery_attempts >= 5 THEN 'red' ELSE stock END,
+        title = CASE WHEN delivery_attempts >= 5 THEN left('Alert delivery failed - ' || title, 120) ELSE title END
         WHERE id = ${row.id}::bigint RETURNING delivery_status`) as { delivery_status: string }[]
       if (failed[0]?.delivery_status === "dead") dead += 1
     }

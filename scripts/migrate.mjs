@@ -66,6 +66,24 @@ const statements = [
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_follow_up_at TIMESTAMPTZ`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS follow_up_notified_at TIMESTAMPTZ`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS photos JSONB NOT NULL DEFAULT '[]'::jsonb`,
+  `CREATE TABLE IF NOT EXISTS lead_photo_intents (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    intake_key TEXT NOT NULL,
+    photo_index INT NOT NULL,
+    target_path TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    size_bytes BIGINT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','stored','attached','failed')),
+    stored_pathname TEXT NOT NULL DEFAULT '',
+    error TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (lead_id, intake_key, photo_index)
+  )`,
+  `CREATE INDEX IF NOT EXISTS lead_photo_intents_backlog_idx
+    ON lead_photo_intents(status, updated_at) WHERE status <> 'attached'`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS invoice_number TEXT NOT NULL DEFAULT ''`,
   `CREATE TABLE IF NOT EXISTS invoice_identities (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -156,6 +174,18 @@ const statements = [
     last_seen_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
+  // Existing unknown roles already fail every strict owner check. Preserve that
+  // effective privilege by normalizing them to crew before enforcing the domain.
+  `UPDATE operators SET role = 'crew'::text WHERE role NOT IN ('owner','crew')`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conname = 'operators_role_check' AND conrelid = 'operators'::regclass
+    ) THEN
+      ALTER TABLE operators ADD CONSTRAINT operators_role_check
+        CHECK (role IN ('owner','crew'));
+    END IF;
+  END $$`,
   `CREATE INDEX IF NOT EXISTS operators_active_idx ON operators(active)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS operators_active_phone_unique_idx ON operators(cell_phone) WHERE active = true AND cell_phone <> ''`,
   `ALTER TABLE operators ADD COLUMN IF NOT EXISTS signature_name TEXT NOT NULL DEFAULT ''`,
@@ -308,6 +338,43 @@ const statements = [
   `CREATE UNIQUE INDEX IF NOT EXISTS events_external_idx ON events(kind, external_id) WHERE external_id <> ''`,
   `ALTER TABLE events ADD COLUMN IF NOT EXISTS tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', body)) STORED`,
   `ALTER TABLE events ADD COLUMN IF NOT EXISTS crew_body TEXT`,
+  `CREATE OR REPLACE FUNCTION protect_event_journal_truth()
+    RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN
+      IF NEW.occurred_at IS DISTINCT FROM OLD.occurred_at THEN RAISE EXCEPTION 'events.occurred_at is immutable'; END IF;
+      IF NEW.recorded_at IS DISTINCT FROM OLD.recorded_at THEN RAISE EXCEPTION 'events.recorded_at is immutable'; END IF;
+      IF NEW.kind IS DISTINCT FROM OLD.kind THEN RAISE EXCEPTION 'events.kind is immutable'; END IF;
+      IF NEW.actor_type IS DISTINCT FROM OLD.actor_type THEN RAISE EXCEPTION 'events.actor_type is immutable'; END IF;
+      IF NEW.actor_id IS DISTINCT FROM OLD.actor_id THEN RAISE EXCEPTION 'events.actor_id is immutable'; END IF;
+      IF NEW.external_id IS DISTINCT FROM OLD.external_id THEN RAISE EXCEPTION 'events.external_id is immutable'; END IF;
+      IF NEW.body IS DISTINCT FROM OLD.body THEN RAISE EXCEPTION 'events.body is immutable'; END IF;
+      IF OLD.lead_id IS NOT NULL AND NEW.lead_id IS DISTINCT FROM OLD.lead_id THEN
+        RAISE EXCEPTION 'events.lead_id cannot be relinked';
+      END IF;
+      IF OLD.person_id IS NOT NULL AND NEW.person_id IS DISTINCT FROM OLD.person_id THEN
+        RAISE EXCEPTION 'events.person_id cannot be relinked';
+      END IF;
+      IF OLD.crew_body IS NOT NULL AND NEW.crew_body IS DISTINCT FROM OLD.crew_body THEN
+        RAISE EXCEPTION 'events.crew_body cannot be rewritten';
+      END IF;
+      IF OLD.detail IS NOT NULL AND NOT (COALESCE(NEW.detail, '{}'::jsonb) @> OLD.detail) THEN
+        RAISE EXCEPTION 'events.detail enrichment cannot replace existing truth';
+      END IF;
+      RETURN NEW;
+    END
+    $$`,
+  `DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'events_truth_immutable' AND tgrelid = 'events'::regclass
+      ) THEN
+        CREATE TRIGGER events_truth_immutable
+          BEFORE UPDATE ON events
+          FOR EACH ROW EXECUTE FUNCTION protect_event_journal_truth();
+      END IF;
+    END
+    $$`,
   `ALTER TABLE events ADD COLUMN IF NOT EXISTS crew_tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', COALESCE(crew_body, ''))) STORED`,
   `CREATE INDEX IF NOT EXISTS events_tsv_idx ON events USING GIN(tsv)`,
   `CREATE INDEX IF NOT EXISTS events_crew_tsv_idx ON events USING GIN(crew_tsv)`,
@@ -563,6 +630,8 @@ const statements = [
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS quiet_hours_exempt BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sms_fallback BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sms_only BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS provider_message_sid TEXT`,
+  `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS provider_status TEXT`,
   `CREATE INDEX IF NOT EXISTS notifications_delivery_retry_idx ON notifications(delivery_status, delivery_next_attempt_at) WHERE sent_at IS NULL AND priority = 'interrupt'`,
   `UPDATE notifications SET budget_exempt = true
     WHERE budget_exempt = false AND (

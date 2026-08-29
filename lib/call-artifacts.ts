@@ -16,7 +16,6 @@ export async function attachRecoveredCallArtifacts(
   await sql`
     WITH call_events AS (
       UPDATE events e SET lead_id = ${leadId}::bigint, person_id = ${personId}::bigint,
-        actor_id = CASE WHEN e.kind IN ('call.in','call.missed') AND e.actor_id = '' AND ${personId}::bigint IS NOT NULL THEN ${personId === null ? "" : String(personId)}::text ELSE e.actor_id END,
         detail = COALESCE(detail, '{}'::jsonb) || ${JSON.stringify({ isTest })}::jsonb,
         processed_at = CASE WHEN e.kind = 'call.transcript' AND e.lead_id IS NULL THEN NULL ELSE e.processed_at END,
         extraction_status = CASE WHEN e.kind = 'call.transcript' AND e.lead_id IS NULL THEN 'pending' ELSE e.extraction_status END,

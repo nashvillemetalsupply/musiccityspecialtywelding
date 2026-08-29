@@ -5,6 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-ms-sans: Arial, Helvetica, sans-serif;
+  --font-ms-mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  --font-ms-slab: Georgia, "Times New Roman", serif;
   --background: oklch(0.99 0.002 90);
   --foreground: oklch(0.12 0.01 90);
   --card: oklch(0.98 0 0);
@@ -273,6 +276,7 @@ html {
 .ms-text-link {
   display: inline-flex;
   align-items: center;
+  min-height: 2.75rem;
   gap: 0.4rem;
   color: inherit;
   font-family: var(--font-ms-mono), monospace;
@@ -299,7 +303,12 @@ html {
   font-weight: 700;
 }
 
-.ms-skip:focus-visible { left: 0.75rem; top: 0.75rem; }
+.ms-skip:focus-visible {
+  left: 0.75rem;
+  top: 0.75rem;
+  outline: 3px solid var(--mx-bone);
+  outline-offset: 3px;
+}
 
 .ms-reveal { min-width: 0; }
 
@@ -1280,7 +1289,13 @@ html {
 }
 
 .ms-footer-call a { color: var(--mx-bone); font-size: 0.9rem; font-weight: 600; }
-.ms-footer-contact a { color: var(--mx-bone); overflow-wrap: anywhere; }
+.ms-footer-contact a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--mx-bone);
+  overflow-wrap: anywhere;
+}
 .ms-footer-contact span { color: var(--mx-steel); line-height: 1.65; }
 
 .ms-footer-meta {
@@ -1298,7 +1313,14 @@ html {
   color: var(--mx-steel);
 }
 
-.ms-footer-meta a { color: var(--mx-bone); text-decoration: none; margin-right: 1.1rem; }
+.ms-footer-meta a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--mx-bone);
+  text-decoration: none;
+  margin-right: 1.1rem;
+}
 .ms-footer-meta a:hover { color: var(--mx-arc); }
 
 /* ---- mobile sticky cta ---- */
@@ -1342,6 +1364,30 @@ html {
 /* ---- subpages ---- */
 
 .ms-subpage { display: block; }
+
+.ms-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 1rem clamp(1rem, 4vw, 4.5rem) 0;
+  color: var(--mx-steel);
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.ms-breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.ms-breadcrumb a:hover { color: var(--mx-arc); }
 
 .ms-subhero {
   position: relative;
@@ -1424,6 +1470,7 @@ html {
 .ms-subplan-lead a {
   display: inline-flex;
   align-items: center;
+  min-height: 2.75rem;
   gap: 0.4rem;
   margin-top: 1.2rem;
   color: var(--mx-bone);
@@ -1526,6 +1573,7 @@ html {
 .ms-subclose a:not([href^="tel:"]) {
   display: inline-flex;
   align-items: center;
+  min-height: 2.75rem;
   gap: 0.4rem;
   color: var(--mx-bone);
   text-decoration: none;

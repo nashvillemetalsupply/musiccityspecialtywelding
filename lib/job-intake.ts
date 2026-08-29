@@ -267,8 +267,7 @@ export async function saveInboundCallAsJob(input: {
       await sql`
         UPDATE events SET processed_at = NULL, extraction_status = 'pending',
           extraction_next_attempt_at = ${input.deferExtraction ? new Date(Date.now() + 11 * 60 * 1000).toISOString() : null}::timestamptz,
-          extraction_last_error = '',
-          detail = COALESCE(detail, '{}'::jsonb) - 'intakeUndoDeferred'
+          extraction_last_error = ''
         WHERE lead_id = ${created.id}::bigint
           AND detail->>'intakeUndoDeferred' = 'true'`
     }

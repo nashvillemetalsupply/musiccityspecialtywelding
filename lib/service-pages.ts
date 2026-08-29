@@ -25,7 +25,7 @@ export const servicePages: ServicePage[] = [
     eyebrow: "The welding equipment comes to you",
     intro:
       "When moving the damaged equipment or metalwork is impractical, we bring mobile welding capability to the job site. We review the failure, access, material, and working conditions before confirming the safest and most efficient repair plan.",
-    image: "/images/owner-work/IMG_20260225_135845.jpg",
+    image: "/images/owner-work/IMG_20260225_135845.webp",
     imageAlt: "Installed steel balcony railing completed on-site by Music City Specialty Welding",
     commonJobs: [
       "Equipment and trailer component repairs",
@@ -58,6 +58,52 @@ export const servicePages: ServicePage[] = [
       {
         question: "Do you handle emergency work?",
         answer: `Urgent work is accepted when scheduling and travel allow. Call ${getShopPhone().display} to confirm availability.`,
+      },
+    ],
+  },
+  {
+    slug: "trailer-welding-repair",
+    title: "Trailer Welding & Frame Repair in Middle Tennessee",
+    shortTitle: "Trailer Welding & Repair",
+    metaDescription:
+      "Trailer welding and frame repair for utility, work, equipment, and specialty trailers across Nashville, Lebanon, and Middle Tennessee.",
+    eyebrow: "Repair the failure, not just the crack",
+    intro:
+      "Trailer damage can involve the frame, tongue, crossmembers, ramps, fenders, brackets, hangers, or the structure around the running gear. We inspect the damaged area and the surrounding load path before confirming what can be repaired and whether the work belongs on-site or in the shop.",
+    image: "/images/owner-work/IMG_20250809_180018.webp",
+    imageAlt: "Trailer frame and axle exposed during structural welding repair by Music City Specialty Welding",
+    commonJobs: [
+      "Cracked trailer frames, crossmembers, and support steel",
+      "Ramps, fenders, brackets, hangers, and attachment points",
+      "Utility, work, equipment, and specialty trailer repairs",
+      "Damage evaluation before a trailer returns to service",
+    ],
+    goodFit: [
+      "The damaged area and nearby structure can be photographed clearly",
+      "The trailer can be safely staged for inspection and hot work",
+      "The owner can explain the load, failure, and prior repairs",
+      "A shop or mobile repair can be selected after the damage is reviewed",
+    ],
+    details: [
+      "Send one photo of the full trailer plus close-ups from both sides of the damage.",
+      "Include the trailer type, approximate capacity, location, and whether it can be moved.",
+      "Mention prior repairs, visible bending, axle or suspension concerns, and the timing required.",
+    ],
+    faqs: [
+      {
+        question: "Can you repair a trailer where it sits?",
+        answer:
+          "Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop.",
+      },
+      {
+        question: "Can you weld a cracked trailer frame?",
+        answer:
+          "A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter. We review those conditions before recommending a repair.",
+      },
+      {
+        question: "What photos help with a trailer quote?",
+        answer:
+          "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced.",
       },
     ],
   },
@@ -160,8 +206,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Built from the requirement, not from a generic catalog",
     intro:
       "Custom fabrication starts by defining what the part must do, how it fits, and how it will be installed. We work from drawings, sketches, dimensions, samples, or a well-documented field requirement.",
-    image: "/images/optimized/speciality_welding.webp",
-    imageAlt: "Specialty welded metal fabrication",
+    image: "/images/owner-work/stainless-worktable.webp",
+    imageAlt: "Finished custom stainless steel worktable and sink fabricated for an existing room",
     commonJobs: [
       "Custom brackets, frames, supports, and assemblies",
       "Gas manifolds and specialized industrial metalwork",

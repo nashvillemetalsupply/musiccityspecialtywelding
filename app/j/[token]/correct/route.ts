@@ -1,8 +1,19 @@
+import { createHash } from "node:crypto"
 import { getGlassJob } from "@/lib/glass"
 import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 import { getShopPhone } from "@/lib/shop-contact"
 import { consumeStrictRateLimit, rateLimitFingerprint } from "@/lib/rate-limit"
+
+function sameOrigin(req: Request) {
+  const origin = req.headers.get("origin")
+  if (!origin) return false
+  try {
+    return new URL(origin).origin === new URL(req.url).origin
+  } catch {
+    return false
+  }
+}
 
 export async function GET() {
   return new Response("Use the correction button on your Customer Page.", {
@@ -12,6 +23,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ token: string }> }) {
+  if (!sameOrigin(req)) return new Response("Request origin did not match.", { status: 403 })
+  const formData = await req.formData().catch(() => null)
+  const actionKey = String(formData?.get("actionKey") ?? "").trim().slice(0, 180)
+  if (!/^glass-correction:[a-z0-9-]{36}$/i.test(actionKey)) {
+    return new Response("Reload the Customer Page before sending a correction.", { status: 400 })
+  }
   const { token } = await params
   const job = await getGlassJob(token)
   if (!job) return new Response("Customer Page not found.", { status: 404 })
@@ -23,19 +40,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   if (await consumeStrictRateLimit(limitKey, 10 * 60 * 1000, 3)) {
     return new Response("The shop already has your correction. Call if it is urgent.", { status: 429 })
   }
-  const bucket = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date())
+  const correctionKey = createHash("sha256")
+    .update(`${job.token_hash}:${fact}:${actionKey}`)
+    .digest("hex")
+  const externalId = `glass-correction:${correctionKey}`
   let eventId = await recordEvent({
     kind: "glass.correction",
     actorType: "customer",
     leadId: job.lead_id,
-    externalId: `glass-correction:${job.token_hash}:${fact}:${bucket}`,
+    externalId,
     body: `Customer questioned the ${fact}`,
+    detail: { actionKeyHash: correctionKey },
   })
   if (!eventId) {
     const sql = (await import("@/lib/db")).getSql()
     const existing = (await sql`
       SELECT id FROM events
-      WHERE kind = 'glass.correction' AND external_id = ${`glass-correction:${job.token_hash}:${fact}:${bucket}`}::text
+      WHERE kind = 'glass.correction' AND external_id = ${externalId}::text
       LIMIT 1`) as { id: number }[]
     eventId = Number(existing[0]?.id) || null
   }

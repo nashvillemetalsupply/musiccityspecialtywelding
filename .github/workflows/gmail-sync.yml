@@ -36,8 +36,13 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://musiccityspecialtywelding.com/api/ingest/gmail")
           status=$(printf '%s' "$response" | tail -n 1)
+          body=$(printf '%s' "$response" | sed '$d')
           echo "HTTP $status"
           if [ "$status" != "200" ]; then
             echo "::error::Gmail sync failed with HTTP $status"
+            exit 1
+          fi
+          if ! printf '%s' "$body" | jq -e '.ok == true' >/dev/null; then
+            echo "::error::Gmail sync returned ok=false"
             exit 1
           fi

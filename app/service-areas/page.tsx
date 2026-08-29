@@ -1,17 +1,16 @@
-import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowUpRight, MapPin, Phone } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
+import { createPublicMetadata } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 
-export const metadata: Metadata = {
+export const metadata = createPublicMetadata({
   title: "Mobile Welding Service Area",
   description: "Mobile welding service from Lebanon across Nashville and surrounding Middle Tennessee communities. Project scope and travel determine availability.",
-  alternates: { canonical: "/service-areas" },
-  openGraph: { url: "/service-areas" },
-}
+  canonical: "/service-areas",
+})
 
 const areas = ["Lebanon", "Nashville", "Franklin", "Murfreesboro", "Gallatin", "Hendersonville", "Clarksville", "Antioch"]
 
@@ -20,7 +19,7 @@ export default function ServiceAreasPage() {
   return (
     <>
       <Navbar />
-      <main className="ms-site ms-subpage ms-area-page">
+      <main id="main-content" className="ms-site ms-subpage ms-area-page">
         <section className="ms-area-hero">
           <h1 className="ms-display">Middle Tennessee is the shop floor.</h1>
           <div>

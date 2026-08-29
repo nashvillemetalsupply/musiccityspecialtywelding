@@ -23,19 +23,17 @@ jobs:
         run: |
           set -euo pipefail
           response=$(curl -sS --max-time 20 -w '\n%{http_code}' \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://musiccityspecialtywelding.com/api/health")
           body=$(printf '%s' "$response" | sed '$d')
           status=$(printf '%s' "$response" | tail -n 1)
           echo "HTTP $status"
-          echo "$body"
           if [ "$status" != "200" ]; then
             echo "::error::Health endpoint returned HTTP $status"
             exit 1
           fi
-          ok=$(printf '%s' "$body" | python3 -c 'import json,sys; print(json.load(sys.stdin)["ok"])')
-          leads=$(printf '%s' "$body" | python3 -c 'import json,sys; print(json.load(sys.stdin)["leadsAccepted"])')
-          if [ "$ok" != "True" ] || [ "$leads" != "True" ]; then
-            echo "::error::Launch gate failing: ok=$ok leadsAccepted=$leads"
+          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true' >/dev/null; then
+            echo "::error::Launch gate or Shop Brain readiness is failing"
             exit 1
           fi
 

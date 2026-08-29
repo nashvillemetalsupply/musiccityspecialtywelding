@@ -15,6 +15,24 @@ html:has(.ms-home) {
   scroll-margin-top: 5rem;
 }
 
+/* Keep the long proof wall and quote form out of the initial layout pass.
+ * Search engines still receive the complete server-rendered page; the browser
+ * simply defers style/layout work until each section nears the viewport. */
+.ms-home :where(
+  .ms-work,
+  .ms-services,
+  .ms-get-it,
+  .ms-process,
+  .ms-job-glass,
+  .ms-territory,
+  .ms-faq,
+  .ms-contact,
+  .ms-footer
+) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 56rem;
+}
+
 /* Gloved-thumb targets for the remaining compact text actions. */
 .ms-home .ms-menu summary {
   min-width: 2.75rem;
@@ -101,6 +119,11 @@ html:has(.ms-home) {
     padding-top: 2rem;
   }
 
+  .ms-home .ms-hero-deck {
+    font-size: 1.05rem;
+    line-height: 1.55;
+  }
+
   .ms-home .ms-hero-actions {
     gap: 1.25rem;
     margin-top: 1.6rem;
@@ -113,8 +136,7 @@ html:has(.ms-home) {
 
 @media (max-width: 360px) {
   .ms-home .ms-hero-deck {
-    font-size: 1.05rem;
-    line-height: 1.6;
+    font-size: 1rem;
   }
 
   .ms-home .sw-plank small {

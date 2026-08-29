@@ -6,6 +6,7 @@ import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
 import { captureAttribution } from "@/lib/attribution"
 import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID } from "@/lib/measurement"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
+import { QUOTE_SERVICE_OPTIONS } from "@/lib/public-quote.mjs"
 
 declare global {
   interface Window {
@@ -148,6 +149,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
       if (!contentType?.includes("application/json")) throw new Error("The server returned an invalid response.")
       const data = await response.json()
       if (!response.ok) throw new Error(data?.error || "The request did not go through.")
+      if (data?.accepted !== true) throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
 
       // The server suppresses text updates (prior STOP or unverifiable
       // permission) and returns a phone-free warning with the success body.
@@ -214,16 +216,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
           <label htmlFor="quote-service">What kind of job? *</label>
           <select id="quote-service" name="service" value={formData.service} onChange={updateField} required>
             <option value="">Pick the closest fit</option>
-            <option>Mobile Welding (On-Site)</option>
-            <option>Trailer / Truck Welding Repair</option>
-            <option>Equipment & Structural Repair</option>
-            <option>Architectural Welding & Fabrication</option>
-            <option>Specialty Fabrication</option>
-            <option>Aluminum / Boat Welding</option>
-            <option>Custom Wrought Iron Mailboxes</option>
-            <option>Custom Metal Planter Boxes</option>
-            <option>Stainless Countertops / Manifolds</option>
-            <option>Not Sure / Other</option>
+            {QUOTE_SERVICE_OPTIONS.map((service) => <option key={service}>{service}</option>)}
           </select>
         </div>
 

@@ -71,7 +71,7 @@ test("the quote route resolves durable consent before granting web consent", () 
   // flag is preserved only for a prior STOP.
   assert.match(quote, /warning: consentWarning/)
   assert.match(quote, /consentConflict \? \{ consentConflict: true \} : \{\}/)
-  assert.match(quote, /\{ ok: true \}/)
+  assert.match(quote, /\{ ok: true, accepted: true \}/)
 })
 
 test("a consent lookup failure cannot grant web text permission", () => {

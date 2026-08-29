@@ -140,11 +140,12 @@ export async function reconcileRawInboundCalls(limit = 20) {
   }>
   let recovered = 0
   for (const row of rows) {
+    const isTest = Boolean(row.detail?.isTest || row.detail?.callerName?.includes("[INTERNAL TEST]"))
     const prepared = await prepareInboundCallIntake({
       callSid: row.twilio_sid,
       phone: row.from_phone,
       callerName: row.detail?.callerName,
-      isTest: Boolean(row.detail?.isTest || row.detail?.callerName?.includes("[INTERNAL TEST]")),
+      isTest,
     })
     const person = prepared.person
     const leadId = prepared.kind === "existing" ? prepared.leadId : null
@@ -159,7 +160,7 @@ export async function reconcileRawInboundCalls(limit = 20) {
       externalId: row.twilio_sid,
       body: `${name} called the shop`,
       crewBody: `${name} called the shop`,
-      detail: { recovered: true, intake: prepared.kind },
+      detail: { recovered: true, intake: prepared.kind, isTest },
     })
     if (!eventId) {
       const prior = (await sql`SELECT id FROM events WHERE kind = 'call.in' AND external_id = ${row.twilio_sid}::text LIMIT 1`) as { id: number }[]

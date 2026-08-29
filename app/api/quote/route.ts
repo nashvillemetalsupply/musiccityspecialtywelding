@@ -6,11 +6,15 @@ import { brandedEmail, escapeHtml } from "@/lib/email-templates";
 import { recordEvent } from "@/lib/events";
 import { notifyAll } from "@/lib/notify";
 import { getShopPhone } from "@/lib/shop-contact";
+import { isAuthorizedCron } from "@/lib/ops-auth";
+import { imageTypeMatches, validatePublicQuote } from "@/lib/public-quote.mjs";
 import {
   attachLeadPhotos,
   createLead,
   isRateLimitedDurable,
+  markLeadPhotoIntent,
   markLeadDelivery,
+  reserveLeadPhotoIntents,
 } from "@/lib/leads";
 import { processEvent } from "@/lib/extract";
 import { getMessagingConsentState } from "@/lib/messaging-consent";
@@ -24,14 +28,6 @@ import {
 
 export const runtime = "nodejs"; // important for email libs
 
-const ALLOWED_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/heic",
-  "image/heif",
-]);
 const MAX_PHOTO_COUNT = 5;
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 4 * 1024 * 1024;
@@ -56,11 +52,6 @@ function isRateLimitedLocal(ip: string) {
 
   existing.count += 1;
   return existing.count > RATE_LIMIT_MAX_REQUESTS;
-}
-
-function isValidEmail(email?: string) {
-  if (!email) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function sanitize(s: unknown, max = 2000) {
@@ -213,16 +204,16 @@ export async function POST(req: Request) {
     const honeypot = sanitize(formData.get("company"));
     if (honeypot) {
       // Pretend success to bots; do not persist or send email.
-      return Response.json({ ok: true }, { status: 200 });
+      return Response.json({ ok: true, accepted: false }, { status: 200 });
     }
 
-    const firstName = sanitize(formData.get("firstName"));
-    const lastName = sanitize(formData.get("lastName"));
-    const email = sanitize(formData.get("email"));
-    const phone = sanitize(formData.get("phone"));
-    const serviceNeeded = sanitize(formData.get("service"));
-    const projectDetails = sanitize(formData.get("message"));
-    const preferredContact = sanitize(formData.get("preferredContact"));
+    const firstName = sanitize(formData.get("firstName"), 81);
+    const lastName = sanitize(formData.get("lastName"), 81);
+    const email = sanitize(formData.get("email"), 255);
+    const phone = sanitize(formData.get("phone"), 41);
+    const serviceNeeded = sanitize(formData.get("service"), 121);
+    const projectDetails = sanitize(formData.get("message"), 4001);
+    const preferredContact = sanitize(formData.get("preferredContact"), 40);
     const textConsent = sanitize(formData.get("textConsent")) === "yes";
     const intakeKey = sanitize(formData.get("intakeKey"), 80);
 
@@ -236,18 +227,19 @@ export async function POST(req: Request) {
     const landingPage = sanitize(formData.get("landing_page"), 500);
     const referrer = sanitize(formData.get("page_referrer"), 500);
 
-    // Internal verification submissions carry this marker so they can be
-    // filtered and cleaned up without touching real customer records.
-    const isTest = projectDetails.includes("[INTERNAL TEST]");
+    // A public customer can type the marker as ordinary job text. Only an
+    // authenticated verification request may enter the isolated test partition.
+    const isTest = isAuthorizedCron(req) && projectDetails.includes("[INTERNAL TEST]");
 
     const photoFiles: File[] = [];
     const photos = formData.getAll("photos");
     let totalSize = 0;
     for (const photo of photos) {
       if (photo instanceof File) {
-        if (!ALLOWED_IMAGE_TYPES.has(photo.type)) {
+        const signature = new Uint8Array(await photo.slice(0, 32).arrayBuffer());
+        if (!imageTypeMatches(signature, photo.type)) {
           return Response.json(
-            { ok: false, error: "Please attach supported image files only." },
+            { ok: false, accepted: false, error: "One attachment was not a valid JPG, PNG, WebP, GIF, HEIC, or HEIF photo." },
             { status: 400 }
           );
         }
@@ -274,15 +266,19 @@ export async function POST(req: Request) {
       }
     }
 
-    if (!firstName || !phone || !serviceNeeded) {
+    const quoteValidationError = validatePublicQuote({
+      firstName,
+      lastName,
+      email,
+      phone,
+      service: serviceNeeded,
+      message: projectDetails,
+    });
+    if (quoteValidationError) {
       return Response.json(
-        { ok: false, error: "Missing required fields." },
+        { ok: false, accepted: false, error: quoteValidationError },
         { status: 400 }
       );
-    }
-
-    if (email && !isValidEmail(email)) {
-      return Response.json({ ok: false, error: "Invalid email." }, { status: 400 });
     }
 
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(intakeKey)) {
@@ -444,30 +440,81 @@ export async function POST(req: Request) {
       }
     }
 
-    // Persist photos to private Blob storage so they survive an email failure.
-    if (leadId !== null && photoFiles.length > 0 && process.env.BLOB_READ_WRITE_TOKEN) {
+    // No provider side effect may happen without a durable lead and email
+    // intent to resume. During a storage outage, fail clearly to the call CTA.
+    if (leadId === null) {
+      return Response.json(
+        { ok: false, accepted: false, error: `We couldn't safely save your request. Please call ${shopPhone.display} or try again.` },
+        { status: 503, headers: { "Retry-After": "15" } }
+      );
+    }
+
+    // The browser owns the only recoverable bytes until every submitted photo
+    // is durably stored and linked. A partial failure must never clear them.
+    let photosDurable = photoFiles.length === 0;
+    if (leadId !== null && photoFiles.length > 0) {
+      const photoPlans = photoFiles.map((file, index) => {
+        const safeName =
+          file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `photo-${index + 1}`;
+        return {
+          file,
+          photoIndex: index + 1,
+          safeName,
+          targetPath: `leads/${leadPublicId}/${index + 1}-${safeName}`,
+        };
+      });
       try {
-        const stored = [];
-        for (const [index, file] of photoFiles.entries()) {
-          const safeName =
-            file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `photo-${index + 1}`;
-          const blob = await put(`leads/${leadPublicId}/${index + 1}-${safeName}`, file, {
-            access: "private",
-            contentType: file.type,
-            addRandomSuffix: false,
-            allowOverwrite: true,
-          });
-          stored.push({
-            pathname: blob.pathname,
-            contentType: file.type,
-            size: file.size,
-            name: safeName,
-          });
+        await reserveLeadPhotoIntents(leadId, intakeKey, photoPlans.map((photo) => ({
+          photoIndex: photo.photoIndex,
+          targetPath: photo.targetPath,
+          filename: photo.safeName,
+          contentType: photo.file.type,
+          size: photo.file.size,
+        })));
+        if (!process.env.BLOB_READ_WRITE_TOKEN) {
+          photosDurable = false;
+          await Promise.all(photoPlans.map((photo) =>
+            markLeadPhotoIntent(leadId!, intakeKey, photo.photoIndex, "failed", {
+              error: "Private photo storage is not configured.",
+            })
+          ));
+        } else {
+          const stored: Array<{ pathname: string; contentType: string; size: number; name: string; photoIndex: number }> = [];
+          for (const photo of photoPlans) {
+            try {
+              const blob = await put(photo.targetPath, photo.file, {
+                access: "private",
+                contentType: photo.file.type,
+                addRandomSuffix: false,
+                allowOverwrite: true,
+              });
+              await markLeadPhotoIntent(leadId, intakeKey, photo.photoIndex, "stored", { storedPathname: blob.pathname });
+              stored.push({
+                pathname: blob.pathname,
+                contentType: photo.file.type,
+                size: photo.file.size,
+                name: photo.safeName,
+                photoIndex: photo.photoIndex,
+              });
+            } catch (blobError) {
+              photosDurable = false;
+              const message = blobError instanceof Error ? blobError.message : "Private photo storage failed.";
+              await markLeadPhotoIntent(leadId, intakeKey, photo.photoIndex, "failed", { error: message }).catch(() => undefined);
+              console.error("Photo persistence error:", blobError);
+            }
+          }
+          if (stored.length > 0) {
+            await attachLeadPhotos(leadId, stored, { externalId: `quote-photos:${intakeKey}` });
+            await Promise.all(stored.map((photo) =>
+              markLeadPhotoIntent(leadId!, intakeKey, photo.photoIndex, "attached", { storedPathname: photo.pathname })
+            ));
+          }
+          photosDurable = stored.length === photoPlans.length;
         }
-        await attachLeadPhotos(leadId, stored, { externalId: `quote-photos:${intakeKey}` });
       } catch (blobError) {
-        // Photos still ride along on the notification email.
-        console.error("Photo persistence error:", blobError);
+        // No private provider write starts unless all storage intents are durable.
+        photosDurable = false;
+        console.error("Photo intent persistence error:", blobError);
       }
     }
 
@@ -534,7 +581,7 @@ export async function POST(req: Request) {
           .join("<br />"),
         ctaLabel: "Open the board",
         ctaUrl: "https://musiccityspecialtywelding.com/ops",
-        footnote: `Source: ${escapeHtml(gclid ? "google-ads" : utmSource || referrer || "direct")} · ${now}`,
+        footnote: `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"} · ${now}`,
       });
 
       const ownerResult = await sendDurableQuoteEmail({
@@ -583,7 +630,7 @@ export async function POST(req: Request) {
             ].join("\n"),
             html: brandedEmail({
               preheader: "Your job hit the board. We'll call you.",
-              headline: `Got it, ${escapeHtml(firstName)}.`,
+              headline: `Got it, ${firstName}.`,
               bodyHtml: [
                 `Your <strong>${escapeHtml(serviceNeeded)}</strong> request just hit the board at the shop.`,
                 `A real person will call you at <strong>${escapeHtml(phone)}</strong> — not a bot, not a call center.`,
@@ -609,7 +656,7 @@ export async function POST(req: Request) {
               sourceEventId: customerResult.receiptEventId,
               ownerOnly: true,
               dedupeKey: `quote-customer-delivery:${intakeKey}:${customerResult.state}`,
-            });
+            }).catch((error) => console.error("Customer-delivery notification failed:", error));
           }
         }
       }
@@ -644,8 +691,20 @@ export async function POST(req: Request) {
           quietHoursExempt: true,
           smsFallback: true,
           dedupeKey: `quote-intake:${intakeKey}:new-lead`,
-        });
+        }).catch((error) => console.error("New-lead notification failed:", error));
       }
+    }
+
+    if (!photosDurable) {
+      return Response.json(
+        {
+          ok: false,
+          accepted: false,
+          partial: true,
+          error: `We saved your contact details, but your photos were not safely stored. Keep this page open and try again, or call ${shopPhone.display}.`,
+        },
+        { status: 503, headers: { "Retry-After": "15" } }
+      );
     }
 
     // The request succeeds when the lead is captured by at least one channel.
@@ -654,12 +713,13 @@ export async function POST(req: Request) {
         consentWarning
           ? {
             ok: true,
+            accepted: true,
             // A conflict is only real for a prior STOP; a lookup failure
             // denies the grant but must not claim a STOP occurred.
             ...(consentConflict ? { consentConflict: true } : {}),
             warning: consentWarning,
           }
-          : { ok: true },
+          : { ok: true, accepted: true },
         { status: 200 }
       );
     }

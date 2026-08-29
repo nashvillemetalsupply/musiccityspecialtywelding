@@ -1,6 +1,6 @@
 import { ADS_CONVERSION_SEND_TO } from "@/lib/measurement"
 import { dbConfigured, getSql } from "@/lib/db"
-import { getOwnerEmail } from "@/lib/ops-auth"
+import { getOwnerEmail, isAuthorizedCron } from "@/lib/ops-auth"
 import { aiConfigured } from "@/lib/ai"
 import { gmailConfigured } from "@/lib/gmail"
 import {
@@ -51,6 +51,7 @@ type DatabaseHealth = {
   callTranscriptExhausted: number | null
   voiceTranscriptBacklog: number | null
   uploadRecoveryBacklog: number | null
+  quotePhotoBacklog: number | null
   consentRecordCount: number | null
   callSketchErrorCount: number | null
 }
@@ -73,6 +74,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     callTranscriptExhausted: null,
     voiceTranscriptBacklog: null,
     uploadRecoveryBacklog: null,
+    quotePhotoBacklog: null,
     consentRecordCount: null,
     callSketchErrorCount: null,
   }
@@ -97,6 +99,9 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         (SELECT count(*)::int FROM glass_uploads
           WHERE status IN ('uploading','uploaded','projecting','unknown')
             AND updated_at < now() - interval '20 minutes') AS upload_recovery_backlog,
+        (SELECT count(*)::int FROM lead_photo_intents
+          WHERE status <> 'attached'
+            AND updated_at < now() - interval '20 minutes') AS quote_photo_backlog,
         (SELECT count(*)::int FROM messaging_consents) AS consent_record_count,
         (SELECT count(*)::int FROM call_sketches
           WHERE status = 'error' AND updated_at > now() - interval '24 hours') AS call_sketch_error_count`) as {
@@ -106,6 +111,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       call_transcript_exhausted: number
       voice_transcript_backlog: number
       upload_recovery_backlog: number
+      quote_photo_backlog: number
       consent_record_count: number
       call_sketch_error_count: number
     }[]
@@ -116,6 +122,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.callTranscriptExhausted = counts.call_transcript_exhausted
     result.voiceTranscriptBacklog = counts.voice_transcript_backlog
     result.uploadRecoveryBacklog = counts.upload_recovery_backlog
+    result.quotePhotoBacklog = counts.quote_photo_backlog
     result.consentRecordCount = counts.consent_record_count
     result.callSketchErrorCount = counts.call_sketch_error_count
     const digest = (await sql`
@@ -152,13 +159,27 @@ async function checkDatabase(): Promise<DatabaseHealth> {
   return result
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const resendApiKey = process.env.RESEND_API_KEY?.trim() || ""
   const quoteEmailConfigured = Boolean(
     resendApiKey &&
       process.env.QUOTE_FROM_EMAIL?.trim() &&
       process.env.QUOTE_TO_EMAIL?.trim()
   )
+  if (!isAuthorizedCron(req)) {
+    const configured = dbConfigured() && quoteEmailConfigured
+    return Response.json(
+      {
+        ok: configured,
+        service: "music-city-specialty-welding-website",
+        leadsAccepted: configured,
+      },
+      {
+        status: configured ? 200 : 503,
+        headers: { "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300" },
+      },
+    )
+  }
   const [quoteEmailCredentialValid, database, twilioProvider] = await Promise.all([
     quoteEmailConfigured ? hasWorkingResendCredential(resendApiKey) : Promise.resolve(false),
     checkDatabase(),
@@ -243,13 +264,14 @@ export async function GET() {
     !morningBriefStale &&
     (database.callTranscriptBacklog ?? 0) === 0 &&
     (database.voiceTranscriptBacklog ?? 0) === 0 &&
-    (database.uploadRecoveryBacklog ?? 0) === 0
+    (database.uploadRecoveryBacklog ?? 0) === 0 &&
+    (database.quotePhotoBacklog ?? 0) === 0
   )
   const shopBrainGateSatisfied = !shopBrainRequired || shopBrainReady
 
-  // Leads are accepted when either durable channel works; both healthy is the target.
-  const leadsAccepted =
-    (quoteEmailConfigured && quoteEmailCredentialValid) || database.connected
+  // Quote intake fails closed before provider calls unless the durable lead and
+  // email intent are persisted, so database readiness is the acceptance gate.
+  const leadsAccepted = database.connected
 
   const launchGatePassed =
     quoteEmailConfigured &&
@@ -329,6 +351,7 @@ export async function GET() {
         consentLedgerReady: database.consentRecordCount !== null,
         blobConfigured,
         uploadRecoveryBacklog: database.uploadRecoveryBacklog,
+        quotePhotoBacklog: database.quotePhotoBacklog,
         deepgramConfigured: Boolean(process.env.DEEPGRAM_API_KEY?.trim()),
         deepgramCallbackSecretConfigured: deepgramCallbackSecretConfigured(),
         callTranscriptionConfigured: callTranscriptionConfigured(),

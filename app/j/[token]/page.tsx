@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { randomUUID } from "node:crypto"
 import Image from "next/image"
 import { ActionKeyField } from "@/components/build-sheets/action-key-field"
 import { CustomerBuildDrawing } from "@/components/build-sheets/customer-build-drawing"
@@ -41,7 +42,7 @@ export const viewport: Viewport = {
 const STATIONS = ["Received", "Quoted", "Scheduled", "In progress", "Finished"]
 function money(cents: number | null) { return cents == null ? "" : (Number(cents) / 100).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
 function date(iso: string | null) { return iso ? new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Chicago", month: "long", day: "numeric", year: "numeric" }) : "Date being confirmed" }
-function CorrectionStub({ token, fact }: { token: string; fact: string }) { return <form className="glass-correction" action={`/j/${token}/correct?fact=${encodeURIComponent(fact)}`} method="post"><button type="submit">Something wrong with this?</button></form> }
+function CorrectionStub({ token, fact }: { token: string; fact: string }) { return <form className="glass-correction" action={`/j/${token}/correct?fact=${encodeURIComponent(fact)}`} method="post"><input type="hidden" name="actionKey" value={`glass-correction:${randomUUID()}`} /><button type="submit">Something wrong with this?</button></form> }
 
 export default async function GlassPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ build?: string }> }) {
   const { token } = await params

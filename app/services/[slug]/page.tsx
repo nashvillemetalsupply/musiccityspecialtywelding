@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
+import { createPublicMetadata } from "@/lib/public-metadata"
 import { servicePageBySlug, servicePages } from "@/lib/service-pages"
 import { getShopPhone } from "@/lib/shop-contact"
 
@@ -20,17 +21,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const service = servicePageBySlug.get(slug)
   if (!service) return {}
 
-  return {
+  return createPublicMetadata({
     title: service.shortTitle,
     description: service.metaDescription,
-    alternates: { canonical: `/services/${service.slug}` },
-    openGraph: {
-      url: `/services/${service.slug}`,
-      title: service.title,
-      description: service.metaDescription,
-      images: [{ url: service.image, alt: service.imageAlt }],
+    canonical: `/services/${service.slug}`,
+    socialTitle: service.title,
+    image: {
+      url: service.image,
+      alt: service.imageAlt,
     },
-  }
+  })
 }
 
 export default async function ServicePage({ params }: PageProps) {
@@ -48,12 +48,28 @@ export default async function ServicePage({ params }: PageProps) {
     areaServed: "Middle Tennessee",
     provider: { "@id": "https://musiccityspecialtywelding.com/#business" },
   }
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://musiccityspecialtywelding.com/" },
+      { "@type": "ListItem", position: 2, name: "Services", item: "https://musiccityspecialtywelding.com/#services" },
+      { "@type": "ListItem", position: 3, name: service.shortTitle, item: `https://musiccityspecialtywelding.com/services/${service.slug}` },
+    ],
+  }
 
   return (
     <>
       <Navbar />
-      <main className="ms-site ms-subpage" data-service={service.slug}>
+      <main id="main-content" className="ms-site ms-subpage" data-service={service.slug}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
+        <nav className="ms-breadcrumb" aria-label="Breadcrumb">
+          <Link href="/">Home</Link><span aria-hidden="true">/</span>
+          <Link href="/#services">Services</Link><span aria-hidden="true">/</span>
+          <span aria-current="page">{service.shortTitle}</span>
+        </nav>
 
         <section className="ms-subhero">
           <div className="ms-subhero-copy">

@@ -9,6 +9,7 @@ import { isAuthorizedCron } from "@/lib/ops-auth"
 import { extractQuickBooksPaymentFacts, isAuthenticatedIntuitPayment, looksLikeIntuitPaymentEnvelope, paymentCompletesInvoice, sentMessageMayStartWork, shouldSkipGmailMessage } from "@/lib/gmail-routing.mjs"
 import { findPersonByEmail, getPerson } from "@/lib/people"
 import { classifyAttachmentSensitivity, queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-retry"
+import { isGmailMessageGone } from "@/lib/shop-brain-invariants.mjs"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -173,10 +174,19 @@ export async function GET(req: Request) {
     if ((error as { status?: number }).status !== 404) throw error
     listing = await listGmailMessageIds(token, null)
   }
-  const counters = { scanned: listing.ids.length, inserted: 0, payments: 0, skipped: 0, failures: 0, deadLettered: 0 }
+  const counters = { scanned: listing.ids.length, inserted: 0, payments: 0, skipped: 0, gone: 0, failures: 0, deadLettered: 0 }
   for (const id of listing.ids.reverse()) {
     try {
-      const message = await getGmailMessage(token, id)
+      let message
+      try {
+        message = await getGmailMessage(token, id)
+      } catch (error) {
+        if (isGmailMessageGone(error)) {
+          counters.gone++
+          continue
+        }
+        throw error
+      }
       const headers = gmailHeaders(message)
       const subject = headers.subject || "(no subject)"
       const from = emailAddress(headers.from)

@@ -2,12 +2,14 @@ import Image from "next/image"
 import Link from "next/link"
 import { Phone } from "lucide-react"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
+import { PublicSkipLink } from "@/components/public-skip-link"
 import { getShopPhone } from "@/lib/shop-contact"
 
 export function Navbar() {
   const shopPhone = getShopPhone()
   return (
     <header className="ms-site ms-nav" aria-label="Main navigation">
+      <PublicSkipLink />
       <Link className="ms-brand" href="/">
         <span className="ms-brand-badge">
           <Image

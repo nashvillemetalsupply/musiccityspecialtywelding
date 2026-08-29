@@ -1,4 +1,7 @@
 import { getShopPhone } from "@/lib/shop-contact"
+import { escapeEmailText, safeEmailHref } from "@/lib/email-safety.mjs"
+
+export { escapeEmailText as escapeHtml } from "@/lib/email-safety.mjs"
 
 /* Branded email shell — same shop-wall identity as the site and the CRM.
    Table-based, inline-styled, no external assets; every send keeps a plain-
@@ -22,11 +25,12 @@ export function brandedEmail(options: {
   footnote?: string
 }): string {
   const shopPhone = getShopPhone()
-  const cta = options.ctaLabel && options.ctaUrl
+  const ctaUrl = options.ctaUrl ? safeEmailHref(options.ctaUrl) : ""
+  const cta = options.ctaLabel && ctaUrl
     ? `<tr><td align="left" style="padding: 8px 0 4px;">
-        <a href="${options.ctaUrl}"
+        <a href="${ctaUrl}"
            style="display:inline-block;background:${FIRE};color:${INK};font-family:Arial Black,Arial,sans-serif;font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-decoration:none;padding:14px 26px;border-radius:6px;border:3px solid #000;">
-          ${options.ctaLabel}
+          ${escapeEmailText(options.ctaLabel)}
         </a>
       </td></tr>`
     : ""
@@ -34,7 +38,7 @@ export function brandedEmail(options: {
   return `<!doctype html>
 <html>
   <body style="margin:0;padding:0;background:${COAL};">
-    <span style="display:none;max-height:0;overflow:hidden;">${options.preheader}</span>
+    <span style="display:none;max-height:0;overflow:hidden;">${escapeEmailText(options.preheader)}</span>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COAL};padding:24px 12px;">
       <tr><td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
@@ -48,7 +52,7 @@ export function brandedEmail(options: {
           <tr><td style="height:12px;font-size:0;">&nbsp;</td></tr>
           <tr>
             <td style="background:${PAPER};border-radius:4px;padding:28px 30px 26px;color:${INK};font-family:Arial,Helvetica,sans-serif;">
-              <h1 style="margin:0 0 14px;font-family:Arial Black,Arial,sans-serif;font-size:22px;line-height:1.15;text-transform:uppercase;color:${INK};">${options.headline}</h1>
+              <h1 style="margin:0 0 14px;font-family:Arial Black,Arial,sans-serif;font-size:22px;line-height:1.15;text-transform:uppercase;color:${INK};">${escapeEmailText(options.headline)}</h1>
               <div style="font-size:16px;line-height:1.65;color:#3d3324;">${options.bodyHtml}</div>
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:18px;">${cta}</table>
             </td>
@@ -61,7 +65,7 @@ export function brandedEmail(options: {
               <a href="${shopPhone.href}" style="color:${CREAM};">${shopPhone.display}</a> ·
               <a href="mailto:sales@musiccityspecialtywelding.com" style="color:${CREAM};">sales@musiccityspecialtywelding.com</a> ·
               <a href="https://musiccityspecialtywelding.com" style="color:${NEON};">musiccityspecialtywelding.com</a>
-              ${options.footnote ? `<div style="margin-top:10px;color:${MUTED};font-size:12px;">${options.footnote}</div>` : ""}
+              ${options.footnote ? `<div style="margin-top:10px;color:${MUTED};font-size:12px;">${escapeEmailText(options.footnote)}</div>` : ""}
             </td>
           </tr>
         </table>
@@ -69,13 +73,4 @@ export function brandedEmail(options: {
     </table>
   </body>
 </html>`
-}
-
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
 }

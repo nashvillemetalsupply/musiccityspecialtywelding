@@ -218,8 +218,7 @@ export async function createManualLeadRecord(
       const rearmed = (await sql`
         UPDATE events SET processed_at = NULL, extraction_status = 'pending',
           extraction_next_attempt_at = ${options.deferExtraction ? new Date(Date.now() + 11 * 60 * 1000).toISOString() : null}::timestamptz,
-          extraction_last_error = '',
-          detail = COALESCE(detail, '{}'::jsonb) - 'intakeUndoDeferred'
+          extraction_last_error = ''
         WHERE lead_id = ${id}::bigint
           AND detail->>'intakeUndoDeferred' = 'true'
         RETURNING id`) as { id: number }[]
@@ -500,7 +499,7 @@ export async function saveOutcome(formData: FormData) {
           ``,
           `Music City Specialty Welding · 533 W Baddour Pkwy, Lebanon, TN`,
         ].join("\n"),
-        headline: `Job's done, ${escapeHtml(lead.first_name)}.`,
+        headline: `Job's done, ${lead.first_name}.`,
         bodyHtml: [
           `Your <strong>${escapeHtml(lead.service)}</strong> work is wrapped. Thanks for trusting a local shop with it.`,
           `Keep our number. Metal breaks at the worst times, and we answer 24 hours a day.`,

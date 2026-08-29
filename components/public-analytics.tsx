@@ -4,6 +4,7 @@ import Script from "next/script"
 import { usePathname } from "next/navigation"
 import { AttributionTracker } from "@/components/attribution-tracker"
 import { DeferredGoogleTag } from "@/components/deferred-google-tag"
+import { PhoneClickTracker } from "@/components/phone-click-tracker"
 
 function isPrivateSurface(pathname: string) {
   return ["/ops", "/board", "/j", "/design-preview"].some(
@@ -32,5 +33,6 @@ export function PublicAnalytics({ measurementId }: { measurementId?: string }) {
     </Script>
     <DeferredGoogleTag containerId="GT-TWZ9WFGX" />
     <AttributionTracker />
+    <PhoneClickTracker />
   </>
 }

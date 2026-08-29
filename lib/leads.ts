@@ -357,6 +357,52 @@ export async function attachLeadPhotos(
   })
 }
 
+export type LeadPhotoIntentStatus = "pending" | "stored" | "attached" | "failed"
+
+export async function reserveLeadPhotoIntents(
+  leadId: number,
+  intakeKey: string,
+  photos: Array<{ photoIndex: number; targetPath: string; filename: string; contentType: string; size: number }>,
+) {
+  const sql = getSql()
+  for (const photo of photos) {
+    await sql`
+      INSERT INTO lead_photo_intents (
+        lead_id, intake_key, photo_index, target_path, filename, content_type, size_bytes
+      ) VALUES (
+        ${leadId}::bigint, ${intakeKey}::text, ${photo.photoIndex}::int,
+        ${photo.targetPath}::text, ${photo.filename}::text, ${photo.contentType}::text,
+        ${photo.size}::bigint
+      ) ON CONFLICT (lead_id, intake_key, photo_index) DO UPDATE SET
+        target_path = EXCLUDED.target_path,
+        filename = EXCLUDED.filename,
+        content_type = EXCLUDED.content_type,
+        size_bytes = EXCLUDED.size_bytes,
+        updated_at = now()`
+  }
+}
+
+export async function markLeadPhotoIntent(
+  leadId: number,
+  intakeKey: string,
+  photoIndex: number,
+  status: LeadPhotoIntentStatus,
+  detail: { storedPathname?: string; error?: string } = {},
+) {
+  const sql = getSql()
+  await sql`
+    UPDATE lead_photo_intents SET
+      status = ${status}::text,
+      stored_pathname = CASE
+        WHEN ${detail.storedPathname ?? ""}::text <> '' THEN ${detail.storedPathname ?? ""}::text
+        ELSE stored_pathname
+      END,
+      error = ${detail.error?.slice(0, 500) ?? ""}::text,
+      updated_at = now()
+    WHERE lead_id = ${leadId}::bigint AND intake_key = ${intakeKey}::text
+      AND photo_index = ${photoIndex}::int`
+}
+
 export async function recordLeadEvent(
   leadId: number,
   type: string,

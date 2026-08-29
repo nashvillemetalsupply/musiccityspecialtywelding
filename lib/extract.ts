@@ -146,7 +146,7 @@ export async function processEvent(eventId: number) {
   }
   const crewSafeBody = redactCrewText(object.crew_safe_body)
   await sql`
-    UPDATE events SET crew_body = ${crewSafeBody}::text
+    UPDATE events SET crew_body = COALESCE(crew_body, ${crewSafeBody}::text)
     WHERE id = ${event.id}::bigint`
   const messageId = Number(event.detail?.messageId)
   if (Number.isInteger(messageId) && messageId > 0) {

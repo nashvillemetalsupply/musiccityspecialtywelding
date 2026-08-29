@@ -2,10 +2,10 @@ name: Follow-up reminders
 
 on:
   schedule:
-    # Hourly sweep so same-day follow-up picks fire on time. Minute :05 lands on a
-    # wake gmail-sync and health-monitor already pay for, so this costs no extra
-    # Neon compute. See gmail-sync.yml.
-    - cron: "5 * * * *"
+    # GitHub's nominal hourly schedule has shown multi-hour gaps. Share the
+    # daytime wake cadence with Gmail and health; stay hourly overnight.
+    - cron: "5,20,35,50 12-23 * * *"
+    - cron: "5 0-11 * * *"
   workflow_dispatch:
 
 permissions:
@@ -25,8 +25,11 @@ jobs:
           body=$(printf '%s' "$response" | sed '$d')
           status=$(printf '%s' "$response" | tail -n 1)
           echo "HTTP $status"
-          echo "$body"
           if [ "$status" != "200" ]; then
             echo "::error::Reminder sweep failed with HTTP $status"
+            exit 1
+          fi
+          if ! printf '%s' "$body" | jq -e '.ok == true' >/dev/null; then
+            echo "::error::Reminder sweep returned an unhealthy result"
             exit 1
           fi

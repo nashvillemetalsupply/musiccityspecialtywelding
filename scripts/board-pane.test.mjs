@@ -227,7 +227,7 @@ test("only the shop's own promises can be called broken", () => {
   )
   // Asked for 'broken' literally this returned nothing forever, so Ask Jobs
   // could answer "no broken promises" while the board showed several.
-  assert.match(list, /= 'broken'\s*\n\s*AND status = 'open' AND due_at IS NOT NULL AND due_at < now\(\)/)
+  assert.match(list, /= 'broken'\s*\n\s*AND c\.status = 'open' AND c\.due_at IS NOT NULL AND c\.due_at < now\(\)/)
 })
 
 // A marker-only test identity reaches the live board without this, and the
