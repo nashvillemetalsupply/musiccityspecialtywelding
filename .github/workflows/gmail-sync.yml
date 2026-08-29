@@ -38,7 +38,10 @@ jobs:
           status=$(printf '%s' "$response" | tail -n 1)
           body=$(printf '%s' "$response" | sed '$d')
           echo "HTTP $status"
-          if [ "$status" != "200" ]; then
+          # A 202 is the ingest route's truthful "another leased sync already
+          # owns this checkpoint" response. Opportunistic production wakes can
+          # now overlap this job, so that safe coalescing is success, not noise.
+          if [ "$status" != "200" ] && [ "$status" != "202" ]; then
             echo "::error::Gmail sync failed with HTTP $status"
             exit 1
           fi

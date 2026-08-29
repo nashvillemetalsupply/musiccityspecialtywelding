@@ -255,6 +255,7 @@ test("Gmail tombstones advance the checkpoint without retries or false-green sch
   const workflow = source(".github/workflows/gmail-sync.yml")
   assert.match(workflow, /jq -e '\.ok == true'/)
   assert.match(workflow, /Gmail sync returned ok=false/)
+  assert.match(workflow, /\[ "\$status" != "200" \] && \[ "\$status" != "202" \]/)
 })
 
 test("every real inbound SMS persists an owner-cell copy without test or routing loops", () => {
@@ -592,6 +593,37 @@ test("bounded recovery has a daily catch-up, an honest lease, and safe opportuni
   assert.match(voice, /call\.is_test = call\.is_test \|\| prepared\.person\.is_test/)
   assert.match(voice, /call\.is_test = call\.is_test \|\| Boolean\(prepared\.person\?\.is_test \|\| prepared\.draft\.is_test\)/)
   assert.match(voice, /if \(call && !call\.is_test\)[\s\S]{0,180}after\([\s\S]{0,220}trigger: "twilio-call"/)
+})
+
+test("opportunistic recovery wakes only the canonical production Gmail ingest", () => {
+  const wake = source("lib/gmail-wake.ts")
+  const wakePolicy = source("lib/gmail-wake-policy.mjs")
+  const gmail = source("app/api/ingest/gmail/route.ts")
+  const board = source("app/board/page.tsx")
+  const action = source("app/board/recovery-actions.ts")
+  const sms = source("app/api/twilio/sms/route.ts")
+  const voice = source("app/api/twilio/voice-status/route.ts")
+
+  assert.match(wake, /import "server-only"/)
+  assert.match(wake, /CANONICAL_ORIGIN/)
+  assert.match(wake, /evaluateGmailWakePolicy/)
+  assert.match(wake, /Buffer\.byteLength\(secret, "utf8"\) < 32/)
+  assert.match(wakePolicy, /GMAIL_WAKE_PRODUCTION_ORIGIN = "https:\/\/musiccityspecialtywelding\.com"/)
+  assert.match(wakePolicy, /isExactProductionOrigin\(callerOrigin\)/)
+  assert.match(wake, /new URL\("\/api\/ingest\/gmail", GMAIL_WAKE_PRODUCTION_ORIGIN\)/)
+  assert.match(wake, /Authorization: `Bearer \$\{secret\}`/)
+  assert.match(wake, /cache: "no-store"/)
+  assert.doesNotMatch(wake, /getSql|gmailAccessToken|listGmailMessageIds|console\./)
+  assert.match(gmail, /INSERT INTO sync_state \(key, value, updated_at\)[\s\S]{0,140}'gmail-ingest-lease'/)
+  assert.match(gmail, /checkpointAdvanced: counters\.failures === 0/)
+
+  assert.match(board, /trigger: "owner-board"[\s\S]{0,260}!result\.skipped[\s\S]{0,220}wakeGmailIngest\(gmailWakeOrigin\)/)
+  assert.match(action, /wakeGmailIngest\(gmailWakeOrigin\)/)
+  assert.match(action, /if \(!gmailResult\.ok\)/)
+  assert.match(action, /Gmail sync was not confirmed/)
+  assert.match(action, /Gmail sync reported a failure/)
+  assert.match(sms, /eventId && !consentKeyword && !systemSms && !conversation\.person\?\.is_test[\s\S]{0,520}!result\.skipped[\s\S]{0,220}wakeGmailIngest\(new URL\(req\.url\)\.origin\)/)
+  assert.match(voice, /if \(call && !call\.is_test\)[\s\S]{0,520}!result\.skipped[\s\S]{0,220}wakeGmailIngest\(new URL\(req\.url\)\.origin\)/)
 })
 
 test("existing push endpoints rebind to the punched-in operator", () => {

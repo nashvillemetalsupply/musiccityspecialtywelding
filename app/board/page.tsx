@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { after } from "next/server"
 import { dbConfigured } from "@/lib/db"
 import { getPromiseSummary } from "@/lib/commitments"
@@ -15,6 +16,8 @@ import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { JobControl } from "./board"
 import type { BoardPaneData } from "./board"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
+import { wakeGmailIngest } from "@/lib/gmail-wake"
+import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.mjs"
 import "./board.css"
 
 export const metadata: Metadata = {
@@ -93,9 +96,14 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   }
   if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
 
+  const gmailWakeOrigin = operator.role === "owner" ? requestOriginFromHeaders(await headers()) : ""
   if (operator.role === "owner") after(async () => {
     const result = await runRecoverySweep({ trigger: "owner-board" })
     if (!result.ok) console.error("Owner board recovery failed:", result.error)
+    if (!result.skipped) {
+      const gmailResult = await wakeGmailIngest(gmailWakeOrigin)
+      if (!gmailResult.ok) console.error("Owner board Gmail wake failed:", gmailResult.reason)
+    }
   })
 
   const role = operator.role

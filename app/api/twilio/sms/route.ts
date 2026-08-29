@@ -11,6 +11,7 @@ import { queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-r
 import { classifyTwilioConsentKeyword, recordMessagingConsent } from "@/lib/messaging-consent"
 import { resumeSmsProjection } from "@/lib/sms-provider-truth.mjs"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
+import { wakeGmailIngest } from "@/lib/gmail-wake"
 
 export const runtime = "nodejs"
 
@@ -161,6 +162,10 @@ export async function POST(req: Request) {
   if (eventId && !consentKeyword && !systemSms && !conversation.person?.is_test) after(async () => {
     const result = await runRecoverySweep({ trigger: "twilio-sms" })
     if (!result.ok) console.error("Inbound SMS recovery failed:", result.error)
+    if (!result.skipped) {
+      const gmailResult = await wakeGmailIngest(new URL(req.url).origin)
+      if (!gmailResult.ok) console.error("Inbound SMS Gmail wake failed:", gmailResult.reason)
+    }
   })
 
   const attachmentIds: number[] = []

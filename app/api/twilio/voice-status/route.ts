@@ -7,6 +7,7 @@ import { normalizePhone } from "@/lib/people"
 import { prepareInboundCallIntake, type CallIntakeDraft } from "@/lib/job-intake"
 import { readTwilioForm, twilioSmsConfigured, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
+import { wakeGmailIngest } from "@/lib/gmail-wake"
 
 export const runtime = "nodejs"
 
@@ -57,6 +58,10 @@ export async function POST(req: Request) {
   if (call && !call.is_test) after(async () => {
     const result = await runRecoverySweep({ trigger: "twilio-call" })
     if (!result.ok) console.error("Inbound call recovery failed:", result.error)
+    if (!result.skipped) {
+      const gmailResult = await wakeGmailIngest(new URL(req.url).origin)
+      if (!gmailResult.ok) console.error("Inbound call Gmail wake failed:", gmailResult.reason)
+    }
   })
   if (call && ["answered", "completed"].includes(status) && duration > 0 && call.lead_id) {
     const operators = (await sql`
