@@ -140,7 +140,7 @@ test("Customer Page uploads persist intent first, enforce quotas, converge idemp
   const authorize = source("app/api/glass/upload/route.ts")
   const finalize = source("app/api/glass/upload/finalize/route.ts")
   const uploads = source("lib/glass-uploads.ts")
-  const reminders = source("app/api/ops/reminders/route.ts")
+  const recovery = source("lib/recovery-sweep.ts")
   const migration = source("scripts/migrate.mjs")
 
   assert.ok(client.indexOf("const intent = await fileIntent(item)") < client.indexOf("await upload(intent.pathname"))
@@ -167,7 +167,7 @@ test("Customer Page uploads persist intent first, enforce quotas, converge idemp
   assert.match(uploads, /if \(!upload\.is_test && upload\.event_id\)/)
   assert.match(uploads, /if \(notifyGate\[0\]\) await notifyAll/)
   assert.match(uploads, /export async function reconcileGlassUploads/)
-  assert.match(reminders, /reconcileGlassUploads\(\)/)
+  assert.match(recovery, /reconcileGlassUploads\(\)/)
   assert.match(migration, /CREATE TABLE IF NOT EXISTS glass_uploads/)
   for (const status of ["pending", "uploading", "uploaded", "projecting", "stored", "failed", "unknown"]) {
     assert.match(migration, new RegExp(`'${status}'`))

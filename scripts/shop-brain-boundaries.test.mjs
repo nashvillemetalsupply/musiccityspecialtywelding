@@ -120,7 +120,7 @@ test("tracked return calls clear waiting work and exempt alerts do not spend the
 
 test("durable interrupt intents retry through the same quiet-hour and budget gate", () => {
   const notify = source("lib/notify.ts")
-  const reminders = source("app/api/ops/reminders/route.ts")
+  const recovery = source("lib/recovery-sweep.ts")
   const migration = source("scripts/migrate.mjs")
   assert.match(migration, /delivery_status TEXT NOT NULL DEFAULT 'filed'/)
   assert.match(notify, /export async function retryPendingInterrupts/)
@@ -131,7 +131,7 @@ test("durable interrupt intents retry through the same quiet-hour and budget gat
   assert.match(notify, /More happened\. Check Updates\./)
   assert.match(notify, /The coalesced alert could not reach a registered push channel/)
   assert.match(notify, /Alert delivery failed/)
-  assert.match(reminders, /retryPendingInterrupts\(\)/)
+  assert.match(recovery, /retryPendingInterrupts\(\)/)
   assert.doesNotMatch(notify, /sendSms\([\s\S]{0,180}\.then\(\(\) => true\)\.catch\(\(\) => false\)/)
   assert.match(notify, /smsDeliveryUnknown = !isDefinitiveTwilioError\(error\)/)
   assert.match(notify, /delivery_status = 'unknown'[\s\S]{0,260}automatic repeat is quarantined/)
@@ -542,6 +542,58 @@ test("deployed schedulers preserve cost-aware Gmail cadence and both Central bri
   assert.doesNotMatch(briefWorkflow, /echo "\$body"/)
 })
 
+test("bounded recovery has a daily catch-up, an honest lease, and safe opportunistic triggers", () => {
+  const migration = source("scripts/migrate.mjs")
+  const recovery = source("lib/recovery-sweep.ts")
+  const reminders = source("app/api/ops/reminders/route.ts")
+  const board = source("app/board/page.tsx")
+  const action = source("app/board/recovery-actions.ts")
+  const menu = source("app/ops/more-menu.tsx")
+  const sms = source("app/api/twilio/sms/route.ts")
+  const voice = source("app/api/twilio/voice-status/route.ts")
+  const vercel = JSON.parse(source("vercel.json"))
+
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS automation_leases/)
+  assert.match(migration, /holder TEXT NOT NULL/)
+  assert.match(migration, /lease_expires_at TIMESTAMPTZ NOT NULL/)
+  assert.match(migration, /last_finished_at TIMESTAMPTZ/)
+  assert.match(recovery, /automation_leases\.lease_expires_at <= now\(\)/)
+  assert.match(recovery, /\$\{force\}::boolean OR automation_leases\.last_finished_at IS NULL/)
+  assert.match(recovery, /last_finished_at <= now\(\) - interval '10 minutes'/)
+  assert.match(recovery, /now\(\) \+ interval '15 minutes'/)
+  assert.match(recovery, /WHERE key = \$\{RECOVERY_LEASE_KEY\}::text AND holder = \$\{holder\}::text/)
+  assert.match(recovery, /UPDATE automation_leases[\s\S]{0,320}RETURNING key/)
+  assert.match(recovery, /if \(!rows\[0\]\) throw new Error\("Recovery lease ownership was lost before release\."\)/)
+
+  const skippedReturn = recovery.indexOf('reason: "lease-active-or-recent"')
+  const runLog = recovery.indexOf("INSERT INTO automation_runs")
+  assert.ok(skippedReturn >= 0 && skippedReturn < runLog, "a skipped lease must return before automation freshness is logged")
+  assert.ok(recovery.indexOf("await releaseRecoveryLease(holder)") < runLog, "lease release truth must be known before the automation result is logged")
+  assert.doesNotMatch(reminders, /INSERT INTO automation_runs/)
+  assert.match(reminders, /runRecoverySweep\(\{ trigger/)
+
+  for (const reconciler of [
+    "retryPendingAttachments", "retryCallTranscriptions", "retryVoiceTranscriptions",
+    "reconcileStaleSmsIntents", "reconcileRawInboundCalls", "reconcileStaleCallIntakes",
+    "reconcileStaleOutboundCalls", "reconcileStaleCommitmentReschedules",
+    "reconcileGlassUploads", "retryPendingInterrupts",
+  ]) assert.match(recovery, new RegExp(`${reconciler}\\(\\)`))
+
+  assert.ok(vercel.crons.some((cron) => cron.path === "/api/ops/reminders" && cron.schedule === "15 13 * * *"))
+  assert.match(board, /operator\.role === "owner"[\s\S]{0,220}after\([\s\S]{0,300}trigger: "owner-board"/)
+  assert.match(action, /operator\.role !== "owner"/)
+  assert.match(action, /trigger: "owner-manual", force: true/)
+  assert.match(menu, /role === "owner" && <RecoveryControl/)
+
+  assert.ok(sms.indexOf("const { params, valid } = await readTwilioForm(req)") < sms.indexOf('trigger: "twilio-sms"'))
+  assert.match(sms, /eventId && !consentKeyword && !systemSms && !conversation\.person\?\.is_test[\s\S]{0,180}after\([\s\S]{0,220}trigger: "twilio-sms"/)
+  assert.ok(voice.indexOf("if (!valid) return twiml(\"\", 403)") < voice.indexOf('trigger: "twilio-call"'))
+  assert.match(voice, /SELECT is_test FROM people WHERE id = calls\.person_id/)
+  assert.match(voice, /call\.is_test = call\.is_test \|\| prepared\.person\.is_test/)
+  assert.match(voice, /call\.is_test = call\.is_test \|\| Boolean\(prepared\.person\?\.is_test \|\| prepared\.draft\.is_test\)/)
+  assert.match(voice, /if \(call && !call\.is_test\)[\s\S]{0,180}after\([\s\S]{0,220}trigger: "twilio-call"/)
+})
+
 test("existing push endpoints rebind to the punched-in operator", () => {
   const push = source("app/ops/push-toggle.tsx")
   const migration = source("scripts/migrate.mjs")
@@ -650,7 +702,7 @@ test("stale provider claims become visible unknown receipts without automatic re
   const calls = source("lib/calls.ts")
   const commitments = source("lib/commitments.ts")
   const glass = source("lib/glass-delivery.ts")
-  const reminders = source("app/api/ops/reminders/route.ts")
+  const recovery = source("lib/recovery-sweep.ts")
   const migration = source("scripts/migrate.mjs")
   assert.match(calls, /status = 'starting'[\s\S]{0,160}interval '10 minutes'/)
   assert.match(calls, /kind: "call\.out\.unknown"/)
@@ -659,8 +711,8 @@ test("stale provider claims become visible unknown receipts without automatic re
   assert.match(glass, /send_status IN \('pending','failed','sending'\)/)
   assert.match(glass, /send_claimed_at < now\(\) - interval '5 minutes'/)
   assert.match(migration, /commitment_reschedules ADD COLUMN IF NOT EXISTS sending_started_at/)
-  assert.match(reminders, /reconcileStaleOutboundCalls\(\)/)
-  assert.match(reminders, /reconcileStaleCommitmentReschedules\(\)/)
+  assert.match(recovery, /reconcileStaleOutboundCalls\(\)/)
+  assert.match(recovery, /reconcileStaleCommitmentReschedules\(\)/)
 })
 
 test("GLASS corrections and Gmail test threads resume without crossing partitions", () => {

@@ -1,3 +1,4 @@
+import { after } from "next/server"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { sendSmsPersisted } from "@/lib/messages"
@@ -5,6 +6,7 @@ import { notifyAll } from "@/lib/notify"
 import { normalizePhone } from "@/lib/people"
 import { prepareInboundCallIntake, type CallIntakeDraft } from "@/lib/job-intake"
 import { readTwilioForm, twilioSmsConfigured, twilioVoiceConfigured, twiml } from "@/lib/twilio"
+import { runRecoverySweep } from "@/lib/recovery-sweep"
 
 export const runtime = "nodejs"
 
@@ -18,10 +20,11 @@ export async function POST(req: Request) {
   const sql = getSql()
   const rows = (await sql`
     UPDATE calls SET status = ${status}::text, duration_sec = ${duration}::int, updated_at = now()
-    WHERE twilio_sid = ${sid}::text
+    WHERE twilio_sid = ${sid}::text AND direction = 'in'
     RETURNING lead_id, person_id, from_phone,
       (
         COALESCE((SELECT is_test FROM leads WHERE id = calls.lead_id), false)
+        OR COALESCE((SELECT is_test FROM people WHERE id = calls.person_id), false)
         OR lower(COALESCE(calls.detail->>'isTest', 'false')) = 'true'
         OR COALESCE(calls.detail->>'callerName', '') LIKE '%[INTERNAL TEST]%'
       ) AS is_test`) as {
@@ -41,11 +44,20 @@ export async function POST(req: Request) {
     if (prepared.kind === "existing") {
       call.lead_id = prepared.leadId
       call.person_id = prepared.person.id
+      call.is_test = call.is_test || prepared.person.is_test
     } else {
       draft = prepared.draft
       call.person_id = prepared.person?.id ?? call.person_id
+      call.is_test = call.is_test || Boolean(prepared.person?.is_test || prepared.draft.is_test)
     }
   }
+  // The signed provider receipt and its test partition are resolved before
+  // this callback is registered. Later alert or auto-reply failure cannot
+  // prevent a real inbound call from waking the bounded recovery pass.
+  if (call && !call.is_test) after(async () => {
+    const result = await runRecoverySweep({ trigger: "twilio-call" })
+    if (!result.ok) console.error("Inbound call recovery failed:", result.error)
+  })
   if (call && ["answered", "completed"].includes(status) && duration > 0 && call.lead_id) {
     const operators = (await sql`
       SELECT id FROM operators

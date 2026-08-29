@@ -10,6 +10,7 @@ import { processEvent } from "@/lib/extract"
 import { queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-retry"
 import { classifyTwilioConsentKeyword, recordMessagingConsent } from "@/lib/messaging-consent"
 import { resumeSmsProjection } from "@/lib/sms-provider-truth.mjs"
+import { runRecoverySweep } from "@/lib/recovery-sweep"
 
 export const runtime = "nodejs"
 
@@ -153,6 +154,14 @@ export async function POST(req: Request) {
     eventId = Number(prior[0]?.id) || null
     wasNewLead = Boolean(prior[0]?.detail?.createdLead)
   }
+
+  // This wake-up is independent of attachment, extraction, and notification
+  // work below. Only a signed, durably projected, real customer message can
+  // spend the recovery lease; consent controls, system codes, and tests cannot.
+  if (eventId && !consentKeyword && !systemSms && !conversation.person?.is_test) after(async () => {
+    const result = await runRecoverySweep({ trigger: "twilio-sms" })
+    if (!result.ok) console.error("Inbound SMS recovery failed:", result.error)
+  })
 
   const attachmentIds: number[] = []
   for (const [index, media] of (consentKeyword || systemSms ? [] : rawMedia).entries()) {

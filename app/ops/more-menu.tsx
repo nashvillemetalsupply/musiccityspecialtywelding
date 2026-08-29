@@ -5,6 +5,7 @@ import { Menu as MenuIcon, X as CloseIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { PushToggle } from "./push-toggle"
 import { ShopDock } from "./shop-dock"
+import { RecoveryControl } from "@/app/board/recovery-control"
 
 export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" | "crew"; vapidPublicKey: string; voiceReady: boolean }) {
   const [open, setOpen] = useState(false)
@@ -66,6 +67,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
         </nav>
         <ShopDock voiceReady={voiceReady} />
         <div className="ops-more-account">
+          {role === "owner" && <RecoveryControl />}
           <PushToggle vapidPublicKey={vapidPublicKey} />
           <form action="/api/ops/logout" method="post"><button type="submit">Sign out</button></form>
         </div>

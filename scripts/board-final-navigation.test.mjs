@@ -16,7 +16,7 @@ const PAGE = source("app/board/page.tsx")
 const CSS = source("app/board/board.css")
 const MORE = source("app/ops/more-menu.tsx")
 const GMAIL = source("app/api/ingest/gmail/route.ts")
-const REMINDERS = source("app/api/ops/reminders/route.ts")
+const RECOVERY = source("lib/recovery-sweep.ts")
 const BRIEF = source("app/api/ops/brief/route.ts")
 
 test("the rail carries no self-loop and Customers is a live board destination", () => {
@@ -74,8 +74,8 @@ test("gmail ingest deep links land on /board/updates with their intent intact", 
 })
 
 test("the reminder receipt link opens the board's receipt drawer", () => {
-  assert.doesNotMatch(REMINDERS, /view=updates/)
-  assert.match(REMINDERS, /url: `\/board\/updates\?receipt=\$\{event\.id\}#receipt`/)
+  assert.doesNotMatch(RECOVERY, /view=updates/)
+  assert.match(RECOVERY, /url: `\/board\/updates\?receipt=\$\{event\.id\}#receipt`/)
 })
 
 test("the Morning Brief notification opens the board radio", () => {

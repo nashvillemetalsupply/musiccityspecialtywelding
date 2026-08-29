@@ -164,6 +164,13 @@ const statements = [
     detail JSONB
   )`,
   `CREATE INDEX IF NOT EXISTS automation_runs_job_idx ON automation_runs(job, ran_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS automation_leases (
+    key TEXT PRIMARY KEY,
+    holder TEXT NOT NULL DEFAULT '',
+    lease_expires_at TIMESTAMPTZ NOT NULL DEFAULT to_timestamp(0),
+    last_finished_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`,
   `CREATE TABLE IF NOT EXISTS operators (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,

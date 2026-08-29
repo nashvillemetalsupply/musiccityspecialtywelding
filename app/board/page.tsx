@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { after } from "next/server"
 import { dbConfigured } from "@/lib/db"
 import { getPromiseSummary } from "@/lib/commitments"
 import { listTodayEvents } from "@/lib/events"
@@ -13,6 +14,7 @@ import type { JobBoardStage } from "@/lib/ops-data"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { JobControl } from "./board"
 import type { BoardPaneData } from "./board"
+import { runRecoverySweep } from "@/lib/recovery-sweep"
 import "./board.css"
 
 export const metadata: Metadata = {
@@ -90,6 +92,11 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     includeTests,
   }
   if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
+
+  if (operator.role === "owner") after(async () => {
+    const result = await runRecoverySweep({ trigger: "owner-board" })
+    if (!result.ok) console.error("Owner board recovery failed:", result.error)
+  })
 
   const role = operator.role
   // The same menu and dock the /ops pages mount, so #radio and #handset open
