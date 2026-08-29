@@ -2,7 +2,8 @@ import { getSql } from "@/lib/db"
 import { listOperators } from "@/lib/operators"
 import { sendPushToOperator } from "@/lib/push"
 import { isDefinitiveTwilioError, sendSms, twilioSmsConfigured } from "@/lib/twilio"
-import { getOperatorById } from "@/lib/operators"
+import { getOperatorById, getOperatorByPhone } from "@/lib/operators"
+import { formatSmsBody, normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
 import { redactCrewText } from "@/lib/visibility"
 
@@ -26,6 +27,7 @@ export type NotificationRow = {
   action_kind: string
   action_detail: Record<string, unknown>
   budget_exempt: boolean
+  sms_only: boolean
   source_kind: string | null
 }
 
@@ -53,6 +55,7 @@ export async function notify(input: {
   capExempt?: boolean
   quietHoursExempt?: boolean
   smsFallback?: boolean
+  smsOnly?: boolean
   ownerOnly?: boolean
   actionKind?: string
   actionDetail?: Record<string, unknown>
@@ -93,7 +96,8 @@ export async function notify(input: {
   const rows = (await sql`
     INSERT INTO notifications (
       operator_id, priority, stock, title, body, url, source_event_id, owner_only, dedupe_key,
-      action_kind, action_detail, budget_exempt, delivery_status, quiet_hours_exempt, sms_fallback
+      action_kind, action_detail, budget_exempt, delivery_status, quiet_hours_exempt, sms_fallback,
+      sms_only
     ) VALUES (
       ${input.operatorId}::bigint,
       ${input.priority}::text,
@@ -109,7 +113,8 @@ export async function notify(input: {
       ${input.capExempt ?? false}::boolean,
       ${input.priority === "digest" ? "filed" : "pending"}::text,
       ${input.quietHoursExempt ?? false}::boolean,
-      ${input.smsFallback ?? false}::boolean
+      ${input.smsFallback ?? false}::boolean,
+      ${input.smsOnly ?? false}::boolean
     ) ON CONFLICT (operator_id, dedupe_key) WHERE dedupe_key <> '' DO NOTHING
     RETURNING id`) as { id: number }[]
   if (!rows[0]) {
@@ -197,21 +202,25 @@ export async function notify(input: {
     }
   }
 
-  const push = await sendPushToOperator(input.operatorId, {
-    title: input.title,
-    body: storedBody,
-    url: input.url ?? "/ops",
-  })
+  const push = input.smsOnly
+    ? { sent: 0 }
+    : await sendPushToOperator(input.operatorId, {
+        title: input.title,
+        body: storedBody,
+        url: input.url ?? "/ops",
+      })
   let sent = push.sent > 0
   let smsDeliveryUnknown = false
-  if (!sent && input.smsFallback && twilioSmsConfigured()) {
+  const wantsSms = input.smsOnly || (!sent && input.smsFallback)
+  if (wantsSms && twilioSmsConfigured()) {
     const operators = await listOperators()
     const operator = operators.find((item) => Number(item.id) === input.operatorId)
     if (operator?.cell_phone) {
+      const smsBody = formatSmsBody({ title: input.title, body: storedBody, url: input.url, smsOnly: input.smsOnly })
       try {
         await sendSms({
           to: operator.cell_phone,
-          body: `${input.title}${storedBody ? `: ${storedBody}` : ""}`.slice(0, 500),
+          body: smsBody,
         })
         sent = true
       } catch (error) {
@@ -241,6 +250,30 @@ export async function notify(input: {
   return { id, sent, reason: sent ? ("sent" as const) : ("no-channel" as const) }
 }
 
+export async function notifyOwnerCellSms(input: {
+  title: string
+  body?: string
+  url?: string
+  sourceEventId?: number | null
+  capExempt?: boolean
+  quietHoursExempt?: boolean
+  dedupeKey?: string
+}) {
+  const ownerCell = normalizeUsPhone(process.env.OWNER_CELL_PHONE ?? "")
+  const recipient = ownerCell ? await getOperatorByPhone(ownerCell) : null
+  if (!recipient || recipient.role !== "owner") {
+    return { id: 0, sent: false, reason: "not-for-role" as const }
+  }
+  return notify({
+    operatorId: recipient.id,
+    priority: "interrupt",
+    stock: "white",
+    smsOnly: true,
+    ownerOnly: true,
+    ...input,
+  })
+}
+
 export async function notifyAll(input: Omit<Parameters<typeof notify>[0], "operatorId">) {
   const operators = await listOperators()
   return Promise.all(operators.filter((operator) => !input.ownerOnly || operator.role === "owner").map((operator) => notify({ ...input, operatorId: operator.id })))
@@ -249,7 +282,7 @@ export async function notifyAll(input: Omit<Parameters<typeof notify>[0], "opera
 export async function retryPendingInterrupts(limit = 10) {
   const sql = getSql()
   const candidates = (await sql`
-    SELECT id, operator_id, title, body, url, budget_exempt, quiet_hours_exempt, sms_fallback
+    SELECT id, operator_id, title, body, url, budget_exempt, quiet_hours_exempt, sms_fallback, sms_only
     FROM notifications
     WHERE priority = 'interrupt' AND sent_at IS NULL AND delivery_attempts < 5
       AND (
@@ -260,7 +293,7 @@ export async function retryPendingInterrupts(limit = 10) {
     ORDER BY COALESCE(delivery_next_attempt_at, created_at) ASC
     LIMIT ${Math.min(Math.max(limit, 1), 20)}::bigint`) as Array<{
       id: number; operator_id: number | null; title: string; body: string; url: string
-      budget_exempt: boolean; quiet_hours_exempt: boolean; sms_fallback: boolean
+      budget_exempt: boolean; quiet_hours_exempt: boolean; sms_fallback: boolean; sms_only: boolean
     }>
   let sent = 0
   let dead = 0
@@ -326,14 +359,18 @@ export async function retryPendingInterrupts(limit = 10) {
         continue
       }
     }
-    const push = await sendPushToOperator(row.operator_id, { title: row.title, body: row.body, url: row.url || "/ops" })
+    const push = row.sms_only
+      ? { sent: 0 }
+      : await sendPushToOperator(row.operator_id, { title: row.title, body: row.body, url: row.url || "/ops" })
     let delivered = push.sent > 0
     let smsDeliveryUnknown = false
-    if (!delivered && row.sms_fallback && twilioSmsConfigured()) {
+    const wantsSms = row.sms_only || (!delivered && row.sms_fallback)
+    if (wantsSms && twilioSmsConfigured()) {
       const recipient = await getOperatorById(row.operator_id)
       if (recipient?.cell_phone) {
+        const smsBody = formatSmsBody({ title: row.title, body: row.body, url: row.url, smsOnly: row.sms_only })
         try {
-          await sendSms({ to: recipient.cell_phone, body: `${row.title}${row.body ? `: ${row.body}` : ""}`.slice(0, 500) })
+          await sendSms({ to: recipient.cell_phone, body: smsBody })
           delivered = true
         } catch (error) {
           smsDeliveryUnknown = !isDefinitiveTwilioError(error)

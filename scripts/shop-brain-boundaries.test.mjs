@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import { formatSmsBody, isMetaVerificationSms, isUsNumericShortCode } from "../lib/shop-brain-invariants.mjs"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
@@ -192,6 +193,118 @@ test("every real inbound Gmail reply reaches the capped interrupt gate", () => {
   assert.match(inboundNotify, /capExempt: conversation\.createdLead/)
   assert.match(inboundNotify, /quietHoursExempt: conversation\.createdLead/)
   assert.match(inboundNotify, /sourceEventId: eventId/)
+})
+
+test("every real inbound SMS persists an owner-cell copy without test or routing loops", () => {
+  const inbound = source("app/api/twilio/sms/route.ts")
+  const notify = source("lib/notify.ts")
+  const migration = source("scripts/migrate.mjs")
+
+  assert.match(inbound, /!isReservedShopPhone\(from\)/)
+  assert.match(inbound, /await notifyOwnerCellSms\(/)
+  assert.match(inbound, /dedupeKey: `owner-sms-copy:\$\{sid\}`/)
+  assert.match(inbound, /capExempt: true/)
+  assert.match(inbound, /quietHoursExempt: true/)
+  assert.match(inbound, /\/ops\/leads\/\$\{conversation\.leadId\}#spike/)
+  assert.match(notify, /export async function notifyOwnerCellSms/)
+  assert.match(notify, /getOperatorByPhone\(ownerCell\)/)
+  assert.match(notify, /smsOnly: true/)
+  assert.match(notify, /input\.smsOnly/)
+  assert.match(notify, /row\.sms_only/)
+  const insert = notify.slice(notify.indexOf("INSERT INTO notifications"), notify.indexOf("ON CONFLICT"))
+  const columnList = insert.slice(insert.indexOf("("), insert.indexOf(") VALUES"))
+  const valueList = insert.slice(insert.indexOf("VALUES ("))
+  assert.match(columnList, /sms_fallback,\s*sms_only/)
+  const columnCount = (columnList.match(/,/g) ?? []).length + 1
+  const valueCount = valueList.split(/,\r?\n/).length
+  assert.equal(columnCount, valueCount,
+    "INSERT INTO notifications must list a column for every supplied value")
+  assert.match(migration, /sms_only BOOLEAN NOT NULL DEFAULT false/)
+})
+
+test("US short codes and Meta verification texts are system SMS, never customer traffic", () => {
+  // US numeric short codes: 5 or 6 digits after optional punctuation. A short
+  // code is sender infrastructure, never a customer identity, and the 10/11-
+  // digit normalizePhone path must never be asked to resolve one.
+  assert.equal(isUsNumericShortCode("32665"), true)
+  assert.equal(isUsNumericShortCode("+32665"), true)
+  assert.equal(isUsNumericShortCode("326-65"), true)
+  assert.equal(isUsNumericShortCode("  32665  "), true)
+  assert.equal(isUsNumericShortCode("6155551234"), false)
+  assert.equal(isUsNumericShortCode("615-555-1234"), false)
+  assert.equal(isUsNumericShortCode("+16155551234"), false)
+  assert.equal(isUsNumericShortCode(""), false)
+  assert.equal(isUsNumericShortCode("NUMBER"), false)
+  assert.equal(isUsNumericShortCode(null), false)
+
+  // Meta/Instagram verification from an ordinary sender is recognized only by
+  // the body, and only when BOTH the brand and code language are present.
+  assert.equal(isMetaVerificationSms("32665 is your Instagram code. Don't share it."), true)
+  assert.equal(isMetaVerificationSms("Your Instagram code is 481516. Don't share it."), true)
+  assert.equal(isMetaVerificationSms("Confirm it's you: your Instagram login code is 481516."), true)
+  assert.equal(isMetaVerificationSms("Meta: security code 481516 for your account."), true)
+  assert.equal(isMetaVerificationSms("Instagram is great for reaching customers"), false, "brand alone is not a verification text")
+  assert.equal(isMetaVerificationSms("Your code is 481516. Reply STOP to opt out."), false, "code language alone is not a verification text")
+  assert.equal(isMetaVerificationSms("Can you weld this gate by Friday?"), false)
+  assert.equal(isMetaVerificationSms(""), false)
+  assert.equal(isMetaVerificationSms(null), false)
+})
+
+test("signed inbound verification SMS bypasses customers and crew, and texts only the owner", () => {
+  const inbound = source("app/api/twilio/sms/route.ts")
+
+  // Classification runs before any customer intake, so a short code can never
+  // reach resolvePhoneConversation and be rejected by normalizePhone.
+  assert.ok(inbound.indexOf("isUsNumericShortCode(from)") < inbound.lastIndexOf("resolvePhoneConversation"),
+    "short-code classification must precede customer intake")
+  // System SMS inserts a message with nullable lead/person and never records
+  // messaging consent.
+  assert.match(inbound, /systemSms[\s\S]{0,260}return \{ person: null, leadId: null, createdLead: false \}/)
+  assert.match(inbound, /if \(!systemSms\)[\s\S]{0,120}recordMessagingConsent/)
+  // The immutable event is sms.system.in, keyed by the external SID, and its
+  // body is a neutral constant so the code is never exposed or logged.
+  assert.match(inbound, /const eventKind = systemSms[\s\S]{0,80}"sms\.system\.in"/)
+  assert.match(inbound, /externalId: sid/)
+  assert.match(inbound, /System verification text received\./)
+  assert.doesNotMatch(inbound.slice(inbound.indexOf("const eventKind"), inbound.indexOf("let wasNewLead")), /body: body/,
+    "the immutable system event must not carry the code-bearing body")
+  // No crew alert, no attachments, no extraction, no fake job for system SMS.
+  assert.match(inbound, /!consentKeyword && !systemSms[\s\S]{0,60}notifyAll/)
+  assert.match(inbound, /\(consentKeyword \|\| systemSms \? \[\] : rawMedia\)/)
+  assert.match(inbound, /!consentKeyword && !systemSms[\s\S]{0,40}after\(/)
+  // The owner-only copy: verification title, full body and sender, absolute
+  // Updates URL, cap and quiet-hours exempt, stable per-SID dedupe.
+  assert.match(inbound, /title: "Verification code received"/)
+  assert.match(inbound, /body: `\$\{from\}: \$\{body/)
+  assert.match(inbound, /\/board\/updates#wire/)
+  assert.match(inbound, /dedupeKey: `owner-system-sms:\$\{sid\}`/)
+  assert.match(inbound, /capExempt: true/)
+  assert.match(inbound, /quietHoursExempt: true/)
+  // The customer copy path survives beside it, gated off for system SMS.
+  assert.match(inbound, /else if \(eventId && !consentKeyword && !systemSms[\s\S]{0,80}isReservedShopPhone\(from\)\)/)
+  assert.match(inbound, /dedupeKey: `owner-sms-copy:\$\{sid\}`/)
+  // The internal-test boundary still suppresses the owner copy.
+  assert.match(inbound, /\[INTERNAL TEST\]/)
+})
+
+test("owner sms-only bodies keep the direct URL whole inside the 500-char cap", () => {
+  const url = "https://shop.example.com/ops/leads/42#spike"
+  const long = formatSmsBody({ title: "New text at the shop", body: "x".repeat(600), url, smsOnly: true })
+  assert.ok(long.length <= 500)
+  assert.ok(long.endsWith(` ${url}`), "the direct work-order URL must survive truncation")
+  assert.ok(long.startsWith("New text at the shop: "), "the copy is truncated from its end, never the title")
+
+  const short = formatSmsBody({ title: "New text at the shop", body: "Dana: On my way", url, smsOnly: true })
+  assert.equal(short, "New text at the shop: Dana: On my way https://shop.example.com/ops/leads/42#spike")
+
+  // Fallback SMS keeps the old cap-only shape: no URL appended, hard 500 cap.
+  const fallback = formatSmsBody({ title: "New text at the shop", body: "x".repeat(600), url, smsOnly: false })
+  assert.equal(fallback.length, 500)
+  assert.ok(!fallback.includes(url))
+
+  // The retry path reads the stored row; the shared formatter keeps outputs identical.
+  const retry = formatSmsBody({ title: "New text at the shop", body: "Dana: On my way", url, smsOnly: true })
+  assert.equal(retry, short)
 })
 
 test("sent Gmail promises preserve the numeric operator byline", () => {

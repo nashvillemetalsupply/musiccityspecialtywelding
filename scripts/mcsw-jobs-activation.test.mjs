@@ -245,7 +245,7 @@ test("text consent is immutable, explicit, keyword-aware, and enforced before ev
   assert.match(consent, /WHEN \(SELECT source FROM keyword_state\) = 'STOP' THEN 'revoked'/)
   assert.match(consent, /ON CONFLICT \(external_id\) DO NOTHING/)
   assert.match(sms, /OptOutType/)
-  assert.match(sms, /consentKeyword\s*\? await \(async \(\) =>/)
+  assert.match(sms, /(?:consentKeyword \|\| systemSms)\s*\? await \(async \(\) =>/)
   assert.match(sms, /findPersonByPhone\(from\)/)
   assert.match(sms, /if \(!isConfiguredTwilioNumber\(to\)\)/)
   assert.match(sms, /if \(eventId && !consentKeyword/)

@@ -562,6 +562,7 @@ const statements = [
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_error TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS quiet_hours_exempt BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sms_fallback BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sms_only BOOLEAN NOT NULL DEFAULT false`,
   `CREATE INDEX IF NOT EXISTS notifications_delivery_retry_idx ON notifications(delivery_status, delivery_next_attempt_at) WHERE sent_at IS NULL AND priority = 'interrupt'`,
   `UPDATE notifications SET budget_exempt = true
     WHERE budget_exempt = false AND (

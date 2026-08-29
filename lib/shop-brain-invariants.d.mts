@@ -9,6 +9,8 @@ export type GlassStageJob = {
 }
 
 export function normalizeUsPhone(value: unknown): string
+export function isUsNumericShortCode(value: unknown): boolean
+export function isMetaVerificationSms(body: unknown): boolean
 export function isReservedCustomerPhone(value: unknown, reservedValues: unknown[]): boolean
 export function selectBriefAudioPath(role: "owner" | "crew", detail: Record<string, unknown> | null | undefined): string | null
 export function countsAsHumanResponse(kind: string, actorType: string): boolean
@@ -28,6 +30,7 @@ export function handoffDisplayState(input: {
   undoActionEventId?: number | null
 }): boolean
 export function shouldEmitTwilioFailure(previousStatus: string, nextStatus: string, isTest: boolean, immutableEventInserted?: boolean): boolean
+export function formatSmsBody(input: { title: string; body?: string; url?: string; smsOnly?: boolean }, maxLength?: number): string
 export type TwilioConsentKeyword = "STOP" | "START" | "HELP"
 export function classifyTwilioConsentKeyword(optOutType: unknown, body: unknown): TwilioConsentKeyword | null
 export function attachmentCanRetry(status: string, attempts: number, ageMs: number): boolean
