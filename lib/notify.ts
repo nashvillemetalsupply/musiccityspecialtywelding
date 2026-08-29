@@ -211,7 +211,7 @@ export async function notify(input: {
 
   const claimed = (await sql`
     UPDATE notifications SET delivery_status = 'sending', delivery_attempts = delivery_attempts + 1,
-      delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
+      delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL
     WHERE id = ${id}::bigint AND sent_at IS NULL AND delivery_status = 'pending'
     RETURNING id`) as { id: number }[]
   if (!claimed[0]) return { id, sent: false, reason: "already-claimed" as const }
@@ -226,22 +226,34 @@ export async function notify(input: {
   let sent = push.sent > 0
   let smsDeliveryUnknown = false
   const wantsSms = input.smsOnly || (!sent && input.smsFallback)
-  if (wantsSms && twilioSmsConfigured()) {
-    const operators = await listOperators()
-    const operator = operators.find((item) => Number(item.id) === input.operatorId)
-    if (operator?.cell_phone) {
-      const smsBody = formatSmsBody({ title: input.title, body: storedBody, url: input.url, smsOnly: input.smsOnly })
-      try {
-        const sms = await sendSms({
-          to: operator.cell_phone,
-          body: smsBody,
-          statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${id}`),
-        })
-        await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${sms.sid}::text),
-          provider_status = COALESCE(provider_status, ${sms.status}::text) WHERE id = ${id}::bigint`
-        sent = true
-      } catch (error) {
-        smsDeliveryUnknown = !isDefinitiveTwilioError(error)
+  // Why the SMS leg did not send. Every `interrupt` that parks for retry used to
+  // record the same generic sentence, and the re-claim above used to blank it, so
+  // the real reason was destroyed twice over. Owner-cell alerts were failing on
+  // attempt one 100% of the time and no row could say why.
+  let smsFailure = ""
+  if (wantsSms) {
+    if (!twilioSmsConfigured()) {
+      smsFailure = "SMS channel not configured: TWILIO_SMS_ENABLED, messaging service, or webhook base URL is missing."
+    } else {
+      const operators = await listOperators()
+      const operator = operators.find((item) => Number(item.id) === input.operatorId)
+      if (!operator?.cell_phone) {
+        smsFailure = `Operator ${input.operatorId} has no cell_phone on file.`
+      } else {
+        const smsBody = formatSmsBody({ title: input.title, body: storedBody, url: input.url, smsOnly: input.smsOnly })
+        try {
+          const sms = await sendSms({
+            to: operator.cell_phone,
+            body: smsBody,
+            statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${id}`),
+          })
+          await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${sms.sid}::text),
+            provider_status = COALESCE(provider_status, ${sms.status}::text) WHERE id = ${id}::bigint`
+          sent = true
+        } catch (error) {
+          smsFailure = `Twilio send failed: ${error instanceof Error ? error.message : String(error)}`
+          smsDeliveryUnknown = !isDefinitiveTwilioError(error)
+        }
       }
     }
   }
@@ -249,7 +261,7 @@ export async function notify(input: {
     await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
       delivery_status = 'unknown',
       delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
-      delivery_error = 'SMS fallback may have been accepted; automatic repeat is quarantined.',
+      delivery_error = ${`SMS fallback may have been accepted; automatic repeat is quarantined. ${smsFailure}`.trim().slice(0, 500)}::text,
       stock = 'red', title = left('Check alert delivery - ' || title, 120)
       WHERE id = ${id}::bigint`
     return { id, sent: false, reason: "delivery-unknown" as const }
@@ -263,7 +275,7 @@ export async function notify(input: {
     await sql`UPDATE notifications SET interrupt_reserved_at = NULL, delivery_status = 'retry',
       delivery_last_attempt_at = now(),
       delivery_next_attempt_at = now() + interval '10 minutes',
-      delivery_error = 'No registered push or SMS fallback channel accepted the alert.'
+      delivery_error = ${(smsFailure || "No registered push or SMS fallback channel accepted the alert.").slice(0, 500)}::text
       WHERE id = ${id}::bigint`
   }
   return { id, sent, reason: sent ? ("sent" as const) : ("no-channel" as const) }
