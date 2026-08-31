@@ -13,7 +13,7 @@ import { listJobLineItems } from "@/lib/job-line-items"
 import { formatLineItemsText, lineItemsTotalCents } from "@/lib/job-line-items.mjs"
 import { listLeadCalls } from "@/lib/calls"
 import { listLeadEventPage, listLeadEvents as listUnifiedEvents } from "@/lib/events"
-import { listOperators } from "@/lib/operators"
+import { canAccessInternalTests, listOperators } from "@/lib/operators"
 import { twilioSmsConfigured } from "@/lib/twilio"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getMessagingConsentState } from "@/lib/messaging-consent"
@@ -178,18 +178,19 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   const operator = await getAuthenticatedOperator()
   if (!operator) return <OpsLoginForm linkError={false} />
 
-  const [lead, messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems] = await Promise.all([
-    getLead(leadId, operator.role, { includeTests: true }),
+  const includeTests = canAccessInternalTests(operator.role)
+  const lead = await getLead(leadId, operator.role, { includeTests })
+  if (!lead) notFound()
+  const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems] = await Promise.all([
     listLeadMessages(leadId),
-    listCommitments({ leadId, status: "open", includeTests: true }),
+    listCommitments({ leadId, status: "open", includeTests }),
     listActiveClaims("lead", leadId),
     listLeadCalls(leadId),
     listUnifiedEvents(leadId, 300),
     listLeadEventPage(leadId, requestedActivityPage, 25, operator.role),
     listOperators(),
-    listJobLineItems(leadId, operator.role),
+    listJobLineItems(leadId, operator.role, includeTests),
   ])
-  if (!lead) notFound()
   const activityPageNumber = activityPage.page
 
   const completionReceipts = lead.completed_at ? (await getSql()`
@@ -295,8 +296,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   const sourceEventById = new Map(safeUnifiedEvents.map((event) => [event.id, event]))
   const sourceCallBySid = new Map(calls.map((call) => [call.twilio_sid, call]))
   const memoryClaims = safeClaims.filter((claim) => !["quoted_price_cents", "build_fact"].includes(claim.predicate)).slice(0, 6)
-  const visibleJobStatus = lead.handed_off_at
-    ? "Handed Off"
+  const visibleJobStatus = lead.status === "spam" || lead.status === "lost"
+    ? shopJobStatusLabel(lead.status)
+    : lead.handed_off_at
+    ? "Closed"
     : lead.completed_at
       ? "Ready"
     : lead.work_started_at
@@ -354,10 +357,14 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           <strong>{lead.phone_is_placeholder ? "Customer number not caught" : lead.phone ? displayPhone(lead.phone) : "Customer number not caught"}</strong>
           <small>{assignedOperator?.name || (lead.assigned_operator_id === operator.id ? operator.name : "Not assigned")}</small>
           {lead.person_id && Number(lead.person_job_count ?? 0) > 1 && <Link className="btn btn--sm btn--edge job-repeat" href={`/ops/accounts/${lead.person_id}`}>Repeat customer, {Number(lead.person_job_count) - 1} prior jobs</Link>}
+          {lead.email && <Link className="btn btn--sm btn--edge job-email" href="?replyChannel=email#job-reply">Email</Link>}
         </div>
-        {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={lead.phone} label="Call" />}
-        {customerTextReady && <Link className="btn btn--sm btn--edge" href="#spike">Text</Link>}
-        {lead.email && <Link className="btn btn--sm btn--edge" href="#spike">Email</Link>}
+        <nav className="job-action-spine" aria-label="Job actions">
+          {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={lead.phone} label="Call" />}
+          {customerTextReady && <Link className="btn btn--sm btn--edge" href="?replyChannel=text#job-reply">Text</Link>}
+          <Link className="btn btn--sm btn--edge" href="#onsite-payment">Take payment</Link>
+          <Link className="btn btn--sm btn--go" href="#finish-close">{lead.handed_off_at ? "Job closed" : lead.completed_at ? "Close job" : "Finish work"}</Link>
+        </nav>
       </div>
 
       <details className="job-contact-edit" open={!hasCustomerPhone && !lead.email}>
@@ -371,7 +378,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         <small>The customer record is checked before saving.</small>
       </details>
 
-      {smsServiceReady && hasCustomerPhone && consentState === "unknown" && operator.role === "owner" && <details className="job-consent">
+      {smsServiceReady && hasCustomerPhone && consentState === "unknown" && operator.role === "owner" && <details className="job-consent" id="text-permission">
         <summary>Enable customer texting</summary>
         <p>Before recording permission, tell the customer: “You agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this job. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase.” Use this only after the customer clearly says yes.</p>
         <form action={recordVerbalTextConsent}>
@@ -379,7 +386,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording…">Customer said yes</SafeSubmitButton>
         </form>
       </details>}
-      {smsServiceReady && hasCustomerPhone && consentState === "revoked" && <p className="job-alert job-alert--stop">Customer opted out. Text stays off until the customer sends START.</p>}
+      {smsServiceReady && hasCustomerPhone && consentState === "revoked" && <p className="job-alert job-alert--stop" id="text-permission">Customer opted out. Text stays off until the customer sends START.</p>}
 
       {identityConflicts.map((conflict, conflictIndex) => <section className="job-identity" id={conflictIndex === 0 ? "identity-jig" : `identity-jig-${conflict.id}`} key={conflict.id}>
         <div><span>Customer check · owner</span><h2 className="t-sub">Two customer records disagree</h2><p>The job stayed separate. Choose only when the activity record makes it clear.</p></div>
@@ -471,7 +478,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             const event = item.event
             if (event.kind === "job.completed" || event.kind === "note.voice") {
               const byline = typeof event.detail?.operatorName === "string" ? event.detail.operatorName : operators.find((person) => String(person.id) === event.actor_id)?.name || "Crew"
-              return <article className="job-call is-closeout" key={item.id}><div><strong>{event.detail?.noteSource === "voice" || event.kind === "note.voice" ? "Voice note" : "Job finished"}</strong><span>{byline}, {formatCentral(event.occurred_at)}</span></div>{operator.role === "owner" && typeof event.detail?.voicePath === "string" && <audio controls preload="none" src={`/api/ops/voice-note?event=${event.id}`} />}<p>{visibleEventText(event.body, operator.role)}</p></article>
+              return <article className="job-call is-closeout" key={item.id}><div><strong>{event.detail?.noteSource === "voice" || event.kind === "note.voice" ? "Voice note" : "Work finished"}</strong><span>{byline}, {formatCentral(event.occurred_at)}</span></div>{operator.role === "owner" && typeof event.detail?.voicePath === "string" && <audio controls preload="none" src={`/api/ops/voice-note?event=${event.id}`} />}<p>{visibleEventText(event.body, operator.role)}</p></article>
             }
             const delivery = event.kind === "email.out" ? emailDelivery.get(Number(event.id)) ?? (event.detail?.deliveryStatus === "delivered" ? "delivered" : "pending") : null
             return <article className={`job-letter is-${event.kind === "email.out" ? "out" : "in"}${delivery === "failed" ? " is-failed" : ""}`} key={item.id}><span>{event.kind === "email.out" ? `Shop email, ${shopDeliveryLabel(delivery ?? "pending")}` : event.kind === "email.attachments" ? "Attachments" : event.kind === "email.failed" ? "Email failed" : "Customer email"}</span><p>{visibleEventText(event.body, operator.role)}</p><SpikeAttachments items={spikeAttachments(event.detail?.attachments)} leadId={lead.id} role={operator.role} /><time>{formatCentral(event.occurred_at)}</time></article>
@@ -486,7 +493,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           targetHasPhone={targetTextReady}
           targetHasEmail={Boolean(replyTarget?.email)}
           voiceReady={voiceReady}
-          initialChannel={query.replyChannel === "email" && replyTarget?.email ? "email" : !targetTextReady && replyTarget?.email ? "email" : !customerTextReady || lastCustomerEvent?.kind === "email.in" || lead.preferred_contact.toLowerCase() === "email" ? "email" : "text"}
+          focusOnMount={query.replyChannel === "text" || query.replyChannel === "email"}
+          initialChannel={query.replyChannel === "text" && (replyTarget ? targetTextReady : customerTextReady) ? "text" : query.replyChannel === "email" && (replyTarget?.email || lead.email) ? "email" : replyTarget && !targetTextReady && replyTarget.email ? "email" : !replyTarget && (!customerTextReady || lastCustomerEvent?.kind === "email.in" || lead.preferred_contact.toLowerCase() === "email") ? "email" : "text"}
         /> : <p className="job-empty t-caption">Add an email address or record text consent before replying.</p>}
       </section>
 
@@ -745,39 +753,6 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             )}
           </form>
 
-          <form action={recordPayment} className="job-form">
-            <input type="hidden" name="leadId" value={lead.id} />
-            <input type="hidden" name="receiptKey" value={randomUUID()} />
-            <label htmlFor="payment-amount">
-              Money in hand. Cash and checks never hit QuickBooks on their own.
-            </label>
-            <input id="payment-amount" name="paymentAmount" inputMode="decimal" placeholder="Amount received" aria-label="Payment amount" />
-            <select name="paymentMethod" defaultValue="cash" aria-label="How it was paid">
-              <option value="cash">cash</option>
-              <option value="check">check</option>
-              <option value="card">card</option>
-              <option value="other">other</option>
-            </select>
-            {!lead.invoice_total_cents && (
-              <label className="job-check">
-                <input type="checkbox" name="settles" value="1" />
-                this squares the job
-              </label>
-            )}
-            <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording...">Record payment</SafeSubmitButton>
-            {Number(lead.paid_amount_cents ?? 0) > 0 && (
-              <span className="job-current t-caption">
-                Paid {money(lead.paid_amount_cents)}
-                {lead.invoice_total_cents ? ` of ${money(lead.invoice_total_cents)}` : ""}
-                {lead.paid_at
-                  ? " · squared up"
-                  : lead.invoice_total_cents
-                    ? ` · ${money(Math.max(0, Number(lead.invoice_total_cents) - Number(lead.paid_amount_cents ?? 0)))} still out`
-                    : ""}
-              </span>
-            )}
-          </form>
-
           </div>
           </details>}
 
@@ -815,7 +790,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                 <option key={status} value={status}>{shopJobStatusLabel(status)}</option>
               ))}
             </select>
-            <input name="reason" placeholder="Reason (required when closing or marking Not a job)" defaultValue={lead.status_reason} aria-label="Reason for closing or marking Not a job" />
+            <input name="reason" placeholder="Reason (required for Did not book or Not a job)" defaultValue={lead.status_reason} aria-label="Reason for Did not book or Not a job" />
             <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Update status</SafeSubmitButton>
           </form>
 
@@ -856,15 +831,87 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </div>
       </details>
 
-      <DoneStamp leadId={lead.id} completed={Boolean(lead.completed_at)} undoUntil={completionUndoUntil} voiceReady={voiceReady} reviewedCloseout={Boolean(operator.role === "owner" && lead.is_test && buildSheetsEnabled())} closeoutKey={randomUUID()} />
+      <section className="card job-onsite-payment" id="onsite-payment" aria-labelledby="onsite-payment-title">
+        <header>
+          <div>
+            <span>On site</span>
+            <h2 className="t-sub" id="onsite-payment-title">Take a card or tap payment</h2>
+          </div>
+          <strong>QuickBooks GoPayment</strong>
+        </header>
+        <div className="job-onsite-payment-body">
+          <p>
+            Open GoPayment, choose <strong>Invoice payment</strong>, then find
+            {lead.invoice_number ? <> invoice <strong>#{lead.invoice_number}</strong></> : <> <strong>{lead.first_name} {lead.last_name}</strong></>}.
+            QuickBooks handles the card. Shop Brain matches its authenticated receipt when the invoice number belongs to one job; anything unmatched waits in Updates for the owner.
+          </p>
+          {operator.role === "owner" && !lead.invoice_number && <p className="job-payment-note">
+            No invoice number is attached yet. The owner can add it under Job details → Price &amp; invoice, or take a Customer payment in GoPayment and match the receipt afterward.
+          </p>}
+          <div className="job-onsite-payment-actions">
+            <a className="btn btn--sm btn--go" href="https://apps.apple.com/us/app/quickbooks-gopayment-pos/id324389392" target="_blank" rel="noreferrer">Open on iPhone</a>
+            <a className="btn btn--sm btn--edge" href="https://play.google.com/store/apps/details?id=com.intuit.intuitgopayment" target="_blank" rel="noreferrer">Open on Android</a>
+          </div>
+          <small>
+            Owner setup once: invite each employee in QuickBooks with a <strong>Take payments only</strong> role. Never share the owner login. No card number enters Shop Brain.
+          </small>
+          {operator.role === "owner" && <a className="job-payment-manual" href="#job-payment">Record another way</a>}
+        </div>
+      </section>
 
-      <HandoffControl
-        leadId={lead.id}
-        completed={Boolean(lead.completed_at)}
-        handedOff={Boolean(lead.handed_off_at)}
-        initialHandoffEventId={handoffUndoUntil ? Number(handoffReceipt?.id) : null}
-        initialUndoUntil={handoffUndoUntil}
-      />
+      {operator.role === "owner" && <section className="card job-payment" id="job-payment" aria-labelledby="job-payment-title">
+        <header>
+          <div>
+            <span>Cash, check, or outside payment</span>
+            <h2 className="t-sub" id="job-payment-title">Record what changed hands</h2>
+          </div>
+          {Number(lead.paid_amount_cents ?? 0) > 0 && <strong>
+            Paid {money(lead.paid_amount_cents)}
+            {lead.invoice_total_cents ? ` of ${money(lead.invoice_total_cents)}` : ""}
+          </strong>}
+        </header>
+        <form action={recordPayment} className="job-payment-form">
+          <input type="hidden" name="leadId" value={lead.id} />
+          <input type="hidden" name="receiptKey" value={randomUUID()} />
+          <label htmlFor="payment-amount">Amount received</label>
+          <input id="payment-amount" name="paymentAmount" inputMode="decimal" autoComplete="transaction-amount" placeholder="0.00" required aria-required="true" />
+          <label htmlFor="payment-method">Payment method</label>
+          <select id="payment-method" name="paymentMethod" defaultValue="cash">
+            <option value="cash">Cash</option>
+            <option value="check">Check</option>
+            <option value="card">Card</option>
+            <option value="other">Other</option>
+          </select>
+          <label className="job-check job-payment-settles">
+            <input type="checkbox" name="settles" value="1" />
+            Mark remaining balance paid in full
+          </label>
+          <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Recording…">Record payment</SafeSubmitButton>
+          <small>Use this for cash, checks, or payments taken outside QuickBooks. A GoPayment receipt files itself; do not enter it twice. Payment does not finish or close the job.</small>
+          {Number(lead.paid_amount_cents ?? 0) > 0 && <span className="job-current t-caption">
+            {lead.paid_at
+              ? "Balance paid in full"
+              : lead.invoice_total_cents
+                ? `${money(Math.max(0, Number(lead.invoice_total_cents) - Number(lead.paid_amount_cents ?? 0)))} still out`
+                : "Payment recorded; balance is not marked paid in full"}
+          </span>}
+        </form>
+      </section>}
+
+      <section className="job-finish-close" id="finish-close" aria-labelledby="finish-close-title">
+        <header className="job-finish-close-head">
+          <span>Final steps</span>
+          <h2 className="t-sub" id="finish-close-title">Finish &amp; close</h2>
+        </header>
+        <DoneStamp leadId={lead.id} completed={Boolean(lead.completed_at)} undoUntil={completionUndoUntil} voiceReady={voiceReady} reviewedCloseout={Boolean(operator.role === "owner" && lead.is_test && buildSheetsEnabled())} closeoutKey={randomUUID()} />
+        <HandoffControl
+          leadId={lead.id}
+          completed={Boolean(lead.completed_at)}
+          handedOff={Boolean(lead.handed_off_at)}
+          initialHandoffEventId={handoffUndoUntil ? Number(handoffReceipt?.id) : null}
+          initialUndoUntil={handoffUndoUntil}
+        />
+      </section>
 
       <section className="card job-events" aria-label="Recent activity">
         <header><h2 className="t-sub">Recent Activity</h2><strong>{activityPage.total}</strong></header>

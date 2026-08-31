@@ -411,10 +411,11 @@ export async function recordLeadEvent(
 ): Promise<number | null> {
   const sql = getSql()
   const people = (await sql`
-    SELECT person_id FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as {
+    SELECT person_id, is_test FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as {
     person_id: number | null
+    is_test: boolean
   }[]
-  const body =
+  const rawBody =
     typeof detail?.note === "string"
       ? detail.note
       : typeof detail?.message === "string"
@@ -422,6 +423,10 @@ export async function recordLeadEvent(
         : typeof detail?.reason === "string"
           ? detail.reason
           : ""
+  const isTest = people[0]?.is_test === true
+  const body = isTest && !rawBody.includes("[INTERNAL TEST]")
+    ? `[INTERNAL TEST] ${rawBody}`.trim()
+    : rawBody
   const kindMap: Record<string, string> = {
     created: "form.quote",
     status_changed: "status.changed",
@@ -447,7 +452,7 @@ export async function recordLeadEvent(
     personId: people[0]?.person_id ?? null,
     externalId: "",
     body,
-    detail: { ...(detail ?? {}), legacyType: type },
+    detail: { ...(detail ?? {}), legacyType: type, ...(isTest ? { isTest: true } : {}) },
   })
 }
 

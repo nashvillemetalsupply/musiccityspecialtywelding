@@ -10,6 +10,7 @@ import {
   twilioPhoneLoginConfigured,
   twilioSmsConfigured,
   twilioSmsWebhookConfigured,
+  twilioInboundWhisperUrl,
   twilioLiveTranscriptionConfigured,
   twilioVoiceConfigured,
   twilioVerifyConfigured,
@@ -54,6 +55,10 @@ type DatabaseHealth = {
   quotePhotoBacklog: number | null
   consentRecordCount: number | null
   callSketchErrorCount: number | null
+  notificationDeliveryDead: number | null
+  notificationDeliveryUnknown: number | null
+  messageDeliveryUnknown: number | null
+  callDeliveryUnknown: number | null
 }
 
 async function checkDatabase(): Promise<DatabaseHealth> {
@@ -77,6 +82,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     quotePhotoBacklog: null,
     consentRecordCount: null,
     callSketchErrorCount: null,
+    notificationDeliveryDead: null,
+    notificationDeliveryUnknown: null,
+    messageDeliveryUnknown: null,
+    callDeliveryUnknown: null,
   }
   if (!result.configured) return result
   try {
@@ -104,7 +113,36 @@ async function checkDatabase(): Promise<DatabaseHealth> {
             AND updated_at < now() - interval '20 minutes') AS quote_photo_backlog,
         (SELECT count(*)::int FROM messaging_consents) AS consent_record_count,
         (SELECT count(*)::int FROM call_sketches
-          WHERE status = 'error' AND updated_at > now() - interval '24 hours') AS call_sketch_error_count`) as {
+          WHERE status = 'error' AND updated_at > now() - interval '24 hours') AS call_sketch_error_count,
+        (SELECT count(*)::int FROM notifications n
+          LEFT JOIN events e ON e.id = n.source_event_id
+          LEFT JOIN leads l ON l.id = e.lead_id
+          LEFT JOIN people p ON p.id = e.person_id
+          WHERE n.delivery_status = 'dead' AND n.read_at IS NULL
+            AND COALESCE(l.is_test, false) = false
+            AND COALESCE(p.is_test, false) = false
+            AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true') AS notification_delivery_dead,
+        (SELECT count(*)::int FROM notifications n
+          LEFT JOIN events e ON e.id = n.source_event_id
+          LEFT JOIN leads l ON l.id = e.lead_id
+          LEFT JOIN people p ON p.id = e.person_id
+          WHERE n.delivery_status = 'unknown' AND n.read_at IS NULL
+            AND COALESCE(l.is_test, false) = false
+            AND COALESCE(p.is_test, false) = false
+            AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true') AS notification_delivery_unknown,
+        (SELECT count(*)::int FROM messages m
+          LEFT JOIN leads l ON l.id = m.lead_id
+          LEFT JOIN people p ON p.id = m.person_id
+          WHERE m.status = 'unknown'
+            AND COALESCE(l.is_test, false) = false
+            AND COALESCE(p.is_test, false) = false) AS message_delivery_unknown,
+        (SELECT count(*)::int FROM calls c
+          LEFT JOIN leads l ON l.id = c.lead_id
+          LEFT JOIN people p ON p.id = c.person_id
+          WHERE c.status = 'unknown'
+            AND COALESCE(l.is_test, false) = false
+            AND COALESCE(p.is_test, false) = false
+            AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true') AS call_delivery_unknown`) as {
       lead_count: number
       failed_deliveries: number
       call_transcript_backlog: number
@@ -114,6 +152,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       quote_photo_backlog: number
       consent_record_count: number
       call_sketch_error_count: number
+      notification_delivery_dead: number
+      notification_delivery_unknown: number
+      message_delivery_unknown: number
+      call_delivery_unknown: number
     }[]
     result.connected = true
     result.leadCount = counts.lead_count
@@ -125,6 +167,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.quotePhotoBacklog = counts.quote_photo_backlog
     result.consentRecordCount = counts.consent_record_count
     result.callSketchErrorCount = counts.call_sketch_error_count
+    result.notificationDeliveryDead = counts.notification_delivery_dead
+    result.notificationDeliveryUnknown = counts.notification_delivery_unknown
+    result.messageDeliveryUnknown = counts.message_delivery_unknown
+    result.callDeliveryUnknown = counts.call_delivery_unknown
     const digest = (await sql`
       SELECT ran_at, ok FROM automation_runs
       WHERE job = 'daily-digest' ORDER BY ran_at DESC LIMIT 1`) as {
@@ -203,6 +249,7 @@ export async function GET(req: Request) {
   const verifyConfigured = twilioVerifyConfigured()
   const voiceConfigured = twilioVoiceConfigured()
   const liveTranscriptionConfigured = twilioLiveTranscriptionConfigured()
+  const inboundWhisperConfigured = Boolean(twilioInboundWhisperUrl())
   const callSketchPublicEnabled = process.env.CALL_SKETCH_PUBLIC_ENABLED?.trim().toLowerCase() === "true"
   const webhookBaseConfigured = Boolean(twilioWebhookBaseUrl())
   const providerVoiceReady = Boolean(
@@ -236,6 +283,12 @@ export async function GET(req: Request) {
   const reminderHealthy = !reminderStale && (database.lastReminderOk === true || database.lastReminderAt === null)
   const digestHealthy = !digestStale && (database.lastDigestOk === true || database.lastDigestAt === null)
   const briefHealthy = !morningBriefStale && (database.lastBriefOk === true || database.lastBriefAt === null)
+  const durableFailuresHealthy = (
+    (database.notificationDeliveryDead ?? 0) === 0 &&
+    (database.notificationDeliveryUnknown ?? 0) === 0 &&
+    (database.messageDeliveryUnknown ?? 0) === 0 &&
+    (database.callDeliveryUnknown ?? 0) === 0
+  )
   const shopBrainReady = (
     database.connected &&
     database.consentRecordCount !== null &&
@@ -265,7 +318,8 @@ export async function GET(req: Request) {
     (database.callTranscriptBacklog ?? 0) === 0 &&
     (database.voiceTranscriptBacklog ?? 0) === 0 &&
     (database.uploadRecoveryBacklog ?? 0) === 0 &&
-    (database.quotePhotoBacklog ?? 0) === 0
+    (database.quotePhotoBacklog ?? 0) === 0 &&
+    durableFailuresHealthy
   )
   const shopBrainGateSatisfied = !shopBrainRequired || shopBrainReady
 
@@ -326,6 +380,7 @@ export async function GET(req: Request) {
         phoneLoginConfigured: twilioPhoneLoginConfigured(),
         twilioSmsWebhookConfigured: smsWebhookConfigured,
         twilioVoiceConfigured: voiceConfigured,
+        twilioInboundWhisperConfigured: inboundWhisperConfigured,
         twilioLiveTranscriptionConfigured: liveTranscriptionConfigured,
         callSketchPublicEnabled,
         callSketchRecentErrors: database.callSketchErrorCount,
@@ -359,6 +414,14 @@ export async function GET(req: Request) {
         callTranscriptBacklog: database.callTranscriptBacklog,
         callTranscriptExhausted: database.callTranscriptExhausted,
         voiceTranscriptBacklog: database.voiceTranscriptBacklog,
+        durableFailures: {
+          healthy: durableFailuresHealthy,
+          degraded: !durableFailuresHealthy,
+          notificationDead: database.notificationDeliveryDead,
+          notificationUnknown: database.notificationDeliveryUnknown,
+          messageUnknown: database.messageDeliveryUnknown,
+          callUnknown: database.callDeliveryUnknown,
+        },
         gmailConfigured: gmailConfigured(),
         aiGatewayConfigured: aiConfigured(),
         resendWebhookConfigured,

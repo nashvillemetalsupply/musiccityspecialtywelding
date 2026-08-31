@@ -27,7 +27,7 @@ test("handoff and undo are authenticated, idempotent, locked, and atomically rec
 
   assert.match(actions, /^"use server"/)
   assert.equal((actions.match(/getAuthenticatedOperator\(\)/g) ?? []).length, 2)
-  assert.match(actions, /completed_at IS NOT NULL\s+AND handed_off_at IS NULL\s+FOR UPDATE/)
+  assert.match(actions, /completed_at IS NOT NULL\s+AND handed_off_at IS NULL\s+AND \(\$\{includeTests\}::boolean OR is_test = false\)\s+FOR UPDATE/)
   assert.match(actions, /'handoff_completed'::text/)
   assert.match(actions, /'job\.handed-off'::text/)
   assert.match(actions, /handed_off_at = receipt\.occurred_at/)
@@ -35,6 +35,10 @@ test("handoff and undo are authenticated, idempotent, locked, and atomically rec
   assert.match(actions, /Response-loss or double-tap recovery/)
   assert.match(actions, /lead\.actor_id === String\(operator\.id\)/)
   assert.match(actions, /actionEventId: Number\(rows\[0\]\.event_id\)/)
+  assert.match(actions, /SELECT id, person_id, is_test/)
+  assert.match(actions, /SELECT l\.id, l\.person_id, l\.is_test, receipt\.id AS handoff_event_id/)
+  assert.equal((actions.match(/CASE WHEN t\.is_test THEN '\[INTERNAL TEST\] '/g) ?? []).length, 4)
+  assert.equal((actions.match(/'isTest', t\.is_test/g) ?? []).length, 2)
 
   assert.match(actions, /receipt\.actor_id = \$\{String\(operator\.id\)\}::text/)
   assert.match(actions, /receipt\.occurred_at >= now\(\) - interval '10 seconds'/)
@@ -43,7 +47,7 @@ test("handoff and undo are authenticated, idempotent, locked, and atomically rec
   assert.match(actions, /'handoff_undone'::text/)
   assert.match(actions, /'job\.handoff-undone'::text/)
   assert.match(actions, /UPDATE leads l SET handed_off_at = NULL/)
-  assert.match(actions, /Undo is only available to the operator who recorded this handoff, for 10 seconds/)
+  assert.match(actions, /Reopen is only available to the operator who closed this job, for 10 seconds/)
 
   assert.ok((completion.match(/handed_off_at = NULL/g) ?? []).length >= 2, "finish and finish-undo must reset handoff state")
 })
@@ -58,53 +62,42 @@ test("work order explains removal, preserves history, and exposes a thumb-safe r
   assert.match(page, /<HandoffControl/)
   assert.ok(page.indexOf("<DoneStamp") < page.indexOf("<HandoffControl"))
   assert.ok(page.indexOf("<HandoffControl") < page.indexOf('aria-label="Recent activity"'))
-  assert.match(page, /lead\.handed_off_at\s+\? "Handed Off"/)
-  assert.match(control, /Customer received it/)
-  assert.match(control, /Nothing is deleted/)
-  assert.match(control, /Work order and customer history kept/)
-  assert.match(control, /Undo handoff \(10 sec\)/)
+  assert.match(page, /lead\.handed_off_at\s+\? "Closed"/)
+  assert.match(page, /id="finish-close"/)
+  assert.match(control, /isHandedOff \? "Job closed" : "Close job"/)
+  assert.match(control, /Use after pickup or delivery/)
+  assert.match(control, /work order and customer history stay/)
+  assert.match(control, /Removed from Active Jobs\. Work order and customer history kept/)
+  assert.match(control, /Reopen job \(10 sec\)/)
   assert.match(control, /aria-live="polite"/)
   assert.match(control, /role="alert"/)
   assert.match(control, /SafeSubmitButton/)
   assert.match(control, /handoffDisplayState/)
   assert.match(control, /expiredHandoffEventId !== handoffEventId/)
   assert.match(control, /isHandedOff && handoffState\.status === "handed-off"/)
-  assert.match(css, /\.ops-done-bench, \.ops-handoff-control\) :is\(button, summary\) \{ min-height: 44px/)
-  assert.match(language, /"job\.handed-off": "Customer handoff complete"/)
-  assert.match(language, /"job\.handoff-undone": "Customer handoff undone"/)
+  assert.match(css, /\.job-finish-close > :is\(\.ops-done-bench, \.ops-handoff-control\) :is\(button, summary\) \{ min-height: 44px/)
+  assert.match(language, /"job\.handed-off": "Job closed"/)
+  assert.match(language, /"job\.handoff-undone": "Job reopened"/)
 })
 
-test("the board clears a Ready job without leaving the board", () => {
-  // Handoff was reachable only from the work order, so Ready accumulated jobs
-  // the shop had already finished and "Open jobs" counted every one of them.
+test("the board sends a Ready job to the canonical close control", () => {
   const board = source("app/board/board.tsx")
   const css = source("app/board/board.css")
 
-  assert.match(board, /import \{ markJobHandedOff \} from "@\/app\/ops\/leads\/\[id\]\/handoff-actions"/)
-  assert.match(board, /useActionState\(markJobHandedOff, HANDOFF_IDLE\)/)
-  // Handoff belongs in the opened panel, never in the row. The row's actions
-  // cell is a fixed track sharing a line with the reason chip, and a third
-  // control there painted straight over it. Both directions are pinned.
+  assert.doesNotMatch(board, /markJobHandedOff|HandoffButton|HANDOFF_IDLE/)
+  assert.match(board, /href=\{`\/ops\/leads\/\$\{lead\.id\}#finish-close`\}>Close job<\/Link>/)
+  // Close belongs in the opened panel, never in the row. The row's actions
+  // cell is a fixed track sharing a line with the reason chip.
   const cellStart = board.indexOf('<span className="doing c-do">')
   const rowCell = board.slice(cellStart, board.indexOf("</span>", cellStart))
-  assert.ok(!rowCell.includes("HandoffButton"), "handoff must not sit in the row")
-  assert.ok(
-    board.indexOf("<HandoffButton") > board.indexOf("job-detail-"),
-    "handoff must render inside the opened detail panel",
-  )
-  assert.match(board, /Customer received it/)
-  assert.match(board, /aria-label=\{`Record that \$\{customer\} received their job`\}/)
+  assert.ok(!rowCell.includes("Close job"), "close must not sit in the row")
+  assert.ok(board.indexOf("#finish-close") > board.indexOf("job-detail-"), "close must render inside the opened detail panel")
   // The row tracks stay exactly as the locked layout had them.
   assert.ok(css.includes("56px minmax(0,1.6fr) 100px 168px 116px"))
   assert.ok(css.includes("56px minmax(220px,1.8fr) 108px 120px 180px 116px"))
-  // The row toggles the panel on click and exempts anything inside a button;
-  // SafeSubmitButton renders one, so the submit must not also expand the row.
-  assert.match(board, /SafeSubmitButton/)
+  // The row toggles the panel on click and exempts actions inside links/buttons.
   assert.match(board, /closest\("a, button"\)/)
-  // The removed row has to disappear, and only a refetch does that.
-  assert.match(board, /if \(state\.status === "handed-off"\) router\.refresh\(\)/)
-  assert.match(board, /state\.status === "error" && <span className="t-caption" role="alert">/)
-  assert.match(css, /\.why-end \.end form\{display:contents\}/)
+  assert.match(css, /\.why-end/)
 })
 
 test("Closed is its own tab and can never reach the Open jobs figure", () => {

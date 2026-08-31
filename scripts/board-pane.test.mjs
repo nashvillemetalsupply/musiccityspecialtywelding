@@ -11,6 +11,23 @@ const EXTRACT_SOURCE = readFileSync(new URL("../lib/extract.ts", import.meta.url
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
+test("relative board times share the server render clock", () => {
+  assert.doesNotMatch(PREVIEW_SOURCE, /Date\.now\(\)/)
+  assert.match(PAGE_SOURCE, /const nowMs = new Date\(\)\.getTime\(\)/)
+  assert.equal((PAGE_SOURCE.match(/<JobControl[^>]*nowMs=\{nowMs\}/g) ?? []).length, 2)
+  for (const helper of ["sinceInWords", "callLine", "waitingAge"]) {
+    assert.match(PREVIEW_SOURCE, new RegExp(`function ${helper}\\([^)]*nowMs: number`))
+  }
+})
+
+test("the Waiting date is identical on UTC servers and Central phones", () => {
+  const waitingDate = PREVIEW_SOURCE.slice(
+    PREVIEW_SOURCE.indexOf("function waitingDate"),
+    PREVIEW_SOURCE.indexOf("function moneyFor"),
+  )
+  assert.match(waitingDate, /timeZone: "America\/Chicago"/)
+})
+
 // Four of the five labels must equal a reason string the board query already
 // emits. A previous design round was rejected for paraphrasing these, and a
 // paraphrase here would be invisible until someone read both files together.
@@ -119,10 +136,39 @@ test("canceled and superseded promises are counted nowhere", () => {
   assert.ok(!body.includes("'superseded'"), "superseded is the correction mechanism; counting it double-counts")
 })
 
-test("a test lead or a test person keeps a promise off the board", () => {
-  // commitments carries no is_test of its own; both possible owners are checked.
-  const matches = COMMITMENTS_SOURCE.match(/\(l\.id IS NULL OR l\.is_test = false\)\s+AND \(p\.id IS NULL OR p\.is_test = false\)/g)
-  assert.equal(matches?.length, 2, "both promise queries must filter test data")
+test("all promise summary identities and source markers are fail-closed", () => {
+  const summary = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function getPromiseSummary"),
+    COMMITMENTS_SOURCE.indexOf("export async function setCommitmentStatus"),
+  )
+  for (const filter of [
+    "COALESCE(l.is_test, false) = false",
+    "COALESCE(p.is_test, false) = false",
+    "COALESCE(source_lead.is_test, false) = false",
+    "COALESCE(source_person.is_test, false) = false",
+    "lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'",
+    "NOT ILIKE '%[INTERNAL TEST]%'",
+  ]) {
+    assert.equal(summary.split(filter).length - 1, 2, `${filter} must protect counts and the overdue row`)
+  }
+  assert.equal((summary.match(/LEFT JOIN events source ON source\.id = c\.source_event_id/g) ?? []).length, 2)
+  assert.equal((summary.match(/p\.id = COALESCE\(c\.person_id, l\.person_id\)/g) ?? []).length, 2)
+  assert.equal((summary.match(/source_person\.id = COALESCE\(source\.person_id, source_lead\.person_id\)/g) ?? []).length, 2)
+  assert.equal((summary.match(/source_lead\.message, source_lead\.notes/g) ?? []).length, 2)
+})
+
+test("the overdue promise is role-projected before the board receives it", () => {
+  const summary = COMMITMENTS_SOURCE.slice(
+    COMMITMENTS_SOURCE.indexOf("export async function getPromiseSummary"),
+    COMMITMENTS_SOURCE.indexOf("export async function setCommitmentStatus"),
+  )
+  assert.match(summary, /getPromiseSummary\(role: OperatorRole\)/)
+  assert.match(summary, /projectCommitmentForRole\(late, role\)/)
+  assert.match(summary, /summary: projectedLate\?\.summary/)
+  assert.match(summary, /customerName: role === "owner" \? late\.customer_name : ""/)
+  assert.match(summary, /service: role === "owner" \? late\.service : ""/)
+  assert.match(PAGE_SOURCE, /getPromiseSummary\(role\)/)
+  assert.doesNotMatch(PAGE_SOURCE, /getPromiseSummary\(\)/)
 })
 
 test("out the door measures the door, not the sale, and removes money for crew", () => {
@@ -143,6 +189,7 @@ test("the Today trail excludes every test identity and projects bodies for the o
   const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
   assert.match(today, /COALESCE\(l\.is_test, false\) = false/)
   assert.match(today, /COALESCE\(p\.is_test, false\) = false/)
+  assert.match(today, /l\.id IS NULL OR l\.status <> 'spam'/)
   assert.match(today, /lower\(COALESCE\(e\.detail->>'isTest', 'false'\)\) <> 'true'/)
   assert.match(today, /projectEventForRole\(event, role\)/)
 })
@@ -163,6 +210,13 @@ test("each Today trail line names its customer", () => {
   assert.match(today, /customer: event\.customer/)
   assert.match(PAGE_SOURCE, /todayTrail: todayEvents\.map\(\(\{[^}]*customer[^}]*\}\)/)
   assert.match(PREVIEW_SOURCE, /event\.customer && ` · \$\{event\.customer\}`/)
+})
+
+test("the Today trail collapses long receipts to one readable line", () => {
+  assert.match(PAGE_SOURCE, /function trailBody\(body: string\)/)
+  assert.match(PAGE_SOURCE, /body\.replace\(\/\\s\+\/g, " "\)\.trim\(\)/)
+  assert.match(PAGE_SOURCE, /oneLine\.length <= 140/)
+  assert.match(PAGE_SOURCE, /body: trailBody\(body\)/)
 })
 
 // Extraction is handed the open commitments as context and restates them:
@@ -241,7 +295,7 @@ test("board job details are typed, wired, and remain data-only in W1", () => {
   assert.match(OPS_DATA_SOURCE, /export type BoardJobDetail = \{[\s\S]*activeClaims: ClaimRow\[\][\s\S]*newestPhotoAt: string \| null[\s\S]*eventTrail: EventRow\[\][\s\S]*lineItems: JobLineItem\[\]/)
   assert.match(PREVIEW_SOURCE, /details: Map<number, BoardJobDetail>/)
   assert.doesNotMatch(PREVIEW_SOURCE, /board\.details/)
-  assert.match(PAGE_SOURCE, /getBoardJobDetails\(page\.items\.map\(\(item\) => item\.id\), role\)/)
+  assert.match(PAGE_SOURCE, /getBoardJobDetails\(page\.items\.map\(\(item\) => item\.id\), role, includeTests\)/)
   assert.match(PAGE_SOURCE, /details: new Map\(\)/)
 })
 
@@ -253,13 +307,24 @@ test("board job details compose five batched facts with server-side role project
   assert.match(details, /projectCommitmentForRole\(row, role\)/)
   assert.match(details, /newestPhotoAt: newestPhotoDates\.get\(leadId\) \?\? null/)
   for (const call of [
-    "listBoardActiveClaims(ids, role)",
-    "listBoardOpenOrBrokenCommitments(ids, role)",
-    "listBoardNewestPhotoDates(ids)",
-    "listBoardEventTrails(ids, role)",
-    "listJobLineItemsForLeads(ids, role)",
+    "listBoardActiveClaims(ids, role, includeTests)",
+    "listBoardOpenOrBrokenCommitments(ids, role, includeTests)",
+    "listBoardNewestPhotoDates(ids, includeTests)",
+    "listBoardEventTrails(ids, role, 4, includeTests)",
+    "listJobLineItemsForLeads(ids, role, includeTests)",
   ]) assert.ok(details.includes(call), `${call} is missing from the five-query batch`)
   assert.ok((details.match(/NOT ILIKE '%\[INTERNAL TEST\]%'/g) ?? []).length >= 5)
+})
+
+test("board text actions require consent and crew receive no money-derived score", () => {
+  assert.match(OPS_DATA_SOURCE, /text_consent AS \(/)
+  assert.match(OPS_DATA_SOURCE, /FILTER \(WHERE source IN \('STOP','START'\)\)\)\[1\] = 'STOP' THEN false/)
+  assert.match(OPS_DATA_SOURCE, /ELSE bool_or\(effect = 'granted'\)/)
+  assert.equal((OPS_DATA_SOURCE.match(/COALESCE\(tc\.text_ready, false\) AS text_ready/g) ?? []).length, 2)
+  assert.match(OPS_DATA_SOURCE, /role === "owner" \? projected : \{ \.\.\.projected, board_score: 0, board_hot: false \}/)
+  assert.match(PREVIEW_SOURCE, /phone && lead\.text_ready && <Link[\s\S]{0,180}>Text<\/Link>/)
+  assert.match(PREVIEW_SOURCE, /phone && !lead\.text_ready && chrome\.owner && <Link[\s\S]{0,180}>Enable texting<\/Link>/)
+  assert.doesNotMatch(PREVIEW_SOURCE, />Open to text<\/Link>/)
 })
 
 test("photo dates use receipts only and each event trail keeps the newest four chronologically", () => {

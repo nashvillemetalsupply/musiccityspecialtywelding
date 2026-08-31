@@ -54,23 +54,30 @@ export async function POST(req: Request) {
     ON CONFLICT (idempotency_key) WHERE idempotency_key <> '' DO NOTHING
     RETURNING id`) as { id: number }[]
   const prior = rows[0] ? [] : (await sql`
-    SELECT id, status FROM calls WHERE idempotency_key = ${`tracked-call:${operator.id}:${intentKey}`}::text LIMIT 1`) as { id: number; status: string }[]
+    SELECT id, status, twilio_sid FROM calls
+    WHERE idempotency_key = ${`tracked-call:${operator.id}:${intentKey}`}::text
+    LIMIT 1`) as { id: number; status: string; twilio_sid: string }[]
   const callId = Number(rows[0]?.id ?? prior[0]?.id)
+  const intentSid = rows[0] ? pendingSid : prior[0]?.twilio_sid
   if (!callId) return Response.json({ error: "The tracked call intent could not be filed." }, { status: 500 })
   if (prior[0]) {
-    if (["failed", "unknown"].includes(prior[0].status)) return Response.json({ error: "This call attempt needs a human check before another ring." }, { status: 409 })
-    return Response.json({ ok: true, callId, message: "That tracked call is already ringing or filed." })
+    if (prior[0].status === "unknown") return Response.json({ error: "This call may have started. Check the call receipt before ringing again." }, { status: 409 })
+    if (prior[0].status === "failed") return Response.json({ error: "That call did not start. Tap again to retry safely.", retryAllowed: true }, { status: 409 })
+    // `persisted` is the safe pre-provider state. A response loss between the
+    // INSERT and claim must resume this exact intent instead of reporting a
+    // false success and leaving the customer uncalled.
+    if (prior[0].status !== "persisted") return Response.json({ ok: true, callId, message: "That tracked call is already ringing or filed." })
   }
   const claimed = (await sql`UPDATE calls SET status = 'starting', starting_started_at = now() WHERE id = ${callId}::bigint AND status = 'persisted' RETURNING id`) as { id: number }[]
   if (!claimed[0]) return Response.json({ ok: true, callId, message: "That tracked call is already being handled." })
-  const eventId = await recordEvent({ kind: "call.out.intent", actorType: "operator", actorId: operator.id, leadId, personId: targetPersonId, externalId: pendingSid, body: `Calling ${lead.first_name || "customer"} through the shop line`, crewBody: `Calling ${lead.first_name || "customer"} through the shop line`, detail: { callId, targetPersonId } })
+  const eventId = await recordEvent({ kind: "call.out.intent", actorType: "operator", actorId: operator.id, leadId, personId: targetPersonId, externalId: intentSid, body: `Calling ${lead.first_name || "customer"} through the shop line`, crewBody: `Calling ${lead.first_name || "customer"} through the shop line`, detail: { callId, targetPersonId } })
   try {
     const call = await startVoiceCall({
       to: operator.cell_phone,
       url: twilioCallbackUrl(`/api/twilio/outbound-connect?intent=${callId}`),
       statusCallback: twilioCallbackUrl(`/api/twilio/outbound-status?intent=${callId}`),
     })
-    await sql`UPDATE calls SET twilio_sid = ${call.sid}::text, status = ${call.status}::text WHERE id = ${callId}::bigint AND twilio_sid = ${pendingSid}::text`
+    await sql`UPDATE calls SET twilio_sid = ${call.sid}::text, status = ${call.status}::text WHERE id = ${callId}::bigint AND twilio_sid = ${intentSid}::text`
     return Response.json({ ok: true, callId, message: `Calling ${operator.name || "your phone"} now.` })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Tracked call failed."
@@ -80,7 +87,7 @@ export async function POST(req: Request) {
     const transitioned = (await sql`
       UPDATE calls SET status = ${definitive ? "failed" : "unknown"}::text,
         detail = COALESCE(detail, '{}'::jsonb) || ${JSON.stringify({ error: message, ambiguous: !definitive })}::jsonb
-      WHERE id = ${callId}::bigint AND twilio_sid = ${pendingSid}::text AND status = 'starting'
+      WHERE id = ${callId}::bigint AND twilio_sid = ${intentSid}::text AND status = 'starting'
       RETURNING id`) as { id: number }[]
     if (!transitioned[0]) {
       const receipt = await currentReceipt()
@@ -88,7 +95,7 @@ export async function POST(req: Request) {
         return Response.json({ ok: true, callId, message: "Twilio accepted the tracked call." })
       }
     }
-    const failedEventId = await recordEvent({ kind: definitive ? "call.out.failed" : "call.out.unknown", actorType: "system", leadId, personId: targetPersonId, externalId: `${pendingSid}:${definitive ? "failed" : "unknown"}`, body: message, crewBody: definitive ? "Tracked call could not start" : "Tracked call may have started. Verify before ringing again.", detail: { sourceEventId: eventId, callId, targetPersonId, ambiguous: !definitive } })
+    const failedEventId = await recordEvent({ kind: definitive ? "call.out.failed" : "call.out.unknown", actorType: "system", leadId, personId: targetPersonId, externalId: `${intentSid}:${definitive ? "failed" : "unknown"}`, body: message, crewBody: definitive ? "Tracked call could not start" : "Tracked call may have started. Verify before ringing again.", detail: { sourceEventId: eventId, callId, targetPersonId, ambiguous: !definitive } })
     if (!definitive) {
       const receipt = await currentReceipt()
       if (receipt && !receipt.twilio_sid.startsWith("pending:")) {

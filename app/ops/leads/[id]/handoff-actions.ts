@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { getSql } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
+import { canAccessInternalTests } from "@/lib/operators"
 
 export type HandoffActionState = {
   status: "idle" | "handed-off" | "active" | "error"
@@ -34,9 +35,10 @@ export async function markJobHandedOff(
   formData: FormData,
 ): Promise<HandoffActionState> {
   const operator = await getAuthenticatedOperator()
-  if (!operator) return { status: "error", message: "Sign in again before recording the handoff.", handoffEventId: null, undoUntil: null }
+  if (!operator) return { status: "error", message: "Sign in again before closing the job.", handoffEventId: null, undoUntil: null }
   const leadId = leadIdFrom(formData)
   if (!leadId) return { status: "error", message: "Job not found.", handoffEventId: null, undoUntil: null }
+  const includeTests = canAccessInternalTests(operator.role)
 
   const detail = {
     operatorName: operator.name,
@@ -47,11 +49,12 @@ export async function markJobHandedOff(
   try {
     const rows = (await sql`
       WITH target AS MATERIALIZED (
-        SELECT id, person_id
+        SELECT id, person_id, is_test
         FROM leads
         WHERE id = ${leadId}::bigint
           AND completed_at IS NOT NULL
           AND handed_off_at IS NULL
+          AND (${includeTests}::boolean OR is_test = false)
         FOR UPDATE
       ), immutable_receipt AS (
         INSERT INTO events (
@@ -61,9 +64,14 @@ export async function markJobHandedOff(
         SELECT now(), 'job.handed-off'::text, 'operator'::text,
           ${String(operator.id)}::text, t.id, t.person_id,
           ''::text,
-          'Pickup or delivery handoff recorded. Job removed from Active Jobs.'::text,
-          'Pickup or delivery handoff recorded. Job removed from Active Jobs.'::text,
-          ${JSON.stringify(detail)}::jsonb || jsonb_build_object('legacyType', 'handoff_completed'::text)
+          CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END
+            || 'Job closed after pickup or delivery. Removed from Active Jobs.'::text,
+          CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END
+            || 'Job closed after pickup or delivery. Removed from Active Jobs.'::text,
+          ${JSON.stringify(detail)}::jsonb || jsonb_build_object(
+            'legacyType', 'handoff_completed'::text,
+            'isTest', t.is_test
+          )
         FROM target t
         RETURNING id, occurred_at
       ), lead_update AS (
@@ -84,7 +92,7 @@ export async function markJobHandedOff(
       refreshHandoff(leadId)
       return {
         status: "handed-off",
-        message: "Pickup or delivery handoff recorded. Removed from Active Jobs; the job stays in customer history.",
+        message: "Job closed. Removed from Active Jobs; the work order and customer history stay.",
         handoffEventId: Number(rows[0].event_id),
         undoUntil: undoDeadline(rows[0].occurred_at),
         actionEventId: Number(rows[0].event_id),
@@ -106,6 +114,7 @@ export async function markJobHandedOff(
         ORDER BY id DESC LIMIT 1
       ) receipt ON true
       WHERE l.id = ${leadId}::bigint
+        AND (${includeTests}::boolean OR l.is_test = false)
       LIMIT 1`) as Array<{
         completed_at: string | null
         handed_off_at: string | null
@@ -115,8 +124,8 @@ export async function markJobHandedOff(
       }>
     const lead = current[0]
     if (!lead) return { status: "error", message: "Job not found.", handoffEventId: null, undoUntil: null }
-    if (!lead.completed_at) return { status: "error", message: "Finish the job before recording pickup or delivery.", handoffEventId: null, undoUntil: null }
-    if (!lead.handed_off_at) return { status: "error", message: "The handoff did not save. Try again.", handoffEventId: null, undoUntil: null }
+    if (!lead.completed_at) return { status: "error", message: "Finish the work before closing the job.", handoffEventId: null, undoUntil: null }
+    if (!lead.handed_off_at) return { status: "error", message: "The job did not close. Try again.", handoffEventId: null, undoUntil: null }
 
     const deadline = lead.occurred_at ? undoDeadline(lead.occurred_at) : null
     const canUndo = Boolean(
@@ -128,14 +137,14 @@ export async function markJobHandedOff(
     refreshHandoff(leadId)
     return {
       status: "handed-off",
-      message: "This handoff was already recorded. The job is out of Active Jobs and remains in customer history.",
+      message: "This job is already closed. It is out of Active Jobs and remains in customer history.",
       handoffEventId: lead.event_id ? Number(lead.event_id) : null,
       undoUntil: canUndo ? deadline : null,
       actionEventId: lead.event_id ? Number(lead.event_id) : null,
     }
   } catch (error) {
     console.error("Job handoff failed:", error)
-    return { status: "error", message: "The handoff was not recorded. Try again.", handoffEventId: null, undoUntil: null }
+    return { status: "error", message: "The job was not closed. Try again.", handoffEventId: null, undoUntil: null }
   }
 }
 
@@ -144,19 +153,20 @@ export async function undoJobHandedOff(
   formData: FormData,
 ): Promise<HandoffActionState> {
   const operator = await getAuthenticatedOperator()
-  if (!operator) return { status: "error", message: "Sign in again before undoing the handoff.", handoffEventId: null, undoUntil: null }
+  if (!operator) return { status: "error", message: "Sign in again before reopening the job.", handoffEventId: null, undoUntil: null }
   const leadId = leadIdFrom(formData)
   const handoffEventId = Number(formData.get("handoffEventId"))
   if (!leadId || !Number.isInteger(handoffEventId) || handoffEventId <= 0) {
-    return { status: "error", message: "That handoff receipt is not valid.", handoffEventId: null, undoUntil: null }
+    return { status: "error", message: "That close receipt is not valid.", handoffEventId: null, undoUntil: null }
   }
+  const includeTests = canAccessInternalTests(operator.role)
 
   const detail = { handoffEventId, operatorName: operator.name, restoredToActiveJobs: true }
   const sql = getSql()
   try {
     const rows = (await sql`
       WITH target AS MATERIALIZED (
-        SELECT l.id, l.person_id, receipt.id AS handoff_event_id
+        SELECT l.id, l.person_id, l.is_test, receipt.id AS handoff_event_id
         FROM leads l
         JOIN events receipt ON receipt.id = ${handoffEventId}::bigint
           AND receipt.lead_id = l.id
@@ -164,6 +174,7 @@ export async function undoJobHandedOff(
         WHERE l.id = ${leadId}::bigint
           AND l.completed_at IS NOT NULL
           AND l.handed_off_at = receipt.occurred_at
+          AND (${includeTests}::boolean OR l.is_test = false)
           AND receipt.actor_type = 'operator'
           AND receipt.actor_id = ${String(operator.id)}::text
           AND receipt.occurred_at >= now() - interval '10 seconds'
@@ -176,9 +187,14 @@ export async function undoJobHandedOff(
         SELECT now(), 'job.handoff-undone'::text, 'operator'::text,
           ${String(operator.id)}::text, t.id, t.person_id,
           ''::text,
-          'Customer handoff undone. Job returned to Active Jobs.'::text,
-          'Customer handoff undone. Job returned to Active Jobs.'::text,
-          ${JSON.stringify(detail)}::jsonb || jsonb_build_object('legacyType', 'handoff_undone'::text)
+          CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END
+            || 'Job reopened and returned to Active Jobs.'::text,
+          CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END
+            || 'Job reopened and returned to Active Jobs.'::text,
+          ${JSON.stringify(detail)}::jsonb || jsonb_build_object(
+            'legacyType', 'handoff_undone'::text,
+            'isTest', t.is_test
+          )
         FROM target t
         RETURNING id
       ), lead_update AS (
@@ -194,7 +210,7 @@ export async function undoJobHandedOff(
       refreshHandoff(leadId)
       return {
         status: "active",
-        message: "Handoff undone. The finished job is back in Active Jobs as Ready.",
+        message: "Job reopened. The finished work is back in Active Jobs as Ready.",
         handoffEventId: null,
         undoUntil: null,
         actionEventId: Number(rows[0].event_id),
@@ -211,7 +227,9 @@ export async function undoJobHandedOff(
           ORDER BY e.id DESC LIMIT 1
         ) AS undo_event_id
       FROM leads l
-      WHERE l.id = ${leadId}::bigint LIMIT 1`) as Array<{
+      WHERE l.id = ${leadId}::bigint
+        AND (${includeTests}::boolean OR l.is_test = false)
+      LIMIT 1`) as Array<{
         completed_at: string | null
         handed_off_at: string | null
         undo_event_id: number | null
@@ -221,7 +239,7 @@ export async function undoJobHandedOff(
       refreshHandoff(leadId)
       return {
         status: "active",
-        message: "This finished job is already back in Active Jobs as Ready.",
+        message: "This job is already reopened in Active Jobs as Ready.",
         handoffEventId: null,
         undoUntil: null,
         actionEventId: current[0].undo_event_id ? Number(current[0].undo_event_id) : null,
@@ -229,12 +247,12 @@ export async function undoJobHandedOff(
     }
     return {
       status: "error",
-      message: "Undo is only available to the operator who recorded this handoff, for 10 seconds.",
+      message: "Reopen is only available to the operator who closed this job, for 10 seconds.",
       handoffEventId,
       undoUntil: null,
     }
   } catch (error) {
     console.error("Job handoff undo failed:", error)
-    return { status: "error", message: "The handoff was not undone. Check the job and try again.", handoffEventId, undoUntil: null }
+    return { status: "error", message: "The job was not reopened. Check it and try again.", handoffEventId, undoUntil: null }
   }
 }

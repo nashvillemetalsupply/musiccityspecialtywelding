@@ -102,6 +102,44 @@ export function twilioVoiceConfigured() {
   )
 }
 
+function isTwilioHostedWhisperUrl(value: string | undefined) {
+  try {
+    const parsed = new URL(value?.trim() ?? "")
+    const host = parsed.hostname.toLowerCase()
+    const isTwimlBin =
+      host === "handler.twilio.com" &&
+      /^\/twiml\/EH[0-9a-f]{32}\/?$/i.test(parsed.pathname)
+    const isTwilioFunction =
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.twil\.io$/i.test(host)
+    return Boolean(
+      parsed.protocol === "https:" &&
+        !parsed.username &&
+        !parsed.password &&
+        !parsed.port &&
+        !parsed.search &&
+        !parsed.hash &&
+        (isTwimlBin || isTwilioFunction)
+    )
+  } catch {
+    return false
+  }
+}
+
+/** Optional provider-hosted TwiML used only after the owner answers. */
+export function twilioInboundWhisperUrl() {
+  const value = process.env.TWILIO_INBOUND_WHISPER_URL?.trim() ?? ""
+  return isTwilioHostedWhisperUrl(value) ? value : ""
+}
+
+/** Keep direct forwarding as the fail-safe when the optional whisper is unavailable. */
+export function twilioInboundDialTarget(ownerCell: string) {
+  const target = escapeXml(ownerCell)
+  const whisperUrl = twilioInboundWhisperUrl()
+  return whisperUrl
+    ? `<Number method="GET" url="${escapeXml(whisperUrl)}">${target}</Number>`
+    : target
+}
+
 export function twilioLiveTranscriptionConfigured() {
   return (
     twilioVoiceConfigured() &&

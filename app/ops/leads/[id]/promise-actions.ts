@@ -5,6 +5,7 @@ import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { sendSmsPersisted } from "@/lib/messages"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
+import { requireLeadMutationAccess } from "@/lib/operators"
 import { getLead } from "@/lib/ops-data"
 import { createHash } from "node:crypto"
 import { isReservedShopPhone } from "@/lib/people"
@@ -16,6 +17,7 @@ async function context(formData: FormData) {
   const commitmentId = Number(formData.get("commitmentId"))
   const leadId = Number(formData.get("leadId"))
   if (!Number.isInteger(commitmentId) || !Number.isInteger(leadId)) throw new Error("Promise not found.")
+  await requireLeadMutationAccess(operator, leadId)
   return { operator, commitmentId, leadId }
 }
 
@@ -24,14 +26,17 @@ export async function confirmPromise(formData: FormData) {
   const sql = getSql()
   const updated = (await sql`
     WITH target AS MATERIALIZED (
-      SELECT id, person_id FROM commitments
-      WHERE id = ${commitmentId}::bigint AND lead_id = ${leadId}::bigint AND status = 'open'
-      FOR UPDATE
+      SELECT c.id, c.person_id, l.is_test FROM commitments c
+      JOIN leads l ON l.id = c.lead_id
+      WHERE c.id = ${commitmentId}::bigint AND c.lead_id = ${leadId}::bigint AND c.status = 'open'
+      FOR UPDATE OF c
     ), receipt AS (
       INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
       SELECT 'commitment.confirmed', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
-        t.person_id, 'Crew inked a promise tag', 'Crew inked a promise tag',
-        ${JSON.stringify({ commitmentId })}::jsonb FROM target t
+        t.person_id,
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew inked a promise tag',
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew inked a promise tag',
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test) FROM target t
       RETURNING id
     )
     UPDATE commitments c SET confidence = 1::real, confirmed_by = ${operator.id}::bigint,
@@ -57,15 +62,18 @@ export async function publishPromiseToGlass(formData: FormData) {
   }
   const published = (await sql`
     WITH target AS MATERIALIZED (
-      SELECT id, person_id FROM commitments
-      WHERE id = ${commitmentId}::bigint AND lead_id = ${leadId}::bigint
-        AND status = 'open' AND direction = 'we_promised' AND due_at IS NOT NULL
-      FOR UPDATE
+      SELECT c.id, c.person_id, l.is_test FROM commitments c
+      JOIN leads l ON l.id = c.lead_id
+      WHERE c.id = ${commitmentId}::bigint AND c.lead_id = ${leadId}::bigint
+        AND c.status = 'open' AND c.direction = 'we_promised' AND c.due_at IS NOT NULL
+      FOR UPDATE OF c
     ), receipt AS (
       INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
       SELECT 'commitment.glass-primary', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
-        t.person_id, 'Owner selected the public delivery promise', 'Owner selected the public delivery promise',
-        ${JSON.stringify({ commitmentId })}::jsonb FROM target t
+        t.person_id,
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Owner selected the public delivery promise',
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Owner selected the public delivery promise',
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test) FROM target t
       RETURNING id
     ), cleared AS (
       UPDATE commitments SET glass_primary = false, visible_on_glass = false
@@ -85,13 +93,17 @@ export async function rejectPromise(formData: FormData) {
   const sql = getSql()
   const updated = (await sql`
     WITH target AS MATERIALIZED (
-      SELECT id, person_id FROM commitments WHERE id = ${commitmentId}::bigint
-        AND lead_id = ${leadId}::bigint AND status = 'open' FOR UPDATE
+      SELECT c.id, c.person_id, l.is_test FROM commitments c
+      JOIN leads l ON l.id = c.lead_id
+      WHERE c.id = ${commitmentId}::bigint
+        AND c.lead_id = ${leadId}::bigint AND c.status = 'open' FOR UPDATE OF c
     ), receipt AS (
       INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
       SELECT 'commitment.rejected', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
-        t.person_id, 'Crew binned a false promise tag', 'Crew binned a false promise tag',
-        ${JSON.stringify({ commitmentId })}::jsonb FROM target t RETURNING id
+        t.person_id,
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew binned a false promise tag',
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew binned a false promise tag',
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test) FROM target t RETURNING id
     )
     UPDATE commitments c SET status = 'canceled', status_changed_at = now(),
       confirmed_by = ${operator.id}::bigint, status_source_event_id = r.id
@@ -105,12 +117,17 @@ export async function keepPromise(formData: FormData) {
   const sql = getSql()
   const updated = (await sql`
     WITH target AS MATERIALIZED (
-      SELECT id, person_id FROM commitments WHERE id = ${commitmentId}::bigint
-        AND lead_id = ${leadId}::bigint AND status = 'open' FOR UPDATE
+      SELECT c.id, c.person_id, l.is_test FROM commitments c
+      JOIN leads l ON l.id = c.lead_id
+      WHERE c.id = ${commitmentId}::bigint
+        AND c.lead_id = ${leadId}::bigint AND c.status = 'open' FOR UPDATE OF c
     ), receipt AS (
       INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
       SELECT 'commitment.kept', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
-        t.person_id, 'Promise kept', 'Promise kept', ${JSON.stringify({ commitmentId })}::jsonb
+        t.person_id,
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Promise kept',
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Promise kept',
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test)
       FROM target t RETURNING id
     )
     UPDATE commitments c SET status = 'kept', status_changed_at = now(),

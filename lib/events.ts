@@ -113,6 +113,7 @@ export async function listBoardEventTrails(
   leadIds: readonly number[],
   role: OperatorRole,
   limit = 4,
+  includeTests = false,
 ): Promise<Map<number, EventRow[]>> {
   const byLead = new Map<number, EventRow[]>()
   const ids = [...new Set(leadIds.filter((id) => Number.isInteger(id) && id > 0).map(Number))]
@@ -131,11 +132,13 @@ export async function listBoardEventTrails(
       JOIN leads l ON l.id = e.lead_id
       LEFT JOIN people p ON p.id = e.person_id
       WHERE e.lead_id = ANY(${ids}::bigint[])
-        AND l.is_test = false
-        AND COALESCE(p.is_test, false) = false
-        AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
-        AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
-          e.body, e.crew_body, e.detail::text) NOT ILIKE '%[INTERNAL TEST]%'
+        AND (${includeTests}::boolean OR (
+          l.is_test = false
+          AND COALESCE(p.is_test, false) = false
+          AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+          AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+            e.body, e.crew_body, e.detail::text) NOT ILIKE '%[INTERNAL TEST]%'
+        ))
         AND (${role}::text = 'owner' OR (
           NOT (lower(e.kind) = ANY(${[...OWNER_ONLY_EVENT_KINDS]}::text[]))
           AND lower(e.kind) !~ ${OWNER_ONLY_EVENT_NAMESPACE_PATTERN}::text
@@ -180,6 +183,7 @@ export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): P
     WHERE e.occurred_at >= (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
       AND e.occurred_at < ((date_trunc('day', now() AT TIME ZONE 'America/Chicago') + interval '1 day') AT TIME ZONE 'America/Chicago')
       AND COALESCE(l.is_test, false) = false
+      AND (l.id IS NULL OR l.status <> 'spam')
       AND COALESCE(p.is_test, false) = false
       AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
       -- The marker check the per-job trail already does. Without it a

@@ -42,10 +42,11 @@ test("the row keeps the three truthful call statuses", () => {
   }
 })
 
-test("the row says when, who, the number, and where to finish it", () => {
+test("the row says when, who, the number, and where to review it", () => {
   assert.match(PAGE, /formatTime\(draft\.created_at\)/)
   assert.match(PAGE, /draft\.caller_name \|\| formatPhone\(draft\.phone\)/)
   assert.match(PAGE, /href=\{`\/ops\/intake\/\$\{draft\.public_id\}`\}/)
+  assert.match(PAGE, />Review<\/Link>/)
   // The phone formatter is the one the old row used, ten digits or nothing.
   assert.ok(PAGE.includes(String.raw`.replace(/^1(?=\d{10}$)/, "")`), "the ten-digit phone formatter must be the old one")
   assert.match(PAGE, /if \(digits\.length !== 10\) return phone \|\| "Number unavailable"/)
@@ -110,7 +111,7 @@ test("the board route tests are registered in test:shop-brain", () => {
 })
 
 test("the empty queue says so instead of showing an empty frame", () => {
-  assert.ok(PAGE.includes("No calls are waiting to be saved."))
+  assert.ok(PAGE.includes("No calls are waiting for review."))
 })
 
 // The intake's overflow link pointed at a view that no longer exists.

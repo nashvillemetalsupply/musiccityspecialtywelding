@@ -218,14 +218,18 @@ export async function POST(req: Request) {
     const intakeKey = sanitize(formData.get("intakeKey"), 80);
 
     // Attribution (hidden fields populated client-side).
-    const gclid = sanitize(formData.get("gclid"), 200);
-    const utmSource = sanitize(formData.get("utm_source"), 120);
-    const utmMedium = sanitize(formData.get("utm_medium"), 120);
-    const utmCampaign = sanitize(formData.get("utm_campaign"), 200);
-    const utmTerm = sanitize(formData.get("utm_term"), 200);
-    const utmContent = sanitize(formData.get("utm_content"), 200);
-    const landingPage = sanitize(formData.get("landing_page"), 500);
-    const referrer = sanitize(formData.get("page_referrer"), 500);
+    const rawUtmSource = sanitize(formData.get("utm_source"), 120);
+    const rawUtmMedium = sanitize(formData.get("utm_medium"), 120);
+    const internalVerificationAttribution = rawUtmSource.toLowerCase() === "internal-verify"
+      || rawUtmMedium.toLowerCase() === "e2e";
+    const gclid = internalVerificationAttribution ? "" : sanitize(formData.get("gclid"), 200);
+    const utmSource = internalVerificationAttribution ? "" : rawUtmSource;
+    const utmMedium = internalVerificationAttribution ? "" : rawUtmMedium;
+    const utmCampaign = internalVerificationAttribution ? "" : sanitize(formData.get("utm_campaign"), 200);
+    const utmTerm = internalVerificationAttribution ? "" : sanitize(formData.get("utm_term"), 200);
+    const utmContent = internalVerificationAttribution ? "" : sanitize(formData.get("utm_content"), 200);
+    const landingPage = internalVerificationAttribution ? "" : sanitize(formData.get("landing_page"), 500);
+    const referrer = internalVerificationAttribution ? "" : sanitize(formData.get("page_referrer"), 500);
 
     // A public customer can type the marker as ordinary job text. Only an
     // authenticated verification request may enter the isolated test partition.

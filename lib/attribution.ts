@@ -42,10 +42,19 @@ export function captureAttribution(): Attribution {
     return emptyAttribution()
   }
   try {
-    const stored = window.sessionStorage.getItem(STORAGE_KEY)
-    const existing: Attribution = stored ? JSON.parse(stored) : emptyAttribution()
-
     const params = new URLSearchParams(window.location.search)
+    const currentIsVerification = params.get("utm_source")?.toLowerCase() === "internal-verify"
+      || params.get("utm_medium")?.toLowerCase() === "e2e"
+    const stored = window.sessionStorage.getItem(STORAGE_KEY)
+    let existing: Attribution = stored ? JSON.parse(stored) : emptyAttribution()
+    const storedIsVerification = existing.utm_source.toLowerCase() === "internal-verify"
+      || existing.utm_medium.toLowerCase() === "e2e"
+    if (currentIsVerification || storedIsVerification) {
+      window.sessionStorage.removeItem(STORAGE_KEY)
+      if (currentIsVerification) return emptyAttribution()
+      existing = emptyAttribution()
+    }
+
     let changed = false
     for (const key of TRACKED_PARAMS) {
       const value = params.get(key)?.slice(0, 200) ?? ""

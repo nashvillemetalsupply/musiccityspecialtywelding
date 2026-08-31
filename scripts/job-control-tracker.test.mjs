@@ -76,7 +76,7 @@ test("expanded-panel cost lines come only from stored job_line_items rows", () =
   assert.match(DETAIL_SOURCE, /<td>\{item\.label\}\{item\.note && <> <span className="q">\{item\.note\}<\/span><\/>\}<\/td>/)
   assert.match(DETAIL_SOURCE, /<td>\{formatCents\(item\.amountCents\)\}<\/td>/)
   assert.match(DETAIL_SOURCE, /No line items entered\./)
-  assert.match(OPS_DATA_SOURCE, /listJobLineItemsForLeads\(ids, role\)/)
+  assert.match(OPS_DATA_SOURCE, /listJobLineItemsForLeads\(ids, role, includeTests\)/)
   assert.match(OPS_DATA_SOURCE, /lineItems: lineItems\.get\(leadId\) \?\? \[\]/)
   assert.match(LINE_ITEMS_SOURCE, /FROM job_line_items items/)
   assert.match(LINE_ITEMS_SOURCE, /amountCents: Number\(row\.amount_cents\)/)
@@ -97,7 +97,7 @@ test("crew board details contain no money for the expanded panel", () => {
     assert.match(crewProjection, new RegExp(`${field}: null`), `${field} stopped being nulled for crew`)
   }
   assert.match(LINE_ITEMS_SOURCE, /export async function listJobLineItemsForLeads[\s\S]*?if \(role !== "owner"\) return byLead/)
-  assert.match(OPS_DATA_SOURCE, /listJobLineItemsForLeads\(ids, role\)/)
+  assert.match(OPS_DATA_SOURCE, /listJobLineItemsForLeads\(ids, role, includeTests\)/)
   assert.match(DETAIL_SOURCE, /lineItems\.map\(\(item\) => <tr key=\{item\.id\}>/)
 })
 

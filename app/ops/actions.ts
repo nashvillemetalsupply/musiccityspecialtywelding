@@ -10,7 +10,7 @@ import { getSql } from "@/lib/db"
 import { brandedEmail, escapeHtml } from "@/lib/email-templates"
 import { createLead, LEAD_STATUSES, recordLeadEvent, type LeadStatus } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
-import type { Operator } from "@/lib/operators"
+import { canAccessInternalTests, requireLeadMutationAccess, type Operator } from "@/lib/operators"
 import { getShopPhone } from "@/lib/shop-contact"
 import { processEvent } from "@/lib/extract"
 import { notifyAll } from "@/lib/notify"
@@ -23,7 +23,6 @@ import { validateCloseoutReview } from "@/lib/closeout-domain.mjs"
 import { lineItemsTotalCents, parseLineItemsText } from "@/lib/job-line-items.mjs"
 import { replaceJobLineItems } from "@/lib/job-line-items"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
-import { paymentRollup } from "@/lib/payments.mjs"
 
 async function sendCustomerEmail(options: {
   leadId: number
@@ -130,6 +129,12 @@ function parseLeadId(value: FormDataEntryValue | null): number {
   const id = Number(value)
   if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid lead id.")
   return id
+}
+
+async function requireMutableLeadId(operator: Operator, value: FormDataEntryValue | null): Promise<number> {
+  const leadId = parseLeadId(value)
+  await requireLeadMutationAccess(operator, leadId)
+  return leadId
 }
 
 function parseDollarsToCents(value: FormDataEntryValue | null): number | null {
@@ -245,7 +250,7 @@ export async function createManualLead(formData: FormData) {
 // A transient provider outage should be resolvable, not a permanent red flag.
 export async function acknowledgeDeliveryFailure(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
 
   const sql = getSql()
   const rows = (await sql`
@@ -261,7 +266,7 @@ export async function acknowledgeDeliveryFailure(formData: FormData) {
 
 export async function updateLeadStatus(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const status = String(formData.get("status") ?? "") as LeadStatus
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500)
 
@@ -317,7 +322,7 @@ export async function updateLeadStatus(formData: FormData) {
 
 export async function markFirstResponse(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const channel = String(formData.get("channel") ?? "phone").trim().slice(0, 40) || "phone"
 
   const sql = getSql()
@@ -338,7 +343,7 @@ export async function markFirstResponse(formData: FormData) {
 export async function saveEstimate(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const cents = parseDollarsToCents(formData.get("estimate"))
   const emailIt = String(formData.get("emailEstimate") ?? "") === "on"
   const sendGlass = String(formData.get("sendGlass") ?? "") === "on"
@@ -369,7 +374,8 @@ export async function saveEstimate(formData: FormData) {
   if (sendGlass && cents !== null && quoteLead) {
     glassToken = await createOrReuseQuoteGlassLink(leadId, operator.id)
     glassUrl = customerGlassUrl(glassToken)
-    await recordEvent({ kind: "glass.created", actorType: "operator", actorId: operator.id, leadId, personId: quoteLead.person_id, body: "Customer Page created with the quote", crewBody: "Customer Page created with the quote" })
+    const marker = quoteLead.is_test ? "[INTERNAL TEST] " : ""
+    await recordEvent({ kind: "glass.created", actorType: "operator", actorId: operator.id, leadId, personId: quoteLead.person_id, body: `${marker}Customer Page created with the quote`, crewBody: `${marker}Customer Page created with the quote`, detail: { isTest: quoteLead.is_test } })
   }
 
   // Owner-controlled quote email — only when explicitly ticked.
@@ -430,7 +436,7 @@ export async function saveEstimate(formData: FormData) {
 export async function saveJobLineItems(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const { items, errors } = parseLineItemsText(String(formData.get("lineItems") ?? ""))
   // A rejected line blocks the whole save. A partial write would leave a
   // breakdown that is neither what was typed nor what was there before.
@@ -458,7 +464,7 @@ export async function saveJobLineItems(formData: FormData) {
 export async function saveOutcome(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const revenueCents = parseDollarsToCents(formData.get("revenue"))
   const sendThanks = String(formData.get("sendThanks") ?? "") === "on"
 
@@ -520,7 +526,7 @@ export async function saveOutcome(formData: FormData) {
 export async function recordInvoice(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const clear = String(formData.get("clear") ?? "") === "1"
   const invoiceNumber = String(formData.get("invoiceNumber") ?? "").trim().slice(0, 60)
   const invoiceTotalCents = parseDollarsToCents(formData.get("invoiceTotal"))
@@ -615,62 +621,118 @@ export async function recordInvoice(formData: FormData) {
 }
 
 // Money in hand. Cash and checks never reach the QuickBooks ingest, so without
-// this the job stays "still out" forever. The event is the receipt and lands
-// first; the rollup on leads follows. DONE and PAID stay separate truths.
+// this the job stays "still out" forever. One statement locks the work order,
+// writes the immutable receipt, and projects its absolute total onto the lead.
+// A retry repairs that projection from the stored receipt. DONE, handoff, and
+// PAID remain separate truths.
 export async function recordPayment(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const amountCents = parseDollarsToCents(formData.get("paymentAmount"))
   if (!amountCents || amountCents <= 0) throw new Error("Enter the amount that changed hands.")
   const methodRaw = String(formData.get("paymentMethod") ?? "")
   const method = ["cash", "check", "card", "other"].includes(methodRaw) ? methodRaw : "other"
   const settles = String(formData.get("settles") ?? "") === "1"
-  const receiptKey = String(formData.get("receiptKey") ?? "").trim().slice(0, 80)
+  const receiptKey = String(formData.get("receiptKey") ?? "").trim()
+  if (!/^[a-zA-Z0-9_-]{12,80}$/.test(receiptKey)) {
+    throw new Error("The payment receipt is missing. Reload this work order before recording payment.")
+  }
+  const externalId = `manual-payment:${receiptKey}`
+  const baseBody = `$${(amountCents / 100).toLocaleString("en-US")} ${method} in hand`
 
   const sql = getSql()
-  const current = (await sql`
-    SELECT person_id, paid_amount_cents, invoice_total_cents, invoice_number
-    FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as Array<{
-    person_id: number | null
-    paid_amount_cents: number | null
-    invoice_total_cents: number | null
-    invoice_number: string
-  }>
-  if (!current[0]) throw new Error("Work order not found.")
-
-  const { paidTotalCents, fullyPaid } = paymentRollup({
-    currentPaidCents: current[0].paid_amount_cents === null ? null : Number(current[0].paid_amount_cents),
-    amountCents,
-    invoiceTotalCents: current[0].invoice_total_cents === null ? null : Number(current[0].invoice_total_cents),
-    settles,
-  })
-
-  const eventId = await recordEvent({
-    kind: fullyPaid ? "invoice.paid" : "invoice.payment-received",
-    actorType: "operator",
-    actorId: operator.id,
-    leadId,
-    personId: current[0].person_id,
-    externalId: receiptKey ? `manual-payment:${receiptKey}` : "",
-    body: `$${(amountCents / 100).toLocaleString("en-US")} ${method} in hand${current[0].invoice_number ? ` — INV #${current[0].invoice_number}` : ""}${fullyPaid ? ", squared up" : ""}`,
-    detail: { amountCents, method, paidTotalCents, fullyPaid, manual: true },
-  })
-  // A duplicate receiptKey means this exact payment already landed (double
-  // submit); do not add it twice. ponytail: a crash between receipt and rollup
-  // needs the owner to re-enter with a fresh page load — visible, not silent.
-  if (eventId === null && receiptKey) {
-    revalidatePath(`/ops/leads/${leadId}`)
-    revalidatePath("/board")
-    return
+  const result = (await sql`
+    WITH target AS MATERIALIZED (
+      SELECT id, person_id, is_test,
+        COALESCE(paid_amount_cents, 0::bigint) AS paid_amount_cents,
+        invoice_total_cents, invoice_number
+      FROM leads
+      WHERE id = ${leadId}::bigint
+      FOR UPDATE
+    ), existing_key AS MATERIALIZED (
+      SELECT e.id, e.lead_id, e.detail
+      FROM events e
+      WHERE e.kind = ANY(ARRAY['invoice.payment-received','invoice.paid']::text[])
+        AND e.external_id = ${externalId}::text
+      ORDER BY
+        CASE WHEN COALESCE(e.detail->>'paidTotalCents', '') ~ '^[0-9]+$'
+          THEN (e.detail->>'paidTotalCents')::numeric ELSE -1::numeric END DESC,
+        e.id DESC
+      LIMIT 1
+    ), calculation AS MATERIALIZED (
+      SELECT t.*,
+        (t.paid_amount_cents + ${amountCents}::bigint) AS paid_total_cents,
+        (${settles}::boolean OR (
+          t.invoice_total_cents IS NOT NULL
+          AND t.paid_amount_cents + ${amountCents}::bigint >= t.invoice_total_cents
+        )) AS fully_paid
+      FROM target t
+    ), event_write AS (
+      INSERT INTO events (
+        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail
+      )
+      SELECT 'invoice.payment-received'::text,
+        'operator'::text, ${String(operator.id)}::text, c.id, c.person_id,
+        ${externalId}::text,
+        CASE WHEN c.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END
+          || ${baseBody}::text
+          || CASE WHEN c.invoice_number <> '' THEN ' — INV #'::text || c.invoice_number ELSE ''::text END
+          || CASE WHEN c.fully_paid THEN ', squared up'::text ELSE ''::text END,
+        NULL::text,
+        jsonb_build_object(
+          'amountCents', ${amountCents}::bigint,
+          'method', ${method}::text,
+          'paidTotalCents', c.paid_total_cents,
+          'fullyPaid', c.fully_paid,
+          'manual', true,
+          'isTest', c.is_test
+        )
+      FROM calculation c
+      WHERE NOT EXISTS (SELECT 1 FROM existing_key)
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id, lead_id, detail
+    ), receipt_scope AS MATERIALIZED (
+      SELECT w.id, w.lead_id,
+        (w.detail->>'paidTotalCents')::bigint AS paid_total_cents,
+        (w.detail->>'fullyPaid')::boolean AS fully_paid
+      FROM event_write w
+      UNION ALL
+      SELECT e.id, e.lead_id,
+        (e.detail->>'paidTotalCents')::bigint AS paid_total_cents,
+        (e.detail->>'fullyPaid')::boolean AS fully_paid
+      FROM existing_key e JOIN target t ON t.id = e.lead_id
+      WHERE COALESCE(e.detail->>'paidTotalCents', '') ~ '^[0-9]+$'
+        AND lower(COALESCE(e.detail->>'fullyPaid', '')) = ANY(ARRAY['true','false']::text[])
+        AND lower(COALESCE(e.detail->>'manual', 'false')) = 'true'
+        AND NOT EXISTS (SELECT 1 FROM event_write)
+    ), projection_write AS (
+      UPDATE leads l SET
+        paid_amount_cents = GREATEST(COALESCE(l.paid_amount_cents, 0::bigint), r.paid_total_cents),
+        paid_at = CASE WHEN r.fully_paid THEN COALESCE(l.paid_at, now()) ELSE l.paid_at END,
+        updated_at = now()
+      FROM target t CROSS JOIN receipt_scope r
+      WHERE l.id = t.id AND r.lead_id = t.id
+      RETURNING l.id
+    )
+    SELECT t.id AS lead_id, r.id AS event_id, (p.id IS NOT NULL) AS projected,
+      (SELECT e.lead_id FROM existing_key e LIMIT 1) AS key_lead_id
+    FROM target t
+    LEFT JOIN receipt_scope r ON r.lead_id = t.id
+    LEFT JOIN projection_write p ON p.id = t.id
+    LIMIT 1`) as Array<{ lead_id: number; event_id: number | null; projected: boolean; key_lead_id: number | null }>
+  if (!result[0]) throw new Error("Work order not found.")
+  if (!result[0].event_id || !result[0].projected) {
+    // A simultaneous duplicate can lose the INSERT race after this statement's
+    // snapshot was taken. The winning statement already wrote and projected
+    // atomically, so that no-row outcome is a successful idempotent replay.
+    if (result[0].key_lead_id === null) {
+      revalidatePath(`/ops/leads/${leadId}`)
+      revalidatePath("/board")
+      return
+    }
+    throw new Error("That payment receipt is already attached elsewhere or cannot repair this work order.")
   }
-
-  await sql`
-    UPDATE leads SET
-      paid_amount_cents = ${paidTotalCents}::bigint,
-      paid_at = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(paid_at, now()) ELSE paid_at END,
-      updated_at = now()
-    WHERE id = ${leadId}::bigint`
 
   revalidatePath(`/ops/leads/${leadId}`)
   revalidatePath("/board")
@@ -698,8 +760,10 @@ export async function resolveIdentityConflict(formData: FormData) {
       INSERT INTO events (kind, actor_type, actor_id, lead_id, external_id, body, detail)
       SELECT 'identity.conflict.resolved'::text, 'operator'::text, ${actorId(operator)}::text,
         t.lead_id, ${`identity-resolved:${conflictId}`}::text,
-        ${personId === 0 ? "Customer identities kept separate" : "Customer identity selected"}::text,
-        jsonb_build_object('conflictId', t.id, 'personId', ${personId}::bigint, 'resolution', ${resolution}::text)
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END ||
+          ${personId === 0 ? "Customer identities kept separate" : "Customer identity selected"}::text,
+        jsonb_build_object('conflictId', t.id, 'personId', ${personId}::bigint,
+          'resolution', ${resolution}::text, 'isTest', t.is_test)
       FROM target t
       ON CONFLICT DO NOTHING
       RETURNING lead_id
@@ -720,7 +784,7 @@ export async function resolveIdentityConflict(formData: FormData) {
 
 export async function saveNotes(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const notes = String(formData.get("notes") ?? "").trim().slice(0, 8000)
 
   const sql = getSql()
@@ -740,7 +804,7 @@ export async function saveNotes(formData: FormData) {
 
 export async function markReviewRequested(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const received = String(formData.get("received") ?? "") === "on"
 
   const sql = getSql()
@@ -758,7 +822,7 @@ export async function markReviewRequested(formData: FormData) {
 // the first response when none is recorded yet.
 export async function logInteraction(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const channel = String(formData.get("channel") ?? "phone").trim().slice(0, 40) || "phone"
   const note = String(formData.get("note") ?? "").trim().slice(0, 2000)
 
@@ -786,7 +850,7 @@ export async function logInteraction(formData: FormData) {
 // every tracked Call/Text/HANDLE IT path starts working from the shop line.
 export async function captureLeadContact(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const rawPhone = String(formData.get("phone") ?? "").trim()
   const rawEmail = String(formData.get("email") ?? "").trim()
   const sql = getSql()
@@ -835,7 +899,7 @@ export async function captureLeadContact(formData: FormData) {
         email = ${nextEmail}::text,
         updated_at = now()
       WHERE id = ${leadId}::bigint
-      RETURNING id, person_id
+      RETURNING id, person_id, is_test
     )
     INSERT INTO events (
       occurred_at, kind, actor_type, actor_id, lead_id, person_id,
@@ -843,8 +907,10 @@ export async function captureLeadContact(formData: FormData) {
     )
     SELECT now(), 'contact.captured'::text, 'operator'::text,
       ${String(operator.id)}::text, t.id, t.person_id,
-      ''::text, 'Customer contact caught'::text,
-      'Customer contact caught'::text, ${JSON.stringify({ ...detail, legacyType: "contact_captured" })}::jsonb
+      ''::text,
+      CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Customer contact caught'::text,
+      CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Customer contact caught'::text,
+      ${JSON.stringify({ ...detail, legacyType: "contact_captured", isTest: lead.is_test })}::jsonb
     FROM target t`
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
@@ -852,7 +918,7 @@ export async function captureLeadContact(formData: FormData) {
 
 export async function setFollowUp(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const clear = String(formData.get("clear") ?? "") === "1"
   const quick = String(formData.get("quick") ?? "").trim()
   const when = String(formData.get("when") ?? "").trim()
@@ -887,7 +953,7 @@ export async function setFollowUp(formData: FormData) {
 // durable DONE event; commercial state remains an independent ledger.
 export async function markLeadComplete(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const reviewedCloseoutRequested = String(formData.get("reviewedCloseout") ?? "") === "1"
   const sql = getSql()
   const before = (await sql`
@@ -905,6 +971,7 @@ export async function markLeadComplete(formData: FormData) {
       assigned_operator_id: number | null
     }[]
   if (!before[0]) throw new Error("Job not found.")
+  if (before[0].is_test && !canAccessInternalTests(operator.role)) throw new Error("Owner access is required for internal test jobs.")
   const reviewedCloseoutEnabled = operator.role === "owner" && before[0].is_test && buildSheetsEnabled()
   if (reviewedCloseoutRequested && !reviewedCloseoutEnabled) throw new Error("Reviewed closeout is unavailable for this job.")
   const closeout = reviewedCloseoutEnabled ? validateCloseoutReview({
@@ -1008,6 +1075,7 @@ export async function markLeadComplete(formData: FormData) {
     previousWonAt: before[0].won_at,
     previousAssignedOperatorId: before[0].assigned_operator_id,
     operatorName: operator.name,
+    isTest: before[0].is_test,
     closedCommitmentIds,
     ...(hasVoiceIntent ? { voiceIntentId } : {}),
     ...(recoveredVoice[0] ? { voicePath: recoveredVoice[0].blob_path, voiceContentType: recoveredVoice[0].content_type, recoveredVoiceIntentId: voiceIntentId } : {}),
@@ -1015,8 +1083,9 @@ export async function markLeadComplete(formData: FormData) {
   }
   const completion = (await sql`
     WITH target AS (
-      SELECT id, person_id FROM leads
+      SELECT id, person_id, is_test FROM leads
       WHERE id = ${leadId}::bigint AND completed_at IS NULL
+        AND (${canAccessInternalTests(operator.role)}::boolean OR is_test = false)
       FOR UPDATE
     ), immutable_receipt AS (
       INSERT INTO events (
@@ -1025,7 +1094,9 @@ export async function markLeadComplete(formData: FormData) {
       )
       SELECT now(), 'job.completed'::text, 'operator'::text,
         ${String(operator.id)}::text, t.id, t.person_id,
-        ''::text, ${note}::text, ${JSON.stringify({ ...completionDetail, legacyType: "completed" })}::jsonb
+        ''::text,
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || ${note}::text,
+        ${JSON.stringify({ ...completionDetail, legacyType: "completed" })}::jsonb
       FROM target t
       RETURNING id
     ), closeout_write AS (
@@ -1152,7 +1223,7 @@ export async function markLeadComplete(formData: FormData) {
 // has already landed before this action starts.
 export async function addLeadCompletionNote(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const note = String(formData.get("note") ?? "").trim().slice(0, 2000)
   const noteSource = String(formData.get("noteSource") ?? "typed") === "voice" ? "voice" : "typed"
   const photo = formData.get("photo")
@@ -1170,7 +1241,9 @@ export async function addLeadCompletionNote(formData: FormData) {
       SELECT id FROM events WHERE lead_id = l.id AND kind = 'job.completed'
       ORDER BY occurred_at DESC, id DESC LIMIT 1
     ) completion ON true
-    WHERE l.id = ${leadId}::bigint AND l.completed_at IS NOT NULL LIMIT 1`) as Array<{
+    WHERE l.id = ${leadId}::bigint AND l.completed_at IS NOT NULL
+      AND (${canAccessInternalTests(operator.role)}::boolean OR l.is_test = false)
+    LIMIT 1`) as Array<{
       public_id: string; first_name: string; person_id: number | null; is_test: boolean; completion_event_id: number
     }>
   const lead = rows[0]
@@ -1183,7 +1256,8 @@ export async function addLeadCompletionNote(formData: FormData) {
   if (hasVoiceIntent && !recoveredVoice[0]) throw new Error("That saved voice note does not belong to this closeout.")
   const signature = createHash("sha256").update(JSON.stringify({ note, noteSource, voiceIntentId, voiceSize: voiceNote instanceof File ? voiceNote.size : 0, photoName: photo instanceof File ? photo.name : "", photoSize: photo instanceof File ? photo.size : 0 })).digest("hex")
   const externalId = `completion-addendum:${lead.completion_event_id}:${signature}`
-  let noteEventId = await recordEvent({ kind: noteSource === "voice" ? "note.voice" : "note.text", actorType: "operator", actorId: operator.id, leadId, personId: lead.person_id, externalId, body: note || "Closeout media filed", crewBody: redactCrewText(note || "Closeout media filed"), detail: { noteSource, completionEventId: lead.completion_event_id, operatorName: operator.name, voiceIntentId: hasVoiceIntent ? voiceIntentId : null } })
+  const noteBody = `${lead.is_test ? "[INTERNAL TEST] " : ""}${note || "Closeout media filed"}`
+  let noteEventId = await recordEvent({ kind: noteSource === "voice" ? "note.voice" : "note.text", actorType: "operator", actorId: operator.id, leadId, personId: lead.person_id, externalId, body: noteBody, crewBody: redactCrewText(noteBody), detail: { noteSource, completionEventId: lead.completion_event_id, operatorName: operator.name, voiceIntentId: hasVoiceIntent ? voiceIntentId : null, isTest: lead.is_test } })
   if (!noteEventId) {
     const prior = (await sql`SELECT id FROM events WHERE kind = ${noteSource === "voice" ? "note.voice" : "note.text"}::text AND external_id = ${externalId}::text LIMIT 1`) as { id: number }[]
     noteEventId = Number(prior[0]?.id) || null
@@ -1220,7 +1294,7 @@ export async function addLeadCompletionNote(formData: FormData) {
 export async function assignLeadOperator(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const rawAssignee = String(formData.get("assigneeId") ?? "").trim()
   const assigneeId = rawAssignee ? Number(rawAssignee) : null
   if (assigneeId !== null && (!Number.isInteger(assigneeId) || assigneeId <= 0)) {
@@ -1251,7 +1325,7 @@ export async function assignLeadOperator(formData: FormData) {
 
 export async function setJobTravelerStage(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const stage = String(formData.get("stage") ?? "")
   if (stage !== "scheduled" && stage !== "work_started") throw new Error("Unknown job status.")
   const sql = getSql()
@@ -1278,7 +1352,7 @@ export async function setJobTravelerStage(formData: FormData) {
 export async function setPhotoShared(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const pathname = String(formData.get("pathname") ?? "").slice(0, 600)
   const caption = String(formData.get("caption") ?? "").trim().slice(0, 300)
   const shared = String(formData.get("shared") ?? "") === "1"
@@ -1320,7 +1394,7 @@ export async function setPhotoShared(formData: FormData) {
 
 export async function undoLeadComplete(formData: FormData) {
   const operator = await requireOperator()
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const sql = getSql()
   const rows = (await sql`
     SELECT e.id, e.detail, l.first_name, l.is_test FROM events e
@@ -1329,17 +1403,19 @@ export async function undoLeadComplete(formData: FormData) {
       AND e.kind = 'job.completed'
       AND e.occurred_at >= now() - interval '10 seconds'
       AND l.completed_at IS NOT NULL
+      AND (${canAccessInternalTests(operator.role)}::boolean OR l.is_test = false)
     ORDER BY e.occurred_at DESC LIMIT 1`) as { id: number; detail: Record<string, unknown> | null; first_name: string; is_test: boolean }[]
   const previous = String(rows[0]?.detail?.previousStatus ?? "quoted") as LeadStatus
   if (!rows[0] || !(LEAD_STATUSES as readonly string[]).includes(previous)) {
     revalidatePath(`/ops/leads/${leadId}`)
     return
   }
-  const undoDetail = { restoredStatus: previous, completionEventId: rows[0].id }
+  const undoDetail = { restoredStatus: previous, completionEventId: rows[0].id, isTest: rows[0].is_test }
   await sql`
     WITH target AS (
-      SELECT id, person_id FROM leads
+      SELECT id, person_id, is_test FROM leads
       WHERE id = ${leadId}::bigint AND completed_at IS NOT NULL
+        AND (${canAccessInternalTests(operator.role)}::boolean OR is_test = false)
       FOR UPDATE
     ), immutable_receipt AS (
       INSERT INTO events (
@@ -1348,7 +1424,8 @@ export async function undoLeadComplete(formData: FormData) {
       )
       SELECT now(), 'job.completion-undone'::text, 'operator'::text,
         ${String(operator.id)}::text, t.id, t.person_id,
-        ''::text, 'Job finish undone'::text,
+        ''::text,
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Job finish undone'::text,
         ${JSON.stringify({ ...undoDetail, legacyType: "completion_undone" })}::jsonb
       FROM target t
       RETURNING id
@@ -1422,7 +1499,7 @@ export async function undoLeadComplete(formData: FormData) {
 export async function deleteTestLead(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)
-  const leadId = parseLeadId(formData.get("leadId"))
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
 
   const sql = getSql()
   const rows = (await sql`

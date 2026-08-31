@@ -5,8 +5,8 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { sendUsualPaperwork } from "@/app/ops/accounts/[id]/actions"
 import { acceptQuoteCapture, rejectQuoteCapture } from "@/app/ops/leads/[id]/claim-actions"
 import { sendSmsPersisted } from "@/lib/messages"
-import { paymentCompletesInvoice } from "@/lib/gmail-routing.mjs"
 import { isReservedShopPhone, normalizeEmail, normalizePhone } from "@/lib/people"
+import { applyQuickBooksPayment } from "@/lib/payment-ledger"
 import { storeQueuedAttachment } from "@/lib/attachment-retry"
 import { Resend } from "resend"
 import { operatorSignature } from "@/lib/operators"
@@ -145,24 +145,32 @@ export async function POST(req: Request) {
       if (!claims[0]) throw new Error(`Invoice #${invoiceNumber} is reserved by another work order.`)
     }
     await sql`UPDATE events SET lead_id = ${leadId}::bigint, person_id = ${leads[0].person_id}::bigint WHERE id = ${slip.source_event_id}::bigint`
-    const totals = (await sql`
-      SELECT COALESCE(sum(CASE WHEN detail->>'amountCents' ~ '^\\d+$' THEN (detail->>'amountCents')::bigint ELSE 0 END), 0)::bigint AS paid_total
-      FROM events WHERE kind = 'email.payment' AND lead_id = ${leadId}::bigint`) as { paid_total: number }[]
-    const paidTotal = Number(totals[0]?.paid_total ?? 0)
     const amount = Number(events[0].detail.amountCents ?? 0)
     const trustedTotal = leads[0].invoice_total_cents ?? (Number(events[0].detail.invoiceTotalCents || 0) || null)
-    const fullyPaid = events[0].detail.balanceCents === 0 || paymentCompletesInvoice({ text: events[0].detail.explicitFullPayment ? "paid in full" : "", amountCents: amount, priorPaidCents: Math.max(0, paidTotal - amount), invoiceTotalCents: trustedTotal })
     await sql`UPDATE leads SET
       invoice_number = CASE WHEN invoice_number = '' THEN ${invoiceNumber}::text ELSE invoice_number END,
       invoice_total_cents = COALESCE(invoice_total_cents, ${trustedTotal}::bigint),
       invoiced_at = CASE WHEN invoice_number = '' AND ${invoiceNumber}::text <> '' THEN COALESCE(invoiced_at, ${events[0].occurred_at}::timestamptz) ELSE invoiced_at END,
-      paid_at = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(paid_at, ${events[0].occurred_at}::timestamptz) ELSE paid_at END,
-      paid_amount_cents = GREATEST(COALESCE(paid_amount_cents, 0), ${paidTotal}::bigint),
-      revenue_cents = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(revenue_cents, ${(trustedTotal ?? paidTotal) || null}::bigint) ELSE revenue_cents END,
-      status = CASE WHEN ${fullyPaid}::boolean THEN 'won' ELSE status END,
-      won_at = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(won_at, ${events[0].occurred_at}::timestamptz) ELSE won_at END,
       updated_at = now() WHERE id = ${leadId}::bigint`
-    await recordEvent({ kind: fullyPaid ? "invoice.paid" : "invoice.payment-received", actorType: "operator", actorId: operator.id, leadId, personId: leads[0].person_id, externalId: `wire-payment:${slip.source_event_id}`, body: fullyPaid ? "Unmatched QuickBooks payment attached and invoice verified paid" : "QuickBooks payment attached; invoice remains open", detail: { sourceEventId: slip.source_event_id, paidTotalCents: paidTotal, fullyPaid, ...events[0].detail } })
+    const payment = await applyQuickBooksPayment({
+      leadId,
+      sourceEventId: Number(slip.source_event_id),
+      occurredAt: events[0].occurred_at,
+      amountCents: amount,
+      invoiceNumber: invoiceNumber || null,
+      invoiceTotalCents: trustedTotal,
+      balanceCents: Number.isFinite(Number(events[0].detail.balanceCents)) ? Number(events[0].detail.balanceCents) : null,
+      explicitFullPayment: events[0].detail.explicitFullPayment === true,
+      isTest: false,
+      actorType: "operator",
+      actorId: operator.id,
+      body: "Unmatched QuickBooks payment attached to this work order.",
+    })
+    if (payment.fullyPaid) await sql`
+      UPDATE commitments SET status = 'kept', status_changed_at = now(),
+        status_source_event_id = ${payment.paidEventId ?? payment.receiptEventId}::bigint
+      WHERE lead_id = ${leadId}::bigint AND status = 'open'
+        AND (summary ILIKE '%pay%' OR summary ILIKE '%invoice%')`
   } else throw new Error("Unknown update action.")
   await sql`UPDATE notifications SET read_at = COALESCE(read_at, now()), action_kind = '', action_status = 'done' WHERE id = ${notificationId}::bigint AND operator_id = ${operator.id}::bigint`
   return Response.json({ ok: true, message: "Handled from Updates." })

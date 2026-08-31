@@ -8,9 +8,9 @@ export type JobLineItem = ParsedLineItem & { id: number; position: number }
 // projectLeadForRole nulls every other money field. A crew member does not get
 // a shorter list -- they get no list, and the panel says the price is not
 // theirs to see. Hiding it in the markup would not be authorization.
-export async function listJobLineItems(leadId: number, role: OperatorRole): Promise<JobLineItem[]> {
+export async function listJobLineItems(leadId: number, role: OperatorRole, includeTests = false): Promise<JobLineItem[]> {
   if (role !== "owner") return []
-  const map = await listJobLineItemsForLeads([leadId], role)
+  const map = await listJobLineItemsForLeads([leadId], role, includeTests)
   return map.get(leadId) ?? []
 }
 
@@ -18,7 +18,8 @@ export async function listJobLineItems(leadId: number, role: OperatorRole): Prom
 // jobs and Neon compute is metered, so this is never called per row.
 export async function listJobLineItemsForLeads(
   leadIds: readonly number[],
-  role: OperatorRole
+  role: OperatorRole,
+  includeTests = false,
 ): Promise<Map<number, JobLineItem[]>> {
   const byLead = new Map<number, JobLineItem[]>()
   if (role !== "owner") return byLead
@@ -31,10 +32,12 @@ export async function listJobLineItemsForLeads(
     FROM job_line_items items
     JOIN leads l ON l.id = items.lead_id
     WHERE items.lead_id = ANY(${ids}::bigint[])
-      AND items.is_test = false
-      AND l.is_test = false
-      AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
-        items.label, items.note) NOT ILIKE '%[INTERNAL TEST]%'
+      AND (${includeTests}::boolean OR (
+        items.is_test = false
+        AND l.is_test = false
+        AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+          items.label, items.note) NOT ILIKE '%[INTERNAL TEST]%'
+      ))
     ORDER BY items.lead_id, items.position, items.id`) as {
     id: number
     lead_id: number

@@ -26,10 +26,10 @@ const EVENT_LABELS: Record<string, string> = {
   "glass.uploaded": "Customer files added",
   "invoice.paid": "Payment received",
   "invoice.payment-received": "Payment received",
-  "job.completed": "Job finished",
-  "job.completion-undone": "Finish undone",
-  "job.handed-off": "Customer handoff complete",
-  "job.handoff-undone": "Customer handoff undone",
+  "job.completed": "Work finished",
+  "job.completion-undone": "Work finish undone",
+  "job.handed-off": "Job closed",
+  "job.handoff-undone": "Job reopened",
   "note.text": "Job note",
   "note.voice": "Voice note",
   "promise.closed": "Promise closed",
@@ -48,7 +48,7 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   qualified: "Pricing next",
   quoted: "Quote sent",
   won: "Booked",
-  lost: "Closed",
+  lost: "Did not book",
   spam: "Not a job",
 }
 

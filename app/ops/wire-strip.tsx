@@ -81,7 +81,7 @@ export function WireStrip({ slips, unreadTotal, history, page, hasOlder, query }
             {slip.actionKind === "contact-intro" && <SafeActionButton disabled={working !== null} aria-label={`Text ${String(slip.actionDetail.name || "new contact")}`} onAction={() => runAction(slip)}>Text contact</SafeActionButton>}
             {slip.actionKind === "contact-intro-email" && <SafeActionButton disabled={working !== null} aria-label={`Email ${String(slip.actionDetail.name || "new contact")}`} onAction={() => runAction(slip)}>Email contact</SafeActionButton>}
             {slip.actionKind === "attachment-retry" && <SafeActionButton disabled={working !== null} onAction={() => runAction(slip)}>Try filing again</SafeActionButton>}
-            {slip.actionKind === "attach-payment" && <form onSubmit={(event) => { event.preventDefault(); const value = new FormData(event.currentTarget).get("leadId"); void runAction(slip, "attach", String(value ?? "")) }}><input name="leadId" inputMode="numeric" placeholder="Job #" aria-label="Job number" required /><SafeSubmitButton disabled={working !== null}>Attach payment</SafeSubmitButton></form>}
+            {slip.actionKind === "attach-payment" && <form onSubmit={(event) => { event.preventDefault(); const value = new FormData(event.currentTarget).get("leadId"); void runAction(slip, "attach", String(value ?? "")) }}><input name="leadId" inputMode="numeric" placeholder="Job #" aria-label="Job number" required /><SafeSubmitButton disabled={working !== null}>Attach QuickBooks receipt</SafeSubmitButton></form>}
           </div>}
           {result[slip.id] && <small className="ops-wire-result" role="status">{result[slip.id]}</small>}
         </article>)}

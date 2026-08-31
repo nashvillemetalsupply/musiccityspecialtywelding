@@ -57,7 +57,8 @@ test("dynamic action labels and overdue disclosure stay bounded and touch safe",
   // C7 retired jobs-brand.css; the touch floor for the job page's controls
   // (promise disclosure included) lives in job.css.
   const css = read("app/ops/leads/[id]/job.css")
-  assert.match(intake, />Call customer<\/a>/)
+  assert.match(intake, /Open job to call or text/)
+  assert.doesNotMatch(intake, /href=\{callHref\}/)
   assert.match(wire, />Text contact<\/SafeActionButton>/)
   assert.match(wire, />Email contact<\/SafeActionButton>/)
   assert.match(page, />Use this customer<\/SafeSubmitButton>/)

@@ -17,11 +17,25 @@ These production environment values are intentionally independent:
 - `TWILIO_PHONE_NUMBER`: purchased E.164 shop number.
 - `OWNER_CELL_PHONE`: private E.164 forwarding destination. Never use the public Twilio number here.
 - `TWILIO_LIVE_TRANSCRIPTION_ENABLED=true`: starts Twilio Real-Time Transcription on Voice calls.
+- `TWILIO_INBOUND_WHISPER_URL`: optional static Twilio-hosted TwiML Bin, Asset, or Function URL. After the owner answers, Twilio privately requests it with `GET` and plays its TwiML before bridging the customer. Only credential-free HTTPS URLs on `handler.twilio.com/twiml/EH...` or a single `*.twil.io` host are accepted.
 - `TWILIO_PUBLIC_NUMBER_ENABLED=true`: lets the site and structured data replace the established fallback number with the tested Twilio number.
 - `CALL_SKETCH_PUBLIC_ENABLED`: no longer read anywhere. The homepage Call Sketch showcase was removed in the 2026-08-21 final homepage polish; Call Sketch remains an internal `/ops` tool.
 - `TWILIO_SMS_ENABLED=true`: customer messaging is enabled after A2P registration, the real-device matrix, and owner approval.
 
 The public phone, structured data, header, mobile action, contact section, and footer all resolve through `getShopPhone()`. Do not hand-edit phone strings on the homepage.
+
+### Optional inbound business-call whisper
+
+Whisper support is code-ready but is not activated by this repository change. Keep the whisper entirely at Twilio so answering the public line never gains a new website, Vercel, or database dependency. A static TwiML Bin, public Twilio Asset, or static Twilio Function should return only a short private cue, for example:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response><Say>Music City Specialty Welding business call.</Say></Response>
+```
+
+To activate it later, run `node scripts/provision-inbound-whisper.mjs --apply` with real Twilio credentials or create the provider-hosted resource in the Twilio console. Set its credential-free HTTPS URL as `TWILIO_INBOUND_WHISPER_URL`, deploy, and place one owner-approved inbound test call. Confirm the owner hears the cue after answering and the customer does not hear it before the bridge.
+
+If the variable is missing or invalid, inbound TwiML keeps the existing direct bare-number dial. The number-level provider-hosted Voice fallback remains separate and unchanged, so a website or database failure can still ring the owner directly. Do not put credentials, auth tokens, query strings, or fragments in the whisper URL.
 
 ## Provider activation order
 

@@ -28,12 +28,38 @@ jobs:
           body=$(printf '%s' "$response" | sed '$d')
           status=$(printf '%s' "$response" | tail -n 1)
           echo "HTTP $status"
+          diagnostic=$(printf '%s' "$body" | jq -c '{
+            ok,
+            leadsAccepted,
+            delivery,
+            automation: {
+              lastDigestOk: .automation.lastDigestOk,
+              lastReminderOk: .automation.lastReminderOk,
+              lastGmailOk: .automation.lastGmailOk,
+              lastBriefOk: .automation.lastBriefOk,
+              reminderStale: .automation.reminderStale,
+              digestStale: .automation.digestStale,
+              gmailStale: .automation.gmailStale,
+              morningBriefStale: .automation.morningBriefStale
+            },
+            shopBrain: {
+              ready: .shopBrain.ready,
+              gateSatisfied: .shopBrain.gateSatisfied,
+              uploadRecoveryBacklog: .shopBrain.uploadRecoveryBacklog,
+              quotePhotoBacklog: .shopBrain.quotePhotoBacklog,
+              callTranscriptBacklog: .shopBrain.callTranscriptBacklog,
+              callTranscriptExhausted: .shopBrain.callTranscriptExhausted,
+              voiceTranscriptBacklog: .shopBrain.voiceTranscriptBacklog,
+              durableFailures: .shopBrain.durableFailures
+            }
+          }' 2>/dev/null || printf '%s' '{"diagnostic":"invalid-health-json"}')
+          echo "Health diagnostic: $diagnostic"
           if [ "$status" != "200" ]; then
             echo "::error::Health endpoint returned HTTP $status"
             exit 1
           fi
-          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true' >/dev/null; then
-            echo "::error::Launch gate or Shop Brain readiness is failing"
+          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true and .shopBrain.durableFailures.healthy == true' >/dev/null; then
+            echo "::error::Launch gate, Shop Brain readiness, or durable delivery health is failing"
             exit 1
           fi
 

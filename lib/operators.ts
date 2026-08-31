@@ -3,6 +3,30 @@ import { getSql } from "@/lib/db"
 
 export type OperatorRole = "owner" | "crew"
 
+// Internal-test records exercise real workflows without becoming business
+// records. Only the owner may opt into that partition; URL parameters and
+// guessed record IDs never grant access on their own.
+export function canAccessInternalTests(role: OperatorRole) {
+  return role === "owner"
+}
+
+// A rendered page is not an authorization boundary. Every mutation that takes
+// a lead id from a form calls this before changing durable state, so a crew
+// member cannot reach an owner-only test record by guessing its id.
+export async function requireLeadMutationAccess(
+  operator: Pick<Operator, "role">,
+  leadId: number,
+): Promise<{ isTest: boolean }> {
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT is_test FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as Array<{ is_test: boolean }>
+  if (!rows[0]) throw new Error("Job not found.")
+  if (rows[0].is_test && !canAccessInternalTests(operator.role)) {
+    throw new Error("Owner access is required for internal test jobs.")
+  }
+  return { isTest: rows[0].is_test }
+}
+
 export type Operator = {
   id: number
   email: string

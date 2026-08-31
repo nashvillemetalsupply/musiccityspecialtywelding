@@ -6,11 +6,6 @@ import { dismissCallDraftAction, saveCallDraftAction } from "./actions"
 
 type Source = "phone-in" | "walk-in"
 
-function phoneHref(phone: string) {
-  const digits = phone.replace(/\D/g, "")
-  return digits ? `tel:+${digits.length === 10 ? `1${digits}` : digits}` : ""
-}
-
 function formatPhone(phone: string) {
   const digits = phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "")
   if (digits.length !== 10) return phone
@@ -52,7 +47,7 @@ export function JobIntakeForm({
       <Link className="jobs-intake-back" href="/ops">← Back to jobs</Link>
       <header className="jobs-intake-heading">
         <span>{inbound ? callState(draft!.callStatus) : "New job"}</span>
-        <h1 id="jobs-intake-title">Save the job</h1>
+        <h1 id="jobs-intake-title">{inbound ? "Save call as job" : "Save the job"}</h1>
         <p>{inbound ? "The call is already safe." : "Capture the part the shop needs."}</p>
       </header>
 
@@ -67,7 +62,10 @@ export function JobIntakeForm({
           <strong>{draft!.name || "Caller"}</strong>
           <time>{new Date(draft!.createdAt).toLocaleTimeString("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit" })}</time>
         </div>
-        {draft!.phone && <a href={phoneHref(draft!.phone)} aria-label={`Call ${draft!.name || formatPhone(draft!.phone)}`}>Call back</a>}
+        {draft!.phone && <div>
+          <strong>{formatPhone(draft!.phone)}</strong>
+          <small>Save first so the callback stays with this job.</small>
+        </div>}
       </div>}
 
       {draft?.lastError && <p className="jobs-intake-error" role="alert">{draft.lastError}</p>}
@@ -112,7 +110,9 @@ export function JobIntakeForm({
         </details>
 
         <div className="jobs-intake-submit">
-          <SafeSubmitButton className="jobs-save-job" pendingLabel="Saving job…">Save Job</SafeSubmitButton>
+          <SafeSubmitButton className="jobs-save-job" pendingLabel="Saving job…">
+            {inbound ? "Save call as job" : "Save job"}
+          </SafeSubmitButton>
         </div>
       </form>
 

@@ -1,3 +1,7 @@
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
+   genre: workbench · tone: direct · palette: existing steel/amber tokens
+   macrostructure: action spine → work record → field payment → finish/close
+   contrast: pass (46–50) · responsive: pass (36, 59, 61–69) */
 .job-page {
   --surface-sunken: var(--dark-surface-sunken);
   --surface: var(--dark-surface);
@@ -67,7 +71,7 @@
 .job-page summary { cursor: pointer; }
 
 .job-page .card,
-.job-page > :is(.ops-done-bench, .ops-handoff-control) {
+.job-finish-close > :is(.ops-done-bench, .ops-handoff-control) {
   border: 1px solid var(--border) !important;
   border-radius: var(--r-lg) !important;
   color: var(--text-primary) !important;
@@ -140,10 +144,16 @@
 .job-contact > div > :is(span, small) { color: var(--text-muted); font-size: var(--t-caption); }
 .job-contact > div > strong { font-family: var(--font-display); font-size: var(--t-title); font-variant-numeric: tabular-nums; }
 .job-repeat { width: fit-content; margin-top: var(--s2); }
-.job-contact > :is(a, .ops-tracked-call) { width: 100%; }
-.job-contact .ops-tracked-call > button { width: 100%; }
-.job-contact .ops-tracked-call > :is(details, small) { color: var(--text-muted); font-size: var(--t-caption); }
-.job-contact .ops-tracked-call summary { min-height: 44px; display: flex; align-items: center; }
+.job-email { width: fit-content; margin-top: var(--s2); }
+.job-action-spine { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s2); }
+.job-action-spine > :is(a, .ops-tracked-call) { width: 100%; min-width: 0; }
+.job-action-spine > a,
+.job-action-spine .ops-tracked-call > button { width: 100%; min-height: 44px; padding-block: var(--s2); white-space: nowrap; overflow-wrap: normal; line-height: var(--lh-sub); text-align: center; }
+.job-action-spine .ops-tracked-call > button { min-height: var(--control); padding: 0 var(--s3); border: 0; border-radius: var(--r-md); color: var(--action-ink); background: var(--action); font-family: var(--font); font-size: var(--t-label); font-weight: var(--w-semi); line-height: 1; text-transform: none; }
+.job-action-spine .ops-tracked-call { display: grid; gap: var(--s1); }
+.job-action-spine .ops-tracked-call > :is(details, small) { color: var(--text-muted); font-size: var(--t-caption); }
+.job-action-spine .ops-tracked-call summary { min-height: 44px; display: flex; align-items: center; }
+.job-action-spine .ops-tracked-call details a { min-height: 44px; display: flex; align-items: center; color: var(--text-primary); }
 
 .job-contact-edit,
 .job-consent { border-top: 1px solid var(--border); }
@@ -260,6 +270,7 @@
 .job-page :is(.ops-channel-stamp, .ops-mic-key, .ops-reply-chips button, .ops-glass-link button, .ops-glass-link a) { min-height: 44px !important; border: 1px solid var(--border) !important; border-radius: 0 !important; color: var(--text-primary) !important; background: var(--surface-raised) !important; }
 .job-page .ops-glass-control h2 { font-size: var(--t-sub); line-height: var(--lh-sub); }
 .job-page .ops-glass-control p { color: var(--text-secondary); }
+.job-page #job-reply { scroll-margin-top: var(--s4); }
 
 .job-details { overflow: clip; }
 .job-details > summary,
@@ -348,10 +359,35 @@
 .sum-style textarea { font-family: var(--font); font-variant-numeric: normal; }
 .sum-style code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--text-primary); }
 
-.job-page > :is(.ops-done-bench, .ops-handoff-control) { min-width: 0; padding: var(--s4) !important; display: grid; gap: var(--s3); overflow: clip; }
-.job-page > :is(.ops-done-bench, .ops-handoff-control) :is(h2, strong) { color: var(--text-primary) !important; }
-.job-page > :is(.ops-done-bench, .ops-handoff-control) p { color: var(--text-secondary) !important; }
-.job-page > :is(.ops-done-bench, .ops-handoff-control) :is(button, summary) { min-height: 44px; border-radius: 0 !important; }
+.job-payment,
+.job-onsite-payment { overflow: clip; scroll-margin-top: var(--s4); }
+.job-onsite-payment > header,
+.job-payment > header { min-height: var(--row); padding: var(--s3) var(--s4); display: flex; align-items: center; justify-content: space-between; gap: var(--s3); border-bottom: 1px solid var(--border); }
+.job-onsite-payment > header > div,
+.job-payment > header > div { display: grid; gap: var(--s1); }
+.job-onsite-payment > header span,
+.job-onsite-payment > header > strong,
+.job-payment > header span,
+.job-payment > header > strong { color: var(--text-muted); font-size: var(--t-caption); font-variant-numeric: tabular-nums; }
+.job-onsite-payment-body { padding: var(--s4); display: grid; gap: var(--s3); }
+.job-onsite-payment-body > p { color: var(--text-secondary); }
+.job-onsite-payment-body > small { color: var(--text-muted); }
+.job-payment-manual { width: fit-content; color: var(--link); white-space: nowrap; overflow-wrap: normal !important; text-decoration: underline; text-underline-offset: .2em; }
+.job-onsite-payment-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.job-onsite-payment-actions > a { min-width: 0; min-height: 44px; padding-block: var(--s2); white-space: nowrap; overflow-wrap: normal; text-align: center; }
+.job-payment-note { padding: var(--s3); border-left: 3px solid var(--status-warn-mark); background: var(--status-warn-sur); color: var(--status-warn-ink) !important; }
+.job-payment-form { padding: var(--s4); display: grid; gap: var(--s2); }
+.job-payment-form > label:not(.job-check) { color: var(--text-secondary); font-size: var(--t-label); font-weight: var(--w-med); }
+.job-payment-form > small { color: var(--text-muted); }
+.job-payment-form > button { width: 100%; }
+
+.job-finish-close { min-width: 0; display: grid; gap: var(--s3); scroll-margin-top: var(--s4); }
+.job-finish-close-head { padding: 0 var(--s1); display: grid; gap: var(--s1); }
+.job-finish-close-head > span { color: var(--text-muted); font-size: var(--t-caption); }
+.job-finish-close > :is(.ops-done-bench, .ops-handoff-control) { min-width: 0; padding: var(--s4) !important; display: grid; gap: var(--s3); overflow: clip; }
+.job-finish-close > :is(.ops-done-bench, .ops-handoff-control) :is(h2, strong) { color: var(--text-primary) !important; }
+.job-finish-close > :is(.ops-done-bench, .ops-handoff-control) p { color: var(--text-secondary) !important; }
+.job-finish-close > :is(.ops-done-bench, .ops-handoff-control) :is(button, summary) { min-height: 44px; border-radius: 0 !important; }
 .job-page .ops-closeout-review-sheet,
 .job-page .ops-done-note { min-width: 0; display: grid; gap: var(--s3); }
 .job-page .ops-closeout-review-sheet { margin: 0; padding: var(--s3); border: 1px solid var(--border); }
@@ -385,7 +421,8 @@
 
 @media (min-width: 40rem) {
   .job-page { padding: var(--s5); gap: var(--s5); }
-  .job-contact { grid-template-columns: minmax(0, 1fr) repeat(3, minmax(7rem, auto)); align-items: start; }
+  .job-contact { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .job-action-spine { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   .job-contact-edit > form { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; }
   .job-identity-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .job-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -399,6 +436,7 @@
 @media (min-width: 56rem) {
   .job-head { padding: var(--s5); }
   .job-contact { padding: var(--s5); }
+  .job-action-spine { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .job-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .job-columns { grid-template-columns: minmax(16rem, .7fr) minmax(0, 1.3fr); align-items: start; }
   .job-ledger { border-right: 1px solid var(--border); border-bottom: 0; }
@@ -409,7 +447,8 @@
   .job-head { grid-template-columns: minmax(0, 1fr); }
   .job-status { justify-self: start; }
   .job-contact { grid-template-columns: minmax(0, 1fr); }
-  .job-contact > :is(a, .ops-tracked-call) { min-width: 0; }
+  .job-action-spine > :is(a, .ops-tracked-call) { min-width: 0; }
+  .job-onsite-payment-actions { grid-template-columns: minmax(0, 1fr); }
   .sum-style,
   .sum-style tbody,
   .sum-style tr,

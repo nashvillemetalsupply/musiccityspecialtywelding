@@ -45,6 +45,7 @@ export type BoardJobRow = LeadRow & {
   board_signals: BoardSignal[]
   board_score: number
   board_hot: boolean
+  text_ready: boolean
 }
 
 export type BoardJobPage = {
@@ -303,8 +304,20 @@ export async function listBoardJobs(
         (array_agg(reason ORDER BY priority ASC, waiting_since ASC))[1] AS reason
       FROM candidates
       GROUP BY lead_id
+    ), text_consent AS (
+      SELECT phone_e164,
+        CASE
+          WHEN (array_agg(source ORDER BY occurred_at DESC, id DESC)
+            FILTER (WHERE source IN ('STOP','START')))[1] = 'STOP' THEN false
+          WHEN (array_agg(source ORDER BY occurred_at DESC, id DESC)
+            FILTER (WHERE source IN ('STOP','START')))[1] = 'START' THEN true
+          ELSE bool_or(effect = 'granted')
+        END AS text_ready
+      FROM messaging_consents
+      GROUP BY phone_e164
     ), board AS (
       SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name,
+        COALESCE(tc.text_ready, false) AS text_ready,
         CASE
           WHEN l.completed_at IS NOT NULL THEN 'ready'
           WHEN n.lead_id IS NOT NULL THEN 'attention'
@@ -339,6 +352,7 @@ export async function listBoardJobs(
         )::int AS board_score
       FROM leads l
       LEFT JOIN operators o ON o.id = l.assigned_operator_id
+      LEFT JOIN text_consent tc ON tc.phone_e164 = l.phone
       LEFT JOIN needs n ON n.lead_id = l.id
       LEFT JOIN (
         SELECT person_id, is_test, GREATEST(0, count(*) - 1)::int AS prior_jobs
@@ -379,6 +393,7 @@ export async function listBoardJobs(
       -- keeps this scan off every other tab. Column list and order match the
       -- board CTE exactly, because the two are unioned below.
       SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name,
+        COALESCE(tc.text_ready, false) AS text_ready,
         'closed'::text AS board_stage,
         CASE
           WHEN l.review_received THEN 'Review received'
@@ -390,6 +405,7 @@ export async function listBoardJobs(
         0 AS board_score
       FROM leads l
       LEFT JOIN operators o ON o.id = l.assigned_operator_id
+      LEFT JOIN text_consent tc ON tc.phone_e164 = l.phone
       WHERE ${stage}::text = 'closed'
         AND l.handed_off_at IS NOT NULL
         AND l.status NOT IN ('lost','spam')
@@ -471,7 +487,10 @@ export async function listBoardJobs(
   const items = rows
     .filter((row) => Number.isInteger(Number(row.id)) && Number(row.id) > 0)
     .slice(0, pageSize)
-    .map((row) => projectLeadForRole(row, role))
+    .map((row) => {
+      const projected = projectLeadForRole(row, role)
+      return role === "owner" ? projected : { ...projected, board_score: 0, board_hot: false }
+    })
   return {
     items,
     counts: {
@@ -497,6 +516,7 @@ function boardDetailIds(leadIds: readonly number[]) {
 async function listBoardActiveClaims(
   leadIds: readonly number[],
   role: OperatorRole,
+  includeTests: boolean,
 ): Promise<Map<number, ClaimRow[]>> {
   const byLead = new Map<number, ClaimRow[]>()
   const sql = getSql()
@@ -510,12 +530,14 @@ async function listBoardActiveClaims(
     WHERE c.subject_id = ANY(${leadIds}::bigint[])
       AND c.subject_type = 'lead'
       AND c.superseded_by IS NULL
-      AND l.is_test = false
-      AND COALESCE(source_lead.is_test, false) = false
-      AND COALESCE(source_person.is_test, false) = false
-      AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
-      AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
-        source.body, source.crew_body, source.detail::text, c.value::text) NOT ILIKE '%[INTERNAL TEST]%'
+      AND (${includeTests}::boolean OR (
+        l.is_test = false
+        AND COALESCE(source_lead.is_test, false) = false
+        AND COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+          source.body, source.crew_body, source.detail::text, c.value::text) NOT ILIKE '%[INTERNAL TEST]%'
+      ))
     ORDER BY c.subject_id ASC, c.created_at DESC, c.id DESC`) as ClaimRow[]
 
   for (const row of rows) {
@@ -532,6 +554,7 @@ async function listBoardActiveClaims(
 async function listBoardOpenOrBrokenCommitments(
   leadIds: readonly number[],
   role: OperatorRole,
+  includeTests: boolean,
 ): Promise<Map<number, CommitmentRow[]>> {
   const byLead = new Map<number, CommitmentRow[]>()
   const sql = getSql()
@@ -545,14 +568,16 @@ async function listBoardOpenOrBrokenCommitments(
     LEFT JOIN people source_person ON source_person.id = source.person_id
     WHERE c.lead_id = ANY(${leadIds}::bigint[])
       AND c.status = ANY(ARRAY['open','broken']::text[])
-      AND l.is_test = false
-      AND COALESCE(source_lead.is_test, false) = false
-      AND COALESCE(commitment_person.is_test, false) = false
-      AND COALESCE(source_person.is_test, false) = false
-      AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
-      AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
-        c.summary, c.crew_summary, source.body, source.crew_body, source.detail::text)
-        NOT ILIKE '%[INTERNAL TEST]%'
+      AND (${includeTests}::boolean OR (
+        l.is_test = false
+        AND COALESCE(source_lead.is_test, false) = false
+        AND COALESCE(commitment_person.is_test, false) = false
+        AND COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+          c.summary, c.crew_summary, source.body, source.crew_body, source.detail::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
+      ))
     ORDER BY c.lead_id ASC, c.due_at ASC NULLS LAST, c.created_at DESC, c.id DESC`) as CommitmentRow[]
 
   for (const row of rows) {
@@ -566,16 +591,18 @@ async function listBoardOpenOrBrokenCommitments(
   return byLead
 }
 
-async function listBoardNewestPhotoDates(leadIds: readonly number[]): Promise<Map<number, string>> {
+async function listBoardNewestPhotoDates(leadIds: readonly number[], includeTests: boolean): Promise<Map<number, string>> {
   const sql = getSql()
   const rows = (await sql`
     WITH visible_leads AS MATERIALIZED (
       SELECT l.id, l.photos
       FROM leads l
       WHERE l.id = ANY(${leadIds}::bigint[])
-        AND l.is_test = false
-        AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes)
-          NOT ILIKE '%[INTERNAL TEST]%'
+        AND (${includeTests}::boolean OR (
+          l.is_test = false
+          AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes)
+            NOT ILIKE '%[INTERNAL TEST]%'
+        ))
     ), photo_receipts AS (
       SELECT l.id AS lead_id, receipt.occurred_at AS photo_at
       FROM visible_leads l
@@ -586,10 +613,12 @@ async function listBoardNewestPhotoDates(leadIds: readonly number[]): Promise<Ma
         ELSE NULL
       END AND receipt.lead_id = l.id
       LEFT JOIN people source_person ON source_person.id = receipt.person_id
-      WHERE COALESCE(source_person.is_test, false) = false
+      WHERE (${includeTests}::boolean OR (
+        COALESCE(source_person.is_test, false) = false
         AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
         AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
           NOT ILIKE '%[INTERNAL TEST]%'
+      ))
       UNION ALL
       SELECT l.id AS lead_id, receipt.occurred_at AS photo_at
       FROM visible_leads l
@@ -600,20 +629,24 @@ async function listBoardNewestPhotoDates(leadIds: readonly number[]): Promise<Ma
         ELSE NULL
       END AND receipt.lead_id = l.id
       LEFT JOIN people source_person ON source_person.id = receipt.person_id
-      WHERE COALESCE(source_person.is_test, false) = false
+      WHERE (${includeTests}::boolean OR (
+        COALESCE(source_person.is_test, false) = false
         AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
         AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
           NOT ILIKE '%[INTERNAL TEST]%'
+      ))
       UNION ALL
       SELECT receipt.lead_id, receipt.occurred_at AS photo_at
       FROM events receipt
       JOIN visible_leads l ON l.id = receipt.lead_id
       LEFT JOIN people source_person ON source_person.id = receipt.person_id
       WHERE receipt.kind = 'photo.added'
-        AND COALESCE(source_person.is_test, false) = false
-        AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
-        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
-          NOT ILIKE '%[INTERNAL TEST]%'
+        AND (${includeTests}::boolean OR (
+          COALESCE(source_person.is_test, false) = false
+          AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
+          AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
+            NOT ILIKE '%[INTERNAL TEST]%'
+        ))
     )
     SELECT lead_id, max(photo_at) AS newest_photo_at
     FROM photo_receipts
@@ -628,16 +661,17 @@ async function listBoardNewestPhotoDates(leadIds: readonly number[]): Promise<Ma
 export async function getBoardJobDetails(
   leadIds: readonly number[],
   role: OperatorRole,
+  includeTests = false,
 ): Promise<Map<number, BoardJobDetail>> {
   const ids = boardDetailIds(leadIds)
   if (!ids.length) return new Map()
 
   const [claims, commitments, newestPhotoDates, eventTrails, lineItems] = await Promise.all([
-    listBoardActiveClaims(ids, role),
-    listBoardOpenOrBrokenCommitments(ids, role),
-    listBoardNewestPhotoDates(ids),
-    listBoardEventTrails(ids, role),
-    listJobLineItemsForLeads(ids, role),
+    listBoardActiveClaims(ids, role, includeTests),
+    listBoardOpenOrBrokenCommitments(ids, role, includeTests),
+    listBoardNewestPhotoDates(ids, includeTests),
+    listBoardEventTrails(ids, role, 4, includeTests),
+    listJobLineItemsForLeads(ids, role, includeTests),
   ])
 
   return new Map(ids.map((leadId) => [leadId, {

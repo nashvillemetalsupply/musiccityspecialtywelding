@@ -4,7 +4,7 @@ import { recordEvent } from "@/lib/events"
 import { prepareInboundCallIntake } from "@/lib/job-intake"
 import { notifyAll } from "@/lib/notify"
 import { normalizePhone } from "@/lib/people"
-import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioCallbackUrl, twilioLiveTranscriptionStart, twilioVoiceConfigured, twiml } from "@/lib/twilio"
+import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioCallbackUrl, twilioInboundDialTarget, twilioLiveTranscriptionStart, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 
 export const runtime = "nodejs"
 
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       twilioLiveTranscriptionStart({ callSid: sid, direction: "in" }) +
       `<Dial answerOnBridge="true" record="record-from-answer-dual" ` +
       `recordingStatusCallback="${escapeXml(twilioCallbackUrl("/api/twilio/recording"))}" ` +
-      `action="${escapeXml(twilioCallbackUrl("/api/twilio/voice-status"))}">${escapeXml(ownerCell)}</Dial>`
+      `action="${escapeXml(twilioCallbackUrl("/api/twilio/voice-status"))}">${twilioInboundDialTarget(ownerCell)}</Dial>`
   )
   // The public phone line must ring even during a database outage. Signed
   // Twilio traffic receives TwiML first; Shop Brain catches up after response.

@@ -10,6 +10,7 @@ import { extractQuickBooksPaymentFacts, isAuthenticatedIntuitPayment, looksLikeI
 import { findPersonByEmail, getPerson } from "@/lib/people"
 import { classifyAttachmentSensitivity, queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-retry"
 import { isGmailMessageGone } from "@/lib/shop-brain-invariants.mjs"
+import { applyQuickBooksPayment } from "@/lib/payment-ledger"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -20,7 +21,8 @@ async function ingestPayment(messageId: string, occurredAt: string, subject: str
   const cents = facts.paymentAmountCents
   const explicitFullPayment = paymentCompletesInvoice({ text: `${subject}\n${body}`, amountCents: cents })
   const sql = getSql()
-  let eventId = await recordEvent({ kind: "email.payment", actorType: "system", externalId: messageId, occurredAt, body: subject, detail: { invoiceNumber: invoice ?? null, amountCents: cents, invoiceTotalCents: facts.invoiceTotalCents, balanceCents: facts.balanceCents, explicitFullPayment, isTest } })
+  const testPrefix = isTest ? "[INTERNAL TEST] " : ""
+  let eventId = await recordEvent({ kind: "email.payment", actorType: "system", externalId: messageId, occurredAt, body: `${testPrefix}${subject}`, detail: { invoiceNumber: invoice ?? null, amountCents: cents, invoiceTotalCents: facts.invoiceTotalCents, balanceCents: facts.balanceCents, explicitFullPayment, isTest } })
   const inserted = Boolean(eventId)
   if (!eventId) {
     const existing = (await sql`SELECT id FROM events WHERE kind = 'email.payment' AND external_id = ${messageId}::text LIMIT 1`) as { id: number }[]
@@ -47,38 +49,28 @@ async function ingestPayment(messageId: string, occurredAt: string, subject: str
   const lead = leads[0]
   if (lead) {
     await sql`UPDATE events SET lead_id = ${lead.id}::bigint, person_id = ${lead.person_id}::bigint WHERE id = ${eventId}::bigint`
-    const totals = (await sql`
-      SELECT COALESCE(sum(
-        CASE WHEN detail->>'amountCents' ~ '^\\d+$' THEN (detail->>'amountCents')::bigint ELSE 0 END
-      ), 0)::bigint AS paid_total
-      FROM events
-      WHERE kind = 'email.payment' AND lead_id = ${lead.id}::bigint`) as { paid_total: number }[]
-    const paidTotal = Number(totals[0]?.paid_total ?? 0)
-    const priorPaid = Math.max(0, paidTotal - (cents ?? 0))
-    const trustedTotal = lead.invoice_total_cents ?? facts.invoiceTotalCents
-    const fullyPaid = facts.balanceCents === 0 || paymentCompletesInvoice({ text: `${subject}\n${body}`, amountCents: cents, invoiceTotalCents: trustedTotal, priorPaidCents: priorPaid })
-    await sql`
-      UPDATE leads SET
-        paid_at = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(paid_at, ${occurredAt}::timestamptz) ELSE paid_at END,
-        paid_amount_cents = GREATEST(COALESCE(paid_amount_cents, 0), ${paidTotal}::bigint),
-        invoice_total_cents = COALESCE(invoice_total_cents, ${facts.invoiceTotalCents}::bigint),
-        revenue_cents = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(revenue_cents, ${(trustedTotal ?? paidTotal) || null}::bigint) ELSE revenue_cents END,
-        status = CASE WHEN ${fullyPaid}::boolean THEN 'won' ELSE status END,
-        won_at = CASE WHEN ${fullyPaid}::boolean THEN COALESCE(won_at, ${occurredAt}::timestamptz) ELSE won_at END,
-        updated_at = now()
-      WHERE id = ${lead.id}::bigint`
-    if (fullyPaid) {
+    const payment = await applyQuickBooksPayment({
+      leadId: lead.id,
+      sourceEventId: eventId,
+      occurredAt,
+      amountCents: cents,
+      invoiceNumber: invoice,
+      invoiceTotalCents: facts.invoiceTotalCents,
+      balanceCents: facts.balanceCents,
+      explicitFullPayment,
+      isTest: lead.is_test,
+      body: `${cents ? `$${(cents / 100).toLocaleString("en-US")}` : "Payment"} landed${invoice ? ` — INV #${invoice}` : ""}`,
+    })
+    if (payment.fullyPaid) {
       await sql`
         UPDATE commitments SET status = 'kept', status_changed_at = now(), status_source_event_id = ${eventId}::bigint
         WHERE lead_id = ${lead.id}::bigint AND status = 'open'
           AND (summary ILIKE '%pay%' OR summary ILIKE '%invoice%')`
-      const paidEventId = await recordEvent({ kind: "invoice.paid", actorType: "system", leadId: lead.id, personId: lead.person_id, externalId: `payment:${messageId}`, occurredAt, body: `${paidTotal ? `$${(paidTotal / 100).toLocaleString("en-US")}` : "Payment"} landed${invoice ? ` — INV #${invoice}` : ""}`, detail: { sourceEventId: eventId, amountCents: cents, paidTotalCents: paidTotal, invoiceNumber: invoice } })
-      if (!lead.is_test) await notifyAll({ priority: "digest", stock: "green", title: `${paidTotal ? `$${(paidTotal / 100).toLocaleString("en-US")}` : "Money"} landed`, body: invoice ? `Invoice #${invoice} paid.` : "QuickBooks marked a payment.", url: `/ops/leads/${lead.id}`, sourceEventId: paidEventId || eventId, ownerOnly: true })
+      if (!lead.is_test) await notifyAll({ priority: "digest", stock: "green", title: `${payment.paidTotalCents ? `$${(payment.paidTotalCents / 100).toLocaleString("en-US")}` : "Money"} landed`, body: invoice ? `Invoice #${invoice} paid.` : "QuickBooks marked a payment.", url: `/ops/leads/${lead.id}`, sourceEventId: payment.paidEventId || payment.receiptEventId, ownerOnly: true, dedupeKey: `quickbooks-paid:${eventId}` })
     } else {
-      const partialEventId = await recordEvent({ kind: "invoice.payment-received", actorType: "system", leadId: lead.id, personId: lead.person_id, externalId: `partial-payment:${messageId}`, occurredAt, body: `Payment received for invoice #${invoice}; balance not verified as paid`, detail: { sourceEventId: eventId, amountCents: cents, paidTotalCents: paidTotal, invoiceNumber: invoice } })
-      if (!lead.is_test) await notifyAll({ priority: "digest", stock: "manila", title: `Payment on #${invoice}`, body: "Recorded, but the invoice is not verified paid in full.", url: `/ops/leads/${lead.id}`, sourceEventId: partialEventId || eventId, ownerOnly: true, dedupeKey: `partial-payment:${messageId}` })
+      if (!lead.is_test) await notifyAll({ priority: "digest", stock: "manila", title: `Payment on #${invoice}`, body: "Recorded, but the invoice is not verified paid in full.", url: `/ops/leads/${lead.id}`, sourceEventId: payment.receiptEventId, ownerOnly: true, dedupeKey: `quickbooks-payment:${eventId}` })
     }
-    return { paid: fullyPaid, payment: true, duplicate: !inserted }
+    return { paid: payment.fullyPaid, payment: true, duplicate: !inserted || payment.duplicate }
   }
   if (!isTest) await notifyAll({ priority: "digest", stock: "green", title: invoice ? `Payment for #${invoice}` : "QuickBooks payment", body: "No matching work order. Attach it here.", url: "/ops", sourceEventId: eventId, ownerOnly: true, actionKind: "attach-payment", actionDetail: { paymentEventId: eventId, invoiceNumber: invoice ?? "", amountCents: cents } })
   return { unmatched: true, duplicate: !inserted }
@@ -88,7 +80,7 @@ async function ingestDeposit(messageId: string, occurredAt: string, subject: str
   const match = `${subject}\n${body}`.match(/\bAmount\s*\$\s*([\d,]+(?:\.\d{2})?)/i)
   const cents = match ? Math.round(Number(match[1].replace(/,/g, "")) * 100) : null
   const company = body.match(/\bCompany\s+([^\n]+?)(?:\s+Deposit ID\b|$)/i)?.[1]?.trim() ?? ""
-  const eventId = await recordEvent({ kind: "email.deposit", actorType: "system", externalId: messageId, occurredAt, body: `${cents ? `$${(cents / 100).toLocaleString("en-US")}` : "QuickBooks deposit"} is on the way`, detail: { amountCents: cents, company: company || null, isTest } })
+  const eventId = await recordEvent({ kind: "email.deposit", actorType: "system", externalId: messageId, occurredAt, body: `${isTest ? "[INTERNAL TEST] " : ""}${cents ? `$${(cents / 100).toLocaleString("en-US")}` : "QuickBooks deposit"} is on the way`, detail: { amountCents: cents, company: company || null, isTest } })
   if (eventId && !isTest) await notifyAll({ priority: "digest", stock: "green", title: `${cents ? `$${(cents / 100).toLocaleString("en-US")}` : "Money"} is on the way`, body: company || "QuickBooks deposit notice received.", url: "/board/updates#wire", sourceEventId: eventId, ownerOnly: true })
   return { deposit: true, duplicate: !eventId }
 }

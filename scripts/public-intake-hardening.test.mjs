@@ -74,6 +74,8 @@ test("detailed health is cron-authenticated and the monitor fails on Shop Brain 
   assert.ok(health.indexOf("if (!isAuthorizedCron(req))") < health.indexOf("await Promise.all"))
   assert.match(workflow, /Authorization: Bearer \$\{\{ secrets\.CRON_SECRET \}\}/)
   assert.match(workflow, /\.shopBrain\.ready == true/)
+  assert.match(workflow, /Health diagnostic: \$diagnostic/)
+  assert.match(workflow, /durableFailures: \.shopBrain\.durableFailures/)
 })
 
 test("quote photo storage is intent-first and leaves a resumable receipt", () => {

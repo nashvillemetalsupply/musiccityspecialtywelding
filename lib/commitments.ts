@@ -1,6 +1,8 @@
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { notify } from "@/lib/notify"
+import type { OperatorRole } from "@/lib/operators"
+import { projectCommitmentForRole } from "@/lib/visibility"
 
 export type CommitmentStatus = "open" | "kept" | "broken" | "canceled" | "superseded"
 
@@ -191,10 +193,12 @@ export type PromiseSummary = {
  *   correction mechanism, so counting it and its replacement double-counts one
  *   promise. Nothing on the pane claims the three sum to promises made.
  *
- * commitments carries no is_test of its own, so both possible owners are
- * checked: a test lead or a test person disqualifies the row.
+ * commitments carries no is_test of its own, so the commitment owners and its
+ * source event owners are checked. A source detail or text marker also
+ * disqualifies the row. The overdue callout is projected for the operator role
+ * before this function returns anything to the board.
  */
-export async function getPromiseSummary(): Promise<PromiseSummary> {
+export async function getPromiseSummary(role: OperatorRole): Promise<PromiseSummary> {
   const sql = getSql()
   const [counts, overdue] = await Promise.all([
     sql`
@@ -212,29 +216,58 @@ export async function getPromiseSummary(): Promise<PromiseSummary> {
         )::int AS open
       FROM commitments c
       LEFT JOIN leads l ON l.id = c.lead_id
-      LEFT JOIN people p ON p.id = c.person_id
+      LEFT JOIN people p ON p.id = COALESCE(c.person_id, l.person_id)
+      LEFT JOIN events source ON source.id = c.source_event_id
+      LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
+      LEFT JOIN people source_person ON source_person.id = COALESCE(source.person_id, source_lead.person_id)
       WHERE c.direction = 'we_promised'
-        AND (l.id IS NULL OR l.is_test = false)
-        AND (p.id IS NULL OR p.is_test = false)`,
+        AND COALESCE(l.is_test, false) = false
+        AND COALESCE(p.is_test, false) = false
+        AND COALESCE(source_lead.is_test, false) = false
+        AND COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ',
+          c.summary, c.crew_summary,
+          l.first_name, l.last_name, l.service, l.message, l.notes,
+          p.display_name, p.company,
+          source_lead.first_name, source_lead.last_name, source_lead.service,
+          source_lead.message, source_lead.notes,
+          source_person.display_name, source_person.company,
+          source.body, source.crew_body, source.detail::text
+        ) NOT ILIKE '%[INTERNAL TEST]%'`,
     sql`
-      SELECT c.id, c.lead_id, c.summary, c.due_at,
+      SELECT c.*,
         btrim(COALESCE(l.first_name, '') || ' ' || COALESCE(l.last_name, '')) AS customer_name,
         COALESCE(l.service, '') AS service
       FROM commitments c
       LEFT JOIN leads l ON l.id = c.lead_id
-      LEFT JOIN people p ON p.id = c.person_id
+      LEFT JOIN people p ON p.id = COALESCE(c.person_id, l.person_id)
+      LEFT JOIN events source ON source.id = c.source_event_id
+      LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
+      LEFT JOIN people source_person ON source_person.id = COALESCE(source.person_id, source_lead.person_id)
       WHERE c.direction = 'we_promised'
         AND c.status = 'open'
         AND c.due_at IS NOT NULL AND c.due_at < now()
-        AND (l.id IS NULL OR l.is_test = false)
-        AND (p.id IS NULL OR p.is_test = false)
+        AND COALESCE(l.is_test, false) = false
+        AND COALESCE(p.is_test, false) = false
+        AND COALESCE(source_lead.is_test, false) = false
+        AND COALESCE(source_person.is_test, false) = false
+        AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ',
+          c.summary, c.crew_summary,
+          l.first_name, l.last_name, l.service, l.message, l.notes,
+          p.display_name, p.company,
+          source_lead.first_name, source_lead.last_name, source_lead.service,
+          source_lead.message, source_lead.notes,
+          source_person.display_name, source_person.company,
+          source.body, source.crew_body, source.detail::text
+        ) NOT ILIKE '%[INTERNAL TEST]%'
       ORDER BY c.due_at ASC
       LIMIT 1`,
   ])
   const summary = (counts as Array<{ kept: number; open: number; broken: number }>)[0]
-  const late = (overdue as Array<{
-    id: number; lead_id: number | null; summary: string; due_at: string; customer_name: string; service: string
-  }>)[0]
+  const late = (overdue as Array<CommitmentRow & { customer_name: string; service: string }>)[0]
+  const projectedLate = late ? projectCommitmentForRole(late, role) : null
   return {
     kept: Number(summary?.kept ?? 0),
     open: Number(summary?.open ?? 0),
@@ -243,10 +276,10 @@ export async function getPromiseSummary(): Promise<PromiseSummary> {
       ? {
           id: Number(late.id),
           leadId: late.lead_id === null ? null : Number(late.lead_id),
-          summary: late.summary,
-          dueAt: late.due_at,
-          customerName: late.customer_name,
-          service: late.service,
+          summary: projectedLate?.summary ?? "Promise detail is unavailable.",
+          dueAt: late.due_at!,
+          customerName: role === "owner" ? late.customer_name : "",
+          service: role === "owner" ? late.service : "",
         }
       : null,
   }

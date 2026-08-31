@@ -18,6 +18,7 @@ import type { BoardPaneData } from "./board"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
 import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.mjs"
+import { canAccessInternalTests } from "@/lib/operators"
 import "./board.css"
 
 export const metadata: Metadata = {
@@ -35,6 +36,11 @@ const BOARD_DATE = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
 })
+
+function trailBody(body: string) {
+  const oneLine = body.replace(/\s+/g, " ").trim()
+  return oneLine.length <= 140 ? oneLine : `${oneLine.slice(0, 137).trimEnd()}...`
+}
 
 // This value must stay in the server module. Exporting it from the client
 // component turns it into a client reference instead of serializable data.
@@ -86,7 +92,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // request that hand-types ?tests=1 gets the ordinary board, because the URL
   // never gets a vote. It rides in chrome so the board's own links and its
   // search form can carry the mode forward without the client ever deciding it.
-  const includeTests = params.tests === "1" && operator?.role === "owner"
+  const includeTests = params.tests === "1" && Boolean(operator && canAccessInternalTests(operator.role))
   const chrome = {
     date: BOARD_DATE.format(new Date()),
     operatorInitial: (operator?.name || operator?.email || "").trim().charAt(0).toLocaleUpperCase("en-US"),
@@ -94,7 +100,8 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     query,
     includeTests,
   }
-  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} />
+  const nowMs = new Date().getTime()
+  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} nowMs={nowMs} />
 
   const gmailWakeOrigin = operator.role === "owner" ? requestOriginFromHeaders(await headers()) : ""
   if (operator.role === "owner") after(async () => {
@@ -115,7 +122,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.
     listBoardJobs({ stage, signal, order: "oldest", query, includeTests, page: requestedPage }, role),
-    getPromiseSummary(),
+    getPromiseSummary(role),
     getWeekAhead(role, includeTests),
     getOutTheDoorWeek(role),
     getOpsStats(role),
@@ -123,16 +130,16 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     getLatestBoardCallSketch(role),
     role === "owner" ? getOwnerVoiceSnapshot() : Promise.resolve(null),
   ])
-  const details = await getBoardJobDetails(page.items.map((item) => item.id), role)
+  const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
-  return <JobControl chrome={chrome} menu={menu} board={{
+  return <JobControl chrome={chrome} menu={menu} nowMs={nowMs} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,
     week,
     outTheDoor,
     medianFirstResponseMinutes: stats.medianFirstResponseMinutes,
-    todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body, customer }) => ({ id, occurredAt, kind, body, customer })),
+    todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body, customer }) => ({ id, occurredAt, kind, body: trailBody(body), customer })),
     callSketch,
     voice,
     items: page.items,

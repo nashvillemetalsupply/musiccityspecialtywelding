@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useEffect, useRef, useState } from "react"
 import { VoiceCaptureButton } from "../../voice-capture-button"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import { sendLeadReplyState, type ReplyActionState } from "./message-actions"
@@ -18,6 +18,7 @@ export function SpikeReply({
   targetHasPhone,
   targetHasEmail,
   voiceReady,
+  focusOnMount = false,
 }: {
   leadId: number
   hasEmail: boolean
@@ -28,6 +29,7 @@ export function SpikeReply({
   targetHasPhone?: boolean
   targetHasEmail?: boolean
   voiceReady: boolean
+  focusOnMount?: boolean
 }) {
   const [state, action, pending] = useActionState(sendLeadReplyState, initialState)
   const canText = targetPersonId ? Boolean(targetHasPhone) : hasPhone
@@ -36,6 +38,12 @@ export function SpikeReply({
   const [body, setBody] = useState("")
   const [voiceError, setVoiceError] = useState("")
   const [intentKey, setIntentKey] = useState(() => crypto.randomUUID())
+  const bodyRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!focusOnMount) return
+    bodyRef.current?.focus({ preventScroll: true })
+  }, [focusOnMount])
 
   useEffect(() => {
     if (state.status !== "sent") return
@@ -44,7 +52,7 @@ export function SpikeReply({
   }, [state.sentAt, state.status])
 
   return (
-    <form action={action} className="ops-spike-reply">
+    <form action={action} className="ops-spike-reply" id="job-reply">
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="channel" value={channel} />
       <input type="hidden" name="intentKey" value={intentKey} />
@@ -65,7 +73,7 @@ export function SpikeReply({
         onError={setVoiceError}
         onTranscript={(transcript) => setBody((current) => current.trim() ? `${current.trim()} ${transcript}` : transcript)}
       />
-      <input name="body" required value={body} onChange={(event) => setBody(event.target.value)} aria-label={channel === "email" ? "Email reply" : "Text reply"} placeholder={channel === "email" ? "Short shop email…" : "Short shop reply…"} />
+      <input ref={bodyRef} name="body" required value={body} onChange={(event) => setBody(event.target.value)} aria-label={channel === "email" ? "Email reply" : "Text reply"} placeholder={channel === "email" ? "Short shop email…" : "Short shop reply…"} />
       <SafeSubmitButton disabled={pending || !body.trim()} pendingLabel="Sending…">Send {channel}</SafeSubmitButton>
       <div className="ops-reply-chips" aria-label="Quick replies">
         {QUICK_COPIES.map((copy) => <button type="button" key={copy} onClick={() => setBody(copy)}>{copy}</button>)}

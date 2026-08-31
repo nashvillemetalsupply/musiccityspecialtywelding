@@ -29,7 +29,7 @@ test("QA step 1: the pane renders an honest linked week card", () => {
   // human-only because this node suite has no authenticated browser session.
   const week = BOARD_SOURCE.slice(
     BOARD_SOURCE.indexOf('<section className="card week">'),
-    BOARD_SOURCE.indexOf("<h4>Out the door</h4>"),
+    BOARD_SOURCE.indexOf("<h4>Closed this week</h4>"),
   )
   assert.ok(week.length > 0, "the week card renders in the board pane")
   assert.match(week, /<h4>The week<\/h4>/)
@@ -45,8 +45,9 @@ test("QA step 2: a partial payment records first and renders the remaining balan
     { paidTotalCents: 50000, fullyPaid: false },
   )
   const action = exportedFunction(ACTIONS_SOURCE, "recordPayment")
-  assert.ok(action.indexOf("recordEvent({") < action.indexOf("UPDATE leads"), "the event lands before the rollup")
-  assert.match(action, /kind: fullyPaid \? "invoice\.paid" : "invoice\.payment-received"/)
+  assert.equal((action.match(/await sql`/g) ?? []).length, 1, "receipt and rollup share one statement")
+  assert.ok(action.indexOf("INSERT INTO events") < action.indexOf("UPDATE leads"), "the receipt feeds the rollup")
+  assert.match(action, /SELECT 'invoice\.payment-received'::text,/)
   assert.match(JOB_PAGE_SOURCE, /Paid \{money\(lead\.paid_amount_cents\)\}/)
   assert.match(JOB_PAGE_SOURCE, /` of \$\{money\(lead\.invoice_total_cents\)\}`/)
   assert.match(JOB_PAGE_SOURCE, /still out`/)
@@ -60,8 +61,8 @@ test("QA step 3: the remaining payment settles and exposes paid truth", () => {
     { paidTotalCents: 186000, fullyPaid: true },
   )
   const action = exportedFunction(ACTIONS_SOURCE, "recordPayment")
-  assert.match(action, /paid_at = CASE WHEN \$\{fullyPaid\}::boolean THEN COALESCE\(paid_at, now\(\)\)/)
-  assert.match(JOB_PAGE_SOURCE, /\? " [^\"]*squared up"/)
+  assert.match(action, /paid_at = CASE WHEN r\.fully_paid THEN COALESCE\(l\.paid_at, now\(\)\)/)
+  assert.match(action, /CASE WHEN c\.fully_paid THEN ', squared up'::text ELSE ''::text END/)
   assert.match(BOARD_SOURCE, /if \(lead\.paid_at\)/)
   assert.match(BOARD_SOURCE, /note: "paid"/)
 })

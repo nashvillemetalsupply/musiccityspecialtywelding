@@ -75,7 +75,7 @@ export function InlineJobIntake({
     }))
     else setWalkInFields(next)
   }
-  const canSave = Boolean(fields.name.trim() && fields.need.trim())
+  const canSave = Boolean(fields.name.trim() && (inbound || fields.need.trim()))
 
   function switchSource(next: IntakeSource) {
     setSource(next)
@@ -153,8 +153,6 @@ export function InlineJobIntake({
     : null
 
   if (savedJob) {
-    const firstName = savedJob.name.trim().split(/\s+/)[0] || "customer"
-    const callHref = `tel:${savedJob.phone.replace(/[^\d+]/g, "")}`
     return <section className="card intake intake-result" aria-live="polite">
       <div>
         <p className="t-caption intake-kicker">Job saved</p>
@@ -162,9 +160,10 @@ export function InlineJobIntake({
         <p>{savedJob.need}</p>
       </div>
       {actionError && <p className="intake-alert" role="alert">{actionError}</p>}
-      <div className={`intake-actions${savedJob.phone ? "" : " is-single"}`}>
-        {savedJob.phone && <a className="btn btn--sm btn--go" href={callHref} aria-label={`Call ${firstName}`}>Call customer</a>}
-        <Link className="btn btn--sm btn--edge" href={`/ops/leads/${savedJob.leadId}`}>Open Job</Link>
+      <div className="intake-actions is-single">
+        <Link className="btn btn--sm btn--go" href={`/ops/leads/${savedJob.leadId}`}>
+          {savedJob.phone ? "Open job to call or text" : "Open job"}
+        </Link>
         <SafeActionButton className="btn btn--sm btn--edge" busyLabel="Undoing..." onAction={undoSavedJob}>Undo</SafeActionButton>
         <button type="button" className="btn btn--sm btn--edge" onClick={continueAfterSaved}>{savedJob.source === "call" && draft?.publicId && draft.publicId !== savedJob.intakeRef ? "Next call" : "Done"}</button>
       </div>
@@ -236,15 +235,15 @@ export function InlineJobIntake({
       </div>
 
       <label className="intake-need">
-        <span>Needs</span>
+        <span>{inbound ? "Needs (optional)" : "Needs"}</span>
         <textarea
           name="message"
           value={fields.need}
           onChange={(event) => setFields((current) => ({ ...current, need: event.target.value }))}
           placeholder={source === "walk-in" ? "What did they bring in?" : "Gate, trailer, repair, fabrication…"}
           rows={2}
-          required
-          aria-required="true"
+          required={!inbound}
+          aria-required={!inbound}
         />
       </label>
 
@@ -267,7 +266,7 @@ export function InlineJobIntake({
 
       <div className="intake-actions">
         {source === "walk-in" ? <button type="button" className="btn btn--sm btn--edge" onClick={() => switchSource("phone-in")}>Cancel</button> : owner || !activeDraft ? <SafeActionButton className="btn btn--sm btn--edge" busyLabel="Clearing…" onAction={() => changeDisposition("dismiss")}>Not a job</SafeActionButton> : <span />}
-        <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving job…" disabled={!canSave}>Save Job</SafeSubmitButton>
+        <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel={inbound ? "Saving call as job…" : "Saving job…"} disabled={!canSave}>{inbound ? "Save call as job" : "Save job"}</SafeSubmitButton>
       </div>
     </form>
   </section>

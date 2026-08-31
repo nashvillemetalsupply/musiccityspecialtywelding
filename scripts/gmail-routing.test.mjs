@@ -28,6 +28,7 @@ test("provider subdomains, bulk mail, and cold finance pitches never become jobs
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "rep@xwf.google.com" }), true)
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "intuit@eq.intuit.com" }), true)
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "donotreply@twilio.com" }), true)
+  assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "paul@supabase.com", subject: "Welcome to Supabase" }), true)
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "news@vendor.example", headers: { "List-Unsubscribe": "<https://vendor.example/unsubscribe>" } }), true)
   assert.equal(shouldSkipGmailMessage({ sent: false, categorizedNoise: false, from: "jake@lender.example", subject: "Funding partnership?" }), true)
 })

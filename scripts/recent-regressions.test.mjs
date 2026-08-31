@@ -71,9 +71,23 @@ test("health distinguishes exhausted call transcriptions from retryable backlog"
   assert.match(health, /callTranscriptExhausted: database\.callTranscriptExhausted/)
 })
 
+test("health fails readiness and reports the exact unresolved durable delivery states", () => {
+  const health = source("app/api/health/route.ts")
+  for (const state of ["notificationDeliveryDead", "notificationDeliveryUnknown", "messageDeliveryUnknown", "callDeliveryUnknown"]) {
+    assert.match(health, new RegExp(state))
+  }
+  assert.match(health, /const durableFailuresHealthy =/)
+  assert.match(health, /durableFailures: \{[\s\S]*healthy: durableFailuresHealthy,[\s\S]*degraded: !durableFailuresHealthy/)
+  assert.match(health.slice(health.indexOf("const shopBrainReady"), health.indexOf("const shopBrainGateSatisfied")), /&&\s*durableFailuresHealthy/)
+  assert.match(health, /COALESCE\(l\.is_test, false\) = false/)
+  assert.match(health, /e\.detail->>'isTest'/)
+})
+
 test("public analytics excludes every private and internal review surface", () => {
   const analytics = source("components/public-analytics.tsx")
   const deferredTag = source("components/deferred-google-tag.tsx")
+  const attribution = source("lib/attribution.ts")
+  const intake = source("app/api/quote/route.ts")
 
   for (const prefix of ["/ops", "/board", "/j", "/design-preview"]) {
     assert.match(analytics, new RegExp(`"${prefix.replace("/", "\\/")}"`))
@@ -81,7 +95,13 @@ test("public analytics excludes every private and internal review surface", () =
   for (const marker of ["internal-verify", "e2e"]) {
     assert.match(analytics, new RegExp(marker))
     assert.match(deferredTag, new RegExp(marker))
+    assert.match(attribution, new RegExp(marker))
+    assert.match(intake, new RegExp(marker))
   }
+  assert.match(attribution, /window\.sessionStorage\.removeItem\(STORAGE_KEY\)/)
+  assert.match(attribution, /if \(currentIsVerification\) return emptyAttribution\(\)/)
+  assert.match(intake, /const internalVerificationAttribution =/)
+  assert.equal((intake.match(/internalVerificationAttribution \? "" :/g) ?? []).length, 8)
 })
 
 test("Active Jobs clamps stale pages and renders the captured customer need", () => {
@@ -114,7 +134,7 @@ test("lead snapshot stays truthful and contact actions stay consent-gated", () =
   assert.match(data, /btrim\(gclid\) <> ''/)
   assert.match(job, /getMessagingConsentState\(lead\.phone\)/)
   assert.match(job, /hasCustomerPhone && <TrackedCallButton/)
-  assert.match(job, /customerTextReady && <Link[^>]*href="#spike">Text<\/Link>/)
+  assert.match(job, /customerTextReady && <Link[^>]*href="\?replyChannel=text#job-reply">Text<\/Link>/)
 })
 
 test("shared pagination normalizes hostile inputs and makes empty data page one", async () => {
@@ -394,8 +414,9 @@ test("internal test call receipts and Ask Jobs stay in the test partition", () =
   assert.doesNotMatch(commitmentTool, /includeTests:\s*true/)
 
   const workOrder = source("app/ops/leads/[id]/page.tsx")
-  assert.match(workOrder, /getLead\(leadId, operator\.role, \{ includeTests: true \}\)/)
-  assert.match(workOrder, /listCommitments\(\{ leadId, status: "open", includeTests: true \}\)/)
+  assert.match(workOrder, /const includeTests = canAccessInternalTests\(operator\.role\)/)
+  assert.match(workOrder, /getLead\(leadId, operator\.role, \{ includeTests \}\)/)
+  assert.match(workOrder, /listCommitments\(\{ leadId, status: "open", includeTests \}\)/)
   assert.match(source("app/ops/leads/[id]/promise-actions.ts"), /if \(lead\?\.is_test\) throw new Error\("Internal test jobs never send customer promise updates\."\)/)
 })
 

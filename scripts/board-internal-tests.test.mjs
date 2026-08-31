@@ -9,21 +9,21 @@ const PAGE = source("app/board/page.tsx")
 const BOARD = source("app/board/board.tsx")
 const SHOP = source("app/ops/shop/page.tsx")
 const DATA = source("lib/ops-data.ts")
+const WORK_ORDER = source("app/ops/leads/[id]/page.tsx")
+const OPERATORS = source("lib/operators.ts")
 
 test("/board accepts tests as a search param", () => {
   assert.match(PAGE, /type SearchParams = Promise<\{[^}]*tests\?: string[^}]*\}>/)
-  assert.match(PAGE, /const includeTests = params\.tests === "1" && operator\?\.role === "owner"/)
+  assert.match(PAGE, /const includeTests = params\.tests === "1" && Boolean\(operator && canAccessInternalTests\(operator\.role\)\)/)
 })
 
 test("only a signed-in owner can turn internal tests on", () => {
   // the URL never gets a vote: the flag is an AND of the typed param and the
   // role the server resolved, so ?tests=1 from crew is the ordinary board
-  const gate = PAGE.indexOf('const includeTests = params.tests === "1" && operator?.role === "owner"')
+  const gate = PAGE.indexOf('const includeTests = params.tests === "1" && Boolean(operator && canAccessInternalTests(operator.role))')
   const session = PAGE.indexOf("const operator = dbConfigured() ? await getAuthenticatedOperator() : null")
   assert.ok(session > -1 && gate > session, "includeTests must be derived after the session resolves")
-  // optional chaining is what makes the signed-out case false rather than a
-  // throw: operator is null there and null?.role is never "owner"
-  assert.doesNotMatch(PAGE, /includeTests = params\.tests === "1" && operator\.role/)
+  assert.match(OPERATORS, /export function canAccessInternalTests\(role: OperatorRole\) \{\s*return role === "owner"/)
   assert.doesNotMatch(PAGE, /includeTests: true/)
   assert.doesNotMatch(PAGE, /includeTests: params\.tests|includeTests: Boolean\(params\.tests\)/)
   // the flag is never recomputed further down, where role is already narrowed
@@ -75,16 +75,26 @@ test("the search form re-submits the mode instead of dropping it", () => {
   assert.doesNotMatch(form, /name="tests" value="1" \/>(?!\})/)
 })
 
-test("the flag is spent on the existing listBoardJobs query and nothing else", () => {
-  assert.match(PAGE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests \}, role\)/)
+test("the owner-only flag reaches rows and their batched details", () => {
+  assert.match(PAGE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests, page: requestedPage \}, role\)/)
   // stage, signal and query behaviour is untouched by the flag
   assert.match(PAGE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)
   assert.match(PAGE, /BOARD_SIGNAL_KINDS\.includes\(requestedSignal as BoardSignalKind\)/)
   assert.match(PAGE, /const query = params\.q\?\.trim\(\)\.slice\(0, 80\) \?\? ""/)
-  // every other projection still carries the server-resolved role
-  for (const call of [/getOutTheDoorWeek\(role\)/, /getOpsStats\(role\)/, /listTodayEvents\(role\)/, /getBoardJobDetails\(page\.items\.map\(\(item\) => item\.id\), role\)/]) {
+  // every other projection still carries the server-resolved role; only the
+  // selected row details opt into test facts.
+  for (const call of [/getOutTheDoorWeek\(role\)/, /getOpsStats\(role\)/, /listTodayEvents\(role\)/, /getBoardJobDetails\(page\.items\.map\(\(item\) => item\.id\), role, includeTests\)/]) {
     assert.match(PAGE, call)
   }
+})
+
+test("direct work-order URLs resolve the test partition from the role", () => {
+  assert.match(WORK_ORDER, /const includeTests = canAccessInternalTests\(operator\.role\)/)
+  assert.match(WORK_ORDER, /const lead = await getLead\(leadId, operator\.role, \{ includeTests \}\)/)
+  assert.ok(WORK_ORDER.indexOf("const lead = await getLead") < WORK_ORDER.indexOf("Promise.all(["), "authorize the lead before loading related facts")
+  assert.match(WORK_ORDER, /listCommitments\(\{ leadId, status: "open", includeTests \}\)/)
+  assert.match(WORK_ORDER, /listJobLineItems\(leadId, operator\.role, includeTests\)/)
+  assert.doesNotMatch(WORK_ORDER, /includeTests: true/)
 })
 
 test("business metrics never take the test flag", () => {

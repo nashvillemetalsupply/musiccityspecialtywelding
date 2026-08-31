@@ -12,39 +12,54 @@ export async function listLeadCalls(leadId: number): Promise<CallRow[]> {
 export async function reconcileStaleOutboundCalls(limit = 20) {
   const sql = getSql()
   const rows = (await sql`
-    UPDATE calls SET status = 'unknown',
-      detail = COALESCE(detail, '{}'::jsonb) || '{"ambiguous":true,"reconciled":"stale-starting"}'::jsonb
-    WHERE id IN (
-      SELECT id FROM calls
-      WHERE direction = 'out' AND status = 'starting'
-        AND starting_started_at < now() - interval '10 minutes'
-      ORDER BY starting_started_at ASC
+    WITH stale AS MATERIALIZED (
+      SELECT id, status
+      FROM calls
+      WHERE direction = 'out' AND (
+        (status = 'persisted' AND started_at < now() - interval '10 minutes')
+        OR (status = 'starting' AND starting_started_at < now() - interval '10 minutes')
+      )
+      ORDER BY COALESCE(starting_started_at, started_at) ASC
       LIMIT ${Math.min(Math.max(limit, 1), 50)}::bigint
+      FOR UPDATE SKIP LOCKED
     )
-    RETURNING id, twilio_sid, lead_id, person_id, operator_id`) as Array<{
-      id: number; twilio_sid: string; lead_id: number | null; person_id: number | null; operator_id: number | null
+    UPDATE calls c SET
+      status = CASE WHEN stale.status = 'persisted' THEN 'failed' ELSE 'unknown' END,
+      detail = COALESCE(c.detail, '{}'::jsonb) || CASE WHEN stale.status = 'persisted'
+        THEN '{"ambiguous":false,"reconciled":"stale-persisted"}'::jsonb
+        ELSE '{"ambiguous":true,"reconciled":"stale-starting"}'::jsonb END
+    FROM stale
+    WHERE c.id = stale.id
+    RETURNING c.id, c.twilio_sid, c.lead_id, c.person_id, c.operator_id,
+      stale.status AS prior_status`) as Array<{
+      id: number; twilio_sid: string; lead_id: number | null; person_id: number | null; operator_id: number | null; prior_status: string
     }>
   for (const row of rows) {
+    const providerHandoffStarted = row.prior_status === "starting"
     const eventId = await recordEvent({
-      kind: "call.out.unknown",
+      kind: providerHandoffStarted ? "call.out.unknown" : "call.out.failed",
       actorType: "system",
       leadId: row.lead_id,
       personId: row.person_id,
-      externalId: `call-out-unknown:${row.id}`,
-      body: "Tracked call handoff needs verification before another call is placed.",
-      crewBody: "Tracked call may have started. Verify before ringing again.",
-      detail: { callId: row.id, sid: row.twilio_sid, ambiguous: true },
+      externalId: `call-out-${providerHandoffStarted ? "unknown" : "failed"}:${row.id}`,
+      body: providerHandoffStarted
+        ? "Tracked call handoff needs verification before another call is placed."
+        : "Tracked call intent expired before the provider handoff began.",
+      crewBody: providerHandoffStarted
+        ? "Tracked call may have started. Verify before ringing again."
+        : "Tracked call never started. It is safe to try again.",
+      detail: { callId: row.id, sid: row.twilio_sid, ambiguous: providerHandoffStarted },
     })
     if (row.operator_id) await notify({
       operatorId: row.operator_id,
       priority: "digest",
       stock: "red",
-      title: "Check this call before ringing again",
-      body: "Twilio may have started it. Verify the call receipt first.",
-      crewBody: "The call may have started. Verify before trying again.",
+      title: providerHandoffStarted ? "Check this call before ringing again" : "Tracked call did not start",
+      body: providerHandoffStarted ? "Twilio may have started it. Verify the call receipt first." : "No provider handoff began. Open the work order and try again.",
+      crewBody: providerHandoffStarted ? "The call may have started. Verify before trying again." : "The call never started. Open the work order and try again.",
       url: row.lead_id ? `/ops/leads/${row.lead_id}#spike` : "/board/updates#wire",
       sourceEventId: eventId,
-      dedupeKey: `call-out-unknown:${row.id}`,
+      dedupeKey: `call-out-${providerHandoffStarted ? "unknown" : "failed"}:${row.id}`,
     })
   }
   return { reconciled: rows.length }

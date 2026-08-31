@@ -93,7 +93,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   }
 
   return <section className={`ops-done-bench${completed ? " is-done" : ""}`} aria-labelledby="finish-job-title">
-    <div><strong id="finish-job-title">{completed ? "Job Finished" : "Finish Job"}</strong></div>
+    <div><strong id="finish-job-title">{completed ? "Work finished" : "Finish work"}</strong></div>
 
     {!completed && <form ref={finishRef} action={markLeadComplete} className={reviewedCloseout ? "ops-closeout-form" : undefined}>
       <input type="hidden" name="leadId" value={leadId} />
@@ -160,7 +160,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           aria-disabled={submitting}
           aria-pressed={keyboardArmed}
           aria-describedby="swipe-finish-help"
-          aria-label={keyboardArmed ? "Press again to finish job" : "Swipe to Finish. Activate twice without swiping."}
+          aria-label={keyboardArmed ? "Press again to finish work" : "Swipe to finish work. Activate twice without swiping."}
           style={{ "--swipe-progress": progress } as React.CSSProperties}
           onClick={(event) => {
             if (event.detail === 0) armOrFinish()
@@ -191,11 +191,11 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
             armOrFinish()
           }}
       >
-          <span className="ops-swipe-track">{submitting ? "Finishing…" : keyboardArmed ? "Press again to finish" : "Swipe to Finish"}</span>
+          <span className="ops-swipe-track">{submitting ? "Finishing work…" : keyboardArmed ? "Press again to finish work" : "Swipe to finish work"}</span>
           <span className="ops-swipe-thumb" aria-hidden="true">→</span>
         </button>
         <small id="swipe-finish-help">
-          {reviewedCloseout ? "Swipe right after reviewing the outcome. Vertical scrolling stays safe." : "Swipe right to finish. Vertical scrolling stays safe."}
+          {reviewedCloseout ? "Swipe right after reviewing the outcome. Vertical scrolling stays safe." : "Swipe right to finish work. Vertical scrolling stays safe."}
           <span className="ops-sr-only"> Keyboard users press Enter twice.</span>
         </small>
       </div>}

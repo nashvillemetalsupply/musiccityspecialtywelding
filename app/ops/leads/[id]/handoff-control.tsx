@@ -60,32 +60,32 @@ export function HandoffControl({
       : ""
   const error = undoState.status === "error" ? undoState.message : handoffState.status === "error" ? handoffState.message : ""
 
-  return <section className={`ops-handoff-control${isHandedOff ? " is-handed-off" : ""}`} aria-labelledby="job-handoff-title">
+  return <section className={`ops-handoff-control${isHandedOff ? " is-handed-off" : ""}`} id="job-close" aria-labelledby="job-handoff-title">
     <div className="ops-handoff-copy">
       <span>Pickup or delivery</span>
-      <h2 id="job-handoff-title">{isHandedOff ? "Customer handoff complete" : "Has the customer received it?"}</h2>
+      <h2 id="job-handoff-title">{isHandedOff ? "Job closed" : "Close job"}</h2>
       <p>{isHandedOff
-        ? "This finished job is out of Active Jobs. Its work order and customer history stay available."
-        : "Record pickup or completed delivery to remove this Ready job from Active Jobs. Nothing is deleted."}</p>
+        ? "This job is out of Active Jobs. Its work order and customer history stay available."
+        : "Use after pickup or delivery. Closing removes this Ready job from Active Jobs; its work order and customer history stay."}</p>
     </div>
 
     {!isHandedOff && <form action={handoffAction}>
       <input type="hidden" name="leadId" value={leadId} />
-      <SafeSubmitButton disabled={handoffPending} pendingLabel="Recording handoff...">
-        Customer received it
+      <SafeSubmitButton disabled={handoffPending} pendingLabel="Closing job…">
+        Close job
       </SafeSubmitButton>
     </form>}
 
     {isHandedOff && <div className="ops-handoff-receipt" aria-live="polite">
-      <strong>Removed from Active Jobs</strong>
-      <span>Work order and customer history kept.</span>
+      <strong>Job closed</strong>
+      <span>Removed from Active Jobs. Work order and customer history kept.</span>
     </div>}
 
     {canUndo && <form action={undoAction}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="handoffEventId" value={handoffEventId ?? ""} />
-      <SafeSubmitButton className="ops-handoff-undo" disabled={undoPending} pendingLabel="Undoing handoff...">
-        Undo handoff (10 sec)
+      <SafeSubmitButton className="ops-handoff-undo" disabled={undoPending} pendingLabel="Reopening job…">
+        Reopen job (10 sec)
       </SafeSubmitButton>
     </form>}
 

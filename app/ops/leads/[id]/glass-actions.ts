@@ -5,6 +5,7 @@ import { createOrReuseQuoteGlassLink, hashGlassToken, revokeGlassLinks, rotateGl
 import { recordEvent } from "@/lib/events"
 import { deliverGlassClipboard, glassUrl } from "@/lib/glass-delivery"
 import { twilioSmsConfigured } from "@/lib/twilio"
+import { requireLeadMutationAccess } from "@/lib/operators"
 
 export type GlassActionState = { url: string; error: string; message: string; smsReady: boolean; needsReplacement: boolean }
 export type GlassSendState = { message: string; error: string }
@@ -18,13 +19,14 @@ export async function hangGlassClipboard(state: GlassActionState, formData: Form
   const intent = String(formData.get("intent") ?? "hang")
   const smsReady = twilioSmsConfigured()
   try {
+    const access = await requireLeadMutationAccess(operator, leadId)
     if (intent === "revoke") {
       const revoked = await revokeGlassLinks(leadId, operator.id)
       return { url: "", error: "", message: revoked ? "Customer Page closed. The old link no longer works." : "No active Customer Page was found.", smsReady, needsReplacement: false }
     }
     const token = intent === "rotate" ? await rotateGlassLink(leadId, operator.id) : await createOrReuseQuoteGlassLink(leadId, operator.id)
     const url = glassUrl(token)
-    if (intent !== "rotate") await recordEvent({ kind: "glass.created", actorType: "operator", actorId: operator.id, leadId, externalId: `glass-created:${hashGlassToken(token)}`, body: "Customer Page created" })
+    if (intent !== "rotate") await recordEvent({ kind: "glass.created", actorType: "operator", actorId: operator.id, leadId, externalId: `glass-created:${hashGlassToken(token)}`, body: `${access.isTest ? "[INTERNAL TEST] " : ""}Customer Page created`, detail: { isTest: access.isTest } })
     return { url, error: "", message: intent === "rotate" ? "New link created. The old link no longer works." : "", smsReady, needsReplacement: false }
   } catch (error) {
     return {
@@ -46,6 +48,7 @@ export async function sendGlassClipboard(_state: GlassSendState, formData: FormD
   const token = url.match(/\/j\/([a-f0-9]{64})/i)?.[1] ?? ""
   if (!Number.isInteger(leadId) || leadId <= 0 || !token) return { message: "", error: "Customer Page link is invalid." }
   try {
+    await requireLeadMutationAccess(operator, leadId)
     const result = await deliverGlassClipboard({ token, leadId, operatorId: operator.id })
     return { message: result.alreadySent ? "Already sent from the shop number." : "Sent from the shop number.", error: "" }
   } catch (error) {

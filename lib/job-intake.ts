@@ -620,7 +620,7 @@ export async function reconcileStaleCallIntakes(limit = 20) {
     } else {
       await sql`
         UPDATE call_intake_drafts SET status = 'pending', save_started_at = NULL,
-          last_error = 'The previous save did not finish. Nothing was duplicated; tap Save Job again.', updated_at = now()
+          last_error = 'The previous save did not finish. Nothing was duplicated; tap Save call as job again.', updated_at = now()
         WHERE id = ${row.id}::bigint`
       reopened += 1
     }

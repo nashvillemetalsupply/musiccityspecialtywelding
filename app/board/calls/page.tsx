@@ -9,7 +9,7 @@ import { ThemeBoot } from "../theme-boot"
 import "./calls.css"
 
 export const metadata: Metadata = {
-  title: "Calls to Save",
+  title: "Calls to Review",
   robots: { index: false, follow: false },
 }
 
@@ -69,7 +69,7 @@ function CallDraftRow({ draft, now }: { draft: CallIntakeDraft; now: Date }) {
       <p className="t-caption">{formatPhone(draft.phone)}</p>
       {need && <p className="calls-need t-caption">{need}</p>}
     </div>
-    <Link className="btn btn--go" href={`/ops/intake/${draft.public_id}`}>Finish</Link>
+    <Link className="btn btn--go" href={`/ops/intake/${draft.public_id}`}>Review</Link>
   </article>
 }
 
@@ -78,7 +78,7 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
   // A pending call carries a real caller's name and number, so it is gated the
   // way the rest of /ops is: signed out there is nothing to show and nowhere to
   // sign in but the door itself.
-  if (!dbConfigured()) return <main><h1>Calls to save</h1><p>The operations database is not configured.</p></main>
+  if (!dbConfigured()) return <main><h1>Calls to review</h1><p>The operations database is not configured.</p></main>
   const operator = await getAuthenticatedOperator()
   if (!operator) redirect("/ops")
 
@@ -95,12 +95,12 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
       <main className="calls">
       <header className="calls-top">
         <Link className="btn btn--edge" href="/board">Board</Link>
-        <h1 className="t-title">Calls to save</h1>
+        <h1 className="t-title">Calls to review</h1>
         <span className="calls-count t-label">{calls.total} total</span>
       </header>
 
       {calls.items.length === 0 ? (
-        <p className="calls-empty t-data">No calls are waiting to be saved.</p>
+        <p className="calls-empty t-data">No calls are waiting for review.</p>
       ) : (
         <div className="calls-list">
           {calls.items.map((draft) => <CallDraftRow draft={draft} now={now} key={draft.id} />)}
@@ -108,7 +108,7 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
       )}
 
       {calls.total > calls.pageSize && (
-        <nav className="calls-pages" aria-label="Calls to save pages">
+        <nav className="calls-pages" aria-label="Calls to review pages">
           {page > 1 ? <Link className="btn btn--edge" href={`/board/calls?callsPage=${page - 1}`}>Newer</Link> : <span />}
           <span className="t-label">Page {page} of {Math.ceil(calls.total / calls.pageSize)}</span>
           {page * calls.pageSize < calls.total ? <Link className="btn btn--edge" href={`/board/calls?callsPage=${page + 1}`}>Older</Link> : <span />}

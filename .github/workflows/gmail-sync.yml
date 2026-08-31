@@ -49,3 +49,32 @@ jobs:
             echo "::error::Gmail sync returned ok=false"
             exit 1
           fi
+
+      - name: Verify Shop Brain after ingest
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --fail-with-body --max-time 30 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://musiccityspecialtywelding.com/api/health")
+          diagnostic=$(printf '%s' "$body" | jq -c '{
+            ok,
+            leadsAccepted,
+            delivery,
+            automation: {
+              lastGmailOk: .automation.lastGmailOk,
+              gmailStale: .automation.gmailStale
+            },
+            shopBrain: {
+              ready: .shopBrain.ready,
+              durableFailures: .shopBrain.durableFailures,
+              callTranscriptBacklog: .shopBrain.callTranscriptBacklog,
+              voiceTranscriptBacklog: .shopBrain.voiceTranscriptBacklog,
+              uploadRecoveryBacklog: .shopBrain.uploadRecoveryBacklog,
+              quotePhotoBacklog: .shopBrain.quotePhotoBacklog
+            }
+          }')
+          echo "Health diagnostic: $diagnostic"
+          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true and .shopBrain.durableFailures.healthy == true' >/dev/null; then
+            echo "::error::Post-ingest Shop Brain health is degraded"
+            exit 1
+          fi

@@ -10,6 +10,8 @@ import { dismissInboundCallDraft, restoreInboundCallDraft, saveInboundCallAsJob,
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { createManualLeadRecord } from "../actions"
 
+const CALL_NEED_FALLBACK = "Phone call saved. Details are in Calls & Messages."
+
 function readPublicId(value: FormDataEntryValue | null) {
   const publicId = String(value ?? "").trim().slice(0, 80)
   if (!/^[a-zA-Z0-9-]{12,80}$/.test(publicId)) throw new Error("That call link is invalid.")
@@ -27,7 +29,6 @@ export async function saveCallDraftRecord(
   const phone = String(formData.get("phone") ?? "").trim().slice(0, 40)
   const need = String(formData.get("message") ?? "").trim().slice(0, 2000)
   if (!name) throw new Error("Add the caller or company name.")
-  if (!need) throw new Error("Add what the customer needs before saving the job.")
   const result = await saveInboundCallAsJob({
     publicId,
     operatorId: operator.id,
@@ -53,7 +54,7 @@ export async function saveCallDraftRecord(
   revalidatePath("/ops")
   // Keep the inline receipt and its Undo control mounted. This route is
   // force-dynamic, so an explicit reload/navigation still reads fresh truth.
-  return { leadId: result.leadId, name, phone, need, draftId: publicId }
+  return { leadId: result.leadId, name, phone, need: need || CALL_NEED_FALLBACK, draftId: publicId }
 }
 
 export async function saveCallDraftAction(formData: FormData) {

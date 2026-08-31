@@ -1,9 +1,25 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import ts from "typescript"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 const visibleJsxText = (value) => [...value.matchAll(/>([^<{]+)</g)].map((match) => match[1]).join(" ")
+
+async function loadPureTypescriptModule(path) {
+  const result = ts.transpileModule(source(path), {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: path,
+    reportDiagnostics: true,
+  })
+  const errors = (result.diagnostics ?? []).filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)
+  assert.deepEqual(errors, [], `${path} must transpile before its pure helpers are exercised`)
+  const encoded = Buffer.from(result.outputText).toString("base64")
+  return import(`data:text/javascript;base64,${encoded}`)
+}
 
 test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools under Menu", () => {
   // C7 flipped the shell to the board language: the /ops home is a redirect to
@@ -37,10 +53,10 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(intake, /source === "phone-in" \? "Phone call" : "Walk-in"/)
   assert.match(intake, /switchSource\(source === "phone-in" \? "walk-in" : "phone-in"\)/)
   assert.match(intake, /Name or company/)
-  assert.match(intake, /<span>Needs<\/span>/)
+  assert.match(intake, /<span>\{inbound \? "Needs \(optional\)" : "Needs"\}<\/span>/)
   assert.match(intake, /moreOpen \? "Close details" : "More details"/)
   assert.match(intake, /Job saved/)
-  assert.match(intake, /Open Job/)
+  assert.match(intake, /Open job to call or text/)
   assert.match(intake, /undoInlineJobAction/)
   assert.match(css, /\.ops-frame\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
   assert.match(css, /min-height:\s*44px/)
@@ -53,6 +69,7 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
 test("mobile side effects use centered scroll-safe controls with busy-state protection", () => {
   const safe = source("app/ops/safe-action-controls.tsx")
   const intake = source("app/ops/intake/inline-job-intake.tsx")
+  const intakeActions = source("app/ops/intake/actions.ts")
   const updates = source("app/ops/wire-strip.tsx")
   const css = source("app/globals.css")
   assert.match(safe, /safeActionMovement/)
@@ -62,7 +79,10 @@ test("mobile side effects use centered scroll-safe controls with busy-state prot
   assert.match(safe, /disabled=\{pending \|\| props\.disabled\}/)
   assert.match(safe, /if \(busy \|\| disabled\) return/)
   assert.match(intake, /import \{ SafeActionButton, SafeSubmitButton \}/)
-  assert.match(intake, /<SafeSubmitButton[^>]*>Save Job<\/SafeSubmitButton>/)
+  assert.match(intake, /inbound \? "Save call as job" : "Save job"/)
+  assert.match(intake, /required=\{!inbound\}/)
+  assert.doesNotMatch(intakeActions, /if \(!need\) throw new Error/)
+  assert.match(intakeActions, /need: need \|\| CALL_NEED_FALLBACK/)
   assert.match(
     intake,
     /changeDisposition\("dismiss"\)[\s\S]{0,120}>Not a job<\/SafeActionButton>/,
@@ -93,7 +113,7 @@ test("mobile quick replies leave a separate usable free-form composer", () => {
   )
 })
 
-test("Swipe to Finish is deliberate, scroll-canceling, single-submit, accessible, and undoable", () => {
+test("Swipe to finish work is deliberate, scroll-canceling, single-submit, accessible, and undoable", () => {
   const done = source("app/ops/leads/[id]/done-stamp.tsx")
   const actions = source("app/ops/actions.ts")
   assert.match(done, /swipeFinishDecision/)
@@ -102,6 +122,7 @@ test("Swipe to Finish is deliberate, scroll-canceling, single-submit, accessible
   assert.match(done, /submittedRef\.current = true/)
   assert.match(done, /if \(completed \|\| submitting \|\| submittedRef\.current\) return/)
   assert.match(done, /Press again to finish/)
+  assert.match(done, /Swipe to finish work/)
   assert.match(done, /Keyboard users press Enter twice/)
   assert.match(done, /const remaining = undoUntil \? new Date\(undoUntil\)\.getTime\(\) - Date\.now\(\) : 0/)
   assert.match(done, /setTimeout\(\(\) => setUndoExpired\(remaining <= 0\), 0\)/)
@@ -300,7 +321,7 @@ test("Twilio webhooks survive an outbound pause and reconcile provider-first cal
   assert.match(messages, /!receipt\.twilio_sid\.startsWith\("pending:"\)/)
   assert.match(outboundStatus, /twilio_sid = CASE WHEN twilio_sid LIKE 'pending:%'/)
   assert.match(outboundStatus, /kind = 'call\.out\.unknown'/)
-  assert.match(call, /twilio_sid = \$\{pendingSid\}::text AND status = 'starting'/)
+  assert.match(call, /twilio_sid = \$\{intentSid\}::text AND status = 'starting'/)
   assert.match(call, /!receipt\.twilio_sid\.startsWith\("pending:"\)/)
   for (const callbackBuilder of [messages, call, voice, outboundConnect, callTranscription]) {
     assert.match(callbackBuilder, /twilioCallbackUrl/)
@@ -325,6 +346,55 @@ test("Twilio webhooks survive an outbound pause and reconcile provider-first cal
   assert.match(health, /gateSatisfied: shopBrainGateSatisfied/)
 })
 
+test("inbound call whisper is optional, provider-hosted, and fail-safe", async () => {
+  const twilio = await loadPureTypescriptModule("lib/twilio.ts")
+  const voice = source("app/api/twilio/voice/route.ts")
+  const previous = process.env.TWILIO_INBOUND_WHISPER_URL
+  const bin = "https://handler.twilio.com/twiml/EH0123456789abcdef0123456789abcdef"
+  const fn = "https://mcsw-call-whisper-1234.twil.io/inbound"
+
+  try {
+    delete process.env.TWILIO_INBOUND_WHISPER_URL
+    assert.equal(twilio.twilioInboundWhisperUrl(), "")
+    assert.equal(twilio.twilioInboundDialTarget("+16155550123"), "+16155550123")
+
+    for (const url of [bin, fn]) {
+      process.env.TWILIO_INBOUND_WHISPER_URL = url
+      assert.equal(twilio.twilioInboundWhisperUrl(), url)
+      assert.equal(
+        twilio.twilioInboundDialTarget("+16155550123"),
+        `<Number method="GET" url="${url}">+16155550123</Number>`,
+      )
+    }
+
+    for (const url of [
+      "http://handler.twilio.com/twiml/EH0123456789abcdef0123456789abcdef",
+      "https://user:password@handler.twilio.com/twiml/EH0123456789abcdef0123456789abcdef",
+      "https://handler.twilio.com/twiml/EH0123456789abcdef0123456789abcdef?token=secret",
+      "https://handler.twilio.com/not-a-bin",
+      "https://twil.io/inbound",
+      "https://mcsw-call-whisper.twil.io.example.com/inbound",
+      "https://mcsw-call-whisper.twil.io:8443/inbound",
+    ]) {
+      process.env.TWILIO_INBOUND_WHISPER_URL = url
+      assert.equal(twilio.twilioInboundWhisperUrl(), "")
+      assert.equal(twilio.twilioInboundDialTarget("+16155550123"), "+16155550123")
+    }
+  } finally {
+    if (previous === undefined) delete process.env.TWILIO_INBOUND_WHISPER_URL
+    else process.env.TWILIO_INBOUND_WHISPER_URL = previous
+  }
+
+  const signatureGate = voice.indexOf("if (!valid) return twiml(\"\", 403)")
+  const publicLineGate = voice.indexOf("if (!isConfiguredTwilioNumber(to)) return twiml(\"\", 403)")
+  const dialTarget = voice.indexOf("twilioInboundDialTarget(ownerCell)")
+  assert.ok(signatureGate >= 0 && signatureGate < dialTarget)
+  assert.ok(publicLineGate >= 0 && publicLineGate < dialTarget)
+  assert.match(voice, /<Dial answerOnBridge="true"/)
+  assert.match(voice, /return twiml\("", 503\)/)
+  assert.doesNotMatch(voice, /TWILIO_INBOUND_WHISPER_URL/)
+})
+
 test("provider readiness validates the Messaging Service outbound status callback", () => {
   const twilio = source("lib/twilio.ts")
   const health = source("app/api/health/route.ts")
@@ -333,6 +403,7 @@ test("provider readiness validates the Messaging Service outbound status callbac
   assert.match(twilio, /messagingStatusCallbackMatches/)
   assert.match(health, /twilioProvider\.messagingStatusCallbackMatches/)
   assert.match(health, /messagingStatusCallbackMatches: twilioProvider\.messagingStatusCallbackMatches/)
+  assert.match(health, /twilioInboundWhisperConfigured: inboundWhisperConfigured/)
 })
 
 test("voice cutover and customer texting are independent launch gates", () => {
@@ -352,7 +423,7 @@ test("voice cutover and customer texting are independent launch gates", () => {
   assert.match(phone, /voiceReady: publicNumberEnabled/)
   assert.match(phone, /textReady: publicNumberEnabled && twilioSmsConfigured\(\)/)
   assert.match(workOrder, /hasCustomerPhone && <TrackedCallButton/)
-  assert.match(workOrder, /customerTextReady && <Link[^>]*href="#spike">Text<\/Link>/)
+  assert.match(workOrder, /customerTextReady && <Link[^>]*href="\?replyChannel=text#job-reply">Text<\/Link>/)
   assert.match(customerPage, /shopPhone\.textReady \? "Call or text us" : "Call the shop"/)
   assert.match(health, /publicNumberEnabled/)
   assert.match(health, /messagingServiceConfigured/)
@@ -460,4 +531,36 @@ test("owner analytics guards financial queries and reports business totals witho
   assert.doesNotMatch(analytics, /assigned_operator|operator_id|JOIN operators/i)
   assert.match(page, /Business totals without crew rankings/)
   for (const range of [30, 90, 365]) assert.match(analytics, new RegExp(`\\b${range}\\b`))
+})
+
+test("the work order has one captured action spine and a visible owner payment section", () => {
+  const workOrder = source("app/ops/leads/[id]/page.tsx")
+  const reply = source("app/ops/leads/[id]/spike-reply.tsx")
+  const trackedCall = source("app/ops/tracked-call-button.tsx")
+  const wire = source("app/ops/wire-strip.tsx")
+  const language = source("lib/shop-language.ts")
+  const css = source("app/ops/leads/[id]/job.css")
+
+  assert.match(workOrder, /className="job-action-spine"/)
+  assert.match(workOrder, /label="Call"/)
+  assert.match(workOrder, /href="\?replyChannel=text#job-reply">Text/)
+  assert.match(workOrder, /href="#onsite-payment">Take payment/)
+  assert.match(workOrder, /lead\.handed_off_at \? "Job closed" : lead\.completed_at \? "Close job" : "Finish work"/)
+
+  const detailsStart = workOrder.indexOf('<details className="card job-details">')
+  const paymentStart = workOrder.indexOf('<section className="card job-payment"')
+  assert.ok(detailsStart >= 0 && paymentStart > detailsStart)
+  assert.doesNotMatch(workOrder.slice(detailsStart, paymentStart), /action=\{recordPayment\}/)
+  assert.match(workOrder.slice(paymentStart), /<label htmlFor="payment-amount">Amount received<\/label>/)
+  assert.match(workOrder.slice(paymentStart), /<label htmlFor="payment-method">Payment method<\/label>/)
+  assert.match(workOrder.slice(paymentStart), /Mark remaining balance paid in full/)
+  assert.match(workOrder.slice(paymentStart), /Payment does not finish or close the job/)
+
+  assert.match(reply, /id="job-reply"/)
+  assert.match(reply, /bodyRef\.current\?\.focus\(\{ preventScroll: true \}\)/)
+  assert.match(trackedCall, /Your phone rings first\. Answer it, then we connect the customer/)
+  assert.match(trackedCall, /Call directly — not saved/)
+  assert.match(wire, /Attach QuickBooks receipt/)
+  assert.match(language, /lost: "Did not book"/)
+  assert.match(css, /white-space: nowrap; overflow-wrap: normal/)
 })

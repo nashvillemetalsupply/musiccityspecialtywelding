@@ -26,6 +26,7 @@ test("crew lead and account tools share one fail-closed money projection", () =>
   assert.match(accounts, /projectLeadForRole\(lead, role\)/)
   assert.match(ask, /getLead\(id, operator\.role\)/)
   assert.match(ask, /getAccount\(person_id, operator\.role/)
+  assert.match(opsData, /role === "owner" \? projected : \{ \.\.\.projected, board_score: 0, board_hot: false \}/)
 })
 
 test("crew claim values recursively redact money even under safe predicates", () => {
@@ -99,6 +100,7 @@ test("work orders render old and new email bodies as readable text", () => {
 
 test("tracked calling rejects the shop number and test work", () => {
   const call = source("app/api/ops/call/route.ts")
+  const recovery = source("lib/calls.ts")
   const button = source("app/ops/tracked-call-button.tsx")
   assert.match(call, /isReservedShopPhone\(targetPhone\)/)
   assert.match(call, /lead\.is_test/)
@@ -106,6 +108,43 @@ test("tracked calling rejects the shop number and test work", () => {
   assert.match(call, /That phone is not attached to this customer account/)
   assert.match(call, /INSERT INTO calls/)
   assert.ok(call.indexOf("INSERT INTO calls") < call.indexOf("await startVoiceCall"), "call intent must persist before provider delivery")
+  assert.match(call, /SELECT id, status, twilio_sid FROM calls/)
+  const persistedResume = call.indexOf('if (prior[0].status !== "persisted")')
+  const claim = call.indexOf("const claimed =")
+  assert.ok(persistedResume >= 0 && persistedResume < claim, "a persisted retry reaches the provider claim")
+  assert.match(call, /const intentSid = rows\[0\] \? pendingSid : prior\[0\]\?\.twilio_sid/)
+  assert.match(recovery, /status = 'persisted' AND started_at < now\(\) - interval '10 minutes'/)
+  assert.match(recovery, /status = CASE WHEN stale\.status = 'persisted' THEN 'failed' ELSE 'unknown' END/)
+  assert.doesNotMatch(recovery, /startVoiceCall|sendVoice|createCall/, "recovery must never auto-redial")
+})
+
+test("crew cannot mutate any internal-test work order by guessing an id", () => {
+  const actions = source("app/ops/actions.ts")
+  const handoff = source("app/ops/leads/[id]/handoff-actions.ts")
+  const claims = source("app/ops/leads/[id]/claim-actions.ts")
+  const glass = source("app/ops/leads/[id]/glass-actions.ts")
+  const promises = source("app/ops/leads/[id]/promise-actions.ts")
+  const leads = source("lib/leads.ts")
+  const operators = source("lib/operators.ts")
+  assert.match(operators, /export async function requireLeadMutationAccess/)
+  assert.match(operators, /rows\[0\]\.is_test && !canAccessInternalTests\(operator\.role\)/)
+  assert.ok((actions.match(/await requireMutableLeadId\(operator, formData\.get\("leadId"\)\)/g) ?? []).length >= 20)
+  assert.doesNotMatch(actions.replace(/const leadId = parseLeadId\(value\)/, ""), /const leadId = parseLeadId\(formData\.get\("leadId"\)\)/)
+  assert.match(claims, /await requireLeadMutationAccess\(operator, leadId\)/)
+  assert.ok((claims.match(/\[INTERNAL TEST\]/g) ?? []).length >= 3)
+  assert.ok((claims.match(/isTest/g) ?? []).length >= 6)
+  assert.match(glass, /const access = await requireLeadMutationAccess\(operator, leadId\)/)
+  assert.match(glass, /\[INTERNAL TEST\][\s\S]*isTest: access\.isTest/)
+  assert.match(promises.slice(promises.indexOf("async function context"), promises.indexOf("export async function confirmPromise")), /await requireLeadMutationAccess\(operator, leadId\)/)
+  assert.match(leads, /SELECT person_id, is_test FROM leads/)
+  assert.match(leads, /`\[INTERNAL TEST\] \$\{rawBody\}`/)
+  assert.match(leads, /isTest: true/)
+  const completion = actions.slice(actions.indexOf("export async function markLeadComplete"), actions.indexOf("export async function addLeadCompletionNote"))
+  assert.match(completion, /before\[0\]\.is_test && !canAccessInternalTests\(operator\.role\)/)
+  assert.match(completion, /\$\{canAccessInternalTests\(operator\.role\)\}::boolean OR is_test = false/)
+  assert.match(completion, /CASE WHEN t\.is_test THEN '\[INTERNAL TEST\] '/)
+  assert.match(completion, /isTest: before\[0\]\.is_test/)
+  assert.ok((handoff.match(/\$\{includeTests\}::boolean OR (?:l\.)?is_test = false/g) ?? []).length >= 4)
 })
 
 test("tracked return calls clear waiting work and exempt alerts do not spend the budget", () => {
@@ -256,6 +295,9 @@ test("Gmail tombstones advance the checkpoint without retries or false-green sch
   assert.match(workflow, /jq -e '\.ok == true'/)
   assert.match(workflow, /Gmail sync returned ok=false/)
   assert.match(workflow, /\[ "\$status" != "200" \] && \[ "\$status" != "202" \]/)
+  assert.match(workflow, /Verify Shop Brain after ingest/)
+  assert.match(workflow, /\.shopBrain\.ready == true/)
+  assert.match(workflow, /Health diagnostic: \$diagnostic/)
 })
 
 test("every real inbound SMS persists an owner-cell copy without test or routing loops", () => {
@@ -380,11 +422,14 @@ test("sent Gmail promises preserve the numeric operator byline", () => {
 test("payment never masquerades as job completion", () => {
   const gmail = source("app/api/ingest/gmail/route.ts")
   const wire = source("app/api/ops/wire/action/route.ts")
+  const ledger = source("lib/payment-ledger.ts")
   const needs = source("lib/ops-data.ts")
   const people = source("lib/people.ts")
-  assert.match(gmail, /status = CASE WHEN \$\{fullyPaid\}::boolean THEN 'won' ELSE status END/)
-  assert.match(wire, /status = CASE WHEN \$\{fullyPaid\}::boolean THEN 'won' ELSE status END/)
+  assert.match(gmail, /await applyQuickBooksPayment\(\{/)
+  assert.match(wire, /await applyQuickBooksPayment\(\{/)
+  assert.match(ledger, /status = CASE WHEN r\.fully_paid THEN 'won' ELSE l\.status END/)
   assert.doesNotMatch(gmail.slice(gmail.indexOf("async function ingestPayment"), gmail.indexOf("async function ingestDeposit")), /completed_at\s*=/)
+  assert.doesNotMatch(ledger, /completed_at\s*=/)
   assert.match(needs, /l\.completed_at IS NULL AND l\.status NOT IN \('lost','spam'\)/)
   assert.match(people, /status = 'won' AND completed_at IS NULL/)
 })
@@ -402,9 +447,16 @@ test("PAID receipts come only from verified payment ingestion", () => {
   // C7 retired the /ops home's PaidMoment strip; the ingestion-side receipt
   // wiring is the surviving guarantee.
   const gmail = source("app/api/ingest/gmail/route.ts")
-  assert.match(gmail, /sourceEventId: paidEventId \|\| eventId/)
-  assert.match(gmail, /sourceEventId: partialEventId \|\| eventId/)
-  assert.match(gmail, /kind: "invoice\.payment-received"/)
+  const ledger = source("lib/payment-ledger.ts")
+  assert.match(gmail, /sourceEventId: payment\.paidEventId \|\| payment\.receiptEventId/)
+  assert.match(gmail, /sourceEventId: payment\.receiptEventId/)
+  assert.match(ledger, /'invoice\.payment-received'::text/)
+  assert.match(ledger, /'invoice\.paid'::text/)
+  const paymentIngest = gmail.slice(gmail.indexOf("async function ingestPayment"), gmail.indexOf("async function ingestDeposit"))
+  assert.match(paymentIngest, /const testPrefix = isTest \? "\[INTERNAL TEST\] " : ""/)
+  assert.match(paymentIngest, /isTest: lead\.is_test/)
+  assert.match(ledger, /const body = `\$\{input\.isTest \? "\[INTERNAL TEST\] " : ""\}/)
+  assert.equal((ledger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
 })
 
 test("DONE and peel-back atomically preserve their Wire receipts", () => {
@@ -431,7 +483,8 @@ test("unmatched QuickBooks receipts bind invoice identity and trusted totals", (
   assert.match(wireAction, /events\[0\]\.detail\.invoiceTotalCents/)
   assert.match(wireAction, /INSERT INTO invoice_identities/)
   assert.match(wireAction, /invoice_number = CASE WHEN invoice_number = ''/)
-  assert.match(wireAction, /events\[0\]\.detail\.balanceCents === 0/)
+  assert.match(wireAction, /balanceCents: Number\.isFinite\(Number\(events\[0\]\.detail\.balanceCents\)\)/)
+  assert.match(wireAction, /invoiceTotalCents: trustedTotal/)
 })
 
 test("full-trust GLASS is owner-only in UI and server actions", () => {
@@ -737,7 +790,7 @@ test("stale provider claims become visible unknown receipts without automatic re
   const recovery = source("lib/recovery-sweep.ts")
   const migration = source("scripts/migrate.mjs")
   assert.match(calls, /status = 'starting'[\s\S]{0,160}interval '10 minutes'/)
-  assert.match(calls, /kind: "call\.out\.unknown"/)
+  assert.match(calls, /kind: providerHandoffStarted \? "call\.out\.unknown" : "call\.out\.failed"/)
   assert.match(commitments, /status = 'sending'[\s\S]{0,160}interval '10 minutes'/)
   assert.match(commitments, /kind: "commitment\.reschedule-unknown"/)
   assert.match(glass, /send_status IN \('pending','failed','sending'\)/)

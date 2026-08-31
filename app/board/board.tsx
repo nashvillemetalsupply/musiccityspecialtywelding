@@ -1,11 +1,8 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
-import { markJobHandedOff } from "@/app/ops/leads/[id]/handoff-actions"
-import type { HandoffActionState } from "@/app/ops/leads/[id]/handoff-actions"
 import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
@@ -15,6 +12,7 @@ import {
 import type { BoardCallSketch } from "@/lib/call-sketch-store"
 import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
 import { VoicePreview } from "./voice-preview"
+import { TrackedCallButton } from "@/app/ops/tracked-call-button"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
@@ -100,8 +98,8 @@ function money(cents: number | null) {
   return `$${Math.round(cents / 100).toLocaleString("en-US")}`
 }
 
-function sinceInWords(iso: string) {
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000))
+function sinceInWords(iso: string, nowMs: number) {
+  const minutes = Math.max(0, Math.floor((nowMs - new Date(iso).getTime()) / 60_000))
   if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`
@@ -112,39 +110,11 @@ function sinceInWords(iso: string) {
 // What the panel says about the call itself. A call still on the line has no
 // end time to report, and a call with no duration on its receipt yet gets its
 // start rather than an invented finish.
-function callLine(sketch: BoardCallSketch) {
+function callLine(sketch: BoardCallSketch, nowMs: number) {
   const name = sketch.callerName || "Unknown caller"
   if (sketch.status === "listening") return `${name} · phone call, on the line now`
   if (!sketch.endedAt) return `${name} · phone call, started ${TRAIL_TIME.format(new Date(sketch.startedAt))}`
-  return `${name} · phone call, ended ${TRAIL_TIME.format(new Date(sketch.endedAt))} · ${sinceInWords(sketch.endedAt)}`
-}
-
-// A finished job only leaves the board when someone records the pickup or
-// delivery. That button lived only on the job's own page, so Ready filled with
-// work the shop already considered done and "Open jobs" counted all of it. Same
-// server action, moved to the row it belongs to.
-const HANDOFF_IDLE: HandoffActionState = {
-  status: "idle", message: "", handoffEventId: null, undoUntil: null,
-}
-
-function HandoffButton({ leadId, customer }: { leadId: number; customer: string }) {
-  const router = useRouter()
-  const [state, action] = useActionState(markJobHandedOff, HANDOFF_IDLE)
-  useEffect(() => {
-    // The row leaves the board on success, so the list has to refetch. Undo
-    // still lives on the job page, which is where the receipt is shown.
-    if (state.status === "handed-off") router.refresh()
-  }, [state.status, router])
-  return <>
-    <form action={action}>
-      <input type="hidden" name="leadId" value={leadId} />
-      <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording…"
-        aria-label={`Record that ${customer} received their job`}>
-        Customer received it
-      </SafeSubmitButton>
-    </form>
-    {state.status === "error" && <span className="t-caption" role="alert">{state.message}</span>}
-  </>
+  return `${name} · phone call, ended ${TRAIL_TIME.format(new Date(sketch.endedAt))} · ${sinceInWords(sketch.endedAt, nowMs)}`
 }
 
 // The tracker's stage tabs are JOB_BOARD_STAGES in their canonical order.
@@ -222,8 +192,8 @@ function customerName(lead: BoardJobRow) {
 
 // The Waiting cell: how long this job has been sitting, and the date it
 // started sitting. Both come from board_since, never from a fixture.
-function waitingAge(iso: string) {
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000))
+function waitingAge(iso: string, nowMs: number) {
+  const minutes = Math.max(0, Math.floor((nowMs - new Date(iso).getTime()) / 60_000))
   if (!Number.isFinite(minutes)) return "—"
   if (minutes < 60) return `${minutes}m`
   const hours = Math.floor(minutes / 60)
@@ -235,7 +205,11 @@ function waitingAge(iso: string) {
 function waitingDate(iso: string) {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ""
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return date.toLocaleDateString("en-US", {
+    timeZone: "America/Chicago",
+    month: "short",
+    day: "numeric",
+  })
 }
 
 // The money cell names the field it is showing, in the shop's own words:
@@ -270,7 +244,7 @@ const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good",
 // live call only ever carries three, so it never folds at all.
 const PANEL_OPEN_LINES = 4
 
-export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode }) {
+export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode; nowMs: number }) {
   const [openJobId, setOpenJobId] = useState<number | null>(null)
   const router = useRouter()
   const { details: jobDetails } = board
@@ -473,11 +447,11 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
           {promises.overdue && (promises.overdue.leadId
             ? <Link className="due" href={`/ops/leads/${promises.overdue.leadId}#promise-${promises.overdue.id}`}>
                 <p>{promises.overdue.summary}</p>
-                <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
+                <span>Due {sinceInWords(promises.overdue.dueAt, nowMs)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
               </Link>
             : <div className="due">
                 <p>{promises.overdue.summary}</p>
-                <span>Due {sinceInWords(promises.overdue.dueAt)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
+                <span>Due {sinceInWords(promises.overdue.dueAt, nowMs)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
               </div>)}
 
           <section className="card week">
@@ -544,7 +518,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
             </div>
           </div>
           <div className="figure">
-            <h4>Out the door</h4>
+            <h4>Closed this week</h4>
             <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
             <div className="under">
               {outTheDoor.jobs > 0 && <span className="bar" role="img"
@@ -563,7 +537,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
         <section className="card">
           <div className="call-top">
             <h2 className="t-title">Live call sketch</h2>
-            <span className="sub">{sketch ? callLine(sketch) : "No call sketched yet"}</span>
+            <span className="sub">{sketch ? callLine(sketch, nowMs) : "No call sketched yet"}</span>
             <span className="end">
               {sketch && sketch.unsketchedCalls > 0 &&
                 <span className="t-label">{sketch.unsketchedCalls} more call{sketch.unsketchedCalls === 1 ? "" : "s"} not sketched</span>}
@@ -730,7 +704,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                   commitment.direction === "we_promised"
                   && commitment.status === "open"
                   && commitment.due_at !== null
-                  && new Date(commitment.due_at).getTime() < Date.now())
+                  && new Date(commitment.due_at).getTime() < nowMs)
                 const datedCommitment = commitments.find((commitment) => commitment.due_at)
                 const bookedDate = datedCommitment?.due_at ?? lead.scheduled_at
                 const lineItemTotal = lineItems.reduce((total, item) => total + item.amountCents, 0)
@@ -769,7 +743,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                   if (!lead.quoted_at) return "Not quoted"
                   const quotedAt = new Date(lead.quoted_at).getTime()
                   if (!Number.isFinite(quotedAt)) return "Date not recorded"
-                  const days = Math.max(0, Math.floor((Date.now() - quotedAt) / 86_400_000))
+                  const days = Math.max(0, Math.floor((nowMs - quotedAt) / 86_400_000))
                   return `${days} ${days === 1 ? "day" : "days"}`
                 })()
                 const stageMilestones = [
@@ -866,7 +840,7 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                       <b>{customerName(lead)}</b>
                       <span>{lead.message.trim() || lead.service}</span>
                     </span>
-                    <span className="val right c-wait">{waitingAge(lead.board_since)} <em>{waitingDate(lead.board_since)}</em></span>
+                    <span className="val right c-wait">{waitingAge(lead.board_since, nowMs)} <em>{waitingDate(lead.board_since)}</em></span>
                     <span className="val right c-money">{moneyCell.value} <em>{moneyCell.note}</em></span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
@@ -962,11 +936,11 @@ export function JobControl({ board, chrome, menu }: { board: BoardPaneData; chro
                                   cell is a fixed track shared with the reason chip, and a
                                   third control there overran it. Opening the job is the
                                   look before the click anyway. */}
-                              {lead.board_stage === "ready" &&
-                                <HandoffButton leadId={lead.id} customer={customerName(lead)} />}
+                              {lead.board_stage === "ready" && <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}#finish-close`}>Close job</Link>}
                               <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}`}>Open job</Link>
-                              {phone && <a className="btn btn--sm btn--edge" href={`tel:${phone}`}>Call</a>}
-                              {phone && <a className="btn btn--sm btn--edge" href={`sms:${phone}`}>Text</a>}
+                              {phone && <TrackedCallButton leadId={lead.id} phone={phone} label="Call" compact />}
+                              {phone && lead.text_ready && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}?replyChannel=text#job-reply`}>Text</Link>}
+                              {phone && !lead.text_ready && chrome.owner && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}#text-permission`}>Enable texting</Link>}
                             </span>
                           </div>
                         </div>
