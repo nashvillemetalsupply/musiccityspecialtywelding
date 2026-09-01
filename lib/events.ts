@@ -100,8 +100,11 @@ export async function listLeadEvents(leadId: number, limit = 300): Promise<Event
   const sql = getSql()
   return (await sql`
     SELECT * FROM (
-      SELECT * FROM events WHERE lead_id = ${leadId}::bigint
-      ORDER BY occurred_at DESC, id DESC
+      SELECT e.* FROM events e
+      LEFT JOIN leads routed_source ON routed_source.id = e.lead_id
+      WHERE e.lead_id = ${leadId}::bigint
+        OR routed_source.routed_to_lead_id = ${leadId}::bigint
+      ORDER BY e.occurred_at DESC, e.id DESC
       LIMIT ${Math.min(Math.max(limit, 1), 500)}::bigint
     ) recent ORDER BY occurred_at ASC, id ASC`) as EventRow[]
 }
@@ -124,19 +127,25 @@ export async function listBoardEventTrails(
   const rows = (await sql`
     WITH ranked AS (
       SELECT e.*,
+        COALESCE(l.routed_to_lead_id, e.lead_id) AS projected_lead_id,
         row_number() OVER (
-          PARTITION BY e.lead_id
+          PARTITION BY COALESCE(l.routed_to_lead_id, e.lead_id)
           ORDER BY e.occurred_at DESC, e.id DESC
         ) AS trail_rank
       FROM events e
       JOIN leads l ON l.id = e.lead_id
       LEFT JOIN people p ON p.id = e.person_id
-      WHERE e.lead_id = ANY(${ids}::bigint[])
+      LEFT JOIN people lead_person ON lead_person.id = l.person_id
+      WHERE COALESCE(l.routed_to_lead_id, e.lead_id) = ANY(${ids}::bigint[])
         AND (${includeTests}::boolean OR (
           l.is_test = false
           AND COALESCE(p.is_test, false) = false
+          AND COALESCE(lead_person.is_test, false) = false
           AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
           AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+            p.display_name, p.company, p.phones::text, p.emails::text,
+            lead_person.display_name, lead_person.company,
+            lead_person.phones::text, lead_person.emails::text,
             e.body, e.crew_body, e.detail::text) NOT ILIKE '%[INTERNAL TEST]%'
         ))
         AND (${role}::text = 'owner' OR (
@@ -147,11 +156,11 @@ export async function listBoardEventTrails(
     )
     SELECT * FROM ranked
     WHERE trail_rank <= ${bounded}::bigint
-    ORDER BY lead_id ASC, occurred_at ASC, id ASC`) as Array<EventRow & { trail_rank: number }>
+    ORDER BY projected_lead_id ASC, occurred_at ASC, id ASC`) as Array<EventRow & { projected_lead_id: number; trail_rank: number }>
 
-  for (const { trail_rank, ...event } of rows) {
+  for (const { trail_rank, projected_lead_id, ...event } of rows) {
     void trail_rank
-    const projected = projectEventForRole(event, role)
+    const projected = projectEventForRole({ ...event, lead_id: Number(projected_lead_id) }, role)
     if (!projected || projected.lead_id === null) continue
     const leadId = Number(projected.lead_id)
     const trail = byLead.get(leadId) ?? []
@@ -163,6 +172,71 @@ export async function listBoardEventTrails(
 
 export type TodayEventRow = EventRow & { customer: string | null }
 
+const TODAY_CALL_KINDS = new Set([
+  "call.in",
+  "call.answered",
+  "call.missed",
+  "call.out",
+  "call.recording",
+  "call.transcript",
+])
+
+function todayCallKey(event: TodayEventRow) {
+  if (!TODAY_CALL_KINDS.has(event.kind)) return ""
+  const detailSid = typeof event.detail?.callSid === "string" ? event.detail.callSid.trim() : ""
+  if (detailSid) return detailSid
+  const externalId = event.external_id.trim()
+  if (["call.answered", "call.missed", "call.out"].includes(event.kind)) {
+    return externalId.replace(/:(?:answered|missed|completed)$/i, "")
+  }
+  return event.kind === "call.in" ? externalId : ""
+}
+
+// A call produces several immutable receipts: ring, answer, recording and
+// notes. Those receipts remain separate in the full record, but printing each
+// as a separate Today item makes one real-world interaction look like four
+// jobs. Collapse only the short board projection, keyed by the provider call
+// id, and keep the newest receipt as the list position.
+function collapseTodayCalls(events: TodayEventRow[]): TodayEventRow[] {
+  const grouped = new Map<string, TodayEventRow[]>()
+  for (const event of events) {
+    const callKey = todayCallKey(event)
+    const key = callKey ? `call:${callKey}` : `event:${event.id}`
+    const group = grouped.get(key) ?? []
+    group.push(event)
+    grouped.set(key, group)
+  }
+
+  return [...grouped.values()].map((group) => {
+    if (group.length === 1 || !todayCallKey(group[0])) return group[0]
+    const kinds = new Set(group.map((event) => event.kind))
+    const representative = group.find((event) => event.kind === "call.missed")
+      ?? group.find((event) => event.kind === "call.answered")
+      ?? group.find((event) => event.kind === "call.out")
+      ?? group.find((event) => event.kind === "call.in")
+      ?? group[0]
+    const durationSec = group
+      .map((event) => Number(event.detail?.durationSec))
+      .find((value) => Number.isFinite(value) && value > 0)
+    const summary = [
+      kinds.has("call.missed") ? "Missed" : kinds.has("call.answered") ? "Answered" : kinds.has("call.out") ? "Completed" : "Call filed",
+      durationSec ? `${Math.max(1, Math.round(durationSec / 60))} min` : "",
+      kinds.has("call.transcript") ? "notes saved" : "",
+      kinds.has("call.recording") ? "recording saved" : "",
+    ].filter(Boolean).join(" · ")
+    const newest = group[0]
+    return {
+      ...representative,
+      id: newest.id,
+      occurred_at: newest.occurred_at,
+      recorded_at: newest.recorded_at,
+      body: summary,
+      crew_body: summary,
+      customer: group.find((event) => event.customer)?.customer ?? null,
+    }
+  })
+}
+
 // The trail prints one line per event, and several kinds carry a fixed body —
 // a handoff always reads "Pickup or delivery handoff recorded." So four jobs
 // handed off in a minute rendered as the same sentence four times, which reads
@@ -171,6 +245,9 @@ export type TodayEventRow = EventRow & { customer: string | null }
 export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): Promise<TodayEventRow[]> {
   const sql = getSql()
   const bounded = Math.min(Math.max(Math.floor(limit), 1), 12)
+  // Pull enough receipts to return `bounded` real-world interactions even
+  // when the newest call generated four or five rows of immutable evidence.
+  const fetchLimit = Math.min(bounded * 12, 144)
   const rows = (await sql`
     SELECT e.*, NULLIF(btrim(COALESCE(
       NULLIF(btrim(COALESCE(l.first_name, '') || ' ' || COALESCE(l.last_name, '')), ''),
@@ -197,14 +274,15 @@ export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): P
         AND NOT (lower(COALESCE(e.detail->>'sensitivity', '')) = ANY(${[...OWNER_ONLY_EVENT_SENSITIVITIES]}::text[]))
       ))
     ORDER BY e.occurred_at DESC, e.id DESC
-    LIMIT ${bounded}::bigint`) as TodayEventRow[]
+    LIMIT ${fetchLimit}::bigint`) as TodayEventRow[]
 
-  return rows
+  const projected = rows
     .map((event) => {
       const projected = projectEventForRole(event, role)
       return projected ? { ...projected, customer: event.customer } : null
     })
     .filter((event): event is TodayEventRow => Boolean(event))
+  return collapseTodayCalls(projected).slice(0, bounded)
 }
 
 export async function listLeadEventPage(leadId: number, page = 1, limit = 25, role: OperatorRole = "owner"): Promise<{ items: EventRow[]; total: number; page: number; pageSize: number }> {
@@ -215,7 +293,8 @@ export async function listLeadEventPage(leadId: number, page = 1, limit = 25, ro
   const rows = (await sql`
     SELECT e.*, count(*) OVER()::int AS full_count
     FROM events e
-    WHERE e.lead_id = ${leadId}::bigint
+    LEFT JOIN leads routed_source ON routed_source.id = e.lead_id
+    WHERE (e.lead_id = ${leadId}::bigint OR routed_source.routed_to_lead_id = ${leadId}::bigint)
       AND (${role}::text = 'owner' OR (
         NOT (lower(e.kind) = ANY(${[...OWNER_ONLY_EVENT_KINDS]}::text[]))
         AND lower(e.kind) !~ ${OWNER_ONLY_EVENT_NAMESPACE_PATTERN}::text
@@ -226,12 +305,13 @@ export async function listLeadEventPage(leadId: number, page = 1, limit = 25, ro
   const totalRows = rows.length
     ? Number(rows[0].full_count)
     : Number(((await sql`
-        SELECT count(*)::int AS count FROM events
-        WHERE lead_id = ${leadId}::bigint
+        SELECT count(*)::int AS count FROM events e
+        LEFT JOIN leads routed_source ON routed_source.id = e.lead_id
+        WHERE (e.lead_id = ${leadId}::bigint OR routed_source.routed_to_lead_id = ${leadId}::bigint)
           AND (${role}::text = 'owner' OR (
-            NOT (lower(kind) = ANY(${[...OWNER_ONLY_EVENT_KINDS]}::text[]))
-            AND lower(kind) !~ ${OWNER_ONLY_EVENT_NAMESPACE_PATTERN}::text
-            AND NOT (lower(COALESCE(detail->>'sensitivity', '')) = ANY(${[...OWNER_ONLY_EVENT_SENSITIVITIES]}::text[]))
+            NOT (lower(e.kind) = ANY(${[...OWNER_ONLY_EVENT_KINDS]}::text[]))
+            AND lower(e.kind) !~ ${OWNER_ONLY_EVENT_NAMESPACE_PATTERN}::text
+            AND NOT (lower(COALESCE(e.detail->>'sensitivity', '')) = ANY(${[...OWNER_ONLY_EVENT_SENSITIVITIES]}::text[]))
            ))`) as { count: number }[])[0]?.count ?? 0)
   const clampedPage = clampPageToTotal(safePage, totalRows, pageSize)
   if (clampedPage !== safePage) return listLeadEventPage(leadId, clampedPage, pageSize, role)

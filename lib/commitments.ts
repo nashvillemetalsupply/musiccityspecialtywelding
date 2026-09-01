@@ -127,17 +127,21 @@ export async function listCommitments(input: {
   return (await sql`
     SELECT c.* FROM commitments c
     LEFT JOIN leads l ON l.id = c.lead_id
-    LEFT JOIN people p ON p.id = COALESCE(c.person_id, l.person_id)
+    LEFT JOIN people p ON p.id = c.person_id
+    LEFT JOIN people lead_person ON lead_person.id = l.person_id
     LEFT JOIN events source ON source.id = c.source_event_id
     LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
     LEFT JOIN people source_person ON source_person.id = source.person_id
+    LEFT JOIN people source_lead_person ON source_lead_person.id = source_lead.person_id
     WHERE (${input.leadId ?? null}::bigint IS NULL OR c.lead_id = ${input.leadId ?? null}::bigint)
       AND (${input.personId ?? null}::bigint IS NULL OR c.person_id = ${input.personId ?? null}::bigint)
       AND (${includeTests}::boolean OR (
         COALESCE(l.is_test, false) = false
         AND COALESCE(p.is_test, false) = false
+        AND COALESCE(lead_person.is_test, false) = false
         AND COALESCE(source_lead.is_test, false) = false
         AND COALESCE(source_person.is_test, false) = false
+        AND COALESCE(source_lead_person.is_test, false) = false
         AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
       ))
       -- 'broken' is derived, not stored (see getPromiseSummary). Asked for it
@@ -216,23 +220,28 @@ export async function getPromiseSummary(role: OperatorRole): Promise<PromiseSumm
         )::int AS open
       FROM commitments c
       LEFT JOIN leads l ON l.id = c.lead_id
-      LEFT JOIN people p ON p.id = COALESCE(c.person_id, l.person_id)
+      LEFT JOIN people p ON p.id = c.person_id
+      LEFT JOIN people lead_person ON lead_person.id = l.person_id
       LEFT JOIN events source ON source.id = c.source_event_id
       LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
-      LEFT JOIN people source_person ON source_person.id = COALESCE(source.person_id, source_lead.person_id)
+      LEFT JOIN people source_person ON source_person.id = source.person_id
+      LEFT JOIN people source_lead_person ON source_lead_person.id = source_lead.person_id
       WHERE c.direction = 'we_promised'
         AND COALESCE(l.is_test, false) = false
         AND COALESCE(p.is_test, false) = false
+        AND COALESCE(lead_person.is_test, false) = false
         AND COALESCE(source_lead.is_test, false) = false
         AND COALESCE(source_person.is_test, false) = false
+        AND COALESCE(source_lead_person.is_test, false) = false
         AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
         AND concat_ws(' ',
           c.summary, c.crew_summary,
           l.first_name, l.last_name, l.service, l.message, l.notes,
-          p.display_name, p.company,
+          p.display_name, p.company, lead_person.display_name, lead_person.company,
           source_lead.first_name, source_lead.last_name, source_lead.service,
           source_lead.message, source_lead.notes,
           source_person.display_name, source_person.company,
+          source_lead_person.display_name, source_lead_person.company,
           source.body, source.crew_body, source.detail::text
         ) NOT ILIKE '%[INTERNAL TEST]%'`,
     sql`
@@ -241,25 +250,30 @@ export async function getPromiseSummary(role: OperatorRole): Promise<PromiseSumm
         COALESCE(l.service, '') AS service
       FROM commitments c
       LEFT JOIN leads l ON l.id = c.lead_id
-      LEFT JOIN people p ON p.id = COALESCE(c.person_id, l.person_id)
+      LEFT JOIN people p ON p.id = c.person_id
+      LEFT JOIN people lead_person ON lead_person.id = l.person_id
       LEFT JOIN events source ON source.id = c.source_event_id
       LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
-      LEFT JOIN people source_person ON source_person.id = COALESCE(source.person_id, source_lead.person_id)
+      LEFT JOIN people source_person ON source_person.id = source.person_id
+      LEFT JOIN people source_lead_person ON source_lead_person.id = source_lead.person_id
       WHERE c.direction = 'we_promised'
         AND c.status = 'open'
         AND c.due_at IS NOT NULL AND c.due_at < now()
         AND COALESCE(l.is_test, false) = false
         AND COALESCE(p.is_test, false) = false
+        AND COALESCE(lead_person.is_test, false) = false
         AND COALESCE(source_lead.is_test, false) = false
         AND COALESCE(source_person.is_test, false) = false
+        AND COALESCE(source_lead_person.is_test, false) = false
         AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
         AND concat_ws(' ',
           c.summary, c.crew_summary,
           l.first_name, l.last_name, l.service, l.message, l.notes,
-          p.display_name, p.company,
+          p.display_name, p.company, lead_person.display_name, lead_person.company,
           source_lead.first_name, source_lead.last_name, source_lead.service,
           source_lead.message, source_lead.notes,
           source_person.display_name, source_person.company,
+          source_lead_person.display_name, source_lead_person.company,
           source.body, source.crew_body, source.detail::text
         ) NOT ILIKE '%[INTERNAL TEST]%'
       ORDER BY c.due_at ASC

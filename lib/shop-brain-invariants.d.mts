@@ -9,6 +9,9 @@ export type GlassStageJob = {
 }
 
 export function normalizeUsPhone(value: unknown): string
+export function isInternalTestContext(...markers: unknown[]): boolean
+export type InboundAttachmentSensitivity = "photo" | "drawing" | "owner_paperwork" | "unclassified"
+export function classifyInboundAttachmentSensitivity(filenameValue: unknown, contentTypeValue: unknown, contextValue?: unknown): InboundAttachmentSensitivity
 export function isUsNumericShortCode(value: unknown): boolean
 export function isMetaVerificationSms(body: unknown): boolean
 export function isGmailMessageGone(error: unknown): boolean

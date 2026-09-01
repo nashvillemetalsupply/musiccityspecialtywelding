@@ -6,7 +6,7 @@ import { recordEvent } from "@/lib/events"
 import { createLead } from "@/lib/leads"
 import {
   findOrCreatePerson,
-  findRecentOpenLeadForPerson,
+  findOpenLeadResolutionForPerson,
   normalizePhone,
   type PersonRow,
 } from "@/lib/people"
@@ -77,10 +77,10 @@ export async function prepareInboundCallIntake(input: {
     : null
 
   if (person) {
-    const existingLead = await findRecentOpenLeadForPerson(person.id, person.is_test)
-    if (existingLead) {
+    const openLead = await findOpenLeadResolutionForPerson(person.id, person.is_test)
+    if (openLead.leadId && !openLead.needsJobMatch) {
       await sql`
-        UPDATE calls SET lead_id = COALESCE(lead_id, ${existingLead}::bigint),
+        UPDATE calls SET lead_id = COALESCE(lead_id, ${openLead.leadId}::bigint),
           person_id = COALESCE(person_id, ${person.id}::bigint),
           detail = COALESCE(detail, '{}'::jsonb) || ${JSON.stringify({
             isTest: person.is_test,
@@ -89,9 +89,9 @@ export async function prepareInboundCallIntake(input: {
           })}::jsonb,
           updated_at = now()
         WHERE twilio_sid = ${input.callSid}::text`
-      await attachRecoveredCallArtifacts(input.callSid, existingLead, person.id, person.is_test)
-      await projectRecoveredTestCallBuildFacts(input.callSid, existingLead, person.is_test)
-      return { kind: "existing", leadId: existingLead, person }
+      await attachRecoveredCallArtifacts(input.callSid, openLead.leadId, person.id, person.is_test)
+      await projectRecoveredTestCallBuildFacts(input.callSid, openLead.leadId, person.is_test)
+      return { kind: "existing", leadId: openLead.leadId, person }
     }
   }
 

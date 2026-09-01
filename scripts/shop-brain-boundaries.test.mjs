@@ -7,10 +7,33 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 
 test("crew searches and receipts cross a role-aware server boundary", () => {
   const events = source("lib/events.ts")
+  const eventAccess = source("lib/event-access.ts")
   const receipts = source("app/api/ops/receipts/route.ts")
   assert.match(events, /THEN e\.tsv ELSE e\.crew_tsv END/)
-  assert.match(receipts, /projectEventForRole\(event, operator\.role\)/)
+  assert.match(eventAccess, /projectEventForRole\(event, role\)/)
+  assert.match(receipts, /listReadableEventsById\(ids, operator\.role\)/)
   assert.doesNotMatch(receipts, /receipts:\s*rows\.map\(\(\{.*body/s)
+})
+
+test("guessed receipt ids stay behind the owner-only test partition", () => {
+  const eventAccess = source("lib/event-access.ts")
+  const updates = source("app/board/updates/page.tsx")
+  assert.match(eventAccess, /COALESCE\(event_lead\.is_test, false\) = false/)
+  assert.match(eventAccess, /COALESCE\(event_person\.is_test, false\) = false/)
+  assert.match(eventAccess, /COALESCE\(lead_person\.is_test, false\) = false/)
+  assert.match(eventAccess, /e\.detail->>'isTest'/)
+  assert.match(eventAccess, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
+  assert.match(updates, /getReadableEventById\(receiptId, operator\.role\)/)
+})
+
+test("crew attachment reads reject either linked test marker before Blob access", () => {
+  const attachment = source("app/api/ops/attachment/route.ts")
+  assert.match(attachment, /l\.is_test AS lead_is_test/)
+  assert.match(attachment, /COALESCE\(p\.is_test, false\) AS person_is_test/)
+  assert.match(attachment, /operator\.role === "crew" && \(access\[0\]\.lead_is_test \|\| access\[0\]\.person_is_test\)/)
+  assert.match(attachment, /attachmentRow\.source_is_test/)
+  assert.match(attachment, /classification\[0\]\?\.source_is_test/)
+  assert.ok(attachment.indexOf("lead_is_test") < attachment.indexOf("await get(pathname"))
 })
 
 test("crew lead and account tools share one fail-closed money projection", () => {
@@ -116,6 +139,18 @@ test("tracked calling rejects the shop number and test work", () => {
   assert.match(recovery, /status = 'persisted' AND started_at < now\(\) - interval '10 minutes'/)
   assert.match(recovery, /status = CASE WHEN stale\.status = 'persisted' THEN 'failed' ELSE 'unknown' END/)
   assert.doesNotMatch(recovery, /startVoiceCall|sendVoice|createCall/, "recovery must never auto-redial")
+})
+
+test("Morning Brief excludes test commitments even when they have no lead", () => {
+  const brief = source("app/api/ops/brief/route.ts")
+  assert.match(brief, /LEFT JOIN people p ON p\.id = c\.person_id/)
+  assert.match(brief, /LEFT JOIN people lead_person ON lead_person\.id = l\.person_id/)
+  assert.match(brief, /COALESCE\(p\.is_test, false\) = false/)
+  assert.match(brief, /COALESCE\(lead_person\.is_test, false\) = false/)
+  assert.match(brief, /COALESCE\(source_lead_person\.is_test, false\) = false/)
+  assert.match(brief, /source\.detail->>'isTest'/)
+  assert.match(brief, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
+  assert.doesNotMatch(brief, /l\.is_test = false OR l\.id IS NULL/)
 })
 
 test("crew cannot mutate any internal-test work order by guessing an id", () => {
@@ -227,13 +262,18 @@ test("unlinked INTERNAL TEST receipts never enter Handset search", () => {
   assert.match(events, /e\.detail->>'isTest'/)
 })
 
-test("money evidence outranks raster attachment convenience", () => {
+test("generic raster attachments require trusted classification before crew projection", () => {
   const retry = source("lib/attachment-retry.ts")
   const sms = source("app/api/twilio/sms/route.ts")
-  assert.ok(retry.indexOf('return "owner_paperwork"') < retry.indexOf('return "photo"'))
+  const actions = source("app/ops/actions.ts")
+  const workOrder = source("app/ops/leads/[id]/page.tsx")
+  assert.match(retry, /classifyInboundAttachmentSensitivity\(filename, contentType, context\)/)
+  assert.doesNotMatch(retry, /isSafeRasterImage\(contentType\)\) return "photo"/)
   assert.match(retry, /classifyAttachmentSensitivity\(input\.filename, input\.contentType, input\.context\)/)
   assert.match(sms, /context: body/)
   assert.doesNotMatch(sms, /sensitivity: media\.contentType\.startsWith/)
+  assert.match(actions, /classifyLeadAttachment/)
+  assert.match(workOrder, /Share with crew/)
 })
 
 test("attachment pointers persist before provider bytes are copied", () => {
@@ -277,6 +317,13 @@ test("every real inbound Gmail reply reaches the capped interrupt gate", () => {
   assert.match(inboundNotify, /sourceEventId: eventId/)
 })
 
+test("extraction combines every linked INTERNAL TEST marker fail-closed", () => {
+  const extraction = source("lib/extract.ts")
+  assert.match(extraction, /isInternalTestContext\(/)
+  assert.match(extraction, /WHERE id = ANY\(\$\{linkedPersonIds\}::bigint\[\]\)/)
+  assert.doesNotMatch(extraction, /leads\[0\]\?\.is_test \?\? people\[0\]\?\.is_test/)
+})
+
 test("Gmail tombstones advance the checkpoint without retries or false-green schedulers", () => {
   assert.equal(isGmailMessageGone(Object.assign(new Error("Gmail API 404"), { status: 404 })), true)
   assert.equal(isGmailMessageGone(Object.assign(new Error("Gmail API 429"), { status: 429 })), false)
@@ -310,7 +357,7 @@ test("every real inbound SMS persists an owner-cell copy without test or routing
   assert.match(inbound, /dedupeKey: `owner-sms-copy:\$\{sid\}`/)
   assert.match(inbound, /capExempt: true/)
   assert.match(inbound, /quietHoursExempt: true/)
-  assert.match(inbound, /\/ops\/leads\/\$\{conversation\.leadId\}#spike/)
+  assert.match(inbound, /\/ops\/leads\/\$\{projectedLeadId\}#spike/)
   assert.match(notify, /export async function notifyOwnerCellSms/)
   assert.match(notify, /getOperatorByPhone\(ownerCell\)/)
   assert.match(notify, /smsOnly: true/)
@@ -364,7 +411,7 @@ test("signed inbound verification SMS bypasses customers and crew, and texts onl
     "short-code classification must precede customer intake")
   // System SMS inserts a message with nullable lead/person and never records
   // messaging consent.
-  assert.match(inbound, /systemSms[\s\S]{0,260}return \{ person: null, leadId: null, createdLead: false \}/)
+  assert.match(inbound, /systemSms[\s\S]{0,300}return \{ person: null, leadId: null, createdLead: false, routing: undefined \}/)
   assert.match(inbound, /if \(!systemSms\)[\s\S]{0,120}recordMessagingConsent/)
   // The immutable event is sms.system.in, keyed by the external SID, and its
   // body is a neutral constant so the code is never exposed or logged.
@@ -474,7 +521,8 @@ test("all tracked SMS paths reject shop and forwarding numbers centrally", () =>
   const promises = source("app/ops/leads/[id]/promise-actions.ts")
   assert.match(messages, /isReservedCustomerPhone\(to, reservedPhones\)/)
   assert.match(messages, /A real customer phone number is required/)
-  assert.match(workOrder, /const hasCustomerPhone = Boolean\(lead\.phone && !lead\.phone_is_placeholder && !isReservedShopPhone\(lead\.phone\)\)/)
+  assert.match(workOrder, /const customerPhone = normalizePhone\(lead\.phone\)/)
+  assert.match(workOrder, /const hasCustomerPhone = Boolean\(customerPhone && !lead\.phone_is_placeholder && !isReservedShopPhone\(customerPhone\)\)/)
   assert.match(promises, /isReservedShopPhone\(lead\.phone\)/)
 })
 
@@ -490,7 +538,7 @@ test("unmatched QuickBooks receipts bind invoice identity and trusted totals", (
 test("full-trust GLASS is owner-only in UI and server actions", () => {
   const page = source("app/ops/leads/[id]/page.tsx")
   const actions = source("app/ops/leads/[id]/glass-actions.ts")
-  assert.match(page, /operator\.role === "owner" && <GlassControl/)
+  assert.match(page, /operator\.role === "owner" && !needsJobMatch && !routedToLeadId && <GlassControl/)
   assert.equal((actions.match(/operator\.role !== "owner"/g) ?? []).length, 2)
 })
 
@@ -575,7 +623,7 @@ test("time, transcript, and activity windows preserve current truth", () => {
   assert.match(brief, /brief_audio_status = 'submitting'/)
   assert.match(calls, /ORDER BY started_at DESC, id DESC LIMIT 200\) recent ORDER BY started_at ASC/)
   assert.match(messages, /ORDER BY sent_at DESC, id DESC LIMIT 300[\s\S]{0,80}recent ORDER BY sent_at ASC/)
-  assert.match(events, /ORDER BY occurred_at DESC, id DESC[\s\S]{0,120}recent ORDER BY occurred_at ASC/)
+  assert.match(events, /ORDER BY e\.occurred_at DESC, e\.id DESC[\s\S]{0,120}recent ORDER BY occurred_at ASC/)
 })
 
 test("deployed schedulers preserve cost-aware Gmail cadence and both Central brief offsets", () => {
@@ -706,7 +754,8 @@ test("customer-controlled SVG can never execute from the CRM origin", () => {
   const photo = source("app/api/ops/photo/route.ts")
   const glassPhoto = source("app/api/glass/photo/route.ts")
   assert.doesNotMatch(media, /image\/svg/)
-  assert.match(retry, /if \(isSafeRasterImage\(contentType\)\) return "photo"/)
+  assert.match(retry, /classifyInboundAttachmentSensitivity\(filename, contentType, context\)/)
+  assert.match(retry, /row\.sensitivity === "photo" && isSafeRasterImage\(row\.content_type\)/)
   for (const route of [attachment, photo, glassPhoto]) {
     assert.match(route, /isSafeRasterImage/)
     assert.match(route, /X-Content-Type-Options/)

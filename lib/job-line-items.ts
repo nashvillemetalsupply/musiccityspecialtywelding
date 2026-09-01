@@ -31,11 +31,15 @@ export async function listJobLineItemsForLeads(
     SELECT items.id, items.lead_id, items.position, items.label, items.note, items.amount_cents
     FROM job_line_items items
     JOIN leads l ON l.id = items.lead_id
+    LEFT JOIN people lead_person ON lead_person.id = l.person_id
     WHERE items.lead_id = ANY(${ids}::bigint[])
       AND (${includeTests}::boolean OR (
         items.is_test = false
         AND l.is_test = false
+        AND COALESCE(lead_person.is_test, false) = false
         AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+          lead_person.display_name, lead_person.company,
+          lead_person.phones::text, lead_person.emails::text,
           items.label, items.note) NOT ILIKE '%[INTERNAL TEST]%'
       ))
     ORDER BY items.lead_id, items.position, items.id`) as {

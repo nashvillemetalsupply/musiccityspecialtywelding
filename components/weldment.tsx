@@ -9,12 +9,12 @@ type ArtProps = {
 
 /* A run of weld bead: overlapping crescent ripples like a stacked-dime MIG bead.
    Tiles horizontally; drawn once per 120px. */
-export function WeldSeam({ className }: { className?: string }) {
+export function WeldSeam({ id, className }: { id: string; className?: string }) {
   return (
     <div className={`wm-seam${className ? ` ${className}` : ""}`} aria-hidden="true">
       <svg className="wm-seam-svg" height="18" width="100%" focusable="false">
         <defs>
-          <pattern id="wm-bead" patternUnits="userSpaceOnUse" width="120" height="18">
+          <pattern id={id} patternUnits="userSpaceOnUse" width="120" height="18">
             <path
               d="M0 14 Q4 4 10 12 Q14 3 20 12 Q24 4 30 12 Q34 3 40 12 Q44 4 50 12 Q54 3 60 12 Q64 4 70 12 Q74 3 80 12 Q84 4 90 12 Q94 3 100 12 Q104 4 110 12 Q114 3 120 14"
               fill="none"
@@ -31,7 +31,7 @@ export function WeldSeam({ className }: { className?: string }) {
             />
           </pattern>
         </defs>
-        <rect width="100%" height="18" fill="url(#wm-bead)" />
+        <rect width="100%" height="18" fill={`url(#${id})`} />
       </svg>
     </div>
   )

@@ -12,6 +12,7 @@ import { classifyTwilioConsentKeyword, recordMessagingConsent } from "@/lib/mess
 import { resumeSmsProjection } from "@/lib/sms-provider-truth.mjs"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
+import { reconcileRoutedLeadProjections, resolveProjectionLeadId } from "@/lib/routing"
 
 export const runtime = "nodejs"
 
@@ -99,13 +100,13 @@ export async function POST(req: Request) {
   // existing customer when possible, but never create a person or work order.
   // System SMS creates nothing at all: no person, no lead, no consent record.
   const conversation = persistedProjection
-    ? { person: persistedPeople[0] ?? null, leadId: persistedLeadId, createdLead: persistedCreatedLead }
+      ? { person: persistedPeople[0] ?? null, leadId: persistedLeadId, createdLead: persistedCreatedLead, routing: undefined }
     : consentKeyword || systemSms
       ? await (async () => {
-        if (systemSms) return { person: null, leadId: null, createdLead: false }
+        if (systemSms) return { person: null, leadId: null, createdLead: false, routing: undefined }
         const person = await findPersonByPhone(from)
         const leadId = person ? await findRecentOpenLeadForPerson(person.id, person.is_test) : null
-        return { person, leadId, createdLead: false }
+        return { person, leadId, createdLead: false, routing: undefined }
       })()
       : await resolvePhoneConversation({ phone: from, body, source: "sms-in" })
   const personId = conversation.person?.id ?? null
@@ -116,13 +117,17 @@ export async function POST(req: Request) {
     UPDATE messages SET lead_id = COALESCE(lead_id, ${conversation.leadId ?? null}::bigint),
       person_id = COALESCE(person_id, ${personId}::bigint)
     WHERE id = ${messageId}::bigint AND twilio_sid = ${sid}::text`
+  let projectedLeadId = await resolveProjectionLeadId(conversation.leadId)
+  if (projectedLeadId && projectedLeadId !== conversation.leadId) {
+    await sql`UPDATE messages SET lead_id = ${projectedLeadId}::bigint WHERE id = ${messageId}::bigint`
+  }
 
   if (!systemSms) {
     await recordMessagingConsent({
       phone: from,
       source: consentKeyword ?? "inbound-message",
       externalId: `twilio-consent:${sid}:${consentKeyword ?? "inbound"}`,
-      leadId: conversation.leadId,
+      leadId: projectedLeadId,
       personId,
       provenance: {
         messageSid: sid,
@@ -140,7 +145,7 @@ export async function POST(req: Request) {
     kind: eventKind,
     actorType: systemSms ? "system" : "customer",
     actorId: personId,
-    leadId: conversation.leadId,
+    leadId: projectedLeadId,
     personId,
     externalId: sid,
     body: systemSms
@@ -172,7 +177,11 @@ export async function POST(req: Request) {
   for (const [index, media] of (consentKeyword || systemSms ? [] : rawMedia).entries()) {
     if (!media.url) continue
     const extension = media.contentType.split("/")[1]?.replace(/[^a-z0-9]/gi, "") || "bin"
-    attachmentIds.push(await queueIngestAttachment({ provider: "twilio", externalMessageId: sid, attachmentKey: String(index), leadId: conversation.leadId!, personId, filename: `${index + 1}.${extension}`, contentType: media.contentType, sourceUrl: media.url, context: body, sourceDetail: { messageId, index } }))
+    attachmentIds.push(await queueIngestAttachment({ provider: "twilio", externalMessageId: sid, attachmentKey: String(index), leadId: projectedLeadId!, personId, filename: `${index + 1}.${extension}`, contentType: media.contentType, sourceUrl: media.url, context: body, sourceDetail: { messageId, index } }))
+  }
+  if (conversation.leadId) {
+    const reconciledTarget = await reconcileRoutedLeadProjections(conversation.leadId)
+    if (reconciledTarget) projectedLeadId = reconciledTarget
   }
 
   // The interrupt row (and its push attempt) exists before Twilio receives 200.
@@ -180,9 +189,9 @@ export async function POST(req: Request) {
   if (eventId && !consentKeyword && !systemSms && !conversation.person?.is_test) await notifyAll({
       priority: "interrupt",
       stock: "white",
-      title: wasNewLead ? "New text at the shop" : "Customer texted",
-      body: (body || `${mediaCount} photo(s)`).slice(0, 120),
-      url: `/ops/leads/${conversation.leadId}#spike`,
+      title: conversation.routing === "needs-job-match" ? "Text needs a job match" : wasNewLead ? "New text at the shop" : "Customer texted",
+      body: conversation.routing === "needs-job-match" ? "Filed separately instead of guessing between this customer's active jobs." : (body || `${mediaCount} photo(s)`).slice(0, 120),
+      url: `/ops/leads/${projectedLeadId}#spike`,
       sourceEventId: eventId,
       capExempt: wasNewLead,
       quietHoursExempt: wasNewLead,
@@ -210,7 +219,7 @@ export async function POST(req: Request) {
     await notifyOwnerCellSms({
       title: wasNewLead ? "New text at the shop" : "Customer texted",
       body: `${conversation.person?.display_name || from}: ${body || `${mediaCount} photo(s)`}`.slice(0, 500),
-      url: `${twilioWebhookBaseUrl()}/ops/leads/${conversation.leadId}#spike`,
+      url: `${twilioWebhookBaseUrl()}/ops/leads/${projectedLeadId}#spike`,
       sourceEventId: eventId,
       capExempt: true,
       quietHoursExempt: true,

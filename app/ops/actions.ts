@@ -23,6 +23,8 @@ import { validateCloseoutReview } from "@/lib/closeout-domain.mjs"
 import { lineItemsTotalCents, parseLineItemsText } from "@/lib/job-line-items.mjs"
 import { replaceJobLineItems } from "@/lib/job-line-items"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
+import { isSafeRasterImage } from "@/lib/media-safety"
+import { reconcileRoutedLeadProjections } from "@/lib/routing"
 
 async function sendCustomerEmail(options: {
   leadId: number
@@ -131,9 +133,9 @@ function parseLeadId(value: FormDataEntryValue | null): number {
   return id
 }
 
-async function requireMutableLeadId(operator: Operator, value: FormDataEntryValue | null): Promise<number> {
+async function requireMutableLeadId(operator: Operator, value: FormDataEntryValue | null, options: { allowRoutingInbox?: boolean } = {}): Promise<number> {
   const leadId = parseLeadId(value)
-  await requireLeadMutationAccess(operator, leadId)
+  await requireLeadMutationAccess(operator, leadId, options)
   return leadId
 }
 
@@ -145,6 +147,15 @@ function parseDollarsToCents(value: FormDataEntryValue | null): number | null {
     throw new Error("Invalid dollar amount.")
   }
   return Math.round(dollars * 100)
+}
+
+export type OpsActionState = { status: "idle" | "success" | "error"; message: string }
+
+function recoverableActionError(error: unknown, fallback: string): OpsActionState {
+  const message = error instanceof Error && error.message.trim()
+    ? error.message.trim().slice(0, 240)
+    : fallback
+  return { status: "error", message }
 }
 
 // Phone-in and walk-in leads enter the same pipeline as website leads. The
@@ -282,7 +293,8 @@ export async function updateLeadStatus(formData: FormData) {
   }
 
   const sql = getSql()
-  await sql`
+  const changed = (await sql`
+    WITH lead_update AS (
     UPDATE leads SET
       status = ${status}::text,
       status_reason = ${reason}::text,
@@ -297,9 +309,27 @@ export async function updateLeadStatus(formData: FormData) {
         ELSE first_response_channel END,
       quoted_at = CASE WHEN ${status}::text = 'quoted' AND quoted_at IS NULL THEN now() ELSE quoted_at END,
       won_at = CASE WHEN ${status}::text = 'won' AND won_at IS NULL THEN now() ELSE won_at END,
-      lost_at = CASE WHEN ${status}::text = 'lost' AND lost_at IS NULL THEN now() ELSE lost_at END,
+      lost_at = CASE WHEN ${status}::text = ANY(ARRAY['lost','spam']::text[])
+        THEN COALESCE(lost_at, now()) ELSE NULL END,
       updated_at = now()
-    WHERE id = ${leadId}::bigint`
+    WHERE id = ${leadId}::bigint AND completed_at IS NULL AND handed_off_at IS NULL
+    RETURNING id, person_id, is_test
+    ), immutable_receipt AS (
+      INSERT INTO events (
+        occurred_at, kind, actor_type, actor_id, lead_id, person_id,
+        external_id, body, crew_body, detail
+      )
+      SELECT now(), 'status.changed'::text, 'operator'::text,
+        ${actorId(operator)}::text, u.id, u.person_id, ''::text,
+        CASE WHEN u.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || ${reason}::text,
+        NULL::text,
+        ${JSON.stringify({ status, reason: reason || null, legacyType: "status_changed" })}::jsonb
+          || CASE WHEN u.is_test THEN '{"isTest":true}'::jsonb ELSE '{}'::jsonb END
+      FROM lead_update u
+      RETURNING lead_id
+    )
+    SELECT lead_id AS id FROM immutable_receipt`) as { id: number }[]
+  if (!changed[0]) throw new Error("Finished jobs are locked. Use Undo finish before changing their status.")
   if (status === "spam") {
     await sql`
       UPDATE notifications n SET
@@ -315,7 +345,6 @@ export async function updateLeadStatus(formData: FormData) {
       FROM events e
       WHERE e.id = n.source_event_id AND e.lead_id = ${leadId}::bigint`
   }
-  await recordLeadEvent(leadId, "status_changed", actorId(operator), { status, reason: reason || null })
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
 }
@@ -727,6 +756,14 @@ export async function recordPayment(formData: FormData) {
     // snapshot was taken. The winning statement already wrote and projected
     // atomically, so that no-row outcome is a successful idempotent replay.
     if (result[0].key_lead_id === null) {
+      const winner = (await sql`
+        SELECT lead_id FROM events
+        WHERE kind = ANY(ARRAY['invoice.payment-received','invoice.paid']::text[])
+          AND external_id = ${externalId}::text
+        ORDER BY id DESC LIMIT 1`) as Array<{ lead_id: number | null }>
+      if (Number(winner[0]?.lead_id) !== leadId) {
+        throw new Error("That payment receipt was used by another work order. Reload before trying again.")
+      }
       revalidatePath(`/ops/leads/${leadId}`)
       revalidatePath("/board")
       return
@@ -736,6 +773,130 @@ export async function recordPayment(formData: FormData) {
 
   revalidatePath(`/ops/leads/${leadId}`)
   revalidatePath("/board")
+}
+
+export async function routeConversationToJob(formData: FormData) {
+  const operator = await requireOperator()
+  requireOwner(operator)
+  const sourceLeadId = await requireMutableLeadId(operator, formData.get("sourceLeadId"), { allowRoutingInbox: true })
+  const targetLeadId = await requireMutableLeadId(operator, formData.get("targetLeadId"))
+  if (sourceLeadId === targetLeadId) throw new Error("Choose the job this conversation belongs to.")
+  const sql = getSql()
+  const receiptKey = `conversation-routed:${sourceLeadId}:${targetLeadId}`
+  const routed = (await sql`
+    WITH pair AS (
+      SELECT source.id AS source_id, target.id AS target_id, source.person_id, source.is_test
+      FROM leads source
+      JOIN leads target ON target.id = ${targetLeadId}::bigint
+      WHERE source.id = ${sourceLeadId}::bigint
+        AND source.service = 'Needs job match'
+        AND source.completed_at IS NULL
+        AND source.status NOT IN ('lost','spam')
+        AND source.person_id IS NOT NULL
+        AND target.person_id = source.person_id
+        AND target.is_test = source.is_test
+        AND target.id <> source.id
+        AND target.service <> 'Needs job match'
+        AND target.completed_at IS NULL
+        AND target.status NOT IN ('lost','spam')
+        AND target.routed_to_lead_id IS NULL
+        AND (source.routed_to_lead_id IS NULL OR source.routed_to_lead_id = target.id)
+    ), routed AS (
+      UPDATE leads source SET routed_to_lead_id = pair.target_id, updated_at = now()
+      FROM pair WHERE source.id = pair.source_id
+      RETURNING pair.source_id, pair.target_id, pair.person_id, pair.is_test
+    ), moved_messages AS (
+      UPDATE messages message SET lead_id = routed.target_id
+      FROM routed WHERE message.lead_id = routed.source_id
+      RETURNING message.id
+    ), moved_attachments AS (
+      UPDATE ingest_attachments attachment SET lead_id = routed.target_id, updated_at = now()
+      FROM routed WHERE attachment.lead_id = routed.source_id
+      RETURNING attachment.id
+    ), duplicate_commitments AS (
+      UPDATE commitments source_commitment
+      SET status = 'superseded', status_changed_at = now(), glass_primary = false
+      FROM routed
+      WHERE source_commitment.lead_id = routed.source_id
+        AND source_commitment.status = 'open'
+        AND EXISTS (
+          SELECT 1 FROM commitments target_commitment
+          WHERE target_commitment.lead_id = routed.target_id
+            AND target_commitment.status = 'open'
+            AND target_commitment.direction = source_commitment.direction
+            AND btrim(lower(target_commitment.summary)) = btrim(lower(source_commitment.summary))
+            AND target_commitment.due_at IS NOT DISTINCT FROM source_commitment.due_at
+        )
+      RETURNING source_commitment.id
+    ), moved_commitments AS (
+      UPDATE commitments commitment
+      SET lead_id = routed.target_id,
+        glass_primary = CASE WHEN commitment.glass_primary AND EXISTS (
+          SELECT 1 FROM commitments target_primary
+          WHERE target_primary.lead_id = routed.target_id
+            AND target_primary.glass_primary = true AND target_primary.status = 'open'
+        ) THEN false ELSE commitment.glass_primary END
+      FROM routed
+      WHERE commitment.lead_id = routed.source_id
+        AND NOT EXISTS (SELECT 1 FROM duplicate_commitments duplicate WHERE duplicate.id = commitment.id)
+      RETURNING commitment.id
+    ), moved_claims AS (
+      UPDATE claims claim SET subject_id = routed.target_id
+      FROM routed
+      WHERE claim.subject_type = 'lead' AND claim.subject_id = routed.source_id
+      RETURNING claim.id
+    ), claim_write AS (
+      UPDATE inbound_conversation_claims claim
+      SET lead_id = routed.target_id, claimed_at = now(), updated_at = now()
+      FROM routed WHERE claim.identity_key = 'phone:'::text || routed.person_id::text
+      RETURNING claim.identity_key
+    ), source_receipt AS (
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+      SELECT 'conversation.routed'::text, 'operator'::text, ${actorId(operator)}::text,
+        routed.source_id, routed.person_id, ${receiptKey}::text,
+        ${`Conversation filed to Job #${targetLeadId}.`}::text,
+        ${`Conversation filed to Job #${targetLeadId}.`}::text,
+        ${JSON.stringify({ targetLeadId, isTest: false })}::jsonb || jsonb_build_object('isTest', routed.is_test)
+      FROM routed
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id
+    ), target_receipt AS (
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+      SELECT 'conversation.received'::text, 'operator'::text, ${actorId(operator)}::text,
+        routed.target_id, routed.person_id, ${receiptKey}::text,
+        ${`Unmatched customer conversation filed here from Job #${sourceLeadId}.`}::text,
+        ${`Customer conversation filed here from Job #${sourceLeadId}.`}::text,
+        ${JSON.stringify({ sourceLeadId, isTest: false })}::jsonb || jsonb_build_object('isTest', routed.is_test)
+      FROM routed
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id
+    )
+    SELECT target_id,
+      (SELECT count(*)::int FROM moved_messages) AS moved_messages,
+      (SELECT count(*)::int FROM moved_attachments) AS moved_attachments,
+      (SELECT count(*)::int FROM moved_commitments) AS moved_commitments,
+      (SELECT count(*)::int FROM moved_claims) AS moved_claims,
+      (SELECT count(*)::int FROM source_receipt) AS source_receipts,
+      (SELECT count(*)::int FROM target_receipt) AS target_receipts
+    FROM routed LIMIT 1`) as Array<{ target_id: number }>
+  if (!routed[0]) throw new Error("That conversation cannot be filed to this job.")
+  // A long-running extraction may have committed a projection while the
+  // atomic routing statement was in flight. A fresh-snapshot sweep closes
+  // that race; extraction performs the symmetric sweep after its own writes.
+  await reconcileRoutedLeadProjections(sourceLeadId, targetLeadId)
+  revalidatePath("/board")
+  revalidatePath(`/ops/leads/${sourceLeadId}`)
+  revalidatePath(`/ops/leads/${targetLeadId}`)
+  redirect(`/ops/leads/${targetLeadId}#spike`)
+}
+
+export async function recordPaymentState(_previous: OpsActionState, formData: FormData): Promise<OpsActionState> {
+  try {
+    await recordPayment(formData)
+    return { status: "success", message: "Payment recorded." }
+  } catch (error) {
+    return recoverableActionError(error, "Payment was not recorded. Check the amount and try again.")
+  }
 }
 
 export async function resolveIdentityConflict(formData: FormData) {
@@ -1219,6 +1380,20 @@ export async function markLeadComplete(formData: FormData) {
   revalidatePath(`/ops/leads/${leadId}`)
 }
 
+export async function markLeadCompleteState(_previous: OpsActionState, formData: FormData): Promise<OpsActionState> {
+  try {
+    await markLeadComplete(formData)
+    const partialUpdate = String(formData.get("reviewedCloseout") ?? "") === "1"
+      && String(formData.get("completion") ?? "") === "partial"
+    return {
+      status: "success",
+      message: partialUpdate ? "Update filed. Job stays open." : "Finish saved.",
+    }
+  } catch (error) {
+    return recoverableActionError(error, "The job was not finished. Nothing was lost; try again.")
+  }
+}
+
 // Optional closeout narration and photo are a resumable addendum. DONE itself
 // has already landed before this action starts.
 export async function addLeadCompletionNote(formData: FormData) {
@@ -1346,6 +1521,39 @@ export async function setJobTravelerStage(formData: FormData) {
     operatorName: operator.name,
   })
   revalidatePath("/ops")
+  revalidatePath(`/ops/leads/${leadId}`)
+}
+
+export async function classifyLeadAttachment(formData: FormData) {
+  const operator = await requireOperator()
+  requireOwner(operator)
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"), { allowRoutingInbox: true })
+  const pathname = String(formData.get("pathname") ?? "").trim().slice(0, 700)
+  if (!pathname || pathname.includes("..")) throw new Error("Attachment not found.")
+  const sql = getSql()
+  const attachment = (await sql`
+    SELECT content_type, sensitivity FROM ingest_attachments
+    WHERE lead_id = ${leadId}::bigint AND blob_path = ${pathname}::text AND status = 'stored'
+    LIMIT 1`) as Array<{ content_type: string; sensitivity: string }>
+  if (!attachment[0] || !isSafeRasterImage(attachment[0].content_type)) {
+    throw new Error("Only a verified raster image can be shared with the crew as a job photo.")
+  }
+  const receiptKey = `attachment-classified:${leadId}:${createHash("sha256").update(pathname).digest("hex")}`
+  await sql`
+    WITH changed AS (
+      UPDATE ingest_attachments SET sensitivity = 'photo', updated_at = now()
+      WHERE lead_id = ${leadId}::bigint AND blob_path = ${pathname}::text
+        AND status = 'stored' AND sensitivity <> 'photo'
+      RETURNING person_id
+    )
+    INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+    SELECT 'attachment.classified'::text, 'operator'::text, ${actorId(operator)}::text,
+      ${leadId}::bigint, changed.person_id, ${receiptKey}::text,
+      'Owner approved an inbound image as a job photo.'::text,
+      'A customer photo is ready for the crew.'::text,
+      ${JSON.stringify({ pathname, sensitivity: "photo" })}::jsonb
+    FROM changed
+    ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING`
   revalidatePath(`/ops/leads/${leadId}`)
 }
 

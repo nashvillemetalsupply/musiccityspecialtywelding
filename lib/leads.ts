@@ -51,6 +51,7 @@ export type LeadRow = {
   person_id: number | null
   assigned_operator_id: number | null
   assigned_operator_name: string
+  routed_to_lead_id: number | null
   photos: { pathname: string; contentType: string; size: number; name: string }[]
   invoice_number: string
   invoiced_at: string | null

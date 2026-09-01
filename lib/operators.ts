@@ -16,15 +16,23 @@ export function canAccessInternalTests(role: OperatorRole) {
 export async function requireLeadMutationAccess(
   operator: Pick<Operator, "role">,
   leadId: number,
-): Promise<{ isTest: boolean }> {
+  options: { allowRoutingInbox?: boolean } = {},
+): Promise<{ isTest: boolean; routedToLeadId: number | null; service: string }> {
   const sql = getSql()
   const rows = (await sql`
-    SELECT is_test FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as Array<{ is_test: boolean }>
+    SELECT is_test, routed_to_lead_id, service FROM leads
+    WHERE id = ${leadId}::bigint LIMIT 1`) as Array<{ is_test: boolean; routed_to_lead_id: number | null; service: string }>
   if (!rows[0]) throw new Error("Job not found.")
   if (rows[0].is_test && !canAccessInternalTests(operator.role)) {
     throw new Error("Owner access is required for internal test jobs.")
   }
-  return { isTest: rows[0].is_test }
+  if (!options.allowRoutingInbox && rows[0].routed_to_lead_id) {
+    throw new Error(`This conversation was filed to Job #${rows[0].routed_to_lead_id}. Open that job to make changes.`)
+  }
+  if (!options.allowRoutingInbox && rows[0].service === "Needs job match") {
+    throw new Error("Choose the correct job before making changes or replying.")
+  }
+  return { isTest: rows[0].is_test, routedToLeadId: rows[0].routed_to_lead_id, service: rows[0].service }
 }
 
 export type Operator = {

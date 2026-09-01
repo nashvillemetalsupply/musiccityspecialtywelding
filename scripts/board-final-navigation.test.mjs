@@ -36,7 +36,7 @@ test("the signed-in board mounts the shared menu so #radio and #handset resolve"
   // The menu renders on the server page, only when a session exists — the
   // same gate the /ops layout applies to its chrome.
   assert.match(PAGE, /import \{ MoreMenu \} from "@\/app\/ops\/more-menu"/)
-  assert.match(PAGE, /const menu = <MoreMenu role=\{role\} vapidPublicKey=\{process\.env\.NEXT_PUBLIC_VAPID_PUBLIC_KEY\?\.trim\(\) \?\? ""\} voiceReady=\{voiceTranscriptionConfigured\(\)\} \/>/)
+  assert.match(PAGE, /const menu = <MoreMenu role=\{role\} vapidPublicKey=\{process\.env\.NEXT_PUBLIC_VAPID_PUBLIC_KEY\?\.trim\(\) \?\? ""\} voiceReady=\{voiceTranscriptionConfigured\(\)\} initialSearch=\{query\} includeTests=\{includeTests\} \/>/)
   assert.match(PAGE, /menu=\{menu\}/)
   // menu is declared after the signed-out return, so a signed-out render can
   // never receive it
@@ -56,7 +56,9 @@ test("the signed-in board mounts the shared menu so #radio and #handset resolve"
   assert.match(MORE, /\["#radio", "#handset"\]\.includes\(window\.location\.hash\)/)
   assert.match(MORE, /<ShopDock voiceReady=\{voiceReady\}/)
   // The menu's inert guard covers the board shell as well as the /ops one.
-  assert.match(MORE, /querySelectorAll<HTMLElement>\("\.ops-shell main, \.app main"\)/)
+  assert.match(MORE, /const previousInert = new Map<HTMLElement, boolean>\(\)/)
+  assert.match(MORE, /sibling\.inert = true/)
+  assert.match(MORE, /surface\.inert = wasInert/)
 })
 
 test("the menu exposes the live Customers, Updates and Calls destinations", () => {

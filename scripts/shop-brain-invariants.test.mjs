@@ -4,6 +4,7 @@ import {
   attachmentCanRetry,
   canApplyDone,
   canUndoDone,
+  classifyInboundAttachmentSensitivity,
   countsAsHumanResponse,
   glassExpiryAt,
   glassReviewEligible,
@@ -12,6 +13,7 @@ import {
   handoffDisplayState,
   isGlassUploadPendingExpired,
   isReservedCustomerPhone,
+  isInternalTestContext,
   messagingConsentState,
   normalizeUsPhone,
   safeActionMovement,
@@ -22,6 +24,21 @@ import {
   swipeFinishDecision,
   validateCustomerUploadMetadata,
 } from "../lib/shop-brain-invariants.mjs"
+
+test("any independent INTERNAL TEST marker keeps the context out of production", () => {
+  assert.equal(isInternalTestContext(false, true), true)
+  assert.equal(isInternalTestContext(false, "true"), true)
+  assert.equal(isInternalTestContext(false, "Customer note [INTERNAL TEST]"), true)
+  assert.equal(isInternalTestContext(false, false, "ordinary customer note"), false)
+})
+
+test("generic raster attachments stay owner-only until classified", () => {
+  assert.equal(classifyInboundAttachmentSensitivity("IMG_1234.jpg", "image/jpeg", "See attached"), "unclassified")
+  assert.equal(classifyInboundAttachmentSensitivity("invoice.jpg", "image/jpeg", "See attached"), "owner_paperwork")
+  assert.equal(classifyInboundAttachmentSensitivity("gate-plan.dxf", "application/octet-stream", ""), "drawing")
+  assert.equal(classifyInboundAttachmentSensitivity("shop.pdf", "application/pdf", "fabrication blueprint"), "drawing")
+  assert.equal(classifyInboundAttachmentSensitivity("customer.svg", "image/svg+xml", "photo"), "unclassified")
+})
 
 test("shop and forwarding numbers never become customer identity", () => {
   const reserved = ["+16158104910", "+16155550199"]

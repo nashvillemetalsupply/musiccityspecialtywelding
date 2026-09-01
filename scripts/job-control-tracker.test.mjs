@@ -189,9 +189,9 @@ test("every service a form can write has a row mark", () => {
   assert.match(PREVIEW_SOURCE, /SERVICE_MARKS\[service\.trim\(\)\] \?\?/)
 })
 
-// One tracker page carries the documented 100-row ceiling; the pager below it
-// is what makes any remaining stage rows reachable.
-test("one tracker page holds the documented ceiling", () => {
+// One tracker page stays thumb-sized; the pager below it makes every remaining
+// stage row reachable without burying live-call actions thousands of pixels.
+test("one tracker page stays bounded for a phone", () => {
   const list = OPS_DATA_SOURCE.slice(
     OPS_DATA_SOURCE.indexOf("export async function listBoardJobs"),
     OPS_DATA_SOURCE.indexOf("function boardDetailIds"),
@@ -199,8 +199,8 @@ test("one tracker page holds the documented ceiling", () => {
   const clamp = list.match(/const pageSize = Math\.min\(Math\.max\(Math\.floor\(options\.pageSize \?\? (\d+)\), 1\), (\d+)\)/)
   assert.ok(clamp, "listBoardJobs stopped clamping its page size")
   const [, fallback, ceiling] = clamp
-  assert.ok(Number(fallback) >= 100, `the tracker defaults to only ${fallback} rows a page`)
-  assert.equal(fallback, ceiling, "the default page must use the documented ceiling")
+  assert.equal(fallback, "8", "the phone tracker should show eight jobs at a time")
+  assert.equal(ceiling, "50", "explicit callers remain bounded")
   // The honest count line stays: past the ceiling the board still says so and
   // the pager offers the remaining rows.
   assert.match(PREVIEW_SOURCE, /Showing \$\{board\.items\.length\} of \$\{board\.resultTotal\}/)

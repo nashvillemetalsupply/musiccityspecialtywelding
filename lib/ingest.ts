@@ -2,6 +2,7 @@ import { createLead } from "@/lib/leads"
 import {
   attachLeadToPerson,
   findOrCreatePerson,
+  findOpenLeadResolutionForPerson,
   findRecentOpenLeadForPerson,
   normalizePhone,
   type PersonRow,
@@ -18,7 +19,7 @@ export async function resolvePhoneConversation(input: {
   body?: string
   isTest?: boolean
   source: "phone-in" | "sms-in"
-}): Promise<{ person: PersonRow; leadId: number; createdLead: boolean }> {
+}): Promise<{ person: PersonRow; leadId: number; createdLead: boolean; routing: "existing" | "new" | "needs-job-match" }> {
   const phone = normalizePhone(input.phone)
   if (!phone) throw new Error("Inbound phone number is invalid.")
   const displayName = `Caller •${phone.slice(-4)}`
@@ -29,11 +30,36 @@ export async function resolvePhoneConversation(input: {
     isTest,
   })
   if (!person) throw new Error("Customer record could not be created.")
-  const existingLead = await findRecentOpenLeadForPerson(person.id, person.is_test)
-  if (existingLead) return { person, leadId: existingLead, createdLead: false }
-
   const sql = getSql()
   const identityKey = `phone:${person.id}`
+  // Once the owner has matched a conversation, keep using that explicit job
+  // until it closes. This is stronger evidence than guessing from recency.
+  const claimed = (await sql`
+    SELECT claim.lead_id, lead.service
+    FROM inbound_conversation_claims claim
+    JOIN leads lead ON lead.id = claim.lead_id
+    WHERE claim.identity_key = ${identityKey}::text
+      AND claim.person_id = ${person.id}::bigint
+      AND lead.person_id = ${person.id}::bigint
+      AND lead.is_test = ${person.is_test}::boolean
+      AND lead.completed_at IS NULL
+      AND lead.status NOT IN ('lost','spam')
+      AND lead.routed_to_lead_id IS NULL
+    LIMIT 1`) as Array<{ lead_id: number; service: string }>
+  if (claimed[0]) return {
+    person,
+    leadId: Number(claimed[0].lead_id),
+    createdLead: false,
+    routing: claimed[0].service === "Needs job match" ? "needs-job-match" : "existing",
+  }
+  const openLead = await findOpenLeadResolutionForPerson(person.id, person.is_test)
+  if (openLead.leadId) return {
+    person,
+    leadId: openLead.leadId,
+    createdLead: false,
+    routing: openLead.needsJobMatch ? "needs-job-match" : "existing",
+  }
+
   const claim = (await sql`
     INSERT INTO inbound_conversation_claims (identity_key, person_id, claimed_at, updated_at)
     VALUES (${identityKey}::text, ${person.id}::bigint, now(), now())
@@ -44,6 +70,7 @@ export async function resolvePhoneConversation(input: {
         inbound_conversation_claims.lead_id IS NOT NULL AND NOT EXISTS (
           SELECT 1 FROM leads l WHERE l.id = inbound_conversation_claims.lead_id
             AND l.completed_at IS NULL AND l.status NOT IN ('lost','spam')
+            AND l.routed_to_lead_id IS NULL
         )
       )
     RETURNING identity_key`) as { identity_key: string }[]
@@ -51,12 +78,26 @@ export async function resolvePhoneConversation(input: {
     for (let attempt = 0; attempt < 8; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 125 + attempt * 50))
       const resolved = (await sql`
-        SELECT lead_id FROM inbound_conversation_claims
-        WHERE identity_key = ${identityKey}::text AND lead_id IS NOT NULL LIMIT 1`) as { lead_id: number }[]
-      if (resolved[0]?.lead_id) return { person, leadId: Number(resolved[0].lead_id), createdLead: false }
+        SELECT claim.lead_id, lead.service FROM inbound_conversation_claims claim
+        JOIN leads lead ON lead.id = claim.lead_id
+        WHERE claim.identity_key = ${identityKey}::text
+          AND lead.completed_at IS NULL AND lead.status NOT IN ('lost','spam')
+          AND lead.routed_to_lead_id IS NULL
+        LIMIT 1`) as Array<{ lead_id: number; service: string }>
+      if (resolved[0]?.lead_id) return {
+        person,
+        leadId: Number(resolved[0].lead_id),
+        createdLead: false,
+        routing: resolved[0].service === "Needs job match" ? "needs-job-match" : "existing",
+      }
     }
-    const lateLead = await findRecentOpenLeadForPerson(person.id, person.is_test)
-    if (lateLead) return { person, leadId: lateLead, createdLead: false }
+    const lateResolution = await findOpenLeadResolutionForPerson(person.id, person.is_test)
+    if (lateResolution.leadId) return {
+      person,
+      leadId: lateResolution.leadId,
+      createdLead: false,
+      routing: lateResolution.needsJobMatch ? "needs-job-match" : "existing",
+    }
     throw new Error("This caller is already being attached to a work order. Retry the signed webhook.")
   }
 
@@ -66,8 +107,10 @@ export async function resolvePhoneConversation(input: {
       lastName: "",
       phone,
       email: "",
-      service: input.source === "phone-in" ? "Inbound phone request" : "Inbound text request",
-      message: input.body?.trim().slice(0, 2000) || "Customer contacted the shop.",
+      service: openLead.ambiguous ? "Needs job match" : input.source === "phone-in" ? "Inbound phone request" : "Inbound text request",
+      message: openLead.ambiguous
+        ? `Customer has multiple active jobs. Filed separately so this message is not attached to the wrong work order.\n\n${input.body?.trim().slice(0, 1800) || "Customer contacted the shop."}`
+        : input.body?.trim().slice(0, 2000) || "Customer contacted the shop.",
       preferredContact: input.source === "phone-in" ? "Call" : "Text",
       photoCount: 0,
       gclid: "",
@@ -88,7 +131,7 @@ export async function resolvePhoneConversation(input: {
   await sql`
     UPDATE inbound_conversation_claims SET lead_id = ${created.id}::bigint, updated_at = now()
     WHERE identity_key = ${identityKey}::text AND person_id = ${person.id}::bigint`
-  return { person, leadId: created.id, createdLead: true }
+  return { person, leadId: created.id, createdLead: true, routing: openLead.ambiguous ? "needs-job-match" : "new" }
 }
 
 export async function resolveEmailConversation(input: {

@@ -4,6 +4,7 @@ export type ServicePage = {
   slug: string
   title: string
   shortTitle: string
+  seoTitle: string
   metaDescription: string
   eyebrow: string
   intro: string
@@ -20,6 +21,7 @@ export const servicePages: ServicePage[] = [
     slug: "mobile-welding",
     title: "Mobile Welding in Nashville & Middle Tennessee",
     shortTitle: "Mobile Welding",
+    seoTitle: "Mobile Welder Nashville & Middle Tennessee",
     metaDescription:
       "On-site mobile welding for equipment, trailers, facilities, and repair work across Nashville, Lebanon, and surrounding Middle Tennessee communities.",
     eyebrow: "The welding equipment comes to you",
@@ -65,6 +67,7 @@ export const servicePages: ServicePage[] = [
     slug: "trailer-welding-repair",
     title: "Trailer Welding & Frame Repair in Middle Tennessee",
     shortTitle: "Trailer Welding & Repair",
+    seoTitle: "Trailer Welding Repair Nashville & Middle Tennessee",
     metaDescription:
       "Trailer welding and frame repair for utility, work, equipment, and specialty trailers across Nashville, Lebanon, and Middle Tennessee.",
     eyebrow: "Repair the failure, not just the crack",
@@ -111,6 +114,7 @@ export const servicePages: ServicePage[] = [
     slug: "equipment-repair",
     title: "Welding Repair for Equipment & Machinery",
     shortTitle: "Equipment Repair",
+    seoTitle: "Equipment Welding Repair Nashville",
     metaDescription:
       "Welding repair and maintenance for industrial equipment, machinery, trailers, and working assets in Nashville and Middle Tennessee.",
     eyebrow: "Reduce downtime with a repair plan built around the equipment",
@@ -156,6 +160,7 @@ export const servicePages: ServicePage[] = [
     slug: "architectural-welding",
     title: "Architectural Welding & Metal Fabrication",
     shortTitle: "Architectural Welding",
+    seoTitle: "Architectural Welding Nashville",
     metaDescription:
       "Architectural welding and custom metal fabrication for railings, stairs, structural details, and commercial projects across Middle Tennessee.",
     eyebrow: "Metalwork that has to look right and perform correctly",
@@ -201,6 +206,7 @@ export const servicePages: ServicePage[] = [
     slug: "custom-fabrication",
     title: "Custom & Specialty Metal Fabrication",
     shortTitle: "Custom Fabrication",
+    seoTitle: "Custom Metal Fabrication Nashville",
     metaDescription:
       "Custom metal fabrication for brackets, frames, manifolds, signage, streetscape components, and built-to-spec projects in Middle Tennessee.",
     eyebrow: "Built from the requirement, not from a generic catalog",
@@ -247,6 +253,7 @@ export const servicePages: ServicePage[] = [
     slug: "custom-metal-products",
     title: "Custom Metal Mailboxes & Planter Boxes",
     shortTitle: "Custom Metal Products",
+    seoTitle: "Custom Metal Products Nashville",
     metaDescription:
       "Custom steel mailboxes, mailbox clusters, brackets, and metal planter boxes fabricated for residential and commercial properties.",
     eyebrow: "Durable exterior metalwork made for the property",

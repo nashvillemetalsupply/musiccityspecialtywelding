@@ -7,6 +7,7 @@ const ACTIONS_SOURCE = readFileSync("app/ops/actions.ts", "utf8").replace(/\r\n/
 const LEDGER_SOURCE = readFileSync("lib/payment-ledger.ts", "utf8").replace(/\r\n/g, "\n")
 const GMAIL_SOURCE = readFileSync("app/api/ingest/gmail/route.ts", "utf8").replace(/\r\n/g, "\n")
 const WIRE_SOURCE = readFileSync("app/api/ops/wire/action/route.ts", "utf8").replace(/\r\n/g, "\n")
+const PAYMENT_FORM_SOURCE = readFileSync("app/ops/leads/[id]/payment-form.tsx", "utf8").replace(/\r\n/g, "\n")
 
 function exportedFunction(source, name) {
   const start = source.indexOf(`export async function ${name}`)
@@ -52,13 +53,14 @@ test("the action is owner-gated and requires a stable receipt key", () => {
 
 test("receipt and paid projection are one atomic locked statement", () => {
   const action = exportedFunction(ACTIONS_SOURCE, "recordPayment")
-  assert.equal((action.match(/await sql`/g) ?? []).length, 1, "one database statement owns the transition")
+  assert.equal((action.match(/await sql`/g) ?? []).length, 2, "one atomic transition plus one post-conflict verification read")
   assert.match(action, /WITH target AS MATERIALIZED \([\s\S]*WHERE id = \$\{leadId\}::bigint[\s\S]*FOR UPDATE/)
   assert.match(action, /event_write AS \([\s\S]*INSERT INTO events/)
   assert.match(action, /projection_write AS \([\s\S]*UPDATE leads/)
   assert.ok(action.indexOf("INSERT INTO events") < action.indexOf("UPDATE leads"))
   assert.doesNotMatch(action, /recordEvent\(/, "a separate event statement would reopen the crash gap")
   assert.match(action, /SELECT 'invoice\.payment-received'::text,/)
+  assert.match(action, /SELECT lead_id FROM events[\s\S]*external_id = \$\{externalId\}::text/)
   assert.doesNotMatch(action, /CASE WHEN c\.fully_paid THEN 'invoice\.paid'/, "one receipt key must have one stable event kind")
 })
 
@@ -141,6 +143,7 @@ test("the job offers field collection without putting card data in Shop Brain", 
   assert.match(page, /QuickBooks GoPayment/)
   assert.match(page, /Take payments only/)
   assert.match(page, /No card number enters Shop Brain/)
-  assert.match(page, /Mark remaining balance paid in full/)
-  assert.doesNotMatch(page, /!lead\.invoice_total_cents && <label className="job-check job-payment-settles"/)
+  assert.match(page, /<PaymentForm/)
+  assert.match(PAYMENT_FORM_SOURCE, /Mark remaining balance paid in full/)
+  assert.doesNotMatch(PAYMENT_FORM_SOURCE, /!lead\.invoice_total_cents && <label className="job-check job-payment-settles"/)
 })

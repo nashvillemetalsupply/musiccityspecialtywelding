@@ -6,6 +6,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { normalizePage } from "@/lib/pagination"
 import { listRegularAccounts } from "@/lib/wall-data"
 import { ThemeBoot } from "../theme-boot"
+import { BoardRouteNav } from "../board-route-nav"
 import "./customers.css"
 
 export const metadata: Metadata = {
@@ -87,6 +88,7 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
         </nav>
       )}
       </main>
+      <BoardRouteNav role={operator.role} current="customers" />
     </>
   )
 }

@@ -101,7 +101,7 @@ svg{display:block}
 .logo{height:30px;width:auto;flex:none;display:block}
 /* The logo is a link home to /board. It occupies exactly the space the bare
    image did, so the top bar's fit at 320px is unchanged. */
-.logo-home{display:flex;align-items:center;flex:none;border-radius:var(--radius)}
+.logo-home{display:flex;align-items:center;justify-content:center;flex:none;min-width:44px;min-height:44px;border-radius:var(--radius)}
 /* the date and the search field are desk furniture; on a phone the bar has
    room for the wordmark and the avatar and nothing else */
 .top .when{display:none;color:var(--text-muted);font-size:var(--t-label);white-space:nowrap;
@@ -134,6 +134,13 @@ svg{display:block}
   width:24px;height:24px;font-size:var(--t-caption);font-weight:var(--w-semi);
   background:var(--surface-raised);color:var(--text-primary);
   box-shadow:inset 0 0 0 1px var(--border)}
+
+.live-call-jump{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);
+  border-bottom:1px solid var(--status-warn-mark);background:var(--status-warn-sur)}
+.live-call-jump>div{display:grid;min-width:0;gap:var(--s1);flex:1}
+.live-call-jump strong{color:var(--status-warn-ink);font-size:var(--t-data)}
+.live-call-jump span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-size:var(--t-caption)}
+.live-call-jump .btn{flex:none;min-height:44px}
 
 /* ========================================================== left pane ==== */
 /* The pane IS the product — it is the only thing that answers "what needs me,
@@ -328,7 +335,7 @@ svg{display:block}
 /* The rest of an ended call folds away so the tracker is not pushed off the
    screen. Native <details> — no state, no script, and it stays open while the
    owner reads it. */
-.spoke-more>summary{cursor:pointer;list-style:none;padding:var(--s2) 0;
+.spoke-more>summary{cursor:pointer;list-style:none;padding:var(--s2) 0;min-height:44px;display:flex;align-items:center;
   color:var(--text-muted);font-size:var(--t-label);font-weight:var(--w-med)}
 .spoke-more>summary::-webkit-details-marker{display:none}
 .spoke-more>summary::before{content:"▸ ";display:inline-block;transition:transform .12s}
@@ -573,6 +580,7 @@ svg{display:block}
     border-top:0;border-right:1px solid var(--border);padding:var(--s2) 0}
   .rl-gap{display:block}
   .rail .rl:nth-of-type(3){display:grid}
+  .live-call-jump{display:none}
 
   .pane{display:flex;flex-direction:column;min-height:0;
     border-bottom:0;border-right:1px solid var(--border)}
@@ -697,6 +705,13 @@ svg{display:block}
   color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
 .board-more .ops-more-panel>header h2{margin:var(--s1) 0 0;font-family:var(--font-display);
   font-size:var(--t-lede);font-weight:680;letter-spacing:-.01em;line-height:var(--lh-lede)}
+.board-more .ops-more-search{display:grid;gap:var(--s2);padding:var(--s4) 0 0}
+.board-more .ops-more-search>label{color:var(--text-secondary);font-size:var(--t-label);font-weight:var(--w-med)}
+.board-more .ops-more-search>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2)}
+.board-more .ops-more-search input,.board-more .ops-more-search button{min-height:44px;
+  border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-raised);color:var(--text-primary)}
+.board-more .ops-more-search input{min-width:0;padding:0 var(--s3)}
+.board-more .ops-more-search button{padding:0 var(--s4);font-weight:var(--w-med);cursor:pointer}
 .board-more .ops-more-panel>nav{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);padding:var(--s4) 0}
 .board-more .ops-more-panel>nav a{display:flex;align-items:center;min-height:44px;
   padding:0 var(--s3);border:1px solid var(--border);border-radius:var(--r-md);

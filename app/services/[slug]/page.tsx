@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!service) return {}
 
   return createPublicMetadata({
-    title: service.shortTitle,
+    title: service.seoTitle,
     description: service.metaDescription,
     canonical: `/services/${service.slug}`,
     socialTitle: service.title,

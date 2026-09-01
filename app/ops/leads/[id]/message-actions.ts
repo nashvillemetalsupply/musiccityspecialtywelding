@@ -23,6 +23,8 @@ export async function recordVerbalTextConsent(formData: FormData) {
   if (!Number.isInteger(leadId) || leadId <= 0) throw new Error("Job not found.")
   const lead = await getLead(leadId, operator.role)
   if (!lead || lead.phone_is_placeholder || !lead.phone) throw new Error("Add a valid customer mobile number first.")
+  if (lead.routed_to_lead_id) throw new Error(`This conversation was filed to Job #${lead.routed_to_lead_id}. Open that job first.`)
+  if (lead.service === "Needs job match") throw new Error("Choose the correct job before recording consent or replying.")
   if (lead.is_test) throw new Error("Internal test jobs never create customer messaging consent.")
   const current = await getMessagingConsentState(lead.phone)
   if (current === "revoked") throw new Error("This customer opted out. Only a new START message can restore texting.")
@@ -55,6 +57,8 @@ export async function sendLeadReply(formData: FormData) {
   if (!/^[a-z0-9-]{16,80}$/i.test(intentKey)) throw new Error("Reload the work order before sending this reply.")
   const lead = await getLead(leadId, operator.role)
   if (!lead) throw new Error("Job not found.")
+  if (lead.routed_to_lead_id) throw new Error(`This conversation was filed to Job #${lead.routed_to_lead_id}. Open that job before replying.`)
+  if (lead.service === "Needs job match") throw new Error("Choose the correct job before replying.")
   if (lead.is_test) throw new Error("Internal test jobs never send customer messages.")
 
   let replyPhone = lead.phone

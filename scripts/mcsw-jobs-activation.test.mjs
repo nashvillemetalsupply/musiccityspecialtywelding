@@ -42,7 +42,7 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(more, /<CloseIcon/)
   assert.doesNotMatch(header, /<strong>Jobs<\/strong>/)
   assert.doesNotMatch(layout, /ShopDock/)
-  for (const label of ["Job Control", "New Job", "Promises", "Search Jobs", "Install MCSW Jobs", "Settings", "Sign out"]) {
+  for (const label of ["Job Control", "New Job", "Promises", "Find a job", "Search", "Install MCSW Jobs", "Settings", "Sign out"]) {
     assert.match(more, new RegExp(label))
   }
   assert.match(dock, /Ask Jobs/)
@@ -535,6 +535,7 @@ test("owner analytics guards financial queries and reports business totals witho
 
 test("the work order has one captured action spine and a visible owner payment section", () => {
   const workOrder = source("app/ops/leads/[id]/page.tsx")
+  const paymentForm = source("app/ops/leads/[id]/payment-form.tsx")
   const reply = source("app/ops/leads/[id]/spike-reply.tsx")
   const trackedCall = source("app/ops/tracked-call-button.tsx")
   const wire = source("app/ops/wire-strip.tsx")
@@ -551,10 +552,11 @@ test("the work order has one captured action spine and a visible owner payment s
   const paymentStart = workOrder.indexOf('<section className="card job-payment"')
   assert.ok(detailsStart >= 0 && paymentStart > detailsStart)
   assert.doesNotMatch(workOrder.slice(detailsStart, paymentStart), /action=\{recordPayment\}/)
-  assert.match(workOrder.slice(paymentStart), /<label htmlFor="payment-amount">Amount received<\/label>/)
-  assert.match(workOrder.slice(paymentStart), /<label htmlFor="payment-method">Payment method<\/label>/)
-  assert.match(workOrder.slice(paymentStart), /Mark remaining balance paid in full/)
-  assert.match(workOrder.slice(paymentStart), /Payment does not finish or close the job/)
+  assert.match(workOrder.slice(paymentStart), /<PaymentForm/)
+  assert.match(paymentForm, /<label htmlFor="payment-amount">Amount received<\/label>/)
+  assert.match(paymentForm, /<label htmlFor="payment-method">Payment method<\/label>/)
+  assert.match(paymentForm, /Mark remaining balance paid in full/)
+  assert.match(paymentForm, /Payment does not finish or close the job/)
 
   assert.match(reply, /id="job-reply"/)
   assert.match(reply, /bodyRef\.current\?\.focus\(\{ preventScroll: true \}\)/)

@@ -6,6 +6,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { normalizePage } from "@/lib/pagination"
 import { listPendingCallIntakes, type CallIntakeDraft } from "@/lib/job-intake"
 import { ThemeBoot } from "../theme-boot"
+import { BoardRouteNav } from "../board-route-nav"
 import "./calls.css"
 
 export const metadata: Metadata = {
@@ -115,6 +116,7 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
         </nav>
       )}
       </main>
+      <BoardRouteNav role={operator.role} current="calls" />
     </>
   )
 }

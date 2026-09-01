@@ -31,8 +31,10 @@ test("signed out lands on the /ops door and an unconfigured database says so", (
   assert.match(PAGE, /if \(!dbConfigured\(\)\)/)
   assert.match(PAGE, /const operator = await getAuthenticatedOperator\(\)/)
   assert.match(PAGE, /if \(!operator\) redirect\("\/ops"\)/)
-  // Neither role is filtered out: owner and crew both read the index.
-  assert.doesNotMatch(PAGE, /operator\.role/)
+  // Neither role is filtered out: the resolved role only configures the
+  // shared navigation after authentication has succeeded.
+  assert.match(PAGE, /<BoardRouteNav role=\{operator\.role\} current="customers" \/>/)
+  assert.ok(PAGE.indexOf('if (!operator) redirect("/ops")') < PAGE.indexOf("<BoardRouteNav"))
 })
 
 test("rows link to the account page and keep the label and the counts", () => {

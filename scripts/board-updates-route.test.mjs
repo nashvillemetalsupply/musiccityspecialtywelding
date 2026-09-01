@@ -28,7 +28,7 @@ test("the archive is gated before it reads a single update", () => {
   // the gate has to precede every read, or a signed-out request still costs a
   // query against real customer rows before the redirect lands
   assert.ok(PAGE.indexOf('if (!operator) redirect("/ops")') < PAGE.indexOf("listWire("))
-  assert.ok(PAGE.indexOf('if (!operator) redirect("/ops")') < PAGE.indexOf("getEvent("))
+  assert.ok(PAGE.indexOf('if (!operator) redirect("/ops")') < PAGE.indexOf("getReadableEventById("))
 })
 
 test("wire wiring is the historical wiring: unread by default, past at 50", () => {
@@ -47,7 +47,7 @@ test("wire wiring is the historical wiring: unread by default, past at 50", () =
 test("every projection stays on the server and carries the operator's role", () => {
   // role is never inferred in the browser: listWire, countUnreadWire and the
   // receipt projection each take it as an argument on this server render.
-  for (const call of [/listWire\(operator\.id, operator\.role/, /countUnreadWire\(operator\.id, operator\.role/, /projectEventForRole\(receiptRaw, operator\.role\)/]) {
+  for (const call of [/listWire\(operator\.id, operator\.role/, /countUnreadWire\(operator\.id, operator\.role/, /getReadableEventById\(receiptId, operator\.role\)/]) {
     assert.match(PAGE, call)
   }
   assert.doesNotMatch(PAGE, /revenue|amount_cents|price/i)
@@ -55,9 +55,9 @@ test("every projection stays on the server and carries the operator's role", () 
 
 test("the receipt drawer projects before it renders and keeps call audio owner-only", () => {
   assert.match(PAGE, /const receiptRequested = Number\.isInteger\(receiptId\) && receiptId > 0/)
-  assert.match(PAGE, /const receiptRaw = receiptRequested \? await getEvent\(receiptId\) : null/)
-  // the projection runs before the drawer's markup exists, not inside it
-  assert.ok(PAGE.indexOf("projectEventForRole(receiptRaw") < PAGE.indexOf("{receiptRequested && <section"))
+  assert.match(PAGE, /const receipt = receiptRequested \? await getReadableEventById\(receiptId, operator\.role\) : null/)
+  // the centralized test/role projection runs before the drawer's markup.
+  assert.ok(PAGE.indexOf("getReadableEventById(receiptId") < PAGE.indexOf("{receiptRequested && <section"))
   assert.match(PAGE, /receiptCall\[0\] && operator\.role === "owner" && <audio controls preload="none" src=\{`\/api\/ops\/call\/\$\{receiptCall\[0\]\.id\}`\}/)
   // a crew member who types an owner-only receipt id gets the card, not the row
   assert.match(PAGE, /This update is not available in your role\./)

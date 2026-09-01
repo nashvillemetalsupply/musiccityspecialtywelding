@@ -7,7 +7,7 @@ import { PushToggle } from "./push-toggle"
 import { ShopDock } from "./shop-dock"
 import { RecoveryControl } from "@/app/board/recovery-control"
 
-export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" | "crew"; vapidPublicKey: string; voiceReady: boolean }) {
+export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "", includeTests = false }: { role: "owner" | "crew"; vapidPublicKey: string; voiceReady: boolean; initialSearch?: string; includeTests?: boolean }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLElement>(null)
@@ -21,8 +21,21 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
     if (!open) return
     const trigger = triggerRef.current
     const previous = document.body.style.overflow
-    const pageSurfaces = [...document.querySelectorAll<HTMLElement>(".ops-shell main, .app main")]
-    for (const surface of pageSurfaces) surface.inert = true
+    // Make every page surface outside the dialog unavailable to assistive
+    // technology, including rails, headers and secondary board pages. Walking
+    // ancestor siblings is resilient to the menu being mounted in different
+    // shells; the trigger stays available as the dialog's Close control.
+    const previousInert = new Map<HTMLElement, boolean>()
+    let branch: HTMLElement | null = document.querySelector(".ops-more-backdrop")
+    while (branch?.parentElement) {
+      for (const sibling of branch.parentElement.children) {
+        if (!(sibling instanceof HTMLElement) || sibling === branch || sibling === trigger) continue
+        if (!previousInert.has(sibling)) previousInert.set(sibling, sibling.inert)
+        sibling.inert = true
+      }
+      branch = branch.parentElement
+      if (branch === document.body) break
+    }
     document.body.style.overflow = "hidden"
     trigger?.focus()
     const keydown = (event: KeyboardEvent) => {
@@ -42,7 +55,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
     window.addEventListener("keydown", keydown)
     return () => {
       document.body.style.overflow = previous
-      for (const surface of pageSurfaces) surface.inert = false
+      for (const [surface, wasInert] of previousInert) surface.inert = wasInert
       window.removeEventListener("keydown", keydown)
       trigger?.focus()
     }
@@ -53,6 +66,14 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
     {open && <div className="ops-more-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) close() }}>
       <aside ref={panelRef} className="ops-more-panel" id="ops-more-panel" role="dialog" aria-modal="true" aria-labelledby="ops-more-title">
         <header><div><span>MCSW</span><h2 id="ops-more-title">Menu</h2></div></header>
+        <form className="ops-more-search" action="/board" method="get" role="search" onSubmit={close}>
+          <label htmlFor="ops-menu-job-search">Find a job</label>
+          <div>
+            <input id="ops-menu-job-search" name="q" type="search" defaultValue={initialSearch} placeholder="Name, job, or work" />
+            {includeTests && <input type="hidden" name="tests" value="1" />}
+            <button type="submit">Search</button>
+          </div>
+        </form>
         <nav aria-label="MCSW sections">
           <Link href="/board" onClick={close}>Job Control</Link>
           <Link href="/ops/intake/new" onClick={close}>New Job</Link>
@@ -60,7 +81,6 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady }: { role: "owner" |
           <Link href="/board/customers" onClick={close}>Customers</Link>
           <Link href="/board/updates" onClick={close}>Updates</Link>
           <Link href="/board?signal=promise" onClick={close}>Promises</Link>
-          <Link href="/board" onClick={close}>Search Jobs</Link>
           {role === "owner" && <Link href="/ops/analytics" onClick={close}>Analytics</Link>}
           <Link href="/ops/install" onClick={close}>Install MCSW Jobs</Link>
           {role === "owner" && <Link href="/ops/shop" onClick={close}>Settings</Link>}

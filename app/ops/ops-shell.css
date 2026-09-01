@@ -224,6 +224,36 @@
   line-height: var(--lh-lede);
 }
 
+.ops-shell .ops-more-search {
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s4) 0 0;
+}
+
+.ops-shell .ops-more-search > label {
+  color: var(--text-secondary);
+  font-size: var(--t-label);
+  font-weight: var(--w-med);
+}
+
+.ops-shell .ops-more-search > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s2);
+}
+
+.ops-shell .ops-more-search input,
+.ops-shell .ops-more-search button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.ops-shell .ops-more-search input { min-width: 0; padding: 0 var(--s3); }
+.ops-shell .ops-more-search button { padding: 0 var(--s4); font-weight: var(--w-med); cursor: pointer; }
+
 .ops-shell .ops-more-panel > nav {
   display: grid;
   grid-template-columns: 1fr 1fr;

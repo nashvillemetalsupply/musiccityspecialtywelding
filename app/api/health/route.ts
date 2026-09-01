@@ -35,6 +35,37 @@ async function hasWorkingResendCredential(apiKey: string) {
   }
 }
 
+async function canPersistLeadIntake() {
+  if (!dbConfigured()) return false
+  try {
+    const sql = getSql()
+    const privileges = (await sql`
+      SELECT
+        has_table_privilege(current_user, 'leads', 'INSERT')
+        AND has_table_privilege(current_user, 'events', 'INSERT') AS ready`) as Array<{ ready: boolean }>
+    if (!privileges[0]?.ready) return false
+    // Plan the same two-table durable intake shape used by a real quote. EXPLAIN
+    // checks INSERT permissions, required columns, foreign keys, and the event
+    // dependency without creating a synthetic customer row.
+    await sql`
+      EXPLAIN (FORMAT JSON)
+      WITH lead_write AS (
+        INSERT INTO leads (public_id, first_name, phone, service, is_test, intake_key)
+        VALUES ('health-plan-only', '[INTERNAL TEST] health plan', '', 'Health plan', true, 'health-plan-only')
+        RETURNING id, person_id
+      )
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+      SELECT 'form.quote'::text, 'system'::text, 'health-plan'::text,
+        lead_write.id, lead_write.person_id, 'health-plan-only'::text,
+        '[INTERNAL TEST] health plan'::text, '[INTERNAL TEST] health plan'::text,
+        '{"isTest":true}'::jsonb
+      FROM lead_write`
+    return true
+  } catch {
+    return false
+  }
+}
+
 type DatabaseHealth = {
   configured: boolean
   connected: boolean
@@ -213,16 +244,17 @@ export async function GET(req: Request) {
       process.env.QUOTE_TO_EMAIL?.trim()
   )
   if (!isAuthorizedCron(req)) {
-    const configured = dbConfigured() && quoteEmailConfigured
+    const leadsAccepted = await canPersistLeadIntake()
+    const ready = leadsAccepted && quoteEmailConfigured
     return Response.json(
       {
-        ok: configured,
+        ok: ready,
         service: "music-city-specialty-welding-website",
-        leadsAccepted: configured,
+        leadsAccepted,
       },
       {
-        status: configured ? 200 : 503,
-        headers: { "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300" },
+        status: ready ? 200 : 503,
+        headers: { "Cache-Control": "no-store" },
       },
     )
   }

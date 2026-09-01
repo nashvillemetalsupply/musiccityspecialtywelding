@@ -1,0 +1,42 @@
+@import "../../styles/control.css";
+
+.board-route-nav{display:none}
+
+@media (max-width:55rem){
+  .cust,.calls,.updates-page{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  .board-route-nav{position:fixed;z-index:90;left:0;right:0;bottom:0;display:flex;align-items:center;
+    justify-content:space-around;gap:var(--s1);min-height:56px;padding:var(--s1) var(--s2) env(safe-area-inset-bottom,0px);
+    border-top:1px solid var(--border);background:var(--surface);color:var(--text-primary)}
+  .board-route-nav>a{display:flex;align-items:center;justify-content:center;min-width:64px;min-height:44px;
+    border-radius:var(--r-md);color:var(--text-secondary);font-size:var(--t-label);font-weight:var(--w-med);text-decoration:none}
+  .board-route-nav>a[aria-current="page"]{background:var(--action);color:var(--action-ink)}
+  .board-route-menu{display:flex}
+  .board-route-menu .ops-more-trigger{display:grid;place-items:center;min-width:44px;min-height:44px;
+    border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-raised);color:var(--text-primary)}
+  .board-route-menu .ops-more-trigger[aria-expanded="true"]{position:fixed;z-index:122;
+    top:max(var(--s3),env(safe-area-inset-top,0px));right:max(var(--s4),env(safe-area-inset-right,0px))}
+  .board-route-menu .ops-menu-icon,.board-route-menu .ops-menu-icon svg{display:grid;width:22px;height:22px;place-items:center}
+  .board-route-menu .ops-more-trigger[aria-expanded="false"] .is-close,
+  .board-route-menu .ops-more-trigger:not([aria-expanded]) .is-close,
+  .board-route-menu .ops-more-trigger[aria-expanded="true"] .is-menu{display:none}
+  .board-route-menu .ops-more-backdrop{position:fixed;inset:0;z-index:120;display:flex;justify-content:flex-end;
+    background:color-mix(in srgb,var(--surface-sunken) 62%,transparent)}
+  .board-route-menu .ops-more-panel{width:min(100%,30rem);height:100dvh;overflow-y:auto;overscroll-behavior:contain;
+    padding:max(var(--s4),env(safe-area-inset-top,0px)) max(var(--s4),env(safe-area-inset-right,0px)) max(var(--s4),env(safe-area-inset-bottom,0px)) var(--s4);
+    background:var(--surface);color:var(--text-primary);border-left:1px solid var(--border)}
+  .board-route-menu .ops-more-panel>header{padding-bottom:var(--s4);border-bottom:1px solid var(--border)}
+  .board-route-menu .ops-more-panel>header span{color:var(--text-muted);font-size:var(--t-label);font-weight:var(--w-med);text-transform:uppercase;letter-spacing:.08em}
+  .board-route-menu .ops-more-panel>header h2{margin:var(--s1) 0 0;font-size:var(--t-lede)}
+  .board-route-menu .ops-more-search{display:grid;gap:var(--s2);padding:var(--s4) 0 0}
+  .board-route-menu .ops-more-search>label{color:var(--text-secondary);font-size:var(--t-label);font-weight:var(--w-med)}
+  .board-route-menu .ops-more-search>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2)}
+  .board-route-menu .ops-more-search input,.board-route-menu .ops-more-search button{min-height:44px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-raised);color:var(--text-primary);padding:0 var(--s3)}
+  .board-route-menu .ops-more-search input{min-width:0}
+  .board-route-menu .ops-more-panel>nav{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);padding:var(--s4) 0}
+  .board-route-menu .ops-more-panel>nav a{display:flex;align-items:center;min-height:44px;padding:0 var(--s3);
+    border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-raised);color:var(--text-primary);font-size:var(--t-data);font-weight:var(--w-med);text-decoration:none}
+  .board-route-menu .ops-more-account{display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4);padding-top:var(--s4);border-top:1px solid var(--border)}
+  .board-route-menu .ops-more-account button{min-height:44px;padding:0 var(--s4);border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-raised);color:var(--text-primary)}
+  .board-route-menu .ops-more-account form{display:flex}.board-route-menu .ops-more-account form button{flex:1}
+  .board-route-menu .jobs-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+}

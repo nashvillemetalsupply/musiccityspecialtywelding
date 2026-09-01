@@ -85,10 +85,31 @@ export async function GET(req: Request) {
     return Response.json({ ok: true, resumed: true, eventId: existing[0].id, audio })
   }
   const [promises, unanswered, quotes, invoices, wins, outdoor] = await Promise.all([
-    sql`SELECT c.id, c.lead_id, c.summary, c.crew_summary, c.due_at, l.first_name, l.service FROM commitments c LEFT JOIN leads l ON l.id = c.lead_id WHERE c.status = 'open' AND c.due_at < now() + interval '1 day' AND (l.is_test = false OR l.id IS NULL) ORDER BY c.due_at ASC LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
-    sql`SELECT id, first_name, service, created_at FROM leads WHERE is_test = false AND first_response_at IS NULL AND completed_at IS NULL AND status NOT IN ('lost','spam') ORDER BY created_at ASC LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
-    sql`SELECT id, first_name, service, quoted_at FROM leads WHERE is_test = false AND status = 'quoted' AND quoted_at < now() - interval '3 days' ORDER BY quoted_at ASC LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
-    sql`SELECT id, first_name, invoice_number, invoice_due_at FROM leads WHERE is_test = false AND invoiced_at IS NOT NULL AND paid_at IS NULL ORDER BY invoice_due_at ASC NULLS LAST LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
+    sql`
+      SELECT c.id, c.lead_id, c.summary, c.crew_summary, c.due_at, l.first_name, l.service
+      FROM commitments c
+      LEFT JOIN leads l ON l.id = c.lead_id
+      LEFT JOIN people p ON p.id = c.person_id
+      LEFT JOIN people lead_person ON lead_person.id = l.person_id
+      LEFT JOIN events source ON source.id = c.source_event_id
+      LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
+      LEFT JOIN people source_person ON source_person.id = source.person_id
+      LEFT JOIN people source_lead_person ON source_lead_person.id = source_lead.person_id
+      WHERE c.status = 'open' AND c.due_at < now() + interval '1 day'
+        AND l.routed_to_lead_id IS NULL
+        AND COALESCE(l.is_test, false) = false
+        AND COALESCE(p.is_test, false) = false
+        AND COALESCE(lead_person.is_test, false) = false
+        AND COALESCE(source_lead.is_test, false) = false
+        AND COALESCE(source_person.is_test, false) = false
+        AND COALESCE(source_lead_person.is_test, false) = false
+        AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', c.summary, c.crew_summary, source.body, source.crew_body, source.detail::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
+      ORDER BY c.due_at ASC LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
+    sql`SELECT id, first_name, service, created_at FROM leads WHERE is_test = false AND routed_to_lead_id IS NULL AND first_response_at IS NULL AND completed_at IS NULL AND status NOT IN ('lost','spam') ORDER BY created_at ASC LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
+    sql`SELECT id, first_name, service, quoted_at FROM leads WHERE is_test = false AND routed_to_lead_id IS NULL AND status = 'quoted' AND quoted_at < now() - interval '3 days' ORDER BY quoted_at ASC LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
+    sql`SELECT id, first_name, invoice_number, invoice_due_at FROM leads WHERE is_test = false AND routed_to_lead_id IS NULL AND invoiced_at IS NOT NULL AND paid_at IS NULL ORDER BY invoice_due_at ASC NULLS LAST LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
     sql`SELECT l.first_name, l.service, l.paid_amount_cents, l.revenue_cents,
       COALESCE(o.name, completion.operator_name, 'The crew') AS crew_name
       FROM leads l
@@ -98,9 +119,9 @@ export async function GET(req: Request) {
         ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1
       ) completion ON true
       LEFT JOIN operators o ON o.id::text = completion.actor_id
-      WHERE l.is_test = false AND l.completed_at > now() - interval '1 day'
+      WHERE l.is_test = false AND l.routed_to_lead_id IS NULL AND l.completed_at > now() - interval '1 day'
       ORDER BY l.completed_at DESC LIMIT 20`.then((rows) => rows as Record<string, unknown>[]),
-    sql`SELECT EXISTS(SELECT 1 FROM leads WHERE is_test = false AND completed_at IS NULL AND status NOT IN ('lost','spam') AND (scheduled_at IS NOT NULL OR work_started_at IS NOT NULL) AND service ~* '(mobile|on-site|onsite|outdoor|field|install)') AS needed`.then((rows) => Boolean(((rows as { needed?: boolean }[])[0])?.needed)),
+    sql`SELECT EXISTS(SELECT 1 FROM leads WHERE is_test = false AND routed_to_lead_id IS NULL AND completed_at IS NULL AND status NOT IN ('lost','spam') AND (scheduled_at IS NOT NULL OR work_started_at IS NOT NULL) AND service ~* '(mobile|on-site|onsite|outdoor|field|install)') AS needed`.then((rows) => Boolean(((rows as { needed?: boolean }[])[0])?.needed)),
   ])
   const weather = await nashvilleWeatherLine(outdoor)
   const ownerPromiseSheet = promises.map((item) => ({ label: `${item.first_name || "Shop"}: ${item.summary || "promise due"}`, url: item.lead_id ? `/ops/leads/${item.lead_id}#promise-${item.id}` : "/board?signal=promise" }))

@@ -7,6 +7,7 @@ import { paymentRollup } from "../lib/payments.mjs"
 const BOARD_SOURCE = readFileSync("app/board/board.tsx", "utf8")
 const BOARD_PAGE_SOURCE = readFileSync("app/board/page.tsx", "utf8")
 const JOB_PAGE_SOURCE = readFileSync("app/ops/leads/[id]/page.tsx", "utf8")
+const PAYMENT_FORM_SOURCE = readFileSync("app/ops/leads/[id]/payment-form.tsx", "utf8")
 const ACTIONS_SOURCE = readFileSync("app/ops/actions.ts", "utf8")
 const LEADS_SOURCE = readFileSync("lib/leads.ts", "utf8")
 const OPS_DATA_SOURCE = readFileSync("lib/ops-data.ts", "utf8")
@@ -45,12 +46,12 @@ test("QA step 2: a partial payment records first and renders the remaining balan
     { paidTotalCents: 50000, fullyPaid: false },
   )
   const action = exportedFunction(ACTIONS_SOURCE, "recordPayment")
-  assert.equal((action.match(/await sql`/g) ?? []).length, 1, "receipt and rollup share one statement")
+  assert.equal((action.match(/await sql`/g) ?? []).length, 2, "the transition is atomic and a second statement verifies a concurrent winner")
   assert.ok(action.indexOf("INSERT INTO events") < action.indexOf("UPDATE leads"), "the receipt feeds the rollup")
   assert.match(action, /SELECT 'invoice\.payment-received'::text,/)
   assert.match(JOB_PAGE_SOURCE, /Paid \{money\(lead\.paid_amount_cents\)\}/)
   assert.match(JOB_PAGE_SOURCE, /` of \$\{money\(lead\.invoice_total_cents\)\}`/)
-  assert.match(JOB_PAGE_SOURCE, /still out`/)
+  assert.match(PAYMENT_FORM_SOURCE, /still out`/)
 })
 
 test("QA step 3: the remaining payment settles and exposes paid truth", () => {
@@ -74,7 +75,7 @@ test("QA step 4: no invoice plus the settles tick sets fullyPaid", () => {
     paymentRollup({ currentPaidCents: 0, amountCents: 40000, invoiceTotalCents: null, settles: true }),
     { paidTotalCents: 40000, fullyPaid: true },
   )
-  assert.match(JOB_PAGE_SOURCE, /<input type="checkbox" name="settles" value="1" \/>/)
+  assert.match(PAYMENT_FORM_SOURCE, /<input type="checkbox" name="settles" value="1" \/>/)
   assert.match(exportedFunction(ACTIONS_SOURCE, "recordPayment"), /const settles = String\(formData\.get\("settles"\) \?\? ""\) === "1"/)
 })
 
@@ -86,11 +87,15 @@ test("QA step 5: status, interaction, and completion each use one events receipt
   assert.equal((recordLeadEvent.match(/\brecordEvent\(\{/g) ?? []).length, 1)
   assert.doesNotMatch(recordLeadEvent, /INSERT INTO lead_events/)
 
-  for (const name of ["updateLeadStatus", "logInteraction"]) {
-    const action = exportedFunction(ACTIONS_SOURCE, name)
-    assert.equal((action.match(/recordLeadEvent\(/g) ?? []).length, 1, `${name} writes one receipt`)
-    assert.doesNotMatch(action, /INSERT INTO lead_events/)
-  }
+  const status = exportedFunction(ACTIONS_SOURCE, "updateLeadStatus")
+  assert.equal((status.match(/INSERT INTO events/g) ?? []).length, 1, "status writes one atomic receipt")
+  assert.match(status, /WITH lead_update AS \([\s\S]*immutable_receipt AS \(/)
+  assert.doesNotMatch(status, /recordLeadEvent\(/)
+  assert.doesNotMatch(status, /INSERT INTO lead_events/)
+
+  const interaction = exportedFunction(ACTIONS_SOURCE, "logInteraction")
+  assert.equal((interaction.match(/recordLeadEvent\(/g) ?? []).length, 1, "interaction writes one receipt")
+  assert.doesNotMatch(interaction, /INSERT INTO lead_events/)
 
   const completion = exportedFunction(ACTIONS_SOURCE, "markLeadComplete")
   const completedReceipt = completion.slice(

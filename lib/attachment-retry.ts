@@ -4,6 +4,7 @@ import { recordEvent } from "@/lib/events"
 import { gmailAccessToken } from "@/lib/gmail"
 import { notifyAll } from "@/lib/notify"
 import { isSafeRasterImage } from "@/lib/media-safety"
+import { classifyInboundAttachmentSensitivity } from "@/lib/shop-brain-invariants.mjs"
 
 type AttachmentRow = {
   id: number; provider: "gmail" | "twilio"; external_message_id: string; attachment_key: string
@@ -15,12 +16,7 @@ type AttachmentRow = {
 export type AttachmentSensitivity = "photo" | "drawing" | "owner_paperwork" | "unclassified"
 
 export function classifyAttachmentSensitivity(filename: string, contentType: string, context = ""): AttachmentSensitivity {
-  const evidence = `${filename} ${context}`.toLowerCase()
-  if (/\b(?:w-?9|certificate of insurance|coi|invoice|payment|deposit|quote|estimate|purchase order|po number|tax)\b/i.test(evidence)) return "owner_paperwork"
-  if (isSafeRasterImage(contentType)) return "photo"
-  if (/\.(?:dxf|dwg|step|stp|iges|igs)$/i.test(filename)) return "drawing"
-  if (contentType.toLowerCase() === "application/pdf" && /\b(?:rfq|drawing|blueprint|plan|schematic|fabrication|shop drawing|spec|cad|part|assembly|detail)\b/i.test(evidence)) return "drawing"
-  return "unclassified"
+  return classifyInboundAttachmentSensitivity(filename, contentType, context) as AttachmentSensitivity
 }
 
 function decodeBase64Url(data: string) { return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64") }

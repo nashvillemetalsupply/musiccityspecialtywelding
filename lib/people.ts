@@ -263,15 +263,26 @@ export async function findPersonByPhone(value: string, isTest = false): Promise<
 }
 
 export async function findRecentOpenLeadForPerson(personId: number, isTest = false) {
+  const resolution = await findOpenLeadResolutionForPerson(personId, isTest)
+  return resolution.leadId
+}
+
+export async function findOpenLeadResolutionForPerson(personId: number, isTest = false): Promise<{ leadId: number | null; ambiguous: boolean; needsJobMatch: boolean }> {
   const sql = getSql()
   const rows = (await sql`
-    SELECT id FROM leads
+    SELECT id, service FROM leads
     WHERE person_id = ${personId}::bigint
       AND is_test = ${isTest}::boolean
       AND (status = ANY(ARRAY['new','contacted','qualified','quoted']::text[]) OR (status = 'won' AND completed_at IS NULL))
+      AND routed_to_lead_id IS NULL
       AND updated_at > now() - interval '90 days'
-    ORDER BY updated_at DESC LIMIT 1`) as { id: number }[]
-  return rows[0] ? Number(rows[0].id) : null
+    ORDER BY (service = 'Needs job match') DESC, updated_at DESC LIMIT 3`) as { id: number; service: string }[]
+  const matchingInbox = rows.find((row) => row.service === "Needs job match")
+  return {
+    leadId: matchingInbox ? Number(matchingInbox.id) : rows.length === 1 ? Number(rows[0].id) : null,
+    ambiguous: rows.length > 1,
+    needsJobMatch: Boolean(matchingInbox),
+  }
 }
 
 export async function getPersonJobCount(personId: number): Promise<number> {

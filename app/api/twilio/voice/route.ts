@@ -69,8 +69,8 @@ export async function POST(req: Request) {
       if (eventId && !isTestCall && !person?.is_test && !(prepared.kind === "draft" && prepared.draft.is_test)) await notifyAll({
         priority: "interrupt",
         stock: "white",
-        title: `${name} calling`,
-        body: prepared.kind === "draft" ? "Tap now for the live call sketch. Confirm it after hangup, then Save Job." : "Their active job is ready.",
+        title: `MCSW call · ${name}`,
+        body: prepared.kind === "draft" ? "The welding business is ringing. Tap for the live call sketch, then Save Job after hangup." : "The welding business is ringing. Their active job is ready.",
         crewBody: prepared.kind === "draft" ? "The call is safe. Tap after you hang up, then Save Job." : "Their active job is ready.",
         url: prepared.kind === "draft" ? `/ops/intake/${prepared.draft.public_id}` : `/ops/leads/${prepared.leadId}`,
         sourceEventId: eventId,

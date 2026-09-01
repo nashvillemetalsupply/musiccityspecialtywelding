@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useActionState, useEffect, useRef, useState } from "react"
 import { deriveCloseoutDraft, type CloseoutReview } from "@/lib/closeout-domain.mjs"
 import { swipeFinishDecision } from "@/lib/shop-brain-invariants.mjs"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import { VoiceCaptureButton } from "../../voice-capture-button"
-import { addLeadCompletionNote, markLeadComplete, undoLeadComplete } from "../../actions"
+import { addLeadCompletionNote, markLeadCompleteState, undoLeadComplete, type OpsActionState } from "../../actions"
 
 type SwipeStart = { x: number; y: number; width: number } | null
+const INITIAL_FINISH_STATE: OpsActionState = { status: "idle", message: "" }
 
 export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCloseout = false, closeoutKey = "" }: { leadId: number; completed: boolean; undoUntil: string | null; voiceReady: boolean; reviewedCloseout?: boolean; closeoutKey?: string }) {
   const finishRef = useRef<HTMLFormElement>(null)
@@ -26,6 +27,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   const [voiceIntentId, setVoiceIntentId] = useState("")
   const [voiceError, setVoiceError] = useState("")
   const [review, setReview] = useState<CloseoutReview | null>(null)
+  const [finishState, finishAction] = useActionState(markLeadCompleteState, INITIAL_FINISH_STATE)
 
   useEffect(() => {
     const remaining = undoUntil ? new Date(undoUntil).getTime() - Date.now() : 0
@@ -63,6 +65,20 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
     return () => window.clearTimeout(timer)
   }, [completed])
 
+  useEffect(() => {
+    if (finishState.status !== "error") return
+    submittedRef.current = false
+    swipeStartRef.current = null
+    const timer = window.setTimeout(() => {
+      setSubmitting(false)
+      setProgress(0)
+      setDragging(false)
+      setKeyboardArmed(false)
+      setAddendumOpen(false)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [finishState])
+
   function finish() {
     if (completed || submitting || submittedRef.current) return
     if (reviewedCloseout && (!review || review.completion !== "complete" || review.remainingWork.trim())) return
@@ -95,7 +111,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   return <section className={`ops-done-bench${completed ? " is-done" : ""}`} aria-labelledby="finish-job-title">
     <div><strong id="finish-job-title">{completed ? "Work finished" : "Finish work"}</strong></div>
 
-    {!completed && <form ref={finishRef} action={markLeadComplete} className={reviewedCloseout ? "ops-closeout-form" : undefined}>
+    {!completed && <form ref={finishRef} action={finishAction} className={reviewedCloseout ? "ops-closeout-form" : undefined}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="reviewedCloseout" value={reviewedCloseout ? "1" : "0"} />
       {reviewedCloseout && <input type="hidden" name="closeoutKey" value={closeoutKey} />}
@@ -199,6 +215,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           <span className="ops-sr-only"> Keyboard users press Enter twice.</span>
         </small>
       </div>}
+      {finishState.message && <p className={`job-action-result is-${finishState.status}`} role={finishState.status === "error" ? "alert" : "status"} aria-live="polite">{finishState.message}</p>}
     </form>}
 
     {completed && !addendumOpen && <button type="button" className="ops-closeout-add" onClick={() => setAddendumOpen(true)}>Add closeout note or photo</button>}

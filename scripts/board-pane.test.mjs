@@ -20,6 +20,12 @@ test("relative board times share the server render clock", () => {
   }
 })
 
+test("the board has one accessible page title and a full-size home target", () => {
+  const css = readFileSync(new URL("../app/board/board.css", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.match(PREVIEW_SOURCE, /<h1 className="ops-sr-only">MCSW job board<\/h1>/)
+  assert.match(css, /\.logo-home\{[^}]*min-width:44px;min-height:44px/)
+})
+
 test("the Waiting date is identical on UTC servers and Central phones", () => {
   const waitingDate = PREVIEW_SOURCE.slice(
     PREVIEW_SOURCE.indexOf("function waitingDate"),
@@ -144,16 +150,20 @@ test("all promise summary identities and source markers are fail-closed", () => 
   for (const filter of [
     "COALESCE(l.is_test, false) = false",
     "COALESCE(p.is_test, false) = false",
+    "COALESCE(lead_person.is_test, false) = false",
     "COALESCE(source_lead.is_test, false) = false",
     "COALESCE(source_person.is_test, false) = false",
+    "COALESCE(source_lead_person.is_test, false) = false",
     "lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'",
     "NOT ILIKE '%[INTERNAL TEST]%'",
   ]) {
     assert.equal(summary.split(filter).length - 1, 2, `${filter} must protect counts and the overdue row`)
   }
   assert.equal((summary.match(/LEFT JOIN events source ON source\.id = c\.source_event_id/g) ?? []).length, 2)
-  assert.equal((summary.match(/p\.id = COALESCE\(c\.person_id, l\.person_id\)/g) ?? []).length, 2)
-  assert.equal((summary.match(/source_person\.id = COALESCE\(source\.person_id, source_lead\.person_id\)/g) ?? []).length, 2)
+  assert.equal((summary.match(/p\.id = c\.person_id/g) ?? []).length, 2)
+  assert.equal((summary.match(/lead_person\.id = l\.person_id/g) ?? []).length, 2)
+  assert.equal((summary.match(/source_person\.id = source\.person_id/g) ?? []).length, 2)
+  assert.equal((summary.match(/source_lead_person\.id = source_lead\.person_id/g) ?? []).length, 2)
   assert.equal((summary.match(/source_lead\.message, source_lead\.notes/g) ?? []).length, 2)
 })
 
@@ -181,8 +191,24 @@ test("the Today trail is the newest bounded slice of the Central calendar day", 
   const today = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
   assert.match(today, /e\.occurred_at >= \(date_trunc\('day', now\(\) AT TIME ZONE 'America\/Chicago'\) AT TIME ZONE 'America\/Chicago'\)/)
   assert.match(today, /e\.occurred_at < \(\(date_trunc\('day', now\(\) AT TIME ZONE 'America\/Chicago'\) \+ interval '1 day'\) AT TIME ZONE 'America\/Chicago'\)/)
-  assert.match(today, /ORDER BY e\.occurred_at DESC, e\.id DESC\s+LIMIT \$\{bounded\}::bigint/)
+  assert.match(today, /const fetchLimit = Math\.min\(bounded \* 12, 144\)/)
+  assert.match(today, /ORDER BY e\.occurred_at DESC, e\.id DESC\s+LIMIT \$\{fetchLimit\}::bigint/)
+  assert.match(today, /collapseTodayCalls\(projected\)\.slice\(0, bounded\)/)
   assert.match(PAGE_SOURCE, /listTodayEvents\(role\)/)
+})
+
+test("the Today trail shows one interaction per call without deleting its receipts", () => {
+  const collapse = EVENTS_SOURCE.slice(
+    EVENTS_SOURCE.indexOf("const TODAY_CALL_KINDS"),
+    EVENTS_SOURCE.indexOf("export async function listTodayEvents"),
+  )
+  for (const kind of ["call.in", "call.answered", "call.missed", "call.out", "call.recording", "call.transcript"]) {
+    assert.ok(collapse.includes(`"${kind}"`), `${kind} must join the call projection`)
+  }
+  assert.match(collapse, /const grouped = new Map<string, TodayEventRow\[\]>\(\)/)
+  assert.match(collapse, /kinds\.has\("call\.transcript"\) \? "notes saved"/)
+  assert.match(collapse, /kinds\.has\("call\.recording"\) \? "recording saved"/)
+  assert.match(collapse, /\.\.\.representative/)
 })
 
 test("the Today trail excludes every test identity and projects bodies for the operator role", () => {
@@ -217,6 +243,23 @@ test("the Today trail collapses long receipts to one readable line", () => {
   assert.match(PAGE_SOURCE, /body\.replace\(\/\\s\+\/g, " "\)\.trim\(\)/)
   assert.match(PAGE_SOURCE, /oneLine\.length <= 140/)
   assert.match(PAGE_SOURCE, /body: trailBody\(body\)/)
+})
+
+test("the work order removes repeated facts and makes false promises correctable", () => {
+  const job = readFileSync(new URL("../app/ops/leads/[id]/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.match(job, /function claimDisplayKey\(predicate: string, value: unknown\)/)
+  assert.match(job, /const visibleClaimKeys = new Set\(\[claimDisplayKey\("service", lead\.service\)\]\)/)
+  assert.match(job, /if \(visibleClaimKeys\.has\(key\)\) return false/)
+  assert.match(job, />Not a promise<\/SafeSubmitButton>/)
+  assert.match(EXTRACT_SOURCE, /A price or estimate stated by itself is a quoted_price_cents fact, not a promise\./)
+})
+
+test("an incomplete phone number never renders a call action", () => {
+  const job = readFileSync(new URL("../app/ops/leads/[id]/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+  assert.match(job, /const customerPhone = normalizePhone\(lead\.phone\)/)
+  assert.match(job, /const hasCustomerPhone = Boolean\(customerPhone/)
+  assert.match(job, /"Customer number incomplete"/)
+  assert.match(job, /<TrackedCallButton leadId=\{lead\.id\} phone=\{customerPhone\}/)
 })
 
 // Extraction is handed the open commitments as context and restates them:
@@ -335,9 +378,9 @@ test("photo dates use receipts only and each event trail keeps the newest four c
   assert.doesNotMatch(photo, /l\.updated_at|leads\.updated_at/)
 
   const trails = EVENTS_SOURCE.slice(EVENTS_SOURCE.indexOf("export async function listBoardEventTrails"), EVENTS_SOURCE.indexOf("export async function listTodayEvents"))
-  assert.match(trails, /PARTITION BY e\.lead_id\s+ORDER BY e\.occurred_at DESC, e\.id DESC/)
-  assert.match(trails, /WHERE trail_rank <= \$\{bounded\}::bigint\s+ORDER BY lead_id ASC, occurred_at ASC, id ASC/)
-  assert.match(trails, /projectEventForRole\(event, role\)/)
+  assert.match(trails, /PARTITION BY COALESCE\(l\.routed_to_lead_id, e\.lead_id\)\s+ORDER BY e\.occurred_at DESC, e\.id DESC/)
+  assert.match(trails, /WHERE trail_rank <= \$\{bounded\}::bigint\s+ORDER BY projected_lead_id ASC, occurred_at ASC, id ASC/)
+  assert.match(trails, /projectEventForRole\(\{ \.\.\.event, lead_id: Number\(projected_lead_id\) \}, role\)/)
   assert.match(trails, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
 })
 

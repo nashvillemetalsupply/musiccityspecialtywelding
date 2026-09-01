@@ -181,6 +181,14 @@
 .job-identity-choices { display: grid; gap: var(--s2); }
 .job-identity-choices form { display: grid; gap: var(--s2); padding: var(--s3); border: 1px solid var(--border); background: var(--surface); }
 .job-identity-choices small { color: var(--text-muted); }
+.job-routing { display: grid; gap: var(--s4); padding: var(--s4); border-top: 1px solid var(--border); background: var(--status-warn-sur); }
+.job-routing > div { display: grid; gap: var(--s1); }
+.job-routing > div > span { color: var(--status-warn-ink); font-size: var(--t-caption); font-weight: var(--w-semi); text-transform: uppercase; letter-spacing: .06em; }
+.job-routing :is(p, h2) { margin: 0; }
+.job-routing form { display: grid; gap: var(--s3); }
+.job-routing label { display: grid; gap: var(--s1); color: var(--text-secondary); font-size: var(--t-label); }
+.job-routing select { width: 100%; min-height: 48px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-raised); color: var(--text-primary); padding: 0 var(--s3); }
+.job-routing-done { margin: 0 var(--s4) var(--s4); }
 
 .job-flow { display: grid; gap: var(--s4); }
 .job-summary,
@@ -251,9 +259,12 @@
 .job-thread-stack details > summary { min-height: 44px; display: flex; align-items: center; color: var(--text-secondary); font-size: var(--t-label); }
 
 .job-attachments { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--s2); }
+.job-attachment { min-width: 0; display: grid; gap: var(--s2); align-content: start; }
 .job-attachments a { min-width: 0; padding: var(--s2); display: grid; gap: var(--s1); border: 1px solid var(--border); background: var(--surface-raised); }
 .job-attachments img { width: 100%; max-height: 12rem; object-fit: cover; }
 .job-attachments span { color: var(--text-muted); font-size: var(--t-caption); }
+.job-attachment-review { display: grid; gap: var(--s2); padding: var(--s2); border: 1px solid var(--border); background: var(--status-warn-sur); }
+.job-attachment-review small { color: var(--status-warn-ink); }
 
 .job-page .ops-spike-reply,
 .job-page .ops-glass-control { min-width: 0; padding: var(--s4) !important; display: grid; gap: var(--s3); border: 0 !important; border-top: 1px solid var(--border) !important; border-radius: 0 !important; color: var(--text-primary) !important; background: var(--surface) !important; box-shadow: none !important; }
@@ -372,13 +383,15 @@
 .job-onsite-payment-body { padding: var(--s4); display: grid; gap: var(--s3); }
 .job-onsite-payment-body > p { color: var(--text-secondary); }
 .job-onsite-payment-body > small { color: var(--text-muted); }
-.job-payment-manual { width: fit-content; color: var(--link); white-space: nowrap; overflow-wrap: normal !important; text-decoration: underline; text-underline-offset: .2em; }
+.job-payment-manual { width: fit-content; min-height:44px; display:inline-flex; align-items:center; color: var(--link); white-space: nowrap; overflow-wrap: normal !important; text-decoration: underline; text-underline-offset: .2em; }
 .job-onsite-payment-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
 .job-onsite-payment-actions > a { min-width: 0; min-height: 44px; padding-block: var(--s2); white-space: nowrap; overflow-wrap: normal; text-align: center; }
 .job-payment-note { padding: var(--s3); border-left: 3px solid var(--status-warn-mark); background: var(--status-warn-sur); color: var(--status-warn-ink) !important; }
 .job-payment-form { padding: var(--s4); display: grid; gap: var(--s2); }
 .job-payment-form > label:not(.job-check) { color: var(--text-secondary); font-size: var(--t-label); font-weight: var(--w-med); }
 .job-payment-form > small { color: var(--text-muted); }
+.job-action-result { margin:0; padding:var(--s2) var(--s3); border-left:3px solid var(--status-good-mark); background:var(--status-good-sur); color:var(--status-good-ink); }
+.job-action-result.is-error { border-left-color:var(--status-bad-mark); background:var(--status-bad-sur); color:var(--status-bad-ink); }
 .job-payment-form > button { width: 100%; }
 
 .job-finish-close { min-width: 0; display: grid; gap: var(--s3); scroll-margin-top: var(--s4); }

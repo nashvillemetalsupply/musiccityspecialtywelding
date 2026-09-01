@@ -262,6 +262,8 @@ const statements = [
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS crew_message TEXT`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS crew_notes TEXT`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS intake_key TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE leads ADD COLUMN IF NOT EXISTS routed_to_lead_id BIGINT REFERENCES leads(id)`,
+  `CREATE INDEX IF NOT EXISTS leads_routed_to_idx ON leads(routed_to_lead_id) WHERE routed_to_lead_id IS NOT NULL`,
   `CREATE UNIQUE INDEX IF NOT EXISTS leads_intake_key_idx ON leads(intake_key) WHERE intake_key <> ''`,
   `ALTER TABLE people ADD COLUMN IF NOT EXISTS is_regular BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE people ADD COLUMN IF NOT EXISTS account_key TEXT NOT NULL DEFAULT ''`,

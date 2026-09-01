@@ -252,7 +252,7 @@ export default function Page() {
           <a className="ms-sticker is-arc" href={shopPhone.href}>{shopPhone.display}</a>
         </div>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-proof" />
 
         <section className="ms-work" id="work">
           <PlateStamp id="PLT-01" name="The work" className="is-ink" />
@@ -312,7 +312,7 @@ export default function Page() {
           </div>
         </section>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-services" />
 
         <section className="ms-services" id="services">
           <PlateStamp id="PLT-02" name="What we weld" />
@@ -338,7 +338,7 @@ export default function Page() {
                   <strong>{service.line}</strong>
                   <p>{service.detail}</p>
                   <Link href={service.href}>
-                    See this work <ArrowUpRight aria-hidden="true" />
+                    {service.title} details <ArrowUpRight aria-hidden="true" />
                   </Link>
                 </div>
                 <figure className="ms-service-image">
@@ -362,7 +362,7 @@ export default function Page() {
           </aside>
         </section>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-capabilities" />
 
         <section className="ms-get-it" id="approach" aria-label="We understand the job">
           <div className="ms-get-it-pin">
@@ -376,7 +376,7 @@ export default function Page() {
           </div>
         </section>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-process" />
 
         <section className="ms-process" id="process" aria-labelledby="process-title">
           <PlateStamp id="PLT-03" name="The plan" />
@@ -395,7 +395,7 @@ export default function Page() {
           </a>
         </section>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-customer-page" />
 
         <section className="ms-job-glass" id="job-glass" aria-labelledby="job-glass-title">
           <div className="ms-job-glass-copy ms-reveal">
@@ -426,7 +426,7 @@ export default function Page() {
           </figure>
         </section>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-area" />
 
         <section className="ms-territory" id="service-area" aria-labelledby="territory-title">
           <PlateStamp id="PLT-04" name="Territory" className="is-ink" />
@@ -446,7 +446,7 @@ export default function Page() {
           </div>
         </section>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-faq" />
 
         <section className="ms-faq" id="faq" aria-labelledby="faq-title">
           <PlateStamp id="PLT-05" name="Straight answers" />
@@ -463,12 +463,12 @@ export default function Page() {
           </div>
         </section>
 
-        <WeldSeam />
+        <WeldSeam id="wm-bead-contact" />
 
         <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
       </main>
 
-      <WeldSeam />
+      <WeldSeam id="wm-bead-footer" />
 
       <footer className="ms-footer">
         <ShopCrest className="wm-art wm-crest" style={{ width: "7.5rem", top: "2.6rem", right: "6%", opacity: 0.35 }} />

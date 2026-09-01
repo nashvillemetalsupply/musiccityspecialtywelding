@@ -378,6 +378,7 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
 
   return (
     <div className="app">
+      <h1 className="ops-sr-only">MCSW job board</h1>
     
       <header className="top">
         <Link className="logo-home" href="/board" aria-label="Job Control home">
@@ -409,6 +410,15 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
         <span className="rl-gap"></span>
         <Link className="rl" href="/ops/install" aria-label="Help"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="6"/><path d="M6.4 6.2a1.7 1.7 0 1 1 2.2 1.9v1"/><path d="M8 11.4h.01"/></svg></Link>
       </nav>
+
+      {onTheLine && sketch && <section className="live-call-jump" aria-label="Live MCSW call">
+        <div><strong>Welding call live</strong><span>{callLine(sketch, nowMs)}</span></div>
+        {sketch.leadId != null
+          ? <Link className="btn btn--sm btn--go" href={`/ops/leads/${sketch.leadId}`}>Open job</Link>
+          : sketch.draftId
+            ? <Link className="btn btn--sm btn--go" href={`/ops/intake/${sketch.draftId}`}>Open call</Link>
+            : null}
+      </section>}
     
       <aside className="pane">
         <div className="pane-body">

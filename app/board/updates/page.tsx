@@ -2,15 +2,15 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { dbConfigured, getSql } from "@/lib/db"
-import { getEvent } from "@/lib/events"
+import { getReadableEventById } from "@/lib/event-access"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { countUnreadWire, listWire } from "@/lib/notify"
 import { normalizePage } from "@/lib/pagination"
 import { shopEventLabel } from "@/lib/shop-language"
-import { projectEventForRole } from "@/lib/visibility"
 import { PaidMoment } from "@/app/ops/paid-moment"
 import { WireStrip } from "@/app/ops/wire-strip"
 import { ThemeBoot } from "../theme-boot"
+import { BoardRouteNav } from "../board-route-nav"
 import "../board.css"
 import "./updates.css"
 
@@ -62,8 +62,7 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
   // id gets the "not available in your role" card, never the row.
   const receiptId = Number(params.receipt)
   const receiptRequested = Number.isInteger(receiptId) && receiptId > 0
-  const receiptRaw = receiptRequested ? await getEvent(receiptId) : null
-  const receipt = receiptRaw ? projectEventForRole(receiptRaw, operator.role) : null
+  const receipt = receiptRequested ? await getReadableEventById(receiptId, operator.role) : null
   const receiptCall = receipt && typeof receipt.detail?.callSid === "string"
     ? (await getSql()`SELECT id FROM calls WHERE twilio_sid = ${receipt.detail.callSid}::text LIMIT 1`) as { id: number }[]
     : []
@@ -117,5 +116,6 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
       </> : <p>This update is not available in your role.</p>}
     </section>}
     </main>
+    <BoardRouteNav role={operator.role} current="updates" />
   </>
 }

@@ -57,7 +57,7 @@ const EMPTY_BOARD: BoardPaneData = {
   items: [],
   details: new Map(),
   resultTotal: 0,
-  pageSize: 5,
+  pageSize: 8,
   page: 1,
   hasNext: false,
   stage: "board",
@@ -117,7 +117,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // The same menu and dock the /ops pages mount, so #radio and #handset open
   // the Morning Brief and Ask Jobs here too. Signed out there is no menu,
   // which is exactly the /ops layout's own gate.
-  const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} />
+  const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} initialSearch={query} includeTests={includeTests} />
   const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice] = await Promise.all([
     // Oldest first is the tracker's own sort. The pane's counts are
     // aggregates over the same query and do not depend on row order.

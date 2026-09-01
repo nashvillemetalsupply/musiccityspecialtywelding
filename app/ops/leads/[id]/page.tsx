@@ -17,7 +17,7 @@ import { canAccessInternalTests, listOperators } from "@/lib/operators"
 import { twilioSmsConfigured } from "@/lib/twilio"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getMessagingConsentState } from "@/lib/messaging-consent"
-import { isReservedShopPhone } from "@/lib/people"
+import { isReservedShopPhone, normalizePhone } from "@/lib/people"
 import { LatePromiseMessage } from "./voice-draft"
 import { normalizePage } from "@/lib/pagination"
 import { readableEmailText } from "@/lib/gmail-plaintext.mjs"
@@ -26,9 +26,11 @@ import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { glassUrl } from "@/lib/glass-delivery"
 import { shopClaimLabel, shopClaimText, shopDeliveryLabel, shopEventLabel, shopJobStatusLabel, shopSourceLabel } from "@/lib/shop-language"
 import { strongestEmailReceiptStatus } from "@/lib/email-provider-truth.mjs"
+import { isSafeRasterImage } from "@/lib/media-safety"
 import { projectClaimForRole, projectCommitmentForRole, projectEventForRole, redactCrewText } from "@/lib/visibility"
 import { OpsLoginForm } from "../../login-form"
 import { DoneStamp } from "./done-stamp"
+import { PaymentForm } from "./payment-form"
 import { HandoffControl } from "./handoff-control"
 import { SpikeReply } from "./spike-reply"
 import { GlassControl } from "./glass-control"
@@ -41,12 +43,13 @@ import {
   acknowledgeDeliveryFailure,
   assignLeadOperator,
   captureLeadContact,
+  classifyLeadAttachment,
   deleteTestLead,
   logInteraction,
   markFirstResponse,
   markReviewRequested,
   recordInvoice,
-  recordPayment,
+  routeConversationToJob,
   resolveIdentityConflict,
   saveEstimate,
   saveJobLineItems,
@@ -86,6 +89,11 @@ function money(cents: unknown) {
 function displayPhone(phone: string) {
   const value = phone.replace(/\D/g, "").slice(-10)
   return value.length === 10 ? `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6)}` : phone
+}
+
+function claimDisplayKey(predicate: string, value: unknown) {
+  const normalized = shopClaimText(value).replace(/\s+/g, " ").trim().toLocaleLowerCase("en-US")
+  return `${predicate.trim().toLocaleLowerCase("en-US")}:${normalized}`
 }
 
 function isPast(iso: string) {
@@ -147,12 +155,21 @@ function SpikeAttachments({ items, leadId, role }: { items: Array<{ pathname: st
   return <div className="job-attachments">{visible.map((item) => {
     const href = `/api/ops/attachment?lead=${leadId}&path=${encodeURIComponent(item.pathname)}`
     const isImage = item.contentType.startsWith("image/")
+    const isShareablePhoto = isSafeRasterImage(item.contentType)
     const isDrawing = /(?:dxf|dwg|step|stp|iges|igs|drawing|blueprint)/i.test(`${item.contentType} ${item.name}`)
-    return <a className={isDrawing ? "is-blueprint" : isImage ? "is-polaroid" : "is-file"} href={href} target="_blank" rel="noreferrer" key={item.pathname}>
-      {isImage && <img src={href} alt="Customer upload" />}
-      <span>{isDrawing ? "Drawing" : isImage ? "Photo" : "File"}</span>
-      <strong>{item.name}</strong>
-    </a>
+    return <div className="job-attachment" key={item.pathname}>
+      <a className={isDrawing ? "is-blueprint" : isImage ? "is-polaroid" : "is-file"} href={href} target="_blank" rel="noreferrer">
+        {isImage && <img src={href} alt="Customer upload" />}
+        <span>{isDrawing ? "Drawing" : isImage ? "Photo" : "File"}</span>
+        <strong>{item.name}</strong>
+      </a>
+      {role === "owner" && isShareablePhoto && item.sensitivity === "unclassified" && <form action={classifyLeadAttachment} className="job-attachment-review">
+        <input type="hidden" name="leadId" value={leadId} />
+        <input type="hidden" name="pathname" value={item.pathname} />
+        <small>Owner only until you confirm this is a job photo.</small>
+        <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sharing...">Share with crew</SafeSubmitButton>
+      </form>}
+    </div>
   })}</div>
 }
 
@@ -181,7 +198,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   const includeTests = canAccessInternalTests(operator.role)
   const lead = await getLead(leadId, operator.role, { includeTests })
   if (!lead) notFound()
-  const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems] = await Promise.all([
+  const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems, attachmentClassifications, routingChoices] = await Promise.all([
     listLeadMessages(leadId),
     listCommitments({ leadId, status: "open", includeTests }),
     listActiveClaims("lead", leadId),
@@ -190,7 +207,21 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     listLeadEventPage(leadId, requestedActivityPage, 25, operator.role),
     listOperators(),
     listJobLineItems(leadId, operator.role, includeTests),
+    getSql()`SELECT blob_path, sensitivity FROM ingest_attachments
+      WHERE lead_id = ${leadId}::bigint AND status = 'stored'`,
+    operator.role === "owner" && lead.service === "Needs job match" && !lead.routed_to_lead_id && lead.person_id
+      ? getSql()`SELECT id, service, message FROM leads
+          WHERE person_id = ${lead.person_id}::bigint AND id <> ${lead.id}::bigint
+            AND is_test = ${lead.is_test}::boolean
+            AND completed_at IS NULL AND status NOT IN ('lost','spam')
+            AND routed_to_lead_id IS NULL AND service <> 'Needs job match'
+          ORDER BY updated_at DESC LIMIT 20`
+      : Promise.resolve([]),
   ])
+  const attachmentSensitivity = new Map((attachmentClassifications as Array<{ blob_path: string; sensitivity: string }>).map((item) => [item.blob_path, item.sensitivity]))
+  const fileChoices = routingChoices as Array<{ id: number; service: string; message: string }>
+  const routedToLeadId = Number(lead.routed_to_lead_id) || null
+  const needsJobMatch = lead.service === "Needs job match" && !routedToLeadId
   const activityPageNumber = activityPage.page
 
   const completionReceipts = lead.completed_at ? (await getSql()`
@@ -240,7 +271,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       )
     LIMIT 1`) as { id: number; display_name: string; phone: string | null; email: string | null }[] : []
   const replyTarget = replyTargets[0] ?? null
-  const replyTargetConsent = replyTarget?.phone ? await getMessagingConsentState(replyTarget.phone) : "unknown"
+  const replyTargetPhone = normalizePhone(replyTarget?.phone ?? "")
+  const replyTargetConsent = replyTargetPhone ? await getMessagingConsentState(replyTargetPhone) : "unknown"
 
   const identityConflicts = operator.role === "owner" ? (await getSql()`
     SELECT c.id, c.phone, c.email,
@@ -260,10 +292,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     }> : []
 
   const assignedOperator = operators.find((item) => item.id === lead.assigned_operator_id)
-  const hasCustomerPhone = Boolean(lead.phone && !lead.phone_is_placeholder && !isReservedShopPhone(lead.phone))
+  const customerPhone = normalizePhone(lead.phone)
+  const hasCustomerPhone = Boolean(customerPhone && !lead.phone_is_placeholder && !isReservedShopPhone(customerPhone))
   const smsServiceReady = twilioSmsConfigured()
   const voiceReady = voiceTranscriptionConfigured()
-  const consentState = hasCustomerPhone ? await getMessagingConsentState(lead.phone) : "unknown"
+  const consentState = hasCustomerPhone ? await getMessagingConsentState(customerPhone) : "unknown"
   const customerTextReady = smsServiceReady && consentState === "granted"
   const targetTextReady = smsServiceReady && replyTargetConsent === "granted"
   let activeGlassUrl = ""
@@ -295,7 +328,20 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     : null
   const sourceEventById = new Map(safeUnifiedEvents.map((event) => [event.id, event]))
   const sourceCallBySid = new Map(calls.map((call) => [call.twilio_sid, call]))
-  const memoryClaims = safeClaims.filter((claim) => !["quoted_price_cents", "build_fact"].includes(claim.predicate)).slice(0, 6)
+  // The immutable claim journal may contain the same extracted fact from
+  // several calls or emails. The work-order summary is a projection, not the
+  // journal: show each normalized fact once, and do not repeat the service
+  // already printed at the top of this card.
+  const visibleClaimKeys = new Set([claimDisplayKey("service", lead.service)])
+  const memoryClaims = safeClaims
+    .filter((claim) => !["quoted_price_cents", "build_fact"].includes(claim.predicate))
+    .filter((claim) => {
+      const key = claimDisplayKey(claim.predicate, claim.value)
+      if (visibleClaimKeys.has(key)) return false
+      visibleClaimKeys.add(key)
+      return true
+    })
+    .slice(0, 6)
   const visibleJobStatus = lead.status === "spam" || lead.status === "lost"
     ? shopJobStatusLabel(lead.status)
     : lead.handed_off_at
@@ -348,37 +394,56 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <span aria-hidden="true">Open →</span>
           </Link>}
         </div>
-        <div className={`chip job-status is-${lead.status}`}>{visibleJobStatus}</div>
+        <div className={`chip job-status is-${lead.status}`}>{needsJobMatch ? "Needs job match" : routedToLeadId ? "Filed" : visibleJobStatus}</div>
       </header>
+
+      {routedToLeadId && <p className="job-alert job-alert--success job-routing-done">
+        Conversation filed to <Link href={`/ops/leads/${routedToLeadId}#spike`}>Job #{routedToLeadId}</Link>. New messages will stay with the matched job while it is active.
+      </p>}
+      {needsJobMatch && operator.role === "owner" && <section className="job-routing" aria-labelledby="job-routing-title">
+        <div><span>One quick decision</span><h2 className="t-sub" id="job-routing-title">Which job are these messages about?</h2><p>The text stayed separate so it could not land on the wrong work order.</p></div>
+        {fileChoices.length ? <form action={routeConversationToJob}>
+          <input type="hidden" name="sourceLeadId" value={lead.id} />
+          <label>File conversation under<select name="targetLeadId" required defaultValue="">
+            <option value="" disabled>Choose the correct job</option>
+            {fileChoices.map((choice) => <option value={choice.id} key={choice.id}>Job #{choice.id} · {choice.service} · {choice.message.slice(0, 70)}</option>)}
+          </select></label>
+          <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Filing...">File messages to job</SafeSubmitButton>
+        </form> : <p className="job-alert job-alert--stop">No other active job is available. Open the correct job first, then return here.</p>}
+      </section>}
 
       <div className="job-contact">
         <div>
           <span>Contact</span>
-          <strong>{lead.phone_is_placeholder ? "Customer number not caught" : lead.phone ? displayPhone(lead.phone) : "Customer number not caught"}</strong>
+          <strong>{lead.phone_is_placeholder || !lead.phone
+            ? "Customer number not caught"
+            : hasCustomerPhone
+              ? displayPhone(customerPhone)
+              : "Customer number incomplete"}</strong>
           <small>{assignedOperator?.name || (lead.assigned_operator_id === operator.id ? operator.name : "Not assigned")}</small>
           {lead.person_id && Number(lead.person_job_count ?? 0) > 1 && <Link className="btn btn--sm btn--edge job-repeat" href={`/ops/accounts/${lead.person_id}`}>Repeat customer, {Number(lead.person_job_count) - 1} prior jobs</Link>}
           {lead.email && <Link className="btn btn--sm btn--edge job-email" href="?replyChannel=email#job-reply">Email</Link>}
         </div>
-        <nav className="job-action-spine" aria-label="Job actions">
-          {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={lead.phone} label="Call" />}
+        {!needsJobMatch && !routedToLeadId && <nav className="job-action-spine" aria-label="Job actions">
+          {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={customerPhone} label="Call" />}
           {customerTextReady && <Link className="btn btn--sm btn--edge" href="?replyChannel=text#job-reply">Text</Link>}
           <Link className="btn btn--sm btn--edge" href="#onsite-payment">Take payment</Link>
-          <Link className="btn btn--sm btn--go" href="#finish-close">{lead.handed_off_at ? "Job closed" : lead.completed_at ? "Close job" : "Finish work"}</Link>
-        </nav>
+          <Link className="btn btn--sm btn--edge" href="#finish-close">{lead.handed_off_at ? "Job closed" : lead.completed_at ? "Close job" : "Finish work"}</Link>
+        </nav>}
       </div>
 
-      <details className="job-contact-edit" open={!hasCustomerPhone && !lead.email}>
+      {!needsJobMatch && !routedToLeadId && <details className="job-contact-edit" open={!hasCustomerPhone && !lead.email}>
         <summary>{hasCustomerPhone || lead.email ? "Edit contact" : "Add contact"}</summary>
         <form action={captureLeadContact}>
           <input type="hidden" name="leadId" value={lead.id} />
-          <label>Mobile number<input name="phone" type="tel" inputMode="tel" defaultValue={hasCustomerPhone ? lead.phone : ""} placeholder="(615) 555-0123" /></label>
+          <label>Mobile number<input name="phone" type="tel" inputMode="tel" defaultValue={!lead.phone_is_placeholder ? lead.phone : ""} placeholder="(615) 555-0123" /></label>
           <label>Email<input name="email" type="email" inputMode="email" defaultValue={lead.email} placeholder="customer@company.com" /></label>
           <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Save contact</SafeSubmitButton>
         </form>
         <small>The customer record is checked before saving.</small>
-      </details>
+      </details>}
 
-      {smsServiceReady && hasCustomerPhone && consentState === "unknown" && operator.role === "owner" && <details className="job-consent" id="text-permission">
+      {!needsJobMatch && !routedToLeadId && smsServiceReady && hasCustomerPhone && consentState === "unknown" && operator.role === "owner" && <details className="job-consent" id="text-permission">
         <summary>Enable customer texting</summary>
         <p>Before recording permission, tell the customer: “You agree to receive recurring customer-care and job-update text messages from Music City Specialty Welding about this job. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. Consent is optional and is not a condition of purchase.” Use this only after the customer clearly says yes.</p>
         <form action={recordVerbalTextConsent}>
@@ -386,9 +451,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Recording…">Customer said yes</SafeSubmitButton>
         </form>
       </details>}
-      {smsServiceReady && hasCustomerPhone && consentState === "revoked" && <p className="job-alert job-alert--stop" id="text-permission">Customer opted out. Text stays off until the customer sends START.</p>}
+      {!needsJobMatch && !routedToLeadId && smsServiceReady && hasCustomerPhone && consentState === "revoked" && <p className="job-alert job-alert--stop" id="text-permission">Customer opted out. Text stays off until the customer sends START.</p>}
 
-      {identityConflicts.map((conflict, conflictIndex) => <section className="job-identity" id={conflictIndex === 0 ? "identity-jig" : `identity-jig-${conflict.id}`} key={conflict.id}>
+      {!needsJobMatch && !routedToLeadId && identityConflicts.map((conflict, conflictIndex) => <section className="job-identity" id={conflictIndex === 0 ? "identity-jig" : `identity-jig-${conflict.id}`} key={conflict.id}>
         <div><span>Customer check · owner</span><h2 className="t-sub">Two customer records disagree</h2><p>The job stayed separate. Choose only when the activity record makes it clear.</p></div>
         <div className="job-identity-choices">
           {conflict.people.map((person) => <form action={resolveIdentityConflict} key={person.id}>
@@ -452,8 +517,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <time>{promise.due_at ? formatCentral(promise.due_at) : "No date caught"}</time>
             {sourceEventById.get(promise.source_event_id) && <Link className="btn btn--sm btn--edge job-promise-source" href={`#e${promise.source_event_id}`}>Show source, {formatCentral(sourceEventById.get(promise.source_event_id)!.occurred_at)}</Link>}
             <div className="job-actions">
-              {promise.confidence < 0.6 && <><form action={confirmPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Confirm</SafeSubmitButton></form><form action={rejectPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Reject</SafeSubmitButton></form></>}
+              {promise.confidence < 0.6 && <form action={confirmPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Confirm</SafeSubmitButton></form>}
               <form action={keepPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Mark kept</SafeSubmitButton></form>
+              <form action={rejectPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a promise</SafeSubmitButton></form>
               {operator.role === "owner" && promise.direction === "we_promised" && promise.due_at && <form action={publishPromiseToGlass}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Adding...">Add to Customer Page</SafeSubmitButton></form>}
             </div>
             {promise.due_at && isPast(promise.due_at) && customerTextReady && <details className="job-handle"><summary>Handle it</summary><form action={handlePromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><LatePromiseMessage leadId={lead.id} commitmentId={promise.id} fallback={`Running behind on your ${lead.service.toLowerCase()}. I’m sorry.`} /><input name="reason" defaultValue="Running behind — new date confirmed with the shop." aria-label="Reason shown on Customer Page" /><label>New promise<select name="quickDue" defaultValue="tomorrow-am"><option value="tomorrow-am">Tomorrow morning</option><option value="two-days-am">In two mornings</option><option value="next-monday-am">Next Monday morning</option></select></label><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sending...">Text + update date</SafeSubmitButton></form></details>}
@@ -473,7 +539,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             }
             if (item.kind === "message") {
               const message = item.message
-              return <article className={`job-message is-${message.direction}${["failed", "undelivered"].includes(message.status) ? " is-failed" : ""}`} key={item.id}><span>{message.direction === "in" ? lead.first_name || "Customer" : "Shop"}</span><p>{(operator.role === "owner" ? message.body : redactCrewText(message.crew_body || "MCSW Jobs is preparing the crew-safe message.")) || `${message.media.length} attachment(s)`}</p><SpikeAttachments items={spikeAttachments(message.media)} leadId={lead.id} role={operator.role} /><time>{formatCentral(message.sent_at)}{message.direction === "out" ? `, ${shopDeliveryLabel(message.status)}` : ""}</time></article>
+              return <article className={`job-message is-${message.direction}${["failed", "undelivered"].includes(message.status) ? " is-failed" : ""}`} key={item.id}><span>{message.direction === "in" ? lead.first_name || "Customer" : "Shop"}</span><p>{(operator.role === "owner" ? message.body : redactCrewText(message.crew_body || "MCSW Jobs is preparing the crew-safe message.")) || `${message.media.length} attachment(s)`}</p><SpikeAttachments items={spikeAttachments(message.media).map((item) => ({ ...item, sensitivity: attachmentSensitivity.get(item.pathname) || item.sensitivity }))} leadId={lead.id} role={operator.role} /><time>{formatCentral(message.sent_at)}{message.direction === "out" ? `, ${shopDeliveryLabel(message.status)}` : ""}</time></article>
             }
             const event = item.event
             if (event.kind === "job.completed" || event.kind === "note.voice") {
@@ -481,10 +547,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               return <article className="job-call is-closeout" key={item.id}><div><strong>{event.detail?.noteSource === "voice" || event.kind === "note.voice" ? "Voice note" : "Work finished"}</strong><span>{byline}, {formatCentral(event.occurred_at)}</span></div>{operator.role === "owner" && typeof event.detail?.voicePath === "string" && <audio controls preload="none" src={`/api/ops/voice-note?event=${event.id}`} />}<p>{visibleEventText(event.body, operator.role)}</p></article>
             }
             const delivery = event.kind === "email.out" ? emailDelivery.get(Number(event.id)) ?? (event.detail?.deliveryStatus === "delivered" ? "delivered" : "pending") : null
-            return <article className={`job-letter is-${event.kind === "email.out" ? "out" : "in"}${delivery === "failed" ? " is-failed" : ""}`} key={item.id}><span>{event.kind === "email.out" ? `Shop email, ${shopDeliveryLabel(delivery ?? "pending")}` : event.kind === "email.attachments" ? "Attachments" : event.kind === "email.failed" ? "Email failed" : "Customer email"}</span><p>{visibleEventText(event.body, operator.role)}</p><SpikeAttachments items={spikeAttachments(event.detail?.attachments)} leadId={lead.id} role={operator.role} /><time>{formatCentral(event.occurred_at)}</time></article>
+            return <article className={`job-letter is-${event.kind === "email.out" ? "out" : "in"}${delivery === "failed" ? " is-failed" : ""}`} key={item.id}><span>{event.kind === "email.out" ? `Shop email, ${shopDeliveryLabel(delivery ?? "pending")}` : event.kind === "email.attachments" ? "Attachments" : event.kind === "email.failed" ? "Email failed" : "Customer email"}</span><p>{visibleEventText(event.body, operator.role)}</p><SpikeAttachments items={spikeAttachments(event.detail?.attachments).map((item) => ({ ...item, sensitivity: attachmentSensitivity.get(item.pathname) || item.sensitivity }))} leadId={lead.id} role={operator.role} /><time>{formatCentral(event.occurred_at)}</time></article>
           })}
         </div>
-        {(customerTextReady || Boolean(lead.email) || targetTextReady || Boolean(replyTarget?.email)) ? <SpikeReply
+        {!needsJobMatch && !routedToLeadId && (customerTextReady || Boolean(lead.email) || targetTextReady || Boolean(replyTarget?.email)) ? <SpikeReply
           leadId={lead.id}
           hasEmail={Boolean(lead.email)}
           hasPhone={customerTextReady}
@@ -495,10 +561,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           voiceReady={voiceReady}
           focusOnMount={query.replyChannel === "text" || query.replyChannel === "email"}
           initialChannel={query.replyChannel === "text" && (replyTarget ? targetTextReady : customerTextReady) ? "text" : query.replyChannel === "email" && (replyTarget?.email || lead.email) ? "email" : replyTarget && !targetTextReady && replyTarget.email ? "email" : !replyTarget && (!customerTextReady || lastCustomerEvent?.kind === "email.in" || lead.preferred_contact.toLowerCase() === "email") ? "email" : "text"}
-        /> : <p className="job-empty t-caption">Add an email address or record text consent before replying.</p>}
+        /> : <p className="job-empty t-caption">{needsJobMatch ? "Choose the correct job before replying." : routedToLeadId ? `Continue this conversation in Job #${routedToLeadId}.` : "Add an email address or record text consent before replying."}</p>}
       </section>
 
-      {operator.role === "owner" && <GlassControl
+      {operator.role === "owner" && !needsJobMatch && !routedToLeadId && <GlassControl
         leadId={lead.id}
         textReady={customerTextReady}
         initialUrl={activeGlassUrl}
@@ -508,7 +574,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       />}
       </div>
 
-      <details className="card job-details">
+      {!needsJobMatch && !routedToLeadId && <details className="card job-details">
         <summary>
           <span><strong>Job Details</strong><small>Contact, price, status, notes</small></span>
           <b aria-hidden="true" />
@@ -782,7 +848,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             </form>
           </div>
 
-          <form action={updateLeadStatus} className="job-form">
+          {!lead.completed_at && !lead.handed_off_at ? <form action={updateLeadStatus} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
             <label htmlFor="lead-status">Update job status</label>
             <select id="lead-status" name="status" defaultValue={lead.status}>
@@ -792,7 +858,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             </select>
             <input name="reason" placeholder="Reason (required for Did not book or Not a job)" defaultValue={lead.status_reason} aria-label="Reason for Did not book or Not a job" />
             <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Update status</SafeSubmitButton>
-          </form>
+          </form> : <p className="job-current t-caption">Finished jobs are locked. Use Undo finish below before changing status.</p>}
 
           <form action={markReviewRequested} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
@@ -829,9 +895,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </section>
       </div>
         </div>
-      </details>
+      </details>}
 
-      <section className="card job-onsite-payment" id="onsite-payment" aria-labelledby="onsite-payment-title">
+      {!needsJobMatch && !routedToLeadId && <><section className="card job-onsite-payment" id="onsite-payment" aria-labelledby="onsite-payment-title">
         <header>
           <div>
             <span>On site</span>
@@ -870,32 +936,13 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             {lead.invoice_total_cents ? ` of ${money(lead.invoice_total_cents)}` : ""}
           </strong>}
         </header>
-        <form action={recordPayment} className="job-payment-form">
-          <input type="hidden" name="leadId" value={lead.id} />
-          <input type="hidden" name="receiptKey" value={randomUUID()} />
-          <label htmlFor="payment-amount">Amount received</label>
-          <input id="payment-amount" name="paymentAmount" inputMode="decimal" autoComplete="transaction-amount" placeholder="0.00" required aria-required="true" />
-          <label htmlFor="payment-method">Payment method</label>
-          <select id="payment-method" name="paymentMethod" defaultValue="cash">
-            <option value="cash">Cash</option>
-            <option value="check">Check</option>
-            <option value="card">Card</option>
-            <option value="other">Other</option>
-          </select>
-          <label className="job-check job-payment-settles">
-            <input type="checkbox" name="settles" value="1" />
-            Mark remaining balance paid in full
-          </label>
-          <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Recording…">Record payment</SafeSubmitButton>
-          <small>Use this for cash, checks, or payments taken outside QuickBooks. A GoPayment receipt files itself; do not enter it twice. Payment does not finish or close the job.</small>
-          {Number(lead.paid_amount_cents ?? 0) > 0 && <span className="job-current t-caption">
-            {lead.paid_at
-              ? "Balance paid in full"
-              : lead.invoice_total_cents
-                ? `${money(Math.max(0, Number(lead.invoice_total_cents) - Number(lead.paid_amount_cents ?? 0)))} still out`
-                : "Payment recorded; balance is not marked paid in full"}
-          </span>}
-        </form>
+        <PaymentForm
+          leadId={lead.id}
+          receiptKey={randomUUID()}
+          paidAmountCents={Number(lead.paid_amount_cents ?? 0)}
+          invoiceTotalCents={lead.invoice_total_cents === null ? null : Number(lead.invoice_total_cents)}
+          paidAt={lead.paid_at}
+        />
       </section>}
 
       <section className="job-finish-close" id="finish-close" aria-labelledby="finish-close-title">
@@ -911,7 +958,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           initialHandoffEventId={handoffUndoUntil ? Number(handoffReceipt?.id) : null}
           initialUndoUntil={handoffUndoUntil}
         />
-      </section>
+      </section></>}
 
       <section className="card job-events" aria-label="Recent activity">
         <header><h2 className="t-sub">Recent Activity</h2><strong>{activityPage.total}</strong></header>

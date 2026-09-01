@@ -111,6 +111,7 @@ export async function listLeads(filter: LeadFilter = {}, role: OperatorRole = "c
       SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name
       FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
       WHERE (${includeTests}::boolean OR l.is_test = false)
+        AND l.routed_to_lead_id IS NULL
         AND (
           ${status}::text = 'all'
           OR (${status}::text = 'open' AND (l.status = ANY(${[...OPEN_STATUSES]}::text[]) OR (l.status = 'won' AND l.completed_at IS NULL)))
@@ -137,6 +138,7 @@ export async function listLeads(filter: LeadFilter = {}, role: OperatorRole = "c
       FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
       WHERE (l.status = ANY(${[...OPEN_STATUSES]}::text[]) OR (l.status = 'won' AND l.completed_at IS NULL))
         AND (${includeTests}::boolean OR l.is_test = false)
+        AND l.routed_to_lead_id IS NULL
       ORDER BY
         (l.next_follow_up_at IS NOT NULL AND l.next_follow_up_at <= now()) DESC,
         (l.first_response_at IS NULL) DESC,
@@ -148,7 +150,8 @@ export async function listLeads(filter: LeadFilter = {}, role: OperatorRole = "c
     const rows = await sql`
       SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name
       FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
-      WHERE l.completed_at IS NOT NULL AND (${includeTests}::boolean OR l.is_test = false)
+      WHERE l.completed_at IS NOT NULL AND l.routed_to_lead_id IS NULL
+        AND (${includeTests}::boolean OR l.is_test = false)
       ORDER BY l.completed_at DESC LIMIT ${limit}::bigint OFFSET ${offset}::bigint`
     return (rows as LeadRow[]).map((lead) => projectLeadForRole(lead, role))
   }
@@ -156,14 +159,15 @@ export async function listLeads(filter: LeadFilter = {}, role: OperatorRole = "c
     const rows = await sql`
       SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name
       FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
-      WHERE l.status = ${status}::text AND (${includeTests}::boolean OR l.is_test = false)
+      WHERE l.status = ${status}::text AND l.routed_to_lead_id IS NULL
+        AND (${includeTests}::boolean OR l.is_test = false)
       ORDER BY l.created_at DESC LIMIT ${limit}::bigint OFFSET ${offset}::bigint`
     return (rows as LeadRow[]).map((lead) => projectLeadForRole(lead, role))
   }
   const rows = await sql`
     SELECT l.*, COALESCE(o.name, '') AS assigned_operator_name
     FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
-    WHERE (${includeTests}::boolean OR l.is_test = false)
+    WHERE l.routed_to_lead_id IS NULL AND (${includeTests}::boolean OR l.is_test = false)
     ORDER BY l.created_at DESC LIMIT ${limit}::bigint OFFSET ${offset}::bigint`
   return (rows as LeadRow[]).map((lead) => projectLeadForRole(lead, role))
 }
@@ -200,10 +204,10 @@ export async function listBoardJobs(
   const query = options.query?.trim().slice(0, 80) ?? ""
   const pattern = `%${query.replace(/[%_\\]/g, "\\$&")}%`
   const page = Math.max(1, Math.floor(options.page ?? 1))
-  // The tracker is the front door and has no pager, so a page smaller than the
-  // stage hid jobs with no way to reach them: "Showing 5 of 24" and no sixth.
-  // One page holds the whole stage; the ceiling only guards the query.
-  const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 100), 1), 100)
+  // Eight work orders keep the phone's action surface bounded. The tracker has
+  // explicit previous/next controls, so every remaining result is reachable
+  // without forcing the current call several thousand pixels down the page.
+  const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 8), 1), 50)
   const offset = (page - 1) * pageSize
   const order: BoardJobOrder = options.order === "weight" ? "weight" : options.order === "oldest" ? "oldest" : "stage"
   const signal: BoardSignalKind | "" = options.signal && BOARD_SIGNAL_KINDS.includes(options.signal)
@@ -215,7 +219,7 @@ export async function listBoardJobs(
 
   const rows = (await sql`
     WITH comms AS (
-      SELECT e.lead_id,
+      SELECT COALESCE(event_lead.routed_to_lead_id, e.lead_id) AS lead_id,
         max(e.occurred_at) FILTER (
           WHERE e.kind = ANY(ARRAY['sms.in','email.in','call.missed','glass.uploaded']::text[])
         ) AS inbound_at,
@@ -225,18 +229,48 @@ export async function listBoardJobs(
             OR (e.actor_type = 'operator' AND e.kind = ANY(ARRAY['sms.out','email.out']::text[]))
         ) AS outbound_at
       FROM events e
+      LEFT JOIN leads event_lead ON event_lead.id = e.lead_id
+      LEFT JOIN people event_person ON event_person.id = e.person_id
+      LEFT JOIN people event_lead_person ON event_lead_person.id = event_lead.person_id
       WHERE e.lead_id IS NOT NULL
         AND e.kind = ANY(ARRAY[
           'sms.in','email.in','call.missed','glass.uploaded','sms.out','email.out',
           'contact.logged','contact.first-response','call.answered','call.out'
         ]::text[])
-      GROUP BY e.lead_id
+        AND (${includeTests}::boolean OR (
+          COALESCE(event_lead.is_test, false) = false
+          AND COALESCE(event_person.is_test, false) = false
+          AND COALESCE(event_lead_person.is_test, false) = false
+          AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+          AND concat_ws(' ', e.body, e.crew_body, e.detail::text,
+            event_lead.first_name, event_lead.last_name, event_lead.service, event_lead.message, event_lead.notes,
+            event_person.display_name, event_person.company, event_person.phones::text, event_person.emails::text,
+            event_lead_person.display_name, event_lead_person.company,
+            event_lead_person.phones::text, event_lead_person.emails::text)
+            NOT ILIKE '%[INTERNAL TEST]%'
+        ))
+      GROUP BY COALESCE(event_lead.routed_to_lead_id, e.lead_id)
     ), candidates AS (
       SELECT c.lead_id,
         CASE (
           SELECT e2.kind FROM events e2
-          WHERE e2.lead_id = c.lead_id
+          LEFT JOIN leads e2_lead ON e2_lead.id = e2.lead_id
+          LEFT JOIN people e2_person ON e2_person.id = e2.person_id
+          LEFT JOIN people e2_lead_person ON e2_lead_person.id = e2_lead.person_id
+          WHERE COALESCE(e2_lead.routed_to_lead_id, e2.lead_id) = c.lead_id
             AND e2.kind = ANY(ARRAY['sms.in','email.in','call.missed','glass.uploaded']::text[])
+            AND (${includeTests}::boolean OR (
+              COALESCE(e2_lead.is_test, false) = false
+              AND COALESCE(e2_person.is_test, false) = false
+              AND COALESCE(e2_lead_person.is_test, false) = false
+              AND lower(COALESCE(e2.detail->>'isTest', 'false')) <> 'true'
+              AND concat_ws(' ', e2.body, e2.crew_body, e2.detail::text,
+                e2_lead.first_name, e2_lead.last_name, e2_lead.service, e2_lead.message, e2_lead.notes,
+                e2_person.display_name, e2_person.company, e2_person.phones::text, e2_person.emails::text,
+                e2_lead_person.display_name, e2_lead_person.company,
+                e2_lead_person.phones::text, e2_lead_person.emails::text)
+                NOT ILIKE '%[INTERNAL TEST]%'
+            ))
           ORDER BY e2.occurred_at DESC, e2.id DESC LIMIT 1
         )
           WHEN 'sms.in' THEN 'Customer text waiting'
@@ -263,7 +297,39 @@ export async function listBoardJobs(
           ${cap}::numeric,
           1 + GREATEST(0, EXTRACT(EPOCH FROM (now() - c.due_at)) / 3600.0) / ${half}::numeric
         )
-      FROM commitments c WHERE c.status = 'open' AND c.due_at < now()
+      FROM commitments c
+      LEFT JOIN leads commitment_lead ON commitment_lead.id = c.lead_id
+      LEFT JOIN people commitment_person ON commitment_person.id = c.person_id
+      LEFT JOIN people commitment_lead_person ON commitment_lead_person.id = commitment_lead.person_id
+      LEFT JOIN events commitment_source ON commitment_source.id = c.source_event_id
+      LEFT JOIN leads commitment_source_lead ON commitment_source_lead.id = commitment_source.lead_id
+      LEFT JOIN people commitment_source_person ON commitment_source_person.id = commitment_source.person_id
+      LEFT JOIN people commitment_source_lead_person ON commitment_source_lead_person.id = commitment_source_lead.person_id
+      WHERE c.status = 'open' AND c.due_at < now()
+        AND (${includeTests}::boolean OR (
+          COALESCE(commitment_lead.is_test, false) = false
+          AND COALESCE(commitment_person.is_test, false) = false
+          AND COALESCE(commitment_lead_person.is_test, false) = false
+          AND COALESCE(commitment_source_lead.is_test, false) = false
+          AND COALESCE(commitment_source_person.is_test, false) = false
+          AND COALESCE(commitment_source_lead_person.is_test, false) = false
+          AND lower(COALESCE(commitment_source.detail->>'isTest', 'false')) <> 'true'
+          AND concat_ws(' ', c.summary, c.crew_summary, commitment_source.body,
+            commitment_source.crew_body, commitment_source.detail::text,
+            commitment_lead.first_name, commitment_lead.last_name, commitment_lead.service,
+            commitment_lead.message, commitment_lead.notes,
+            commitment_person.display_name, commitment_person.company,
+            commitment_person.phones::text, commitment_person.emails::text,
+            commitment_lead_person.display_name, commitment_lead_person.company,
+            commitment_lead_person.phones::text, commitment_lead_person.emails::text,
+            commitment_source_person.display_name, commitment_source_person.company,
+            commitment_source_person.phones::text, commitment_source_person.emails::text,
+            commitment_source_lead.first_name, commitment_source_lead.last_name, commitment_source_lead.service,
+            commitment_source_lead.message, commitment_source_lead.notes,
+            commitment_source_lead_person.display_name, commitment_source_lead_person.company,
+            commitment_source_lead_person.phones::text, commitment_source_lead_person.emails::text)
+            NOT ILIKE '%[INTERNAL TEST]%'
+        ))
       UNION ALL
       SELECT l.id, 'Follow-up due'::text, l.next_follow_up_at, 2,
         'followup'::text,
@@ -357,10 +423,11 @@ export async function listBoardJobs(
       LEFT JOIN (
         SELECT person_id, is_test, GREATEST(0, count(*) - 1)::int AS prior_jobs
         FROM leads
-        WHERE person_id IS NOT NULL
+        WHERE person_id IS NOT NULL AND routed_to_lead_id IS NULL
         GROUP BY person_id, is_test
       ) pc ON pc.person_id = l.person_id AND pc.is_test = l.is_test
       WHERE l.status NOT IN ('lost','spam')
+        AND l.routed_to_lead_id IS NULL
         AND (
           l.completed_at IS NULL
           OR (l.completed_at IS NOT NULL AND l.handed_off_at IS NULL)
@@ -408,6 +475,7 @@ export async function listBoardJobs(
       LEFT JOIN text_consent tc ON tc.phone_e164 = l.phone
       WHERE ${stage}::text = 'closed'
         AND l.handed_off_at IS NOT NULL
+        AND l.routed_to_lead_id IS NULL
         AND l.status NOT IN ('lost','spam')
         AND (${includeTests}::boolean OR l.is_test = false)
     ), closed_count AS (
@@ -416,6 +484,7 @@ export async function listBoardJobs(
       SELECT count(*)::int AS closed_count
       FROM leads l
       WHERE l.handed_off_at IS NOT NULL
+        AND l.routed_to_lead_id IS NULL
         AND l.status NOT IN ('lost','spam')
         AND (${includeTests}::boolean OR l.is_test = false)
     ), filtered AS (
@@ -524,19 +593,29 @@ async function listBoardActiveClaims(
     SELECT c.*
     FROM claims c
     JOIN leads l ON l.id = c.subject_id AND c.subject_type = 'lead'
+    LEFT JOIN people lead_person ON lead_person.id = l.person_id
     JOIN events source ON source.id = c.source_event_id
     LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
     LEFT JOIN people source_person ON source_person.id = source.person_id
+    LEFT JOIN people source_lead_person ON source_lead_person.id = source_lead.person_id
     WHERE c.subject_id = ANY(${leadIds}::bigint[])
       AND c.subject_type = 'lead'
       AND c.superseded_by IS NULL
       AND (${includeTests}::boolean OR (
         l.is_test = false
+        AND COALESCE(lead_person.is_test, false) = false
         AND COALESCE(source_lead.is_test, false) = false
         AND COALESCE(source_person.is_test, false) = false
+        AND COALESCE(source_lead_person.is_test, false) = false
         AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
         AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
-          source.body, source.crew_body, source.detail::text, c.value::text) NOT ILIKE '%[INTERNAL TEST]%'
+          lead_person.display_name, lead_person.company, lead_person.phones::text, lead_person.emails::text,
+          source.body, source.crew_body, source.detail::text, c.value::text,
+          source_person.display_name, source_person.company, source_person.phones::text, source_person.emails::text,
+          source_lead.first_name, source_lead.last_name, source_lead.service, source_lead.message, source_lead.notes,
+          source_lead_person.display_name, source_lead_person.company,
+          source_lead_person.phones::text, source_lead_person.emails::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
       ))
     ORDER BY c.subject_id ASC, c.created_at DESC, c.id DESC`) as ClaimRow[]
 
@@ -562,20 +641,31 @@ async function listBoardOpenOrBrokenCommitments(
     SELECT c.*
     FROM commitments c
     JOIN leads l ON l.id = c.lead_id
+    LEFT JOIN people lead_person ON lead_person.id = l.person_id
     JOIN events source ON source.id = c.source_event_id
     LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
     LEFT JOIN people commitment_person ON commitment_person.id = c.person_id
     LEFT JOIN people source_person ON source_person.id = source.person_id
+    LEFT JOIN people source_lead_person ON source_lead_person.id = source_lead.person_id
     WHERE c.lead_id = ANY(${leadIds}::bigint[])
       AND c.status = ANY(ARRAY['open','broken']::text[])
       AND (${includeTests}::boolean OR (
         l.is_test = false
+        AND COALESCE(lead_person.is_test, false) = false
         AND COALESCE(source_lead.is_test, false) = false
         AND COALESCE(commitment_person.is_test, false) = false
         AND COALESCE(source_person.is_test, false) = false
+        AND COALESCE(source_lead_person.is_test, false) = false
         AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
         AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
-          c.summary, c.crew_summary, source.body, source.crew_body, source.detail::text)
+          lead_person.display_name, lead_person.company, lead_person.phones::text, lead_person.emails::text,
+          c.summary, c.crew_summary, commitment_person.display_name, commitment_person.company,
+          commitment_person.phones::text, commitment_person.emails::text,
+          source.body, source.crew_body, source.detail::text,
+          source_person.display_name, source_person.company, source_person.phones::text, source_person.emails::text,
+          source_lead.first_name, source_lead.last_name, source_lead.service, source_lead.message, source_lead.notes,
+          source_lead_person.display_name, source_lead_person.company,
+          source_lead_person.phones::text, source_lead_person.emails::text)
           NOT ILIKE '%[INTERNAL TEST]%'
       ))
     ORDER BY c.lead_id ASC, c.due_at ASC NULLS LAST, c.created_at DESC, c.id DESC`) as CommitmentRow[]
@@ -597,10 +687,13 @@ async function listBoardNewestPhotoDates(leadIds: readonly number[], includeTest
     WITH visible_leads AS MATERIALIZED (
       SELECT l.id, l.photos
       FROM leads l
+      LEFT JOIN people lead_person ON lead_person.id = l.person_id
       WHERE l.id = ANY(${leadIds}::bigint[])
         AND (${includeTests}::boolean OR (
           l.is_test = false
-          AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes)
+          AND COALESCE(lead_person.is_test, false) = false
+          AND concat_ws(' ', l.first_name, l.last_name, l.service, l.message, l.notes,
+            lead_person.display_name, lead_person.company, lead_person.phones::text, lead_person.emails::text)
             NOT ILIKE '%[INTERNAL TEST]%'
         ))
     ), photo_receipts AS (
@@ -616,7 +709,8 @@ async function listBoardNewestPhotoDates(leadIds: readonly number[], includeTest
       WHERE (${includeTests}::boolean OR (
         COALESCE(source_person.is_test, false) = false
         AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
-        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
+        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text,
+          source_person.display_name, source_person.company, source_person.phones::text, source_person.emails::text)
           NOT ILIKE '%[INTERNAL TEST]%'
       ))
       UNION ALL
@@ -632,7 +726,8 @@ async function listBoardNewestPhotoDates(leadIds: readonly number[], includeTest
       WHERE (${includeTests}::boolean OR (
         COALESCE(source_person.is_test, false) = false
         AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
-        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
+        AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text,
+          source_person.display_name, source_person.company, source_person.phones::text, source_person.emails::text)
           NOT ILIKE '%[INTERNAL TEST]%'
       ))
       UNION ALL
@@ -644,7 +739,8 @@ async function listBoardNewestPhotoDates(leadIds: readonly number[], includeTest
         AND (${includeTests}::boolean OR (
           COALESCE(source_person.is_test, false) = false
           AND lower(COALESCE(receipt.detail->>'isTest', 'false')) <> 'true'
-          AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text)
+          AND concat_ws(' ', receipt.body, receipt.crew_body, receipt.detail::text,
+            source_person.display_name, source_person.company, source_person.phones::text, source_person.emails::text)
             NOT ILIKE '%[INTERNAL TEST]%'
         ))
     )
@@ -695,6 +791,7 @@ export async function getLead(
       CASE WHEN l.person_id IS NULL THEN 1 ELSE (
         SELECT count(*)::int FROM leads sibling
         WHERE sibling.person_id = l.person_id AND sibling.is_test = l.is_test
+          AND sibling.routed_to_lead_id IS NULL
       ) END AS person_job_count
     FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
     WHERE l.id = ${id}::bigint
@@ -710,6 +807,7 @@ export async function getRepeatJobCounts(personIds: Array<number | null>) {
   const rows = (await sql`
     SELECT person_id, count(*)::int AS job_count FROM leads
     WHERE person_id = ANY(${ids}::bigint[]) AND is_test = false
+      AND routed_to_lead_id IS NULL
     GROUP BY person_id`) as { person_id: number; job_count: number }[]
   return new Map(rows.map((row) => [Number(row.person_id), Number(row.job_count)]))
 }
@@ -722,7 +820,8 @@ export async function listTodayJobs(role: OperatorRole = "crew", limit = 8): Pro
     FROM leads l LEFT JOIN operators o ON o.id = l.assigned_operator_id
     WHERE l.scheduled_at >= (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
       AND l.scheduled_at < ((date_trunc('day', now() AT TIME ZONE 'America/Chicago') + interval '1 day') AT TIME ZONE 'America/Chicago')
-      AND l.completed_at IS NULL AND l.status NOT IN ('lost','spam') AND l.is_test = false
+      AND l.completed_at IS NULL AND l.status NOT IN ('lost','spam')
+      AND l.routed_to_lead_id IS NULL AND l.is_test = false
     ORDER BY l.scheduled_at ASC, l.updated_at DESC
     LIMIT ${bounded}::bigint`) as LeadRow[]
   return rows.map((lead) => projectLeadForRole(lead, role))
@@ -755,7 +854,7 @@ export async function getTodayLeadSummary(): Promise<TodayLeadSummary> {
       FROM leads
       WHERE created_at >= (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
         AND created_at < ((date_trunc('day', now() AT TIME ZONE 'America/Chicago') + interval '1 day') AT TIME ZONE 'America/Chicago')
-        AND is_test = false AND status <> 'spam'`,
+        AND routed_to_lead_id IS NULL AND is_test = false AND status <> 'spam'`,
     sql`
       SELECT CASE
           WHEN btrim(gclid) <> '' OR (
@@ -777,7 +876,7 @@ export async function getTodayLeadSummary(): Promise<TodayLeadSummary> {
       FROM leads
       WHERE created_at >= (date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
         AND created_at < ((date_trunc('day', now() AT TIME ZONE 'America/Chicago') + interval '1 day') AT TIME ZONE 'America/Chicago')
-        AND is_test = false AND status <> 'spam'
+        AND routed_to_lead_id IS NULL AND is_test = false AND status <> 'spam'
       GROUP BY 1
       ORDER BY count DESC, source ASC`,
   ])
@@ -835,15 +934,16 @@ export async function getOpsStats(role: OperatorRole = "crew"): Promise<OpsStats
           ORDER BY EXTRACT(EPOCH FROM (first_response_at - created_at)) / 60.0)
         FROM leads
         WHERE first_response_at IS NOT NULL AND is_test = false
+          AND routed_to_lead_id IS NULL
           AND first_response_at > created_at) AS median_response_minutes
     FROM leads
-    WHERE is_test = false`) as Record<string, unknown>[]
+    WHERE is_test = false AND routed_to_lead_id IS NULL`) as Record<string, unknown>[]
 
   const sources = (await sql`
     SELECT source,
       count(*)::int AS count,
       count(*) FILTER (WHERE completed_at IS NOT NULL)::int AS won
-    FROM leads WHERE is_test = false
+    FROM leads WHERE is_test = false AND routed_to_lead_id IS NULL
     GROUP BY source ORDER BY count DESC LIMIT 12`) as {
     source: string
     count: number
@@ -879,7 +979,7 @@ export async function getNeedsNow(options: { page?: number; pageSize?: number } 
   const offset = (requestedPage - 1) * pageSize
   const items = (await sql`
     WITH comms AS (
-      SELECT e.lead_id,
+      SELECT COALESCE(event_lead.routed_to_lead_id, e.lead_id) AS lead_id,
         max(e.occurred_at) FILTER (WHERE e.kind = ANY(ARRAY['sms.in','email.in','call.missed','glass.uploaded']::text[])) AS inbound_at,
         max(e.occurred_at) FILTER (
           WHERE e.kind = ANY(ARRAY['call.answered','call.out']::text[])
@@ -904,14 +1004,41 @@ export async function getNeedsNow(options: { page?: number; pageSize?: number } 
             )
         ) AS outbound_at
       FROM events e
+      LEFT JOIN leads event_lead ON event_lead.id = e.lead_id
+      LEFT JOIN people event_person ON event_person.id = e.person_id
+      LEFT JOIN people event_lead_person ON event_lead_person.id = event_lead.person_id
       WHERE e.lead_id IS NOT NULL
         AND e.kind = ANY(ARRAY['sms.in','email.in','call.missed','glass.uploaded','sms.out','email.out','contact.logged','contact.first-response','call.answered','call.out']::text[])
-      GROUP BY e.lead_id
+        AND COALESCE(event_lead.is_test, false) = false
+        AND COALESCE(event_person.is_test, false) = false
+        AND COALESCE(event_lead_person.is_test, false) = false
+        AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', e.body, e.crew_body, e.detail::text,
+          event_lead.first_name, event_lead.last_name, event_lead.service, event_lead.message, event_lead.notes,
+          event_person.display_name, event_person.company, event_person.phones::text, event_person.emails::text,
+          event_lead_person.display_name, event_lead_person.company,
+          event_lead_person.phones::text, event_lead_person.emails::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
+      GROUP BY COALESCE(event_lead.routed_to_lead_id, e.lead_id)
     ), candidates AS (
       SELECT c.lead_id,
         CASE (
           SELECT e2.kind FROM events e2
-          WHERE e2.lead_id = c.lead_id AND e2.kind = ANY(ARRAY['sms.in','email.in','call.missed','glass.uploaded']::text[])
+          LEFT JOIN leads e2_lead ON e2_lead.id = e2.lead_id
+          LEFT JOIN people e2_person ON e2_person.id = e2.person_id
+          LEFT JOIN people e2_lead_person ON e2_lead_person.id = e2_lead.person_id
+          WHERE COALESCE(e2_lead.routed_to_lead_id, e2.lead_id) = c.lead_id
+            AND e2.kind = ANY(ARRAY['sms.in','email.in','call.missed','glass.uploaded']::text[])
+            AND COALESCE(e2_lead.is_test, false) = false
+            AND COALESCE(e2_person.is_test, false) = false
+            AND COALESCE(e2_lead_person.is_test, false) = false
+            AND lower(COALESCE(e2.detail->>'isTest', 'false')) <> 'true'
+            AND concat_ws(' ', e2.body, e2.crew_body, e2.detail::text,
+              e2_lead.first_name, e2_lead.last_name, e2_lead.service, e2_lead.message, e2_lead.notes,
+              e2_person.display_name, e2_person.company, e2_person.phones::text, e2_person.emails::text,
+              e2_lead_person.display_name, e2_lead_person.company,
+              e2_lead_person.phones::text, e2_lead_person.emails::text)
+              NOT ILIKE '%[INTERNAL TEST]%'
           ORDER BY e2.occurred_at DESC LIMIT 1
         )
           WHEN 'sms.in' THEN 'customer text waiting'
@@ -925,7 +1052,37 @@ export async function getNeedsNow(options: { page?: number; pageSize?: number } 
         AND (c.outbound_at IS NULL OR c.outbound_at < c.inbound_at)
       UNION ALL
       SELECT c.lead_id, 'overdue promise'::text, c.due_at, 1
-      FROM commitments c WHERE c.status = 'open' AND c.due_at < now()
+      FROM commitments c
+      LEFT JOIN leads commitment_lead ON commitment_lead.id = c.lead_id
+      LEFT JOIN people commitment_person ON commitment_person.id = c.person_id
+      LEFT JOIN people commitment_lead_person ON commitment_lead_person.id = commitment_lead.person_id
+      LEFT JOIN events commitment_source ON commitment_source.id = c.source_event_id
+      LEFT JOIN leads commitment_source_lead ON commitment_source_lead.id = commitment_source.lead_id
+      LEFT JOIN people commitment_source_person ON commitment_source_person.id = commitment_source.person_id
+      LEFT JOIN people commitment_source_lead_person ON commitment_source_lead_person.id = commitment_source_lead.person_id
+      WHERE c.status = 'open' AND c.due_at < now()
+        AND COALESCE(commitment_lead.is_test, false) = false
+        AND COALESCE(commitment_person.is_test, false) = false
+        AND COALESCE(commitment_lead_person.is_test, false) = false
+        AND COALESCE(commitment_source_lead.is_test, false) = false
+        AND COALESCE(commitment_source_person.is_test, false) = false
+        AND COALESCE(commitment_source_lead_person.is_test, false) = false
+        AND lower(COALESCE(commitment_source.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', c.summary, c.crew_summary, commitment_source.body,
+          commitment_source.crew_body, commitment_source.detail::text,
+          commitment_lead.first_name, commitment_lead.last_name, commitment_lead.service,
+          commitment_lead.message, commitment_lead.notes,
+          commitment_person.display_name, commitment_person.company,
+          commitment_person.phones::text, commitment_person.emails::text,
+          commitment_lead_person.display_name, commitment_lead_person.company,
+          commitment_lead_person.phones::text, commitment_lead_person.emails::text,
+          commitment_source_person.display_name, commitment_source_person.company,
+          commitment_source_person.phones::text, commitment_source_person.emails::text,
+          commitment_source_lead.first_name, commitment_source_lead.last_name, commitment_source_lead.service,
+          commitment_source_lead.message, commitment_source_lead.notes,
+          commitment_source_lead_person.display_name, commitment_source_lead_person.company,
+          commitment_source_lead_person.phones::text, commitment_source_lead_person.emails::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
       UNION ALL
       SELECT l.id, 'follow-up due'::text, l.next_follow_up_at, 2
       FROM leads l WHERE l.next_follow_up_at IS NOT NULL AND l.next_follow_up_at <= now()
@@ -942,7 +1099,8 @@ export async function getNeedsNow(options: { page?: number; pageSize?: number } 
     FROM ranked r
     JOIN leads l ON l.id = r.lead_id
     LEFT JOIN operators o ON o.id = l.assigned_operator_id
-    WHERE l.completed_at IS NULL AND l.status NOT IN ('lost','spam') AND l.is_test = false
+    WHERE l.completed_at IS NULL AND l.status NOT IN ('lost','spam')
+      AND l.routed_to_lead_id IS NULL AND l.is_test = false
     ORDER BY r.priority ASC, r.waiting_since ASC
     LIMIT ${pageSize}::bigint OFFSET ${offset}::bigint`) as Array<NeedsNowRow & { total_count: number }>
   const total = Number(items[0]?.total_count ?? 0)
@@ -981,10 +1139,33 @@ export async function getWeekAhead(role: OperatorRole, includeTests = false): Pr
     FROM commitments c
     LEFT JOIN leads l ON l.id = c.lead_id
     LEFT JOIN people p ON p.id = c.person_id
+    LEFT JOIN people lead_person ON lead_person.id = l.person_id
+    LEFT JOIN events source ON source.id = c.source_event_id
+    LEFT JOIN leads source_lead ON source_lead.id = source.lead_id
+    LEFT JOIN people source_person ON source_person.id = source.person_id
+    LEFT JOIN people source_lead_person ON source_lead_person.id = source_lead.person_id
     WHERE c.status = 'open' AND c.direction = 'we_promised' AND c.due_at IS NOT NULL
       AND c.due_at >= now() AND c.due_at < now() + interval '7 days'
-      AND (l.id IS NULL OR l.is_test = false OR ${includeTests}::boolean)
-      AND (p.id IS NULL OR p.is_test = false OR ${includeTests}::boolean)
+      AND l.routed_to_lead_id IS NULL
+      AND (${includeTests}::boolean OR (
+        COALESCE(l.is_test, false) = false
+        AND COALESCE(p.is_test, false) = false
+        AND COALESCE(lead_person.is_test, false) = false
+        AND COALESCE(source_lead.is_test, false) = false
+        AND COALESCE(source_person.is_test, false) = false
+        AND COALESCE(source_lead_person.is_test, false) = false
+        AND lower(COALESCE(source.detail->>'isTest', 'false')) <> 'true'
+        AND concat_ws(' ', c.summary, c.crew_summary,
+          l.first_name, l.last_name, l.service, l.message, l.notes,
+          p.display_name, p.company, p.phones::text, p.emails::text,
+          lead_person.display_name, lead_person.company, lead_person.phones::text, lead_person.emails::text,
+          source.body, source.crew_body, source.detail::text,
+          source_person.display_name, source_person.company, source_person.phones::text, source_person.emails::text,
+          source_lead.first_name, source_lead.last_name, source_lead.service, source_lead.message, source_lead.notes,
+          source_lead_person.display_name, source_lead_person.company,
+          source_lead_person.phones::text, source_lead_person.emails::text)
+          NOT ILIKE '%[INTERNAL TEST]%'
+      ))
     UNION ALL
     SELECT 'followup'::text AS lane,
       to_char(l.next_follow_up_at AT TIME ZONE 'America/Chicago', 'YYYY-MM-DD') AS day,
@@ -995,6 +1176,7 @@ export async function getWeekAhead(role: OperatorRole, includeTests = false): Pr
     WHERE l.next_follow_up_at IS NOT NULL
       AND l.next_follow_up_at >= now() AND l.next_follow_up_at < now() + interval '7 days'
       AND l.status NOT IN ('lost', 'spam') AND l.completed_at IS NULL
+      AND l.routed_to_lead_id IS NULL
       AND (l.is_test = false OR ${includeTests}::boolean)
     ORDER BY day ASC`) as Array<{
       lane: string; day: string; lead_id: number | null
@@ -1009,6 +1191,7 @@ export async function getWeekAhead(role: OperatorRole, includeTests = false): Pr
     FROM leads l
     WHERE l.invoice_due_at IS NOT NULL AND l.paid_at IS NULL
       AND l.invoice_due_at >= now() AND l.invoice_due_at < now() + interval '7 days'
+      AND l.routed_to_lead_id IS NULL
       AND (l.is_test = false OR ${includeTests}::boolean)
     ORDER BY day ASC`) as Array<{ day: string; lead_id: number; summary: string; customer: string }> : []
 
@@ -1065,7 +1248,7 @@ export async function getOutTheDoorWeek(role: OperatorRole = "crew"): Promise<Ou
     FROM leads
     WHERE completed_at >= (date_trunc('week', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
       AND completed_at < ((date_trunc('week', now() AT TIME ZONE 'America/Chicago') + interval '1 week') AT TIME ZONE 'America/Chicago')
-      AND is_test = false AND status NOT IN ('lost', 'spam')`) as Array<{
+      AND routed_to_lead_id IS NULL AND is_test = false AND status NOT IN ('lost', 'spam')`) as Array<{
         jobs: number; paid_jobs: number; revenue_cents: number; still_out_cents: number
       }>
   const row = rows[0]
@@ -1082,7 +1265,7 @@ export async function getMonthRevenueCents(): Promise<number> {
   const rows = (await sql`
     SELECT COALESCE(sum(revenue_cents), 0)::bigint AS cents FROM leads
     WHERE status = 'won' AND won_at >= date_trunc('month', now())
-      AND is_test = false`) as { cents: number }[]
+      AND routed_to_lead_id IS NULL AND is_test = false`) as { cents: number }[]
   return Number(rows[0]?.cents ?? 0)
 }
 
@@ -1090,7 +1273,7 @@ export async function getStatusCounts(includeTests: boolean): Promise<Record<str
   const sql = getSql()
   const rows = (await sql`
     SELECT status, (completed_at IS NOT NULL) AS completed, count(*)::int AS count FROM leads
-    WHERE (${includeTests}::boolean OR is_test = false)
+    WHERE routed_to_lead_id IS NULL AND (${includeTests}::boolean OR is_test = false)
     GROUP BY status, (completed_at IS NOT NULL)`) as { status: string; completed: boolean; count: number }[]
   const counts: Record<string, number> = {}
   let paidButOpen = 0
@@ -1107,7 +1290,7 @@ export async function countFailedDeliveries(): Promise<number> {
   const sql = getSql()
   const rows = (await sql`
     SELECT count(*)::int AS count FROM leads
-    WHERE email_delivery_status = 'failed' AND is_test = false`) as { count: number }[]
+    WHERE email_delivery_status = 'failed' AND routed_to_lead_id IS NULL AND is_test = false`) as { count: number }[]
   return rows[0]?.count ?? 0
 }
 
