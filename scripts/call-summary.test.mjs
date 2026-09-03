@@ -20,10 +20,20 @@ test("the summary is one post-call model read, never a live poll", () => {
   assert.match(SUMMARY, /model: AI_MODELS\.extraction/)
 })
 
+test("the gateway is read first and the shop's DeepSeek key is the fallback, both through one schema", () => {
+  const AI = read("../lib/ai.ts")
+  assert.match(AI, /export async function jsonWithDeepSeek/)
+  assert.match(AI, /response_format: \{ type: "json_object" \}/)
+  assert.match(SUMMARY, /if \(!deepseekConfigured\(\)\) throw gatewayError/)
+  assert.match(SUMMARY, /const object = await jsonWithDeepSeek\(\{ system: `\$\{SYSTEM\} \$\{JSON_SHAPE\}`, prompt \}\)\s+return callSummarySchema\.parse\(object\)/)
+  assert.match(SUMMARY, /WHERE summary_status = 'pending' AND updated_at < now\(\) - interval '10 minutes'/)
+  assert.match(SUMMARY, /setTimeout\(resolve, 1500\)/)
+})
+
 test("intent is persisted before the model is called, and one call is read once", () => {
   const claim = SUMMARY.indexOf("SET summary_status = 'pending', summary_attempts = summary_attempts + 1")
-  const model = SUMMARY.indexOf("await generateText({")
-  assert.ok(claim > -1 && model > claim, "the claim UPDATE must come before generateText")
+  const model = SUMMARY.indexOf("await readCall(")
+  assert.ok(claim > -1 && model > claim, "the claim UPDATE must come before the model read")
   assert.match(SUMMARY, /AND summary_status = ANY\(ARRAY\['', 'failed'\]::text\[\]\)\s+AND summary_attempts < 3\s+RETURNING id/)
   assert.match(SUMMARY, /if \(!claimed\[0\]\) return \{ summarized: false, reason: "already-claimed" \}/)
 })
@@ -47,7 +57,8 @@ test("every interpolation in the summary SQL carries a cast", () => {
 
 test("money never reaches a stored summary, and test calls stay marked", () => {
   assert.match(SUMMARY, /const MONEY = /)
-  assert.match(SUMMARY, /const summary = scrub\(callSummarySchema\.parse\(result\.output\)\)/)
+  assert.match(SUMMARY, /const summary = scrub\(await readCall\(/)
+  assert.match(SUMMARY, /return callSummarySchema\.parse\(result\.output\)/)
   assert.match(SUMMARY, /Never include prices, quotes, dollar amounts/)
   assert.match(SUMMARY, /const isTest = draft\.is_test \|\| \/\\\[INTERNAL TEST\\\]\/i\.test\(draft\.transcript\)/)
   assert.match(SUMMARY, /\[INTERNAL TEST\] /)
