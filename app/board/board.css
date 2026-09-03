@@ -274,6 +274,34 @@ svg{display:block}
 .spoke-more[open]>summary::before{content:"▾ "}
 .spoke-more>summary:hover{color:var(--text-secondary)}
 
+/* --- calls to save --- */
+/* A native disclosure: one bar closed, the queue open. The summary is the
+   whole 56px row, so the tap target is the row and not the chevron. */
+.calls-drop{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
+.calls-drop summary{display:flex;align-items:center;gap:var(--s2);min-height:var(--row);
+  padding:var(--s3) var(--s4);cursor:pointer;list-style:none;font-weight:var(--w-semi);font-size:15px}
+.calls-drop summary::-webkit-details-marker{display:none}
+.calls-drop summary .n{display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 var(--s2);
+  border-radius:var(--r-md);background:var(--status-warn-sur);color:var(--status-warn-ink);
+  font-variant-numeric:tabular-nums}
+.calls-drop summary svg{margin-left:auto;flex:none;color:var(--text-muted);transition:transform .15s var(--ease)}
+.calls-drop[open] summary svg{transform:rotate(180deg)}
+.calls-drop summary:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;border-radius:var(--r-lg)}
+.calls-drop ul{margin:0;padding:0;list-style:none}
+.call-row{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2);
+  padding:var(--s3) var(--s4);border-top:1px solid var(--border-subtle)}
+.call-row .when{font-size:var(--t-caption);color:var(--text-muted)}
+.call-row .who{font-size:15px;font-weight:var(--w-semi);overflow-wrap:anywhere}
+.call-row .said{font-size:var(--t-data);color:var(--text-secondary);overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.call-row .do{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s1)}
+.call-row .do form{display:contents}
+.call-row .do .btn{min-height:44px;flex:1 1 auto}
+.call-row .err{font-size:var(--t-caption);color:var(--status-stop-ink)}
+.call-row.saved{background:var(--surface-raised)}
+.calls-drop .foot{margin:0;padding:var(--s3) var(--s4);border-top:1px solid var(--border-subtle);font-size:var(--t-data)}
+.calls-drop .foot a{color:inherit}
+
 /* --- the tracker --- */
 .track-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);
   padding:var(--s4)}
@@ -551,6 +579,15 @@ svg{display:block}
   .call-end .btn{width:auto}
 
   /* --- the tracker ------------------------------------------------------- */
+  .call-row{grid-template-columns:132px minmax(0,1fr) auto;column-gap:var(--s4);align-items:center;padding:var(--s3) var(--s6)}
+  .call-row .who{grid-column:2}
+  .call-row .said{grid-column:2}
+  .call-row .when{grid-row:1/3}
+  .call-row .do{grid-column:3;grid-row:1/3;margin-top:0;flex-wrap:nowrap}
+  .call-row .do .btn{min-height:var(--control);flex:none}
+  .call-row .err{grid-column:2}
+  .call-row.saved .said{grid-row:auto}
+  .calls-drop summary{padding:var(--s3) var(--s6)}
   .track-top{flex-wrap:nowrap;gap:var(--s3);padding:var(--s4) var(--s6)}
   .track-top h2{width:auto}
   .track-top .count{width:auto}

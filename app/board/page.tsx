@@ -10,6 +10,8 @@ import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character"
 import { normalizePage } from "@/lib/pagination"
 import { MoreMenu } from "@/app/ops/more-menu"
+import { listPendingCallIntakes } from "@/lib/job-intake"
+import { RecentCalls } from "./recent-calls"
 import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, getWeekAhead, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
@@ -118,7 +120,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // the Morning Brief and Ask Jobs here too. Signed out there is no menu,
   // which is exactly the /ops layout's own gate.
   const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} initialSearch={query} includeTests={includeTests} />
-  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice] = await Promise.all([
+  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice, pendingCalls] = await Promise.all([
     // Newest first is the tracker's own sort (owner's call, 2026-09-03). The
     // pane's counts are aggregates over the same query and do not depend on
     // row order.
@@ -130,10 +132,22 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     listTodayEvents(role),
     getLatestBoardCallSketch(role),
     role === "owner" ? getOwnerVoiceSnapshot() : Promise.resolve(null),
+    // The same queue the Calls tab reads, ten at most. Test drafts are already
+    // excluded inside the query, the same way the Calls tab excludes them.
+    listPendingCallIntakes({ pageSize: 10 }),
   ])
+  const calls = <RecentCalls owner={role === "owner"} nowMs={nowMs} total={pendingCalls.total}
+    calls={pendingCalls.items.map((draft) => ({
+      publicId: draft.public_id,
+      name: draft.caller_name,
+      phone: draft.phone,
+      need: draft.need,
+      callStatus: draft.call_status,
+      createdAt: draft.created_at,
+    }))} />
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
-  return <JobControl chrome={chrome} menu={menu} nowMs={nowMs} board={{
+  return <JobControl chrome={chrome} menu={menu} calls={calls} nowMs={nowMs} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,

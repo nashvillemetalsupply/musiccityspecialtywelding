@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getSql } from "@/lib/db"
 import { processEvent } from "@/lib/extract"
-import { dismissInboundCallDraft, restoreInboundCallDraft, saveInboundCallAsJob, undoSavedJobIntake } from "@/lib/job-intake"
+import { dismissInboundCallDraft, getCallIntakeDraft, restoreInboundCallDraft, saveInboundCallAsJob, undoSavedJobIntake } from "@/lib/job-intake"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { createManualLeadRecord } from "../actions"
 
@@ -155,4 +155,47 @@ export async function changeCallDraftDispositionAction(formData: FormData) {
     return { status: result.restored ? "ready" : "unchanged" } as const
   }
   throw new Error("That call update is invalid.")
+}
+
+export type QuickSaveState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  | { status: "saved"; leadId: number }
+
+// One tap from the board. The intake page refuses a save without a typed
+// name, and that gate is why calls sat unsaved for days. The phone already
+// knows the caller: caller ID name first, then "Caller 2875". Everything
+// else — the saving claim, the lead, the transcript extraction that fills in
+// service and details — is the same path a typed save takes.
+export async function quickSaveCallAction(_previous: QuickSaveState, formData: FormData): Promise<QuickSaveState> {
+  try {
+    const operator = await getAuthenticatedOperator()
+    if (!operator) throw new Error("Sign in to save this job.")
+    const publicId = readPublicId(formData.get("draftId"))
+    const draft = await getCallIntakeDraft(publicId)
+    if (!draft) throw new Error("That call is no longer available.")
+    const last4 = draft.phone.replace(/\D/g, "").slice(-4)
+    const filled = new FormData()
+    filled.set("draftId", publicId)
+    filled.set("firstName", draft.caller_name.trim() || (last4 ? `Caller ${last4}` : "Caller"))
+    filled.set("phone", draft.phone)
+    filled.set("message", draft.need)
+    const result = await saveCallDraftRecord(filled)
+    revalidatePath("/board")
+    return { status: "saved", leadId: result.leadId }
+  } catch (error) {
+    return { status: "error", message: error instanceof Error ? error.message : "The call could not be saved." }
+  }
+}
+
+export async function dismissCallFromBoardAction(formData: FormData) {
+  const operator = await getAuthenticatedOperator()
+  if (!operator) throw new Error("Sign in to update this call.")
+  if (operator.role !== "owner") throw new Error("Only the owner can mark a call as not a job.")
+  const publicId = readPublicId(formData.get("draftId"))
+  await dismissInboundCallDraft({ publicId, operatorId: operator.id })
+  // Only the board is refreshed. The intake page is force-dynamic and reads
+  // fresh truth on its own; revalidating it here would refresh away an inline
+  // receipt someone else has open (production-flow-regressions pins this).
+  revalidatePath("/board")
 }

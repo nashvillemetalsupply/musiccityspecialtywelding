@@ -251,3 +251,34 @@ test("the voice snapshot rides the parallel fetch", () => {
   const all = page.slice(page.indexOf("Promise.all"), page.indexOf("])", page.indexOf("Promise.all")))
   assert.match(all, /getOwnerVoiceSnapshot/)
 })
+
+// Owner, 2026-09-03: saving a call meant leaving the board, opening the call,
+// and typing a name before the save button would work. The board now carries
+// the same pending-call queue the Calls tab reads, collapsed to one bar above
+// the tracker, with a one-tap save that fills the name from what the phone
+// already knows.
+test("the board carries a one-tap calls-to-save dropdown above the tracker", () => {
+  const CALLS_SOURCE = readFileSync(new URL("../app/board/recent-calls.tsx", import.meta.url), "utf8")
+  const ACTIONS_SOURCE = readFileSync(new URL("../app/ops/intake/actions.ts", import.meta.url), "utf8")
+  // same query as the Calls tab, ten at most
+  assert.match(PAGE_SOURCE, /import \{ listPendingCallIntakes \} from "@\/lib\/job-intake"/)
+  assert.match(PAGE_SOURCE, /listPendingCallIntakes\(\{ pageSize: 10 \}\)/)
+  assert.match(PAGE_SOURCE, /calls=\{calls\}/)
+  // the slot sits in main before the tracker card
+  const main = PREVIEW_SOURCE.indexOf('<main className="main">')
+  const slot = PREVIEW_SOURCE.indexOf("{calls}")
+  const tracker = PREVIEW_SOURCE.indexOf('<div className="track-top">')
+  assert.ok(main > -1 && main < slot && slot < tracker, `expected main < calls slot < tracker, got ${[main, slot, tracker]}`)
+  // native disclosure, closed by default, nothing rendered for an empty queue
+  assert.match(CALLS_SOURCE, /if \(calls\.length === 0\) return null/)
+  assert.match(CALLS_SOURCE, /<details className="calls-drop">/)
+  assert.doesNotMatch(CALLS_SOURCE, /<details className="calls-drop" open/)
+  // one tap: the action fills the name itself and reuses the typed-save path
+  assert.match(CALLS_SOURCE, /useActionState\(quickSaveCallAction, initialState\)/)
+  assert.match(ACTIONS_SOURCE, /filled\.set\("firstName", draft\.caller_name\.trim\(\) \|\| \(last4 \? `Caller \$\{last4\}` : "Caller"\)\)/)
+  assert.match(ACTIONS_SOURCE, /const result = await saveCallDraftRecord\(filled\)\s+revalidatePath\("\/board"\)/)
+  // review still opens the full intake; dismiss stays owner-only
+  assert.match(CALLS_SOURCE, /href=\{`\/ops\/intake\/\$\{call\.publicId\}`\}>Review<\/Link>/)
+  assert.match(CALLS_SOURCE, /\{owner && <form action=\{dismissCallFromBoardAction\}>/)
+  assert.match(ACTIONS_SOURCE, /export async function dismissCallFromBoardAction[\s\S]{0,400}if \(operator\.role !== "owner"\) throw/)
+})

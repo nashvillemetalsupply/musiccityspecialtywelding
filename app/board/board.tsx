@@ -218,7 +218,7 @@ const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good",
 // live call only ever carries three, so it never folds at all.
 const PANEL_OPEN_LINES = 4
 
-export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode; nowMs: number }) {
+export function JobControl({ board, chrome, menu, calls, nowMs }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode; calls?: React.ReactNode; nowMs: number }) {
   const [openJobId, setOpenJobId] = useState<number | null>(null)
   const router = useRouter()
   const { details: jobDetails } = board
@@ -392,6 +392,10 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
     
     
       <main className="main">
+        {/* Calls waiting to become jobs, collapsed to one bar so the tracker
+            stays the first thing on the screen. Rendered by the server page;
+            null when the queue is empty. */}
+        {calls}
         <section className="card">
           <div className="track-top">
             <h2 className="t-title">Job tracker</h2>
