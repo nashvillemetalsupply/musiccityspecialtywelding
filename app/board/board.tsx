@@ -261,8 +261,8 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
   // screen down the page. The opening stays in the open — that is where the
   // customer says what he needs — and the rest folds into a native disclosure.
   const openLines = sketch?.lines.slice(0, PANEL_OPEN_LINES) ?? []
+  // The need is the headline above these slots, so it is not repeated here.
   const summarySlots = summary ? [
-    { key: "need", label: "Needs", tone: "said", text: summary.need || "Nothing asked for" },
     ...summary.details.map((detail, index) => ({ key: `detail-${index}`, label: index === 0 ? "Details" : "", tone: "said", text: detail })),
     ...(summary.where_when ? [{ key: "where", label: "Where / when", tone: "said", text: summary.where_when }] : []),
     ...(summary.next_question ? [{ key: "ask", label: "Still to ask", tone: "ambig", text: summary.next_question }] : []),
