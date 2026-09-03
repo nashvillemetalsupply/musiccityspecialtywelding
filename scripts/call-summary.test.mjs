@@ -153,7 +153,7 @@ test("a price heard on the call shows on the board row for the owner to confirm,
   assert.match(BOARD, /if \(lead\.heard_quote_cents !== null && lead\.heard_quote_cents > 0\)/)
   assert.match(BOARD, /confirmHref: `\/ops\/leads\/\$\{lead\.id\}#quote-capture`/)
   // the row order stays honest: a confirmed estimate beats a heard one
-  assert.ok(BOARD.indexOf('note: "estimated"') < BOARD.indexOf('note: "heard on the call · confirm"'))
+  assert.ok(BOARD.indexOf('note: "estimated"') < BOARD.indexOf('note: "confirm", confirmHref'))
 })
 
 test("a call the read called not a job clears itself after a week, restorable and journaled", () => {

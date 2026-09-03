@@ -202,7 +202,7 @@ function moneyFor(lead: BoardJobRow): { value: string; note: string; confirmHref
   // Heard on the call, not yet confirmed. The question mark is the honesty;
   // the tap lands on the quote-capture slip on the work order.
   if (lead.heard_quote_cents !== null && lead.heard_quote_cents > 0) {
-    return { value: `${money(lead.heard_quote_cents)}?`, note: "heard on the call · confirm", confirmHref: `/ops/leads/${lead.id}#quote-capture` }
+    return { value: `${money(lead.heard_quote_cents)}?`, note: "confirm", confirmHref: `/ops/leads/${lead.id}#quote-capture` }
   }
   return { value: "—", note: "no price" }
 }
@@ -656,7 +656,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                     <span className="val right c-wait">{waitingAge(lead.board_since, nowMs)} <em>{waitingDate(lead.board_since)}</em></span>
                     <span className="val right c-money">
                       {moneyCell.confirmHref
-                        ? <Link className="heard-quote" href={moneyCell.confirmHref}>{moneyCell.value} <em>{moneyCell.note}</em></Link>
+                        ? <Link className="heard-quote" href={moneyCell.confirmHref} title="Heard on the call, not confirmed yet">{moneyCell.value} <em>{moneyCell.note}</em></Link>
                         : <>{moneyCell.value} <em>{moneyCell.note}</em></>}
                     </span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
