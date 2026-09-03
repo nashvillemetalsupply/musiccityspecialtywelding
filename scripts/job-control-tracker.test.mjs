@@ -23,7 +23,8 @@ const DETAIL_SOURCE = PREVIEW_SOURCE.slice(
 )
 
 test("tracker tabs use the canonical stages and refetch the requested stage", () => {
-  assert.match(PREVIEW_SOURCE, /board\.stages\.map\(\(stage\) =>/)
+  assert.match(PREVIEW_SOURCE, /TAB_ORDER\.filter\(\(stage\) => board\.stages\.includes\(stage\)\)\.map\(\(stage\) =>/)
+  assert.match(PREVIEW_SOURCE, /const TAB_ORDER: JobBoardStage\[\] = \["board", "attention", "shop", "waiting", "ready", "closed"\]/, "open jobs is the first tab")
   assert.match(PREVIEW_SOURCE, /href=\{`\/board\?stage=\$\{stage\}\$\{chrome\.includeTests \? "&tests=1" : ""\}`\}/)
   assert.match(PREVIEW_SOURCE, /board\.counts\[stage\]/)
   assert.match(PAGE_SOURCE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)

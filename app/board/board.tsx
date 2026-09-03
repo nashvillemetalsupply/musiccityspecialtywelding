@@ -102,8 +102,15 @@ const TAB_LABELS: Record<JobBoardStage, string> = {
   waiting: "Waiting",
   ready: "Ready",
   closed: "Closed",
-  board: "All jobs",
+  board: "Open jobs",
 }
+
+// Open jobs first, newest at the top: that is the board he opens to. The
+// working stages follow as filters, Closed last. Owner, 2026-09-03: "all jobs
+// that are open should be the first ones and the newest one should be the
+// top." The server's JOB_BOARD_STAGES order is a data contract; this is the
+// tab order.
+const TAB_ORDER: JobBoardStage[] = ["board", "attention", "shop", "waiting", "ready", "closed"]
 
 // The row mark draws the SERVICE, which the schema actually stores, not the
 // part's geometry, which it does not. `service` is TEXT, but every writer picks
@@ -484,7 +491,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
           </div>
 
           <div className="tabs" aria-label="Job stages">
-            {board.stages.map((stage) => (
+            {TAB_ORDER.filter((stage) => board.stages.includes(stage)).map((stage) => (
               <Link className="tab" key={stage} href={`/board?stage=${stage}${chrome.includeTests ? "&tests=1" : ""}`} aria-current={board.stage === stage ? "page" : undefined} onClick={() => tapped(TAPS.stageTab, { stage })}>
                 {TAB_LABELS[stage]} <b className={stage === "attention" ? "hot" : undefined}>{board.counts[stage]}</b>
               </Link>

@@ -104,14 +104,17 @@ test("Closed is its own tab and can never reach the Open jobs figure", () => {
   const data = source("lib/ops-data.ts")
   const board = source("app/board/board.tsx")
 
-  // Tab order: working stages, then the two look-back views, All jobs last.
+  // Data order: working stages, then the two look-back views, the whole
+  // board last. The rendered tab order is TAB_ORDER in board.tsx (Open jobs
+  // first, owner's call 2026-09-03); the data contract does not move.
   assert.match(
     data,
     /JOB_BOARD_STAGES = \["attention", "shop", "waiting", "ready", "closed", "board"\] as const/,
   )
+  assert.match(board, /board: "Open jobs"/)
   assert.ok(
-    board.indexOf('closed: "Closed"') < board.indexOf('board: "All jobs"'),
-    "the Closed tab must sit before All jobs",
+    board.indexOf('"board", "attention"') < board.indexOf('"closed"]'),
+    "Open jobs is the first tab and Closed the last",
   )
 
   // The whole point of the separate CTE: board_counts, which feeds "Open jobs",
