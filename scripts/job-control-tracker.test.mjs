@@ -142,7 +142,7 @@ test("tracker has an honest empty state and the protected regions remain", () =>
   assert.match(PREVIEW_SOURCE, /No jobs in this stage right now\./)
   assert.match(PAGE_SOURCE, /const EMPTY_BOARD: BoardPaneData = \{/)
   assert.doesNotMatch(PREVIEW_SOURCE, /export const EMPTY_BOARD/)
-  assert.match(PREVIEW_SOURCE, /<h2 className="t-title">Live call<\/h2>/)
+  assert.match(PREVIEW_SOURCE, /<h2 className="t-title">\{onTheLine \? "On the phone" : "Last call"\}<\/h2>/)
   // Both regions survive, now behind the fallback a call that described no
   // gate takes: the ask line and the answered count are still the panel's.
   assert.match(PREVIEW_SOURCE, /className="ask">\{askLabel\}<\/p>/)
@@ -226,17 +226,18 @@ test("the call panel refreshes itself, faster while a call is on the line", () =
 })
 
 // Fourteen transcript lines pushed the tracker most of a screen down the page.
-test("an ended call folds everything past its opening", () => {
+test("an ended call folds the whole transcript behind one line; a live one shows its tail", () => {
+  // Since 2026-09-03 the read above the transcript says what mattered, so an
+  // ended call's words fold entirely. Live, the last lines stay in the open.
   assert.match(PREVIEW_SOURCE, /const PANEL_OPEN_LINES = \d+/)
   assert.match(PREVIEW_SOURCE, /sketch\?\.lines\.slice\(0, PANEL_OPEN_LINES\)/)
-  assert.match(PREVIEW_SOURCE, /sketch\?\.lines\.slice\(PANEL_OPEN_LINES\)/)
   assert.match(PREVIEW_SOURCE, /<details className="spoke-more">/)
-  assert.match(PREVIEW_SOURCE, /more line\{foldedLines\.length === 1 \? "" : "s"\} of this call/)
-  // Nothing is dropped — the folded half renders the same line markup.
-  assert.match(PREVIEW_SOURCE, /foldedLines\.map\(\(line\) =>/)
+  assert.match(PREVIEW_SOURCE, /<summary>Read the whole call · \{sketch\.totalLines\} line\{sketch\.totalLines === 1 \? "" : "s"\}<\/summary>/)
+  // Nothing is dropped — every line renders the same line markup inside the fold.
+  assert.match(PREVIEW_SOURCE, /\{sketch\.lines\.map\(\(line\) =>/)
   const open = Number(PREVIEW_SOURCE.match(/const PANEL_OPEN_LINES = (\d+)/)[1])
   const live = Number(CALL_SKETCH_SOURCE.match(/const LIVE_LINES = (\d+)/)[1])
-  assert.ok(open >= live, "a live call carries fewer lines than the fold, so it never folds")
+  assert.ok(open >= live, "a live call carries fewer lines than the open slice, so none are hidden")
 })
 
 test("the tracker paginates honestly past a full page", () => {

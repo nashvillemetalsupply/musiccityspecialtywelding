@@ -16,6 +16,7 @@ import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
 import { shopClaimLabel, shopClaimText, shopSourceLabel } from "@/lib/shop-language"
+import { outcomeLine } from "@/lib/call-summary"
 
 type TodayTrailItem = {
   id: number
@@ -255,17 +256,29 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
   // screen down the page. The opening stays in the open — that is where the
   // customer says what he needs — and the rest folds into a native disclosure.
   const openLines = sketch?.lines.slice(0, PANEL_OPEN_LINES) ?? []
-  const foldedLines = sketch?.lines.slice(PANEL_OPEN_LINES) ?? []
   const summarySlots = summary ? [
     { key: "need", label: "Needs", tone: "said", text: summary.need || "Nothing asked for" },
     ...summary.details.map((detail, index) => ({ key: `detail-${index}`, label: index === 0 ? "Details" : "", tone: "said", text: detail })),
     ...(summary.where_when ? [{ key: "where", label: "Where / when", tone: "said", text: summary.where_when }] : []),
-    ...(summary.is_job === "no" ? [{ key: "notjob", label: "Not a job", tone: "said", text: summary.not_job_reason || "Not shop work" }] : []),
+    ...(summary.next_question ? [{ key: "ask", label: "Still to ask", tone: "ambig", text: summary.next_question }] : []),
   ] : []
-  const askLabel = showSummary ? (summary?.next_question ? "Ask next" : "What the call said") : showHeard ? "What the call said" : "Ask next"
+  // The read leads with what happened, because the owner answers on his own
+  // phone and reads this afterwards: the call is done, the question is what
+  // the board did with it.
+  const outcomeLabel = summary
+    ? summary.auto === "filed" ? "Filed to the caller's open job"
+      : sketch?.leadId != null || summary.auto === "saved" ? "Saved as a job"
+      : summary.is_job === "no" ? "Probably not a job"
+      : summary.auto === "failed" ? "Could not save it"
+      : "Could not tell if it is a job"
+    : ""
+  const askLabel = showSummary ? outcomeLabel : showHeard ? "What the call said" : "Ask next"
   const askBody = showSummary
-    ? (summary?.next_question ?? "Nothing left to ask before quoting.")
+    ? (summary?.need || "Nothing asked for on this call.")
     : showHeard ? "No gate or frame was described, so the drawing stays blank." : spec.nextQuestion
+  // The sketch tile is only worth its third of the card when there is a
+  // drawing on it. A read call with no gate or frame hides it.
+  const showTile = drawing.hasDrawing || !showSummary
   const slots = showSummary
     ? summarySlots
     : showHeard
@@ -785,11 +798,9 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
 
         <section className="card">
           <div className="call-top">
-            <h2 className="t-title">Live call</h2>
-            <span className="sub">{sketch ? callLine(sketch, nowMs) : "No call sketched yet"}</span>
+            <h2 className="t-title">{onTheLine ? "On the phone" : "Last call"}</h2>
+            <span className="sub">{sketch ? callLine(sketch, nowMs) : "No calls yet"}</span>
             <span className="end">
-              {sketch && sketch.unsketchedCalls > 0 &&
-                <span className="t-label">{sketch.unsketchedCalls} more call{sketch.unsketchedCalls === 1 ? "" : "s"} not sketched</span>}
               {sketch?.leadId != null &&
                 <Link className="btn btn--sm btn--edge" href={`/ops/leads/${sketch.leadId}`}>Open the job</Link>}
               {/* A call with no job yet is the one the board could not act on:
@@ -800,8 +811,8 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
             </span>
           </div>
     
-          <div className="call-cols">
-            <div>
+          <div className={showTile ? "call-cols" : "call-cols call-cols--read"}>
+            {showTile && <div>
               <figure className="tile">
                 <svg viewBox="0 0 244 172" role="img" aria-label={sketchAriaLabel(spec)}>
                   <rect width="244" height="172" fill="var(--sketch-ground)"></rect>
@@ -850,7 +861,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                 <figcaption>ROUGH CALL SKETCH &middot;<br />NOT A FABRICATION DRAWING</figcaption>
               </figure>
               <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Every answer that comes back edits it.</p>
-            </div>
+            </div>}
     
             <div>
               <p className="ask">{askLabel}</p>
@@ -863,8 +874,8 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                   </span>)}
               </div>
               <div className="call-end">
-                <span>{showSummary
-                  ? (summary?.is_job === "no" ? "Probably not a job" : summary?.is_job === "unsure" ? "Call ended before the request was clear" : "Read from the whole call")
+                <span>{showSummary && summary
+                  ? outcomeLine(summary, sketch?.leadId ?? null)
                   : showHeard
                   ? `${heard.length} fact${heard.length === 1 ? "" : "s"} heard on this call`
                   : `${answered} of ${PANEL_FACT_KEYS.length} answered${pricingGap && ` · ${pricingGap}`}`}</span>
@@ -874,22 +885,23 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
             </div>
     
             <div>
-              <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>{onTheLine ? "Recent call language" : "How the call opened"}</p>
+              <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>{onTheLine ? "Being said now" : "The call itself"}</p>
+              {/* Live, the tail of the call is the point. Ended, the read above
+                  has already said what mattered, so the whole transcript folds
+                  behind one line and opens only when he wants the words. */}
               {sketch && sketch.lines.length > 0
-                ? <>
-                    {openLines.map((line) =>
+                ? onTheLine
+                  ? openLines.map((line) =>
                       <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
                         <b>{line.speaker}</b><span>{line.transcript}</span>
-                      </p>)}
-                    {foldedLines.length > 0 &&
-                      <details className="spoke-more">
-                        <summary>{foldedLines.length} more line{foldedLines.length === 1 ? "" : "s"} of this call</summary>
-                        {foldedLines.map((line) =>
-                          <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
-                            <b>{line.speaker}</b><span>{line.transcript}</span>
-                          </p>)}
-                      </details>}
-                  </>
+                      </p>)
+                  : <details className="spoke-more">
+                      <summary>Read the whole call · {sketch.totalLines} line{sketch.totalLines === 1 ? "" : "s"}</summary>
+                      {sketch.lines.map((line) =>
+                        <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
+                          <b>{line.speaker}</b><span>{line.transcript}</span>
+                        </p>)}
+                    </details>
                 : <p className="t-caption">Nothing has been transcribed on this call yet.</p>}
               {unshownLines > 0 &&
                 <p className="t-caption" style={{ "marginTop": "var(--s2)" }}>{unshownLines} more line{unshownLines === 1 ? "" : "s"} on this call.</p>}

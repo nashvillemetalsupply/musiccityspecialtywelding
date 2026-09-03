@@ -169,7 +169,11 @@ export async function listPendingCallIntakes(options: { page?: number; pageSize?
 
 export async function saveInboundCallAsJob(input: {
   publicId: string
-  operatorId: number
+  // Null when the read of the call saved it, with nobody at a keyboard. The
+  // byline then says "system", because attribution names who changed the
+  // record and no operator did.
+  operatorId: number | null
+  automatic?: boolean
   name: string
   phone: string
   need: string
@@ -232,7 +236,7 @@ export async function saveInboundCallAsJob(input: {
       isTest: draft.is_test || intakeNote.includes("[INTERNAL TEST]"),
     }, {
       sourceOverride: "phone-in",
-      actor: String(input.operatorId),
+      actor: input.operatorId == null ? "system" : String(input.operatorId),
       firstResponseNow,
       intakeKey: `call:${draft.call_sid}`,
     })
@@ -257,8 +261,8 @@ export async function saveInboundCallAsJob(input: {
         restored = true
         await recordEvent({
           kind: "call.intake.resaved",
-          actorType: "operator",
-          actorId: input.operatorId,
+          actorType: input.operatorId == null ? "system" : "operator",
+          actorId: input.operatorId ?? "",
           leadId: created.id,
           personId: draft.person_id,
           body: "Undone call intake saved again",
@@ -291,13 +295,13 @@ export async function saveInboundCallAsJob(input: {
     await projectRecoveredTestCallBuildFacts(draft.call_sid, created.id, leads[0]?.is_test ?? draft.is_test)
     await recordEvent({
       kind: "call.intake.saved",
-      actorType: "operator",
-      actorId: input.operatorId,
+      actorType: input.operatorId == null ? "system" : "operator",
+      actorId: input.operatorId ?? "",
       leadId: created.id,
       personId,
       externalId: `${draft.call_sid}:intake-saved:${saveReceiptKey}`,
-      body: "Call saved as a job",
-      crewBody: "Call saved as a job",
+      body: input.automatic ? "Call saved as a job from what the caller said" : "Call saved as a job",
+      crewBody: input.automatic ? "Call saved as a job from what the caller said" : "Call saved as a job",
       detail: { callSid: draft.call_sid },
     })
     const finalized = (await sql`
@@ -322,6 +326,60 @@ export async function saveInboundCallAsJob(input: {
     return { leadId: created.id, eventId: created.eventId }
   } catch (error) {
     const message = error instanceof Error ? error.message.slice(0, 500) : "The call could not be saved yet."
+    await sql`
+      UPDATE call_intake_drafts SET status = 'failed', last_error = ${message}::text, updated_at = now()
+      WHERE id = ${draft.id}::bigint AND status = 'saving'`
+    throw error
+  }
+}
+
+// A repeat caller with a job already open does not get a second job. Ring
+// time already files such calls (prepareInboundCallIntake above); this is the
+// same filing for a draft whose caller's job was created after the call rang,
+// which is how one caller ended up as two drafts and one job on 2026-09-03.
+export async function fileCallOntoOpenLead(input: { publicId: string; leadId: number }): Promise<{ leadId: number }> {
+  const sql = getSql()
+  const draft = await getCallIntakeDraft(input.publicId)
+  if (!draft) throw new Error("That call is no longer available.")
+  if (draft.status === "saved" && draft.lead_id) return { leadId: Number(draft.lead_id) }
+  const claimed = (await sql`
+    UPDATE call_intake_drafts SET status = 'saving', save_started_at = now(), last_error = '', updated_at = now()
+    WHERE id = ${draft.id}::bigint AND status = ANY(ARRAY['pending','failed','unknown']::text[])
+    RETURNING id`) as { id: number }[]
+  if (!claimed[0]) throw new Error("That call is already being saved.")
+  try {
+    const leads = (await sql`
+      SELECT person_id, is_test FROM leads WHERE id = ${input.leadId}::bigint LIMIT 1`) as { person_id: number | null; is_test: boolean }[]
+    if (!leads[0]) throw new Error("That job no longer exists.")
+    const personId = leads[0].person_id ?? draft.person_id
+    const isTest = leads[0].is_test || draft.is_test
+    await sql`
+      UPDATE calls SET lead_id = COALESCE(lead_id, ${input.leadId}::bigint),
+        person_id = COALESCE(person_id, ${personId}::bigint),
+        detail = COALESCE(detail, '{}'::jsonb) || '{"intakeOutcome":"filed"}'::jsonb,
+        updated_at = now()
+      WHERE twilio_sid = ${draft.call_sid}::text`
+    await attachRecoveredCallArtifacts(draft.call_sid, input.leadId, personId, isTest)
+    await projectRecoveredTestCallBuildFacts(draft.call_sid, input.leadId, isTest)
+    await recordEvent({
+      kind: "call.intake.saved",
+      actorType: "system",
+      actorId: "",
+      leadId: input.leadId,
+      personId,
+      externalId: `${draft.call_sid}:intake-filed`,
+      body: "Repeat call filed to this job",
+      crewBody: "Repeat call filed to this job",
+      detail: { callSid: draft.call_sid, filed: true },
+    })
+    await sql`
+      UPDATE call_intake_drafts SET status = 'saved', lead_id = ${input.leadId}::bigint,
+        person_id = COALESCE(person_id, ${personId}::bigint), saved_at = COALESCE(saved_at, now()),
+        last_error = '', updated_at = now()
+      WHERE id = ${draft.id}::bigint AND status = 'saving'`
+    return { leadId: input.leadId }
+  } catch (error) {
+    const message = error instanceof Error ? error.message.slice(0, 500) : "The call could not be filed."
     await sql`
       UPDATE call_intake_drafts SET status = 'failed', last_error = ${message}::text, updated_at = now()
       WHERE id = ${draft.id}::bigint AND status = 'saving'`

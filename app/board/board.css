@@ -577,6 +577,10 @@ svg{display:block}
   .call-cols>*{padding:var(--s5) var(--s6)}
   .call-cols>*+*{border-top:0;border-left:1px solid var(--border)}
   .call-cols>:last-child{grid-column:1/3;border-left:0;border-top:1px solid var(--border)}
+  /* A read call with no drawing has two columns: the read, then the folded
+     transcript beside it. */
+  .call-cols--read{grid-template-columns:minmax(0,1fr) 320px}
+  .call-cols--read>:last-child{grid-column:auto;border-left:1px solid var(--border);border-top:0}
   .ask+p{font-size:var(--t-lede);max-width:30ch}
   .slots{gap:0 var(--s6)}
   .voice-strip{flex-direction:row;align-items:center;gap:var(--s5);padding:var(--s4) var(--s6)}
@@ -645,6 +649,7 @@ svg{display:block}
 /* ------------------------------------------------------ 82.5rem · 1320px ---- */
 @media (min-width:82.5001rem){
   .call-cols{grid-template-columns:280px minmax(0,1fr) 280px}
+  .call-cols--read{grid-template-columns:minmax(0,1fr) 360px}
   .call-cols>:last-child{grid-column:auto;border-left:1px solid var(--border);border-top:0}
   .main{padding:var(--s6) var(--s7) var(--s8)}
 }

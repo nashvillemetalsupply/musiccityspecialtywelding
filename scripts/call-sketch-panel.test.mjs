@@ -155,7 +155,7 @@ test("an ended call reads from the top, a live one from the tail", () => {
   // The count is what makes the truncation honest rather than silent.
   assert.match(reader, /totalLines: utterances\.length/)
   assert.match(PREVIEW_SOURCE, /\{unshownLines\} more line\{unshownLines === 1 \? "" : "s"\} on this call\./)
-  assert.match(PREVIEW_SOURCE, /onTheLine \? "Recent call language" : "How the call opened"/)
+  assert.match(PREVIEW_SOURCE, /onTheLine \? "Being said now" : "The call itself"/)
 })
 
 test("a call with no job yet offers the draft, and only while intake will open it", () => {

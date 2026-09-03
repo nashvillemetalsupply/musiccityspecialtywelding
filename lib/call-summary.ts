@@ -2,6 +2,9 @@ import { generateText, Output } from "ai"
 import { z } from "zod"
 import { getSql } from "@/lib/db"
 import { AI_MODELS, aiConfigured, deepseekConfigured, jsonWithDeepSeek } from "@/lib/ai"
+import { fileCallOntoOpenLead, saveInboundCallAsJob } from "@/lib/job-intake"
+import { findOpenLeadResolutionForPerson } from "@/lib/people"
+import { notifyAll } from "@/lib/notify"
 
 // One read of a finished call, written onto its intake draft. The live sketch
 // only understood gates and frames and identified a part on 4 of 56 calls in
@@ -25,7 +28,18 @@ export const callSummarySchema = z.object({
   next_question: z.string().max(600).nullable().describe("The one thing the shop still needs to ask before quoting. Null if nothing is missing."),
 })
 
-export type CallSummary = z.output<typeof callSummarySchema>
+// What the read did with the call once it was written down. Stored beside
+// the read so the board can say what happened, not guess from other rows.
+export type CallOutcome = "saved" | "filed" | "left" | "already" | "failed"
+export type CallSummary = z.output<typeof callSummarySchema> & { auto?: CallOutcome }
+
+export function outcomeLine(summary: CallSummary, leadId: number | null) {
+  if (summary.auto === "filed") return "Repeat caller. Filed to their open job."
+  if (leadId != null || summary.auto === "saved") return "Saved as a job. It is on the tracker."
+  if (summary.is_job === "no") return summary.not_job_reason ? `${summary.not_job_reason}. Left in calls to save.` : "Left in calls to save."
+  if (summary.auto === "failed") return "The save did not go through. It is in calls to save."
+  return "Could not tell if it is a job. Left in calls to save."
+}
 
 // Crew read the board. Money is removed before anything is stored, so a price
 // the model repeats despite the instruction never reaches a row.
@@ -56,8 +70,12 @@ const PLACEHOLDER_NAME = /^(?:caller \d{4}|private caller|caller)$/i
 
 type DraftForSummary = {
   id: number
+  public_id: string
   call_sid: string
+  person_id: number | null
+  status: string
   caller_name: string
+  phone: string
   need: string
   is_test: boolean
   transcript: string
@@ -103,7 +121,7 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
   if (!aiConfigured() && !deepseekConfigured()) return { summarized: false, reason: "not-configured" }
   const sql = getSql()
   const rows = (await sql`
-    SELECT d.id, d.call_sid, d.caller_name, d.need, d.is_test,
+    SELECT d.id, d.public_id, d.call_sid, d.person_id, d.status, d.caller_name, d.phone, d.need, d.is_test,
       c.transcript, c.transcript_status, COALESCE(c.duration_sec, 0)::int AS duration_sec
     FROM call_intake_drafts d
     JOIN calls c ON c.twilio_sid = d.call_sid
@@ -144,6 +162,7 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
           ELSE caller_name END,
         updated_at = now()
       WHERE id = ${draft.id}::bigint`
+    await settleCall(draft, summary, name, isTest)
     return { summarized: true }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -153,6 +172,70 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
     console.error("Call summary failed:", callSid, message)
     return { summarized: false, reason: "failed" }
   }
+}
+
+const OPEN_DRAFT = ["pending", "failed", "unknown"]
+
+// The owner answers on his own phone and opens the app afterwards, if at all.
+// So the read does the work a tap used to: a call that asked for shop work
+// becomes a job on the tracker (or is filed onto the caller's open job), and
+// one push tells him what the call was and what happened. Calls the read
+// could not place stay in "calls to save" for a one-tap decision. Nothing
+// here can fail the read itself: the summary is already stored when it runs.
+async function settleCall(draft: DraftForSummary, summary: CallSummary, name: string, isTest: boolean) {
+  const sql = getSql()
+  let outcome: CallOutcome = "left"
+  let leadId: number | null = null
+  try {
+    if (!OPEN_DRAFT.includes(draft.status)) {
+      outcome = "already"
+    } else if (summary.is_job === "yes") {
+      const open = draft.person_id ? await findOpenLeadResolutionForPerson(draft.person_id, draft.is_test) : null
+      if (open?.leadId && !open.needsJobMatch) {
+        leadId = (await fileCallOntoOpenLead({ publicId: draft.public_id, leadId: open.leadId })).leadId
+        outcome = "filed"
+      } else {
+        leadId = (await saveInboundCallAsJob({
+          publicId: draft.public_id,
+          operatorId: null,
+          automatic: true,
+          name: name || draft.caller_name,
+          phone: draft.phone,
+          need: draft.need.trim() || summary.need,
+        })).leadId
+        outcome = "saved"
+      }
+    }
+  } catch (error) {
+    outcome = "failed"
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("Call settle failed:", draft.call_sid, message)
+    const stored = `After the read: ${message}`.slice(0, 300)
+    await sql`
+      UPDATE call_intake_drafts SET summary_error = ${stored}::text, updated_at = now()
+      WHERE id = ${draft.id}::bigint`
+  }
+  const outcomeJson = JSON.stringify({ auto: outcome })
+  await sql`
+    UPDATE call_intake_drafts SET summary = COALESCE(summary, '{}'::jsonb) || ${outcomeJson}::jsonb, updated_at = now()
+    WHERE id = ${draft.id}::bigint`
+
+  // Tests never alert anyone. A wrong number is not worth a buzz either; it
+  // waits in calls to save. Everything else is one push: what the call was,
+  // what happened. Quiet hours file it for the morning.
+  if (isTest || summary.is_job === "no" || outcome === "already") return
+  const who = name || draft.caller_name || "Caller"
+  const line = { ...summary, auto: outcome }
+  await notifyAll({
+    priority: "interrupt",
+    stock: leadId != null ? "green" : "manila",
+    title: `${who}: ${summary.need || "called, nothing asked for"}`.slice(0, 120),
+    body: [...summary.details, summary.where_when ?? "", outcomeLine(line, leadId)].filter(Boolean).join(" · ").slice(0, 500),
+    url: leadId != null ? `/ops/leads/${leadId}` : "/board",
+    ownerOnly: true,
+    smsFallback: false,
+    dedupeKey: `call-read:${draft.call_sid}`,
+  }).catch((error) => console.error("Call read notification failed:", draft.call_sid, error))
 }
 
 // The recovery sweep's share: drafts still waiting to be saved whose call has

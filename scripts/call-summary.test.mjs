@@ -87,5 +87,46 @@ test("the calls dropdown and the live card read the summary", () => {
   assert.match(STORE, /summary: call\.summary \?\? null,/)
   assert.match(BOARD, /const showSummary = !drawing\.hasDrawing && summary !== null/)
   assert.match(BOARD, /\{!showHeard && !showSummary && <>/)
-  assert.match(BOARD, /<h2 className="t-title">Live call<\/h2>/)
+  assert.match(BOARD, /<h2 className="t-title">\{onTheLine \? "On the phone" : "Last call"\}<\/h2>/)
+  // the sketch tile only earns its third of the card when something is drawn
+  assert.match(BOARD, /const showTile = drawing\.hasDrawing \|\| !showSummary/)
+  assert.match(BOARD, /\{showTile && <div>\s+<figure className="tile">/)
+  // an ended call folds the whole transcript behind one line
+  assert.match(BOARD, /<summary>Read the whole call · \{sketch\.totalLines\} line/)
+})
+
+// The owner answers on his own phone and opens the app afterwards. The read
+// does the tap for him when the call asked for shop work.
+test("a call that asked for shop work becomes a job with no tap, attributed to the system", () => {
+  const INTAKE = read("../lib/job-intake.ts")
+  const settle = SUMMARY.slice(SUMMARY.indexOf("async function settleCall"), SUMMARY.indexOf("export async function summarizePendingCalls"))
+  assert.match(settle, /if \(!OPEN_DRAFT\.includes\(draft\.status\)\) \{\s+outcome = "already"/)
+  assert.match(settle, /else if \(summary\.is_job === "yes"\)/)
+  assert.match(settle, /operatorId: null,\s+automatic: true,/)
+  // the summary is stored before settle runs, so a failed save never loses the read
+  assert.ok(SUMMARY.indexOf("summary_status = 'ready'") < SUMMARY.indexOf("await settleCall(draft, summary, name, isTest)"))
+  assert.match(settle, /outcome = "failed"/)
+  // attribution: no operator saved it, so no operator is named
+  assert.match(INTAKE, /operatorId: number \| null/)
+  assert.match(INTAKE, /actor: input\.operatorId == null \? "system" : String\(input\.operatorId\)/)
+  assert.equal((INTAKE.match(/actorType: input\.operatorId == null \? "system" : "operator",/g) ?? []).length, 2)
+})
+
+test("a repeat caller with an open job is filed onto it, never duplicated", () => {
+  const INTAKE = read("../lib/job-intake.ts")
+  const settle = SUMMARY.slice(SUMMARY.indexOf("async function settleCall"), SUMMARY.indexOf("export async function summarizePendingCalls"))
+  assert.match(settle, /await findOpenLeadResolutionForPerson\(draft\.person_id, draft\.is_test\)/)
+  assert.match(settle, /if \(open\?\.leadId && !open\.needsJobMatch\)[\s\S]{0,200}fileCallOntoOpenLead\(\{ publicId: draft\.public_id, leadId: open\.leadId \}\)/)
+  assert.match(INTAKE, /export async function fileCallOntoOpenLead/)
+  assert.match(INTAKE, /externalId: `\$\{draft\.call_sid\}:intake-filed`/)
+  assert.match(INTAKE, /'\{"intakeOutcome":"filed"\}'::jsonb/)
+})
+
+test("one push per read tells the owner what the call was and what happened", () => {
+  const settle = SUMMARY.slice(SUMMARY.indexOf("async function settleCall"), SUMMARY.indexOf("export async function summarizePendingCalls"))
+  // tests never alert; wrong numbers wait quietly; a call already handled says nothing
+  assert.match(settle, /if \(isTest \|\| summary\.is_job === "no" \|\| outcome === "already"\) return/)
+  assert.match(settle, /priority: "interrupt",/)
+  assert.match(settle, /ownerOnly: true,\s+smsFallback: false,\s+dedupeKey: `call-read:\$\{draft\.call_sid\}`,/)
+  assert.match(settle, /url: leadId != null \? `\/ops\/leads\/\$\{leadId\}` : "\/board",/)
 })
