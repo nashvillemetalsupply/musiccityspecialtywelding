@@ -58,7 +58,11 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(intake, /Job saved/)
   assert.match(intake, /Open job to call or text/)
   assert.match(intake, /undoInlineJobAction/)
-  assert.match(css, /\.ops-frame\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
+  // The frame is full-bleed since 2026-09-03 so the top bar spans the
+  // viewport; the 92rem column moved to the bar's contents and the pages.
+  assert.match(css, /\.ops-frame\s*\{[^}]*width:\s*100%/s)
+  assert.match(css, /\.ops-frame > :not\(\.ops-top\)\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
+  assert.match(css, /\.ops-top-inner\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
   assert.match(css, /min-height:\s*44px/)
   assert.match(
     css,

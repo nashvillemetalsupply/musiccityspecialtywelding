@@ -54,12 +54,18 @@
   color-scheme: dark;
 }
 
+/* The frame is full-bleed so the sticky top bar spans the viewport like the
+   board's; the bar's contents and the pages inside keep the 92rem column. On
+   a wide monitor the bar used to float in the middle with dark gutters. */
 .ops-frame {
-  width: min(100%, 92rem);
-  margin-inline: auto;
+  width: 100%;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+.ops-frame > :not(.ops-top) {
+  width: min(100%, 92rem);
+  margin-inline: auto;
 }
 
 .ops-frame > main {
@@ -80,6 +86,8 @@
 }
 
 .ops-top-inner {
+  width: min(100%, 92rem);
+  margin-inline: auto;
   display: flex;
   align-items: center;
   gap: var(--s3);
