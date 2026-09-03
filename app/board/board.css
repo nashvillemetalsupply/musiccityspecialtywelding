@@ -243,6 +243,8 @@ svg{display:block}
 .ask+p{margin:var(--s2) 0 0;font-size:22px;font-weight:var(--w-semi);
   letter-spacing:-.02em;line-height:var(--lh-lede);text-wrap:balance;max-width:none}
 .slots{margin:var(--s5) 0 0;display:grid;grid-template-columns:1fr;gap:0 var(--s6)}
+/* The post-call read is sentences, not label/value pairs; one column at every width. */
+.slots--read{grid-template-columns:1fr!important}
 .slot{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s2) 0;
   border-top:1px solid var(--border-subtle)}
 .slot .k{font-size:var(--t-label);color:var(--text-secondary);flex:1}

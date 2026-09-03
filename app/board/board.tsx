@@ -855,7 +855,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
             <div>
               <p className="ask">{askLabel}</p>
               <p>{askBody}</p>
-              <div className="slots">
+              <div className={showSummary ? "slots slots--read" : "slots"}>
                 {slots.map((slot) =>
                   <span className="slot" key={slot.key}>
                     <span className="k">{slot.label}</span>

@@ -122,7 +122,7 @@ test("a call that answered no gate fact falls back to what the call said", () =>
   assert.match(PREVIEW_SOURCE, /showHeard \? "What the call said" : "Ask next"/)
   assert.match(PREVIEW_SOURCE, /const slots = showSummary\s+\? summarySlots\s+: showHeard/)
   // One loop draws both. A second hand-written slot list is how the two drift.
-  assert.equal((PREVIEW_SOURCE.match(/className="slots"/g) ?? []).length, 1)
+  assert.equal((PREVIEW_SOURCE.match(/className=\{showSummary \? "slots slots--read" : "slots"\}/g) ?? []).length, 1)
   assert.match(PREVIEW_SOURCE, /slots\.map\(\(slot\) =>/)
 })
 
