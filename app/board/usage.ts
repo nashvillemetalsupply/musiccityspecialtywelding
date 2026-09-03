@@ -1,15 +1,17 @@
 "use client"
 
-import { track } from "@vercel/analytics"
-
 // Owner-only feature taps, so the next change to the board is built on what
 // he actually uses rather than a guess. Names only, never content: no
-// customer, no number, no money, no job id ever rides on an event.
+// customer, no number, no money, no job id ever rides on a tap. The one
+// detail allowed is the stage tab's own name, folded into the tap name.
 //
-// Crew are never counted. JobControl mounts the analytics script only for the
-// owner and only flips this switch for the owner, so a crew tap is a no-op
-// before it reaches the SDK. That is the repo's no-surveillance rule, kept at
-// the source, not in a dashboard filter.
+// Counted first party (POST /api/ops/usage into usage_taps): Vercel Web
+// Analytics on the Hobby plan carries no custom events, and a paid plan for
+// ten counters is the wrong trade. Page views still go to Vercel, free.
+//
+// Crew are never counted. JobControl flips this switch only for the owner,
+// and the route refuses anyone else besides. That is the repo's
+// no-surveillance rule, kept at the source, not in a dashboard filter.
 export const TAPS = {
   callsOpen: "calls-open",
   callSave: "call-save",
@@ -33,11 +35,16 @@ export function enableUsage(owner: boolean) {
 
 export function tapped(name: Tap, detail?: { stage?: string }) {
   if (!enabled) return
+  const payload = JSON.stringify({ name: detail?.stage ? `${name}:${detail.stage}` : name })
   try {
-    track(name, detail)
+    // sendBeacon survives the navigation most of these taps start; the fetch
+    // is the fallback for browsers that refuse a beacon.
+    if (!navigator.sendBeacon?.("/api/ops/usage", new Blob([payload], { type: "application/json" }))) {
+      void fetch("/api/ops/usage", { method: "POST", body: payload, headers: { "Content-Type": "application/json" }, keepalive: true })
+    }
   } catch (error) {
-    // Analytics is decoration on the board, never a dependency of it. A
-    // blocked or missing script must not stop the tap it was counting.
-    console.warn("Usage event dropped:", name, error)
+    // Counting is decoration on the board, never a dependency of it. A tap
+    // that cannot be counted still does what it was for.
+    console.warn("Usage tap dropped:", name, error)
   }
 }

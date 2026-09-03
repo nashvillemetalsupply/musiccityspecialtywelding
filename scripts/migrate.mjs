@@ -509,6 +509,13 @@ const statements = [
   `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary_attempts INT NOT NULL DEFAULT 0`,
   `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary_at TIMESTAMPTZ`,
   `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary_error TEXT NOT NULL DEFAULT ''`,
+  // 2026-09-03: owner-only feature-tap counts, first party (see app/board/usage.ts).
+  `CREATE TABLE IF NOT EXISTS usage_taps (
+    day DATE NOT NULL,
+    name TEXT NOT NULL,
+    taps INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, name)
+  )`,
   `CREATE TABLE IF NOT EXISTS call_live_transcript_items (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     call_sid TEXT NOT NULL REFERENCES calls(twilio_sid) ON DELETE CASCADE,
