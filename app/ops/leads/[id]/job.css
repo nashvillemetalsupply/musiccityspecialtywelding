@@ -473,6 +473,15 @@
   .job-quote-capture article > div { grid-template-columns: minmax(0, 1fr); }
 }
 
+@media (max-width: 55rem) {
+  /* The Customer Page card is a two-column grid from globals.css; on a phone
+     the sentence was squeezed to one word per line beside the button. */
+  .job-page .ops-glass-control { grid-template-columns: 1fr; }
+  .job-page .ops-glass-control form,
+  .job-page .ops-glass-control form button { width: 100%; }
+  .job-page .ops-glass-link code { flex-basis: 100%; }
+}
+
 @media (pointer: coarse), (max-width: 55rem) {
   .job-page .btn,
   .job-page .btn.btn--sm,
