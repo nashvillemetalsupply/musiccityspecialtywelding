@@ -2,6 +2,7 @@ import { getSql } from "@/lib/db"
 import { after } from "next/server"
 import { recordEvent } from "@/lib/events"
 import { processEvent } from "@/lib/extract"
+import { summarizeCallDraft } from "@/lib/call-summary"
 import { safeSecretMatch } from "@/lib/ops-auth"
 import { deepgramCallbackSecretConfigured } from "@/lib/call-transcription"
 
@@ -71,6 +72,10 @@ export async function POST(req: Request) {
       detail: { callSid: call.twilio_sid, isTest: existing[0]?.is_test ?? false, deepgramRequestId: payload?.metadata?.request_id ?? null, segments },
     })
     if (eventId) after(() => processEvent(eventId).catch((error) => console.error("Transcript extraction failed:", error)))
+    // The transcript is the whole call, so this is the moment the draft can be
+    // read once. A call with no draft (an outbound call, or one already a job)
+    // returns no-draft and costs nothing.
+    if (transcript) after(() => summarizeCallDraft(call.twilio_sid).catch((error) => console.error("Call summary failed:", error)))
   }
   return Response.json({ ok: true })
 }

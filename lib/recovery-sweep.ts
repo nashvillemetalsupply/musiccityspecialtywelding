@@ -12,6 +12,7 @@ import { reconcileStaleOutboundCalls } from "@/lib/calls"
 import { reconcileStaleCommitmentReschedules } from "@/lib/commitments"
 import { reconcileGlassUploads } from "@/lib/glass-uploads"
 import { reconcileStaleCallIntakes } from "@/lib/job-intake"
+import { summarizePendingCalls } from "@/lib/call-summary"
 
 export type RecoveryTrigger =
   | "github-schedule"
@@ -168,6 +169,7 @@ export async function runRecoverySweep({
     detail.extractionRetries = unprocessed.length
     detail.attachmentRetries = await retryPendingAttachments()
     detail.callTranscriptRetries = await retryCallTranscriptions()
+    detail.callSummaries = await summarizePendingCalls()
     detail.voiceTranscriptRetries = await retryVoiceTranscriptions()
     detail.smsReconciliation = await reconcileStaleSmsIntents()
     detail.rawCallReconciliation = await reconcileRawInboundCalls()

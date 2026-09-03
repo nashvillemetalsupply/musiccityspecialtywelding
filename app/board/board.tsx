@@ -241,7 +241,11 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
   // fact measured — "about 26 inches wide" — counted as nothing at all,
   // because a hedged measurement is not an answer. Both are drawings.
   const drawing = sketchGeometry(spec)
-  const showHeard = !drawing.hasDrawing && heard.length > 0
+  // The post-call read wins over both fallbacks: it is the whole call in five
+  // lines, where the extractor's claims were whatever survived into a record.
+  const summary = sketch?.summary ?? null
+  const showSummary = !drawing.hasDrawing && summary !== null
+  const showHeard = !drawing.hasDrawing && !showSummary && heard.length > 0
   // A call still on the line shows its tail; an ended one shows its opening,
   // where the customer says what they need. Either way the count is honest
   // about what the column left out.
@@ -252,7 +256,19 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
   // customer says what he needs — and the rest folds into a native disclosure.
   const openLines = sketch?.lines.slice(0, PANEL_OPEN_LINES) ?? []
   const foldedLines = sketch?.lines.slice(PANEL_OPEN_LINES) ?? []
-  const slots = showHeard
+  const summarySlots = summary ? [
+    { key: "need", label: "Needs", tone: "said", text: summary.need || "Nothing asked for" },
+    ...summary.details.map((detail, index) => ({ key: `detail-${index}`, label: index === 0 ? "Details" : "", tone: "said", text: detail })),
+    ...(summary.where_when ? [{ key: "where", label: "Where / when", tone: "said", text: summary.where_when }] : []),
+    ...(summary.is_job === "no" ? [{ key: "notjob", label: "Not a job", tone: "said", text: summary.not_job_reason || "Not shop work" }] : []),
+  ] : []
+  const askLabel = showSummary ? (summary?.next_question ? "Ask next" : "What the call said") : showHeard ? "What the call said" : "Ask next"
+  const askBody = showSummary
+    ? (summary?.next_question ?? "Nothing left to ask before quoting.")
+    : showHeard ? "No gate or frame was described, so the drawing stays blank." : spec.nextQuestion
+  const slots = showSummary
+    ? summarySlots
+    : showHeard
     ? heard.map((fact) => ({ key: fact.predicate, label: fact.label, tone: "said", text: fact.text }))
     : PANEL_FACT_KEYS.map((key) => ({
       key,
@@ -769,7 +785,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
 
         <section className="card">
           <div className="call-top">
-            <h2 className="t-title">Live call sketch</h2>
+            <h2 className="t-title">Live call</h2>
             <span className="sub">{sketch ? callLine(sketch, nowMs) : "No call sketched yet"}</span>
             <span className="end">
               {sketch && sketch.unsketchedCalls > 0 &&
@@ -796,7 +812,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                   {/* The copy beside this tile says the drawing stays blank on
                       a call that described no gate or frame. Until this guard
                       it said that over a full elevation. */}
-                  {!showHeard && <>
+                  {!showHeard && !showSummary && <>
                     {/* A box drawn from hedged numbers is drawn as a hedge. */}
                     <rect x={drawing.x} y={drawing.y} width={drawing.w} height={drawing.h}
                       fill="none" stroke="var(--sketch-line)" strokeWidth={drawing.stroke}
@@ -837,8 +853,8 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
             </div>
     
             <div>
-              <p className="ask">{showHeard ? "What the call said" : "Ask next"}</p>
-              <p>{showHeard ? "No gate or frame was described, so the drawing stays blank." : spec.nextQuestion}</p>
+              <p className="ask">{askLabel}</p>
+              <p>{askBody}</p>
               <div className="slots">
                 {slots.map((slot) =>
                   <span className="slot" key={slot.key}>
@@ -847,7 +863,9 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                   </span>)}
               </div>
               <div className="call-end">
-                <span>{showHeard
+                <span>{showSummary
+                  ? (summary?.is_job === "no" ? "Probably not a job" : summary?.is_job === "unsure" ? "Call ended before the request was clear" : "Read from the whole call")
+                  : showHeard
                   ? `${heard.length} fact${heard.length === 1 ? "" : "s"} heard on this call`
                   : `${answered} of ${PANEL_FACT_KEYS.length} answered${pricingGap && ` · ${pricingGap}`}`}</span>
                 {sketch?.leadId != null &&

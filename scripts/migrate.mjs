@@ -503,6 +503,12 @@ const statements = [
   )`,
   `CREATE INDEX IF NOT EXISTS call_intake_drafts_queue_idx ON call_intake_drafts(status, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS call_intake_drafts_person_idx ON call_intake_drafts(person_id, created_at DESC)`,
+  // 2026-09-03: one post-call read of the transcript, written onto the draft.
+  `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary JSONB`,
+  `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary_status TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary_attempts INT NOT NULL DEFAULT 0`,
+  `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary_at TIMESTAMPTZ`,
+  `ALTER TABLE call_intake_drafts ADD COLUMN IF NOT EXISTS summary_error TEXT NOT NULL DEFAULT ''`,
   `CREATE TABLE IF NOT EXISTS call_live_transcript_items (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     call_sid TEXT NOT NULL REFERENCES calls(twilio_sid) ON DELETE CASCADE,

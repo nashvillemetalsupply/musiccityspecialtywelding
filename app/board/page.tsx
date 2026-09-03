@@ -144,6 +144,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
       need: draft.need,
       callStatus: draft.call_status,
       createdAt: draft.created_at,
+      summary: draft.summary ?? null,
     }))} />
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 

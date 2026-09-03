@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import type { CallSummary } from "@/lib/call-summary"
 import { attachRecoveredCallArtifacts } from "@/lib/call-artifacts"
 import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { getSql } from "@/lib/db"
@@ -30,6 +31,9 @@ export type CallIntakeDraft = {
   saved_at: string | null
   dismissed_at: string | null
   last_error: string
+  // Post-call read of the transcript (lib/call-summary.ts). Null until it runs.
+  summary: CallSummary | null
+  summary_status: string
   call_status: string
   duration_sec: number
   transcript_status: string

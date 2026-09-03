@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db"
+import type { CallSummary } from "@/lib/call-summary"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { buildClarificationForSketch } from "@/lib/build-sheets-continuation.mjs"
@@ -375,6 +376,8 @@ export type BoardCallSketch = {
   totalLines: number
   heard: { predicate: string; label: string; text: string }[]
   unsketchedCalls: number
+  // The post-call read of this call's transcript, when its draft has one.
+  summary: CallSummary | null
 }
 
 // While the shop is still on the line the tail is the point: the last three
@@ -455,7 +458,8 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
         WHEN d.status = ANY(ARRAY['pending','saving','failed','unknown']::text[]) THEN d.public_id
         ELSE ''
       END AS draft_public_id,
-      s.status, COALESCE(s.confirmed_spec, s.observed_spec) AS spec
+      s.status, COALESCE(s.confirmed_spec, s.observed_spec) AS spec,
+      d.summary
     FROM call_sketches s
     JOIN calls c ON c.twilio_sid = s.call_sid
     LEFT JOIN call_intake_drafts d ON d.call_sid = c.twilio_sid
@@ -476,6 +480,7 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
       draft_public_id: string
       status: string
       spec: Partial<CallSketchSpec> | null
+      summary: CallSummary | null
     }>
   const call = rows[0]
   if (!call) return null
@@ -525,5 +530,6 @@ export async function getLatestBoardCallSketch(role: OperatorRole = "crew"): Pro
     totalLines: utterances.length,
     heard: heardFromClaims(claims),
     unsketchedCalls: Number(unsketched[0]?.count ?? 0),
+    summary: call.summary ?? null,
   }
 }

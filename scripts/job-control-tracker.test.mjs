@@ -142,10 +142,11 @@ test("tracker has an honest empty state and the protected regions remain", () =>
   assert.match(PREVIEW_SOURCE, /No jobs in this stage right now\./)
   assert.match(PAGE_SOURCE, /const EMPTY_BOARD: BoardPaneData = \{/)
   assert.doesNotMatch(PREVIEW_SOURCE, /export const EMPTY_BOARD/)
-  assert.match(PREVIEW_SOURCE, /<h2 className="t-title">Live call sketch<\/h2>/)
+  assert.match(PREVIEW_SOURCE, /<h2 className="t-title">Live call<\/h2>/)
   // Both regions survive, now behind the fallback a call that described no
   // gate takes: the ask line and the answered count are still the panel's.
-  assert.match(PREVIEW_SOURCE, /className="ask">\{showHeard \? "What the call said" : "Ask next"\}<\/p>/)
+  assert.match(PREVIEW_SOURCE, /className="ask">\{askLabel\}<\/p>/)
+  assert.match(PREVIEW_SOURCE, /const showSummary = !drawing\.hasDrawing && summary !== null/)
   assert.match(PREVIEW_SOURCE, /\$\{answered\} of \$\{PANEL_FACT_KEYS\.length\} answered/)
 })
 

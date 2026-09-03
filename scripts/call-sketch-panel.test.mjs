@@ -81,7 +81,7 @@ test("the drawing's label names the facts it is still missing", () => {
 test("the ask-next question is the engine's own, never the panel's", () => {
   // The panel renders the engine's string. The only prose beside it is the
   // fallback that explains a blank drawing, which is not a question at all.
-  assert.match(PREVIEW_SOURCE, /: spec\.nextQuestion\}/)
+  assert.match(PREVIEW_SOURCE, /: showHeard \? "No gate or frame was described, so the drawing stays blank\." : spec\.nextQuestion/)
   // questionFor() emits these; a paraphrase typed into the panel would drift.
   assert.doesNotMatch(PREVIEW_SOURCE, /How wide does it need to finish, post to post\?/)
 })
@@ -115,9 +115,12 @@ test("the board's sketch is a real call, and never a test one", () => {
 // beside a drawing of a gate nobody had mentioned — after a call the extractor
 // had in fact understood in full. These pin the two repairs.
 test("a call that answered no gate fact falls back to what the call said", () => {
-  assert.match(PREVIEW_SOURCE, /const showHeard = !drawing\.hasDrawing && heard\.length > 0/)
+  // Since 2026-09-03 the post-call summary is the first fallback and the
+  // extractor's heard facts the second; the drawing still gates both.
+  assert.match(PREVIEW_SOURCE, /const showHeard = !drawing\.hasDrawing && !showSummary && heard\.length > 0/)
   assert.match(PREVIEW_SOURCE, /const drawing = sketchGeometry\(spec\)/)
   assert.match(PREVIEW_SOURCE, /showHeard \? "What the call said" : "Ask next"/)
+  assert.match(PREVIEW_SOURCE, /const slots = showSummary\s+\? summarySlots\s+: showHeard/)
   // One loop draws both. A second hand-written slot list is how the two drift.
   assert.equal((PREVIEW_SOURCE.match(/className="slots"/g) ?? []).length, 1)
   assert.match(PREVIEW_SOURCE, /slots\.map\(\(slot\) =>/)
