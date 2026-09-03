@@ -6,6 +6,13 @@
    adds only what the wire strip, the receipt drawer and the paid moment need.
    No colour is named here: every value is a semantic role.
 
+   Every rule below is written against .updates-page. globals.css still ships
+   the marketing wire -- rotated paper slips with tape, a spike line, an
+   18rem horizontal rail -- under the same class names, and in the production
+   bundle it loads after this file, so single-class rules here lost on order
+   alone. Two classes outrank it regardless of order, and the block at the end
+   removes the paper theatre outright.
+
    Stock is the notification's own vocabulary — white, green, manila, red,
    people — and it is carried as a 2px edge mark, never as a fill. A fill would
    make five routine categories read as five severities.
@@ -21,102 +28,102 @@
 .updates-head > div{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
 
 /* ========================================================= the wire ==== */
-.ops-wire{min-width:0;display:flex;flex-direction:column;gap:var(--s5)}
-.ops-wire-current{display:flex;flex-direction:column;gap:var(--s3)}
-.ops-update-summary{font-size:var(--t-label);font-weight:var(--w-med);color:var(--text-muted);
+.updates-page .ops-wire{min-width:0;display:flex;flex-direction:column;gap:var(--s5)}
+.updates-page .ops-wire-current{display:flex;flex-direction:column;gap:var(--s3)}
+.updates-page .ops-update-summary{font-size:var(--t-label);font-weight:var(--w-med);color:var(--text-muted);
   line-height:var(--lh-label)}
-.ops-wire-line{display:flex;flex-direction:column;gap:var(--s2)}
-.ops-wire-empty{font-size:var(--t-body);color:var(--text-muted)}
+.updates-page .ops-wire-line{display:flex;flex-direction:column;gap:var(--s2)}
+.updates-page .ops-wire-empty{font-size:var(--t-body);color:var(--text-muted)}
 
-.ops-wire-slip{
+.updates-page .ops-wire-slip{
   display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s3);
   padding:var(--s3) var(--s4);background:var(--surface);
   border:1px solid var(--border-subtle);border-left:2px solid var(--mark-quiet)}
-.ops-wire-slip.is-green{border-left-color:var(--status-good-mark)}
-.ops-wire-slip.is-manila{border-left-color:var(--status-warn-mark)}
-.ops-wire-slip.is-red{border-left-color:var(--status-stop-mark)}
-.ops-wire-slip.is-people{border-left-color:var(--status-info-mark)}
+.updates-page .ops-wire-slip.is-green{border-left-color:var(--status-good-mark)}
+.updates-page .ops-wire-slip.is-manila{border-left-color:var(--status-warn-mark)}
+.updates-page .ops-wire-slip.is-red{border-left-color:var(--status-stop-mark)}
+.updates-page .ops-wire-slip.is-people{border-left-color:var(--status-info-mark)}
 
-.ops-update-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
-.ops-update-copy strong{font-size:var(--t-name);font-weight:var(--w-semi);
+.updates-page .ops-update-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
+.updates-page .ops-update-copy strong{font-size:var(--t-name);font-weight:var(--w-semi);
   line-height:var(--lh-name);overflow-wrap:anywhere}
-.ops-update-copy span{font-size:var(--t-body);color:var(--text-secondary);
+.updates-page .ops-update-copy span{font-size:var(--t-body);color:var(--text-secondary);
   line-height:var(--lh-body);overflow-wrap:anywhere}
-.ops-update-copy time{font-size:var(--t-caption);color:var(--text-muted);
+.updates-page .ops-update-copy time{font-size:var(--t-caption);color:var(--text-muted);
   line-height:var(--lh-caption);font-variant-numeric:tabular-nums}
 
 /* Every control on a slip is the board's button, so a shop phone gets the
    same 44px target here that the tracker gives it. */
-.ops-update-open,
-.ops-wire .ops-safe-action{
+.updates-page .ops-update-open,
+.updates-page .ops-wire .ops-safe-action{
   height:var(--control);padding:0 var(--s3);
   font-size:var(--t-label);font-weight:var(--w-semi);white-space:nowrap;
   display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
   color:var(--text-primary);box-shadow:inset 0 0 0 1px var(--border);
   transition:background .15s var(--ease),color .15s var(--ease)}
-.ops-update-open:hover,
-.ops-wire .ops-safe-action:hover{background:var(--surface-raised)}
-.ops-wire .ops-safe-action[disabled]{color:var(--text-muted);cursor:default}
+.updates-page .ops-update-open:hover,
+.updates-page .ops-wire .ops-safe-action:hover{background:var(--surface-raised)}
+.updates-page .ops-wire .ops-safe-action[disabled]{color:var(--text-muted);cursor:default}
 
-.ops-wire-action{flex:0 0 100%;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
-.ops-wire-action form{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
-.ops-wire-action input{height:var(--control);min-width:6rem;padding:0 var(--s3);
+.updates-page .ops-wire-action{flex:0 0 100%;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
+.updates-page .ops-wire-action form{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
+.updates-page .ops-wire-action input{height:var(--control);min-width:6rem;padding:0 var(--s3);
   border:1px solid var(--border);background:var(--surface-raised);
   color:var(--text-primary);font:inherit;font-size:var(--t-label)}
-.ops-wire-result{flex:0 0 100%;font-size:var(--t-caption);color:var(--text-secondary);
+.updates-page .ops-wire-result{flex:0 0 100%;font-size:var(--t-caption);color:var(--text-secondary);
   line-height:var(--lh-caption)}
 
 /* ====================================================== the cabinet ==== */
-.ops-wire-cabinet{border-top:1px solid var(--border);padding-top:var(--s4);
+.updates-page .ops-wire-cabinet{border-top:1px solid var(--border);padding-top:var(--s4);
   display:flex;flex-direction:column;gap:var(--s3)}
-.ops-wire-cabinet > summary{cursor:pointer;display:flex;align-items:center;
+.updates-page .ops-wire-cabinet > summary{cursor:pointer;display:flex;align-items:center;
   justify-content:space-between;gap:var(--s3);min-height:44px;
   font-size:var(--t-sub);font-weight:var(--w-semi);line-height:var(--lh-sub)}
-.ops-wire-cabinet > summary span{font-size:var(--t-label);font-weight:var(--w-med);
+.updates-page .ops-wire-cabinet > summary span{font-size:var(--t-label);font-weight:var(--w-med);
   color:var(--text-muted)}
-.ops-wire-search{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
-.ops-wire-search input[type="search"]{flex:1;min-width:12rem;height:var(--control);
+.updates-page .ops-wire-search{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
+.updates-page .ops-wire-search input[type="search"]{flex:1;min-width:12rem;height:var(--control);
   padding:0 var(--s3);border:1px solid var(--border);background:var(--surface-raised);
   color:var(--text-primary);font:inherit;font-size:var(--t-body)}
 /* Search is the cabinet's only committing control, so it takes the action
    fill. Written against .ops-wire-search so it outranks the shared edge
    treatment above, which SafeSubmitButton also wears. */
-.ops-wire-search .ops-safe-action{background:var(--action);color:var(--action-ink);
+.updates-page .ops-wire-search .ops-safe-action{background:var(--action);color:var(--action-ink);
   box-shadow:none;padding:0 var(--s4)}
-.ops-wire-search .ops-safe-action:hover{background:var(--action);filter:brightness(1.16)}
-.ops-wire-pages{display:flex;align-items:center;gap:var(--s4);
+.updates-page .ops-wire-search .ops-safe-action:hover{background:var(--action);filter:brightness(1.16)}
+.updates-page .ops-wire-pages{display:flex;align-items:center;gap:var(--s4);
   font-size:var(--t-label);color:var(--text-muted);font-variant-numeric:tabular-nums}
-.ops-wire-pages a{color:var(--text-primary);text-decoration:underline;
+.updates-page .ops-wire-pages a{color:var(--text-primary);text-decoration:underline;
   text-underline-offset:3px;min-height:44px;display:inline-flex;align-items:center}
-.ops-wire-archive{font-size:var(--t-label);font-weight:var(--w-semi);
+.updates-page .ops-wire-archive{font-size:var(--t-label);font-weight:var(--w-semi);
   color:var(--text-primary);text-decoration:underline;text-underline-offset:3px;
   min-height:44px;display:inline-flex;align-items:center}
 
 /* ================================================ the receipt drawer ==== */
-.updates-receipt{display:flex;flex-direction:column;gap:var(--s3);
+.updates-page .updates-receipt{display:flex;flex-direction:column;gap:var(--s3);
   padding:var(--s4);background:var(--surface);border:1px solid var(--border)}
-.updates-receipt > header{display:flex;align-items:flex-start;
+.updates-page .updates-receipt > header{display:flex;align-items:flex-start;
   justify-content:space-between;gap:var(--s4)}
-.updates-receipt > header > div{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
-.updates-receipt p{font-size:var(--t-body);line-height:var(--lh-body);overflow-wrap:anywhere}
-.updates-receipt audio{width:100%;max-width:28rem}
-.updates-receipt > a{align-self:flex-start}
+.updates-page .updates-receipt > header > div{min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
+.updates-page .updates-receipt p{font-size:var(--t-body);line-height:var(--lh-body);overflow-wrap:anywhere}
+.updates-page .updates-receipt audio{width:100%;max-width:28rem}
+.updates-page .updates-receipt > a{align-self:flex-start}
 
 /* ==================================================== the paid moment ==== */
 /* Paid is the one moment on this page allowed a saturated ground, and it is
    the neutral money field the board already uses — money is not a state. */
-.ops-paid-moment{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);
+.updates-page .ops-paid-moment{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);
   padding:var(--s4);background:var(--field-neutral);color:var(--on-field)}
-.ops-paid-moment > span{font-size:var(--t-label);font-weight:var(--w-med);
+.updates-page .ops-paid-moment > span{font-size:var(--t-label);font-weight:var(--w-med);
   color:var(--on-field-muted)}
-.ops-paid-moment > strong{font-family:var(--font-display);font-size:var(--t-lede);
+.updates-page .ops-paid-moment > strong{font-family:var(--font-display);font-size:var(--t-lede);
   font-weight:760;letter-spacing:-.018em;line-height:var(--lh-lede)}
-.ops-paid-moment > div{flex:1 1 14rem;min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
-.ops-paid-moment h2{font-size:var(--t-name);font-weight:var(--w-semi);
+.updates-page .ops-paid-moment > div{flex:1 1 14rem;min-width:0;display:flex;flex-direction:column;gap:var(--s1)}
+.updates-page .ops-paid-moment h2{font-size:var(--t-name);font-weight:var(--w-semi);
   line-height:var(--lh-name);overflow-wrap:anywhere}
-.ops-paid-moment p{font-size:var(--t-body);color:var(--on-field-muted);
+.updates-page .ops-paid-moment p{font-size:var(--t-body);color:var(--on-field-muted);
   line-height:var(--lh-body);overflow-wrap:anywhere}
-.ops-paid-moment button{height:var(--control);padding:0 var(--s4);
+.updates-page .ops-paid-moment button{height:var(--control);padding:0 var(--s4);
   font-size:var(--t-label);font-weight:var(--w-semi);
   color:var(--on-field);box-shadow:inset 0 0 0 1px var(--on-field-muted)}
 
@@ -127,3 +134,25 @@
   .ops-wire-action input,
   .ops-wire-search input[type="search"]{min-height:44px}
 }
+
+/* ============================================= the marketing wire, undone ==
+   Structural leftovers from globals.css: no tape, no tilt, no spike line, no
+   horizontal rail, no display-face shouting, no 8rem paper. The board's card
+   above is the whole design. */
+.updates-page .ops-wire{position:static;margin:0;padding:0}
+.updates-page .ops-wire::before,
+.updates-page .ops-wire-slip::before{content:none;display:none}
+.updates-page .ops-wire-line{display:flex;flex-direction:column;overflow:visible;padding:0;gap:var(--s2)}
+.updates-page .ops-wire-slip,
+.updates-page .ops-wire-slip:nth-child(even){transform:none;flex:0 0 auto;min-height:0;box-shadow:none;
+  border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);
+  border-right:1px solid var(--border-subtle);background:var(--surface);color:var(--text-primary)}
+.updates-page .ops-wire-slip.is-manila{background:var(--surface)}
+.updates-page .ops-wire-slip strong{font-family:var(--font);text-transform:none;letter-spacing:0}
+.updates-page .ops-wire-slip time{align-self:auto;font-family:var(--font)}
+.updates-page .ops-wire-slip > a{display:flex;flex-direction:column;gap:var(--s1);color:inherit;text-decoration:none}
+.updates-page .ops-wire summary{font-family:var(--font);text-transform:none;letter-spacing:0;
+  border:0;background:none;color:var(--text-primary);padding:0}
+.updates-page .ops-wire-action{margin:0}
+.updates-page .ops-wire-result{margin:0;font-weight:var(--w-med)}
+.updates-page .ops-wire-empty{padding:0;color:var(--text-muted)}

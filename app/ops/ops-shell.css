@@ -41,40 +41,9 @@
   --w-med: 480;
   --w-semi: 620;
 
-  /* The marketing site's own tokens (tokens.css) are still referenced by
-     roughly 1,500 .ops-* rules in globals.css that predate the board
-     language. They are light-page values -- ink #171a1d on paper #fff -- so
-     on this dark shell anything they touch reads as ink on ink: the Customer
-     Page heading on a work order measured 1.0:1 on 2026-09-03. Aliased here,
-     every leftover rule resolves to the shell's own role map, and no page has
-     to hunt its stragglers one selector at a time. */
-  --color-paper: var(--surface);
-  --color-paper-2: var(--surface-raised);
-  --color-paper-3: var(--surface-raised);
-  --color-ink: var(--text-primary);
-  --color-ink-2: var(--text-secondary);
-  --color-rule: var(--border);
-  --color-rule-2: var(--border-strong);
-  --color-muted: var(--text-secondary);
-  --color-neutral: var(--text-secondary);
-  --color-accent: var(--brand);
-  --color-accent-ink: var(--action-ink);
-  --color-focus: var(--focus);
-  --color-focus-outer: var(--surface);
-  --color-attention: var(--status-warn-ink);
-  --color-attention-surface: var(--status-warn-sur);
-  --color-wall: var(--surface-sunken);
-  --color-wall-2: var(--surface);
-  --color-wall-3: var(--surface-raised);
-  --color-wall-ink: var(--text-primary);
-  --color-wall-muted: var(--text-secondary);
-  --color-positive: var(--status-good-ink);
-  --color-danger: var(--status-stop-ink);
-  --color-warning: var(--status-warn-ink);
-  --color-blueprint: var(--status-info-ink);
-  --color-shop-floor: var(--surface-sunken);
-  --color-raw-steel: var(--border-strong);
-  --color-machined: var(--text-muted);
+  /* Legacy marketing tokens are aliased for every shell in styles/control.css
+     (the block "legacy tokens"), because /board/updates, /board/calls and
+     /board/customers render the same globals.css rules without this class. */
 
   min-height: 100dvh;
   background: var(--surface-sunken);
