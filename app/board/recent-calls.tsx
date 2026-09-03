@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useActionState } from "react"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import { dismissCallFromBoardAction, quickSaveCallAction, type QuickSaveState } from "@/app/ops/intake/actions"
-import type { CallSummary } from "@/lib/call-summary"
+import type { CallSummary } from "@/lib/call-summary-shared"
 
 // The board's own slice of the pending-call queue. Same rows the Calls tab
 // reads, ten at most, newest first. The owner asked for this on 2026-09-03

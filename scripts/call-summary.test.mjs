@@ -58,8 +58,13 @@ test("every interpolation in the summary SQL carries a cast", () => {
 test("money never reaches a stored summary, and test calls stay marked", () => {
   assert.match(SUMMARY, /const MONEY = /)
   // Parse loosely, store tightly: lengths are cut in scrub, never refused.
-  assert.match(SUMMARY, /need: z\.string\(\)\.max\(2000\)\.nullable\(\)\.transform\(\(value\) => value \?\? ""\)/)
-  assert.match(SUMMARY, /details: z\.array\(z\.string\(\)\.max\(400\)\)\.max\(12\)\.catch\(\[\]\)/)
+  const SHARED = read("../lib/call-summary-shared.ts")
+  assert.match(SHARED, /need: z\.string\(\)\.max\(2000\)\.nullable\(\)\.transform\(\(value\) => value \?\? ""\)/)
+  assert.match(SHARED, /details: z\.array\(z\.string\(\)\.max\(400\)\)\.max\(12\)\.catch\(\[\]\)/)
+  // The browser half never imports the server half: that pull of web-push
+  // into the client bundle is what broke two production builds on 2026-09-03.
+  assert.doesNotMatch(SHARED, /@\/lib\/(db|ai|notify|job-intake|people)/)
+  assert.match(BOARD, /import \{ outcomeLine \} from "@\/lib\/call-summary-shared"/)
   assert.match(SUMMARY, /need: noMoney\(summary\.need\)\.slice\(0, 200\)/)
   assert.match(SUMMARY, /noMoney\(item\)\.slice\(0, 80\)\)\.filter\(Boolean\)\.slice\(0, 5\)/)
   assert.match(SUMMARY, /const summary = scrub\(await readCall\(/)

@@ -16,7 +16,7 @@ import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
 import { shopClaimLabel, shopClaimText, shopSourceLabel } from "@/lib/shop-language"
-import { outcomeLine } from "@/lib/call-summary"
+import { outcomeLine } from "@/lib/call-summary-shared"
 
 type TodayTrailItem = {
   id: number
