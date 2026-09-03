@@ -57,6 +57,11 @@ test("every interpolation in the summary SQL carries a cast", () => {
 
 test("money never reaches a stored summary, and test calls stay marked", () => {
   assert.match(SUMMARY, /const MONEY = /)
+  // Parse loosely, store tightly: lengths are cut in scrub, never refused.
+  assert.match(SUMMARY, /need: z\.string\(\)\.max\(2000\)\.nullable\(\)\.transform\(\(value\) => value \?\? ""\)/)
+  assert.match(SUMMARY, /details: z\.array\(z\.string\(\)\.max\(400\)\)\.max\(12\)\.catch\(\[\]\)/)
+  assert.match(SUMMARY, /need: noMoney\(summary\.need\)\.slice\(0, 200\)/)
+  assert.match(SUMMARY, /noMoney\(item\)\.slice\(0, 80\)\)\.filter\(Boolean\)\.slice\(0, 5\)/)
   assert.match(SUMMARY, /const summary = scrub\(await readCall\(/)
   assert.match(SUMMARY, /return callSummarySchema\.parse\(result\.output\)/)
   assert.match(SUMMARY, /Never include prices, quotes, dollar amounts/)

@@ -11,17 +11,21 @@ import { AI_MODELS, aiConfigured, deepseekConfigured, jsonWithDeepSeek } from "@
 // job at all. It fills the "calls to save" row and becomes the job's opening
 // note on a one-tap save. One model call per call, never during it.
 
+// Parse loosely, store tightly. The first backfill lost four calls to a
+// detail of 81 characters and a null need -- a model that wrote a good
+// summary and got told it was invalid. `scrub` below is where lengths are
+// enforced, by cutting, not by refusing.
 export const callSummarySchema = z.object({
-  caller_name: z.string().max(80).nullable().describe("The caller's name or company if they said it. Null if not said."),
-  need: z.string().max(200).describe("One plain sentence: what the caller wants done. Empty string only if the call had no request."),
-  details: z.array(z.string().max(80)).max(5).describe("Sizes, material, quantity, part names, as said. No prices."),
-  where_when: z.string().max(120).nullable().describe("Location, drop-off or on-site, and any timing the caller gave. Null if none."),
-  is_job: z.enum(["yes", "no", "unsure"]).describe("yes for welding or fabrication work. no for wrong numbers, vendors, spam, or personal calls."),
-  not_job_reason: z.string().max(80).nullable().describe("Why this is not a job, in a few words, when is_job is no. Otherwise null."),
-  next_question: z.string().max(120).nullable().describe("The one thing the shop still needs to ask before quoting. Null if nothing is missing."),
+  caller_name: z.string().max(400).nullable().describe("The caller's name or company if they said it. Null if not said."),
+  need: z.string().max(2000).nullable().transform((value) => value ?? "").describe("One plain sentence: what the caller wants done. Empty string only if the call had no request."),
+  details: z.array(z.string().max(400)).max(12).catch([]).describe("Sizes, material, quantity, part names, as said. No prices. At most five short items."),
+  where_when: z.string().max(600).nullable().describe("Location, drop-off or on-site, and any timing the caller gave. Null if none."),
+  is_job: z.enum(["yes", "no", "unsure"]).catch("unsure").describe("yes for welding or fabrication work. no for wrong numbers, vendors, spam, or personal calls."),
+  not_job_reason: z.string().max(400).nullable().describe("Why this is not a job, in a few words, when is_job is no. Otherwise null."),
+  next_question: z.string().max(600).nullable().describe("The one thing the shop still needs to ask before quoting. Null if nothing is missing."),
 })
 
-export type CallSummary = z.infer<typeof callSummarySchema>
+export type CallSummary = z.output<typeof callSummarySchema>
 
 // Crew read the board. Money is removed before anything is stored, so a price
 // the model repeats despite the instruction never reaches a row.
