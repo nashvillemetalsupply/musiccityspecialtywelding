@@ -174,8 +174,11 @@ function customerName(lead: BoardJobRow) {
   return `${lead.first_name} ${lead.last_name}`.trim() || "Customer"
 }
 
-// The Waiting cell: how long this job has been sitting, and the date it
-// started sitting. Both come from board_since, never from a fixture.
+// The "Came in" cell: how long ago the job arrived, and the date. The list
+// is ordered by that same clock (created_at, newest first), so the column
+// always reads in order. It used to show board_since -- time in the current
+// stage, which resets whenever the job is touched -- and a 36-minute job sat
+// above a 25-minute one. Two clocks in one column; now it is one.
 function waitingAge(iso: string, nowMs: number) {
   const minutes = Math.max(0, Math.floor((nowMs - new Date(iso).getTime()) / 60_000))
   if (!Number.isFinite(minutes)) return "—"
@@ -501,7 +504,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
           <div className="cols colhead">
             <span>Part</span>
             <span>Customer</span>
-            <span className="right c-wait">Waiting</span>
+            <span className="right c-wait">Came in</span>
             <span className="right c-money">Money</span>
             <span className="c-state">Why it needs you</span>
             <span className="c-do"></span>
@@ -668,7 +671,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                       <b>{customerName(lead)}</b>
                       <span>{lead.message.trim() || lead.service}</span>
                     </span>
-                    <span className="val right c-wait">{waitingAge(lead.board_since, nowMs)} <em>{waitingDate(lead.board_since)}</em></span>
+                    <span className="val right c-wait">{waitingAge(lead.created_at, nowMs)} <em>{waitingDate(lead.created_at)}</em></span>
                     <span className="val right c-money">
                       {moneyCell.confirmHref
                         ? <Link className="heard-quote" href={moneyCell.confirmHref} title="Heard on the call, not confirmed yet" onClick={() => tapped(TAPS.heardPrice)}>{moneyCell.value} <em>{moneyCell.note}</em></Link>
