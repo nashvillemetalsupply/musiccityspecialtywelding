@@ -58,9 +58,9 @@ test("the summary fills only what ring time left blank", () => {
   assert.match(SUMMARY, /caller_name = CASE\s+WHEN \$\{name !== ""\}::boolean AND \(caller_name = '' OR caller_name ~\* '\^\(caller \\\\d\{4\}\|private caller\|caller\)\$'\) THEN \$\{name\}::text\s+ELSE caller_name END/)
 })
 
-test("the sweep backfills a handful per pass, newest first, three tries each", () => {
+test("the sweep backfills up to thirty per pass, newest first, three tries each", () => {
   assert.match(SWEEP, /detail\.callSummaries = await summarizePendingCalls\(\)/)
-  assert.match(SUMMARY, /export async function summarizePendingCalls\(limit = 5\)/)
+  assert.match(SUMMARY, /export async function summarizePendingCalls\(limit = 30\)/)
   assert.match(SUMMARY, /AND d\.summary_attempts < 3\s+AND c\.transcript_status = 'ready' AND c\.transcript <> ''\s+ORDER BY d\.created_at DESC/)
 })
 

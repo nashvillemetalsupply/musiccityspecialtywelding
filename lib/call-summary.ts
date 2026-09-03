@@ -133,9 +133,11 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
 }
 
 // The recovery sweep's share: drafts still waiting to be saved whose call has
-// a transcript and no summary yet. Newest first, a handful per sweep, three
-// tries each, so a bad transcript cannot burn the sweep forever.
-export async function summarizePendingCalls(limit = 5) {
+// a transcript and no summary yet. Newest first, three tries each, so a bad
+// transcript cannot burn the sweep forever. Thirty per pass clears the backlog
+// that existed when this shipped (28) in one sweep; in steady state only the
+// calls since the last sweep qualify, so the ceiling costs nothing.
+export async function summarizePendingCalls(limit = 30) {
   if (!aiConfigured()) return { configured: false, attempted: 0, summarized: 0 }
   const sql = getSql()
   const rows = (await sql`
@@ -147,7 +149,7 @@ export async function summarizePendingCalls(limit = 5) {
       AND d.summary_attempts < 3
       AND c.transcript_status = 'ready' AND c.transcript <> ''
     ORDER BY d.created_at DESC
-    LIMIT ${Math.min(Math.max(limit, 1), 20)}::bigint`) as { call_sid: string }[]
+    LIMIT ${Math.min(Math.max(limit, 1), 40)}::bigint`) as { call_sid: string }[]
   let summarized = 0
   for (const row of rows) {
     const result = await summarizeCallDraft(row.call_sid).catch(() => ({ summarized: false }))
