@@ -122,10 +122,17 @@ test("a repeat caller with an open job is filed onto it, never duplicated", () =
   assert.match(INTAKE, /'\{"intakeOutcome":"filed"\}'::jsonb/)
 })
 
+test("calls read before auto-save existed are settled quietly by the sweep, once", () => {
+  const sweep = SUMMARY.slice(SUMMARY.indexOf("export async function summarizePendingCalls"))
+  assert.match(sweep, /AND d\.summary_status = 'ready' AND d\.summary IS NOT NULL\s+AND \(d\.summary->>'auto'\) IS NULL/)
+  assert.match(sweep, /await settleCall\(row, row\.summary, row\.summary\.caller_name\?\.trim\(\) \?\? "", row\.is_test, true\)/)
+  assert.match(SUMMARY, /if \(quiet \|\| isTest \|\| summary\.is_job === "no" \|\| outcome === "already"\) return/)
+})
+
 test("one push per read tells the owner what the call was and what happened", () => {
   const settle = SUMMARY.slice(SUMMARY.indexOf("async function settleCall"), SUMMARY.indexOf("export async function summarizePendingCalls"))
   // tests never alert; wrong numbers wait quietly; a call already handled says nothing
-  assert.match(settle, /if \(isTest \|\| summary\.is_job === "no" \|\| outcome === "already"\) return/)
+  assert.match(settle, /if \(quiet \|\| isTest \|\| summary\.is_job === "no" \|\| outcome === "already"\) return/)
   assert.match(settle, /priority: "interrupt",/)
   assert.match(settle, /ownerOnly: true,\s+smsFallback: false,\s+dedupeKey: `call-read:\$\{draft\.call_sid\}`,/)
   assert.match(settle, /url: leadId != null \? `\/ops\/leads\/\$\{leadId\}` : "\/board",/)

@@ -182,7 +182,7 @@ const OPEN_DRAFT = ["pending", "failed", "unknown"]
 // one push tells him what the call was and what happened. Calls the read
 // could not place stay in "calls to save" for a one-tap decision. Nothing
 // here can fail the read itself: the summary is already stored when it runs.
-async function settleCall(draft: DraftForSummary, summary: CallSummary, name: string, isTest: boolean) {
+async function settleCall(draft: DraftForSummary, summary: CallSummary, name: string, isTest: boolean, quiet = false) {
   const sql = getSql()
   let outcome: CallOutcome = "left"
   let leadId: number | null = null
@@ -223,7 +223,7 @@ async function settleCall(draft: DraftForSummary, summary: CallSummary, name: st
   // Tests never alert anyone. A wrong number is not worth a buzz either; it
   // waits in calls to save. Everything else is one push: what the call was,
   // what happened. Quiet hours file it for the morning.
-  if (isTest || summary.is_job === "no" || outcome === "already") return
+  if (quiet || isTest || summary.is_job === "no" || outcome === "already") return
   const who = name || draft.caller_name || "Caller"
   const line = { ...summary, auto: outcome }
   await notifyAll({
@@ -262,6 +262,24 @@ export async function summarizePendingCalls(limit = 30) {
       AND c.transcript_status = 'ready' AND c.transcript <> ''
     ORDER BY d.created_at DESC
     LIMIT ${Math.min(Math.max(limit, 1), 40)}::bigint`) as { call_sid: string }[]
+  // Calls read before the read could act on them (or whose settle failed
+  // once) get settled here, quietly: a push about a call from last week is
+  // noise, and the job landing on the tracker is the point.
+  const unsettled = (await sql`
+    SELECT d.id, d.public_id, d.call_sid, d.person_id, d.status, d.caller_name, d.phone, d.need, d.is_test,
+      d.summary, c.transcript, c.transcript_status, COALESCE(c.duration_sec, 0)::int AS duration_sec
+    FROM call_intake_drafts d
+    JOIN calls c ON c.twilio_sid = d.call_sid
+    WHERE d.status = ANY(ARRAY['pending','failed','unknown']::text[])
+      AND d.summary_status = 'ready' AND d.summary IS NOT NULL
+      AND (d.summary->>'auto') IS NULL
+    ORDER BY d.created_at DESC
+    LIMIT 40`) as (DraftForSummary & { summary: CallSummary })[]
+  let settled = 0
+  for (const row of unsettled) {
+    await settleCall(row, row.summary, row.summary.caller_name?.trim() ?? "", row.is_test, true).catch((error) => console.error("Call backfill settle failed:", row.call_sid, error))
+    settled += 1
+  }
   let summarized = 0
   for (const [index, row] of rows.entries()) {
     // A breath between reads. The gateway's free tier rate-limits a burst.
@@ -269,5 +287,5 @@ export async function summarizePendingCalls(limit = 30) {
     const result = await summarizeCallDraft(row.call_sid).catch(() => ({ summarized: false }))
     if (result.summarized) summarized += 1
   }
-  return { configured: true, attempted: rows.length, summarized }
+  return { configured: true, attempted: rows.length, summarized, settled }
 }
