@@ -144,8 +144,11 @@ test("the tracker leads the board: first card in main, and there is no pane", ()
   const tracker = BOARD_SOURCE.indexOf('<div className="track-top">')
   const call = BOARD_SOURCE.indexOf('<div className="call-top">')
   const figures = BOARD_SOURCE.indexOf('<section className="card figures">')
-  assert.ok(main > -1 && main < tracker && tracker < call && call < figures,
-    `expected main < tracker < call < figures, got ${[main, tracker, call, figures]}`)
+  // Figures lead as a thin strip (owner, 2026-09-03), then the calls slot,
+  // then the tracker, then the live call sketch.
+  const slot = BOARD_SOURCE.indexOf("{calls}")
+  assert.ok(main > -1 && main < figures && figures < slot && slot < tracker && tracker < call,
+    `expected main < figures < calls slot < tracker < call, got ${[main, figures, slot, tracker, call]}`)
   assert.doesNotMatch(BOARD_SOURCE, /<aside className="pane">/)
   assert.doesNotMatch(BOARD_SOURCE, /<h4>The week<\/h4>/)
   assert.doesNotMatch(BOARD_SOURCE, /<h3 className="t-sub">Today<\/h3>/)

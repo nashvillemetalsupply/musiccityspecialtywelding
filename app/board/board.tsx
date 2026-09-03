@@ -392,6 +392,34 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
     
     
       <main className="main">
+        {/* The two figures lead: open jobs and this week's money, one thin
+            strip. Owner moved them up on 2026-09-03 — at the bottom they read
+            as an afterthought. */}
+        <section className="card figures">
+          <div className="figure">
+            <h4>Open jobs</h4>
+            <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
+            <div className="under">
+              <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
+              <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
+            </div>
+          </div>
+          <div className="figure">
+            <h4>Closed this week</h4>
+            <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
+            <div className="under">
+              {outTheDoor.jobs > 0 && <span className="bar" role="img"
+                aria-label={`${outTheDoor.jobs} ${outTheDoor.jobs === 1 ? "job" : "jobs"} went out this week: ${outTheDoor.paidJobs} paid, ${outTheDoor.jobs - outTheDoor.paidJobs} not`}>
+                {/* One mark per job, capped so a heavy week cannot overrun the
+                    field. The count beside it stays exact. */}
+                {Array.from({ length: Math.min(outTheDoor.jobs, 10) }, (_, index) =>
+                  <i className={index < outTheDoor.paidJobs ? "good" : "warn"} key={index}></i>)}
+              </span>}
+              {outTheDoor.revenueCents !== null &&
+                <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
+            </div>
+          </div>
+        </section>
         {/* Calls waiting to become jobs, collapsed to one bar so the tracker
             stays the first thing on the screen. Rendered by the server page;
             null when the queue is empty. */}
@@ -853,31 +881,6 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
         </section>
     
 
-        <section className="card figures">
-          <div className="figure">
-            <h4>Open jobs</h4>
-            <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
-            <div className="under">
-              <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
-              <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
-            </div>
-          </div>
-          <div className="figure">
-            <h4>Closed this week</h4>
-            <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
-            <div className="under">
-              {outTheDoor.jobs > 0 && <span className="bar" role="img"
-                aria-label={`${outTheDoor.jobs} ${outTheDoor.jobs === 1 ? "job" : "jobs"} went out this week: ${outTheDoor.paidJobs} paid, ${outTheDoor.jobs - outTheDoor.paidJobs} not`}>
-                {/* One mark per job, capped so a heavy week cannot overrun the
-                    field. The count beside it stays exact. */}
-                {Array.from({ length: Math.min(outTheDoor.jobs, 10) }, (_, index) =>
-                  <i className={index < outTheDoor.paidJobs ? "good" : "warn"} key={index}></i>)}
-              </span>}
-              {outTheDoor.revenueCents !== null &&
-                <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   )

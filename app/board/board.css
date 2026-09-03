@@ -168,8 +168,10 @@ svg{display:block}
 
 /* The three numbers are colour fields, not cards: the shop's own positive,
    warning and danger, deepened enough to hold bone text at 4.5:1. */
-.figures{display:grid;grid-template-columns:1fr;gap:1px;border:0;background:none}
-.figure+.figure{border-top:1px solid var(--border)}
+/* Two tiles side by side on every screen; stacked they cost the phone a whole
+   screen before the tracker. */
+.figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);border:0;background:none}
+.figure{border-radius:var(--r-md)}
 .figure{padding:var(--s4) var(--s5);min-width:0}
 .figure h4{font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
 .figure .n{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s3) 0 0}
