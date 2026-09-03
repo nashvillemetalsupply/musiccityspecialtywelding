@@ -215,8 +215,10 @@ test("the Today trail excludes every test identity and projects bodies for the o
   assert.match(today, /projectEventForRole\(event, role\)/)
 })
 
-test("the Today trail uses shop labels verbatim and has no signed-out fixtures", () => {
-  assert.match(PREVIEW_SOURCE, /shopEventLabel\(event\.kind\)/)
+// The Today trail left the board on 2026-09-03 (owner: "serves no purpose").
+// listTodayEvents still feeds the page's data shape; nothing renders it.
+test("the Today trail is no longer rendered, and the board has no signed-out fixtures", () => {
+  assert.doesNotMatch(PREVIEW_SOURCE, /shopEventLabel\(event\.kind\)/)
   assert.match(PREVIEW_SOURCE, /timeZone: "America\/Chicago"/)
   assert.match(PAGE_SOURCE, /todayTrail: \[\]/)
   assert.doesNotMatch(PREVIEW_SOURCE, /Price worked out for Phil Lloyd|Ray Colter called|Denz automotive asked|Gerald Pace plate finished/)
@@ -230,7 +232,6 @@ test("each Today trail line names its customer", () => {
   assert.match(today, /AS customer/)
   assert.match(today, /customer: event\.customer/)
   assert.match(PAGE_SOURCE, /todayTrail: todayEvents\.map\(\(\{[^}]*customer[^}]*\}\)/)
-  assert.match(PREVIEW_SOURCE, /event\.customer && ` · \$\{event\.customer\}`/)
 })
 
 test("the Today trail collapses long receipts to one readable line", () => {

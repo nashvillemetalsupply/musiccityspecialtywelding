@@ -15,7 +15,7 @@ import { TrackedCallButton } from "@/app/ops/tracked-call-button"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
-import { shopClaimLabel, shopClaimText, shopEventLabel, shopSourceLabel } from "@/lib/shop-language"
+import { shopClaimLabel, shopClaimText, shopSourceLabel } from "@/lib/shop-language"
 
 type TodayTrailItem = {
   id: number
@@ -66,18 +66,6 @@ const TRAIL_TIME = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   hourCycle: "h23",
 })
-
-const GOOD_TRAIL_EVENTS = new Set([
-  "call.answered", "contact.first-response", "contact.logged",
-  "email.delivered", "invoice.paid", "invoice.payment-received",
-  "job.completed", "job.handed-off", "promise.kept",
-])
-
-function trailMark(kind: string) {
-  if (GOOD_TRAIL_EVENTS.has(kind)) return "good"
-  if (kind === "call.missed" || kind === "attachment.needs-help" || kind.endsWith(".failed")) return "warn"
-  return undefined
-}
 
 function money(cents: number | null) {
   if (cents === null) return "—"
@@ -887,46 +875,6 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
           </div>
         </section>
       </main>
-      {/* The pane used to lead with the signal list and Promises. The owner
-          reads neither — he reads the tracker — so on 2026-09-03 the pane
-          shrank to the two lists he did keep: the week's dates and today's
-          trail. It now follows the tracker on a phone. */}
-      <aside className="pane">
-        <div className="pane-body">
-          <section className="card week">
-            <h4>The week</h4>
-            {board.week.every((d) => !d.promises.length && !d.invoices.length && !d.followUps.length)
-              ? <p className="t-caption">Nothing due in the next seven days.</p>
-              : board.week
-                  .filter((d) => d.promises.length || d.invoices.length || d.followUps.length)
-                  .map((d) => (
-                    <div key={d.date} className="week-day">
-                      <span className="week-dow t-caption">{d.dow}</span>
-                      <ul>
-                        {[...d.promises, ...d.invoices, ...d.followUps].map((item, i) => (
-                          <li key={`${d.date}-${i}`}>
-                            {item.leadId
-                              ? <Link href={`/ops/leads/${item.leadId}`}>{item.label}</Link>
-                              : <span>{item.label}</span>}
-                            <span className="t-caption"> · {item.customer}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-          </section>
-          <div className="rule"></div>
-
-          <div className="head"><h3 className="t-sub">Today</h3></div>
-          <ul className="trail">
-            {board.todayTrail.map((event) => <li key={event.id}>
-              <i className={trailMark(event.kind)}></i>
-              <time dateTime={event.occurredAt}>{TRAIL_TIME.format(new Date(event.occurredAt))}</time>
-              <b>{shopEventLabel(event.kind)}{event.customer && ` · ${event.customer}`}{event.body && ` — ${event.body}`}</b>
-            </li>)}
-          </ul>
-        </div>
-      </aside>
     </div>
   )
 }

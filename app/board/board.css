@@ -150,39 +150,10 @@ svg{display:block}
 .live-call-jump .btn{flex:none;min-height:44px}
 
 /* ========================================================== left pane ==== */
-/* The pane holds the two short lists the owner kept: the week's dates and
-   today's trail. On a phone it follows the tracker in document flow (its DOM
-   position, no `order:` needed); on the desktop it is the middle column and
-   scrolls independently of the tracker beside it. */
-.pane{display:block;background:var(--surface);border-top:1px solid var(--border);
-  padding-bottom:calc(64px + var(--safe-area-bottom))}
-.pane-body{padding:var(--s5) var(--s4)}
-
 .head{display:flex;align-items:baseline;gap:var(--s2);margin:0 0 var(--s3)}
 .head .end{margin-left:auto}
 .rule{height:1px;background:var(--border);margin:var(--s6) 0}
 
-/* The week is the pane's short day-by-day ledger, not another dashboard. */
-.week{margin-top:var(--s4);padding:var(--s3)}
-.week h4{margin:0 0 var(--s3);font-size:var(--t-sub);font-weight:var(--w-semi)}
-.week-day{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--s3)}
-.week-day+.week-day{margin-top:var(--s3)}
-.week-dow{min-width:var(--s7);text-align:right}
-.week ul{margin:0;padding:0;list-style:none}
-.week li{font-size:var(--t-data);line-height:var(--lh-data)}
-.week li+li{margin-top:var(--s2)}
-.week a{color:inherit;text-decoration:none;font-weight:var(--w-med)}
-.week a:hover{text-decoration:underline;text-underline-offset:2px}
-
-.trail{margin:var(--s3) 0 0;padding:0;list-style:none}
-.trail li{display:flex;align-items:baseline;gap:var(--s2);padding:var(--s1) 0;
-  font-size:var(--t-caption);color:var(--text-secondary)}
-.trail time{color:var(--text-muted);flex:none;width:36px}
-.trail b{font-weight:var(--w-reg);color:var(--text-primary);flex:1;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trail i{width:6px;height:6px;border-radius:50%;background:var(--mark-quiet);flex:none}
-.trail i.good{background:var(--status-good-mark)}
-.trail i.warn{background:var(--status-warn-mark)}
 
 /* ============================================================== main ==== */
 /* Reading order is the order of his attention: the job list first, the call
@@ -484,7 +455,7 @@ svg{display:block}
 
 /* 6 · Print. The owner prints the board for the wall on Mondays. */
 @media print{
-  .rail,.pane,.top-end,.find{display:none}
+  .rail,.top-end,.find{display:none}
   .app{display:block;height:auto}
   .card{break-inside:avoid;border-color:#999}
   .figures .figure,.figures .figure *{background:none!important;color:#000!important}
@@ -534,9 +505,9 @@ svg{display:block}
 
   /* --- the shell -------------------------------------------------------- */
   .app{display:grid;height:100dvh;
-    grid-template-columns:56px 300px minmax(0,1fr);
+    grid-template-columns:56px minmax(0,1fr);
     grid-template-rows:56px minmax(0,1fr)}
-  .top{grid-column:1/4;position:static;z-index:auto;padding:0 var(--s5)}
+  .top{grid-column:1/3;position:static;z-index:auto;padding:0 var(--s5)}
   .top .when{display:block}
   .top .find{display:flex}
 
@@ -547,11 +518,9 @@ svg{display:block}
   .rail .rl:nth-of-type(3){display:grid}
   .live-call-jump{display:none}
 
-  .pane{display:flex;flex-direction:column;min-height:0;grid-column:2;grid-row:2;
-    border-top:0;border-right:1px solid var(--border);padding-bottom:0}
-  .pane-body{flex:1;min-height:0;overflow-y:auto;padding:var(--s5)}
-
-  .main{display:block;overflow-y:auto;grid-column:3;grid-row:2;padding:var(--s5) var(--s6) var(--s7)}
+  /* The pane is gone (owner, 2026-09-03: "serves no purpose"). The tracker
+     has the whole width beside the rail. */
+  .main{display:block;overflow-y:auto;grid-column:2;grid-row:2;padding:var(--s5) var(--s6) var(--s7)}
   .card+.card{margin-top:var(--s5)}
 
   /* --- the three numbers go back to a row -------------------------------- */
@@ -588,11 +557,9 @@ svg{display:block}
   .track-top .end{margin-left:auto;width:auto;flex-wrap:nowrap;justify-content:normal}
   .tabs{padding:0 var(--s5) var(--s3)}
 
-  /* Between 880 and 1180 the pane is still on screen, so the tracker has only
-     ~670px to work with. A 190px floor under the customer column made the
-     tracks sum to 750 and pushed the action button off the card. The name
-     truncates instead — it is the one cell that can lose characters without
-     losing meaning, and money goes before the action does. */
+  /* Between 880 and 1180 the tracker still has under 1000px. The name
+     truncates rather than holding a floor — it is the one cell that can lose
+     characters without losing meaning, and money goes before the action does. */
   .cols{gap:0 var(--s4);padding:0 var(--s6);
     grid-template-columns:56px minmax(0,1.6fr) 100px 168px 116px}
   .cols .c-wait{display:block}

@@ -21,8 +21,7 @@ test("test rows stay out of the week", () => {
   assert.match(fn, /is_test/)
 })
 
-test("the board renders the week card honestly", () => {
+test("the week card is gone from the board (owner cut the pane 2026-09-03)", () => {
   const board = readFileSync("app/board/board.tsx", "utf8")
-  assert.match(board, /card week/)
-  assert.match(board, /Nothing due in the next seven days\./)
+  assert.doesNotMatch(board, /card week/)
 })

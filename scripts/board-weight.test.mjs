@@ -138,22 +138,25 @@ test("newest order is created_at DESC before pagination, and is what the board a
   assert.deepEqual(orderBoardFixtures(jobs, "newest"), [12, 11, 10, 13])
 })
 
-test("the tracker leads the board: first card in main, pane after main", () => {
+test("the tracker leads the board: first card in main, and there is no pane", () => {
   const BOARD_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8")
   const main = BOARD_SOURCE.indexOf('<main className="main">')
   const tracker = BOARD_SOURCE.indexOf('<div className="track-top">')
   const call = BOARD_SOURCE.indexOf('<div className="call-top">')
   const figures = BOARD_SOURCE.indexOf('<section className="card figures">')
-  const pane = BOARD_SOURCE.indexOf('<aside className="pane">')
-  assert.ok(main > -1 && main < tracker && tracker < call && call < figures && figures < pane,
-    `expected main < tracker < call < figures < pane, got ${[main, tracker, call, figures, pane]}`)
+  assert.ok(main > -1 && main < tracker && tracker < call && call < figures,
+    `expected main < tracker < call < figures, got ${[main, tracker, call, figures]}`)
+  assert.doesNotMatch(BOARD_SOURCE, /<aside className="pane">/)
+  assert.doesNotMatch(BOARD_SOURCE, /<h4>The week<\/h4>/)
+  assert.doesNotMatch(BOARD_SOURCE, /<h3 className="t-sub">Today<\/h3>/)
   assert.doesNotMatch(BOARD_SOURCE, /need you/)
   assert.doesNotMatch(BOARD_SOURCE, /<h3 className="t-sub">Promises<\/h3>/)
   assert.doesNotMatch(BOARD_SOURCE, /<h4>Needs you<\/h4>/)
   assert.match(BOARD_SOURCE, /Newest first/)
   const CSS = readFileSync(new URL("../app/board/board.css", import.meta.url), "utf8")
   assert.doesNotMatch(CSS, /\.main>\.card:has\(\.track-top\)\{order:/)
-  assert.match(CSS, /\.pane\{display:flex;flex-direction:column;min-height:0;grid-column:2;grid-row:2;/)
+  assert.match(CSS, /grid-template-columns:56px minmax\(0,1fr\);/)
+  assert.doesNotMatch(CSS, /\.pane\{/)
   assert.match(CSS, /\.tabs\{display:flex;flex-wrap:wrap;/)
 })
 
