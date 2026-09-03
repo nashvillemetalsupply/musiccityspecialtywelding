@@ -49,7 +49,7 @@ test("crew lead and account tools share one fail-closed money projection", () =>
   assert.match(accounts, /projectLeadForRole\(lead, role\)/)
   assert.match(ask, /getLead\(id, operator\.role\)/)
   assert.match(ask, /getAccount\(person_id, operator\.role/)
-  assert.match(opsData, /role === "owner" \? projected : \{ \.\.\.projected, board_score: 0, board_hot: false \}/)
+  assert.match(opsData, /role === "owner"\s+\? \{ \.\.\.projected, heard_quote_cents: row\.heard_quote_cents == null \? null : Number\(row\.heard_quote_cents\) \}\s+: \{ \.\.\.projected, board_score: 0, board_hot: false, heard_quote_cents: null \}/)
 })
 
 test("crew claim values recursively redact money even under safe predicates", () => {

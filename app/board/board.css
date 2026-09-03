@@ -378,6 +378,10 @@ svg{display:block}
 .val{font-size:var(--t-data);font-weight:var(--w-med);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
 .val em{font-style:normal;color:var(--text-muted);font-weight:var(--w-reg);font-size:var(--t-label)}
+/* A price heard on the call is a link to confirm it, coloured as a question. */
+.heard-quote{color:var(--status-warn-ink);text-decoration:none}
+.heard-quote:hover{text-decoration:underline;text-underline-offset:2px}
+.heard-quote em{color:var(--status-warn-ink);opacity:.85}
 .right{text-align:right}
 .doing{display:flex;justify-content:flex-end;gap:var(--s1)}
 

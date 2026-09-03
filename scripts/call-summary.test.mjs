@@ -142,3 +142,23 @@ test("one push per read tells the owner what the call was and what happened", ()
   assert.match(settle, /ownerOnly: true,\s+smsFallback: false,\s+dedupeKey: `call-read:\$\{draft\.call_sid\}`,/)
   assert.match(settle, /url: leadId != null \? `\/ops\/leads\/\$\{leadId\}` : "\/board",/)
 })
+
+// Zero of 61 jobs in 60 days carried a price while 14 prices were heard on
+// calls. The quote-capture slip sat in a digest; now it rides on the row.
+test("a price heard on the call shows on the board row for the owner to confirm, never for crew", () => {
+  const OPS = read("../lib/ops-data.ts")
+  assert.match(OPS, /heard_quote_cents: number \| null/)
+  assert.match(OPS, /WHERE n\.action_kind = 'quote-capture' AND n\.read_at IS NULL\s+AND \(n\.action_detail->>'leadId'\)::bigint = p\.id/)
+  assert.match(OPS, /: \{ \.\.\.projected, board_score: 0, board_hot: false, heard_quote_cents: null \}/, "crew money is removed server-side")
+  assert.match(BOARD, /if \(lead\.heard_quote_cents !== null && lead\.heard_quote_cents > 0\)/)
+  assert.match(BOARD, /confirmHref: `\/ops\/leads\/\$\{lead\.id\}#quote-capture`/)
+  // the row order stays honest: a confirmed estimate beats a heard one
+  assert.ok(BOARD.indexOf('note: "estimated"') < BOARD.indexOf('note: "heard on the call · confirm"'))
+})
+
+test("a call the read called not a job clears itself after a week, restorable and journaled", () => {
+  const sweep = SUMMARY.slice(SUMMARY.indexOf("export async function summarizePendingCalls"))
+  assert.match(sweep, /SET status = 'dismissed', dismissed_at = COALESCE\(dismissed_at, now\(\)\)[\s\S]{0,200}AND summary->>'is_job' = 'no'\s+AND created_at < now\(\) - interval '7 days'/)
+  assert.match(sweep, /kind: "call\.intake\.dismissed",\s+actorType: "system",/)
+  assert.match(sweep, /'\{"intakeOutcome":"dismissed"\}'::jsonb/)
+})

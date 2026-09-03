@@ -46,6 +46,9 @@ export type BoardJobRow = LeadRow & {
   board_score: number
   board_hot: boolean
   text_ready: boolean
+  // A price the extractor heard on this job's call, still waiting for the
+  // owner to confirm it (the quote-capture slip). Money, so crew get null.
+  heard_quote_cents: number | null
 }
 
 export type BoardJobPage = {
@@ -534,12 +537,22 @@ export async function listBoardJobs(
       LIMIT ${pageSize + 1}::int OFFSET ${offset}::int
     )
     SELECT p.*, (p.board_score >= ${w.hotThreshold}::int) AS board_hot, bc.*, rc.result_total,
-      sc.signal_counts, cc.closed_count
+      sc.signal_counts, cc.closed_count, hq.heard_quote_cents
     FROM board_counts bc
     CROSS JOIN result_count rc
     CROSS JOIN signal_counts sc
     CROSS JOIN closed_count cc
-    LEFT JOIN paged p ON true`) as Array<BoardJobRow & {
+    LEFT JOIN paged p ON true
+    -- The newest unconfirmed quote-capture slip for this job. Zero of 61 jobs
+    -- in 60 days carried a price while 14 prices were heard on calls; the
+    -- slip sat in a digest nobody opened. On the row it is one tap away.
+    LEFT JOIN LATERAL (
+      SELECT (n.action_detail->>'amountCents')::bigint AS heard_quote_cents
+      FROM notifications n
+      WHERE n.action_kind = 'quote-capture' AND n.read_at IS NULL
+        AND (n.action_detail->>'leadId')::bigint = p.id
+      ORDER BY n.created_at DESC LIMIT 1
+    ) hq ON true`) as Array<BoardJobRow & {
       board_count: number
       attention_count: number
       shop_count: number
@@ -561,7 +574,9 @@ export async function listBoardJobs(
     .slice(0, pageSize)
     .map((row) => {
       const projected = projectLeadForRole(row, role)
-      return role === "owner" ? projected : { ...projected, board_score: 0, board_hot: false }
+      return role === "owner"
+        ? { ...projected, heard_quote_cents: row.heard_quote_cents == null ? null : Number(row.heard_quote_cents) }
+        : { ...projected, board_score: 0, board_hot: false, heard_quote_cents: null }
     })
   return {
     items,

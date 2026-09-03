@@ -4,6 +4,7 @@ import { AI_MODELS, aiConfigured, deepseekConfigured, jsonWithDeepSeek } from "@
 import { fileCallOntoOpenLead, saveInboundCallAsJob } from "@/lib/job-intake"
 import { findOpenLeadResolutionForPerson } from "@/lib/people"
 import { notifyAll } from "@/lib/notify"
+import { recordEvent } from "@/lib/events"
 
 // One read of a finished call, written onto its intake draft. The live sketch
 // only understood gates and frames and identified a part on 4 of 56 calls in
@@ -251,6 +252,30 @@ export async function summarizePendingCalls(limit = 30) {
       AND (d.summary->>'auto') IS NULL
     ORDER BY d.created_at DESC
     LIMIT 40`) as (DraftForSummary & { summary: CallSummary })[]
+  // A call the read called "not a job", untouched for a week, stops asking.
+  // Same row state a tap would leave (dismissed, restorable), same call
+  // detail, same journal entry -- with no operator named, because none acted.
+  const cleared = (await sql`
+    UPDATE call_intake_drafts SET status = 'dismissed', dismissed_at = COALESCE(dismissed_at, now()), updated_at = now()
+    WHERE status = ANY(ARRAY['pending','failed','unknown']::text[])
+      AND summary->>'is_job' = 'no'
+      AND created_at < now() - interval '7 days'
+    RETURNING call_sid, person_id, is_test`) as { call_sid: string; person_id: number | null; is_test: boolean }[]
+  for (const row of cleared) {
+    await sql`
+      UPDATE calls SET detail = COALESCE(detail, '{}'::jsonb) || '{"intakeOutcome":"dismissed"}'::jsonb, updated_at = now()
+      WHERE twilio_sid = ${row.call_sid}::text`
+    await recordEvent({
+      kind: "call.intake.dismissed",
+      actorType: "system",
+      actorId: "",
+      personId: row.person_id,
+      externalId: `${row.call_sid}:intake-dismissed`,
+      body: "Call cleared after a week: the read said it was not a job",
+      crewBody: "Call cleared after a week: the read said it was not a job",
+      detail: { callSid: row.call_sid, isTest: row.is_test, automatic: true },
+    }).catch((error) => console.error("Call clear event failed:", row.call_sid, error))
+  }
   let settled = 0
   for (const row of unsettled) {
     await settleCall(row, row.summary, row.summary.caller_name?.trim() ?? "", row.is_test, true).catch((error) => console.error("Call backfill settle failed:", row.call_sid, error))
@@ -263,5 +288,5 @@ export async function summarizePendingCalls(limit = 30) {
     const result = await summarizeCallDraft(row.call_sid).catch(() => ({ summarized: false }))
     if (result.summarized) summarized += 1
   }
-  return { configured: true, attempted: rows.length, summarized, settled }
+  return { configured: true, attempted: rows.length, summarized, settled, cleared: cleared.length }
 }

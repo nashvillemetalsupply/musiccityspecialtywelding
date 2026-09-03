@@ -191,7 +191,7 @@ function waitingDate(iso: string) {
 // paid, invoiced, booked, estimated — or honestly "no price". Crew rows
 // arrive with every money field nulled by projectLeadForRole, so a crew
 // member sees "— no price" on every job; the owner sees the real number.
-function moneyFor(lead: BoardJobRow): { value: string; note: string } {
+function moneyFor(lead: BoardJobRow): { value: string; note: string; confirmHref?: string } {
   if (lead.paid_at) {
     const cents = lead.paid_amount_cents ?? lead.invoice_total_cents ?? lead.revenue_cents
     return cents !== null ? { value: money(cents), note: "paid" } : { value: "—", note: "no price" }
@@ -199,6 +199,11 @@ function moneyFor(lead: BoardJobRow): { value: string; note: string } {
   if (lead.invoice_total_cents !== null) return { value: money(lead.invoice_total_cents), note: "invoiced" }
   if (lead.status === "won" && lead.revenue_cents !== null) return { value: money(lead.revenue_cents), note: "booked" }
   if (lead.estimate_value_cents !== null) return { value: money(lead.estimate_value_cents), note: "estimated" }
+  // Heard on the call, not yet confirmed. The question mark is the honesty;
+  // the tap lands on the quote-capture slip on the work order.
+  if (lead.heard_quote_cents !== null && lead.heard_quote_cents > 0) {
+    return { value: `${money(lead.heard_quote_cents)}?`, note: "heard on the call · confirm", confirmHref: `/ops/leads/${lead.id}#quote-capture` }
+  }
   return { value: "—", note: "no price" }
 }
 
@@ -649,7 +654,11 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                       <span>{lead.message.trim() || lead.service}</span>
                     </span>
                     <span className="val right c-wait">{waitingAge(lead.board_since, nowMs)} <em>{waitingDate(lead.board_since)}</em></span>
-                    <span className="val right c-money">{moneyCell.value} <em>{moneyCell.note}</em></span>
+                    <span className="val right c-money">
+                      {moneyCell.confirmHref
+                        ? <Link className="heard-quote" href={moneyCell.confirmHref}>{moneyCell.value} <em>{moneyCell.note}</em></Link>
+                        : <>{moneyCell.value} <em>{moneyCell.note}</em></>}
+                    </span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
                       <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}`}>Open job</Link>
