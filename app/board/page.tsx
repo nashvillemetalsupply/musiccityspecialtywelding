@@ -119,9 +119,10 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // which is exactly the /ops layout's own gate.
   const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} initialSearch={query} includeTests={includeTests} />
   const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice] = await Promise.all([
-    // Oldest first is the tracker's own sort. The pane's counts are
-    // aggregates over the same query and do not depend on row order.
-    listBoardJobs({ stage, signal, order: "oldest", query, includeTests, page: requestedPage }, role),
+    // Newest first is the tracker's own sort (owner's call, 2026-09-03). The
+    // pane's counts are aggregates over the same query and do not depend on
+    // row order.
+    listBoardJobs({ stage, signal, order: "newest", query, includeTests, page: requestedPage }, role),
     getPromiseSummary(role),
     getWeekAhead(role, includeTests),
     getOutTheDoorWeek(role),

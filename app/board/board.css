@@ -70,6 +70,13 @@
    =========================================================================== */
 
 /* ============================================================== base ==== */
+/* Phone type runs one step larger than the shared /ops scale. The board is read
+   at arm's length across a shop, not at a desk; the desktop block below leaves
+   these at the shared values. Owner asked for "highly accessible" 2026-09-03. */
+@media (max-width:55rem){
+  :root{--t-data:15px;--t-label:13px;--t-caption:12.5px}
+  .cust b{font-size:16px}
+}
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;overflow-x:clip}
 body{
@@ -143,57 +150,17 @@ svg{display:block}
 .live-call-jump .btn{flex:none;min-height:44px}
 
 /* ========================================================== left pane ==== */
-/* The pane IS the product — it is the only thing that answers "what needs me,
-   and why". It used to be display:none on a phone. On a phone it now leads,
-   as a block in the document flow; on the desktop it is the middle column and
-   scrolls independently of the tracker beside it. Nothing in it is ever
-   hidden: an earlier pass hid the section after the first rule to save scroll
-   and took the Promises heading with it, leaving Kept/Open/Broken floating
-   with no name. All three are short and all three are why he opened it. */
-.pane{display:block;background:var(--surface);border-bottom:1px solid var(--border)}
+/* The pane holds the two short lists the owner kept: the week's dates and
+   today's trail. On a phone it follows the tracker in document flow (its DOM
+   position, no `order:` needed); on the desktop it is the middle column and
+   scrolls independently of the tracker beside it. */
+.pane{display:block;background:var(--surface);border-top:1px solid var(--border);
+  padding-bottom:calc(64px + var(--safe-area-bottom))}
 .pane-body{padding:var(--s5) var(--s4)}
-.pane-foot{padding:var(--s4) var(--s5);border-top:1px solid var(--border);
-  position:sticky;bottom:calc(56px + var(--safe-area-bottom));
-  background:var(--surface);z-index:10;
-  box-shadow:0 -8px 16px -12px rgba(0,0,0,.4)}
-.pane-foot .btn{width:100%}
 
 .head{display:flex;align-items:baseline;gap:var(--s2);margin:0 0 var(--s3)}
 .head .end{margin-left:auto}
 .rule{height:1px;background:var(--border);margin:var(--s6) 0}
-
-/* The five signals, in the product's own weight order. This is what the board
-   means by "needs you" — lib/shop-brain-invariants.mjs BOARD_WEIGHTS.
-
-   Two numbers sit on each row: how many jobs trip that signal, and how hard the
-   shop weights it. Two bare numbers side by side mean nothing on their own, and
-   a paragraph about tuning constants means nothing to a welder — so the helper
-   is one plain line under the list, in the words someone would actually use. */
-.signals{display:flex;flex-direction:column}
-.signal{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0;
-  text-align:left;width:100%;border-radius:var(--r-sm);
-  color:inherit;text-decoration:none;transition:background .15s var(--ease)}
-.signal+.signal{border-top:1px solid var(--border-subtle)}
-.signal:hover{background:var(--surface-raised)}
-.signal[aria-current="true"]{background:var(--surface-raised);
-  box-shadow:inset 0 0 0 1px var(--border-strong)}
-.signal i{width:8px;height:8px;border-radius:2px;flex:none}
-.signal span{flex:1;min-width:0;font-size:var(--t-data);color:var(--text-secondary)}
-.signal b{font-size:var(--t-name);font-weight:var(--w-semi);color:var(--text-primary)}
-.signal em{font-style:normal;font-size:var(--t-caption);color:var(--text-muted);
-  flex:none;width:var(--s6);text-align:right}
-.signal.none b,.signal.none span{color:var(--text-muted);font-weight:var(--w-reg)}
-
-/* Promises — the concept the shop's own language is built around. */
-.keep{display:flex;flex-direction:column;gap:var(--s2)}
-.keep-row{display:flex;align-items:center;gap:var(--s3);font-size:var(--t-data);
-  color:var(--text-secondary)}
-.keep-row b{margin-left:auto;font-weight:var(--w-semi);color:var(--text-primary)}
-.due{display:block;margin:var(--s3) 0 0;padding:var(--s3);border-radius:var(--r-md);
-  background:var(--status-warn-sur);color:inherit;text-decoration:none}
-.due p{font-size:var(--t-data);color:var(--status-warn-ink);font-weight:var(--w-med)}
-.due span{display:block;margin-top:var(--s1);font-size:var(--t-caption);
-  color:var(--status-warn-ink);opacity:.85}
 
 /* The week is the pane's short day-by-day ledger, not another dashboard. */
 .week{margin-top:var(--s4);padding:var(--s3)}
@@ -218,18 +185,13 @@ svg{display:block}
 .trail i.warn{background:var(--status-warn-mark)}
 
 /* ============================================================== main ==== */
-/* On a phone the reading order is the order of his attention, not the order of
-   the DOM: the call he is in, then the job list, then the week's money last,
-   because money is never why he picked the phone up. A flex column reorders
-   without touching the markup; on the desktop `.main` is a block again and
-   `order` stops meaning anything, which is why it needs no counterpart below.
-   The gap does the spacing here, so `.card+.card` is desktop-only — that is
-   what the old `.main>*{margin:0!important}` was fighting. */
-.main{min-width:0;display:flex;flex-direction:column;gap:var(--s5);
-  padding:var(--s4) var(--s4) calc(64px + var(--safe-area-bottom))}
-.main>.card:has(.call-top){order:1}
-.main>.card:has(.track-top){order:2}
-.main>.figures{order:3}
+/* Reading order is the order of his attention: the job list first, the call
+   he is in, then the week's money last, because money is never why he picked
+   the phone up. Since 2026-09-03 the DOM is written in that order, so no
+   `order:` rules are needed on either breakpoint. The gap does the spacing
+   here, so `.card+.card` is desktop-only — that is what the old
+   `.main>*{margin:0!important}` was fighting. */
+.main{min-width:0;display:flex;flex-direction:column;gap:var(--s5);padding:var(--s4)}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
 .card.figures{border:0;background:none}
 
@@ -254,8 +216,7 @@ svg{display:block}
    on --color-danger, which the contract reserves for stopped. Green and red now
    belong to row states alone. */
 .figures .figure:nth-child(1){background:var(--field-info)}
-.figures .figure:nth-child(2){background:var(--field-warn)}
-.figures .figure:nth-child(3){background:var(--field-neutral)}
+.figures .figure:nth-child(2){background:var(--field-neutral)}
 .figures .figure,
 .figures .figure h4,
 .figures .figure .n span,
@@ -349,9 +310,10 @@ svg{display:block}
 .track-top .count{width:100%;color:var(--text-muted);font-size:var(--t-label)}
 .track-top .end{margin-left:0;width:100%;display:flex;flex-wrap:wrap;
   align-items:center;justify-content:flex-start;gap:var(--s2)}
-.tabs{display:flex;align-items:center;gap:var(--s1);padding:0 var(--s4) var(--s3);
-  overflow-x:auto;scrollbar-width:none}
-.tab{height:28px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
+/* All four stages stay on screen: the tabs wrap rather than scroll sideways,
+   because a stage hidden past the right edge is a stage that does not exist. */
+.tabs{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1);padding:0 var(--s4) var(--s3)}
+.tab{height:32px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
   font-weight:var(--w-med);color:var(--text-muted);white-space:nowrap}
 /* the stage tabs are server-filtered links now, not toggle buttons */
 /* The JSX puts a space between the label and the count, but a flex container
@@ -372,8 +334,11 @@ svg{display:block}
    the last thing to go — it is the reason the job is on the board at all. */
 .cols{display:grid;align-items:center;gap:var(--s2) var(--s3);padding:var(--s3) var(--s4);
   min-width:0;grid-template-columns:44px minmax(0,1fr)}
-.cols .c-wait,.cols .c-money{display:none}
+.cols .c-money{display:none}
 .cols .c-state{grid-column:2;grid-row:2;justify-self:start;margin:0}
+/* Newest-first only reads if each card says when. The wait cell moves under
+   the chip on a phone instead of hiding. */
+.cols .c-wait{grid-column:2;grid-row:3;text-align:left}
 .cols .c-do{grid-column:1/3;margin-top:var(--s2)}
 .cols .c-do .btn{flex:1}
 .cols .c-do .icon{flex:none}
@@ -582,16 +547,15 @@ svg{display:block}
   .rail .rl:nth-of-type(3){display:grid}
   .live-call-jump{display:none}
 
-  .pane{display:flex;flex-direction:column;min-height:0;
-    border-bottom:0;border-right:1px solid var(--border)}
+  .pane{display:flex;flex-direction:column;min-height:0;grid-column:2;grid-row:2;
+    border-top:0;border-right:1px solid var(--border);padding-bottom:0}
   .pane-body{flex:1;min-height:0;overflow-y:auto;padding:var(--s5)}
-  .pane-foot{position:static;z-index:auto;box-shadow:none}
 
-  .main{display:block;overflow-y:auto;padding:var(--s5) var(--s6) var(--s7)}
+  .main{display:block;overflow-y:auto;grid-column:3;grid-row:2;padding:var(--s5) var(--s6) var(--s7)}
   .card+.card{margin-top:var(--s5)}
 
   /* --- the three numbers go back to a row -------------------------------- */
-  .figures{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+  .figures{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
   .figure+.figure{border-top:0}
   .figure{padding:var(--s6)}
   .figure .under{flex-wrap:nowrap}
@@ -622,7 +586,7 @@ svg{display:block}
   .track-top h2{width:auto}
   .track-top .count{width:auto}
   .track-top .end{margin-left:auto;width:auto;flex-wrap:nowrap;justify-content:normal}
-  .tabs{padding:0 var(--s5) var(--s3);overflow-x:visible;scrollbar-width:auto}
+  .tabs{padding:0 var(--s5) var(--s3)}
 
   /* Between 880 and 1180 the pane is still on screen, so the tracker has only
      ~670px to work with. A 190px floor under the customer column made the

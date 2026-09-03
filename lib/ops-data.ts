@@ -37,7 +37,7 @@ export type BoardSignal = {
   hoursLate: number
   weight: number
 }
-export type BoardJobOrder = "stage" | "weight" | "oldest"
+export type BoardJobOrder = "stage" | "weight" | "oldest" | "newest"
 export type BoardJobRow = LeadRow & {
   board_stage: Exclude<JobBoardStage, "board">
   board_reason: string
@@ -209,7 +209,7 @@ export async function listBoardJobs(
   // without forcing the current call several thousand pixels down the page.
   const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 8), 1), 50)
   const offset = (page - 1) * pageSize
-  const order: BoardJobOrder = options.order === "weight" ? "weight" : options.order === "oldest" ? "oldest" : "stage"
+  const order: BoardJobOrder = options.order === "weight" ? "weight" : options.order === "oldest" ? "oldest" : options.order === "newest" ? "newest" : "stage"
   const signal: BoardSignalKind | "" = options.signal && BOARD_SIGNAL_KINDS.includes(options.signal)
     ? options.signal
     : ""
@@ -523,6 +523,9 @@ export async function listBoardJobs(
         -- oldest is one global queue: every other guarded key is NULL, so
         -- board_since ASC NULLS LAST and id DESC are the complete ordering.
         CASE WHEN ${order}::text = 'oldest' THEN f.board_since END ASC NULLS LAST,
+        -- newest is the board's default since 2026-09-03: the owner reads the
+        -- list top-down and wants the job that just came in at the top.
+        CASE WHEN ${order}::text = 'newest' THEN f.created_at END DESC NULLS LAST,
         CASE WHEN ${order}::text = 'weight' THEN -f.board_score END ASC NULLS LAST,
         CASE WHEN ${order}::text = 'weight' THEN f.board_since END ASC NULLS LAST,
         CASE WHEN ${order}::text = 'stage' AND f.board_stage = 'attention' THEN f.board_since END ASC NULLS LAST,

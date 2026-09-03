@@ -28,7 +28,7 @@ test("tracker tabs use the canonical stages and refetch the requested stage", ()
   assert.match(PREVIEW_SOURCE, /board\.counts\[stage\]/)
   assert.match(PAGE_SOURCE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)
   assert.match(PAGE_SOURCE, /stages: \[\.\.\.JOB_BOARD_STAGES\]/)
-  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests, page: requestedPage \}, role\)/)
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "newest", query, includeTests, page: requestedPage \}, role\)/)
 })
 
 test("tracker rows come from listBoardJobs and keep its reason string verbatim", () => {
@@ -109,7 +109,6 @@ test("every left-rail link resolves to an existing app route", () => {
     "Board",
     "Customers",
     "Quotes",
-    "Promises",
     "Money",
     "Help",
   ])
@@ -123,9 +122,10 @@ test("every left-rail link resolves to an existing app route", () => {
 test("signal query values are strictly validated before filtering", () => {
   assert.match(PAGE_SOURCE, /const requestedSignal = params\.signal \?\? ""/)
   assert.match(PAGE_SOURCE, /const signal: BoardSignalKind \| undefined = BOARD_SIGNAL_KINDS\.includes\(requestedSignal as BoardSignalKind\)\s*\? \(requestedSignal as BoardSignalKind\)\s*: undefined/)
-  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests, page: requestedPage \}, role\)/)
-  assert.match(PREVIEW_SOURCE, /SIGNAL_ORDER\.map\(\(kind\) =>/)
-  assert.match(PREVIEW_SOURCE, /href=\{boardHref\(\{ signal: kind \}\)\}/)
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "newest", query, includeTests, page: requestedPage \}, role\)/)
+  // The signal list left the pane on 2026-09-03; a ?signal= URL still
+  // filters, and the tracker header is where it can be cleared.
+  assert.doesNotMatch(PREVIEW_SOURCE, /SIGNAL_ORDER/)
   assert.match(PREVIEW_SOURCE, /href=\{boardHref\(\{ signal: null \}\)\}>Clear signal filter<\/Link>/)
 })
 
@@ -142,8 +142,6 @@ test("tracker has an honest empty state and the protected regions remain", () =>
   assert.match(PREVIEW_SOURCE, /No jobs in this stage right now\./)
   assert.match(PAGE_SOURCE, /const EMPTY_BOARD: BoardPaneData = \{/)
   assert.doesNotMatch(PREVIEW_SOURCE, /export const EMPTY_BOARD/)
-  assert.match(PREVIEW_SOURCE, /SIGNAL_ORDER\.map\(\(kind\) =>/)
-  assert.match(PREVIEW_SOURCE, /<h3 className="t-sub">Promises<\/h3>/)
   assert.match(PREVIEW_SOURCE, /<h2 className="t-title">Live call sketch<\/h2>/)
   // Both regions survive, now behind the fallback a call that described no
   // gate takes: the ask line and the answered count are still the panel's.

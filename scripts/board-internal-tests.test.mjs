@@ -59,8 +59,9 @@ test("boardHref keeps tests=1 across every stage and signal hop", () => {
   assert.ok(body.indexOf('params.set("stage", stage)') < body.indexOf('params.set("tests", "1")'))
   assert.ok(body.indexOf('params.set("signal", signal)') < body.indexOf('params.set("tests", "1")'))
   // every boardHref consumer therefore stays in test mode; none of them
-  // hand-builds a /board URL of its own
-  for (const link of [/href=\{boardHref\(\{ signal: kind \}\)\}/, /href=\{boardHref\(\{ signal: null \}\)\}/, /href=\{boardHref\(\{ stage: "attention", signal: null \}\)\}/]) {
+  // hand-builds a /board URL of its own. The signal chips and the attention
+  // jump left the pane on 2026-09-03; clear-filter and paging remain.
+  for (const link of [/href=\{boardHref\(\{ signal: null \}\)\}/, /href=\{boardHref\(\{ page: board\.page \+ 1 \}\)\}/]) {
     assert.match(BOARD, link)
   }
 })
@@ -76,7 +77,7 @@ test("the search form re-submits the mode instead of dropping it", () => {
 })
 
 test("the owner-only flag reaches rows and their batched details", () => {
-  assert.match(PAGE, /listBoardJobs\(\{ stage, signal, order: "oldest", query, includeTests, page: requestedPage \}, role\)/)
+  assert.match(PAGE, /listBoardJobs\(\{ stage, signal, order: "newest", query, includeTests, page: requestedPage \}, role\)/)
   // stage, signal and query behaviour is untouched by the flag
   assert.match(PAGE, /JOB_BOARD_STAGES\.includes\(requested as JobBoardStage\)/)
   assert.match(PAGE, /BOARD_SIGNAL_KINDS\.includes\(requestedSignal as BoardSignalKind\)/)

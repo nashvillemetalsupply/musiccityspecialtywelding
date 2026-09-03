@@ -119,20 +119,15 @@ test("broken promises are counted, and no promise is counted twice", () => {
   const writesBroken = [COMMITMENTS_SOURCE, EVENTS_SOURCE, EXTRACT_SOURCE]
     .some((source) => /SET[\s\S]{0,80}status = 'broken'/.test(source))
   assert.ok(!writesBroken, "if something starts storing 'broken', this counter has to be revisited")
-  assert.match(PREVIEW_SOURCE, /broken is past its date and still owed/)
 })
 
-// The pane's one "you are late on this" line went nowhere. It opens the
-// promise on its own work order, where the customer's last message and the
-// call button are both in reach — the order the shop works in.
-test("the overdue callout opens the promise it names", () => {
+// The overdue callout left the pane on 2026-09-03 with the rest of the
+// Promises block; the promise anchor on the work order stays, because the
+// Morning Brief still links to it.
+test("the promise anchor on the work order survives the pane cut", () => {
   const JOB_PAGE_SOURCE = readFileSync(new URL("../app/ops/leads/[id]/page.tsx", import.meta.url), "utf8")
-  assert.match(PREVIEW_SOURCE, /<Link className="due" href=\{`\/ops\/leads\/\$\{promises\.overdue\.leadId\}#promise-\$\{promises\.overdue\.id\}`\}>/)
-  // The anchor has to exist on the other end, or the link lands on a page and stops.
   assert.match(JOB_PAGE_SOURCE, /id=\{`promise-\$\{promise\.id\}`\}/)
-  // A promise with no lead behind it has no work order to open.
-  assert.match(PREVIEW_SOURCE, /promises\.overdue\.leadId\s*\?/)
-  assert.match(PREVIEW_SOURCE, /: <div className="due">/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /className="due"/)
 })
 
 test("canceled and superseded promises are counted nowhere", () => {
@@ -399,7 +394,7 @@ test("the board chrome and Ask Jobs sources point at destinations that still exi
   // landed: Customers goes to the board's own regulars index, and Leads is
   // gone — the board is the job list, so that entry linked the page to itself.
   assert.match(PREVIEW_SOURCE, /href="\/board\?stage=waiting" aria-label="Quotes"/)
-  assert.match(PREVIEW_SOURCE, /href="\/board\?signal=promise" aria-label="Promises"/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /aria-label="Promises"/)
   assert.match(PREVIEW_SOURCE, /href="\/board\/customers" aria-label="Customers"/)
   assert.doesNotMatch(PREVIEW_SOURCE, /aria-label="Leads"/)
   assert.doesNotMatch(PREVIEW_SOURCE, /view=regulars/)

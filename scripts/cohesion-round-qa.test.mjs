@@ -28,9 +28,11 @@ function sourceFiles(dir) {
 test("QA step 1: the pane renders an honest linked week card", () => {
   // A live owner session, real due rows, and following a rendered link remain
   // human-only because this node suite has no authenticated browser session.
+  // The pane follows main since 2026-09-03, so the week card is bounded by
+  // the Today heading that comes after it, not by the figures.
   const week = BOARD_SOURCE.slice(
     BOARD_SOURCE.indexOf('<section className="card week">'),
-    BOARD_SOURCE.indexOf("<h4>Closed this week</h4>"),
+    BOARD_SOURCE.indexOf('<h3 className="t-sub">Today</h3>'),
   )
   assert.ok(week.length > 0, "the week card renders in the board pane")
   assert.match(week, /<h4>The week<\/h4>/)

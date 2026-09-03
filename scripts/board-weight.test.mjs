@@ -109,7 +109,7 @@ test("board_reason and board_since still match DISTINCT ON", () => {
 })
 
 test("stage order remains the default and keeps every legacy ordering key", () => {
-  assert.match(OPS_DATA_SOURCE, /const order: BoardJobOrder = options\.order === "weight" \? "weight" : options\.order === "oldest" \? "oldest" : "stage"/)
+  assert.match(OPS_DATA_SOURCE, /const order: BoardJobOrder = options\.order === "weight" \? "weight" : options\.order === "oldest" \? "oldest" : options\.order === "newest" \? "newest" : "stage"/)
   assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'stage' THEN\s+CASE f\.board_stage WHEN 'attention' THEN 0 WHEN 'shop' THEN 1 WHEN 'waiting' THEN 2 ELSE 3 END/)
   assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'stage' AND f\.board_stage = 'attention' THEN f\.board_since END ASC NULLS LAST,\s+CASE WHEN \$\{order\}::text = 'stage' THEN f\.updated_at END DESC NULLS LAST,\s+f\.id DESC/)
 })
@@ -123,6 +123,38 @@ test("oldest order is global longest-waiting-first before pagination", () => {
     { id: 13, boardStage: "shop", boardSince: null, updatedAt: "2026-08-09", signals: [], valueCents: 0, priorJobs: 0 },
   ]
   assert.deepEqual(orderBoardFixtures(jobs, "oldest"), [12, 11, 10, 13])
+})
+
+test("newest order is created_at DESC before pagination, and is what the board asks for", () => {
+  assert.match(OPS_DATA_SOURCE, /CASE WHEN \$\{order\}::text = 'newest' THEN f\.created_at END DESC NULLS LAST/)
+  const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8")
+  assert.match(PAGE_SOURCE, /listBoardJobs\(\{ stage, signal, order: "newest", query, includeTests, page: requestedPage \}, role\)/)
+  const jobs = [
+    { id: 10, boardStage: "ready", boardSince: "2026-08-18", createdAt: "2026-08-01", updatedAt: "2026-08-19", signals: [], valueCents: 0, priorJobs: 0 },
+    { id: 12, boardStage: "waiting", boardSince: "2026-08-10", createdAt: "2026-08-03", updatedAt: "2026-08-11", signals: [], valueCents: 0, priorJobs: 0 },
+    { id: 11, boardStage: "attention", boardSince: "2026-08-10", createdAt: "2026-08-03", updatedAt: "2026-08-12", signals: [], valueCents: 0, priorJobs: 0 },
+    { id: 13, boardStage: "shop", boardSince: null, createdAt: null, updatedAt: "2026-08-09", signals: [], valueCents: 0, priorJobs: 0 },
+  ]
+  assert.deepEqual(orderBoardFixtures(jobs, "newest"), [12, 11, 10, 13])
+})
+
+test("the tracker leads the board: first card in main, pane after main", () => {
+  const BOARD_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8")
+  const main = BOARD_SOURCE.indexOf('<main className="main">')
+  const tracker = BOARD_SOURCE.indexOf('<div className="track-top">')
+  const call = BOARD_SOURCE.indexOf('<div className="call-top">')
+  const figures = BOARD_SOURCE.indexOf('<section className="card figures">')
+  const pane = BOARD_SOURCE.indexOf('<aside className="pane">')
+  assert.ok(main > -1 && main < tracker && tracker < call && call < figures && figures < pane,
+    `expected main < tracker < call < figures < pane, got ${[main, tracker, call, figures, pane]}`)
+  assert.doesNotMatch(BOARD_SOURCE, /need you/)
+  assert.doesNotMatch(BOARD_SOURCE, /<h3 className="t-sub">Promises<\/h3>/)
+  assert.doesNotMatch(BOARD_SOURCE, /<h4>Needs you<\/h4>/)
+  assert.match(BOARD_SOURCE, /Newest first/)
+  const CSS = readFileSync(new URL("../app/board/board.css", import.meta.url), "utf8")
+  assert.doesNotMatch(CSS, /\.main>\.card:has\(\.track-top\)\{order:/)
+  assert.match(CSS, /\.pane\{display:flex;flex-direction:column;min-height:0;grid-column:2;grid-row:2;/)
+  assert.match(CSS, /\.tabs\{display:flex;flex-wrap:wrap;/)
 })
 
 test("ten jobs keep exact legacy order and get exact weighted order", () => {

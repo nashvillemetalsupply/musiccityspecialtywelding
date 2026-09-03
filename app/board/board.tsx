@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { BOARD_SIGNAL_LABELS, BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
   PANEL_FACT_KEYS, PANEL_FACT_LABELS, answeredFactCount, dimensionMark,
@@ -39,7 +38,7 @@ export type BoardPaneData = {
   callSketch: BoardCallSketch | null
   // Null for crew, signed out, or before the first call has been learned from.
   voice: OwnerVoiceSnapshot | null
-  // The tracker: whichever stage the URL asked for, ordered oldest-first.
+  // The tracker: whichever stage the URL asked for, ordered newest-first.
   items: BoardJobRow[]
   details: Map<number, BoardJobDetail>
   resultTotal: number
@@ -61,12 +60,6 @@ type BoardChrome = {
   includeTests: boolean
 }
 
-// Descending weight, which is also the order the mockup was approved in.
-const SIGNAL_ORDER = (Object.keys(BOARD_WEIGHTS.signal) as BoardSignalKind[])
-  .sort((a, b) => BOARD_WEIGHTS.signal[b] - BOARD_WEIGHTS.signal[a])
-
-const WORST_WEIGHT = Math.max(...Object.values(BOARD_WEIGHTS.signal))
-
 const TRAIL_TIME = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Chicago",
   hour: "2-digit",
@@ -84,13 +77,6 @@ function trailMark(kind: string) {
   if (GOOD_TRAIL_EVENTS.has(kind)) return "good"
   if (kind === "call.missed" || kind === "attachment.needs-help" || kind.endsWith(".failed")) return "warn"
   return undefined
-}
-
-// The contract reserves red for signals weighted 50 and above; a count of zero
-// is not a state, so it goes quiet.
-function markFor(kind: BoardSignalKind, count: number) {
-  if (count === 0) return "var(--mark-quiet)"
-  return BOARD_WEIGHTS.signal[kind] >= 50 ? "var(--status-stop-mark)" : "var(--status-warn-mark)"
 }
 
 function money(cents: number | null) {
@@ -248,10 +234,7 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
   const [openJobId, setOpenJobId] = useState<number | null>(null)
   const router = useRouter()
   const { details: jobDetails } = board
-  const needsYou = board.counts.attention
-  const promises = board.promises
   const outTheDoor = board.outTheDoor
-  const median = board.medianFirstResponseMinutes
   const sketch = board.callSketch
   // Signed out, or with nothing sketched yet, the panel renders the same
   // frame against an empty spec: seven facts unstated, zero answered.
@@ -405,7 +388,6 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
         <Link className="rl" href="/board" aria-label="Board" aria-current="page"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></Link>
         <Link className="rl" href="/board/customers" aria-label="Customers"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="6" r="2.4"/><path d="M3.2 13c.6-2.3 2.5-3.5 4.8-3.5S12.2 10.7 12.8 13"/></svg></Link>
         <Link className="rl" href="/board?stage=waiting" aria-label="Quotes"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 6h5M5.5 9h3"/></svg></Link>
-        <Link className="rl" href="/board?signal=promise" aria-label="Promises"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 8.5 6.5 12 13 4.5"/></svg></Link>
         {chrome.owner && <Link className="rl" href="/ops/analytics" aria-label="Money"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="4" width="12" height="8" rx="1.5"/><path d="M2 7h12"/></svg></Link>}
         <span className="rl-gap"></span>
         <Link className="rl" href="/ops/install" aria-label="Help"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="8" r="6"/><path d="M6.4 6.2a1.7 1.7 0 1 1 2.2 1.9v1"/><path d="M8 11.4h.01"/></svg></Link>
@@ -420,254 +402,21 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
             : null}
       </section>}
     
-      <aside className="pane">
-        <div className="pane-body">
-          <div className="head"><h3 className="t-sub">Why {needsYou} need you</h3><span className="t-label end">now</span></div>
-          <div className="signals">
-            {SIGNAL_ORDER.map((kind) => {
-              const count = board.signalCounts[kind]
-              return <Link className={`signal${count === 0 ? " none" : ""}`}
-                href={boardHref({ signal: kind })}
-                aria-current={board.signal === kind ? "true" : undefined} key={kind}>
-                <i style={{ "background": markFor(kind, count) }}></i>
-                <span>{BOARD_SIGNAL_LABELS[kind]}</span><b>{count}</b><em>{BOARD_WEIGHTS.signal[kind]}</em>
-              </Link>
-            })}
-          </div>
-          {board.signal && <p style={{ "marginTop": "var(--s3)" }}>
-            <Link className="btn btn--sm btn--edge" href={boardHref({ signal: null })}>Clear signal filter</Link>
-          </p>}
-          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>How many jobs, then how bad it is — one job can carry more than one. {WORST_WEIGHT} is the worst it gets.</p>
-    
-          <div className="rule"></div>
-    
-          <div className="head"><h3 className="t-sub">Promises</h3></div>
-          <div className="keep">
-            <div className="keep-row"><span className="chip chip--good"><i></i>Kept</span><b>{promises.kept}</b></div>
-            <div className="keep-row"><span className="chip chip--info"><i></i>Open</span><b>{promises.open}</b></div>
-            <div className="keep-row"><span className="chip chip--warn"><i></i>Broken</span><b>{promises.broken}</b></div>
-          </div>
-          <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Open and broken are right now — broken is past its date and still owed. Kept is this month.</p>
-          {/* The callout named the shop's oldest broken promise and then went
-              nowhere, so the one thing on the pane that says "you are late on
-              this" could not be acted on. It links to the promise on its own
-              work order — where the customer's last message and the call
-              button are both in reach, which is the order the shop works in.
-              A promise with no lead behind it has no work order to open. */}
-          {promises.overdue && (promises.overdue.leadId
-            ? <Link className="due" href={`/ops/leads/${promises.overdue.leadId}#promise-${promises.overdue.id}`}>
-                <p>{promises.overdue.summary}</p>
-                <span>Due {sinceInWords(promises.overdue.dueAt, nowMs)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
-              </Link>
-            : <div className="due">
-                <p>{promises.overdue.summary}</p>
-                <span>Due {sinceInWords(promises.overdue.dueAt, nowMs)}{promises.overdue.customerName && ` · ${promises.overdue.customerName}`}{promises.overdue.service && `, ${promises.overdue.service}`}</span>
-              </div>)}
-
-          <section className="card week">
-            <h4>The week</h4>
-            {board.week.every((d) => !d.promises.length && !d.invoices.length && !d.followUps.length)
-              ? <p className="t-caption">Nothing due in the next seven days.</p>
-              : board.week
-                  .filter((d) => d.promises.length || d.invoices.length || d.followUps.length)
-                  .map((d) => (
-                    <div key={d.date} className="week-day">
-                      <span className="week-dow t-caption">{d.dow}</span>
-                      <ul>
-                        {[...d.promises, ...d.invoices, ...d.followUps].map((item, i) => (
-                          <li key={`${d.date}-${i}`}>
-                            {item.leadId
-                              ? <Link href={`/ops/leads/${item.leadId}`}>{item.label}</Link>
-                              : <span>{item.label}</span>}
-                            <span className="t-caption"> · {item.customer}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-          </section>
-          <div className="rule"></div>
-
-          <div className="head"><h3 className="t-sub">Today</h3></div>
-          <ul className="trail">
-            {board.todayTrail.map((event) => <li key={event.id}>
-              <i className={trailMark(event.kind)}></i>
-              <time dateTime={event.occurredAt}>{TRAIL_TIME.format(new Date(event.occurredAt))}</time>
-              <b>{shopEventLabel(event.kind)}{event.customer && ` · ${event.customer}`}{event.body && ` — ${event.body}`}</b>
-            </li>)}
-          </ul>
-        </div>
-    
-        <div className="pane-foot">
-          <Link className="btn btn--go" href={boardHref({ stage: "attention", signal: null })}>
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 8.5 6.5 12 13 4.5"/></svg>Work the {needsYou} that {needsYou === 1 ? "needs" : "need"} you</Link>
-        </div>
-      </aside>
     
       <main className="main">
-    
-        <section className="card figures">
-          <div className="figure">
-            <h4>Open jobs</h4>
-            <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
-            <div className="under">
-              <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
-              <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
-            </div>
-          </div>
-          <div className="figure">
-            <h4>Needs you</h4>
-            <p className="n"><b className="t-display">{needsYou}</b><span>today</span></p>
-            <div className="under">
-              {/* The seven-day sparkline is cut. Nothing stores a daily
-                  attention-count history, so the trend could only be guessed at
-                  by replaying the events table — a drawn line with no data
-                  behind it is the exact failure this board exists to fix. It
-                  returns if a daily snapshot ever ships. */}
-              <span>median first reply <b>{median === null ? "—" : `${Math.round(median)} min`}</b></span>
-            </div>
-          </div>
-          <div className="figure">
-            <h4>Closed this week</h4>
-            <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
-            <div className="under">
-              {outTheDoor.jobs > 0 && <span className="bar" role="img"
-                aria-label={`${outTheDoor.jobs} ${outTheDoor.jobs === 1 ? "job" : "jobs"} went out this week: ${outTheDoor.paidJobs} paid, ${outTheDoor.jobs - outTheDoor.paidJobs} not`}>
-                {/* One mark per job, capped so a heavy week cannot overrun the
-                    field. The count beside it stays exact. */}
-                {Array.from({ length: Math.min(outTheDoor.jobs, 10) }, (_, index) =>
-                  <i className={index < outTheDoor.paidJobs ? "good" : "warn"} key={index}></i>)}
-              </span>}
-              {outTheDoor.revenueCents !== null &&
-                <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
-            </div>
-          </div>
-        </section>
-    
-        <section className="card">
-          <div className="call-top">
-            <h2 className="t-title">Live call sketch</h2>
-            <span className="sub">{sketch ? callLine(sketch, nowMs) : "No call sketched yet"}</span>
-            <span className="end">
-              {sketch && sketch.unsketchedCalls > 0 &&
-                <span className="t-label">{sketch.unsketchedCalls} more call{sketch.unsketchedCalls === 1 ? "" : "s"} not sketched</span>}
-              {sketch?.leadId != null &&
-                <Link className="btn btn--sm btn--edge" href={`/ops/leads/${sketch.leadId}`}>Open the job</Link>}
-              {/* A call with no job yet is the one the board could not act on:
-                  it showed the conversation and offered nothing to do with it.
-                  The draft is only linked while intake will still open it. */}
-              {sketch?.leadId == null && sketch?.draftId &&
-                <Link className="btn btn--sm btn--edge" href={`/ops/intake/${sketch.draftId}`}>Save this call as a job</Link>}
-            </span>
-          </div>
-    
-          <div className="call-cols">
-            <div>
-              <figure className="tile">
-                <svg viewBox="0 0 244 172" role="img" aria-label={sketchAriaLabel(spec)}>
-                  <rect width="244" height="172" fill="var(--sketch-ground)"></rect>
-                  <g stroke="var(--sketch-grid)" strokeWidth="1">
-                    <path d="M0 24h244M0 48h244M0 72h244M0 96h244M0 120h244M0 144h244"></path>
-                    <path d="M24 0v172M48 0v172M72 0v172M96 0v172M120 0v172M144 0v172M168 0v172M192 0v172M216 0v172"></path>
-                  </g>
-                  {/* The copy beside this tile says the drawing stays blank on
-                      a call that described no gate or frame. Until this guard
-                      it said that over a full elevation. */}
-                  {!showHeard && <>
-                    {/* A box drawn from hedged numbers is drawn as a hedge. */}
-                    <rect x={drawing.x} y={drawing.y} width={drawing.w} height={drawing.h}
-                      fill="none" stroke="var(--sketch-line)" strokeWidth={drawing.stroke}
-                      strokeDasharray={drawing.outlineUncertain ? "6 4" : undefined}></rect>
-                    <g stroke="var(--sketch-line)"
-                      strokeWidth={drawing.railsStated ? drawing.stroke * 0.7 : 1.6}
-                      strokeDasharray={drawing.railsStated ? undefined : "4 4"}
-                      opacity={drawing.railsStated ? 1 : .45}>
-                      {drawing.rails.map((railY) =>
-                        <path key={railY} d={`M${drawing.x} ${railY}h${drawing.w}`}></path>)}
-                    </g>
-                    {/* A frame export never invents gate hardware, and neither
-                        does the picture of one. */}
-                    {drawing.hinge && <g fill="var(--sketch-line)">
-                      {drawing.hinge.ys.map((hingeY) =>
-                        <circle key={hingeY} cx={drawing.hinge!.x} cy={hingeY} r={drawing.hinge!.r}></circle>)}
-                    </g>}
-                    {drawing.latch && <rect fill="var(--sketch-line)"
-                      x={drawing.latch.x - drawing.latch.size / 2} y={drawing.latch.y - drawing.latch.size}
-                      width={drawing.latch.size} height={drawing.latch.size * 2}></rect>}
-                    <g stroke="var(--sketch-dim)" strokeWidth="1">
-                      <path d={drawing.widthDim}></path>
-                      <path d={drawing.heightDim}></path>
-                    </g>
-                    <g fontFamily="Instrument Sans" fontSize="12" fontWeight="600" fill="var(--sketch-line)">
-                      {/* Width along the bottom, height up the left, stock size
-                          outside the right rail — a fact that is not an answer
-                          stays a question mark on the paper. */}
-                      <text x={drawing.widthText.x} y={drawing.widthText.y} textAnchor="middle">{dimensionMark(spec.width)}</text>
-                      <text x={drawing.heightText.x} y={drawing.heightText.y} textAnchor="middle">{dimensionMark(spec.height)}</text>
-                      <text x={drawing.stockText.x} y={drawing.stockText.y} textAnchor="middle">{dimensionMark(spec.stockSize)}</text>
-                    </g>
-                  </>}
-                </svg>
-                <figcaption>ROUGH CALL SKETCH &middot;<br />NOT A FABRICATION DRAWING</figcaption>
-              </figure>
-              <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Every answer that comes back edits it.</p>
-            </div>
-    
-            <div>
-              <p className="ask">{showHeard ? "What the call said" : "Ask next"}</p>
-              <p>{showHeard ? "No gate or frame was described, so the drawing stays blank." : spec.nextQuestion}</p>
-              <div className="slots">
-                {slots.map((slot) =>
-                  <span className="slot" key={slot.key}>
-                    <span className="k">{slot.label}</span>
-                    <span className={`v ${slot.tone}`}>{slot.text}</span>
-                  </span>)}
-              </div>
-              <div className="call-end">
-                <span>{showHeard
-                  ? `${heard.length} fact${heard.length === 1 ? "" : "s"} heard on this call`
-                  : `${answered} of ${PANEL_FACT_KEYS.length} answered${pricingGap && ` · ${pricingGap}`}`}</span>
-                {sketch?.leadId != null &&
-                  <span className="end"><Link className="btn btn--sm btn--go" href={`/ops/leads/${sketch.leadId}#spike`}>Text him the three</Link></span>}
-              </div>
-            </div>
-    
-            <div>
-              <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>{onTheLine ? "Recent call language" : "How the call opened"}</p>
-              {sketch && sketch.lines.length > 0
-                ? <>
-                    {openLines.map((line) =>
-                      <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
-                        <b>{line.speaker}</b><span>{line.transcript}</span>
-                      </p>)}
-                    {foldedLines.length > 0 &&
-                      <details className="spoke-more">
-                        <summary>{foldedLines.length} more line{foldedLines.length === 1 ? "" : "s"} of this call</summary>
-                        {foldedLines.map((line) =>
-                          <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
-                            <b>{line.speaker}</b><span>{line.transcript}</span>
-                          </p>)}
-                      </details>}
-                  </>
-                : <p className="t-caption">Nothing has been transcribed on this call yet.</p>}
-              {unshownLines > 0 &&
-                <p className="t-caption" style={{ "marginTop": "var(--s2)" }}>{unshownLines} more line{unshownLines === 1 ? "" : "s"} on this call.</p>}
-            </div>
-          </div>
-          {chrome.owner && <VoicePreview voice={board.voice} />}
-        </section>
-    
         <section className="card">
           <div className="track-top">
             <h2 className="t-title">Job tracker</h2>
             <span className="count">{countLine}</span>
             <span className="end">
-              {/* The tracker is genuinely ordered oldest-first — the page asks
-                  for order:"oldest" — so the sort chip is an honest active
+              {board.signal &&
+                <Link className="btn btn--sm btn--edge" href={boardHref({ signal: null })}>Clear signal filter</Link>}
+              {/* The tracker is genuinely ordered newest-first — the page asks
+                  for order:"newest" — so the sort chip is an honest active
                   label, not a button that claims a sort it does not perform. */}
-              <span className="chip chip--info track-sort" title="Jobs are ordered by how long each has waited">
+              <span className="chip chip--info track-sort" title="Jobs are ordered by when they came in, newest at the top">
                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5 6.5 12 13 4.5"/></svg>
-                Longest waiting first
+                Newest first
               </span>
             </span>
           </div>
@@ -997,7 +746,187 @@ export function JobControl({ board, chrome, menu, nowMs }: { board: BoardPaneDat
             </nav>
           )}
         </section>
+
+        <section className="card">
+          <div className="call-top">
+            <h2 className="t-title">Live call sketch</h2>
+            <span className="sub">{sketch ? callLine(sketch, nowMs) : "No call sketched yet"}</span>
+            <span className="end">
+              {sketch && sketch.unsketchedCalls > 0 &&
+                <span className="t-label">{sketch.unsketchedCalls} more call{sketch.unsketchedCalls === 1 ? "" : "s"} not sketched</span>}
+              {sketch?.leadId != null &&
+                <Link className="btn btn--sm btn--edge" href={`/ops/leads/${sketch.leadId}`}>Open the job</Link>}
+              {/* A call with no job yet is the one the board could not act on:
+                  it showed the conversation and offered nothing to do with it.
+                  The draft is only linked while intake will still open it. */}
+              {sketch?.leadId == null && sketch?.draftId &&
+                <Link className="btn btn--sm btn--edge" href={`/ops/intake/${sketch.draftId}`}>Save this call as a job</Link>}
+            </span>
+          </div>
+    
+          <div className="call-cols">
+            <div>
+              <figure className="tile">
+                <svg viewBox="0 0 244 172" role="img" aria-label={sketchAriaLabel(spec)}>
+                  <rect width="244" height="172" fill="var(--sketch-ground)"></rect>
+                  <g stroke="var(--sketch-grid)" strokeWidth="1">
+                    <path d="M0 24h244M0 48h244M0 72h244M0 96h244M0 120h244M0 144h244"></path>
+                    <path d="M24 0v172M48 0v172M72 0v172M96 0v172M120 0v172M144 0v172M168 0v172M192 0v172M216 0v172"></path>
+                  </g>
+                  {/* The copy beside this tile says the drawing stays blank on
+                      a call that described no gate or frame. Until this guard
+                      it said that over a full elevation. */}
+                  {!showHeard && <>
+                    {/* A box drawn from hedged numbers is drawn as a hedge. */}
+                    <rect x={drawing.x} y={drawing.y} width={drawing.w} height={drawing.h}
+                      fill="none" stroke="var(--sketch-line)" strokeWidth={drawing.stroke}
+                      strokeDasharray={drawing.outlineUncertain ? "6 4" : undefined}></rect>
+                    <g stroke="var(--sketch-line)"
+                      strokeWidth={drawing.railsStated ? drawing.stroke * 0.7 : 1.6}
+                      strokeDasharray={drawing.railsStated ? undefined : "4 4"}
+                      opacity={drawing.railsStated ? 1 : .45}>
+                      {drawing.rails.map((railY) =>
+                        <path key={railY} d={`M${drawing.x} ${railY}h${drawing.w}`}></path>)}
+                    </g>
+                    {/* A frame export never invents gate hardware, and neither
+                        does the picture of one. */}
+                    {drawing.hinge && <g fill="var(--sketch-line)">
+                      {drawing.hinge.ys.map((hingeY) =>
+                        <circle key={hingeY} cx={drawing.hinge!.x} cy={hingeY} r={drawing.hinge!.r}></circle>)}
+                    </g>}
+                    {drawing.latch && <rect fill="var(--sketch-line)"
+                      x={drawing.latch.x - drawing.latch.size / 2} y={drawing.latch.y - drawing.latch.size}
+                      width={drawing.latch.size} height={drawing.latch.size * 2}></rect>}
+                    <g stroke="var(--sketch-dim)" strokeWidth="1">
+                      <path d={drawing.widthDim}></path>
+                      <path d={drawing.heightDim}></path>
+                    </g>
+                    <g fontFamily="Instrument Sans" fontSize="12" fontWeight="600" fill="var(--sketch-line)">
+                      {/* Width along the bottom, height up the left, stock size
+                          outside the right rail — a fact that is not an answer
+                          stays a question mark on the paper. */}
+                      <text x={drawing.widthText.x} y={drawing.widthText.y} textAnchor="middle">{dimensionMark(spec.width)}</text>
+                      <text x={drawing.heightText.x} y={drawing.heightText.y} textAnchor="middle">{dimensionMark(spec.height)}</text>
+                      <text x={drawing.stockText.x} y={drawing.stockText.y} textAnchor="middle">{dimensionMark(spec.stockSize)}</text>
+                    </g>
+                  </>}
+                </svg>
+                <figcaption>ROUGH CALL SKETCH &middot;<br />NOT A FABRICATION DRAWING</figcaption>
+              </figure>
+              <p className="t-caption" style={{ "marginTop": "var(--s3)" }}>Every answer that comes back edits it.</p>
+            </div>
+    
+            <div>
+              <p className="ask">{showHeard ? "What the call said" : "Ask next"}</p>
+              <p>{showHeard ? "No gate or frame was described, so the drawing stays blank." : spec.nextQuestion}</p>
+              <div className="slots">
+                {slots.map((slot) =>
+                  <span className="slot" key={slot.key}>
+                    <span className="k">{slot.label}</span>
+                    <span className={`v ${slot.tone}`}>{slot.text}</span>
+                  </span>)}
+              </div>
+              <div className="call-end">
+                <span>{showHeard
+                  ? `${heard.length} fact${heard.length === 1 ? "" : "s"} heard on this call`
+                  : `${answered} of ${PANEL_FACT_KEYS.length} answered${pricingGap && ` · ${pricingGap}`}`}</span>
+                {sketch?.leadId != null &&
+                  <span className="end"><Link className="btn btn--sm btn--go" href={`/ops/leads/${sketch.leadId}#spike`}>Text him the three</Link></span>}
+              </div>
+            </div>
+    
+            <div>
+              <p className="t-label" style={{ "marginBottom": "var(--s2)" }}>{onTheLine ? "Recent call language" : "How the call opened"}</p>
+              {sketch && sketch.lines.length > 0
+                ? <>
+                    {openLines.map((line) =>
+                      <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
+                        <b>{line.speaker}</b><span>{line.transcript}</span>
+                      </p>)}
+                    {foldedLines.length > 0 &&
+                      <details className="spoke-more">
+                        <summary>{foldedLines.length} more line{foldedLines.length === 1 ? "" : "s"} of this call</summary>
+                        {foldedLines.map((line) =>
+                          <p className={line.speaker === "Shop" ? "spoke" : "spoke them"} key={line.sequenceId}>
+                            <b>{line.speaker}</b><span>{line.transcript}</span>
+                          </p>)}
+                      </details>}
+                  </>
+                : <p className="t-caption">Nothing has been transcribed on this call yet.</p>}
+              {unshownLines > 0 &&
+                <p className="t-caption" style={{ "marginTop": "var(--s2)" }}>{unshownLines} more line{unshownLines === 1 ? "" : "s"} on this call.</p>}
+            </div>
+          </div>
+          {chrome.owner && <VoicePreview voice={board.voice} />}
+        </section>
+    
+
+        <section className="card figures">
+          <div className="figure">
+            <h4>Open jobs</h4>
+            <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
+            <div className="under">
+              <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
+              <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
+            </div>
+          </div>
+          <div className="figure">
+            <h4>Closed this week</h4>
+            <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
+            <div className="under">
+              {outTheDoor.jobs > 0 && <span className="bar" role="img"
+                aria-label={`${outTheDoor.jobs} ${outTheDoor.jobs === 1 ? "job" : "jobs"} went out this week: ${outTheDoor.paidJobs} paid, ${outTheDoor.jobs - outTheDoor.paidJobs} not`}>
+                {/* One mark per job, capped so a heavy week cannot overrun the
+                    field. The count beside it stays exact. */}
+                {Array.from({ length: Math.min(outTheDoor.jobs, 10) }, (_, index) =>
+                  <i className={index < outTheDoor.paidJobs ? "good" : "warn"} key={index}></i>)}
+              </span>}
+              {outTheDoor.revenueCents !== null &&
+                <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
+            </div>
+          </div>
+        </section>
       </main>
+      {/* The pane used to lead with the signal list and Promises. The owner
+          reads neither — he reads the tracker — so on 2026-09-03 the pane
+          shrank to the two lists he did keep: the week's dates and today's
+          trail. It now follows the tracker on a phone. */}
+      <aside className="pane">
+        <div className="pane-body">
+          <section className="card week">
+            <h4>The week</h4>
+            {board.week.every((d) => !d.promises.length && !d.invoices.length && !d.followUps.length)
+              ? <p className="t-caption">Nothing due in the next seven days.</p>
+              : board.week
+                  .filter((d) => d.promises.length || d.invoices.length || d.followUps.length)
+                  .map((d) => (
+                    <div key={d.date} className="week-day">
+                      <span className="week-dow t-caption">{d.dow}</span>
+                      <ul>
+                        {[...d.promises, ...d.invoices, ...d.followUps].map((item, i) => (
+                          <li key={`${d.date}-${i}`}>
+                            {item.leadId
+                              ? <Link href={`/ops/leads/${item.leadId}`}>{item.label}</Link>
+                              : <span>{item.label}</span>}
+                            <span className="t-caption"> · {item.customer}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+          </section>
+          <div className="rule"></div>
+
+          <div className="head"><h3 className="t-sub">Today</h3></div>
+          <ul className="trail">
+            {board.todayTrail.map((event) => <li key={event.id}>
+              <i className={trailMark(event.kind)}></i>
+              <time dateTime={event.occurredAt}>{TRAIL_TIME.format(new Date(event.occurredAt))}</time>
+              <b>{shopEventLabel(event.kind)}{event.customer && ` · ${event.customer}`}{event.body && ` — ${event.body}`}</b>
+            </li>)}
+          </ul>
+        </div>
+      </aside>
     </div>
   )
 }
