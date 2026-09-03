@@ -67,7 +67,7 @@ test("boardHref keeps tests=1 across every stage and signal hop", () => {
 })
 
 test("the search form re-submits the mode instead of dropping it", () => {
-  assert.match(BOARD, /<form className="find" action="\/board" method="get" role="search">/)
+  assert.match(BOARD, /<form className="find" action="\/board" method="get" role="search"/)
   const form = BOARD.slice(BOARD.indexOf('<form className="find"'), BOARD.indexOf("</form>"))
   assert.match(form, /name="q"/)
   assert.match(form, /\{chrome\.includeTests && <input type="hidden" name="tests" value="1" \/>\}/)

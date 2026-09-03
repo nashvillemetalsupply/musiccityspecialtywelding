@@ -5,6 +5,7 @@ import { useActionState } from "react"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import { dismissCallFromBoardAction, quickSaveCallAction, type QuickSaveState } from "@/app/ops/intake/actions"
 import type { CallSummary } from "@/lib/call-summary-shared"
+import { tapped, TAPS } from "./usage"
 
 // The board's own slice of the pending-call queue. Same rows the Calls tab
 // reads, ten at most, newest first. The owner asked for this on 2026-09-03
@@ -70,12 +71,12 @@ function CallRow({ call, owner, nowMs }: { call: BoardCall; owner: boolean; nowM
     {details && <span className="said quiet">{details}</span>}
     {notJob && <span className="flag">Probably not a job{summary?.not_job_reason && ` · ${summary.not_job_reason}`}</span>}
     <span className="do">
-      <form action={save}>
+      <form action={save} onSubmit={() => tapped(TAPS.callSave)}>
         <input type="hidden" name="draftId" value={call.publicId} />
         <SafeSubmitButton className={notJob ? "btn btn--edge" : "btn btn--go"} pendingLabel="Saving…" disabled={pending}>Save as job</SafeSubmitButton>
       </form>
-      <Link className="btn btn--edge" href={`/ops/intake/${call.publicId}`}>Review</Link>
-      {owner && <form action={dismissCallFromBoardAction}>
+      <Link className="btn btn--edge" href={`/ops/intake/${call.publicId}`} onClick={() => tapped(TAPS.callReview)}>Review</Link>
+      {owner && <form action={dismissCallFromBoardAction} onSubmit={() => tapped(TAPS.callNotJob)}>
         <input type="hidden" name="draftId" value={call.publicId} />
         <SafeSubmitButton className={notJob ? "btn btn--go" : "btn btn--edge"} pendingLabel="Removing…">Not a job</SafeSubmitButton>
       </form>}
@@ -86,7 +87,7 @@ function CallRow({ call, owner, nowMs }: { call: BoardCall; owner: boolean; nowM
 
 export function RecentCalls({ calls, total, owner, nowMs }: { calls: BoardCall[]; total: number; owner: boolean; nowMs: number }) {
   if (calls.length === 0) return null
-  return <details className="calls-drop">
+  return <details className="calls-drop" onToggle={(event) => { if (event.currentTarget.open) tapped(TAPS.callsOpen) }}>
     <summary>
       <span className="n">{total}</span>
       <span>{total === 1 ? "call to save" : "calls to save"}</span>

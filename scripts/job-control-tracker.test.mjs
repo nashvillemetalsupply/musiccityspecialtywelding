@@ -231,7 +231,7 @@ test("an ended call folds the whole transcript behind one line; a live one shows
   // ended call's words fold entirely. Live, the last lines stay in the open.
   assert.match(PREVIEW_SOURCE, /const PANEL_OPEN_LINES = \d+/)
   assert.match(PREVIEW_SOURCE, /sketch\?\.lines\.slice\(0, PANEL_OPEN_LINES\)/)
-  assert.match(PREVIEW_SOURCE, /<details className="spoke-more">/)
+  assert.match(PREVIEW_SOURCE, /<details className="spoke-more" onToggle=/)
   assert.match(PREVIEW_SOURCE, /<summary>Read the whole call · \{sketch\.totalLines\} line\{sketch\.totalLines === 1 \? "" : "s"\}<\/summary>/)
   // Nothing is dropped — every line renders the same line markup inside the fold.
   assert.match(PREVIEW_SOURCE, /\{sketch\.lines\.map\(\(line\) =>/)
@@ -273,14 +273,14 @@ test("the board carries a one-tap calls-to-save dropdown above the tracker", () 
   assert.ok(main > -1 && main < slot && slot < tracker, `expected main < calls slot < tracker, got ${[main, slot, tracker]}`)
   // native disclosure, closed by default, nothing rendered for an empty queue
   assert.match(CALLS_SOURCE, /if \(calls\.length === 0\) return null/)
-  assert.match(CALLS_SOURCE, /<details className="calls-drop">/)
-  assert.doesNotMatch(CALLS_SOURCE, /<details className="calls-drop" open/)
+  assert.match(CALLS_SOURCE, /<details className="calls-drop" onToggle=/)
+  assert.doesNotMatch(CALLS_SOURCE, /<details className="calls-drop"[^>]* open[ >]/)
   // one tap: the action fills the name itself and reuses the typed-save path
   assert.match(CALLS_SOURCE, /useActionState\(quickSaveCallAction, initialState\)/)
   assert.match(ACTIONS_SOURCE, /filled\.set\("firstName", draft\.caller_name\.trim\(\) \|\| \(last4 \? `Caller \$\{last4\}` : "Caller"\)\)/)
   assert.match(ACTIONS_SOURCE, /const result = await saveCallDraftRecord\(filled\)\s+revalidatePath\("\/board"\)/)
   // review still opens the full intake; dismiss stays owner-only
-  assert.match(CALLS_SOURCE, /href=\{`\/ops\/intake\/\$\{call\.publicId\}`\}>Review<\/Link>/)
-  assert.match(CALLS_SOURCE, /\{owner && <form action=\{dismissCallFromBoardAction\}>/)
+  assert.match(CALLS_SOURCE, /href=\{`\/ops\/intake\/\$\{call\.publicId\}`\}[\s\S]{0,60}>Review<\/Link>/)
+  assert.match(CALLS_SOURCE, /\{owner && <form action=\{dismissCallFromBoardAction\}[\s\S]{0,60}>/)
   assert.match(ACTIONS_SOURCE, /export async function dismissCallFromBoardAction[\s\S]{0,400}if \(operator\.role !== "owner"\) throw/)
 })

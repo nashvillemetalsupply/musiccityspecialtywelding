@@ -27,7 +27,7 @@ test("job search keeps a mounted, labelled input on the board", () => {
   // C7 archived active-job-index/-controls; the live search is the board's
   // .find form, which must stay a plain GET form with a labelled input.
   const board = read("app/board/board.tsx")
-  assert.match(board, /<form className="find" action="\/board" method="get" role="search">/)
+  assert.match(board, /<form className="find" action="\/board" method="get" role="search"/)
   assert.match(board, /name="q" type="search" defaultValue=\{chrome\.query\}/)
   assert.match(board, /aria-label="Search jobs"/)
 })
