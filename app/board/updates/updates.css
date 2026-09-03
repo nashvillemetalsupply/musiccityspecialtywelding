@@ -153,6 +153,7 @@
 .updates-page .ops-wire-slip > a{display:flex;flex-direction:column;gap:var(--s1);color:inherit;text-decoration:none}
 .updates-page .ops-wire summary{font-family:var(--font);text-transform:none;letter-spacing:0;
   border:0;background:none;color:var(--text-primary);padding:0}
-.updates-page .ops-wire-action{margin:0}
+.updates-page .ops-wire-action{margin:0;justify-content:flex-start}
+.updates-page .ops-wire-action form{margin:0}
 .updates-page .ops-wire-result{margin:0;font-weight:var(--w-med)}
 .updates-page .ops-wire-empty{padding:0;color:var(--text-muted)}
