@@ -136,6 +136,10 @@ test("a phone tap can carry an Ads conversion", () => {
     measurement.includes("NEXT_PUBLIC_GOOGLE_ADS_PHONE_SEND_TO"),
     "The phone conversion label must be configurable.",
   )
+  assert.ok(
+    measurement.includes('"AW-17817632790/0aSACPS5ue4cEJaAjrBC"'),
+    'The tap must send to "Call tap on website"; a wrong label is a dead destination.',
+  )
   const tracker = source("components/phone-click-tracker.tsx")
   assert.ok(
     tracker.includes('queueMeasurementEvent("conversion", { send_to: ADS_PHONE_CONVERSION_SEND_TO })'),
