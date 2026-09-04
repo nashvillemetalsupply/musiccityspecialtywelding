@@ -22,6 +22,10 @@ import { automationRunIsStale, gmailFreshnessWindowMs } from "@/lib/automation-h
 
 export const dynamic = "force-dynamic"
 
+// Four days with no web quote is roughly a one-in-a-hundred quiet stretch at
+// the shop's observed rate, so it is worth a red build rather than a shrug.
+const WEB_QUOTE_SILENCE_LIMIT_HOURS = 96
+
 async function hasWorkingResendCredential(apiKey: string) {
   try {
     const response = await fetch("https://api.resend.com/domains", {
@@ -90,6 +94,7 @@ type DatabaseHealth = {
   notificationDeliveryUnknown: number | null
   messageDeliveryUnknown: number | null
   callDeliveryUnknown: number | null
+  lastWebQuoteAt: string | null
 }
 
 async function checkDatabase(): Promise<DatabaseHealth> {
@@ -117,6 +122,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     notificationDeliveryUnknown: null,
     messageDeliveryUnknown: null,
     callDeliveryUnknown: null,
+    lastWebQuoteAt: null,
   }
   if (!result.configured) return result
   try {
@@ -124,6 +130,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     const [counts] = (await sql`
       SELECT
         (SELECT count(*)::int FROM leads WHERE is_test = false) AS lead_count,
+        -- Only /api/quote writes landing_page, so this is the last time the
+        -- public form actually reached the database.
+        (SELECT max(created_at) FROM leads
+          WHERE coalesce(landing_page, '') <> '' AND is_test = false) AS last_web_quote_at,
         (SELECT count(*)::int FROM leads
           WHERE email_delivery_status = 'failed' AND is_test = false) AS failed_deliveries,
         (SELECT count(*)::int FROM calls
@@ -175,6 +185,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
             AND COALESCE(p.is_test, false) = false
             AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true') AS call_delivery_unknown`) as {
       lead_count: number
+      last_web_quote_at: string | null
       failed_deliveries: number
       call_transcript_backlog: number
       call_transcript_exhausted: number
@@ -190,6 +201,9 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     }[]
     result.connected = true
     result.leadCount = counts.lead_count
+    result.lastWebQuoteAt = counts.last_web_quote_at
+      ? new Date(counts.last_web_quote_at).toISOString()
+      : null
     result.failedDeliveries = counts.failed_deliveries
     result.callTranscriptBacklog = counts.call_transcript_backlog
     result.callTranscriptExhausted = counts.call_transcript_exhausted
@@ -264,6 +278,15 @@ export async function GET(req: Request) {
     checkTwilioProviderReadiness(),
   ])
   const adsConversionConfigured = Boolean(ADS_CONVERSION_SEND_TO)
+  // The Ads conversion action only ever hears from the public quote form, so a
+  // long silence on that form is indistinguishable from a dead tag -- and that
+  // silence ran eleven days from 2026-08-24 with nothing watching it. Report it
+  // so the health monitor can fail on the outcome, not only on configuration.
+  const webQuoteSilenceHours = database.lastWebQuoteAt
+    ? Math.floor((Date.now() - new Date(database.lastWebQuoteAt).getTime()) / 3_600_000)
+    : null
+  const webQuoteSilent = database.connected
+    && (webQuoteSilenceHours === null || webQuoteSilenceHours >= WEB_QUOTE_SILENCE_LIMIT_HOURS)
   const analyticsMeasurementConfigured = Boolean(
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
   )
@@ -462,6 +485,11 @@ export async function GET(req: Request) {
       },
       googleAds: {
         conversionConfigured: adsConversionConfigured,
+        conversionSendTo: ADS_CONVERSION_SEND_TO,
+        lastWebQuoteAt: database.lastWebQuoteAt,
+        webQuoteSilenceHours,
+        webQuoteSilenceLimitHours: WEB_QUOTE_SILENCE_LIMIT_HOURS,
+        webQuoteSilent,
       },
       googleAnalytics: {
         measurementConfigured: analyticsMeasurementConfigured,

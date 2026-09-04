@@ -61,6 +61,78 @@ conversion tracking was broken (see below). Do not size the budget off this yet.
 
 ---
 
+## CORRECTION (2026-09-04, later the same day) — the tag was never broken
+
+The finding below is right about the symptom and wrong about the cause. Root-caused
+against production and the live database:
+
+**The tag works.** Three real conversion pings were fired from
+`https://musiccityspecialtywelding.com/` today by submitting the actual form with
+`/api/quote` stubbed out in the browser, so no lead was created. Each one produced:
+
+    https://www.googleadservices.com/pagead/conversion/17817632790/?label=CZF4CMyQhPEbEJaAjrBC&...
+    https://www.googleadservices.com/ccm/conversion/17817632790/?label=CZF4CMyQhPEbEJaAjrBC&...
+
+That is exactly the destination `ctId=7484803148` listens on. The label in the
+deployed client bundle is `AW-17817632790/CZF4CMyQhPEbEJaAjrBC` — the correct one;
+`NEXT_PUBLIC_GOOGLE_ADS_SEND_TO` is unset, so the hardcoded fallback is what ships.
+
+**Deploy `3beace9` is not the cause.** `components/public-analytics.tsx` and
+`components/deferred-google-tag.tsx` have not been touched since that commit, so the
+code under suspicion is byte-for-byte what is live now — and it fires. The
+double-parse theory (a top-level `const` in the inline script) does not apply either:
+in the Next.js App Router an `afterInteractive` `<Script>` renders nothing on the
+server and is injected exactly once from `useEffect`, guarded by next/script's own
+`LoadCache`. It only ever parses once.
+
+**The real cause: nothing has been submitting the form.**
+
+| Week of | Web-form leads | Of those, from Ads |
+|---|---|---|
+| Aug 3 | 2 | 2 |
+| Aug 10 | 6 | 5 |
+| Aug 17 | 5 | 5 |
+| Aug 24 | 1 | 0 |
+| Aug 31 | 0 | 0 |
+
+The last web-form lead is #161, **2026-08-25 17:59 UTC** (aluminium boat hatch, an
+ad click carrying `gbraid` but no `gclid`). Corroborated independently by the
+`rate_limits` table, which `isRateLimitedDurable` prunes to 24 hours **on every
+call**: its single surviving row is that Aug 25 submission, which is only possible
+if no quote request has reached it since. Phone, SMS and email intake continued
+normally the whole time (15 phone-ins on Sep 3 alone), so this is the web form
+specifically, not the shop.
+
+At the observed rate (~5 web leads a week, essentially all from Ads) a run of zero
+over eleven days is roughly a 1-in-400 coincidence. So Ads has recorded nothing
+because there has been nothing to record — "Misconfigured / no tag pings in 7 days"
+is a symptom of an empty funnel, not a dead tag.
+
+**The server is healthy too.** A probe of live `/api/quote` with valid fields and a
+deliberately invalid `intakeKey` (rejected before any write) returns the designed
+`400 "This form expired before it could be sent."` — so honeypot, photo validation
+and `validatePublicQuote` all pass real input today.
+
+**What that leaves.** The remaining explanation is on the Ads side, and it is the
+same Aug 24 date: Change History shows the budget raised and a phrase-match keyword
+paused that morning. 55% of spend already sits in privacy-thresholded "Other search
+terms" that negatives cannot govern, and the call asset had been disapproved since
+December. Look at click quality and the landing-page report before spending more.
+
+**Shipped so the silence cannot repeat** (it ran eleven days unseen because every
+check watched configuration and none watched the outcome):
+
+- `/api/health` now reports `googleAds.lastWebQuoteAt`, `webQuoteSilenceHours` and
+  `webQuoteSilent`; the health monitor **fails the build** past 96 hours of silence.
+- `scripts/verify-ads-tag.mjs` fetches the live bundle every monitor run and asserts
+  the AW container config and the exact `send_to` label are still shipped.
+- `scripts/ads-conversion-tag.test.mjs` pins the wiring in the suite, including that
+  the inline tag body stays inside an IIFE.
+- The inline tag script was moved into an IIFE. Not the cause, but it removes the
+  re-entrancy hazard for good.
+
+---
+
 ## CRITICAL FINDING — conversion tracking is dead
 
 Conversion action **“Submit lead form (FIXED)”** (`ctId=7484803148`, created 2/2/2026):

@@ -19,16 +19,16 @@ export function PublicAnalytics({ measurementId }: { measurementId?: string }) {
   return <>
     <Script id="google-tag" strategy="afterInteractive">
       {`
-        const measurementParams = new URLSearchParams(window.location.search);
-        const isInternalVerification = measurementParams.get('utm_source') === 'internal-verify' || measurementParams.get('utm_medium') === 'e2e';
-        if (!isInternalVerification) {
+        (function(){
+          var params = new URLSearchParams(window.location.search);
+          if (params.get('utm_source') === 'internal-verify' || params.get('utm_medium') === 'e2e') return;
           window.dataLayer = window.dataLayer || [];
           window.gtag = window.gtag || function(){window.dataLayer.push(arguments);};
           window.gtag('js', new Date());
           window.gtag('config', 'GT-TWZ9WFGX');
           window.gtag('config', 'AW-17817632790');
           ${measurementId ? `window.gtag('config', ${JSON.stringify(measurementId)});` : ""}
-        }
+        })();
       `}
     </Script>
     <DeferredGoogleTag containerId="GT-TWZ9WFGX" />

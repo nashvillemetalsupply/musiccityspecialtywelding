@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
+      # Needed only by the Ads tag probe below; the curl checks are standalone.
+      - uses: actions/checkout@v4
+
       - name: Check /api/health
         run: |
           set -euo pipefail
@@ -42,6 +45,12 @@ jobs:
               gmailStale: .automation.gmailStale,
               morningBriefStale: .automation.morningBriefStale
             },
+            googleAds: {
+              conversionSendTo: .googleAds.conversionSendTo,
+              lastWebQuoteAt: .googleAds.lastWebQuoteAt,
+              webQuoteSilenceHours: .googleAds.webQuoteSilenceHours,
+              webQuoteSilent: .googleAds.webQuoteSilent
+            },
             shopBrain: {
               ready: .shopBrain.ready,
               gateSatisfied: .shopBrain.gateSatisfied,
@@ -62,6 +71,18 @@ jobs:
             echo "::error::Launch gate, Shop Brain readiness, or durable delivery health is failing"
             exit 1
           fi
+          # Google Ads conversion tracking went dead for eleven days from
+          # 2026-08-24 and nothing here noticed, because every check watched
+          # configuration and none watched the outcome. A quote form that has
+          # taken nothing in four days is the outage, whatever the cause.
+          if printf '%s' "$body" | jq -e '.googleAds.webQuoteSilent == true' >/dev/null; then
+            hours=$(printf '%s' "$body" | jq -r '.googleAds.webQuoteSilenceHours // "never"')
+            echo "::error::No web quote has reached the database in ${hours} hours; Google Ads has nothing to record"
+            exit 1
+          fi
+
+      - name: Check the Google Ads conversion tag is on the live site
+        run: node scripts/verify-ads-tag.mjs
 
       - name: Check homepage serves
         run: |
