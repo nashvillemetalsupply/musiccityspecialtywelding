@@ -61,6 +61,30 @@ conversion tracking was broken (see below). Do not size the budget off this yet.
 
 ---
 
+## CLOSED OUT (2026-09-04) — nothing left open
+
+| Item | State |
+|---|---|
+| Conversion drop (`window.gtag &&`) | Fixed `57ced62`, verified live with gtag deleted |
+| `Submit lead form (FIXED)` | Awaiting conversions, **All conv. 1.00** |
+| `Call tap on website` | **Created.** Contact goal, website source, count One, primary, campaign optimizing for it. `AW-17817632790/0aSACPS5ue4cEJaAjrBC`, shipped `f2819f9`, tap verified live |
+| Disapproved `6158104910` call assets | **Removed** (2 of them; both already paused, zero impressions) |
+| Replacement call asset `6157033296` | Eligible, 5 impressions — ads have a call button again |
+| Enhanced conversions | **Turned off.** Was auto-detecting quote-form contact data while the privacy policy discloses only device/browser/page/conversion-event info and states no sharing of mobile opt-in info. Off keeps the policy true and clears the Urgent diagnostic |
+| Budget | Left at $40/day — the case for cutting was blind bidding, which ended today |
+| gbraid/wbraid ad clicks | No longer filed as "direct" (`322fc17`) |
+| Watchdog | `/api/health` `webQuoteSilent`, monitor fails past 96h, live bundle probe, 9 mutation-tested checks |
+
+The account now carries **4** conversion actions, up from 3.
+
+**Left deliberately:** two `(615) 810-4910` call assets remain on the paused
+`Welding Services near me` and `ornamental` campaigns. They are inert while
+those campaigns are paused, but they carry the owner's old direct line and
+would fail verification the same way if either campaign is ever resumed.
+Replace them with `6157033296` before un-pausing.
+
+---
+
 ## ROOT CAUSE (2026-09-04, final) — the browser dropped the conversion
 
 GA4 property `G-CNSPDW74CJ` has what the Ads account could not show. Users per
