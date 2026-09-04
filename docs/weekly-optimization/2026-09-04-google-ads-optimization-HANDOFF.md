@@ -61,6 +61,52 @@ conversion tracking was broken (see below). Do not size the budget off this yet.
 
 ---
 
+## ROOT CAUSE (2026-09-04, final) — the browser dropped the conversion
+
+GA4 property `G-CNSPDW74CJ` has what the Ads account could not show. Users per
+day, Aug 1 – Sep 4:
+
+| | Aug 1–23 | Aug 25 / 27 / 28 | Aug 29 – Sep 3 |
+|---|---|---|---|
+| `form_start` | 21 | 3 | 0 |
+| `generate_lead` | 15 | **0** | 0 |
+
+People kept starting the quote form after Aug 24 and the site fired **zero**
+`generate_lead` — including Aug 25, the day lead #161 saved to the database. A
+submission reached the server, wrote a row, and emitted neither the GA4 event
+nor the Ads conversion.
+
+Both were gated the same way:
+
+```js
+if (GA_MEASUREMENT_ID && window.gtag) { ... }
+if (ADS_CONVERSION_SEND_TO && window.gtag) { ... }
+```
+
+`window.gtag` is defined only by the inline snippet. `gtag.js` — loaded
+separately by `DeferredGoogleTag` — fires enhanced-measurement `form_start`
+**without** that shim. That is exactly the fingerprint above: form_start alive,
+our two events dead. When the snippet has not run, `window.gtag &&` turns a
+conversion into a permanent silent loss: no retry, and nothing server-side
+records the miss. Which is why eleven days of it looked like a dead tag from
+Google's side and like nothing at all from ours.
+
+**Fixed in `57ced62`.** `queueMeasurementEvent` defines `dataLayer` and the shim,
+then pushes. gtag.js replays whatever is already in `dataLayer` when it loads, so
+the worst case is now an event that waits instead of one that never existed.
+
+**Verified on production, against the failure itself:** `window.gtag` deleted,
+form submitted → both events queued and two requests to
+`googleadservices.com/.../conversion/17817632790/?label=CZF4CMyQhPEbEJaAjrBC`
+went out. Under the old code both were dropped. Google now shows
+"Submit lead form (FIXED)" with **All conv. 1.00** and status **Awaiting
+conversions** — no longer Misconfigured.
+
+Also explained: `phone_click` reads zero before Aug 29 because
+`PhoneClickTracker` shipped that morning in `c872805`. Not a behaviour change.
+
+---
+
 ## CORRECTION (2026-09-04, later the same day) — the tag was never broken
 
 The finding below is right about the symptom and wrong about the cause. Root-caused
