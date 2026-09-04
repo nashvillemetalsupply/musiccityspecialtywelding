@@ -133,6 +133,57 @@ check watched configuration and none watched the outcome):
 
 ---
 
+### Read against the live account, same day
+
+`Submit lead form (FIXED)` now reads **Awaiting conversions**, not Misconfigured —
+Google has seen the three test pings. `Calls from ads` and
+`Business profile - Tracked call` read Awaiting conversions too.
+
+**The only account change in the window** (Change history, Aug 22 – Sep 4; the
+Conversion, Bidding, Audience, Location, Asset and Feed filters are all empty):
+
+> 2026-08-24 08:56:21, sales@ — MCW General Fab-Ad: budget **$26.21 → $40.00/day**
+
+| | Aug 5–23 | Aug 24 – Sep 3 |
+|---|---|---|
+| Impressions | 1,494 | 1,202 |
+| Clicks | 122 | 103 |
+| Cost | $474.07 | $460.78 |
+| Conversions | 16 (11 form, 5 phone) | **0** |
+| Clicks/day | 6.4 | 9.4 |
+| Avg CPC | $3.89 | $4.47 |
+
+The search terms are the same terms — "welders near me", "welding shops near me",
+"mobile welder repair near me", "custom metal fabrication". They converted at
+25–50% before Aug 24 and 0% after. So the traffic did not get worse. The campaign
+is **Search only** (Networks: Google Search Network — no Display), location 50 mi
+around Nashville, Maximize conversions, Campaign URL options: none. Network
+expansion, a tracking template and a settings change are all ruled out.
+
+51% of spend (49 of 103 clicks, $236.21) sits in privacy-thresholded "Other search
+terms" that negatives cannot reach.
+
+### Owner-gated, in priority order
+
+1. **Enhanced conversions** is flagged "setup issues impacting performance". Until
+   it is fixed, a click Google reports as `gbraid` (iOS and other limited-signal
+   traffic) cannot be tied to a conversion — and the one web lead after Aug 24
+   was exactly that shape. It sends hashed customer data to Google, so it is the
+   owner's call.
+2. **Create a "Calls from website visits" conversion action**, then set
+   `NEXT_PUBLIC_GOOGLE_ADS_PHONE_SEND_TO` in Vercel to its `AW-…/label`. The code
+   is already shipped and dormant. Of 30 leads in those eleven days almost all
+   were calls, and Google Ads saw none of them. This is the biggest single lever.
+   (The setup wizard was attempted here and duplicated "Calls from ads" rows
+   instead; it was backed out unsaved. Do it from Goals → Conversions → the
+   phone flow, or ask Google support.)
+3. **Remove the two disapproved `615-810-4910` call assets.**
+4. **Consider returning the budget to ~$26/day** until a conversion action is
+   recording again. Maximize conversions bidding at $40/day on a zero-conversion
+   signal is the most expensive configuration available.
+
+---
+
 ## CRITICAL FINDING — conversion tracking is dead
 
 Conversion action **“Submit lead form (FIXED)”** (`ctId=7484803148`, created 2/2/2026):
