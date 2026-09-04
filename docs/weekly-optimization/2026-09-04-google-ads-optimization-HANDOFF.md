@@ -4,8 +4,13 @@
 **Campaign:** MCW General Fab-Ad (`campaignId=23382574524`) · Search · $40.00/day
 **Browser used:** Chrome named **"WELDING"** (device `b7524098…` was the older one; the good session was the one the owner clicked Connect on)
 
-Status: **PAUSED MID-TASK.** One item blocked on a Google "Confirm it's you" re-authentication
-gate that only the account owner can clear. Everything else below is **saved and verified live**.
+Status: **COMPLETE.** Every item that can be done inside the Ads account is saved and
+verified live. What remains is owner-side only (website tag fix, replacement logo, and
+three business decisions) — listed at the bottom.
+
+**Campaign status improved during this pass:**
+`Eligible (Limited) + "Call asset is disapproved"` → **`Limited by budget`**
+Optimization score **60.4% → 64.5%**
 
 ---
 
@@ -198,23 +203,35 @@ disapproved for text overlay).
 Google estimated this at roughly **+4.1% CTR**. The campaign previously had **zero**
 campaign-level images.
 
-### 7. Location asset added
-Source set to **"All locations"** at campaign level. Whether it can actually serve
-depends on a Google Business Profile being linked to the Ads account — **not
-confirmed**, could not reach the linked-accounts page. Verify.
+### 7. Location asset added — VERIFIED SERVING
+Campaign level, source **"All locations"**. Confirmed live:
+`Business Profile: sales@musiccityspecialtywelding.com — All locations selected — Enabled`.
+The Business Profile **is** linked, so address, map pin and directions now attach to the ads.
+
+### 8. Second RSA created for Trailer / Truck Repair — LIVE
+Ad group went from **1 ad → 2**. Confirmed in the ads table as
+`Trailer Repair Near You | Mobile Trailer Welding | Trailer Frame Repair +12 more`
+on display path `musiccityspecialtywelding.com/trailer-repair/mobile-welding`.
+Ad strength **Average**. Copy exactly as specified below.
+
+The save required the owner to clear a Google **"Confirm it's you"** re-auth gate;
+once cleared it saved on the first attempt.
+
+### 9. Three disapproved assets paused
+All were dead weight — none could serve, and they were holding the campaign in
+`Eligible (Limited)`:
+- Call `6158104910` × 2 — *Disapproved (Unverified phone number)* → **Paused**
+- Image (MCS logo/text overlay) — *Disapproved (Text or graphic overlays)* → **Paused**
+
+Paused rather than removed, so all three are reversible.
+New call asset `6157033296` is now **Eligible** — approved, not just pending.
 
 ---
 
-## BLOCKED — needs the owner
+## The Trailer / Truck Repair RSA that was created
 
-### Trailer / Truck Repair second RSA (written, not saved)
-
-The ad group has only **one** ad. Its CTR is 2.82%, worst in the account. A second
-RSA gives Google something to test against.
-
-Fully composed and entered into the form; **Google threw a "Confirm it's you"
-re-authentication dialog on save.** That gate requires the account owner. The form
-state is lost on close — re-enter from this spec:
+Ad group had only **one** ad at 2.82% CTR — worst in the account. This second RSA
+gives Google something to test against. **Saved and live.** Spec as built:
 
 - **Ad group:** Trailer / Truck Repair (`adGroupId=191293470140`)
 - **Final URL:** `https://musiccityspecialtywelding.com/`
@@ -244,7 +261,7 @@ state is lost on close — re-enter from this spec:
 3. Send photos of the break. We tell you what it takes and when we can be there.
 4. Steel and aluminum trailer repair at your yard, shop or job site. Clean welds.
 
-Ad strength previewed as **Average**. Preview rendered correctly.
+Ad strength **Average**. 
 
 ⚠️ **Google's AI pre-fills the headline fields with generic filler** — "We Do It All",
 "We've Got You Covered", "No Matter The Job", "Get It Done Right", "Save Time And
@@ -252,19 +269,16 @@ Money". All banned by `BRAND-BRIEF.md`. Overwrite every one of the 15 slots.
 
 ---
 
-## TODO — not started
+## Still open — owner-side only
 
-1. **Retire 3 disapproved assets** (clears the campaign's "Eligible (Limited)" status):
-   - 2× Call asset `6158104910` — Disapproved (Unverified phone number)
-   - 1× Image — Disapproved (Text or graphic overlays) — the MCS-logo-overlay photo
-   - Pause rather than remove; reversible.
-2. **Business logo** — Disapproved *(Business Logo Irrelevance)*, account level, 0 impressions.
-   Needs a clean square logo file from the owner.
-3. **"Business profile - Tracked call"** conversion action is **not** included in
-   account-level goals, so those calls feed nothing. Judgment call: including it may
-   count non-ad organic calls. Owner's decision.
-4. **Verify the location asset can serve** (needs GBP linked).
-5. **Enhanced conversions** setup issue (campaign diagnostics).
+1. **Business logo** — Disapproved *(Business Logo Irrelevance)*, account level, 0 impressions.
+   Needs a clean square logo file from the owner. Cannot be fixed from inside Ads.
+2. **"Business profile - Tracked call"** conversion action is **not** included in
+   account-level goals, so those calls feed nothing. Left alone deliberately —
+   including it would likely count organic (non-ad) calls and inflate reported
+   conversions. Owner's call.
+3. **Enhanced conversions** setup issue (campaign diagnostics) — website-side.
+4. **The conversion tag itself** — see CRITICAL FINDING above. Top priority.
 
 ---
 
