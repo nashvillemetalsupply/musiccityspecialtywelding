@@ -2,6 +2,8 @@
 
 import { useEffect } from "react"
 
+import { ADS_PHONE_CONVERSION_SEND_TO } from "@/lib/measurement"
+
 export function PhoneClickTracker() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -17,6 +19,9 @@ export function PhoneClickTracker() {
         link_text: link.textContent?.trim().slice(0, 100) ?? "",
         page_location: window.location.href,
       })
+      if (ADS_PHONE_CONVERSION_SEND_TO) {
+        window.gtag("event", "conversion", { send_to: ADS_PHONE_CONVERSION_SEND_TO })
+      }
     }
 
     document.addEventListener("click", trackPhoneClick)

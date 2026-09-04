@@ -93,3 +93,32 @@ test("health reports how long the public quote form has been silent", () => {
     "The health monitor must run the live Ads tag probe.",
   )
 })
+
+test("a limited-signal ad click is still filed as paid", () => {
+  // lib/leads.ts reaches the database at import time, so pin the rule on the
+  // source rather than loading the module.
+  const leads = source("lib/leads.ts")
+  assert.ok(leads.includes('"gbraid="'), "gbraid must count as an ad click.")
+  assert.ok(leads.includes('"wbraid="'), "wbraid must count as an ad click.")
+  assert.ok(
+    leads.includes("landingPageIsAdClick(input.landingPage ?? \"\")"),
+    "deriveLeadSource must fall back to the landing page when gclid is absent.",
+  )
+})
+
+test("a phone tap can carry an Ads conversion", () => {
+  const measurement = source("lib/measurement.ts")
+  assert.ok(
+    measurement.includes("NEXT_PUBLIC_GOOGLE_ADS_PHONE_SEND_TO"),
+    "The phone conversion label must be configurable.",
+  )
+  const tracker = source("components/phone-click-tracker.tsx")
+  assert.ok(
+    tracker.includes('window.gtag("event", "conversion", { send_to: ADS_PHONE_CONVERSION_SEND_TO })'),
+    "A tel: tap must fire the Ads conversion when the label is set.",
+  )
+  assert.ok(
+    tracker.includes("if (ADS_PHONE_CONVERSION_SEND_TO)"),
+    "The phone conversion must stay off until a label exists.",
+  )
+})

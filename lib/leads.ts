@@ -104,13 +104,27 @@ export type NewLeadInput = {
   isTest: boolean
 }
 
+// Google stamps most ad clicks with gclid, but iOS and other limited-signal
+// clicks arrive carrying only gbraid or wbraid. Lead #161 on 2026-08-25 was a
+// real ad click filed as "direct" for exactly that reason, which is how a paid
+// lead disappears from the paid column. The landing page holds the evidence
+// either way, so read it when gclid is absent.
+const AD_CLICK_MARKERS = ["gclid=", "gbraid=", "wbraid=", "gad_source="]
+
+export function landingPageIsAdClick(landingPage: string): boolean {
+  const value = (landingPage || "").toLowerCase()
+  return AD_CLICK_MARKERS.some((marker) => value.includes(marker))
+}
+
 export function deriveLeadSource(input: {
   gclid: string
   utmSource: string
   utmMedium: string
   referrer: string
+  landingPage?: string
 }): string {
   if (input.gclid) return "google-ads"
+  if (landingPageIsAdClick(input.landingPage ?? "")) return "google-ads"
   if (input.utmSource) {
     return input.utmMedium ? `${input.utmSource}/${input.utmMedium}` : input.utmSource
   }
