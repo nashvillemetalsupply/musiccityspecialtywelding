@@ -77,11 +77,11 @@ conversion tracking was broken (see below). Do not size the budget off this yet.
 
 The account now carries **4** conversion actions, up from 3.
 
-**Left deliberately:** two `(615) 810-4910` call assets remain on the paused
-`Welding Services near me` and `ornamental` campaigns. They are inert while
-those campaigns are paused, but they carry the owner's old direct line and
-would fail verification the same way if either campaign is ever resumed.
-Replace them with `6157033296` before un-pausing.
+**Nothing left open.** The last two `(615) 810-4910` call assets, on the paused
+`Welding Services near me` and `ornamental` campaigns, were removed as well.
+The account now holds exactly one call asset: `6157033296` on MCW General
+Fab-Ad. Every reference to the owner's old direct line is gone, so neither
+paused campaign can inherit a disapproval if it is resumed.
 
 ---
 
