@@ -46,13 +46,37 @@ test("an accepted quote fires the Ads conversion", () => {
   const contact = source("components/mainstreet-contact.tsx")
   const accepted = contact.indexOf("data?.accepted !== true")
   assert.notEqual(accepted, -1, "The accepted-lead guard is gone.")
-  const fire = contact.indexOf("ADS_CONVERSION_SEND_TO && window.gtag")
+  const fire = contact.indexOf("if (ADS_CONVERSION_SEND_TO)")
   assert.ok(fire > accepted, "The conversion must fire after the lead is accepted, not before.")
   const call = contact.slice(fire, fire + 240)
   assert.ok(
-    call.includes('window.gtag("event", "conversion", { send_to: ADS_CONVERSION_SEND_TO })'),
+    call.includes('queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })'),
     "The conversion event must send to ADS_CONVERSION_SEND_TO.",
   )
+})
+
+test("a conversion is never dropped because gtag has not defined itself yet", () => {
+  // GA4 recorded enhanced-measurement form_start on 2026-08-25, 27 and 28 and
+  // zero generate_lead -- including the day lead #161 saved. Enhanced
+  // measurement comes from gtag.js and needs no shim; these events did, and
+  // `window.gtag &&` turned a missing shim into a permanent, silent loss.
+  const measurement = source("lib/measurement.ts")
+  assert.ok(
+    measurement.includes("export function queueMeasurementEvent"),
+    "queueMeasurementEvent must exist.",
+  )
+  assert.ok(
+    measurement.includes("target.dataLayer = target.dataLayer || []"),
+    "The queue must create dataLayer rather than assume it.",
+  )
+  for (const path of ["components/mainstreet-contact.tsx", "components/phone-click-tracker.tsx"]) {
+    const body = source(path)
+    assert.ok(
+      !/window\.gtag/.test(body.replace(/gtag\?: \(/g, "")),
+      `${path} must not read window.gtag directly; a falsy read drops the conversion for good.`,
+    )
+    assert.ok(body.includes("queueMeasurementEvent"), `${path} must queue its events.`)
+  }
 })
 
 test("the internal-verification guard never disables the tag for ordinary traffic", () => {
@@ -114,7 +138,7 @@ test("a phone tap can carry an Ads conversion", () => {
   )
   const tracker = source("components/phone-click-tracker.tsx")
   assert.ok(
-    tracker.includes('window.gtag("event", "conversion", { send_to: ADS_PHONE_CONVERSION_SEND_TO })'),
+    tracker.includes('queueMeasurementEvent("conversion", { send_to: ADS_PHONE_CONVERSION_SEND_TO })'),
     "A tel: tap must fire the Ads conversion when the label is set.",
   )
   assert.ok(

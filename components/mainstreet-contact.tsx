@@ -4,7 +4,7 @@ import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
 import { captureAttribution } from "@/lib/attribution"
-import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID } from "@/lib/measurement"
+import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID, queueMeasurementEvent } from "@/lib/measurement"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 import { QUOTE_SERVICE_OPTIONS } from "@/lib/public-quote.mjs"
 
@@ -157,15 +157,15 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
         setWarning(data.warning)
       }
 
-      if (GA_MEASUREMENT_ID && window.gtag) {
-        window.gtag("event", "generate_lead", {
+      if (GA_MEASUREMENT_ID) {
+        queueMeasurementEvent("generate_lead", {
           send_to: GA_MEASUREMENT_ID,
           lead_source: "website_quote_form",
           service_requested: formData.service,
         })
       }
-      if (ADS_CONVERSION_SEND_TO && window.gtag) {
-        window.gtag("event", "conversion", { send_to: ADS_CONVERSION_SEND_TO })
+      if (ADS_CONVERSION_SEND_TO) {
+        queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
       }
 
       previews.forEach((url) => URL.revokeObjectURL(url))

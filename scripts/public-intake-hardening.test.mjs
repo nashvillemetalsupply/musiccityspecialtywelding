@@ -57,7 +57,13 @@ test("only accepted leads emit conversions and public text cannot mark itself in
   assert.match(quote, /isAuthorizedCron\(req\)\s*&&\s*projectDetails\.includes\("\[INTERNAL TEST\]"\)/)
   assert.match(quote, /accepted: true/)
   assert.match(client, /data\?\.accepted !== true/)
-  assert.ok(client.indexOf("data?.accepted !== true") < client.indexOf('window.gtag("event", "generate_lead"'))
+  // The call shape moved to queueMeasurementEvent on 2026-09-04 so a missing
+  // window.gtag can no longer drop the event; the ordering invariant is the
+  // point and is unchanged.
+  assert.ok(
+    client.indexOf("data?.accepted !== true") <
+      client.indexOf('queueMeasurementEvent("generate_lead"'),
+  )
 })
 
 test("notification failure cannot turn a durably accepted lead into a client error", () => {
