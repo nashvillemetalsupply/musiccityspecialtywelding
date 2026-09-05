@@ -1016,6 +1016,138 @@ git add app/globals.css styles/ops-legacy.css app/ops/layout.tsx app/board scrip
 git commit -m "refactor(css): the live ops rules move to ops-legacy.css; 5,300 dead lines and nine rejected preview routes go"
 ```
 
+#### Pre-flight inventory — 2026-09-05
+
+A read-only survey of `app/globals.css` ran before this task was scheduled, so the
+hard-to-reverse session does no discovery of its own. It found **four errors in
+the task as written above**. Read these before Step 1.
+
+**Correction A — the plan names three board pages for the import. It is four.**
+`app/board/page.tsx` renders `.ops-recovery-control` and `.ops-sr-only` (through
+`board.tsx` and `recovery-control.tsx`), and their only rules are in
+`globals.css`. Omitting it leaves `/board` broken. Per-route need, measured:
+
+| route | classes whose only rules are in `globals.css` |
+|---|---|
+| `/board` | `.ops-followup-current .ops-ghost .ops-recovery-control .ops-sr-only` |
+| `/board/calls` | `.ops-followup-current .ops-ghost` |
+| `/board/customers` | `.ops-followup-current .ops-ghost` |
+| `/board/updates` | `.ops-followup-current .ops-ghost` + `@keyframes paid-land` |
+
+There is no `app/board/layout.tsx`; each board page carries its own CSS, and each
+route CSS opens with `@import "../../styles/control.css"`.
+
+**Correction B — `app/design-preview/` is 7 routes, not nine.** Seven `page.tsx`,
+one `layout.tsx`, two client components, six CSS files: 16 files. Nothing in
+`app/`, `components/` or `lib/` links to them; the three cross-links are internal
+to the folder. Two path *strings* name the URL prefix and must stay:
+`app/robots.ts:11` and `components/public-analytics.tsx:10`.
+
+**Correction C — `.ops-filters a.is-active` (1910) is a DELETE, not a MOVE.**
+`ops-filters` is rendered by no file; every `.ops-filters*` arm at 1887–1920 and
+3546–3548 is dead. Only `.ops-filters .ops-ghost` (1922) and
+`.ops-main > .ops-filters .ops-followup-current` (3977) move. The plan's other
+half is right: `.ops-done-voice.is-listening` (4479) is a MOVE.
+
+**Correction D — `scripts/dead-css.test.mjs` cannot pass as written.** Its second
+test asserts `used ⊆ defined` *and* `defined ⊆ used`. Both directions fail, and
+neither failure is a defect in the retirement:
+
+- **79 of the 137 used tokens have no rule in `globals.css` at all.** They are
+  styled by route CSS (all 35 `ops-builds-*` live in `builds.css`), or they are
+  not class names — `ops-auth` is a cookie, `ops-sw` and `ops-service-worker` are
+  service-worker registrations, `ops-dashboard` and `ops-data` are revalidate
+  tags, `ops-reply` and `ops-sms-reply` are idempotency keys,
+  `ops-handset-question` and `ops-login-message` are DOM ids, and
+  `ops-code`/`ops-email`/`ops-phone` are form field names. A grep for
+  `ops-[a-z0-9-]*` cannot tell a class from any other `ops-`-prefixed string.
+- **20 names ride into `ops-legacy.css` on MOVE arms without being rendered
+  themselves**, because they are ancestor selectors — `.ops-main .ops-ghost`,
+  `.ops-work-order-vnext > .ops-header`, and so on. The list:
+  `.ops-account-page .ops-account-people .ops-add-job-action .ops-card
+  .ops-filters .ops-header-actions .ops-job-row .ops-kicker .ops-login .ops-main
+  .ops-more-view .ops-phone-row .ops-row-actions .ops-shop-page .ops-sub
+  .ops-table-wrap .ops-ticket-actions .ops-ticket-urgent .ops-wall-vnext
+  .ops-work-order-vnext`. This is a direct consequence of the plan's own arm rule.
+
+Pin the assertion that is actually worth pinning instead:
+
+```js
+// every used ops class that HAD a rule in globals.css still has one
+for (const c of used) if (oldGlobalsDefined.has(c)) assert.ok(legacyDefined.has(c), `${c} lost its rule`)
+// nothing survives that is not reachable from a used class
+for (const c of legacyDefined) assert.ok(used.has(c) || ANCESTOR_ALLOWLIST.has(c), `${c} has a rule but nothing renders it`)
+```
+
+The first direction was verified to hold today: every used class with a rule in
+`globals.css` is covered by a MOVE arm, zero misses. Tests 1 and 3 are fine as
+written.
+
+**Two suites break the moment `app/design-preview/` is deleted, and must be fixed
+in the same commit:**
+
+- `scripts/public-discovery-regressions.test.mjs:38–45` reads
+  `app/design-preview/layout.tsx`. Delete the whole test.
+- `scripts/recent-regressions.test.mjs:40–53` reads five preview pages. Delete
+  the whole test. **This suite is in `test:shop-brain`**, so it breaks the gate.
+- `scripts/recent-regressions.test.mjs:92` iterates a list containing
+  `"/design-preview"` against `public-analytics.tsx` and passes unchanged, as long
+  as that string stays in the component.
+
+**Bucket counts**, from a brace-depth parser that respects `@media` nesting and
+splits selector lists on top-level commas:
+
+```
+ARMS    MOVE=458   DELETE=1749  KEEP=900   total=3107
+BLOCKS  MOVE=384   DELETE=1337  KEEP=782   MIXED=44   total=2547
+```
+
+Indicative lines: DELETE ≈ 3,633 · KEEP ≈ 2,810 · MOVE ≈ 1,038 · MIXED ≈ 273. The
+`globals.css < 4000` assertion in test 1 is achievable. 78 distinct `.ops-*` names
+appear in MOVE arms; 157 appear only in DELETE arms.
+
+**Hazards, confirmed:**
+
+- **`@keyframes`.** `paid-land` (4358) is referenced by `.ops-paid-moment` and
+  **moves with it** — `/board/updates` restyles `.ops-paid-moment` in its own CSS
+  but has no keyframe, so that route needs the import or the modal stops
+  animating. `done-hold` (4484) and `money-odometer` (5385) are referenced only by
+  DELETE arms and go with them. `wm-flicker` and `sw-buzz` are marketing.
+- **Custom properties separate cleanly.** No MOVE arm reads a property declared in
+  a KEEP or DELETE block. `--ms-*` and the five `--ops-*` are declared on
+  `.ops-shell`, itself a MOVE arm, and read only by MOVE/DELETE. The marketing
+  `--mx-*` are declared on `.ms-site` and read only by KEEP.
+- **`app/globals.css:3` is `@import "../tokens.css"` and is load-bearing.**
+  `tokens.css` declares every `--color-*`, `--space-*`, `--radius-*` and font
+  variable that 54 moved properties depend on. Do not remove it, and do **not**
+  add a second `@import "../tokens.css"` to `ops-legacy.css` — Tailwind inlines it
+  twice.
+- **`@theme inline` at 81–121 must stay.** It holds declarations, not rules, so an
+  arm-counting classifier reports it empty in all three buckets.
+- **44 MIXED blocks must be split.** Recurring shapes: `.glass-page` bundled with
+  `.ops-main`/`.ops-login` (4099–4108, 4240–4254, 4767–4769 — the glass arms are
+  `/j/[token]` and stay); `.ops-work-order-vnext > *` fan-outs;
+  `.ops-tracked-call` paired with a dead sibling; `.ops-login > .ops-alert` inside
+  dead login lists.
+- **The two named interleaving traps are exactly where the plan says.**
+  `.ms-site > header.ms-nav` opens at 3492 (block 3492–3496), and the KEEP glass
+  region ends at exactly 8021, with `.ops-work-order-vnext .ops-spike-attachments`
+  starting a 230-line DELETE run at 8025.
+- **There are no `.public-*` classes in `globals.css`.** The "public stub" this
+  task refers to is `html, body { overflow-x: clip }` at 4096–4097.
+- **Cascade order flips, and the fingerprint is what catches it.** Today `/ops`
+  loads `globals.css` (root layout) → `control.css` → `ops-shell.css`. After the
+  move it is `control.css` → `ops-legacy.css` → `ops-shell.css`: the legacy rules
+  go from *before* `control.css` to *after* it, so equal-specificity conflicts
+  invert. If the fingerprint diff fires, import `ops-legacy.css` **before**
+  `control.css`. Do not add a selector to win it back.
+
+**Regenerate before starting.** The used-class list moved twice during the survey
+itself (`ops-handset-speak` and `ops-login-message` appeared mid-pass). Re-run
+`git grep -ho "ops-[a-z0-9-]*" -- "app/board" "app/ops" "components" | sort -u`
+and re-run the classifier at the top of the session rather than trusting the
+counts above.
+
 ---
 
 ### Task 6: Exit verification — the after table, the owner walk, the record
