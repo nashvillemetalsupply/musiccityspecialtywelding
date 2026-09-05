@@ -1,5 +1,7 @@
 @import "../../styles/control.css";
 
+.empty-state{max-width:56ch;margin:var(--s8) auto;padding:0 var(--s4);display:grid;gap:var(--s4)}
+
 /* ===========================================================================
    MCS Welding · Job Control — final
 
@@ -514,7 +516,6 @@ svg{display:block}
   .figures .figure h4,.figures .figure .n span,.figures .figure .under{color:#333!important}
 }
 
-@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms !important}}
 
 /* ===========================================================================
    THE MIN-WIDTH LAYERS

@@ -151,8 +151,6 @@
    second copy of the ladder outside the file that owns it. */
 .ops-shell{--w-reg:400; --w-med:480; --w-semi:620}
 
-:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
-
 /* Chivo carries anything that is seen rather than read, at the house's heavy
    end. Everything at reading size stays on Golos at 420-640. */
 .t-display{font-family:var(--font-display);font-size:var(--t-display);
@@ -172,7 +170,7 @@
   background:var(--surface-raised);transition:box-shadow .15s var(--ease)}
 .find:focus-within{box-shadow:0 0 0 2px var(--focus)}
 /* Preserve the standalone mockup's native input metrics after Tailwind preflight. */
-.find input{flex:1;border:0;padding:1px 2px;background:none;outline:none;font:inherit;color:var(--text-primary)}
+.find input{flex:1;border:0;padding:1px 2px;background:none;font:inherit;color:var(--text-primary)}
 .find input::placeholder{color:var(--text-muted)}
 
 .btn{height:var(--control);padding:0 var(--s3);border-radius:var(--r-md);
@@ -185,6 +183,12 @@
 .btn--go:hover{background:var(--action);color:var(--action-ink);filter:brightness(1.16)}
 .btn--edge{box-shadow:inset 0 0 0 1px var(--border);color:var(--text-primary)}
 .btn--sm{height:28px;padding:0 var(--s3);font-size:var(--t-label)}
+.skip{position:absolute;left:var(--s4);top:-100px;z-index:100;height:44px;
+  display:inline-flex;align-items:center;padding:0 var(--s4);
+  background:var(--action);color:var(--action-ink);font-weight:var(--w-semi);
+  border-radius:var(--r-md)}
+.skip:focus-visible{top:var(--s2);outline:2px solid var(--focus);outline-offset:2px}
+
 .icon{width:var(--control);height:var(--control);border-radius:var(--r-md);
   display:grid;place-items:center;color:var(--text-muted);
   transition:background .15s var(--ease),color .15s var(--ease)}
@@ -208,9 +212,32 @@
   .find{height:44px}
 }
 
-.logo-home:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.figure :focus-visible{outline:2px solid var(--on-field);outline-offset:2px}
-.btn--go:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+/* One ring, everywhere. Components do not restate it; the two coloured
+   fields override only the ring colour so it stays visible on the field. */
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.figure :focus-visible{outline-color:var(--on-field)}
+
+/* Motion is a courtesy, not information. Nothing here conveys state by
+   moving, so stopping it loses nothing. Global so /ops stops too. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms !important;animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;scroll-behavior:auto !important}
+}
+
+/* Windows High Contrast strips backgrounds. Every control that showed its
+   state as a fill shows it as a border instead. */
+@media (forced-colors:active){
+  .chip,.tab,.btn,.skip,.find{border:1px solid ButtonText}
+  .tab[aria-pressed="true"],.tab[aria-current="page"]{border:2px solid Highlight}
+  .btn--go{border:2px solid ButtonText}
+  .chip i{background:CanvasText}
+  .cust svg{stroke:CanvasText}
+}
+
+/* The reader asked the OS for more contrast: the quiet tier steps up one. */
+@media (prefers-contrast:more){
+  :root,.ops-shell{--text-muted:var(--text-secondary);--border:var(--border-strong);--border-subtle:var(--border)}
+}
 
 /* ============================================================ legacy tokens ==
    The marketing site's tokens (tokens.css: near-black ink on white paper) are still
