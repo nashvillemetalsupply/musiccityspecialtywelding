@@ -22,6 +22,21 @@
 - New test files are added to the `test:shop-brain` list in `package.json` in the task that creates them.
 - `npm run dev` does not work in a worktree. Verify on the Vercel preview for the branch with `node scripts/create-local-login.mjs` (swap `localhost:3030` for the preview host).
 - Root-only jobs: `npm i`, `npx playwright install chromium`. `node_modules` is junctioned into worktrees.
+- **`.next` is junctioned into worktrees too, and it makes `tsc` lie.** `tsconfig.json`
+  includes `.next/types/**/*.ts`, and that junction points at the *root* checkout's
+  generated route validator. So a worktree that deletes a route typechecks against a
+  validator that still imports it, and `tsc` reports
+  `TS2307: Cannot find module '../../app/<deleted route>/layout.js'` — an error about a
+  file the branch deliberately removed, generated from a different working tree. It is
+  an artefact, not a type error. Remove the **link** inside your worktree
+  (`rm .next` — plain `rm`, which unlinks the symlink and never touches the target) and
+  re-run. Verify the root's `.next` still exists afterwards. Task 5 and its integrator
+  both hit this; the root's stale `.next` will report the same phantom until it is
+  rebuilt.
+- **`npx next build` cannot run in a worktree at all.** Turbopack rejects the junctioned
+  `node_modules` with `Symlink [project]/node_modules is invalid, it points out of the
+  filesystem root`. The client-bundle gate is therefore verified on the Vercel preview
+  build, not locally — which is what happened this round, and it passed.
 - Codex sandbox has no network: any step that hits the preview (the gate, DevTools checks, owner walk) runs in a Claude session, not Codex.
 - Crew sees no money, no per-worker figures, no surveillance surface. This round adds none; the exit task re-checks.
 
@@ -531,7 +546,7 @@ Add `scripts/type-system.test.mjs` to `test:shop-brain`. Run `npm run typecheck`
 
 Push the branch, open the Vercel preview signed in. DevTools → Network → filter `font`: both faces from `/_next/static/media/`, nothing from `googleapis`. Walk `/board` on desktop and at 375: nothing under 14px (run `npm run test:qa` against the preview and read the `min font` column). **Owner eyeballs the preview.** Do not open Task 2 until approved.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add app/fonts.ts styles/control.css app/board app/ops scripts/type-system.test.mjs package.json
@@ -553,7 +568,7 @@ git commit -m "feat(type): one scale with a 14px floor, one weight ladder, fonts
 - Produces: `<SkipLink />` (server component) rendering `<a className="skip" href="#main">Skip to the job tracker</a>` on `/board` and `Skip to content` elsewhere (prop `label`).
 - Produces: `main#main` on every route, `tabIndex={-1}` so `#main` receives focus in every browser.
 
-- [ ] **Step 1: Write the failing pin**
+- [x] **Step 1: Write the failing pin**
 
 `scripts/landmarks.test.mjs`:
 
@@ -607,11 +622,11 @@ test("/board has its own error, not-found and loading surfaces in the board lang
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/landmarks.test.mjs` → FAIL (no skip-link file, nested mains, missing titles).
 
-- [ ] **Step 3: The skip link**
+- [x] **Step 3: The skip link**
 
 `app/board/skip-link.tsx`:
 
@@ -634,7 +649,7 @@ export function SkipLink({ label = "Skip to content" }: { label?: string }) {
 .skip:focus-visible{top:var(--s2);outline:2px solid var(--focus);outline-offset:2px}
 ```
 
-- [ ] **Step 4: One main, one h1 per route**
+- [x] **Step 4: One main, one h1 per route**
 
 `app/board/board.tsx`: render `<SkipLink label="Skip to the job tracker" />` as the first child of `<div className="app">`; wrap the tracker + figures + calls column in `<main id="main" tabIndex={-1}>` (the rail stays a `<nav aria-label="Board">`; the live-call card is an `<aside aria-label="Last call">`). The board's `h1` is the visible "Job tracker" heading — `board.tsx:481` is `<h2 className="t-title">Job tracker</h2>`; make it `h1` (the `.t-title` class keeps its size, so nothing visibly changes); every other heading on the page steps down one level so none skips.
 
@@ -644,11 +659,11 @@ The three satellites (`calls`, `customers`, `updates`) already render one `<main
 
 `app/ops/ops-header.tsx`: `<SkipLink />` first in the header's JSX.
 
-- [ ] **Step 5: Titles**
+- [x] **Step 5: Titles**
 
 Every page without `export const metadata` gets one, in the pattern the ops layout already uses: `` export const metadata = { title: "Job tracker · MCSW Jobs" } ``. Dynamic pages (`leads/[id]`, `accounts/[id]`, `intake/[draftId]`) use `generateMetadata` returning `` `${name} · MCSW Jobs` ``.
 
-- [ ] **Step 6: Board error surfaces**
+- [x] **Step 6: Board error surfaces**
 
 `app/board/not-found.tsx`:
 
@@ -673,7 +688,7 @@ export default function BoardNotFound() {
 
 `node --test scripts/landmarks.test.mjs` → PASS. Add to `test:shop-brain`. `npm run typecheck && npm run lint && npm run test:shop-brain` → green. On the preview: Tab once on `/board` (skip link visible), Enter (focus on main), `/board/nope` → the not-found page. `npm run test:qa` → `h1`, `main`, `skip` columns all `1 / 1 / true`. **Owner eyeballs.**
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/board app/ops scripts/landmarks.test.mjs styles/control.css package.json
@@ -784,7 +799,7 @@ and `aria-busy={pending}` on the `<form>`, with the submit button `disabled={pen
 
 `node --test scripts/form-affordances.test.mjs` → PASS. Add to `test:shop-brain`. Suites green. On a phone against the preview: `/ops/intake/new`, tap phone (tel keypad), tap name (autofill chip), submit empty (focus and error text). `npm run test:qa` → the axe `label` and `aria-*` rule ids are gone from the intake rows. **Owner eyeballs** (the form looks the same; the check is the keypad and the autofill).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/ops app/board scripts/form-affordances.test.mjs package.json
@@ -803,7 +818,7 @@ git commit -m "feat(forms): autofill, the right keypad, labels, and focus on the
 **Interfaces:**
 - Produces: `control.css` rules the whole app inherits — no per-component `:focus-visible` overrides remain except where the ring colour must change on a coloured field (`.figure :focus-visible` keeps `--on-field`).
 
-- [ ] **Step 1: Write the failing pin**
+- [x] **Step 1: Write the failing pin**
 
 `scripts/modes.test.mjs`:
 
@@ -847,11 +862,11 @@ test("the tracker's service drawing stays named", () => {
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/modes.test.mjs` → FAIL.
 
-- [ ] **Step 3: The four blocks in `control.css`**
+- [x] **Step 3: The four blocks in `control.css`**
 
 Append after the touch-target block:
 
@@ -885,7 +900,7 @@ Append after the touch-target block:
 
 Delete the per-component `:focus-visible` rules in `control.css` (`.logo-home:focus-visible`, `.btn--go:focus-visible`) — the global rule replaces them; keep `.figure :focus-visible{outline-color:var(--on-field)}`. Delete `board.css:509`. Fix the one `outline:none` by removing it (the global ring now applies) or, if it is on `.find input`, leave it — `.find:focus-within` already draws the ring on the wrapper.
 
-- [ ] **Step 4: Colour-only states**
+- [x] **Step 4: Colour-only states**
 
 Walk every place a state is a colour: `.chip` (dot + text — fine), the tracker's service SVG (`role="img"` + label — fine, pinned), the heard-price link (text — fine), the theme toggle and rail icons (`aria-label` — fine). The one to fix if found: any `.c-wait` age that turns red past a threshold without a word — add `<span className="sr-only">overdue</span>` there. Record in the commit body what was checked and what changed; if nothing changed, say so.
 
@@ -893,7 +908,7 @@ Walk every place a state is a colour: `.chip` (dot + text — fine), the tracker
 
 `node --test scripts/modes.test.mjs` → PASS. Add to `test:shop-brain`. Suites green. On the preview: keyboard through `/board` and a job page (every control shows the ring); DevTools → Rendering → `prefers-reduced-motion: reduce` (theme toggle and row expand snap, no animation); Windows contrast theme on (chips/tabs/buttons bordered). `npm run test:qa` → no `color-contrast` ids anywhere. **Owner eyeballs** (in the default modes nothing visibly changes except a consistent focus ring).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add styles/control.css app/board scripts/modes.test.mjs package.json
