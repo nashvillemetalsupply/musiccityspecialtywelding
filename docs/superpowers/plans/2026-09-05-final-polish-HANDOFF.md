@@ -192,6 +192,46 @@ regenerate it.
     rather than exiting, and messaging them to stop restarts their turn and
     resets the idle clock, which is what kept them alive.
 
+    **They will not age out either, and the reason is a Shepherd bug worth
+    fixing.** `.shepherd-state.json` at the Shepherd root still registers a
+    whole project tree that no longer exists on disk:
+
+    ```
+    C:/Users/Owner/Desktop/Shepherd/.shepherd-bridge/w25-disposable
+    C:/Users/Owner/Desktop/Shepherd/.shepherd-bridge/w25-disposable/.worktrees/c4b-real-check-one-print
+    C:/Users/Owner/Desktop/Shepherd/.shepherd-bridge/w25-disposable/.worktrees/w25-one-append-a-line
+    …and several more
+    ```
+
+    Any pass that walks registered projects dies on it:
+
+    ```
+    FAIL exit-check could not inspect run-factory-on-c-users-2:
+      git worktree list --porcelain failed: fatal: cannot change to
+      '…\.shepherd-bridge\w25-disposable': No such file or directory
+    ```
+
+    That is one dead registration failing the inspection *of an unrelated
+    task in an unrelated project*. Two earlier children (P2, P4) did clear, so
+    the reconcile is not dead — it is dying partway through, which is exactly
+    the shape that leaves some tasks finished and others stuck forever with no
+    error anyone reads.
+
+    **The durable fix is in Shepherd, not here:** prune registrations whose
+    directory is gone, and make the project walk skip an unreachable root with
+    a `REPORT` instead of failing the whole inspection — it already does
+    exactly that for five *other* dead paths (`b2f-disposable`,
+    `wave15-disposable`, `Text_Phil_Products`, `wetherby-radar`, a
+    `wave-25-re-run-task-b2` temp dir), which is why they appear as REPORT
+    lines rather than FAILs. `w25-disposable` is reached by a different code
+    path that does not have that guard.
+
+    This round did **not** edit `.shepherd-state.json`: it is outside this
+    worktree, outside this project, and written live by the running bridge.
+    `CLAUDE.md` forbids modifying anything outside your worktree to satisfy a
+    gate, and hand-editing live state under a running bridge risks a lost
+    update.
+
     Clear with, from the console or cockpit:
 
     ```
