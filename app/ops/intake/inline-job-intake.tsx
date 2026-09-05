@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useActionState, useState } from "react"
+import { useActionState, useEffect, useRef, useState } from "react"
 import "./intake.css"
 import { SafeActionButton, SafeSubmitButton } from "../safe-action-controls"
 import { VoiceCaptureButton } from "../voice-capture-button"
@@ -76,6 +76,25 @@ export function InlineJobIntake({
     else setWalkInFields(next)
   }
   const canSave = Boolean(fields.name.trim() && (inbound || fields.need.trim()))
+  const formRef = useRef<HTMLFormElement>(null)
+  // Reflects the fields the browser's own constraint check rejected. No new rules:
+  // the only source of truth is the `required` attributes already on the fields.
+  const [invalid, setInvalid] = useState<Record<string, boolean>>({})
+  const flag = (name: string) => ({
+    "aria-invalid": invalid[name] ? ("true" as const) : undefined,
+    onInvalid: () => setInvalid((current) => ({ ...current, [name]: true })),
+    onInput: () => setInvalid((current) => (current[name] ? { ...current, [name]: false } : current)),
+  })
+  const saveFailed = saveState.status === "error"
+
+  // After a submit that failed, put the keyboard on the first field at fault.
+  useEffect(() => {
+    if (!saveFailed && !Object.values(invalid).some(Boolean)) return
+    const form = formRef.current
+    if (!form) return
+    const target = form.querySelector<HTMLElement>('[aria-invalid="true"]') ?? form.querySelector<HTMLElement>(":invalid")
+    target?.focus()
+  }, [saveFailed, invalid])
 
   function switchSource(next: IntakeSource) {
     setSource(next)
@@ -194,56 +213,67 @@ export function InlineJobIntake({
       </div>
     </header>
 
-    {(activeDraft?.lastError || actionError || saveState.status === "error") && <p className="intake-alert" role="alert">{actionError || (saveState.status === "error" ? saveState.message : activeDraft?.lastError)}</p>}
+    {(activeDraft?.lastError || actionError || saveState.status === "error") && <p className="intake-alert" role="alert" id="jobs-inline-error">{actionError || (saveState.status === "error" ? saveState.message : activeDraft?.lastError)}</p>}
 
     {owner && inbound && <LiveCallSketch draftId={activeDraft!.publicId} />}
 
-    <form action={saveAction} className="intake-form" aria-busy={savePending}>
+    <form ref={formRef} action={saveAction} className="intake-form" aria-busy={savePending}>
       {inbound ? <input type="hidden" name="draftId" value={activeDraft!.publicId} /> : <>
         <input type="hidden" name="source" value={source} />
         <input type="hidden" name="intakeKey" value={manualIntakeKey} />
       </>}
 
       <div className="intake-person">
-        <label className="intake-name">
+        <label className="intake-name" htmlFor="jobs-inline-name">
           <span className="intake-sr-only">Customer or company name</span>
           <input
+            id="jobs-inline-name"
             name="firstName"
-            value={fields.name}
-            onChange={(event) => setFields((current) => ({ ...current, name: event.target.value }))}
-            placeholder="Name or company"
+            type="text"
             autoComplete="name"
+            spellCheck={false}
+            placeholder="Name or company"
             required
             aria-required="true"
+            aria-describedby={saveFailed ? "jobs-inline-error" : undefined}
+            value={fields.name}
+            {...flag("firstName")}
+            onChange={(event) => setFields((current) => ({ ...current, name: event.target.value }))}
           />
         </label>
         <div className={`intake-phone${source === "walk-in" ? " is-walk-in" : ""}`}>
           <span>{source === "phone-in" ? "called from" : "Phone (optional)"}</span>
-          <label>
+          <label htmlFor="jobs-inline-phone">
             <span className="intake-sr-only">Phone number</span>
             <input
+              id="jobs-inline-phone"
               name="phone"
-              value={fields.phone}
-              onChange={(event) => setFields((current) => ({ ...current, phone: event.target.value }))}
               type="tel"
               inputMode="tel"
               autoComplete="tel"
               placeholder={source === "walk-in" ? "(615) 555-0123" : undefined}
+              value={fields.phone}
+              {...flag("phone")}
+              onChange={(event) => setFields((current) => ({ ...current, phone: event.target.value }))}
             />
           </label>
         </div>
       </div>
 
-      <label className="intake-need">
+      <label className="intake-need" htmlFor="jobs-inline-need">
         <span>{inbound ? "Needs (optional)" : "Needs"}</span>
         <textarea
+          id="jobs-inline-need"
           name="message"
-          value={fields.need}
-          onChange={(event) => setFields((current) => ({ ...current, need: event.target.value }))}
+          autoComplete="off"
           placeholder={source === "walk-in" ? "What did they bring in?" : "Gate, trailer, repair, fabrication…"}
           rows={2}
           required={!inbound}
           aria-required={!inbound}
+          aria-describedby={saveFailed ? "jobs-inline-error" : undefined}
+          value={fields.need}
+          {...flag("message")}
+          onChange={(event) => setFields((current) => ({ ...current, need: event.target.value }))}
         />
       </label>
 
@@ -260,8 +290,8 @@ export function InlineJobIntake({
       </div>
 
       {moreOpen && <div className="intake-more" id="jobs-inline-more">
-        <label><span>Service</span><select name="service" defaultValue=""><option value="">Not set</option><option>Mobile Welding (On-Site)</option><option>Trailer / Truck Welding Repair</option><option>Equipment &amp; Structural Repair</option><option>Architectural Welding &amp; Fabrication</option><option>Specialty Fabrication</option><option>Aluminum / Boat Welding</option><option>Not Sure / Other</option></select></label>
-        <label><span>How they found us</span><select name="referral" defaultValue=""><option value="">Not asked</option><option>Google</option><option>Repeat customer</option><option>Referral</option><option>Facebook or Instagram</option><option>Other</option></select></label>
+        <label htmlFor="jobs-inline-service"><span>Service</span><select id="jobs-inline-service" name="service" defaultValue=""><option value="">Not set</option><option>Mobile Welding (On-Site)</option><option>Trailer / Truck Welding Repair</option><option>Equipment &amp; Structural Repair</option><option>Architectural Welding &amp; Fabrication</option><option>Specialty Fabrication</option><option>Aluminum / Boat Welding</option><option>Not Sure / Other</option></select></label>
+        <label htmlFor="jobs-inline-referral"><span>How they found us</span><select id="jobs-inline-referral" name="referral" defaultValue=""><option value="">Not asked</option><option>Google</option><option>Repeat customer</option><option>Referral</option><option>Facebook or Instagram</option><option>Other</option></select></label>
       </div>}
 
       <div className="intake-actions">

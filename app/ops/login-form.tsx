@@ -119,7 +119,7 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
 
   const chooseMode = (next: "email" | "sms") => { setMode(next); resetDelivery() }
 
-  return <main style={ground}>
+  return <div style={ground}>
     <div style={card}>
       <div style={plate}>
         <div style={mark}>
@@ -143,22 +143,22 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
           {smsReady && (!picked || picked.hasSms) && <button type="button" aria-pressed={mode === "sms"} style={pick(mode === "sms")} onClick={() => chooseMode("sms")}><strong className="t-data">Text code</strong><span className="t-caption">Six digits</span></button>}
         </div>
 
-        {mode === "email" ? <form onSubmit={submitEmail} style={stack}>
-          {picked ? <p className="t-caption">Send the one-tap key to {picked.name}&apos;s shop email.</p> : <><label className="t-label" htmlFor="ops-email">Your email</label><input id="ops-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={field} /></>}
+        {mode === "email" ? <form onSubmit={submitEmail} style={stack} aria-busy={state === "sending"}>
+          {picked ? <p className="t-caption">Send the one-tap key to {picked.name}&apos;s shop email.</p> : <><label className="t-label" htmlFor="ops-email">Your email</label><input id="ops-email" aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? "ops-login-message" : undefined} type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={field} /></>}
           <button type="submit" className="btn btn--go" style={wide(state === "sending")} disabled={state === "sending"}>{state === "sending" ? "Sending..." : "Send my link"}</button>
-        </form> : codeRequested ? <form onSubmit={verifyCode} style={stack}>
-          <label className="t-label" htmlFor="ops-code">Six-digit code</label><input id="ops-code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} required style={field} />
+        </form> : codeRequested ? <form onSubmit={verifyCode} style={stack} aria-busy={state === "sending"}>
+          <label className="t-label" htmlFor="ops-code">Six-digit code</label><input id="ops-code" aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? "ops-login-message" : undefined} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} required style={field} />
           <button type="submit" className="btn btn--go" style={wide(state === "sending")} disabled={state === "sending"}>{state === "sending" ? "Checking..." : "Sign in"}</button>
           <button type="button" className="btn btn--edge" style={wide()} onClick={resetDelivery}>Send another code</button>
-        </form> : <form onSubmit={requestCode} style={stack}>
-          {picked ? <p className="t-caption">Text six shop digits to {picked.name}&apos;s phone.</p> : <><label className="t-label" htmlFor="ops-phone">Your cell number</label><input id="ops-phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required style={field} /></>}
+        </form> : <form onSubmit={requestCode} style={stack} aria-busy={state === "sending"}>
+          {picked ? <p className="t-caption">Text six shop digits to {picked.name}&apos;s phone.</p> : <><label className="t-label" htmlFor="ops-phone">Your cell number</label><input id="ops-phone" aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? "ops-login-message" : undefined} type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required style={field} /></>}
           <button type="submit" className="btn btn--go" style={wide(state === "sending")} disabled={state === "sending"}>{state === "sending" ? "Sending..." : "Text my code"}</button>
         </form>}
       </section>}
 
       {picked && <button type="button" className="btn btn--edge" style={wide()} onClick={() => { setSelector(""); resetDelivery() }}>Choose a different person</button>}
       {!picked && operators.length > 0 && <details style={stack} open={manual}><summary className="t-label" style={{ minHeight: "44px", display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => setManual(true)}>My name isn&apos;t here</summary>{manual && <><p className="t-caption">Ask the owner to add you, or use manual sign-in below.</p><button type="button" className="btn btn--edge" style={wide()} onClick={() => setManual(true)}>Use manual sign-in</button></>}</details>}
-      {message && <p style={note(state === "error" ? "stop" : "good")} role={state === "error" ? "alert" : "status"}>{message}</p>}
+      {message && <p id="ops-login-message" style={note(state === "error" ? "stop" : "good")} role={state === "error" ? "alert" : "status"}>{message}</p>}
     </div>
-  </main>
+  </div>
 }

@@ -7,10 +7,12 @@ import { OpsLoginForm } from "../login-form"
 import { InstallAppButton } from "./install-app-button"
 import Link from "next/link"
 
+export const metadata = { title: "Install · MCSW Jobs" }
+
 export const dynamic = "force-dynamic"
 
 export default async function InstallPage() {
-  if (!dbConfigured()) return <main className="install-page install-state-page"><section className="card install-state"><h1 className="t-title">MCSW Jobs</h1><p>The operations database is not configured.</p></section></main>
+  if (!dbConfigured()) return <div className="install-page install-state-page"><section className="card install-state"><h1 className="t-title">MCSW Jobs</h1><p>The operations database is not configured.</p></section></div>
   const operator = await getAuthenticatedOperator()
   if (!operator) {
     const smsReady = twilioPhoneLoginConfigured()
@@ -22,7 +24,7 @@ export default async function InstallPage() {
     })).filter((person) => Boolean(person.selector))
     return <OpsLoginForm linkError={false} operators={operators} smsReady={smsReady} />
   }
-  return <main className="install-page">
+  return <div className="install-page">
     <header className="card install-head"><Link className="install-back t-caption" href="/ops">Back to Jobs</Link><h1 className="t-title">Install MCSW Jobs</h1><p className="t-caption">Put Jobs on this phone&apos;s home screen.</p></header>
     <InstallAppButton />
     <section className="card install-steps">
@@ -34,5 +36,5 @@ export default async function InstallPage() {
       </ol>
     </section>
     <p className="install-note t-caption">This phone stays signed in for up to 90 days. Keep it locked.</p>
-  </main>
+  </div>
 }

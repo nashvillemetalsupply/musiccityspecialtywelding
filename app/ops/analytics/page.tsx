@@ -10,6 +10,8 @@ import {
 } from "@/lib/owner-analytics"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 
+export const metadata = { title: "Shop Analytics · MCSW Jobs" }
+
 export const dynamic = "force-dynamic"
 
 type SearchParams = Promise<{ range?: string }>
@@ -92,7 +94,7 @@ function sourceLabel(source: string) {
 
 export default async function OwnerAnalyticsPage({ searchParams }: { searchParams: SearchParams }) {
   if (!dbConfigured()) {
-    return <main className="analytics-page analytics-state-page"><section className="card analytics-state"><h1 className="t-title">Shop Analytics</h1><p>The operations database is not configured.</p></section></main>
+    return <div className="analytics-page analytics-state-page"><section className="card analytics-state"><h1 className="t-title">Shop Analytics</h1><p>The operations database is not configured.</p></section></div>
   }
 
   const operator = await getAuthenticatedOperator()
@@ -117,7 +119,7 @@ export default async function OwnerAnalyticsPage({ searchParams }: { searchParam
     { label: "Median first response", current: analytics.current.medianFirstResponseMinutes, prior: analytics.prior.medianFirstResponseMinutes, kind: "response" },
   ]
 
-  return <main className="analytics-page">
+  return <div className="analytics-page">
     <header className="card analytics-head">
       <div><Link className="analytics-back t-caption" href="/ops">Back to Jobs</Link><span className="t-label">Owner only</span><h1 className="t-title">Shop Analytics</h1><p className="t-caption">Business totals without crew rankings.</p></div>
     </header>
@@ -168,5 +170,5 @@ export default async function OwnerAnalyticsPage({ searchParams }: { searchParam
       <h2 className="t-sub">How this is counted</h2>
       <p>Each window groups non-test, non-spam jobs by when the lead arrived. Booked means that lead has since reached booked status. Revenue uses recorded revenue only, never estimates. Paid is the amount recorded as paid; unpaid is the remaining recorded invoice balance. Response time excludes leads with no human response yet.</p>
     </aside>
-  </main>
+  </div>
 }

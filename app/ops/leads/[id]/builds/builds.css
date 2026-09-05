@@ -426,11 +426,13 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* SVG user units, which happen to be the label token's own value — named
+   through the token so the scale has exactly one owner. */
 .ops-builds-drawing-source,
 .ops-builds-drawing-label {
   fill: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: var(--t-label);
   font-weight: var(--w-med);
 }
 

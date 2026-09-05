@@ -81,7 +81,7 @@ export function WireStrip({ slips, unreadTotal, history, page, hasOlder, query }
             {slip.actionKind === "contact-intro" && <SafeActionButton disabled={working !== null} aria-label={`Text ${String(slip.actionDetail.name || "new contact")}`} onAction={() => runAction(slip)}>Text contact</SafeActionButton>}
             {slip.actionKind === "contact-intro-email" && <SafeActionButton disabled={working !== null} aria-label={`Email ${String(slip.actionDetail.name || "new contact")}`} onAction={() => runAction(slip)}>Email contact</SafeActionButton>}
             {slip.actionKind === "attachment-retry" && <SafeActionButton disabled={working !== null} onAction={() => runAction(slip)}>Try filing again</SafeActionButton>}
-            {slip.actionKind === "attach-payment" && <form onSubmit={(event) => { event.preventDefault(); const value = new FormData(event.currentTarget).get("leadId"); void runAction(slip, "attach", String(value ?? "")) }}><input name="leadId" inputMode="numeric" placeholder="Job #" aria-label="Job number" required /><SafeSubmitButton disabled={working !== null}>Attach QuickBooks receipt</SafeSubmitButton></form>}
+            {slip.actionKind === "attach-payment" && <form onSubmit={(event) => { event.preventDefault(); const value = new FormData(event.currentTarget).get("leadId"); void runAction(slip, "attach", String(value ?? "")) }}><input name="leadId" type="text" inputMode="numeric" autoComplete="off" placeholder="Job #" aria-label="Job number" required /><SafeSubmitButton disabled={working !== null}>Attach QuickBooks receipt</SafeSubmitButton></form>}
           </div>}
           {result[slip.id] && <small className="ops-wire-result" role="status">{result[slip.id]}</small>}
         </article>)}
@@ -91,7 +91,7 @@ export function WireStrip({ slips, unreadTotal, history, page, hasOlder, query }
       <summary>All Updates <span>Search</span></summary>
       <form className="ops-wire-search" action="/board/updates" method="get">
         <input type="hidden" name="wire" value={history ? "past" : "fresh"} />
-        <input name="wireQ" type="search" defaultValue={query} placeholder="Search updates" aria-label="Search updates" />
+        <input name="wireQ" type="search" autoComplete="off" defaultValue={query} placeholder="Search updates" aria-label="Search updates" />
         <SafeSubmitButton>Search</SafeSubmitButton>
       </form>
       <nav className="ops-wire-pages" aria-label="Update pages">

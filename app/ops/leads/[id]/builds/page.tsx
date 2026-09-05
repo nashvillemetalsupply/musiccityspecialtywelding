@@ -16,6 +16,8 @@ import {
 import { ActionKeyField } from "./action-key"
 import "./builds.css"
 
+export const metadata = { title: "Fabrication · MCSW Jobs" }
+
 export const dynamic = "force-dynamic"
 
 type Params = Promise<{ id: string }>
@@ -83,7 +85,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
     }
   }
 
-  return <main className="ops-builds">
+  return <div className="ops-builds">
     <header className="ops-builds-header">
       <div>
         <p className="t-caption">Job #{workspace.lead.id}</p>
@@ -118,7 +120,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
                 <input type="hidden" name="leadId" value={leadId} />
                 <input type="hidden" name="factKey" value={fact.factKey} />
                 <ActionKeyField scope={`working:${leadId}:${fact.factKey}`} />
-                <label><span>Enter a shop estimate</span><input name="value" type="number" min="0.01" step="0.01" inputMode="decimal" required /></label>
+                <label htmlFor={`build-estimate-${fact.factKey}`}><span>Enter a shop estimate</span><input name="value" id={`build-estimate-${fact.factKey}`} type="number" min="0.01" step="0.01" inputMode="decimal" autoComplete="off" required /></label>
                 <SafeSubmitButton className="btn btn--edge" pendingLabel="Filing…">Use estimate</SafeSubmitButton>
               </form>}
             </article>
@@ -178,9 +180,9 @@ export default async function BuildsPage({ params }: { params: Params }) {
                   <input type="hidden" name="leadId" value={leadId} />
                   <input type="hidden" name="claimId" value={fact.id} />
                   <ActionKeyField scope={`correction:${leadId}:${fact.id}:${fact.factKey}`} />
-                  <label><span>New {fact.label.toLowerCase()}</span>{["gate.hinge_side", "gate.latch_side"].includes(fact.factKey)
-                    ? <select name="value" defaultValue={String(fact.value)} required><option value="left">Left</option><option value="right">Right</option></select>
-                    : <input name="value" type={typeof fact.value === "number" ? "number" : "text"} min={typeof fact.value === "number" ? "0.01" : undefined} step={typeof fact.value === "number" ? "0.01" : undefined} inputMode={typeof fact.value === "number" ? "decimal" : undefined} defaultValue={fact.value} maxLength={typeof fact.value === "string" ? 120 : undefined} required />}</label>
+                  <label htmlFor={`build-correct-${fact.id}`}><span>New {fact.label.toLowerCase()}</span>{["gate.hinge_side", "gate.latch_side"].includes(fact.factKey)
+                    ? <select name="value" id={`build-correct-${fact.id}`} defaultValue={String(fact.value)} required><option value="left">Left</option><option value="right">Right</option></select>
+                    : <input name="value" id={`build-correct-${fact.id}`} type={typeof fact.value === "number" ? "number" : "text"} min={typeof fact.value === "number" ? "0.01" : undefined} step={typeof fact.value === "number" ? "0.01" : undefined} inputMode={typeof fact.value === "number" ? "decimal" : undefined} autoComplete="off" defaultValue={fact.value} maxLength={typeof fact.value === "string" ? 120 : undefined} required />}</label>
                   <SafeSubmitButton className="btn btn--edge" pendingLabel="Filing…">Propose change</SafeSubmitButton>
                 </form>
               </details>
@@ -275,5 +277,5 @@ export default async function BuildsPage({ params }: { params: Params }) {
         </section>
       </div>
     </div>
-  </main>
+  </div>
 }

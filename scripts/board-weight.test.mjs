@@ -140,7 +140,7 @@ test("newest order is created_at DESC before pagination, and is what the board a
 
 test("the tracker leads the board: first card in main, and there is no pane", () => {
   const BOARD_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8")
-  const main = BOARD_SOURCE.indexOf('<main className="main">')
+  const main = BOARD_SOURCE.indexOf('<main id="main" tabIndex={-1} className="main">')
   const tracker = BOARD_SOURCE.indexOf('<div className="track-top">')
   const call = BOARD_SOURCE.indexOf('<div className="call-top">')
   const figures = BOARD_SOURCE.indexOf('<section className="card figures">')

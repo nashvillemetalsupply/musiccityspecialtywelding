@@ -22,8 +22,8 @@ const card: CSSProperties = {
 const bar = (width: string, height: string): CSSProperties => ({ width, height, background: "var(--surface-raised)", borderRadius: "var(--r-sm)" })
 
 export default function OpsLoading() {
-  return <main style={ground} aria-busy="true" aria-label="Loading MCSW Jobs">
+  return <div style={ground} aria-busy="true" aria-label="Loading MCSW Jobs">
     <section style={card} aria-hidden="true"><span style={bar("40%", "var(--s3)")} /><span style={bar("72%", "var(--s3)")} /><span style={bar("100%", "96px")} /></section>
     <section style={card} aria-hidden="true"><span style={bar("40%", "var(--s3)")} /><span style={bar("100%", "var(--row)")} /><span style={bar("100%", "var(--row)")} /><span style={bar("100%", "var(--row)")} /></section>
-  </main>
+  </div>
 }

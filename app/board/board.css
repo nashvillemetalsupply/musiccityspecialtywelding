@@ -1,5 +1,7 @@
 @import "../../styles/control.css";
 
+.empty-state{max-width:56ch;margin:var(--s8) auto;padding:0 var(--s4);display:grid;gap:var(--s4)}
+
 /* ===========================================================================
    MCS Welding · Job Control — final
 
@@ -65,18 +67,17 @@
       measured, not estimated.
    4. One 8px rhythm. Where a value is off-scale it is because a control has to
       meet a touch or optical target, and it says so.
-   5. A type scale you can see across a shop: 11.5 · 12 · 13.5 · 14 · 15 · 19 ·
-      20 · 34, each with its own line-height, tabular figures only in columns.
+   5. A type scale you can see across a shop, owned entirely by control.css and
+      floored at 14px: 14 · 15 · 16 · 18 · 22 · 40, each with its own
+      line-height, tabular figures only in columns. Only --t-display steps with
+      the viewport; no other size is redefined anywhere in this file.
    =========================================================================== */
 
 /* ============================================================== base ==== */
-/* Phone type runs one step larger than the shared /ops scale. The board is read
-   at arm's length across a shop, not at a desk; the desktop block below leaves
-   these at the shared values. Owner asked for "highly accessible" 2026-09-03. */
-@media (max-width:55rem){
-  :root{--t-data:15px;--t-label:13px;--t-caption:12.5px}
-  .cust b{font-size:16px}
-}
+/* The phone used to run its own step-up of the shared scale here. It no longer
+   needs one: control.css carries a single scale with a 14px floor at every
+   width, and a second definition of a type token outside that file is exactly
+   what made "what size is this?" unanswerable. */
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;overflow-x:clip}
 body{
@@ -85,7 +86,7 @@ body{
   line-height:var(--lh-body);-webkit-font-smoothing:antialiased;
 }
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
-h1,h2,h3,h4,h5{margin:0;font-weight:var(--w-semi);letter-spacing:-.011em}
+h1,h2,h3,h4,h5,p:where(.figure-label){margin:0;font-weight:var(--w-semi);letter-spacing:-.011em}
 p{margin:0}
 svg{display:block}
 /* figures line up in columns and stay proportional in sentences */
@@ -137,8 +138,10 @@ svg{display:block}
 
 /* One neutral avatar treatment. These initials used to sit on status colours,
    which failed contrast (as low as 1.8:1) and made green mean "Dale". */
+/* min-height, not height: a 14px caption line box is taller than the 11.5px one
+   this circle was measured around, and a fixed height clipped it. */
 .who-dot{border-radius:50%;flex:none;display:grid;place-items:center;
-  width:24px;height:24px;font-size:var(--t-caption);font-weight:var(--w-semi);
+  width:24px;min-height:24px;font-size:var(--t-caption);font-weight:var(--w-semi);
   background:var(--surface-raised);color:var(--text-primary);
   box-shadow:inset 0 0 0 1px var(--border)}
 
@@ -173,7 +176,7 @@ svg{display:block}
 .figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);border:0;background:none}
 .figure{border-radius:var(--r-md)}
 .figure{padding:var(--s3) var(--s4);min-width:0}
-.figure h4{font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
+.figure p:where(.figure-label){font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
 /* On a phone two tiles share 390px, so the caption sits under the number
    instead of beside it -- "36 on the books" broke the 36 into two lines. The
    desktop block puts them back on one baseline. */
@@ -195,12 +198,12 @@ svg{display:block}
 .figures .figure:nth-child(1){background:var(--field-info)}
 .figures .figure:nth-child(2){background:var(--field-neutral)}
 .figures .figure,
-.figures .figure h4,
+.figures .figure p:where(.figure-label),
 .figures .figure .n span,
 .figures .figure .under,
 .figures .figure .under b,
 .figures .figure .n b{color:var(--on-field)}
-.figures .figure h4,
+.figures .figure p:where(.figure-label),
 .figures .figure .n span,
 .figures .figure .under{color:var(--on-field-muted)}
 .figures .figure .under b{color:var(--on-field);font-weight:var(--w-semi)}
@@ -244,7 +247,7 @@ svg{display:block}
   line-height:var(--lh-label);color:var(--sketch-dim);font-weight:var(--w-med)}
 .ask{font-size:var(--t-caption);font-weight:var(--w-semi);color:var(--brand)}
 /* the question he is being asked is the largest thing on a phone screen */
-.ask+p{margin:var(--s2) 0 0;font-size:22px;font-weight:var(--w-semi);
+.ask+p{margin:var(--s2) 0 0;font-size:var(--t-lede);font-weight:var(--w-semi);
   letter-spacing:-.02em;line-height:var(--lh-lede);text-wrap:balance;max-width:none}
 .slots{margin:var(--s5) 0 0;display:grid;grid-template-columns:1fr;gap:0 var(--s6)}
 /* The post-call read is sentences, not label/value pairs; one column at every width. */
@@ -269,7 +272,9 @@ svg{display:block}
 .voice-strip .btn{flex:1}
 .voice-said{margin:var(--s3) 0 0;font-size:var(--t-lede);color:var(--text-secondary);max-width:56ch}
 .spoke{display:flex;gap:var(--s3);padding:var(--s2) 0;font-size:var(--t-label)}
-.spoke b{font-weight:var(--w-med);color:var(--text-muted);width:64px;flex:none}
+/* min-width, not width: "Customer" at 14px is wider than 64px, and a fixed
+   width made it wrap inside the speaker column. */
+.spoke b{font-weight:var(--w-med);color:var(--text-muted);min-width:64px;flex:none}
 .spoke span{color:var(--text-secondary);flex:1;min-width:0}
 .spoke.them b{color:var(--brand)}
 /* The rest of an ended call folds away so the tracker is not pushed off the
@@ -287,7 +292,7 @@ svg{display:block}
    whole 56px row, so the tap target is the row and not the chevron. */
 .calls-drop{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
 .calls-drop summary{display:flex;align-items:center;gap:var(--s2);min-height:var(--row);
-  padding:var(--s3) var(--s4);cursor:pointer;list-style:none;font-weight:var(--w-semi);font-size:15px}
+  padding:var(--s3) var(--s4);cursor:pointer;list-style:none;font-weight:var(--w-semi);font-size:var(--t-data)}
 .calls-drop summary::-webkit-details-marker{display:none}
 .calls-drop summary .n{display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 var(--s2);
   border-radius:var(--r-md);background:var(--status-warn-sur);color:var(--status-warn-ink);
@@ -299,15 +304,17 @@ svg{display:block}
 .call-row{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2);
   padding:var(--s3) var(--s4);border-top:1px solid var(--border-subtle)}
 .call-row .when{font-size:var(--t-caption);color:var(--text-muted)}
-.call-row .who{font-size:15px;font-weight:var(--w-semi);overflow-wrap:anywhere}
+.call-row .who{font-size:var(--t-name);font-weight:var(--w-semi);overflow-wrap:anywhere}
+/* Three lines, not two: at 15px the same clamp showed materially less of what
+   the caller actually said. The quiet variant below goes two, not one. */
 .call-row .said{font-size:var(--t-data);color:var(--text-secondary);overflow-wrap:anywhere;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 .call-row .do{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s1)}
 .call-row .do form{display:contents}
 .call-row .do .btn{min-height:44px;flex:1 1 auto}
 .call-row .err{font-size:var(--t-caption);color:var(--status-stop-ink)}
 .call-row .who em{font-style:normal;font-weight:var(--w-reg);color:var(--text-muted);font-size:var(--t-caption)}
-.call-row .said.quiet{color:var(--text-muted);-webkit-line-clamp:1}
+.call-row .said.quiet{color:var(--text-muted);-webkit-line-clamp:2}
 .call-row .flag{font-size:var(--t-caption);color:var(--status-warn-ink)}
 .call-row.not-job .who{color:var(--text-secondary)}
 .call-row.saved{background:var(--surface-raised)}
@@ -317,14 +324,15 @@ svg{display:block}
 /* --- the tracker --- */
 .track-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);
   padding:var(--s4)}
-.track-top h2{width:100%}
+.track-top h1{width:100%}
 .track-top .count{width:100%;color:var(--text-muted);font-size:var(--t-label)}
 .track-top .end{margin-left:0;width:100%;display:flex;flex-wrap:wrap;
   align-items:center;justify-content:flex-start;gap:var(--s2)}
 /* All four stages stay on screen: the tabs wrap rather than scroll sideways,
    because a stage hidden past the right edge is a stage that does not exist. */
 .tabs{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1);padding:0 var(--s4) var(--s3)}
-.tab{height:32px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
+/* min-height: a 14px label line box no longer fits inside a fixed 32px tab. */
+.tab{min-height:32px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
   font-weight:var(--w-med);color:var(--text-muted);white-space:nowrap}
 /* the stage tabs are server-filtered links now, not toggle buttons */
 /* The JSX puts a space between the label and the count, but a flex container
@@ -375,7 +383,7 @@ svg{display:block}
 .part svg{width:38px;height:28px}
 
 .cust{min-width:0;display:flex;flex-direction:column;gap:2px}
-.cust b{font-size:15px;font-weight:var(--w-semi);line-height:var(--lh-name);
+.cust b{font-size:var(--t-name);font-weight:var(--w-semi);line-height:var(--lh-name);
   letter-spacing:-.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cust span{font-size:var(--t-data);color:var(--text-secondary);font-weight:var(--w-reg);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -402,7 +410,9 @@ svg{display:block}
 .drawing-top .end{margin-left:0;width:100%;font-size:var(--t-caption);color:var(--text-muted)}
 .drawing svg.plan{width:100%;height:auto;background:var(--draw-fill)}
 .spec{display:flex;flex-wrap:wrap;gap:var(--s2);padding:var(--s4)}
-.spec span{display:inline-flex;align-items:center;gap:var(--s2);height:var(--chip);
+/* min-height: --chip is 24px and a 14px label line box is close enough to it
+   that a fixed height clipped descenders. */
+.spec span{display:inline-flex;align-items:center;gap:var(--s2);min-height:var(--chip);
   padding:0 var(--s3);border-radius:var(--r-sm);background:var(--surface-raised);
   font-size:var(--t-label);color:var(--text-secondary)}
 .spec b{color:var(--text-primary);font-weight:var(--w-semi)}
@@ -419,15 +429,15 @@ svg{display:block}
 .wire{display:none;flex:1;height:2px;background:var(--status-good-mark);opacity:.4;margin:0 var(--s2)}
 .wire.off{background:var(--border-strong);opacity:1}
 .stage-body{margin:var(--s3) 0 0;padding-right:0}
-.stage-body h5{margin:0;font-size:var(--t-name);font-weight:var(--w-semi);letter-spacing:-.01em}
+.stage-body h2{margin:0;font-size:var(--t-name);font-weight:var(--w-semi);letter-spacing:-.01em}
 .stage-body p{margin:var(--s1) 0 0;font-size:var(--t-caption);color:var(--text-muted);
   display:flex;justify-content:space-between;gap:var(--s2)}
 .stage-body p b{color:var(--text-secondary);font-weight:var(--w-med)}
-.stage.off h5{color:var(--text-muted)}
+.stage.off h2{color:var(--text-muted)}
 
 .why{display:grid;grid-template-columns:1fr;gap:var(--s7);
   margin:var(--s6) 0 0;padding:var(--s5) 0 0;border-top:1px solid var(--border)}
-.why h5{margin:0;font-size:var(--t-sub);font-weight:var(--w-semi)}
+.why h2{margin:0;font-size:var(--t-sub);font-weight:var(--w-semi)}
 .why>div>p{margin:var(--s2) 0 0;font-size:var(--t-body);color:var(--text-secondary);
   line-height:var(--lh-body);max-width:58ch}
 .why b{color:var(--text-primary);font-weight:var(--w-semi)}
@@ -503,10 +513,9 @@ svg{display:block}
   .app{display:block;height:auto}
   .card{break-inside:avoid;border-color:#999}
   .figures .figure,.figures .figure *{background:none!important;color:#000!important}
-  .figures .figure h4,.figures .figure .n span,.figures .figure .under{color:#333!important}
+  .figures .figure p:where(.figure-label),.figures .figure .n span,.figures .figure .under{color:#333!important}
 }
 
-@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms !important}}
 
 /* ===========================================================================
    THE MIN-WIDTH LAYERS
@@ -533,11 +542,12 @@ svg{display:block}
    =========================================================================== */
 
 /* ----------------------------------------------------- 26.25rem · 420px ---- */
+/* Display is the one role that still steps with the viewport — it is seen
+   across a room rather than read. Title, name and the lede are single values
+   in control.css now, so their old step-ups are gone. */
 @media (min-width:26.2501rem){
-  :root{--t-display:44px;--t-title:22px}
+  :root{--t-display:44px}
   .slots{grid-template-columns:1fr 1fr;gap:0 var(--s4)}
-  .ask+p{font-size:24px}
-  .cust b{font-size:16px}
   .stage-body{padding-right:var(--s4)}
 }
 
@@ -600,7 +610,9 @@ svg{display:block}
   .call-end .btn{width:auto}
 
   /* --- the tracker ------------------------------------------------------- */
-  .call-row{grid-template-columns:132px minmax(0,1fr) auto;column-gap:var(--s4);align-items:center;padding:var(--s3) var(--s6)}
+  /* max-content upper bounds, not fixed tracks: at 14px the timestamp no longer
+     fits inside 132px and was being squeezed into two lines. */
+  .call-row{grid-template-columns:minmax(132px,max-content) minmax(0,1fr) auto;column-gap:var(--s4);align-items:center;padding:var(--s3) var(--s6)}
   .call-row .who{grid-column:2}
   .call-row .said{grid-column:2}
   .call-row .when{grid-row:1/3}
@@ -611,7 +623,7 @@ svg{display:block}
   .call-row.saved .said{grid-row:auto}
   .calls-drop summary{padding:var(--s3) var(--s6)}
   .track-top{flex-wrap:nowrap;gap:var(--s3);padding:var(--s4) var(--s6)}
-  .track-top h2{width:auto}
+  .track-top h1{width:auto}
   .track-top .count{width:auto}
   .track-top .end{margin-left:auto;width:auto;flex-wrap:nowrap;justify-content:normal}
   .tabs{padding:0 var(--s5) var(--s3)}
@@ -620,7 +632,7 @@ svg{display:block}
      truncates rather than holding a floor — it is the one cell that can lose
      characters without losing meaning, and money goes before the action does. */
   .cols{gap:0 var(--s4);padding:0 var(--s6);
-    grid-template-columns:56px minmax(0,1.6fr) 100px 168px 116px}
+    grid-template-columns:56px minmax(0,1.6fr) minmax(100px,max-content) minmax(168px,max-content) minmax(116px,max-content)}
   /* The phone puts the wait cell under the chip; the desktop puts it back in
      its own column under the "Waiting" head. */
   .cols .c-wait{display:block;grid-column:auto;grid-row:auto;text-align:right}
@@ -632,7 +644,6 @@ svg{display:block}
   .job-row{padding:var(--s3) var(--s6)}
   .part{width:56px;height:40px}
   .part svg{width:46px;height:32px}
-  .cust b{font-size:var(--t-name)}
 
   /* --- the expanded job -------------------------------------------------- */
   .detail{padding:0 var(--s6) var(--s6);gap:var(--s7)}
@@ -649,7 +660,7 @@ svg{display:block}
 /* Money is the first thing to go and the last thing to come back. */
 @media (min-width:73.7501rem){
   .cols{gap:0 var(--s5);
-    grid-template-columns:56px minmax(220px,1.8fr) 108px 120px 180px 116px}
+    grid-template-columns:56px minmax(220px,1.8fr) minmax(108px,max-content) minmax(120px,max-content) minmax(180px,max-content) minmax(116px,max-content)}
   .cols .c-money{display:block}
   .detail{grid-template-columns:minmax(0,380px) minmax(0,1fr)}
   .why{grid-template-columns:minmax(0,1fr) 292px}

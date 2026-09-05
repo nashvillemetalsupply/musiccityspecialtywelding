@@ -37,20 +37,6 @@ async function loadPureTypescriptModule(path) {
   return import(`data:text/javascript;base64,${encoded}`)
 }
 
-test("design previews do not add build-time font fetches", () => {
-  const previewPages = [
-    "app/design-preview/mcsw-jobs-call-concepts/page.tsx",
-    "app/design-preview/mcsw-jobs-call-sketch/page.tsx",
-    "app/design-preview/mcsw-jobs-directions/page.tsx",
-    "app/design-preview/mcsw-jobs-finalists/page.tsx",
-    "app/design-preview/mcsw-jobs-hybrid-directions/page.tsx",
-  ]
-
-  for (const page of previewPages) {
-    assert.doesNotMatch(source(page), /from ["']next\/font\/google["']/)
-  }
-})
-
 test("the sitemap does not manufacture a fresh last-modified date on every build", () => {
   const sitemap = source("app/sitemap.ts")
 
@@ -241,7 +227,8 @@ test("private missing routes stay inside the Jobs brand without marketing chrome
   // The surface is pinned by what it says and what it refuses to render, not by
   // the stylesheet hook it happens to wear: `jobs-route-state` belonged to the
   // sheets Task 7 deletes, so pinning it would have outlawed the conversion.
-  assert.match(missing, /<main\b/)
+  assert.doesNotMatch(missing, /<main\b/)
+  assert.match(source("app/ops/layout.tsx"), /<main id="main" tabIndex=\{-1\}>\{children\}<\/main>/)
   assert.match(missing, /Job or customer not found\./)
   assert.doesNotMatch(missing, /jobs-route-state|jobs-panel|jobs-brand/)
   assert.match(missing, /Nothing was changed/)

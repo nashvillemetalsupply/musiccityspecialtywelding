@@ -36,14 +36,15 @@ client-side value import from `lib/` also runs `npx next build`.
 
 | ID | Mission (plan task) | Session model | Effort | Size | Depends on | Status |
 |----|--------------------|---------------|--------|------|------------|--------|
-| P0 | Task 0: the gate — Playwright + axe against signed-in production, baseline frozen | Claude Fable | medium | M | — | open |
-| P1 | Task 1: one type system, 14px floor, one weight ladder, fonts via `next/font` | Codex `gpt-5.6-sol` | high | M | P0 (baseline exists) | open |
-| P2 | Task 2: landmarks, one h1, skip link, `/board` error surfaces | Codex `gpt-5.6-sol` | medium | M | P1 approved | open |
-| P3 | Task 3: forms — autofill, keypads, labels, focus on first error | Codex `gpt-5.6-sol` | medium | S | P0 | open |
-| P4 | Task 4: focus ring, reduced motion, forced colours, more-contrast | Codex `gpt-5.6-sol` | medium | S | P1 (control.css settled) | open |
-| P4c | Mid-round gate: `test:qa` on the P1–P4 preview; capture `pre-retirement-fingerprint.json` | Claude Sonnet | low | S | P1–P4 merged | open |
-| P5 | Task 5: retire dead CSS into `ops-legacy.css`; delete the nine preview routes | Codex `gpt-5.6-sol` | high | L | P4c | open |
-| P6 | Task 6: strict gate, fingerprint diff, owner walk, before/after tables, record | Claude Fable | high | M | P5 merged + deployed | open |
+| P0 | Task 0: the gate — Playwright + axe against signed-in production, baseline frozen | Claude Fable | medium | M | — | **done** — baseline frozen 2026-09-04 |
+| P1 | Task 1: one type system, 14px floor, one weight ladder, fonts via `next/font` | Codex `gpt-5.6-sol` | high | M | P0 (baseline exists) | **merged** — owner approval outstanding |
+| P2 | Task 2: landmarks, one h1, skip link, `/board` error surfaces | Codex `gpt-5.6-sol` | medium | M | P1 approved | **merged** (Codex, review PASS) — owner approval outstanding |
+| P3 | Task 3: forms — autofill, keypads, labels, focus on first error | Codex `gpt-5.6-sol` | medium | S | P0 | **merged** (Codex, review PASS) |
+| P1b | **Added, not in the original plan.** The 14px floor reaches `app/globals.css`: 39 sub-floor declarations, and the axe contrast node | Codex `gpt-5.6-sol` | high | S | P1, P4 (found it) | **merged** (Codex, review PASS) |
+| P4 | Task 4: focus ring, reduced motion, forced colours, more-contrast | Codex `gpt-5.6-sol` | medium | S | P1 (control.css settled) | **merged** (Codex, review PASS) — owner approval outstanding |
+| P4c | Mid-round gate: `test:qa` on the P1–P4 preview; capture `pre-retirement-fingerprint.json` | Claude Sonnet | low | S | P1–P4 merged | **blocked** — Vercel protection blocks the gate from previews; fingerprint never captured |
+| P5 | Task 5: retire dead CSS into `ops-legacy.css`; delete the seven preview routes | Codex `gpt-5.6-sol` | high | L | P4c | **merged** (Codex, review PASS) — verbatim proof green; owner approval outstanding |
+| P6 | Task 6: strict gate, fingerprint diff, owner walk, before/after tables, record | Claude Fable | high | M | P5 merged + deployed | **blocked** — needs a landed build or a Vercel bypass secret; see QA execution record |
 
 **Recommended order:** P0 → P1 → P3 (gap-filler, independent of P1's approval) → P2 →
 P4 → P4c → P5 → P6. P3 can run while the owner is looking at P1's preview.

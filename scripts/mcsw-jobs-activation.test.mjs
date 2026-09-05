@@ -75,7 +75,10 @@ test("mobile side effects use centered scroll-safe controls with busy-state prot
   const intake = source("app/ops/intake/inline-job-intake.tsx")
   const intakeActions = source("app/ops/intake/actions.ts")
   const updates = source("app/ops/wire-strip.tsx")
-  const css = source("app/globals.css")
+  const css = source("styles/ops-legacy.css")
+  const control = source("styles/control.css")
+  const boardCss = source("app/board/board.css")
+  const recentCalls = source("app/board/recent-calls.tsx")
   assert.match(safe, /safeActionMovement/)
   assert.match(safe, /onPointerMove=\{press\.pointerMove\}/)
   assert.match(safe, /onPointerCancel=\{press\.pointerCancel\}/)
@@ -96,7 +99,13 @@ test("mobile side effects use centered scroll-safe controls with busy-state prot
   assert.match(updates, /if \(working !== null\) return/)
   assert.match(updates, /All Updates/)
   assert.match(updates, /Search updates/)
-  assert.match(css, /\.ops-row-actions\s*\{[^}]*justify-content:\s*center[^}]*padding:\s*\.3rem clamp\(1\.5rem, 7vw, 5rem\)/s)
+  // The retired row action wrapper is no longer rendered. Live call actions
+  // use shared centered buttons, wrapping rows and 44px touch targets.
+  assert.match(recentCalls, /<SafeSubmitButton className=\{notJob \? "btn btn--edge" : "btn btn--go"\}/)
+  assert.match(control, /\.btn\{[^}]*justify-content:center/s)
+  assert.match(control, /@media \(pointer:coarse\),\(max-width:55rem\)\{\s*\.btn,\.btn--sm\{min-height:44px;padding-inline:var\(--s4\)/)
+  assert.match(boardCss, /\.call-row \.do\{display:flex;flex-wrap:wrap;gap:var\(--s2\)/)
+  assert.match(boardCss, /\.call-row \.do \.btn\{min-height:44px;flex:1 1 auto\}/)
   assert.match(css, /\.ops-safe-action\s*\{\s*touch-action:\s*pan-y;/)
 })
 
@@ -484,7 +493,7 @@ test("the install surface and manifest are scoped to private operations", () => 
   const install = source("app/ops/install/page.tsx")
   const button = source("app/ops/install/install-app-button.tsx")
   const worker = source("app/ops/register-ops-service-worker.ts")
-  const css = source("app/globals.css")
+  const css = source("app/ops/install/install.css")
   assert.match(manifest, /name: "MCSW Jobs"/)
   assert.match(manifest, /short_name: "MCSW Jobs"/)
   assert.match(manifest, /display: "standalone"/)
@@ -496,7 +505,9 @@ test("the install surface and manifest are scoped to private operations", () => 
   assert.match(install, /Install app/)
   assert.match(install, /Add to Home screen/)
   assert.match(button, /beforeinstallprompt/)
-  assert.match(css, /\.ops-install-page > \.ops-page-heading\s*\{[^}]*display:\s*grid/s)
+  assert.match(install, /import "\.\/install\.css"/)
+  assert.match(install, /<header className="card install-head"/)
+  assert.match(css, /\.install-head\s*\{[^}]*display:\s*grid/s)
 })
 
 test("deprecated metaphors are absent from visible app labels", () => {

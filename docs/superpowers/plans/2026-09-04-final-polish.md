@@ -22,6 +22,21 @@
 - New test files are added to the `test:shop-brain` list in `package.json` in the task that creates them.
 - `npm run dev` does not work in a worktree. Verify on the Vercel preview for the branch with `node scripts/create-local-login.mjs` (swap `localhost:3030` for the preview host).
 - Root-only jobs: `npm i`, `npx playwright install chromium`. `node_modules` is junctioned into worktrees.
+- **`.next` is junctioned into worktrees too, and it makes `tsc` lie.** `tsconfig.json`
+  includes `.next/types/**/*.ts`, and that junction points at the *root* checkout's
+  generated route validator. So a worktree that deletes a route typechecks against a
+  validator that still imports it, and `tsc` reports
+  `TS2307: Cannot find module '../../app/<deleted route>/layout.js'` — an error about a
+  file the branch deliberately removed, generated from a different working tree. It is
+  an artefact, not a type error. Remove the **link** inside your worktree
+  (`rm .next` — plain `rm`, which unlinks the symlink and never touches the target) and
+  re-run. Verify the root's `.next` still exists afterwards. Task 5 and its integrator
+  both hit this; the root's stale `.next` will report the same phantom until it is
+  rebuilt.
+- **`npx next build` cannot run in a worktree at all.** Turbopack rejects the junctioned
+  `node_modules` with `Symlink [project]/node_modules is invalid, it points out of the
+  filesystem root`. The client-bundle gate is therefore verified on the Vercel preview
+  build, not locally — which is what happened this round, and it passed.
 - Codex sandbox has no network: any step that hits the preview (the gate, DevTools checks, owner walk) runs in a Claude session, not Codex.
 - Crew sees no money, no per-worker figures, no surveillance surface. This round adds none; the exit task re-checks.
 
@@ -79,7 +94,7 @@ The spec's ten steps, verbatim, are the QA Procedure. Task 0 turns steps 1–2 i
 - Produces: `scripts/qa/routes.mjs` exporting `ROUTES`, `WIDTHS`, `FLOOR_PX`, used by Task 5's fingerprint diff and Task 6's re-run.
 - Every test writes its own `scripts/qa/report/rows/<route>-<width>.json`; nothing is held in process memory across tests, so a worker restart cannot lose or overwrite a row (Codex review finding, 2026-09-05).
 
-- [ ] **Step 1: Install (root only)**
+- [x] **Step 1: Install (root only)**
 
 ```powershell
 npm i -D --save-exact @playwright/test@1.63.0 @axe-core/playwright@4.13.0
@@ -88,7 +103,7 @@ npx playwright install chromium
 
 Exact versions (`npm view` on 2026-09-04), not caret ranges — the gate is evidence and must be reproducible.
 
-- [ ] **Step 2: Write the route table**
+- [x] **Step 2: Write the route table**
 
 `scripts/qa/routes.mjs`:
 
@@ -119,7 +134,7 @@ export const FLOOR_PX = 14
 export const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 ```
 
-- [ ] **Step 3: Sign in once, in a setup project**
+- [x] **Step 3: Sign in once, in a setup project**
 
 `scripts/qa/auth.setup.mjs`:
 
@@ -164,7 +179,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 4: Write the spec**
+- [x] **Step 4: Write the spec**
 
 `scripts/qa/final-polish.spec.mjs`:
 
@@ -287,7 +302,7 @@ test("signed-out /board is the structural zero state, still measured", async ({ 
 })
 ```
 
-- [ ] **Step 5: The report merger**
+- [x] **Step 5: The report merger**
 
 `scripts/qa/report.mjs`:
 
@@ -309,7 +324,7 @@ writeFileSync("scripts/qa/report/fingerprint.json", JSON.stringify(fingerprint, 
 console.log(`${rows.length} rows -> scripts/qa/report/summary.md, ${Object.keys(fingerprint).length} routes fingerprinted`)
 ```
 
-- [ ] **Step 6: Wire the script and ignore the artefacts**
+- [x] **Step 6: Wire the script and ignore the artefacts**
 
 `package.json` scripts:
 
@@ -321,7 +336,7 @@ console.log(`${rows.length} rows -> scripts/qa/report/summary.md, ${Object.keys(
 
 `.gitignore`: add `scripts/qa/.auth.json`, `scripts/qa/report/`, `test-results/`.
 
-- [ ] **Step 7: Run the baseline against production**
+- [x] **Step 7: Run the baseline against production**
 
 ```powershell
 $env:MCSW_QA_BASE = "https://musiccityspecialtywelding.com"
@@ -334,7 +349,7 @@ npm run test:qa
 
 Expected: every test passes (STRICT is off), `scripts/qa/report/summary.md` and `fingerprint.json` exist with one row per route × width plus the three extras. To rerun without a new link: `$env:MCSW_QA_REUSE_AUTH = "1"`.
 
-- [ ] **Step 8: Freeze the baseline**
+- [x] **Step 8: Freeze the baseline**
 
 Copy `scripts/qa/report/summary.md` to `scripts/qa/baseline/2026-09-04-summary.md` and `fingerprint.json` to `scripts/qa/baseline/2026-09-04-fingerprint.json`. Paste the summary table into this plan under a `### Baseline — 2026-09-04` heading at the end. These are the *before* numbers every later task is measured against.
 
@@ -362,7 +377,7 @@ git commit -m "test(qa): a signed-in accessibility gate for every CRM route, and
 - Produces: `app/fonts.ts` exporting `golos` and `chivo` (`NextFont` instances) with CSS variables `--font-golos` and `--font-chivo`. Every shell root carries `${golos.variable} ${chivo.variable}`.
 - Produces: `control.css` tokens as the single source: `--t-caption:14px; --t-label:14px; --t-body:15px; --t-data:15px; --t-sub:15px; --t-name:16px; --t-title:18px; --t-lede:22px; --t-display:40px` (display grows in the existing min-width layers to 56px), line-heights `--lh-body:1.5; --lh-data:1.35; --lh-label:1.3; --lh-caption:1.4; --lh-name:1.3; --lh-sub:1.35; --lh-title:1.25; --lh-lede:1.25; --lh-display:1`, weights `--w-reg:420; --w-med:500; --w-semi:640` on light ground and `400 / 480 / 620` on dark.
 
-- [ ] **Step 1: Write the failing pin test**
+- [x] **Step 1: Write the failing pin test**
 
 `scripts/type-system.test.mjs`:
 
@@ -428,12 +443,12 @@ test("fonts come from next/font, not a Google @import", () => {
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/type-system.test.mjs`
 Expected: FAIL on the floor (11.5px), the `@import`, `app/fonts.ts` missing, and `board.css` redefining `--t-data`.
 
-- [ ] **Step 3: Create `app/fonts.ts`**
+- [x] **Step 3: Create `app/fonts.ts`**
 
 ```ts
 import { Chivo, Golos_Text } from "next/font/google"
@@ -459,7 +474,7 @@ export const chivo = Chivo({
 })
 ```
 
-- [ ] **Step 4: Rewrite the type block in `styles/control.css`**
+- [x] **Step 4: Rewrite the type block in `styles/control.css`**
 
 Delete line 1 (the `@import`). Replace lines 96–107 with:
 
@@ -492,13 +507,13 @@ Inside the existing `@media (prefers-color-scheme:dark){ :root:not([data-theme="
     --w-reg:400; --w-med:480; --w-semi:620;
 ```
 
-- [ ] **Step 5: Delete the duplicates**
+- [x] **Step 5: Delete the duplicates**
 
 - `app/board/board.css` lines 76–79 (the `@media (max-width:55rem){ :root{--t-data:15px;…} .cust b{font-size:16px} }` block): delete. `.cust b` at line 378 already sets `font-size:15px` — change to `var(--t-name)`.
 - `app/ops/ops-shell.css`: delete the three `--w-*` lines (43–45).
 - The remaining hard-coded `font-size: <n>px` in board-language CSS: map each to the nearest token (`22px`→`--t-lede`, `15px`→`--t-data` or `--t-name` by role, `16px`→`--t-name`). Do not invent a new token.
 
-- [ ] **Step 5b: The layouts that clip at the new sizes**
+- [x] **Step 5b: The layouts that clip at the new sizes**
 
 A 14px/15px line box is 3–4px taller than the 11.5–13.5px one it replaces. Codex's read of the stylesheets (2026-09-05) named the rules with fixed boxes or nowrap that will clip, overflow or wrap badly; each is one edit, and none changes the look at rest:
 
@@ -516,13 +531,13 @@ A 14px/15px line box is 3–4px taller than the 11.5–13.5px one it replaces. C
 
 `min-height: var(--row)` rows (`board.css:289,364`, `job.css:201,291,376,421`) already grow — leave them. The gate's `overflow` column at 320 and 375 is the check; the owner's eye is the other.
 
-- [ ] **Step 6: Apply the font variables on every shell root**
+- [x] **Step 6: Apply the font variables on every shell root**
 
 `app/ops/layout.tsx`: replace the `Chivo` import and the local `chivo` const with `import { golos, chivo } from "@/app/fonts"`, and the root becomes `<div className={\`${golos.variable} ${chivo.variable} ops-shell\`}>`. Search the tree for `--font-mcsw-jobs` (the old variable name) and repoint every use to `var(--font-chivo)`.
 
 `app/board/page.tsx`, `calls/page.tsx`, `customers/page.tsx`, `updates/page.tsx`: import `golos, chivo` from `@/app/fonts` and add `${golos.variable} ${chivo.variable}` to the className of the outermost element each page renders (for `/board` that is the `<div className="app">` at `board.tsx:400` — pass the classes in as a prop `fontClass` from `page.tsx`, since `board.tsx` is a client component and `next/font` instances are created in server modules).
 
-- [ ] **Step 7: Run the pin, then the suites**
+- [x] **Step 7: Run the pin, then the suites**
 
 Run: `node --test scripts/type-system.test.mjs` → PASS.
 Add `scripts/type-system.test.mjs` to `test:shop-brain`. Run `npm run typecheck`, `npm run lint`, `npm run test:shop-brain` → green. Run `npx next build` → exit 0 (fonts are fetched at build).
@@ -531,7 +546,7 @@ Add `scripts/type-system.test.mjs` to `test:shop-brain`. Run `npm run typecheck`
 
 Push the branch, open the Vercel preview signed in. DevTools → Network → filter `font`: both faces from `/_next/static/media/`, nothing from `googleapis`. Walk `/board` on desktop and at 375: nothing under 14px (run `npm run test:qa` against the preview and read the `min font` column). **Owner eyeballs the preview.** Do not open Task 2 until approved.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add app/fonts.ts styles/control.css app/board app/ops scripts/type-system.test.mjs package.json
@@ -553,7 +568,7 @@ git commit -m "feat(type): one scale with a 14px floor, one weight ladder, fonts
 - Produces: `<SkipLink />` (server component) rendering `<a className="skip" href="#main">Skip to the job tracker</a>` on `/board` and `Skip to content` elsewhere (prop `label`).
 - Produces: `main#main` on every route, `tabIndex={-1}` so `#main` receives focus in every browser.
 
-- [ ] **Step 1: Write the failing pin**
+- [x] **Step 1: Write the failing pin**
 
 `scripts/landmarks.test.mjs`:
 
@@ -607,11 +622,11 @@ test("/board has its own error, not-found and loading surfaces in the board lang
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/landmarks.test.mjs` → FAIL (no skip-link file, nested mains, missing titles).
 
-- [ ] **Step 3: The skip link**
+- [x] **Step 3: The skip link**
 
 `app/board/skip-link.tsx`:
 
@@ -634,7 +649,7 @@ export function SkipLink({ label = "Skip to content" }: { label?: string }) {
 .skip:focus-visible{top:var(--s2);outline:2px solid var(--focus);outline-offset:2px}
 ```
 
-- [ ] **Step 4: One main, one h1 per route**
+- [x] **Step 4: One main, one h1 per route**
 
 `app/board/board.tsx`: render `<SkipLink label="Skip to the job tracker" />` as the first child of `<div className="app">`; wrap the tracker + figures + calls column in `<main id="main" tabIndex={-1}>` (the rail stays a `<nav aria-label="Board">`; the live-call card is an `<aside aria-label="Last call">`). The board's `h1` is the visible "Job tracker" heading — `board.tsx:481` is `<h2 className="t-title">Job tracker</h2>`; make it `h1` (the `.t-title` class keeps its size, so nothing visibly changes); every other heading on the page steps down one level so none skips.
 
@@ -644,11 +659,11 @@ The three satellites (`calls`, `customers`, `updates`) already render one `<main
 
 `app/ops/ops-header.tsx`: `<SkipLink />` first in the header's JSX.
 
-- [ ] **Step 5: Titles**
+- [x] **Step 5: Titles**
 
 Every page without `export const metadata` gets one, in the pattern the ops layout already uses: `` export const metadata = { title: "Job tracker · MCSW Jobs" } ``. Dynamic pages (`leads/[id]`, `accounts/[id]`, `intake/[draftId]`) use `generateMetadata` returning `` `${name} · MCSW Jobs` ``.
 
-- [ ] **Step 6: Board error surfaces**
+- [x] **Step 6: Board error surfaces**
 
 `app/board/not-found.tsx`:
 
@@ -673,7 +688,7 @@ export default function BoardNotFound() {
 
 `node --test scripts/landmarks.test.mjs` → PASS. Add to `test:shop-brain`. `npm run typecheck && npm run lint && npm run test:shop-brain` → green. On the preview: Tab once on `/board` (skip link visible), Enter (focus on main), `/board/nope` → the not-found page. `npm run test:qa` → `h1`, `main`, `skip` columns all `1 / 1 / true`. **Owner eyeballs.**
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/board app/ops scripts/landmarks.test.mjs styles/control.css package.json
@@ -708,7 +723,7 @@ The contract, per field kind:
 
 Every input has a `<label htmlFor>` or `aria-label`; every hint paragraph has an `id` and the input names it in `aria-describedby`; every error paragraph has `role="alert"` and its id is appended to `aria-describedby` when shown; a submit that fails validation calls `.focus()` on the first `[aria-invalid="true"]`; a pending submit sets `aria-busy="true"` on the form and `disabled` on the submit button with its text changed to the verb in progress ("Saving…").
 
-- [ ] **Step 1: Write the failing pin**
+- [x] **Step 1: Write the failing pin**
 
 `scripts/form-affordances.test.mjs`:
 
@@ -761,11 +776,11 @@ test("a failed submit moves focus to the first invalid field, and a pending one 
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/form-affordances.test.mjs` → FAIL on every assertion (zero `autoComplete` today).
 
-- [ ] **Step 3: Apply the contract**
+- [x] **Step 3: Apply the contract**
 
 Work file by file from the table. The focus move is one effect in each form:
 
@@ -784,7 +799,7 @@ and `aria-busy={pending}` on the `<form>`, with the submit button `disabled={pen
 
 `node --test scripts/form-affordances.test.mjs` → PASS. Add to `test:shop-brain`. Suites green. On a phone against the preview: `/ops/intake/new`, tap phone (tel keypad), tap name (autofill chip), submit empty (focus and error text). `npm run test:qa` → the axe `label` and `aria-*` rule ids are gone from the intake rows. **Owner eyeballs** (the form looks the same; the check is the keypad and the autofill).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/ops app/board scripts/form-affordances.test.mjs package.json
@@ -803,7 +818,7 @@ git commit -m "feat(forms): autofill, the right keypad, labels, and focus on the
 **Interfaces:**
 - Produces: `control.css` rules the whole app inherits — no per-component `:focus-visible` overrides remain except where the ring colour must change on a coloured field (`.figure :focus-visible` keeps `--on-field`).
 
-- [ ] **Step 1: Write the failing pin**
+- [x] **Step 1: Write the failing pin**
 
 `scripts/modes.test.mjs`:
 
@@ -847,11 +862,11 @@ test("the tracker's service drawing stays named", () => {
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/modes.test.mjs` → FAIL.
 
-- [ ] **Step 3: The four blocks in `control.css`**
+- [x] **Step 3: The four blocks in `control.css`**
 
 Append after the touch-target block:
 
@@ -885,7 +900,7 @@ Append after the touch-target block:
 
 Delete the per-component `:focus-visible` rules in `control.css` (`.logo-home:focus-visible`, `.btn--go:focus-visible`) — the global rule replaces them; keep `.figure :focus-visible{outline-color:var(--on-field)}`. Delete `board.css:509`. Fix the one `outline:none` by removing it (the global ring now applies) or, if it is on `.find input`, leave it — `.find:focus-within` already draws the ring on the wrapper.
 
-- [ ] **Step 4: Colour-only states**
+- [x] **Step 4: Colour-only states**
 
 Walk every place a state is a colour: `.chip` (dot + text — fine), the tracker's service SVG (`role="img"` + label — fine, pinned), the heard-price link (text — fine), the theme toggle and rail icons (`aria-label` — fine). The one to fix if found: any `.c-wait` age that turns red past a threshold without a word — add `<span className="sr-only">overdue</span>` there. Record in the commit body what was checked and what changed; if nothing changed, say so.
 
@@ -893,7 +908,7 @@ Walk every place a state is a colour: `.chip` (dot + text — fine), the tracker
 
 `node --test scripts/modes.test.mjs` → PASS. Add to `test:shop-brain`. Suites green. On the preview: keyboard through `/board` and a job page (every control shows the ring); DevTools → Rendering → `prefers-reduced-motion: reduce` (theme toggle and row expand snap, no animation); Windows contrast theme on (chips/tabs/buttons bordered). `npm run test:qa` → no `color-contrast` ids anywhere. **Owner eyeballs** (in the default modes nothing visibly changes except a consistent focus ring).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add styles/control.css app/board scripts/modes.test.mjs package.json
@@ -917,7 +932,7 @@ git commit -m "feat(a11y): one focus ring, reduced motion and forced colours on 
 - Consumes: `scripts/qa/baseline/2026-09-04-fingerprint.json` from Task 0 and `scripts/qa/report/fingerprint.json` from a fresh `npm run test:qa` on the preview.
 - Produces: `node scripts/qa/fingerprint-diff.mjs <before.json> <after.json>` — exits 1 and lists every `route / class / property` whose computed value changed.
 
-- [ ] **Step 1: The diff tool**
+- [x] **Step 1: The diff tool**
 
 `scripts/qa/fingerprint-diff.mjs`:
 
@@ -941,7 +956,7 @@ console.log(`fingerprint unchanged across ${Object.keys(before).length} routes`)
 
 Font-size and weight *will* differ from the 2026-09-04 baseline because Task 1 changed them on purpose. So the "before" for this task is a fresh fingerprint captured on the preview of Task 4's merge, not the original baseline: run `npm run test:qa` against that preview first and copy `report/fingerprint.json` to `scripts/qa/baseline/pre-retirement-fingerprint.json`.
 
-- [ ] **Step 2: The pin**
+- [x] **Step 2: The pin**
 
 `scripts/dead-css.test.mjs`:
 
@@ -979,9 +994,9 @@ test("the rejected design previews are gone", () => {
 
 (Write it with `import { execSync } from "node:child_process"` and `import { existsSync } …` at the top — ESM, as every other pin in `scripts/`.)
 
-- [ ] **Step 3: Run it, watch it fail** — `node --test scripts/dead-css.test.mjs` → FAIL on all three.
+- [x] **Step 3: Run it, watch it fail** — `node --test scripts/dead-css.test.mjs` → FAIL on all three.
 
-- [ ] **Step 4: Move the live rules**
+- [x] **Step 4: Move the live rules**
 
 Produce the used-class list: `git grep -ho "ops-[a-z0-9-]*" -- "app/board" "app/ops" "components" | sort -u`. **Select by selector, never by line range** — the ops-era sections are interleaved with marketing (`.ms-site > header.ms-nav` sits at 3492 inside them) and with the customer page (`.glass-traveler` at 8021). The rule, per rule block in `app/globals.css`, including blocks nested in `@media`:
 
@@ -993,13 +1008,13 @@ A block whose arms fall in different buckets is split; a declaration block empti
 
 Import `styles/ops-legacy.css` in `app/ops/layout.tsx` directly after `control.css`, and in the three board satellite pages after their route CSS. Route CSS keeps the two-class specificity pattern the memory note describes (`.updates-page .ops-wire-slip`), so order is not what decides — but the fingerprint diff is the proof, not this sentence.
 
-- [ ] **Step 5: Retarget the token test** — `scripts/ops-shell-tokens.test.mjs` reads `styles/ops-legacy.css` for the `--color-*` references it diffs against the alias block.
+- [x] **Step 5: Retarget the token test** — `scripts/ops-shell-tokens.test.mjs` reads `styles/ops-legacy.css` for the `--color-*` references it diffs against the alias block.
 
-- [ ] **Step 6: Delete the previews**
+- [x] **Step 6: Delete the previews**
 
 `git rm -r app/design-preview`. Decided in the planning session; do not ask again. They are rejected drafts reachable by anyone with the URL, and git history keeps them. Do not delete the root `design-previews/` image folder.
 
-- [ ] **Step 7: Prove it**
+- [x] **Step 7: Prove it**
 
 `node --test scripts/dead-css.test.mjs` → PASS. Add to `test:shop-brain`. Suites green. `npx next build` → exit 0; note the `globals.css` chunk size before and after in the commit body. Push, run `npm run test:qa` against the preview, then
 
@@ -1009,12 +1024,182 @@ node scripts/qa/fingerprint-diff.mjs scripts/qa/baseline/pre-retirement-fingerpr
 
 Expected: `fingerprint unchanged across N routes`. Any line of output is a rule that lost the cascade — restore that block's order in `ops-legacy.css` and re-run; do not patch it with a new selector. **Owner eyeballs** the four routes that carry the most legacy rules: a job page, intake, `/board/updates`, `/board/customers`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/globals.css styles/ops-legacy.css app/ops/layout.tsx app/board scripts
 git commit -m "refactor(css): the live ops rules move to ops-legacy.css; 5,300 dead lines and nine rejected preview routes go"
 ```
+
+#### Pre-flight inventory — 2026-09-05
+
+A read-only survey of `app/globals.css` ran before this task was scheduled, so the
+hard-to-reverse session does no discovery of its own. It found **four errors in
+the task as written above**. Read these before Step 1.
+
+**Correction A — the plan names three board pages for the import. It is four.**
+`app/board/page.tsx` renders `.ops-recovery-control` and `.ops-sr-only` (through
+`board.tsx` and `recovery-control.tsx`), and their only rules are in
+`globals.css`. Omitting it leaves `/board` broken. Per-route need, measured:
+
+| route | classes whose only rules are in `globals.css` |
+|---|---|
+| `/board` | `.ops-followup-current .ops-ghost .ops-recovery-control .ops-sr-only` |
+| `/board/calls` | `.ops-followup-current .ops-ghost` |
+| `/board/customers` | `.ops-followup-current .ops-ghost` |
+| `/board/updates` | `.ops-followup-current .ops-ghost` + `@keyframes paid-land` |
+
+There is no `app/board/layout.tsx`; each board page carries its own CSS, and each
+route CSS opens with `@import "../../styles/control.css"`.
+
+**Correction B — `app/design-preview/` is 7 routes, not nine.** Seven `page.tsx`,
+one `layout.tsx`, two client components, six CSS files: 16 files. Nothing in
+`app/`, `components/` or `lib/` links to them; the three cross-links are internal
+to the folder. Two path *strings* name the URL prefix and must stay:
+`app/robots.ts:11` and `components/public-analytics.tsx:10`.
+
+**Correction C — `.ops-filters a.is-active` (1910) is a DELETE, not a MOVE.**
+`ops-filters` is rendered by no file; every `.ops-filters*` arm at 1887–1920 and
+3546–3548 is dead. Only `.ops-filters .ops-ghost` (1922) and
+`.ops-main > .ops-filters .ops-followup-current` (3977) move. The plan's other
+half is right: `.ops-done-voice.is-listening` (4479) is a MOVE.
+
+**Correction D — `scripts/dead-css.test.mjs` cannot pass as written.** Its second
+test asserts `used ⊆ defined` *and* `defined ⊆ used`. Both directions fail, and
+neither failure is a defect in the retirement:
+
+- **79 of the 137 used tokens have no rule in `globals.css` at all.** They are
+  styled by route CSS (all 35 `ops-builds-*` live in `builds.css`), or they are
+  not class names — `ops-auth` is a cookie, `ops-sw` and `ops-service-worker` are
+  service-worker registrations, `ops-dashboard` and `ops-data` are revalidate
+  tags, `ops-reply` and `ops-sms-reply` are idempotency keys,
+  `ops-handset-question` and `ops-login-message` are DOM ids, and
+  `ops-code`/`ops-email`/`ops-phone` are form field names. A grep for
+  `ops-[a-z0-9-]*` cannot tell a class from any other `ops-`-prefixed string.
+- **20 names ride into `ops-legacy.css` on MOVE arms without being rendered
+  themselves**, because they are ancestor selectors — `.ops-main .ops-ghost`,
+  `.ops-work-order-vnext > .ops-header`, and so on. The list:
+  `.ops-account-page .ops-account-people .ops-add-job-action .ops-card
+  .ops-filters .ops-header-actions .ops-job-row .ops-kicker .ops-login .ops-main
+  .ops-more-view .ops-phone-row .ops-row-actions .ops-shop-page .ops-sub
+  .ops-table-wrap .ops-ticket-actions .ops-ticket-urgent .ops-wall-vnext
+  .ops-work-order-vnext`. This is a direct consequence of the plan's own arm rule.
+
+Pin the assertion that is actually worth pinning instead:
+
+```js
+// every used ops class that HAD a rule in globals.css still has one
+for (const c of used) if (oldGlobalsDefined.has(c)) assert.ok(legacyDefined.has(c), `${c} lost its rule`)
+// nothing survives that is not reachable from a used class
+for (const c of legacyDefined) assert.ok(used.has(c) || ANCESTOR_ALLOWLIST.has(c), `${c} has a rule but nothing renders it`)
+```
+
+The first direction was verified to hold today: every used class with a rule in
+`globals.css` is covered by a MOVE arm, zero misses. Tests 1 and 3 are fine as
+written.
+
+**Two suites break the moment `app/design-preview/` is deleted, and must be fixed
+in the same commit:**
+
+- `scripts/public-discovery-regressions.test.mjs:38–45` reads
+  `app/design-preview/layout.tsx`. Delete the whole test.
+- `scripts/recent-regressions.test.mjs:40–53` reads five preview pages. Delete
+  the whole test. **This suite is in `test:shop-brain`**, so it breaks the gate.
+- `scripts/recent-regressions.test.mjs:92` iterates a list containing
+  `"/design-preview"` against `public-analytics.tsx` and passes unchanged, as long
+  as that string stays in the component.
+
+**Bucket counts**, from a brace-depth parser that respects `@media` nesting and
+splits selector lists on top-level commas:
+
+```
+ARMS    MOVE=458   DELETE=1749  KEEP=900   total=3107
+BLOCKS  MOVE=384   DELETE=1337  KEEP=782   MIXED=44   total=2547
+```
+
+Indicative lines: DELETE ≈ 3,633 · KEEP ≈ 2,810 · MOVE ≈ 1,038 · MIXED ≈ 273. The
+`globals.css < 4000` assertion in test 1 is achievable. 78 distinct `.ops-*` names
+appear in MOVE arms; 157 appear only in DELETE arms.
+
+**Hazards, confirmed:**
+
+- **`@keyframes`.** `paid-land` (4358) is referenced by `.ops-paid-moment` and
+  **moves with it** — `/board/updates` restyles `.ops-paid-moment` in its own CSS
+  but has no keyframe, so that route needs the import or the modal stops
+  animating. `done-hold` (4484) and `money-odometer` (5385) are referenced only by
+  DELETE arms and go with them. `wm-flicker` and `sw-buzz` are marketing.
+- **Custom properties separate cleanly.** No MOVE arm reads a property declared in
+  a KEEP or DELETE block. `--ms-*` and the five `--ops-*` are declared on
+  `.ops-shell`, itself a MOVE arm, and read only by MOVE/DELETE. The marketing
+  `--mx-*` are declared on `.ms-site` and read only by KEEP.
+- **`app/globals.css:3` is `@import "../tokens.css"` and is load-bearing.**
+  `tokens.css` declares every `--color-*`, `--space-*`, `--radius-*` and font
+  variable that 54 moved properties depend on. Do not remove it, and do **not**
+  add a second `@import "../tokens.css"` to `ops-legacy.css` — Tailwind inlines it
+  twice.
+- **`@theme inline` at 81–121 must stay.** It holds declarations, not rules, so an
+  arm-counting classifier reports it empty in all three buckets.
+- **44 MIXED blocks must be split.** Recurring shapes: `.glass-page` bundled with
+  `.ops-main`/`.ops-login` (4099–4108, 4240–4254, 4767–4769 — the glass arms are
+  `/j/[token]` and stay); `.ops-work-order-vnext > *` fan-outs;
+  `.ops-tracked-call` paired with a dead sibling; `.ops-login > .ops-alert` inside
+  dead login lists.
+- **The two named interleaving traps are exactly where the plan says.**
+  `.ms-site > header.ms-nav` opens at 3492 (block 3492–3496), and the KEEP glass
+  region ends at exactly 8021, with `.ops-work-order-vnext .ops-spike-attachments`
+  starting a 230-line DELETE run at 8025.
+- **There are no `.public-*` classes in `globals.css`.** The "public stub" this
+  task refers to is `html, body { overflow-x: clip }` at 4096–4097.
+- **Cascade order flips, and the fingerprint is what catches it.** Today `/ops`
+  loads `globals.css` (root layout) → `control.css` → `ops-shell.css`. After the
+  move it is `control.css` → `ops-legacy.css` → `ops-shell.css`: the legacy rules
+  go from *before* `control.css` to *after* it, so equal-specificity conflicts
+  invert. If the fingerprint diff fires, import `ops-legacy.css` **before**
+  `control.css`. Do not add a selector to win it back.
+
+**Regenerate before starting.** The used-class list moved twice during the survey
+itself (`ops-handset-speak` and `ops-login-message` appeared mid-pass). Re-run
+`git grep -ho "ops-[a-z0-9-]*" -- "app/board" "app/ops" "components" | sort -u`
+and re-run the classifier at the top of the session rather than trusting the
+counts above.
+
+#### P5 offline execution record - 2026-09-05
+
+Executed on the task branch with the owner's P5 overrides: no push, merge,
+production build, preview gate, or computed-style fingerprint run. The Task 5
+checkboxes record the authorized offline replacements for Steps 7 and 8.
+`scripts/qa/fingerprint-diff.mjs` is ready for the later signed-in P6 run;
+computed-style parity is not claimed here.
+
+- Regenerated before moving: 137 used tokens; MOVE 458, DELETE 1749, KEEP 900
+  selector arms. Blocks: MOVE 384, DELETE 1337, KEEP 782, MIXED 44.
+  Imports subsequently add the non-class token `ops-legacy`; buckets stay the same.
+- `app/globals.css`: 8,968 to 3,477 lines. `styles/ops-legacy.css`: 1,318 lines.
+  The replay classifier reads the committed frozen original; its write mode
+  refuses to overwrite any globals file that no longer equals that baseline.
+- The raw declaration proof checks complete bodies, selector arms, enclosing
+  at-rules and source order. Complete MOVE and KEEP projections additionally pin
+  every live arm and all retained marketing/customer-glass/theme rules. Negative
+  fixtures reject formatting, value, order, split, merge and context changes.
+- Legacy is the first import on the ops layout and all four board pages, before
+  component imports that can bring in control.css. This preserves precedence for
+  the shared control utilities, font/token aliases and mode rules. No selector
+  or specificity changes were used. `paid-land` moves; the two dead ops
+  keyframes disappear; marketing keyframes, tokens.css import and theme stay.
+- Deleted seven preview routes / 16 files and exactly their two named tests.
+  The root `design-previews/` images and robots/analytics URL strings remain.
+  Two existing activation tests are retained and retargeted from dead CSS to
+  live controls/install styles; their behavior checks remain.
+- Typecheck passes after generating local route types with `next typegen`.
+  The worktree's stale shared `.next` junction was unlinked (target untouched)
+  and replaced by an isolated ignored directory; no build was run.
+- Final offline gate: 514 pass, 2 skipped, 0 failures (baseline 506 pass minus
+  one retired in-suite preview test plus nine new pins). Focused CSS pins:
+  11/11. Changed JavaScript/TypeScript files lint cleanly.
+- Baseline lint already fails at unchanged `lib/measurement.ts:38`
+  (`prefer-rest-params`). The separate public-discovery suite also has an
+  unchanged phone-analytics assertion against its previous implementation.
+  Neither unrelated failure was repaired by changing application code here.
 
 ---
 
@@ -1055,3 +1240,204 @@ git commit -m "docs(polish): the before and after tables, and the owner walk"
 - **No Lighthouse in the gate.** Lighthouse cannot sign in; the fonts test and the DevTools check in QA step 3 cover the perceived-load gain this round makes.
 - **No CI for the Playwright gate.** It needs a signed-in preview and the live database. It is run by hand, like the Lighthouse JSONs already at the repo root, and its outputs are frozen under `scripts/qa/baseline/`.
 - **No change to `/j/[token]`.** The customer GLASS page is an owner decision left open since the conversion; its `globals.css` blocks stay exactly where they are.
+
+---
+
+### Baseline — 2026-09-04
+
+Captured by `npm run test:qa` against **production** (`https://musiccityspecialtywelding.com`),
+signed in as owner through a one-use link from `scripts/create-local-login.mjs`,
+`MCSW_QA_JOB_ID=290`, `MCSW_QA_ACCOUNT_ID=23`. 52 tests, 51 rows, 12 routes
+fingerprinted, 3.8 minutes. STRICT off — this run asserts nothing; it records.
+
+Frozen at `scripts/qa/baseline/2026-09-04-summary.md` and
+`scripts/qa/baseline/2026-09-04-fingerprint.json`.
+
+**What the before numbers say, in one line each:**
+
+- **The 14px floor is broken on every single route.** The smallest rendered text
+  runs 10.8px (`/ops/leads/290`, a bare `<small>`) to 12px. Not one route clears
+  the owner's number. Task 1.
+- **There is no skip link anywhere.** `skip` is `false` on all 13 surfaces, and
+  the dedicated skip-link test found the first Tab goes somewhere else. Task 2.
+- **`/board` skips a heading level** at all four widths, and so does the
+  signed-out zero state. Every `/ops` route is already in order. Task 2.
+- **Two routes carry an axe `color-contrast` violation** — `/ops/accounts/23` and
+  `/ops/leads/290`, at all four widths. Everything else is clean under
+  wcag2a/2aa/21a/21aa/22aa. Task 4.
+- **Three requests to Google Fonts** on a cold `/board`. Task 1.
+- **`h1` and `main` are already 1 and 1 on every route**, and nothing overflows
+  horizontally at any width. Task 2 must not regress that while moving the
+  landmark into the ops layout.
+
+| route | width | axe | axe ids | min font | at | h1 | main | skip | order | overflow |
+|---|---|---|---|---|---|---|---|---|---|---|
+| account | 1440 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| account | 320 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| account | 375 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| account | 768 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 1440 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 320 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 375 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 768 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| board | 1440 | 0 |  | 11.5 | span.who-dot | 1 | 1 | false | false | 0 |
+| board | 320 | 0 |  | 12 | text. | 1 | 1 | false | false | 0 |
+| board | 375 | 0 |  | 12 | text. | 1 | 1 | false | false | 0 |
+| board | 768 | 0 |  | 12 | text. | 1 | 1 | false | false | 0 |
+| board | fonts |  |  |  |  |  |  |  |  |  |
+| board | skip |  |  |  |  |  |  | false |  |  |
+| builds | 1440 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| builds | 320 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| builds | 375 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| builds | 768 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| calls | 1440 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| calls | 320 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| calls | 375 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| calls | 768 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| customers | 1440 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| customers | 320 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| customers | 375 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| customers | 768 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| install | 1440 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| install | 320 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| install | 375 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| install | 768 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| intake | 1440 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| intake | 320 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| intake | 375 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| intake | 768 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| job | 1440 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| job | 320 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| job | 375 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| job | 768 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| shop | 1440 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| shop | 320 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| shop | 375 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| shop | 768 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| signedout | 1280 |  |  | 11.5 | span.who-dot | 1 | 1 | false | false | 0 |
+| sketch | 1440 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| sketch | 320 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| sketch | 375 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| sketch | 768 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| updates | 1440 | 0 |  | 11.5 | time. | 1 | 1 | false | true | 0 |
+| updates | 320 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
+| updates | 375 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
+| updates | 768 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
+
+
+---
+
+### QA execution record — 2026-09-05
+
+**Status: the round is code-complete and unverified against a running app.**
+Every task's implementation is merged on `task/run-factory-on-c-users-2` and the
+offline evidence is green. Task 6's strict gate has **not** run, and no step of
+the QA Procedure that needs a browser against a signed-in build has been walked.
+The reason is one fact, and it is not a defect in this work:
+
+> **Vercel Deployment Protection blocks every preview from automation.**
+> `https://music-city-speciality-welding-j16eopfas.vercel.app` returns `302` to
+> `vercel.com/login?next=/sso-api…` on `/`, `/board` and every other path. The
+> app's own one-use magic link never gets a chance — Playwright is redirected
+> before it reaches `/api/ops/verify`. `vercel env ls` confirms **no
+> `VERCEL_AUTOMATION_BYPASS_SECRET` is configured** on the project, which is the
+> mechanism Vercel provides for exactly this.
+
+So the gate can reach production (unprotected, and where the 2026-09-04 baseline
+was taken) but not a branch. Task 6 measures production *after* Task 5 deploys —
+which requires landing this branch, which the plan's own owner-gate forbids until
+the owner has approved a preview. That is the loop, and only the owner can break
+it. Two ways, either is fine:
+
+1. **Turn on Protection Bypass for Automation** in the Vercel project. Previews
+   stay SSO-protected for humans; the gate sends the secret as a header. This
+   unblocks every preview check in this plan permanently, not just today's.
+2. **Approve the preview and land**, then run the strict gate against production
+   as Task 6 specifies.
+
+#### What IS proven, offline
+
+| Evidence | Result |
+|---|---|
+| `npm run test:shop-brain` on the integrated branch | **514 pass, 2 skipped, 0 fail** |
+| `npm run typecheck` | clean |
+| `npm run lint` | one error, `lib/measurement.ts:38 prefer-rest-params`, reproduced at `HEAD` in the clean root checkout; `lib/` untouched this round |
+| Vercel preview build, after the 5,491-line CSS deletion | **Ready in 1m** — the client-bundle gate this repo has been burned by before |
+| `scripts/css-move-verbatim.test.mjs` | every moved block byte-identical to the frozen original, same arms, same at-rule context, same source order |
+| Frozen original is genuine | `git hash-object` of `scripts/qa/baseline/pre-retirement-globals.css` equals the blob SHA of `a2245dc:app/globals.css` (`41288ddd…`) |
+| The verbatim proof can actually fail | mutation-tested: changing a `padding` value, changing a `color`, reordering two declarations, and deleting a block each turn it **red**; restoring turns it green |
+| `app/globals.css` | 8,968 to **3,477 lines**, **zero** `.ops-*` selectors remain |
+| Authorization untouched | no `role === "owner"` or crew gating line changed since `12965ec`; `lib/` and every `actions.ts` untouched |
+
+#### QA Procedure, step by step
+
+- **Step 1 — environment.** Pass. Root install of `@playwright/test@1.63.0` and
+  `@axe-core/playwright@4.13.0` at exact versions, `npx playwright install
+  chromium`, login link minted from `scripts/create-local-login.mjs` with the host
+  swapped, `MCSW_QA_JOB_ID=290`, `MCSW_QA_ACCOUNT_ID=23`.
+- **Step 2 — the gate.** Pass **as the baseline only**. 52 tests against signed-in
+  production on 2026-09-04, 51 rows, 12 routes fingerprinted, 3.8 minutes, frozen
+  under `scripts/qa/baseline/`. The *after* half of this step has not run.
+- **Step 3 — fonts from `/_next/static/media/`, no `googleapis`, no layout jump.**
+  **Not walked** — preview unreachable. Partially evidenced: the Vercel build
+  succeeded, which is when `next/font` fetches and self-hosts the two faces, and
+  `scripts/type-system.test.mjs` pins the `@import url(` removal and both
+  `next/font` instances. The runtime request count is unmeasured; the baseline
+  recorded **3** requests to Google Fonts before the round.
+- **Step 4 — phone: tel keypad, autofill chip, focus to first invalid.**
+  **Not walked** — needs a physical phone against a signed-in build. Test-covered
+  by `scripts/form-affordances.test.mjs` (four assertions: `inputMode` and
+  `autoComplete` on every `type="tel"`, name and email autofill, every input
+  labelled, focus-to-first-invalid and `aria-busy` present).
+- **Step 5 — keyboard walk of `/board`.** **Not walked.** Test-covered by
+  `scripts/landmarks.test.mjs` (skip link first, `main#main` with `tabIndex={-1}`)
+  and `scripts/modes.test.mjs` (one global `:focus-visible` ring, no `outline:none`
+  left in `board.css` or `ops-shell.css`). The gate's live "skip link moves focus
+  to main" test has not been re-run.
+- **Step 6 — Windows forced-colors walk.** **Not walked.** Test-covered by
+  `scripts/modes.test.mjs`, which asserts the `@media (forced-colors:active)` block
+  carries rules for `.chip`, `.tab`, `.btn`, `.skip` and `.chip i`.
+- **Step 7 — `prefers-reduced-motion: reduce`.** **Not walked.** Test-covered by
+  `scripts/modes.test.mjs`: the global block exists in `control.css` and the
+  duplicate in `board.css` is gone.
+- **Step 8 — `/board/nope` and a missing job id.** **Not walked.** Test-covered by
+  `scripts/landmarks.test.mjs`, which pins `app/board/error.tsx`,
+  `not-found.tsx` and `loading.tsx` linking back to `/board` and naming no hex
+  colour.
+- **Step 9 — the `app/design-preview/*` URLs 404.** **Pass, with a caveat.**
+  Production already returns `404` for `/design-preview/mcsw-jobs` today (verified
+  by request), and the routes are now deleted from source, so it cannot regress.
+  Note the plan says nine routes; there were **seven**.
+- **Step 10 — owner eyeballs every visual task's preview.** **NOT DONE.** No
+  approval has been given for P1, P2, P4, P1b or P5. This is the gate the plan
+  calls "the one that has always mattered here", and nothing in this record
+  substitutes for it. The preview carrying the whole round, reachable from a
+  browser already signed in to Vercel:
+  `https://music-city-speciality-welding-j16eopfas.vercel.app`
+
+#### Crew check (Task 6 Step 3) — pass
+
+`git diff 12965ec..HEAD` over `app/board` and `app/ops` shows two `.tsx` lines
+matching the money terms, and both are P3 adding `type`, `inputMode`,
+`autoComplete` and `aria-label` to `invoiceTotal` and `invoicePayUrl`, which both
+existed at `12965ec`. No new money surface, no per-worker figure, no ranking, no
+read receipt, no location trail. No role-gating expression changed anywhere, and
+`lib/` and every `actions.ts` are untouched by the entire round.
+
+#### Open items, carried
+
+1. **The owner-eyeball gates for P1, P2, P4, P1b and P5.** Nothing here replaces them.
+2. **Task 6's strict gate**, blocked as described above.
+3. **The fingerprint diff.** `scripts/qa/fingerprint-diff.mjs` is written and ready;
+   `scripts/qa/baseline/pre-retirement-fingerprint.json` was never captured because
+   P4c could not reach a preview. `css-move-verbatim.test.mjs` covers the specific
+   risk it existed for — a rule rewritten while being moved — and is stronger for
+   that, but computed-style parity across the cascade remains **unmeasured**.
+4. **`scripts/ops-conversion-exit.test.mjs` fails at `HEAD` and is in no npm script.**
+   Pre-existing, unrelated, and an orphaned suite the project's own gate never runs.
+   Worth either wiring in or deleting.
+5. **`app/ops/intake/job-intake-form.tsx` is dead code** — nothing imports it; both
+   intake routes render `InlineJobIntake`. It was maintained this round because the
+   plan pins it. Recommend deleting it rather than keeping two intake forms.
+6. **The root checkout's `.next` is stale** and will report the same phantom
+   `TS2307` for the deleted preview routes until it is rebuilt.

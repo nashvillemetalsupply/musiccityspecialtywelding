@@ -63,6 +63,18 @@ import {
 
 export const dynamic = "force-dynamic"
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  if (!dbConfigured()) return { title: "Job · MCSW Jobs" }
+  const operator = await getAuthenticatedOperator()
+  if (!operator) return { title: "Sign in · MCSW Jobs" }
+  const leadId = Number((await params).id)
+  if (!Number.isInteger(leadId) || leadId <= 0) return { title: "Job not found · MCSW Jobs" }
+  const lead = await getLead(leadId, operator.role, { includeTests: canAccessInternalTests(operator.role) })
+  const name = lead ? `${lead.first_name} ${lead.last_name}`.trim() : "Job not found"
+  return { title: `${name} · MCSW Jobs` }
+}
+
+
 function formatCentral(iso: string | null) {
   if (!iso) return "Not recorded"
   return new Date(iso).toLocaleString("en-US", {
@@ -185,10 +197,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
   if (!dbConfigured()) {
     return (
-      <main className="job-page job-state-page">
+      <div className="job-page job-state-page">
         <h1>Shop operations</h1>
         <p className="job-alert job-alert--stop">The operations database is not configured.</p>
-      </main>
+      </div>
     )
   }
 
@@ -375,7 +387,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   }
 
   return (
-    <main className="job-page">
+    <div className="job-page">
       <section className="card job-lead" aria-labelledby="work-order-title">
       <header className="job-head">
         <div>
@@ -404,7 +416,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         <div><span>One quick decision</span><h2 className="t-sub" id="job-routing-title">Which job are these messages about?</h2><p>The text stayed separate so it could not land on the wrong work order.</p></div>
         {fileChoices.length ? <form action={routeConversationToJob}>
           <input type="hidden" name="sourceLeadId" value={lead.id} />
-          <label>File conversation under<select name="targetLeadId" required defaultValue="">
+          <label htmlFor="job-route-target">File conversation under<select id="job-route-target" name="targetLeadId" required defaultValue="">
             <option value="" disabled>Choose the correct job</option>
             {fileChoices.map((choice) => <option value={choice.id} key={choice.id}>Job #{choice.id} · {choice.service} · {choice.message.slice(0, 70)}</option>)}
           </select></label>
@@ -436,11 +448,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         <summary>{hasCustomerPhone || lead.email ? "Edit contact" : "Add contact"}</summary>
         <form action={captureLeadContact}>
           <input type="hidden" name="leadId" value={lead.id} />
-          <label>Mobile number<input name="phone" type="tel" inputMode="tel" defaultValue={!lead.phone_is_placeholder ? lead.phone : ""} placeholder="(615) 555-0123" /></label>
-          <label>Email<input name="email" type="email" inputMode="email" defaultValue={lead.email} placeholder="customer@company.com" /></label>
+          <label htmlFor="job-contact-phone">Mobile number<input id="job-contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={!lead.phone_is_placeholder ? lead.phone : ""} placeholder="(615) 555-0123" aria-describedby="job-contact-hint" /></label>
+          <label htmlFor="job-contact-email">Email<input id="job-contact-email" name="email" type="email" inputMode="email" autoComplete="email" defaultValue={lead.email} placeholder="customer@company.com" aria-describedby="job-contact-hint" /></label>
           <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Save contact</SafeSubmitButton>
         </form>
-        <small>The customer record is checked before saving.</small>
+        <small id="job-contact-hint">The customer record is checked before saving.</small>
       </details>}
 
       {!needsJobMatch && !routedToLeadId && smsServiceReady && hasCustomerPhone && consentState === "unknown" && operator.role === "owner" && <details className="job-consent" id="text-permission">
@@ -489,7 +501,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               <a href={`/api/ops/photo?lead=${lead.id}&path=${encodeURIComponent(photo.pathname)}`} target="_blank" rel="noreferrer">
                 <img src={`/api/ops/photo?lead=${lead.id}&path=${encodeURIComponent(photo.pathname)}`} alt={`Job photo ${photo.name}`} loading="lazy" />
               </a>
-              {operator.role === "owner" && <form action={setPhotoShared}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="pathname" value={photo.pathname} /><input name="caption" defaultValue={glassPhoto.caption ?? lead.glass_caption_draft} placeholder="Customer caption" aria-label="Customer photo caption" /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving..." name="shared" value={glassPhoto.shared ? "0" : "1"}>{glassPhoto.shared ? "Hide from Customer Page" : "Add to Customer Page"}</SafeSubmitButton></form>}
+              {operator.role === "owner" && <form action={setPhotoShared}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="pathname" value={photo.pathname} /><input name="caption" type="text" autoComplete="off" defaultValue={glassPhoto.caption ?? lead.glass_caption_draft} placeholder="Customer caption" aria-label="Customer photo caption" /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving..." name="shared" value={glassPhoto.shared ? "0" : "1"}>{glassPhoto.shared ? "Hide from Customer Page" : "Add to Customer Page"}</SafeSubmitButton></form>}
             </figure>
           })}
         </div>}
@@ -502,7 +514,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               <strong>{shopClaimText(claim.value)}</strong>
               <small>{claim.confidence < 0.6 ? "Needs a quick check" : "Source saved"}</small>
               {source && <details><summary>Show source</summary><p>{visibleEventText(source.body || source.kind, operator.role)}</p><time>{formatCentral(source.occurred_at)}</time>{operator.role === "owner" && <SourceCallAudio event={source} calls={calls} />}</details>}
-              <details className="job-fact-edit"><summary>Edit detail</summary><form action={correctClaim}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="claimId" value={claim.id} /><input name="value" defaultValue={shopClaimText(claim.value)} aria-label={`Correct ${shopClaimLabel(claim.predicate)}`} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Save correction</SafeSubmitButton></form></details>
+              <details className="job-fact-edit"><summary>Edit detail</summary><form action={correctClaim}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="claimId" value={claim.id} /><input name="value" type="text" autoComplete="off" defaultValue={shopClaimText(claim.value)} aria-label={`Correct ${shopClaimLabel(claim.predicate)}`} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Save correction</SafeSubmitButton></form></details>
             </article>
           })}
         </div>}
@@ -522,7 +534,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               <form action={rejectPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a promise</SafeSubmitButton></form>
               {operator.role === "owner" && promise.direction === "we_promised" && promise.due_at && <form action={publishPromiseToGlass}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Adding...">Add to Customer Page</SafeSubmitButton></form>}
             </div>
-            {promise.due_at && isPast(promise.due_at) && customerTextReady && <details className="job-handle"><summary>Handle it</summary><form action={handlePromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><LatePromiseMessage leadId={lead.id} commitmentId={promise.id} fallback={`Running behind on your ${lead.service.toLowerCase()}. I’m sorry.`} /><input name="reason" defaultValue="Running behind — new date confirmed with the shop." aria-label="Reason shown on Customer Page" /><label>New promise<select name="quickDue" defaultValue="tomorrow-am"><option value="tomorrow-am">Tomorrow morning</option><option value="two-days-am">In two mornings</option><option value="next-monday-am">Next Monday morning</option></select></label><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sending...">Text + update date</SafeSubmitButton></form></details>}
+            {promise.due_at && isPast(promise.due_at) && customerTextReady && <details className="job-handle"><summary>Handle it</summary><form action={handlePromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><LatePromiseMessage leadId={lead.id} commitmentId={promise.id} fallback={`Running behind on your ${lead.service.toLowerCase()}. I’m sorry.`} /><input name="reason" type="text" autoComplete="off" defaultValue="Running behind — new date confirmed with the shop." aria-label="Reason shown on Customer Page" /><label htmlFor={`promise-due-${promise.id}`}>New promise<select id={`promise-due-${promise.id}`} name="quickDue" defaultValue="tomorrow-am"><option value="tomorrow-am">Tomorrow morning</option><option value="two-days-am">In two mornings</option><option value="next-monday-am">Next Monday morning</option></select></label><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sending...">Text + update date</SafeSubmitButton></form></details>}
             {promise.due_at && isPast(promise.due_at) && !customerTextReady && <p className="job-empty t-caption">Texting is unavailable until the customer has consented.</p>}
           </article>
         ))}</div>
@@ -678,7 +690,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               <option value="voicemail">left voicemail</option>
               <option value="in-person">met in person</option>
             </select>
-            <input name="note" placeholder="What happened? (optional)" aria-label="Contact note" />
+            <input name="note" type="text" autoComplete="off" placeholder="What happened? (optional)" aria-label="Contact note" />
                 <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Save contact</SafeSubmitButton>
           </form>
 
@@ -717,7 +729,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                 <tr><th><label htmlFor="lead-estimate">Estimate ($); saves the job as quoted</label></th><td><input
                   id="lead-estimate"
                   name="estimate"
+                  type="text"
                   inputMode="decimal"
+                  autoComplete="off"
                   defaultValue={centsToDollars(lead.estimate_value_cents)}
                   placeholder="e.g. 1200"
                 /></td></tr>
@@ -751,6 +765,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                   id="lead-line-items"
                   name="lineItems"
                   rows={6}
+                  autoComplete="off"
+                  spellCheck={false}
                   defaultValue={formatLineItemsText(lineItems)}
                   placeholder={"Steel | 10 ga galv, 18 pcs | 1860\nCut and form | 6.5 hrs | 780\nGalv touch-up | 180"}
                 /></td></tr>
@@ -773,7 +789,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <input
               id="lead-revenue"
               name="revenue"
+              type="text"
               inputMode="decimal"
+              autoComplete="off"
               defaultValue={centsToDollars(lead.revenue_cents)}
               placeholder="what it actually paid"
             />
@@ -794,11 +812,14 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <input
               id="invoice-number"
               name="invoiceNumber"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
               defaultValue={lead.invoice_number}
               placeholder="Invoice # (e.g. 1337)"
             />
-            <input name="invoiceTotal" inputMode="decimal" defaultValue={centsToDollars(lead.invoice_total_cents)} placeholder="Invoice total" aria-label="Invoice total" />
-            <input name="invoicePayUrl" type="url" defaultValue={lead.invoice_pay_url} placeholder="QuickBooks pay link (optional)" aria-label="QuickBooks payment link" />
+            <input name="invoiceTotal" type="text" inputMode="decimal" autoComplete="off" defaultValue={centsToDollars(lead.invoice_total_cents)} placeholder="Invoice total" aria-label="Invoice total" />
+            <input name="invoicePayUrl" type="url" inputMode="url" autoComplete="off" spellCheck={false} defaultValue={lead.invoice_pay_url} placeholder="QuickBooks pay link (optional)" aria-label="QuickBooks payment link" />
             <select name="dueDays" defaultValue="14" aria-label="Due terms">
               <option value="0">due on receipt</option>
               <option value="7">net 7</option>
@@ -856,7 +877,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                 <option key={status} value={status}>{shopJobStatusLabel(status)}</option>
               ))}
             </select>
-            <input name="reason" placeholder="Reason (required for Did not book or Not a job)" defaultValue={lead.status_reason} aria-label="Reason for Did not book or Not a job" />
+            <input name="reason" type="text" autoComplete="off" placeholder="Reason (required for Did not book or Not a job)" defaultValue={lead.status_reason} aria-label="Reason for Did not book or Not a job" />
             <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Update status</SafeSubmitButton>
           </form> : <p className="job-current t-caption">Finished jobs are locked. Use Undo finish below before changing status.</p>}
 
@@ -878,6 +899,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               id="lead-notes"
               name="notes"
               rows={5}
+              autoComplete="off"
               defaultValue={lead.notes}
               placeholder="Quote numbers, measurements, gate codes, the dog's name…"
             />
@@ -986,6 +1008,6 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           </nav>}
         </details>
       </section>
-    </main>
+    </div>
   )
 }

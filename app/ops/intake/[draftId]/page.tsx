@@ -8,6 +8,14 @@ import { InlineJobIntake } from "../inline-job-intake"
 
 export const dynamic = "force-dynamic"
 
+export async function generateMetadata({ params }: { params: Promise<{ draftId: string }> }) {
+  const operator = await getAuthenticatedOperator()
+  if (!operator) return { title: "Sign in · MCSW Jobs" }
+  const draft = await getCallIntakeDraft((await params).draftId)
+  return { title: `${draft?.caller_name || "New job"} · MCSW Jobs` }
+}
+
+
 export default async function CallIntakePage({ params }: { params: Promise<{ draftId: string }> }) {
   const operator = await getAuthenticatedOperator()
   if (!operator) redirect("/ops")
@@ -16,7 +24,7 @@ export default async function CallIntakePage({ params }: { params: Promise<{ dra
   if (!draft || draft.status === "dismissed") redirect("/ops")
   if (draft.status === "saved" && draft.lead_id) redirect(`/ops/leads/${draft.lead_id}`)
 
-  return <main className="intake-page">
+  return <div className="intake-page">
     <Link className="btn btn--sm btn--edge intake-back" href="/ops">Back to Jobs</Link>
     <InlineJobIntake
       intakeKey={`call-${draft.public_id}`}
@@ -32,5 +40,5 @@ export default async function CallIntakePage({ params }: { params: Promise<{ dra
         lastError: draft.last_error,
       }}
     />
-  </main>
+  </div>
 }

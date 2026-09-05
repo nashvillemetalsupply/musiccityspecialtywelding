@@ -37,9 +37,9 @@
   --draw-line: var(--dark-draw-line);
   --draw-thin: var(--dark-draw-thin);
   --draw-fill: var(--dark-draw-fill);
-  --w-reg: 400;
-  --w-med: 480;
-  --w-semi: 620;
+
+  /* The dark weight ladder used to be repeated here. It lives once, with the
+     light one, in styles/control.css — which also pins it on .ops-shell. */
 
   /* Legacy marketing tokens are aliased for every shell in styles/control.css
      (the block "legacy tokens"), because /board/updates, /board/calls and
@@ -121,7 +121,12 @@
   gap: var(--s3);
 }
 
+/* nowrap in a fixed-height top bar: at 14px a long operator name pushed the bar
+   sideways, so it truncates rather than overflowing. */
 .ops-person {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--t-label);
   font-weight: var(--w-med);
   color: var(--text-muted);

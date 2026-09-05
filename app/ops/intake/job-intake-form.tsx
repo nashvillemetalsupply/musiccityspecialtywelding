@@ -1,5 +1,7 @@
+"use client"
+
 import Link from "next/link"
-import type { ComponentProps } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { createManualLead } from "../actions"
 import { SafeSubmitButton } from "../safe-action-controls"
 import { dismissCallDraftAction, saveCallDraftAction } from "./actions"
@@ -40,9 +42,30 @@ export function JobIntakeForm({
   owner: boolean
 }) {
   const inbound = Boolean(draft)
-  const action = (inbound ? saveCallDraftAction : createManualLead) as ComponentProps<"form">["action"]
+  const action: (formData: FormData) => Promise<void> = inbound ? saveCallDraftAction : createManualLead
   const isWalkIn = source === "walk-in"
-  return <main className="jobs-intake-page">
+  const formRef = useRef<HTMLFormElement>(null)
+  const [pending, startSubmit] = useTransition()
+  // Reflects the fields the browser's own constraint check rejected. No new rules:
+  // the only source of truth is the `required` attributes already on the fields.
+  const [invalid, setInvalid] = useState<Record<string, boolean>>({})
+  const flag = (name: string) => ({
+    "aria-invalid": invalid[name] ? ("true" as const) : undefined,
+    onInvalid: () => setInvalid((current) => ({ ...current, [name]: true })),
+    onInput: () => setInvalid((current) => (current[name] ? { ...current, [name]: false } : current)),
+  })
+
+  // After a submit that returned field errors, put the keyboard on the first one.
+  useEffect(() => {
+    if (!Object.values(invalid).some(Boolean)) return
+    formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+  }, [invalid])
+
+  const needHintId = "jobs-intake-need-hint"
+  const errorId = "jobs-intake-error"
+  const needDescribedBy = [inbound ? needHintId : "", draft?.lastError ? errorId : ""].filter(Boolean).join(" ")
+
+  return <div className="jobs-intake-page">
     <section className="jobs-intake-stage" aria-labelledby="jobs-intake-title">
       <Link className="jobs-intake-back" href="/ops">← Back to jobs</Link>
       <header className="jobs-intake-heading">
@@ -68,44 +91,53 @@ export function JobIntakeForm({
         </div>}
       </div>}
 
-      {draft?.lastError && <p className="jobs-intake-error" role="alert">{draft.lastError}</p>}
+      {draft?.lastError && <p className="jobs-intake-error" role="alert" id={errorId}>{draft.lastError}</p>}
 
-      <form action={action} className="jobs-intake-form">
+      <form
+        ref={formRef}
+        action={(formData: FormData) => startSubmit(async () => { await action(formData) })}
+        className="jobs-intake-form"
+        aria-busy={pending}
+      >
         {inbound && <input type="hidden" name="draftId" value={draft!.publicId} />}
         {!inbound && <>
           <input type="hidden" name="source" value={source} />
           <input type="hidden" name="intakeKey" value={intakeKey} />
         </>}
 
-        <label className="jobs-intake-need">
+        <label className="jobs-intake-need" htmlFor="jobs-intake-need">
           <span>What do they need?</span>
           <textarea
+            id="jobs-intake-need"
             name="message"
+            autoComplete="off"
             defaultValue={draft?.need ?? ""}
             placeholder={isWalkIn ? "What did they bring in?" : "Gate, trailer, repair, fabrication…"}
             rows={4}
             required={!inbound}
+            aria-describedby={needDescribedBy || undefined}
             autoFocus
+            {...flag("message")}
           />
-          {inbound && <small>Optional if the recorded call already covers it.</small>}
+          {inbound && <small id={needHintId}>Optional if the recorded call already covers it.</small>}
         </label>
 
         <div className="jobs-intake-person">
-          <label>
+          <label htmlFor="jobs-intake-name">
             <span>Name or company</span>
-            <input name="firstName" defaultValue={draft?.name ?? ""} autoComplete="name" placeholder={isWalkIn ? "Who is here?" : "Caller name"} />
+            <input id="jobs-intake-name" name="firstName" type="text" autoComplete="name" spellCheck={false} defaultValue={draft?.name ?? ""} placeholder={isWalkIn ? "Who is here?" : "Caller name"} {...flag("firstName")} />
           </label>
-          <label>
+          <label htmlFor="jobs-intake-phone">
             <span>Phone</span>
-            <input name="phone" defaultValue={draft?.phone ?? ""} type="tel" inputMode="tel" autoComplete="tel" placeholder="(615) 555-0123" />
+            <input id="jobs-intake-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={draft?.phone ?? ""} placeholder="(615) 555-0123" {...flag("phone")} />
           </label>
         </div>
 
         <details className="jobs-intake-details">
           <summary>More details</summary>
           <div>
-            <label><span>Service</span><select name="service" defaultValue=""><option value="">Not sure yet</option><option>Mobile Welding (On-Site)</option><option>Trailer / Truck Welding Repair</option><option>Equipment &amp; Structural Repair</option><option>Architectural Welding &amp; Fabrication</option><option>Specialty Fabrication</option><option>Aluminum / Boat Welding</option><option>Not Sure / Other</option></select></label>
-            <label><span>Referral</span><input name="referral" placeholder="Who sent them?" /></label>
+            <label htmlFor="jobs-intake-service"><span>Service</span><select id="jobs-intake-service" name="service" defaultValue=""><option value="">Not sure yet</option><option>Mobile Welding (On-Site)</option><option>Trailer / Truck Welding Repair</option><option>Equipment &amp; Structural Repair</option><option>Architectural Welding &amp; Fabrication</option><option>Specialty Fabrication</option><option>Aluminum / Boat Welding</option><option>Not Sure / Other</option></select></label>
+            <label htmlFor="jobs-intake-referral"><span>Referral</span><input id="jobs-intake-referral" name="referral" type="text" autoComplete="off" placeholder="Who sent them?" /></label>
           </div>
         </details>
 
@@ -121,5 +153,5 @@ export function JobIntakeForm({
         <SafeSubmitButton className="jobs-not-job" pendingLabel="Filing…">Not a job</SafeSubmitButton>
       </form>}
     </section>
-  </main>
+  </div>
 }
