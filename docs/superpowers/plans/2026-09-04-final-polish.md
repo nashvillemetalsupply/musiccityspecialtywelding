@@ -1324,3 +1324,120 @@ Frozen at `scripts/qa/baseline/2026-09-04-summary.md` and
 | updates | 375 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
 | updates | 768 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
 
+
+---
+
+### QA execution record — 2026-09-05
+
+**Status: the round is code-complete and unverified against a running app.**
+Every task's implementation is merged on `task/run-factory-on-c-users-2` and the
+offline evidence is green. Task 6's strict gate has **not** run, and no step of
+the QA Procedure that needs a browser against a signed-in build has been walked.
+The reason is one fact, and it is not a defect in this work:
+
+> **Vercel Deployment Protection blocks every preview from automation.**
+> `https://music-city-speciality-welding-j16eopfas.vercel.app` returns `302` to
+> `vercel.com/login?next=/sso-api…` on `/`, `/board` and every other path. The
+> app's own one-use magic link never gets a chance — Playwright is redirected
+> before it reaches `/api/ops/verify`. `vercel env ls` confirms **no
+> `VERCEL_AUTOMATION_BYPASS_SECRET` is configured** on the project, which is the
+> mechanism Vercel provides for exactly this.
+
+So the gate can reach production (unprotected, and where the 2026-09-04 baseline
+was taken) but not a branch. Task 6 measures production *after* Task 5 deploys —
+which requires landing this branch, which the plan's own owner-gate forbids until
+the owner has approved a preview. That is the loop, and only the owner can break
+it. Two ways, either is fine:
+
+1. **Turn on Protection Bypass for Automation** in the Vercel project. Previews
+   stay SSO-protected for humans; the gate sends the secret as a header. This
+   unblocks every preview check in this plan permanently, not just today's.
+2. **Approve the preview and land**, then run the strict gate against production
+   as Task 6 specifies.
+
+#### What IS proven, offline
+
+| Evidence | Result |
+|---|---|
+| `npm run test:shop-brain` on the integrated branch | **514 pass, 2 skipped, 0 fail** |
+| `npm run typecheck` | clean |
+| `npm run lint` | one error, `lib/measurement.ts:38 prefer-rest-params`, reproduced at `HEAD` in the clean root checkout; `lib/` untouched this round |
+| Vercel preview build, after the 5,491-line CSS deletion | **Ready in 1m** — the client-bundle gate this repo has been burned by before |
+| `scripts/css-move-verbatim.test.mjs` | every moved block byte-identical to the frozen original, same arms, same at-rule context, same source order |
+| Frozen original is genuine | `git hash-object` of `scripts/qa/baseline/pre-retirement-globals.css` equals the blob SHA of `a2245dc:app/globals.css` (`41288ddd…`) |
+| The verbatim proof can actually fail | mutation-tested: changing a `padding` value, changing a `color`, reordering two declarations, and deleting a block each turn it **red**; restoring turns it green |
+| `app/globals.css` | 8,968 to **3,477 lines**, **zero** `.ops-*` selectors remain |
+| Authorization untouched | no `role === "owner"` or crew gating line changed since `12965ec`; `lib/` and every `actions.ts` untouched |
+
+#### QA Procedure, step by step
+
+- **Step 1 — environment.** Pass. Root install of `@playwright/test@1.63.0` and
+  `@axe-core/playwright@4.13.0` at exact versions, `npx playwright install
+  chromium`, login link minted from `scripts/create-local-login.mjs` with the host
+  swapped, `MCSW_QA_JOB_ID=290`, `MCSW_QA_ACCOUNT_ID=23`.
+- **Step 2 — the gate.** Pass **as the baseline only**. 52 tests against signed-in
+  production on 2026-09-04, 51 rows, 12 routes fingerprinted, 3.8 minutes, frozen
+  under `scripts/qa/baseline/`. The *after* half of this step has not run.
+- **Step 3 — fonts from `/_next/static/media/`, no `googleapis`, no layout jump.**
+  **Not walked** — preview unreachable. Partially evidenced: the Vercel build
+  succeeded, which is when `next/font` fetches and self-hosts the two faces, and
+  `scripts/type-system.test.mjs` pins the `@import url(` removal and both
+  `next/font` instances. The runtime request count is unmeasured; the baseline
+  recorded **3** requests to Google Fonts before the round.
+- **Step 4 — phone: tel keypad, autofill chip, focus to first invalid.**
+  **Not walked** — needs a physical phone against a signed-in build. Test-covered
+  by `scripts/form-affordances.test.mjs` (four assertions: `inputMode` and
+  `autoComplete` on every `type="tel"`, name and email autofill, every input
+  labelled, focus-to-first-invalid and `aria-busy` present).
+- **Step 5 — keyboard walk of `/board`.** **Not walked.** Test-covered by
+  `scripts/landmarks.test.mjs` (skip link first, `main#main` with `tabIndex={-1}`)
+  and `scripts/modes.test.mjs` (one global `:focus-visible` ring, no `outline:none`
+  left in `board.css` or `ops-shell.css`). The gate's live "skip link moves focus
+  to main" test has not been re-run.
+- **Step 6 — Windows forced-colors walk.** **Not walked.** Test-covered by
+  `scripts/modes.test.mjs`, which asserts the `@media (forced-colors:active)` block
+  carries rules for `.chip`, `.tab`, `.btn`, `.skip` and `.chip i`.
+- **Step 7 — `prefers-reduced-motion: reduce`.** **Not walked.** Test-covered by
+  `scripts/modes.test.mjs`: the global block exists in `control.css` and the
+  duplicate in `board.css` is gone.
+- **Step 8 — `/board/nope` and a missing job id.** **Not walked.** Test-covered by
+  `scripts/landmarks.test.mjs`, which pins `app/board/error.tsx`,
+  `not-found.tsx` and `loading.tsx` linking back to `/board` and naming no hex
+  colour.
+- **Step 9 — the `app/design-preview/*` URLs 404.** **Pass, with a caveat.**
+  Production already returns `404` for `/design-preview/mcsw-jobs` today (verified
+  by request), and the routes are now deleted from source, so it cannot regress.
+  Note the plan says nine routes; there were **seven**.
+- **Step 10 — owner eyeballs every visual task's preview.** **NOT DONE.** No
+  approval has been given for P1, P2, P4, P1b or P5. This is the gate the plan
+  calls "the one that has always mattered here", and nothing in this record
+  substitutes for it. The preview carrying the whole round, reachable from a
+  browser already signed in to Vercel:
+  `https://music-city-speciality-welding-j16eopfas.vercel.app`
+
+#### Crew check (Task 6 Step 3) — pass
+
+`git diff 12965ec..HEAD` over `app/board` and `app/ops` shows two `.tsx` lines
+matching the money terms, and both are P3 adding `type`, `inputMode`,
+`autoComplete` and `aria-label` to `invoiceTotal` and `invoicePayUrl`, which both
+existed at `12965ec`. No new money surface, no per-worker figure, no ranking, no
+read receipt, no location trail. No role-gating expression changed anywhere, and
+`lib/` and every `actions.ts` are untouched by the entire round.
+
+#### Open items, carried
+
+1. **The owner-eyeball gates for P1, P2, P4, P1b and P5.** Nothing here replaces them.
+2. **Task 6's strict gate**, blocked as described above.
+3. **The fingerprint diff.** `scripts/qa/fingerprint-diff.mjs` is written and ready;
+   `scripts/qa/baseline/pre-retirement-fingerprint.json` was never captured because
+   P4c could not reach a preview. `css-move-verbatim.test.mjs` covers the specific
+   risk it existed for — a rule rewritten while being moved — and is stronger for
+   that, but computed-style parity across the cascade remains **unmeasured**.
+4. **`scripts/ops-conversion-exit.test.mjs` fails at `HEAD` and is in no npm script.**
+   Pre-existing, unrelated, and an orphaned suite the project's own gate never runs.
+   Worth either wiring in or deleting.
+5. **`app/ops/intake/job-intake-form.tsx` is dead code** — nothing imports it; both
+   intake routes render `InlineJobIntake`. It was maintained this round because the
+   plan pins it. Recommend deleting it rather than keeping two intake forms.
+6. **The root checkout's `.next` is stale** and will report the same phantom
+   `TS2307` for the deleted preview routes until it is rebuilt.
