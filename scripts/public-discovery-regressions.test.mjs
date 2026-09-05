@@ -35,15 +35,6 @@ test("social and icon assets are truthful and branded", () => {
   assert.match(appleIcon, />\s*WELDING\s*</)
 })
 
-test("design previews are noindex everywhere and become 404s in production", () => {
-  const previewLayout = read("app/design-preview/layout.tsx")
-  assert.match(previewLayout, /index:\s*false/)
-  assert.match(previewLayout, /follow:\s*false/)
-  assert.match(previewLayout, /noimageindex:\s*true/)
-  assert.match(previewLayout, /process\.env\.NODE_ENV\s*===\s*"production"/)
-  assert.match(previewLayout, /notFound\(\)/)
-})
-
 test("public subpages share a skip link, a matching target, and compact 44px controls", () => {
   const navbar = read("components/navbar.tsx")
   const css = read("app/globals.css")

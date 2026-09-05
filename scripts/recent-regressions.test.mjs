@@ -37,20 +37,6 @@ async function loadPureTypescriptModule(path) {
   return import(`data:text/javascript;base64,${encoded}`)
 }
 
-test("design previews do not add build-time font fetches", () => {
-  const previewPages = [
-    "app/design-preview/mcsw-jobs-call-concepts/page.tsx",
-    "app/design-preview/mcsw-jobs-call-sketch/page.tsx",
-    "app/design-preview/mcsw-jobs-directions/page.tsx",
-    "app/design-preview/mcsw-jobs-finalists/page.tsx",
-    "app/design-preview/mcsw-jobs-hybrid-directions/page.tsx",
-  ]
-
-  for (const page of previewPages) {
-    assert.doesNotMatch(source(page), /from ["']next\/font\/google["']/)
-  }
-})
-
 test("the sitemap does not manufacture a fresh last-modified date on every build", () => {
   const sitemap = source("app/sitemap.ts")
 

@@ -917,7 +917,7 @@ git commit -m "feat(a11y): one focus ring, reduced motion and forced colours on 
 - Consumes: `scripts/qa/baseline/2026-09-04-fingerprint.json` from Task 0 and `scripts/qa/report/fingerprint.json` from a fresh `npm run test:qa` on the preview.
 - Produces: `node scripts/qa/fingerprint-diff.mjs <before.json> <after.json>` — exits 1 and lists every `route / class / property` whose computed value changed.
 
-- [ ] **Step 1: The diff tool**
+- [x] **Step 1: The diff tool**
 
 `scripts/qa/fingerprint-diff.mjs`:
 
@@ -941,7 +941,7 @@ console.log(`fingerprint unchanged across ${Object.keys(before).length} routes`)
 
 Font-size and weight *will* differ from the 2026-09-04 baseline because Task 1 changed them on purpose. So the "before" for this task is a fresh fingerprint captured on the preview of Task 4's merge, not the original baseline: run `npm run test:qa` against that preview first and copy `report/fingerprint.json` to `scripts/qa/baseline/pre-retirement-fingerprint.json`.
 
-- [ ] **Step 2: The pin**
+- [x] **Step 2: The pin**
 
 `scripts/dead-css.test.mjs`:
 
@@ -979,9 +979,9 @@ test("the rejected design previews are gone", () => {
 
 (Write it with `import { execSync } from "node:child_process"` and `import { existsSync } …` at the top — ESM, as every other pin in `scripts/`.)
 
-- [ ] **Step 3: Run it, watch it fail** — `node --test scripts/dead-css.test.mjs` → FAIL on all three.
+- [x] **Step 3: Run it, watch it fail** — `node --test scripts/dead-css.test.mjs` → FAIL on all three.
 
-- [ ] **Step 4: Move the live rules**
+- [x] **Step 4: Move the live rules**
 
 Produce the used-class list: `git grep -ho "ops-[a-z0-9-]*" -- "app/board" "app/ops" "components" | sort -u`. **Select by selector, never by line range** — the ops-era sections are interleaved with marketing (`.ms-site > header.ms-nav` sits at 3492 inside them) and with the customer page (`.glass-traveler` at 8021). The rule, per rule block in `app/globals.css`, including blocks nested in `@media`:
 
@@ -993,13 +993,13 @@ A block whose arms fall in different buckets is split; a declaration block empti
 
 Import `styles/ops-legacy.css` in `app/ops/layout.tsx` directly after `control.css`, and in the three board satellite pages after their route CSS. Route CSS keeps the two-class specificity pattern the memory note describes (`.updates-page .ops-wire-slip`), so order is not what decides — but the fingerprint diff is the proof, not this sentence.
 
-- [ ] **Step 5: Retarget the token test** — `scripts/ops-shell-tokens.test.mjs` reads `styles/ops-legacy.css` for the `--color-*` references it diffs against the alias block.
+- [x] **Step 5: Retarget the token test** — `scripts/ops-shell-tokens.test.mjs` reads `styles/ops-legacy.css` for the `--color-*` references it diffs against the alias block.
 
-- [ ] **Step 6: Delete the previews**
+- [x] **Step 6: Delete the previews**
 
 `git rm -r app/design-preview`. Decided in the planning session; do not ask again. They are rejected drafts reachable by anyone with the URL, and git history keeps them. Do not delete the root `design-previews/` image folder.
 
-- [ ] **Step 7: Prove it**
+- [x] **Step 7: Prove it**
 
 `node --test scripts/dead-css.test.mjs` → PASS. Add to `test:shop-brain`. Suites green. `npx next build` → exit 0; note the `globals.css` chunk size before and after in the commit body. Push, run `npm run test:qa` against the preview, then
 
@@ -1009,7 +1009,7 @@ node scripts/qa/fingerprint-diff.mjs scripts/qa/baseline/pre-retirement-fingerpr
 
 Expected: `fingerprint unchanged across N routes`. Any line of output is a rule that lost the cascade — restore that block's order in `ops-legacy.css` and re-run; do not patch it with a new selector. **Owner eyeballs** the four routes that carry the most legacy rules: a job page, intake, `/board/updates`, `/board/customers`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/globals.css styles/ops-legacy.css app/ops/layout.tsx app/board scripts
@@ -1147,6 +1147,44 @@ itself (`ops-handset-speak` and `ops-login-message` appeared mid-pass). Re-run
 `git grep -ho "ops-[a-z0-9-]*" -- "app/board" "app/ops" "components" | sort -u`
 and re-run the classifier at the top of the session rather than trusting the
 counts above.
+
+#### P5 offline execution record - 2026-09-05
+
+Executed on the task branch with the owner's P5 overrides: no push, merge,
+production build, preview gate, or computed-style fingerprint run. The Task 5
+checkboxes record the authorized offline replacements for Steps 7 and 8.
+`scripts/qa/fingerprint-diff.mjs` is ready for the later signed-in P6 run;
+computed-style parity is not claimed here.
+
+- Regenerated before moving: 137 used tokens; MOVE 458, DELETE 1749, KEEP 900
+  selector arms. Blocks: MOVE 384, DELETE 1337, KEEP 782, MIXED 44.
+  Imports subsequently add the non-class token `ops-legacy`; buckets stay the same.
+- `app/globals.css`: 8,968 to 3,477 lines. `styles/ops-legacy.css`: 1,318 lines.
+  The replay classifier reads the committed frozen original; its write mode
+  refuses to overwrite any globals file that no longer equals that baseline.
+- The raw declaration proof checks complete bodies, selector arms, enclosing
+  at-rules and source order. Complete MOVE and KEEP projections additionally pin
+  every live arm and all retained marketing/customer-glass/theme rules. Negative
+  fixtures reject formatting, value, order, split, merge and context changes.
+- Legacy is the first import on the ops layout and all four board pages, before
+  component imports that can bring in control.css. This preserves precedence for
+  the shared control utilities, font/token aliases and mode rules. No selector
+  or specificity changes were used. `paid-land` moves; the two dead ops
+  keyframes disappear; marketing keyframes, tokens.css import and theme stay.
+- Deleted seven preview routes / 16 files and exactly their two named tests.
+  The root `design-previews/` images and robots/analytics URL strings remain.
+  Two existing activation tests are retained and retargeted from dead CSS to
+  live controls/install styles; their behavior checks remain.
+- Typecheck passes after generating local route types with `next typegen`.
+  The worktree's stale shared `.next` junction was unlinked (target untouched)
+  and replaced by an isolated ignored directory; no build was run.
+- Final offline gate: 514 pass, 2 skipped, 0 failures (baseline 506 pass minus
+  one retired in-suite preview test plus nine new pins). Focused CSS pins:
+  11/11. Changed JavaScript/TypeScript files lint cleanly.
+- Baseline lint already fails at unchanged `lib/measurement.ts:38`
+  (`prefer-rest-params`). The separate public-discovery suite also has an
+  unchanged phone-analytics assertion against its previous implementation.
+  Neither unrelated failure was repaired by changing application code here.
 
 ---
 

@@ -1,3 +1,4 @@
+import "../../styles/ops-legacy.css"
 import type { ReactNode } from "react"
 import type { Metadata, Viewport } from "next"
 import { chivo, golos } from "@/app/fonts"
