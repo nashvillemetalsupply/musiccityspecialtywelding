@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { SkipLink } from "./skip-link"
 import { useRouter } from "next/navigation"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
@@ -401,7 +402,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
 
   return (
     <div className={`${fontClass} app`.trim()}>
-      <h1 className="ops-sr-only">MCSW job board</h1>
+      <SkipLink label="Skip to the job tracker" />
     
       <header className="top">
         {/* The analytics script itself is owner-only too: a crew session never
@@ -427,7 +428,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
         </div>
       </header>
     
-      <nav className="rail" aria-label="Sections">
+      <nav className="rail" aria-label="Board">
         <Link className="rl" href="/board" aria-label="Board" aria-current="page"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg></Link>
         <Link className="rl" href="/board/customers" aria-label="Customers"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="8" cy="6" r="2.4"/><path d="M3.2 13c.6-2.3 2.5-3.5 4.8-3.5S12.2 10.7 12.8 13"/></svg></Link>
         <Link className="rl" href="/board?stage=waiting" aria-label="Quotes"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 6h5M5.5 9h3"/></svg></Link>
@@ -446,13 +447,13 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
       </section>}
     
     
-      <main className="main">
+      <main id="main" tabIndex={-1} className="main">
         {/* The two figures lead: open jobs and this week's money, one thin
             strip. Owner moved them up on 2026-09-03 — at the bottom they read
             as an afterthought. */}
         <section className="card figures">
           <div className="figure">
-            <h4>Open jobs</h4>
+            <p className="figure-label">Open jobs</p>
             <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
             <div className="under">
               <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
@@ -460,7 +461,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
             </div>
           </div>
           <div className="figure">
-            <h4>Closed this week</h4>
+            <p className="figure-label">Closed this week</p>
             <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
             <div className="under">
               {outTheDoor.jobs > 0 && <span className="bar" role="img"
@@ -481,7 +482,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
         {calls}
         <section className="card">
           <div className="track-top">
-            <h2 className="t-title">Job tracker</h2>
+            <h1 className="t-title">Job tracker</h1>
             <span className="count">{countLine}</span>
             <span className="end">
               {board.signal &&
@@ -745,7 +746,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
                               {index < stageFacts.length - 1 && <span className={`wire${state === "done" ? "" : " off"}`}></span>}
                             </div>
                             <div className="stage-body">
-                              <h5>{stage.name}</h5>
+                              <h2>{stage.name}</h2>
                               <p><span>{stage.firstLabel}</span><b>{stage.firstValue}</b></p>
                               <p><span>{stage.secondLabel}</span><b>{stage.secondValue}</b></p>
                             </div>
@@ -755,7 +756,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
 
                       <div className="why">
                         <div>
-                          <h5>Why it needs you</h5>
+                          <h2>Why it needs you</h2>
                           <p>
                             {moneyCell.value === "—"
                               ? "No price is available for this job."
@@ -783,7 +784,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
                           </div>
                         </div>
                         <div>
-                          <h5>What is in it</h5>
+                          <h2>What is in it</h2>
                           <table className="sum">
                             <tbody>
                               {lineItems.length > 0
@@ -826,7 +827,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
           )}
         </section>
 
-        <section className="card">
+        <aside className="card" aria-label="Last call">
           <div className="call-top">
             <h2 className="t-title">{onTheLine ? "On the phone" : "Last call"}</h2>
             <span className="sub">{sketch ? callLine(sketch, nowMs) : "No calls yet"}</span>
@@ -945,7 +946,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
             </div>
           </div>
           {chrome.owner && <VoicePreview voice={board.voice} />}
-        </section>
+        </aside>
     
 
       </main>

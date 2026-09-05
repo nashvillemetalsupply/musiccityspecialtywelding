@@ -29,12 +29,12 @@ const card: CSSProperties = {
 const wide: CSSProperties = { width: "100%" }
 
 export default function OpsNotFound() {
-  return <main style={ground}>
+  return <div style={ground}>
     <section style={card}>
       <p className="t-label">Nothing was changed</p>
       <h1 className="t-title">Job or customer not found.</h1>
       <p>The link may be old, or this record may have been filed somewhere else. Check Active Jobs or search from the Jobs home.</p>
       <div><Link className="btn btn--edge" style={wide} href="/ops">Back to Jobs</Link></div>
     </section>
-  </main>
+  </div>
 }

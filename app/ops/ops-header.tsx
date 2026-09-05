@@ -1,9 +1,11 @@
 import Link from "next/link"
+import { SkipLink } from "../board/skip-link"
 import { MoreMenu } from "./more-menu"
 
 export function OpsCompactHeader({ name, role, voiceReady }: { name: string; role: "owner" | "crew"; voiceReady: boolean }) {
   const firstName = name.trim().split(/\s+/)[0] || "Crew"
   return <header className="ops-top">
+    <SkipLink />
     <div className="ops-top-inner">
       <Link href="/ops" className="ops-logo-home" aria-label="MCSW Jobs home">
         <img

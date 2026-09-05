@@ -86,7 +86,7 @@ body{
   line-height:var(--lh-body);-webkit-font-smoothing:antialiased;
 }
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
-h1,h2,h3,h4,h5{margin:0;font-weight:var(--w-semi);letter-spacing:-.011em}
+h1,h2,h3,h4,h5,p:where(.figure-label){margin:0;font-weight:var(--w-semi);letter-spacing:-.011em}
 p{margin:0}
 svg{display:block}
 /* figures line up in columns and stay proportional in sentences */
@@ -176,7 +176,7 @@ svg{display:block}
 .figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);border:0;background:none}
 .figure{border-radius:var(--r-md)}
 .figure{padding:var(--s3) var(--s4);min-width:0}
-.figure h4{font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
+.figure p:where(.figure-label){font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
 /* On a phone two tiles share 390px, so the caption sits under the number
    instead of beside it -- "36 on the books" broke the 36 into two lines. The
    desktop block puts them back on one baseline. */
@@ -198,12 +198,12 @@ svg{display:block}
 .figures .figure:nth-child(1){background:var(--field-info)}
 .figures .figure:nth-child(2){background:var(--field-neutral)}
 .figures .figure,
-.figures .figure h4,
+.figures .figure p:where(.figure-label),
 .figures .figure .n span,
 .figures .figure .under,
 .figures .figure .under b,
 .figures .figure .n b{color:var(--on-field)}
-.figures .figure h4,
+.figures .figure p:where(.figure-label),
 .figures .figure .n span,
 .figures .figure .under{color:var(--on-field-muted)}
 .figures .figure .under b{color:var(--on-field);font-weight:var(--w-semi)}
@@ -324,7 +324,7 @@ svg{display:block}
 /* --- the tracker --- */
 .track-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);
   padding:var(--s4)}
-.track-top h2{width:100%}
+.track-top h1{width:100%}
 .track-top .count{width:100%;color:var(--text-muted);font-size:var(--t-label)}
 .track-top .end{margin-left:0;width:100%;display:flex;flex-wrap:wrap;
   align-items:center;justify-content:flex-start;gap:var(--s2)}
@@ -429,15 +429,15 @@ svg{display:block}
 .wire{display:none;flex:1;height:2px;background:var(--status-good-mark);opacity:.4;margin:0 var(--s2)}
 .wire.off{background:var(--border-strong);opacity:1}
 .stage-body{margin:var(--s3) 0 0;padding-right:0}
-.stage-body h5{margin:0;font-size:var(--t-name);font-weight:var(--w-semi);letter-spacing:-.01em}
+.stage-body h2{margin:0;font-size:var(--t-name);font-weight:var(--w-semi);letter-spacing:-.01em}
 .stage-body p{margin:var(--s1) 0 0;font-size:var(--t-caption);color:var(--text-muted);
   display:flex;justify-content:space-between;gap:var(--s2)}
 .stage-body p b{color:var(--text-secondary);font-weight:var(--w-med)}
-.stage.off h5{color:var(--text-muted)}
+.stage.off h2{color:var(--text-muted)}
 
 .why{display:grid;grid-template-columns:1fr;gap:var(--s7);
   margin:var(--s6) 0 0;padding:var(--s5) 0 0;border-top:1px solid var(--border)}
-.why h5{margin:0;font-size:var(--t-sub);font-weight:var(--w-semi)}
+.why h2{margin:0;font-size:var(--t-sub);font-weight:var(--w-semi)}
 .why>div>p{margin:var(--s2) 0 0;font-size:var(--t-body);color:var(--text-secondary);
   line-height:var(--lh-body);max-width:58ch}
 .why b{color:var(--text-primary);font-weight:var(--w-semi)}
@@ -513,7 +513,7 @@ svg{display:block}
   .app{display:block;height:auto}
   .card{break-inside:avoid;border-color:#999}
   .figures .figure,.figures .figure *{background:none!important;color:#000!important}
-  .figures .figure h4,.figures .figure .n span,.figures .figure .under{color:#333!important}
+  .figures .figure p:where(.figure-label),.figures .figure .n span,.figures .figure .under{color:#333!important}
 }
 
 
@@ -623,7 +623,7 @@ svg{display:block}
   .call-row.saved .said{grid-row:auto}
   .calls-drop summary{padding:var(--s3) var(--s6)}
   .track-top{flex-wrap:nowrap;gap:var(--s3);padding:var(--s4) var(--s6)}
-  .track-top h2{width:auto}
+  .track-top h1{width:auto}
   .track-top .count{width:auto}
   .track-top .end{margin-left:auto;width:auto;flex-wrap:nowrap;justify-content:normal}
   .tabs{padding:0 var(--s5) var(--s3)}

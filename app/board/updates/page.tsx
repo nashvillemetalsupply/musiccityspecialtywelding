@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -10,6 +11,7 @@ import { shopEventLabel } from "@/lib/shop-language"
 import { PaidMoment } from "@/app/ops/paid-moment"
 import { WireStrip } from "@/app/ops/wire-strip"
 import { chivo, golos } from "@/app/fonts"
+import { SkipLink } from "../skip-link"
 import { ThemeBoot } from "../theme-boot"
 import { BoardRouteNav } from "../board-route-nav"
 import "../board.css"
@@ -42,7 +44,7 @@ function ageInWords(iso: string) {
 // borrowed here — an empty archive frame would say nothing a login does not.
 export default async function BoardUpdatesPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
-  if (!dbConfigured()) return <main className={`${golos.variable} ${chivo.variable} updates-page`}><h1 className="t-title">Updates</h1><p>The operations database is not configured.</p></main>
+  if (!dbConfigured()) return <PageShell><h1 className="t-title">Updates</h1><p>The operations database is not configured.</p></PageShell>
   const operator = await getAuthenticatedOperator()
   if (!operator) redirect("/ops")
 
@@ -70,13 +72,7 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
 
   const paidSlip = wire.find((slip) => slip.source_kind === "invoice.paid")
 
-  // The font variables have to sit above both the page and the fixed route nav,
-  // so they go on a wrapper rather than on <main>: a custom property that names
-  // an undefined custom property is inherited as invalid, and the nav is a
-  // sibling of <main>, not a child.
-  return <div className={`${golos.variable} ${chivo.variable}`}>
-    <ThemeBoot />
-    <main className="updates-page">
+  return <PageShell nav={<BoardRouteNav role={operator.role} current="updates" />}>
     {paidSlip && <PaidMoment slipId={paidSlip.id} title={paidSlip.title} body={paidSlip.body} />}
 
     <header className="updates-head">
@@ -120,7 +116,15 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
         {receipt.lead_id && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${receipt.lead_id}`}>Open job</Link>}
       </> : <p>This update is not available in your role.</p>}
     </section>}
-    </main>
-    <BoardRouteNav role={operator.role} current="updates" />
+    </PageShell>
+}
+
+// Keep the landmark and skip target identical for normal and unavailable states.
+function PageShell({ children, nav }: { children: ReactNode; nav?: ReactNode }) {
+  return <div className={`${golos.variable} ${chivo.variable}`}>
+    <SkipLink />
+    <ThemeBoot />
+    <main id="main" tabIndex={-1} className="updates-page">{children}</main>
+    {nav}
   </div>
 }

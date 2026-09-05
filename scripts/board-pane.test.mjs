@@ -22,7 +22,8 @@ test("relative board times share the server render clock", () => {
 
 test("the board has one accessible page title and a full-size home target", () => {
   const css = readFileSync(new URL("../app/board/board.css", import.meta.url), "utf8").replace(/\r\n/g, "\n")
-  assert.match(PREVIEW_SOURCE, /<h1 className="ops-sr-only">MCSW job board<\/h1>/)
+  assert.match(PREVIEW_SOURCE, /<h1 className="t-title">Job tracker<\/h1>/)
+  assert.equal((PREVIEW_SOURCE.match(/<h1[\s>]/g) ?? []).length, 1)
   assert.match(css, /\.logo-home\{[^}]*min-width:44px;min-height:44px/)
 })
 

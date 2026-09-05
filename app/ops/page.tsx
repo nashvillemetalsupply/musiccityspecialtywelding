@@ -5,6 +5,8 @@ import { listOperators, operatorHasEmail, operatorPunchSelector } from "@/lib/op
 import { twilioPhoneLoginConfigured } from "@/lib/twilio"
 import { OpsLoginForm } from "./login-form"
 
+export const metadata = { title: "Jobs · MCSW Jobs" }
+
 export const dynamic = "force-dynamic"
 
 type SearchParams = Promise<{ error?: string }>
@@ -13,7 +15,7 @@ type SearchParams = Promise<{ error?: string }>
 // was always one too many, but a redirect with no door left nowhere to sign in.
 export default async function OpsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
-  if (!dbConfigured()) return <main><h1>MCSW Jobs</h1><p>The operations database is not configured.</p></main>
+  if (!dbConfigured()) return <div><h1>MCSW Jobs</h1><p>The operations database is not configured.</p></div>
   if (await getAuthenticatedOperator()) redirect("/board")
 
   const smsLoginReady = twilioPhoneLoginConfigured()

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -6,6 +7,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { normalizePage } from "@/lib/pagination"
 import { listRegularAccounts } from "@/lib/wall-data"
 import { chivo, golos } from "@/app/fonts"
+import { SkipLink } from "../skip-link"
 import { ThemeBoot } from "../theme-boot"
 import { BoardRouteNav } from "../board-route-nav"
 import "./customers.css"
@@ -35,7 +37,7 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
   const params = await searchParams
   // This list is real customer names, so it is gated the way /ops is. Signed
   // out there is nothing to show and nowhere to sign in but the door itself.
-  if (!dbConfigured()) return <main><h1>Regular Customers</h1><p>The operations database is not configured.</p></main>
+  if (!dbConfigured()) return <PageShell><h1 className="t-title">Regular Customers</h1><p>The operations database is not configured.</p></PageShell>
   const operator = await getAuthenticatedOperator()
   if (!operator) redirect("/ops")
 
@@ -45,14 +47,7 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
   // over-run page number clamps back into range inside listRegularAccounts.
   const page = result.page
 
-  // The font variables have to sit above both the page and the fixed route nav,
-  // so they go on a wrapper rather than on <main>: a custom property that names
-  // an undefined custom property is inherited as invalid, and the nav is a
-  // sibling of <main>, not a child.
-  return (
-    <div className={`${golos.variable} ${chivo.variable}`}>
-      <ThemeBoot />
-      <main className="cust">
+  return <PageShell nav={<BoardRouteNav role={operator.role} current="customers" />}>
       <header className="cust-top">
         <Link className="btn btn--edge" href="/board">Board</Link>
         <h1 className="t-title">Regular Customers</h1>
@@ -92,8 +87,15 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
           {result.hasNext ? <Link className="btn btn--edge" href={href(page + 1, query)}>Older</Link> : <span />}
         </nav>
       )}
-      </main>
-      <BoardRouteNav role={operator.role} current="customers" />
-    </div>
-  )
+      </PageShell>
+}
+
+// Keep the landmark and skip target identical for normal and unavailable states.
+function PageShell({ children, nav }: { children: ReactNode; nav?: ReactNode }) {
+  return <div className={`${golos.variable} ${chivo.variable}`}>
+    <SkipLink />
+    <ThemeBoot />
+    <main id="main" tabIndex={-1} className="cust">{children}</main>
+    {nav}
+  </div>
 }

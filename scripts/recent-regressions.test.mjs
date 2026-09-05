@@ -241,7 +241,8 @@ test("private missing routes stay inside the Jobs brand without marketing chrome
   // The surface is pinned by what it says and what it refuses to render, not by
   // the stylesheet hook it happens to wear: `jobs-route-state` belonged to the
   // sheets Task 7 deletes, so pinning it would have outlawed the conversion.
-  assert.match(missing, /<main\b/)
+  assert.doesNotMatch(missing, /<main\b/)
+  assert.match(source("app/ops/layout.tsx"), /<main id="main" tabIndex=\{-1\}>\{children\}<\/main>/)
   assert.match(missing, /Job or customer not found\./)
   assert.doesNotMatch(missing, /jobs-route-state|jobs-panel|jobs-brand/)
   assert.match(missing, /Nothing was changed/)

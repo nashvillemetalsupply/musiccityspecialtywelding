@@ -65,7 +65,7 @@ export function JobIntakeForm({
   const errorId = "jobs-intake-error"
   const needDescribedBy = [inbound ? needHintId : "", draft?.lastError ? errorId : ""].filter(Boolean).join(" ")
 
-  return <main className="jobs-intake-page">
+  return <div className="jobs-intake-page">
     <section className="jobs-intake-stage" aria-labelledby="jobs-intake-title">
       <Link className="jobs-intake-back" href="/ops">← Back to jobs</Link>
       <header className="jobs-intake-heading">
@@ -153,5 +153,5 @@ export function JobIntakeForm({
         <SafeSubmitButton className="jobs-not-job" pendingLabel="Filing…">Not a job</SafeSubmitButton>
       </form>}
     </section>
-  </main>
+  </div>
 }
