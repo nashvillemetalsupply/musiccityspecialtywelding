@@ -1,0 +1,135 @@
+{
+  "account": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px",
+    "ops-tracked-call": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.5px",
+    "ops-safe-action": "14px|620|rgb(18, 16, 13)|rgb(232, 97, 28)|0px 12px|block|21px",
+    "ops-tracked-call-help": "14px|400|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px"
+  },
+  "analytics": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px"
+  },
+  "board": {
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|inline-flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px",
+    "ops-safe-action": "14px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|21px"
+  },
+  "builds": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px"
+  },
+  "calls": {
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(42, 46, 50)|0px 14px|inline-block|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|inline|21px"
+  },
+  "customers": {
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(42, 46, 50)|0px 14px|inline-block|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|inline|21px"
+  },
+  "install": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px"
+  },
+  "intake": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px",
+    "ops-safe-action": "14px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|14px"
+  },
+  "job": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px",
+    "ops-tracked-call": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.5px",
+    "ops-safe-action": "14px|620|rgb(18, 16, 13)|rgb(232, 97, 28)|0px 12px|block|14px",
+    "ops-tracked-call-help": "14px|400|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-glass-control": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|16px|grid|22.5px",
+    "ops-done-bench": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|16px|grid|22.5px",
+    "ops-closeout-finish": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-swipe-finish": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|inline-block|22.5px",
+    "ops-swipe-track": "16px|900|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 64px|grid|24px",
+    "ops-swipe-thumb": "24px|900|rgb(18, 16, 13)|rgb(232, 97, 28)|0px|grid|36px",
+    "ops-sr-only": "14px|400|rgb(207, 198, 181)|rgba(0, 0, 0, 0)|0px|block|20.3px"
+  },
+  "shop": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px",
+    "ops-safe-action": "14px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|inline-flex|14px"
+  },
+  "sketch": {
+    "ops-shell": "15px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|22.5px",
+    "ops-frame": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-top": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|22.5px",
+    "ops-top-inner": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|22.5px",
+    "ops-logo-home": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-logo": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|22.5px",
+    "ops-person": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21px"
+  },
+  "updates": {
+    "ops-wire": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-wire-current": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|flex|22.5px",
+    "ops-update-summary": "14px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|10px 16px|block|18.2px",
+    "ops-wire-line": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-wire-slip": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|12px 16px|flex|22.5px",
+    "ops-update-copy": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|22.5px",
+    "ops-update-open": "14px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|21px",
+    "ops-wire-action": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 48px|flex|22.5px",
+    "ops-safe-action": "14px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|21px",
+    "ops-wire-cabinet": "15px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|16px 0px 0px|flex|22.5px",
+    "ops-wire-search": "15px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|12px|flex|22.5px",
+    "ops-wire-pages": "14px|400|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|12px|flex|21px",
+    "ops-wire-archive": "14px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|inline-flex|21px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(42, 46, 50)|0px 14px|inline-block|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|inline|21px"
+  }
+}
