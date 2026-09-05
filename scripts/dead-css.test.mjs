@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
@@ -39,7 +39,32 @@ test("used ops classes retain their old global rules and legacy ancestors are ex
 })
 
 test("the rejected design previews are gone", () => {
-  assert.equal(existsSync(join(root, "app/design-preview")), false)
+  // Assert on files, not on the directory. existsSync() of a directory is true
+  // for an EMPTY one, and git does not track empty directories -- so a stale
+  // local `app/design-preview/<something>/` left behind by abandoned work
+  // survives the deletion commit and fails this test on a checkout whose
+  // repository contents are entirely correct.
+  //
+  // That is exactly what happened at the root during this landing: one empty
+  // directory dated three weeks earlier, never tracked on any branch, zero
+  // files under it. The worktree passed, the root failed, and the difference
+  // was not the code. An empty directory is not a route either -- Next needs a
+  // page.tsx -- so it renders nothing and 404s regardless.
+  //
+  // Counting files is immune to that noise and stricter about what matters: it
+  // fails if ANY file reappears anywhere underneath, which the directory check
+  // could not tell apart from the empty case.
+  const dir = join(root, "app/design-preview")
+  const files = []
+  const walk = (d) => {
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      const p = join(d, entry.name)
+      if (entry.isDirectory()) walk(p)
+      else files.push(p.slice(root.length).replace(/\\/g, "/"))
+    }
+  }
+  if (existsSync(dir)) walk(dir)
+  assert.deepEqual(files, [], "a design-preview file is back")
 })
 
 test("all five route entry points load legacy CSS before component and control styles", () => {
