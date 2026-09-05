@@ -79,7 +79,7 @@ The spec's ten steps, verbatim, are the QA Procedure. Task 0 turns steps 1–2 i
 - Produces: `scripts/qa/routes.mjs` exporting `ROUTES`, `WIDTHS`, `FLOOR_PX`, used by Task 5's fingerprint diff and Task 6's re-run.
 - Every test writes its own `scripts/qa/report/rows/<route>-<width>.json`; nothing is held in process memory across tests, so a worker restart cannot lose or overwrite a row (Codex review finding, 2026-09-05).
 
-- [ ] **Step 1: Install (root only)**
+- [x] **Step 1: Install (root only)**
 
 ```powershell
 npm i -D --save-exact @playwright/test@1.63.0 @axe-core/playwright@4.13.0
@@ -88,7 +88,7 @@ npx playwright install chromium
 
 Exact versions (`npm view` on 2026-09-04), not caret ranges — the gate is evidence and must be reproducible.
 
-- [ ] **Step 2: Write the route table**
+- [x] **Step 2: Write the route table**
 
 `scripts/qa/routes.mjs`:
 
@@ -119,7 +119,7 @@ export const FLOOR_PX = 14
 export const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 ```
 
-- [ ] **Step 3: Sign in once, in a setup project**
+- [x] **Step 3: Sign in once, in a setup project**
 
 `scripts/qa/auth.setup.mjs`:
 
@@ -164,7 +164,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 4: Write the spec**
+- [x] **Step 4: Write the spec**
 
 `scripts/qa/final-polish.spec.mjs`:
 
@@ -287,7 +287,7 @@ test("signed-out /board is the structural zero state, still measured", async ({ 
 })
 ```
 
-- [ ] **Step 5: The report merger**
+- [x] **Step 5: The report merger**
 
 `scripts/qa/report.mjs`:
 
@@ -309,7 +309,7 @@ writeFileSync("scripts/qa/report/fingerprint.json", JSON.stringify(fingerprint, 
 console.log(`${rows.length} rows -> scripts/qa/report/summary.md, ${Object.keys(fingerprint).length} routes fingerprinted`)
 ```
 
-- [ ] **Step 6: Wire the script and ignore the artefacts**
+- [x] **Step 6: Wire the script and ignore the artefacts**
 
 `package.json` scripts:
 
@@ -321,7 +321,7 @@ console.log(`${rows.length} rows -> scripts/qa/report/summary.md, ${Object.keys(
 
 `.gitignore`: add `scripts/qa/.auth.json`, `scripts/qa/report/`, `test-results/`.
 
-- [ ] **Step 7: Run the baseline against production**
+- [x] **Step 7: Run the baseline against production**
 
 ```powershell
 $env:MCSW_QA_BASE = "https://musiccityspecialtywelding.com"
@@ -334,7 +334,7 @@ npm run test:qa
 
 Expected: every test passes (STRICT is off), `scripts/qa/report/summary.md` and `fingerprint.json` exist with one row per route × width plus the three extras. To rerun without a new link: `$env:MCSW_QA_REUSE_AUTH = "1"`.
 
-- [ ] **Step 8: Freeze the baseline**
+- [x] **Step 8: Freeze the baseline**
 
 Copy `scripts/qa/report/summary.md` to `scripts/qa/baseline/2026-09-04-summary.md` and `fingerprint.json` to `scripts/qa/baseline/2026-09-04-fingerprint.json`. Paste the summary table into this plan under a `### Baseline — 2026-09-04` heading at the end. These are the *before* numbers every later task is measured against.
 
@@ -362,7 +362,7 @@ git commit -m "test(qa): a signed-in accessibility gate for every CRM route, and
 - Produces: `app/fonts.ts` exporting `golos` and `chivo` (`NextFont` instances) with CSS variables `--font-golos` and `--font-chivo`. Every shell root carries `${golos.variable} ${chivo.variable}`.
 - Produces: `control.css` tokens as the single source: `--t-caption:14px; --t-label:14px; --t-body:15px; --t-data:15px; --t-sub:15px; --t-name:16px; --t-title:18px; --t-lede:22px; --t-display:40px` (display grows in the existing min-width layers to 56px), line-heights `--lh-body:1.5; --lh-data:1.35; --lh-label:1.3; --lh-caption:1.4; --lh-name:1.3; --lh-sub:1.35; --lh-title:1.25; --lh-lede:1.25; --lh-display:1`, weights `--w-reg:420; --w-med:500; --w-semi:640` on light ground and `400 / 480 / 620` on dark.
 
-- [ ] **Step 1: Write the failing pin test**
+- [x] **Step 1: Write the failing pin test**
 
 `scripts/type-system.test.mjs`:
 
@@ -428,12 +428,12 @@ test("fonts come from next/font, not a Google @import", () => {
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/type-system.test.mjs`
 Expected: FAIL on the floor (11.5px), the `@import`, `app/fonts.ts` missing, and `board.css` redefining `--t-data`.
 
-- [ ] **Step 3: Create `app/fonts.ts`**
+- [x] **Step 3: Create `app/fonts.ts`**
 
 ```ts
 import { Chivo, Golos_Text } from "next/font/google"
@@ -459,7 +459,7 @@ export const chivo = Chivo({
 })
 ```
 
-- [ ] **Step 4: Rewrite the type block in `styles/control.css`**
+- [x] **Step 4: Rewrite the type block in `styles/control.css`**
 
 Delete line 1 (the `@import`). Replace lines 96–107 with:
 
@@ -492,13 +492,13 @@ Inside the existing `@media (prefers-color-scheme:dark){ :root:not([data-theme="
     --w-reg:400; --w-med:480; --w-semi:620;
 ```
 
-- [ ] **Step 5: Delete the duplicates**
+- [x] **Step 5: Delete the duplicates**
 
 - `app/board/board.css` lines 76–79 (the `@media (max-width:55rem){ :root{--t-data:15px;…} .cust b{font-size:16px} }` block): delete. `.cust b` at line 378 already sets `font-size:15px` — change to `var(--t-name)`.
 - `app/ops/ops-shell.css`: delete the three `--w-*` lines (43–45).
 - The remaining hard-coded `font-size: <n>px` in board-language CSS: map each to the nearest token (`22px`→`--t-lede`, `15px`→`--t-data` or `--t-name` by role, `16px`→`--t-name`). Do not invent a new token.
 
-- [ ] **Step 5b: The layouts that clip at the new sizes**
+- [x] **Step 5b: The layouts that clip at the new sizes**
 
 A 14px/15px line box is 3–4px taller than the 11.5–13.5px one it replaces. Codex's read of the stylesheets (2026-09-05) named the rules with fixed boxes or nowrap that will clip, overflow or wrap badly; each is one edit, and none changes the look at rest:
 
@@ -516,13 +516,13 @@ A 14px/15px line box is 3–4px taller than the 11.5–13.5px one it replaces. C
 
 `min-height: var(--row)` rows (`board.css:289,364`, `job.css:201,291,376,421`) already grow — leave them. The gate's `overflow` column at 320 and 375 is the check; the owner's eye is the other.
 
-- [ ] **Step 6: Apply the font variables on every shell root**
+- [x] **Step 6: Apply the font variables on every shell root**
 
 `app/ops/layout.tsx`: replace the `Chivo` import and the local `chivo` const with `import { golos, chivo } from "@/app/fonts"`, and the root becomes `<div className={\`${golos.variable} ${chivo.variable} ops-shell\`}>`. Search the tree for `--font-mcsw-jobs` (the old variable name) and repoint every use to `var(--font-chivo)`.
 
 `app/board/page.tsx`, `calls/page.tsx`, `customers/page.tsx`, `updates/page.tsx`: import `golos, chivo` from `@/app/fonts` and add `${golos.variable} ${chivo.variable}` to the className of the outermost element each page renders (for `/board` that is the `<div className="app">` at `board.tsx:400` — pass the classes in as a prop `fontClass` from `page.tsx`, since `board.tsx` is a client component and `next/font` instances are created in server modules).
 
-- [ ] **Step 7: Run the pin, then the suites**
+- [x] **Step 7: Run the pin, then the suites**
 
 Run: `node --test scripts/type-system.test.mjs` → PASS.
 Add `scripts/type-system.test.mjs` to `test:shop-brain`. Run `npm run typecheck`, `npm run lint`, `npm run test:shop-brain` → green. Run `npx next build` → exit 0 (fonts are fetched at build).
@@ -708,7 +708,7 @@ The contract, per field kind:
 
 Every input has a `<label htmlFor>` or `aria-label`; every hint paragraph has an `id` and the input names it in `aria-describedby`; every error paragraph has `role="alert"` and its id is appended to `aria-describedby` when shown; a submit that fails validation calls `.focus()` on the first `[aria-invalid="true"]`; a pending submit sets `aria-busy="true"` on the form and `disabled` on the submit button with its text changed to the verb in progress ("Saving…").
 
-- [ ] **Step 1: Write the failing pin**
+- [x] **Step 1: Write the failing pin**
 
 `scripts/form-affordances.test.mjs`:
 
@@ -761,11 +761,11 @@ test("a failed submit moves focus to the first invalid field, and a pending one 
 })
 ```
 
-- [ ] **Step 2: Run it, watch it fail**
+- [x] **Step 2: Run it, watch it fail**
 
 Run: `node --test scripts/form-affordances.test.mjs` → FAIL on every assertion (zero `autoComplete` today).
 
-- [ ] **Step 3: Apply the contract**
+- [x] **Step 3: Apply the contract**
 
 Work file by file from the table. The focus move is one effect in each form:
 
@@ -1055,3 +1055,87 @@ git commit -m "docs(polish): the before and after tables, and the owner walk"
 - **No Lighthouse in the gate.** Lighthouse cannot sign in; the fonts test and the DevTools check in QA step 3 cover the perceived-load gain this round makes.
 - **No CI for the Playwright gate.** It needs a signed-in preview and the live database. It is run by hand, like the Lighthouse JSONs already at the repo root, and its outputs are frozen under `scripts/qa/baseline/`.
 - **No change to `/j/[token]`.** The customer GLASS page is an owner decision left open since the conversion; its `globals.css` blocks stay exactly where they are.
+
+---
+
+### Baseline — 2026-09-04
+
+Captured by `npm run test:qa` against **production** (`https://musiccityspecialtywelding.com`),
+signed in as owner through a one-use link from `scripts/create-local-login.mjs`,
+`MCSW_QA_JOB_ID=290`, `MCSW_QA_ACCOUNT_ID=23`. 52 tests, 51 rows, 12 routes
+fingerprinted, 3.8 minutes. STRICT off — this run asserts nothing; it records.
+
+Frozen at `scripts/qa/baseline/2026-09-04-summary.md` and
+`scripts/qa/baseline/2026-09-04-fingerprint.json`.
+
+**What the before numbers say, in one line each:**
+
+- **The 14px floor is broken on every single route.** The smallest rendered text
+  runs 10.8px (`/ops/leads/290`, a bare `<small>`) to 12px. Not one route clears
+  the owner's number. Task 1.
+- **There is no skip link anywhere.** `skip` is `false` on all 13 surfaces, and
+  the dedicated skip-link test found the first Tab goes somewhere else. Task 2.
+- **`/board` skips a heading level** at all four widths, and so does the
+  signed-out zero state. Every `/ops` route is already in order. Task 2.
+- **Two routes carry an axe `color-contrast` violation** — `/ops/accounts/23` and
+  `/ops/leads/290`, at all four widths. Everything else is clean under
+  wcag2a/2aa/21a/21aa/22aa. Task 4.
+- **Three requests to Google Fonts** on a cold `/board`. Task 1.
+- **`h1` and `main` are already 1 and 1 on every route**, and nothing overflows
+  horizontally at any width. Task 2 must not regress that while moving the
+  landmark into the ops layout.
+
+| route | width | axe | axe ids | min font | at | h1 | main | skip | order | overflow |
+|---|---|---|---|---|---|---|---|---|---|---|
+| account | 1440 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| account | 320 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| account | 375 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| account | 768 | 1 | color-contrast | 11.5 | a.account-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 1440 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 320 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 375 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| analytics | 768 | 0 |  | 11.5 | a.analytics-back.t-caption | 1 | 1 | false | true | 0 |
+| board | 1440 | 0 |  | 11.5 | span.who-dot | 1 | 1 | false | false | 0 |
+| board | 320 | 0 |  | 12 | text. | 1 | 1 | false | false | 0 |
+| board | 375 | 0 |  | 12 | text. | 1 | 1 | false | false | 0 |
+| board | 768 | 0 |  | 12 | text. | 1 | 1 | false | false | 0 |
+| board | fonts |  |  |  |  |  |  |  |  |  |
+| board | skip |  |  |  |  |  |  | false |  |  |
+| builds | 1440 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| builds | 320 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| builds | 375 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| builds | 768 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| calls | 1440 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| calls | 320 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| calls | 375 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| calls | 768 | 0 |  | 11.5 | span.t-caption | 1 | 1 | false | true | 0 |
+| customers | 1440 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| customers | 320 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| customers | 375 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| customers | 768 | 0 |  | 12 | a.btn.btn--edge | 1 | 1 | false | true | 0 |
+| install | 1440 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| install | 320 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| install | 375 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| install | 768 | 0 |  | 11.5 | a.install-back.t-caption | 1 | 1 | false | true | 0 |
+| intake | 1440 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| intake | 320 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| intake | 375 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| intake | 768 | 0 |  | 11.5 | span. | 1 | 1 | false | true | 0 |
+| job | 1440 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| job | 320 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| job | 375 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| job | 768 | 1 | color-contrast | 10.8 | small. | 1 | 1 | false | true | 0 |
+| shop | 1440 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| shop | 320 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| shop | 375 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| shop | 768 | 0 |  | 11.5 | a.shop-back.t-caption | 1 | 1 | false | true | 0 |
+| signedout | 1280 |  |  | 11.5 | span.who-dot | 1 | 1 | false | false | 0 |
+| sketch | 1440 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| sketch | 320 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| sketch | 375 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| sketch | 768 | 0 |  | 12 | span.ops-person | 1 | 1 | false | true | 0 |
+| updates | 1440 | 0 |  | 11.5 | time. | 1 | 1 | false | true | 0 |
+| updates | 320 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
+| updates | 375 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
+| updates | 768 | 0 |  | 12 | a. | 1 | 1 | false | true | 0 |
+

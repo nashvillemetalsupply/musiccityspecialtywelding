@@ -5,6 +5,7 @@ import { dbConfigured } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { normalizePage } from "@/lib/pagination"
 import { listRegularAccounts } from "@/lib/wall-data"
+import { chivo, golos } from "@/app/fonts"
 import { ThemeBoot } from "../theme-boot"
 import { BoardRouteNav } from "../board-route-nav"
 import "./customers.css"
@@ -44,8 +45,12 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
   // over-run page number clamps back into range inside listRegularAccounts.
   const page = result.page
 
+  // The font variables have to sit above both the page and the fixed route nav,
+  // so they go on a wrapper rather than on <main>: a custom property that names
+  // an undefined custom property is inherited as invalid, and the nav is a
+  // sibling of <main>, not a child.
   return (
-    <>
+    <div className={`${golos.variable} ${chivo.variable}`}>
       <ThemeBoot />
       <main className="cust">
       <header className="cust-top">
@@ -57,7 +62,7 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
       <form className="cust-find" action="/board/customers" method="get">
         <label className="t-label" htmlFor="account-q">Search customers</label>
         <div className="find">
-          <input id="account-q" name="accountQ" defaultValue={query} placeholder="Name, company or account" />
+          <input id="account-q" name="accountQ" type="search" autoComplete="off" defaultValue={query} placeholder="Name, company or account" />
         </div>
         <button className="btn btn--go" type="submit">Search</button>
       </form>
@@ -89,6 +94,6 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
       )}
       </main>
       <BoardRouteNav role={operator.role} current="customers" />
-    </>
+    </div>
   )
 }

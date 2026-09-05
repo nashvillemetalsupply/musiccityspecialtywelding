@@ -1,0 +1,136 @@
+{
+  "account": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px",
+    "ops-tracked-call": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21.6px",
+    "ops-safe-action": "12px|620|rgb(18, 16, 13)|rgb(232, 97, 28)|0px 12px|block|19.2px",
+    "ops-tracked-call-help": "11.5px|400|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|18.4px"
+  },
+  "analytics": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px"
+  },
+  "board": {
+    "ops-sr-only": "13.5px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|inline-flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px",
+    "ops-safe-action": "12px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|19.2px"
+  },
+  "builds": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px"
+  },
+  "calls": {
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(42, 46, 50)|0px 14px|inline-block|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|inline|21px"
+  },
+  "customers": {
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(42, 46, 50)|0px 14px|inline-block|21px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|inline|21px"
+  },
+  "install": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px"
+  },
+  "intake": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px",
+    "ops-safe-action": "12px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|12px"
+  },
+  "job": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px",
+    "ops-tracked-call": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|21.6px",
+    "ops-safe-action": "12px|620|rgb(18, 16, 13)|rgb(232, 97, 28)|0px 12px|block|12px",
+    "ops-tracked-call-help": "11.5px|400|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|18.4px",
+    "ops-glass-control": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|16px|grid|21.6px",
+    "ops-done-bench": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|16px|grid|21.6px",
+    "ops-closeout-finish": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-swipe-finish": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|inline-block|21.6px",
+    "ops-swipe-track": "16px|900|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 64px|grid|25.6px",
+    "ops-swipe-thumb": "24px|900|rgb(18, 16, 13)|rgb(232, 97, 28)|0px|grid|38.4px",
+    "ops-sr-only": "14px|400|rgb(207, 198, 181)|rgba(0, 0, 0, 0)|0px|block|20.3px"
+  },
+  "shop": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px",
+    "ops-safe-action": "12px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|inline-flex|12px"
+  },
+  "sketch": {
+    "ops-shell": "13.5px|400|rgb(241, 235, 220)|rgb(16, 15, 13)|0px|block|21.6px",
+    "ops-frame": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-top": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|block|21.6px",
+    "ops-top-inner": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|flex|21.6px",
+    "ops-logo-home": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-logo": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|block|21.6px",
+    "ops-person": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|0px|block|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(35, 34, 32)|0px 12px|flex|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|grid|22.4px"
+  },
+  "updates": {
+    "ops-wire": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-wire-current": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|0px|flex|21.6px",
+    "ops-update-summary": "12px|480|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|10px 16px|block|16.8px",
+    "ops-wire-line": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-wire-slip": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|12px 16px|flex|21.6px",
+    "ops-update-copy": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|flex|21.6px",
+    "ops-update-open": "12px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|19.2px",
+    "ops-wire-action": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 48px|flex|21.6px",
+    "ops-safe-action": "12px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 12px|flex|19.2px",
+    "ops-wire-cabinet": "13.5px|400|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|16px 0px 0px|flex|21.6px",
+    "ops-wire-search": "13.5px|400|rgb(241, 235, 220)|rgb(26, 25, 23)|12px|flex|21.6px",
+    "ops-wire-pages": "12px|400|rgb(169, 159, 142)|rgba(0, 0, 0, 0)|12px|flex|19.2px",
+    "ops-wire-archive": "12px|620|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px 16px|inline-flex|19.2px",
+    "ops-more-trigger": "14px|700|rgb(241, 235, 220)|rgb(42, 46, 50)|0px 14px|inline-block|22.4px",
+    "ops-menu-icon": "14px|700|rgb(241, 235, 220)|rgba(0, 0, 0, 0)|0px|inline|22.4px"
+  }
+}

@@ -51,10 +51,10 @@ export default async function ShopPage() {
           ))}
         </div>
         <details className="shop-drawer"><summary>Add team member <span className="t-label">Open</span></summary><form action={saveCrewMember} className="shop-form">
-            <label>Name<input name="name" autoComplete="name" /></label>
-            <label>Email<input name="email" type="email" autoComplete="email" /></label>
-            <label>Cell<input name="cellPhone" type="tel" inputMode="tel" autoComplete="tel" /></label>
-            <label>Role<select name="role" defaultValue="crew"><option value="crew">Crew</option><option value="owner">Owner</option></select></label>
+            <label htmlFor="shop-crew-name">Name<input id="shop-crew-name" name="name" type="text" autoComplete="name" spellCheck={false} /></label>
+            <label htmlFor="shop-crew-email">Email<input id="shop-crew-email" name="email" type="email" inputMode="email" autoComplete="email" /></label>
+            <label htmlFor="shop-crew-cell">Cell<input id="shop-crew-cell" name="cellPhone" type="tel" inputMode="tel" autoComplete="tel" /></label>
+            <label htmlFor="shop-crew-role">Role<select id="shop-crew-role" name="role" defaultValue="crew"><option value="crew">Crew</option><option value="owner">Owner</option></select></label>
             <SafeSubmitButton className="btn btn--go" pendingLabel="Adding...">Add team member</SafeSubmitButton>
           </form></details>
       </section>
@@ -68,9 +68,9 @@ export default async function ShopPage() {
           })}
         </div>
         <details className="shop-drawer"><summary>Update a document <span className="t-label">Open</span></summary><form action="/api/ops/shop/document" method="post" encType="multipart/form-data" className="shop-form">
-            <label>Document<select name="kind"><option value="w9">W-9</option><option value="coi">Insurance certificate</option></select></label>
-            <label>PDF<input name="file" type="file" accept="application/pdf" /></label>
-            <label>Expires<input name="expiresAt" type="date" /></label>
+            <label htmlFor="shop-doc-kind">Document<select id="shop-doc-kind" name="kind"><option value="w9">W-9</option><option value="coi">Insurance certificate</option></select></label>
+            <label htmlFor="shop-doc-file">PDF<input id="shop-doc-file" name="file" type="file" accept="application/pdf" /></label>
+            <label htmlFor="shop-doc-expires">Expires<input id="shop-doc-expires" name="expiresAt" type="date" autoComplete="off" /></label>
             <SafeSubmitButton className="btn btn--go" pendingLabel="Uploading...">Save document</SafeSubmitButton>
           </form></details>
       </section>

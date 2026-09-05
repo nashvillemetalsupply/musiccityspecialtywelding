@@ -236,7 +236,10 @@ const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good",
 // live call only ever carries three, so it never folds at all.
 const PANEL_OPEN_LINES = 4
 
-export function JobControl({ board, chrome, menu, calls, nowMs }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode; calls?: React.ReactNode; nowMs: number }) {
+// fontClass carries the next/font variable classes down from page.tsx. The font
+// instances are created in a server module (app/fonts.ts), so this client
+// component can only be handed the class names, never the instances.
+export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode; calls?: React.ReactNode; nowMs: number; fontClass?: string }) {
   const [openJobId, setOpenJobId] = useState<number | null>(null)
   const router = useRouter()
   // Owner-only usage counts (see ./usage.ts). Flipped here, once, from the
@@ -397,7 +400,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
   }, [])
 
   return (
-    <div className="app">
+    <div className={`${fontClass} app`.trim()}>
       <h1 className="ops-sr-only">MCSW job board</h1>
     
       <header className="top">
@@ -410,7 +413,7 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
         <span className="when">{chrome.date}</span>
         <form className="find" action="/board" method="get" role="search" onSubmit={() => tapped(TAPS.search)}>
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--text-muted)" strokeWidth="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
-          <input name="q" type="search" defaultValue={chrome.query} placeholder="Customer, job number, or what it is" aria-label="Search jobs" />
+          <input name="q" type="search" defaultValue={chrome.query} autoComplete="off" placeholder="Customer, job number, or what it is" aria-label="Search jobs" />
           {chrome.includeTests && <input type="hidden" name="tests" value="1" />}
         </form>
         <div className="top-end">
@@ -875,7 +878,14 @@ export function JobControl({ board, chrome, menu, calls, nowMs }: { board: Board
                       <path d={drawing.widthDim}></path>
                       <path d={drawing.heightDim}></path>
                     </g>
-                    <g fontFamily="Instrument Sans" fontSize="12" fontWeight="600" fill="var(--sketch-line)">
+                    {/* 15 user units, not 12, and the board's number face, not
+                        "Instrument Sans" — which is loaded nowhere in this repo
+                        and was silently falling back to a system font. These
+                        are dimension marks: they are read, so the 14px floor
+                        applies to them exactly as it applies to a column. The
+                        2026-09-04 baseline caught this — `text.` at 12px was
+                        the smallest text on /board at 320, 375 and 768. */}
+                    <g fontFamily="var(--font-display)" fontSize="15" fontWeight="600" fill="var(--sketch-line)">
                       {/* Width along the bottom, height up the left, stock size
                           outside the right rail — a fact that is not an answer
                           stays a question mark on the paper. */}

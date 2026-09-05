@@ -52,7 +52,7 @@ export function SpikeReply({
   }, [state.sentAt, state.status])
 
   return (
-    <form action={action} className="ops-spike-reply" id="job-reply">
+    <form action={action} className="ops-spike-reply" id="job-reply" aria-busy={pending}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="channel" value={channel} />
       <input type="hidden" name="intentKey" value={intentKey} />
@@ -73,12 +73,12 @@ export function SpikeReply({
         onError={setVoiceError}
         onTranscript={(transcript) => setBody((current) => current.trim() ? `${current.trim()} ${transcript}` : transcript)}
       />
-      <input ref={bodyRef} name="body" required value={body} onChange={(event) => setBody(event.target.value)} aria-label={channel === "email" ? "Email reply" : "Text reply"} placeholder={channel === "email" ? "Short shop email…" : "Short shop reply…"} />
+      <input ref={bodyRef} id="job-reply-body" name="body" type="text" autoComplete="off" required aria-label={channel === "email" ? "Email reply" : "Text reply"} aria-invalid={state.status === "error" ? "true" : undefined} aria-describedby={voiceError || state.message ? "job-reply-result" : undefined} value={body} onChange={(event) => setBody(event.target.value)} placeholder={channel === "email" ? "Short shop email…" : "Short shop reply…"} />
       <SafeSubmitButton disabled={pending || !body.trim()} pendingLabel="Sending…">Send {channel}</SafeSubmitButton>
       <div className="ops-reply-chips" aria-label="Quick replies">
         {QUICK_COPIES.map((copy) => <button type="button" key={copy} onClick={() => setBody(copy)}>{copy}</button>)}
       </div>
-      {(voiceError || state.message) && <p className={voiceError || state.status === "error" ? "is-error" : "is-ok"} aria-live="polite">{voiceError || state.message}</p>}
+      {(voiceError || state.message) && <p id="job-reply-result" className={voiceError || state.status === "error" ? "is-error" : "is-ok"} role={voiceError || state.status === "error" ? "alert" : "status"} aria-live="polite">{voiceError || state.message}</p>}
       {state.status === "error" && state.retryable && <button type="button" className="ops-ghost" onClick={() => { setIntentKey(crypto.randomUUID()); setVoiceError("") }}>File a fresh retry attempt</button>}
     </form>
   )

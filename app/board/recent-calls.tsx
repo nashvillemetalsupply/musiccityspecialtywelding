@@ -71,7 +71,7 @@ function CallRow({ call, owner, nowMs }: { call: BoardCall; owner: boolean; nowM
     {details && <span className="said quiet">{details}</span>}
     {notJob && <span className="flag">Probably not a job{summary?.not_job_reason && ` · ${summary.not_job_reason}`}</span>}
     <span className="do">
-      <form action={save} onSubmit={() => tapped(TAPS.callSave)}>
+      <form action={save} aria-busy={pending} onSubmit={() => tapped(TAPS.callSave)}>
         <input type="hidden" name="draftId" value={call.publicId} />
         <SafeSubmitButton className={notJob ? "btn btn--edge" : "btn btn--go"} pendingLabel="Saving…" disabled={pending}>Save as job</SafeSubmitButton>
       </form>

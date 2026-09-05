@@ -5,6 +5,7 @@ import { dbConfigured } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { normalizePage } from "@/lib/pagination"
 import { listPendingCallIntakes, type CallIntakeDraft } from "@/lib/job-intake"
+import { chivo, golos } from "@/app/fonts"
 import { ThemeBoot } from "../theme-boot"
 import { BoardRouteNav } from "../board-route-nav"
 import "./calls.css"
@@ -90,8 +91,12 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
   // One clock reading for the whole page, so every row agrees on what today is.
   const now = new Date()
 
+  // The font variables have to sit above both the page and the fixed route nav,
+  // so they go on a wrapper rather than on <main>: a custom property that names
+  // an undefined custom property is inherited as invalid, and the nav is a
+  // sibling of <main>, not a child.
   return (
-    <>
+    <div className={`${golos.variable} ${chivo.variable}`}>
       <ThemeBoot />
       <main className="calls">
       <header className="calls-top">
@@ -117,6 +122,6 @@ export default async function BoardCallsPage({ searchParams }: { searchParams: S
       )}
       </main>
       <BoardRouteNav role={operator.role} current="calls" />
-    </>
+    </div>
   )
 }

@@ -35,3 +35,6 @@ next-env.d.ts
 /.tmp-*.log
 /.scratch/
 /error_discovery_data/
+scripts/qa/.auth.json
+scripts/qa/report/
+test-results/

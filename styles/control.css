@@ -1,4 +1,7 @@
-@import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..900&family=Chivo:wght@300..900&display=swap");
+/* The two faces are self-hosted through next/font (app/fonts.ts). There is no
+   @import here on purpose: a Google stylesheet is a third-party round trip on
+   the critical path and it cannot be metric-matched, so the page jumped when
+   the face arrived. */
 
 :root{
   /* --- raw palette Â· light -------------------------------------------------
@@ -86,27 +89,30 @@
   --row:56px; --control:32px; --chip:24px;
   --safe-area-bottom:env(safe-area-inset-bottom,0px);
 
-  /* --- type roles -------------------------------------------------------- */
-  --font:'Golos Text',system-ui,-apple-system,Segoe UI,sans-serif;
-  --font-display:'Chivo',system-ui,sans-serif;
-  /* display and title step up with the viewport; both are set for the
-     narrowest phone here and grow in the min-width layers at the end */
+  /* --- type roles ---------------------------------------------------------
+     One scale for every route and every width. The floor is 14px — the owner's
+     number ("readable for an old dude"). Display steps up in the min-width
+     layers at the end of board.css; nothing else moves.                      */
+  --font:var(--font-golos),system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-display:var(--font-chivo),system-ui,sans-serif;
   --t-display:40px;  --lh-display:1.0;   /* the three numbers            */
-  --t-lede:22px;     --lh-lede:1.26;      /* the question worth asking    */
-  --t-title:17px;    --lh-title:1.24;     /* a card's name                */
-  --t-name:15px;     --lh-name:1.3;       /* a customer, a signal         */
-  --t-sub:14px;      --lh-sub:1.35;       /* a sub-head inside a card     */
-  --t-body:13.5px;   --lh-body:1.6;       /* running prose                */
-  --t-data:13.5px;   --lh-data:1.35;      /* anything in a column         */
-  --t-label:12px;    --lh-label:1.4;      /* column heads, keys, chips    */
-  --t-caption:11.5px;--lh-caption:1.5;    /* the quiet line under a thing */
-  /* the house ladder, heavy end reserved for display */
+  --t-lede:22px;     --lh-lede:1.25;     /* the question worth asking    */
+  --t-title:18px;    --lh-title:1.25;    /* a card's name                */
+  --t-name:16px;     --lh-name:1.3;      /* a customer, a signal         */
+  --t-sub:15px;      --lh-sub:1.35;      /* a sub-head inside a card     */
+  --t-body:15px;     --lh-body:1.5;      /* running prose                */
+  --t-data:15px;     --lh-data:1.35;     /* anything in a column         */
+  --t-label:14px;    --lh-label:1.3;     /* column heads, keys, chips    */
+  --t-caption:14px;  --lh-caption:1.4;   /* the quiet line under a thing */
+  /* the house ladder, heavy end reserved for display. Light ground here;
+     the dark ground below runs one notch lighter because light-on-dark
+     reads heavier than the same weight ink-on-paper.                       */
   --w-reg:420; --w-med:500; --w-semi:640;
   --ease:cubic-bezier(.2,.7,.3,1);
 }
 
-/* Dark is a coordinated tone map on the same hues. The font is loaded on its
-   variable axis (wght@350..600) so the lighter body weight below is real â€”
+/* Dark is a coordinated tone map on the same hues. Both faces load on their
+   variable axis through next/font, so the lighter body weight below is real —
    with static instances the browser snapped it straight back to 400. */
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -140,6 +146,10 @@
   --draw-line:var(--dark-draw-line); --draw-thin:var(--dark-draw-thin); --draw-fill:var(--dark-draw-fill);
   --w-reg:400; --w-med:480; --w-semi:620;
 }
+/* The shop floor runs dark in either system theme, so it takes the dark ladder
+   unconditionally. This used to live in app/ops/ops-shell.css, which put a
+   second copy of the ladder outside the file that owns it. */
+.ops-shell{--w-reg:400; --w-med:480; --w-semi:620}
 
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-sm)}
 
@@ -203,14 +213,28 @@
 .btn--go:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 
 /* ============================================================ legacy tokens ==
-   The marketing site's tokens (tokens.css: ink #171a1d on paper #fff) are still
+   The marketing site's tokens (tokens.css: near-black ink on white paper) are still
    referenced by roughly 1,500 .ops-* rules in app/globals.css that predate the
    board language, and those rules render on every shell: /ops, /board/updates,
    /board/calls, /board/customers. On a dark shell they read as ink on ink -- the
    Customer Page heading on a work order and the whole Updates feed measured
    1.0:1 on 2026-09-03. Aliased once here, on every shell root, to the role map
-   above, so each leftover rule resolves to readable colours in either theme. */
+   above, so each leftover rule resolves to readable colours in either theme.
+
+   The same five roots also carry the two face roles. next/font declares
+   --font-golos and --font-chivo on whichever element wears its .variable class,
+   which is a shell root and not :root; a custom property whose value names an
+   undefined custom property computes to the guaranteed-invalid value and is
+   inherited as such, so declaring the families only at :root would leave every
+   descendant fontless. They are declared here, where the faces exist. */
 .ops-shell,.app,.updates-page,.calls,.cust{
+  --font: var(--font-golos), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-chivo), system-ui, sans-serif;
+  /* The old name the /ops layout used to give Chivo. tokens.css and the
+     call-sketch prototype module still read it and are outside this round's
+     scope, so it is aliased rather than renamed at every call site. */
+  --font-mcsw-jobs: var(--font-chivo);
+
   --color-paper: var(--surface);
   --color-paper-2: var(--surface-raised);
   --color-paper-3: var(--surface-raised);

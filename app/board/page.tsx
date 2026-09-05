@@ -9,6 +9,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character"
 import { normalizePage } from "@/lib/pagination"
+import { chivo, golos } from "@/app/fonts"
 import { MoreMenu } from "@/app/ops/more-menu"
 import { listPendingCallIntakes } from "@/lib/job-intake"
 import { RecentCalls } from "./recent-calls"
@@ -31,6 +32,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic"
 
 type SearchParams = Promise<{ q?: string; stage?: string; signal?: string; tests?: string; p?: string }>
+
+// The two faces, self-hosted. next/font instances only exist in server modules,
+// so the board's client shell is handed the variable class names instead.
+const FONT_CLASS = `${golos.variable} ${chivo.variable}`
 
 const BOARD_DATE = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Chicago",
@@ -103,7 +108,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     includeTests,
   }
   const nowMs = new Date().getTime()
-  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} nowMs={nowMs} />
+  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} nowMs={nowMs} fontClass={FONT_CLASS} />
 
   const gmailWakeOrigin = operator.role === "owner" ? requestOriginFromHeaders(await headers()) : ""
   if (operator.role === "owner") after(async () => {
@@ -148,7 +153,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     }))} />
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
-  return <JobControl chrome={chrome} menu={menu} calls={calls} nowMs={nowMs} board={{
+  return <JobControl chrome={chrome} menu={menu} calls={calls} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,

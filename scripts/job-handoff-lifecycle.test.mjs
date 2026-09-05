@@ -92,9 +92,15 @@ test("the board sends a Ready job to the canonical close control", () => {
   const rowCell = board.slice(cellStart, board.indexOf("</span>", cellStart))
   assert.ok(!rowCell.includes("Close job"), "close must not sit in the row")
   assert.ok(board.indexOf("#finish-close") > board.indexOf("job-detail-"), "close must render inside the opened detail panel")
-  // The row tracks stay exactly as the locked layout had them.
-  assert.ok(css.includes("56px minmax(0,1.6fr) 100px 168px 116px"))
-  assert.ok(css.includes("56px minmax(220px,1.8fr) 108px 120px 180px 116px"))
+  // The row tracks stay as the locked layout had them, with the three fixed
+  // trailing tracks relaxed to minmax(<the old fixed width>, max-content) by
+  // Task 5b of the 2026-09-04 final-polish plan. The 14px floor makes a line
+  // box 3-4px taller than the 11.5-13.5px one these widths were measured
+  // against, so a fixed 100px timestamp track clipped. The floor is the
+  // owner's number; the track width was not. Minima are unchanged, so the
+  // layout at rest is identical -- the tracks can only grow now.
+  assert.ok(css.includes("56px minmax(0,1.6fr) minmax(100px,max-content) minmax(168px,max-content) minmax(116px,max-content)"))
+  assert.ok(css.includes("56px minmax(220px,1.8fr) minmax(108px,max-content) minmax(120px,max-content) minmax(180px,max-content) minmax(116px,max-content)"))
   // The row toggles the panel on click and exempts actions inside links/buttons.
   assert.match(board, /closest\("a, button"\)/)
   assert.match(css, /\.why-end/)

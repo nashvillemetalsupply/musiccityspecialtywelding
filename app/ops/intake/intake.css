@@ -195,7 +195,9 @@
 .intake-more label { display: grid; gap: var(--s1); }
 .intake-more select { background: var(--surface); }
 
-.intake-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); align-items: center; }
+/* auto-fit, not a hard two: at 14px a two-column action row turned both
+   controls into two-line buttons on a phone. */
+.intake-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--s2); align-items: center; }
 .intake-actions.is-single { grid-template-columns: minmax(0, 1fr); }
 .intake-actions > .btn { width: 100%; }
 
@@ -206,7 +208,7 @@
 .intake-result h1 { font-family: var(--font-display); font-size: var(--t-lede); font-weight: 680; letter-spacing: -.01em; line-height: var(--lh-lede); }
 .intake-result > p:not(.intake-kicker),
 .intake-result > div:first-child > p:not(.intake-kicker) { color: var(--text-secondary); }
-.intake-result .intake-actions { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+.intake-result .intake-actions { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
 
 @media (min-width: 40rem) {
   .intake-page { padding: var(--s5); gap: var(--s5); }

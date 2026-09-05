@@ -9,6 +9,7 @@ import { normalizePage } from "@/lib/pagination"
 import { shopEventLabel } from "@/lib/shop-language"
 import { PaidMoment } from "@/app/ops/paid-moment"
 import { WireStrip } from "@/app/ops/wire-strip"
+import { chivo, golos } from "@/app/fonts"
 import { ThemeBoot } from "../theme-boot"
 import { BoardRouteNav } from "../board-route-nav"
 import "../board.css"
@@ -41,7 +42,7 @@ function ageInWords(iso: string) {
 // borrowed here — an empty archive frame would say nothing a login does not.
 export default async function BoardUpdatesPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
-  if (!dbConfigured()) return <main className="updates-page"><h1 className="t-title">Updates</h1><p>The operations database is not configured.</p></main>
+  if (!dbConfigured()) return <main className={`${golos.variable} ${chivo.variable} updates-page`}><h1 className="t-title">Updates</h1><p>The operations database is not configured.</p></main>
   const operator = await getAuthenticatedOperator()
   if (!operator) redirect("/ops")
 
@@ -69,7 +70,11 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
 
   const paidSlip = wire.find((slip) => slip.source_kind === "invoice.paid")
 
-  return <>
+  // The font variables have to sit above both the page and the fixed route nav,
+  // so they go on a wrapper rather than on <main>: a custom property that names
+  // an undefined custom property is inherited as invalid, and the nav is a
+  // sibling of <main>, not a child.
+  return <div className={`${golos.variable} ${chivo.variable}`}>
     <ThemeBoot />
     <main className="updates-page">
     {paidSlip && <PaidMoment slipId={paidSlip.id} title={paidSlip.title} body={paidSlip.body} />}
@@ -117,5 +122,5 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
     </section>}
     </main>
     <BoardRouteNav role={operator.role} current="updates" />
-  </>
+  </div>
 }

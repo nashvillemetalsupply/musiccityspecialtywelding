@@ -54,6 +54,7 @@ export function LatePromiseMessage({
     <textarea
       name="body"
       rows={3}
+      autoComplete="off"
       value={body}
       onChange={(event) => setBody(event.target.value)}
       aria-label="Message to customer about the delayed promise"

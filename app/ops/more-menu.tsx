@@ -69,7 +69,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "",
         <form className="ops-more-search" action="/board" method="get" role="search" onSubmit={close}>
           <label htmlFor="ops-menu-job-search">Find a job</label>
           <div>
-            <input id="ops-menu-job-search" name="q" type="search" defaultValue={initialSearch} placeholder="Name, job, or work" />
+            <input id="ops-menu-job-search" name="q" type="search" autoComplete="off" aria-label="Search jobs" defaultValue={initialSearch} placeholder="Name, job, or work" />
             {includeTests && <input type="hidden" name="tests" value="1" />}
             <button type="submit">Search</button>
           </div>

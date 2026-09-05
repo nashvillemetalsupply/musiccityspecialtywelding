@@ -147,8 +147,10 @@
 .job-email { width: fit-content; margin-top: var(--s2); }
 .job-action-spine { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s2); }
 .job-action-spine > :is(a, .ops-tracked-call) { width: 100%; min-width: 0; }
+/* No nowrap: at 14px "Text the customer" is wider than a quarter of a phone,
+   and holding it on one line pushed the page sideways. */
 .job-action-spine > a,
-.job-action-spine .ops-tracked-call > button { width: 100%; min-height: 44px; padding-block: var(--s2); white-space: nowrap; overflow-wrap: normal; line-height: var(--lh-sub); text-align: center; }
+.job-action-spine .ops-tracked-call > button { width: 100%; min-height: 44px; padding-block: var(--s2); overflow-wrap: normal; line-height: var(--lh-sub); text-align: center; }
 .job-action-spine .ops-tracked-call > button { min-height: var(--control); padding: 0 var(--s3); border: 0; border-radius: var(--r-md); color: var(--action-ink); background: var(--action); font-family: var(--font); font-size: var(--t-label); font-weight: var(--w-semi); line-height: 1; text-transform: none; }
 .job-action-spine .ops-tracked-call { display: grid; gap: var(--s1); }
 .job-action-spine .ops-tracked-call > :is(details, small) { color: var(--text-muted); font-size: var(--t-caption); }
@@ -384,8 +386,10 @@
 .job-onsite-payment-body > p { color: var(--text-secondary); }
 .job-onsite-payment-body > small { color: var(--text-muted); }
 .job-payment-manual { width: fit-content; min-height:44px; display:inline-flex; align-items:center; color: var(--link); white-space: nowrap; overflow-wrap: normal !important; text-decoration: underline; text-underline-offset: .2em; }
-.job-onsite-payment-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
-.job-onsite-payment-actions > a { min-width: 0; min-height: 44px; padding-block: var(--s2); white-space: nowrap; overflow-wrap: normal; text-align: center; }
+/* Two nowrap payment actions side by side ran off a 22rem phone at 14px. They
+   stack until there is room for both, and neither holds one line any more. */
+.job-onsite-payment-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--s2); }
+.job-onsite-payment-actions > a { min-width: 0; min-height: 44px; padding-block: var(--s2); overflow-wrap: normal; text-align: center; }
 .job-payment-note { padding: var(--s3); border-left: 3px solid var(--status-warn-mark); background: var(--status-warn-sur); color: var(--status-warn-ink) !important; }
 .job-payment-form { padding: var(--s4); display: grid; gap: var(--s2); }
 .job-payment-form > label:not(.job-check) { color: var(--text-secondary); font-size: var(--t-label); font-weight: var(--w-med); }
@@ -442,14 +446,18 @@
   .job-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .job-fact:nth-child(odd) { border-right: 1px solid var(--border-subtle); }
   .job-ledger-body dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .job-timeline li { grid-template-columns: minmax(9rem, auto) minmax(8rem, .4fr) minmax(0, 1fr); gap: var(--s3); }
+  /* Fractional tracks, not 9rem/8rem floors: at 14px those two ate the message
+     column instead of yielding to it. */
+  .job-timeline li { grid-template-columns: minmax(0, .6fr) minmax(0, .4fr) minmax(0, 1fr); gap: var(--s3); }
   .job-record-list article > header { grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; }
 }
 
 @media (min-width: 56rem) {
   .job-head { padding: var(--s5); }
   .job-contact { padding: var(--s5); }
-  .job-action-spine { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* auto-fit rather than a hard four: four equal columns of 14px labels are
+     narrower than the labels themselves on a small laptop. */
+  .job-action-spine { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
   .job-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .job-columns { grid-template-columns: minmax(16rem, .7fr) minmax(0, 1.3fr); align-items: start; }
   .job-ledger { border-right: 1px solid var(--border); border-bottom: 0; }

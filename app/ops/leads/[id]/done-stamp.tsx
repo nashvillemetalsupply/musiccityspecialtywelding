@@ -69,6 +69,8 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
     if (finishState.status !== "error") return
     submittedRef.current = false
     swipeStartRef.current = null
+    // A submit that came back rejected puts the keyboard on the first field at fault.
+    finishRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
     const timer = window.setTimeout(() => {
       setSubmitting(false)
       setProgress(0)
@@ -111,7 +113,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   return <section className={`ops-done-bench${completed ? " is-done" : ""}`} aria-labelledby="finish-job-title">
     <div><strong id="finish-job-title">{completed ? "Work finished" : "Finish work"}</strong></div>
 
-    {!completed && <form ref={finishRef} action={finishAction} className={reviewedCloseout ? "ops-closeout-form" : undefined}>
+    {!completed && <form ref={finishRef} action={finishAction} className={reviewedCloseout ? "ops-closeout-form" : undefined} aria-busy={submitting}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="reviewedCloseout" value={reviewedCloseout ? "1" : "0"} />
       {reviewedCloseout && <input type="hidden" name="closeoutKey" value={closeoutKey} />}
@@ -137,6 +139,9 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       </div>
       <textarea
         id="closeout-source"
+        autoComplete="off"
+        aria-invalid={finishState.status === "error" ? "true" : undefined}
+        aria-describedby={finishState.message ? "finish-job-result" : undefined}
         value={note}
         onChange={(event) => {
           setNoteSource("typed")
@@ -154,12 +159,12 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       {review && <fieldset className="ops-closeout-review-sheet">
         <legend>Review closeout</legend>
         <input type="hidden" name="reviewed" value="1" />
-        <label><span>Work status</span><select name="completion" value={review.completion} onChange={(event) => updateReview("completion", event.target.value as CloseoutReview["completion"])}><option value="complete">Complete</option><option value="partial">Partial</option></select></label>
-        <label><span>Final fit</span><select name="fit" value={review.fit} onChange={(event) => updateReview("fit", event.target.value as CloseoutReview["fit"])}><option value="fit">Fit</option><option value="adjusted">Adjusted on site</option><option value="not-checked">Not checked</option></select></label>
-        <label><span>Extra trips</span><input name="extraTrips" type="number" min="0" step="1" inputMode="numeric" value={review.extraTrips} onChange={(event) => updateReview("extraTrips", Math.max(0, Number(event.target.value) || 0))} /></label>
-        <label><span>Rework</span><select name="rework" value={review.rework} onChange={(event) => updateReview("rework", event.target.value as CloseoutReview["rework"])}><option value="no">No</option><option value="yes">Yes</option></select></label>
-        <label className="ops-closeout-wide"><span>As-built differences</span><textarea name="asBuiltDifferences" value={review.asBuiltDifferences} onChange={(event) => updateReview("asBuiltDifferences", event.target.value)} placeholder="What changed from the plan?" /></label>
-        <label className="ops-closeout-wide"><span>Remaining work</span><textarea name="remainingWork" value={review.remainingWork} onChange={(event) => updateReview("remainingWork", event.target.value)} placeholder="Leave blank when nothing remains." /></label>
+        <label htmlFor="closeout-completion"><span>Work status</span><select id="closeout-completion" name="completion" value={review.completion} onChange={(event) => updateReview("completion", event.target.value as CloseoutReview["completion"])}><option value="complete">Complete</option><option value="partial">Partial</option></select></label>
+        <label htmlFor="closeout-fit"><span>Final fit</span><select id="closeout-fit" name="fit" value={review.fit} onChange={(event) => updateReview("fit", event.target.value as CloseoutReview["fit"])}><option value="fit">Fit</option><option value="adjusted">Adjusted on site</option><option value="not-checked">Not checked</option></select></label>
+        <label htmlFor="closeout-extra-trips"><span>Extra trips</span><input id="closeout-extra-trips" name="extraTrips" type="number" min="0" step="1" inputMode="numeric" autoComplete="off" value={review.extraTrips} onChange={(event) => updateReview("extraTrips", Math.max(0, Number(event.target.value) || 0))} /></label>
+        <label htmlFor="closeout-rework"><span>Rework</span><select id="closeout-rework" name="rework" value={review.rework} onChange={(event) => updateReview("rework", event.target.value as CloseoutReview["rework"])}><option value="no">No</option><option value="yes">Yes</option></select></label>
+        <label className="ops-closeout-wide" htmlFor="closeout-as-built"><span>As-built differences</span><textarea id="closeout-as-built" name="asBuiltDifferences" autoComplete="off" value={review.asBuiltDifferences} onChange={(event) => updateReview("asBuiltDifferences", event.target.value)} placeholder="What changed from the plan?" /></label>
+        <label className="ops-closeout-wide" htmlFor="closeout-remaining"><span>Remaining work</span><textarea id="closeout-remaining" name="remainingWork" autoComplete="off" value={review.remainingWork} onChange={(event) => updateReview("remainingWork", event.target.value)} placeholder="Leave blank when nothing remains." /></label>
       </fieldset>}
 
       </>}
@@ -215,7 +220,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           <span className="ops-sr-only"> Keyboard users press Enter twice.</span>
         </small>
       </div>}
-      {finishState.message && <p className={`job-action-result is-${finishState.status}`} role={finishState.status === "error" ? "alert" : "status"} aria-live="polite">{finishState.message}</p>}
+      {finishState.message && <p id="finish-job-result" className={`job-action-result is-${finishState.status}`} role={finishState.status === "error" ? "alert" : "status"} aria-live="polite">{finishState.message}</p>}
     </form>}
 
     {completed && !addendumOpen && <button type="button" className="ops-closeout-add" onClick={() => setAddendumOpen(true)}>Add closeout note or photo</button>}
@@ -225,7 +230,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       <input type="hidden" name="noteSource" value={noteSource} />
       <input type="hidden" name="voiceIntentId" value={voiceIntentId} />
       <label htmlFor="done-note">Optional closeout note</label>
-      <input id="done-note" name="note" value={note} onChange={(event) => { setNoteSource("typed"); setNote(event.target.value) }} placeholder="Welded hinge, tested swing, customer happy" />
+      <input id="done-note" name="note" type="text" autoComplete="off" value={note} onChange={(event) => { setNoteSource("typed"); setNote(event.target.value) }} placeholder="Welded hinge, tested swing, customer happy" />
       <VoiceCaptureButton
         available={voiceReady}
         recoveryKey={`done:${leadId}`}
@@ -240,7 +245,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         }}
       />
       {voiceError && <small className="ops-done-voice-error" aria-live="polite">{voiceError}</small>}
-      <label className="ops-done-photo"><span>Add a finished-work photo</span><input type="file" name="photo" accept="image/*" capture="environment" onChange={(event) => { if (event.currentTarget.files?.length) window.setTimeout(() => addendumRef.current?.requestSubmit(), 100) }} /></label>
+      <label className="ops-done-photo" htmlFor="done-photo"><span>Add a finished-work photo</span><input id="done-photo" type="file" name="photo" accept="image/*" capture="environment" onChange={(event) => { if (event.currentTarget.files?.length) window.setTimeout(() => addendumRef.current?.requestSubmit(), 100) }} /></label>
       <SafeSubmitButton className="ops-ghost" pendingLabel="Filing…">File typed note</SafeSubmitButton>
     </form>}
 
