@@ -1,6 +1,36 @@
 # Final polish — handoff
 
-**Landed 2026-09-05. `main` is at `e16e6c2`, deployed to production, measured.**
+**Landed 2026-09-05. Deployed to production and measured. Nothing is in flight.**
+
+## State, exactly
+
+| | |
+|---|---|
+| `main` | `22226dc`, pushed to `origin/main`, deployed |
+| Task branch | `task/run-factory-on-c-users-2`, fully merged into `main` |
+| Production | serving the landed code — verified by request, `/board` 200 with `href="#main"` present |
+| Suites on `main` | **517 tests, 517 pass, 0 fail**; typecheck clean |
+| Lint | 1 error, `lib/measurement.ts:38 prefer-rest-params`, pre-existing at `HEAD`, `lib/` out of scope |
+| Plan checkboxes | all ticked |
+
+The commits, in order, so a bisect has names:
+
+```
+ef07318  Task 0 gate + production baseline, Task 1 type system, Task 3 forms
+8960698  Task 5 pre-flight inventory (four corrections to the task as written)
+c0af6ad  merge Task 4 — focus ring, reduced motion, forced colours
+098f629  merge Task 2 — landmarks, skip links, board error surfaces
+a2245dc  merge Task 1b — the floor reaches globals.css, contrast node fixed
+ad01efc  merge Task 5 — the CSS retirement
+dcb3114  the Fable DECLINE fix — Tailwind preflight <small>, and two weak pins
+b91529b  the preview-deletion pin counts files, not the directory
+6b3b23d  Task 6 — after table, fingerprint diff, final QA record
+e4e6db5  this handoff
+```
+
+**Nothing is queued and nothing is half-done.** Every session in the plan is
+landed. The list at the bottom is follow-ups nobody has started, not work in
+progress.
 
 Plan: `2026-09-04-final-polish.md` (every checkbox ticked).
 Session split: `2026-09-04-final-polish-SESSION-PLAN.md`.
@@ -39,7 +69,45 @@ npm run test:qa
 The login link is one-use and lives 15 minutes. `$env:MCSW_QA_REUSE_AUTH = "1"`
 reuses `scripts/qa/.auth.json` within 6 hours instead of burning another.
 
-## Four traps this round paid for. Do not re-learn them.
+## Environment traps. Read this section before you run anything.
+
+### 0. NEVER start a dev server in a Shepherd worktree. It hangs forever.
+
+**This is the most expensive trap in this repo. It cost three sessions on task
+D2 in one night.**
+
+`npm run dev` / `next dev` and `npx next build` **cannot run inside a
+`.worktrees/<slug>` checkout at all.** `node_modules` is a junction, and
+Turbopack rejects it outright:
+
+```
+Error [TurbopackInternalError]: Symlink [project]/node_modules is invalid,
+it points out of the filesystem root
+```
+
+The lethal part is not the failure — it is the *shape* of the failure. `next
+dev` is a long-running foreground process that never exits on its own. An agent
+that runs it sits there waiting for a server that will never come up, burns its
+whole budget on a blocked tool call, and produces nothing. It does not look
+like an error; it looks like the agent is working.
+
+**So:**
+
+- **Never run `npm run dev`, `next dev`, `next start`, or any watch/serve
+  command in a worktree.** There is no flag that fixes it.
+- **Never run `npx next build` in a worktree either.** Same junction, same
+  rejection — it fails fast rather than hanging, but it tells you nothing about
+  your code.
+- **To see a change running, push the branch and read the Vercel build.** That
+  is the only build of this app that works from a worktree, and it is what
+  proved the client-bundle gate this round.
+- If you need a foreground process for any reason, run it with a hard timeout
+  and in the background, never as a blocking foreground call.
+
+`npm run typecheck`, `npm run lint`, `npm run test:shop-brain`, `node --test`
+and `npm run test:qa` all work fine in a worktree. It is only the bundler.
+
+### The other four
 
 1. **A percentage is invisible to a grep for sizes.** Tailwind preflight ships
    `small{font-size:80%}`. Six sessions swept for `px` and `rem` under 14 and
@@ -47,9 +115,8 @@ reuses `scripts/qa/.auth.json` within 6 hours instead of burning another.
    `styles/control.css` now floors `small`, `sub` and `sup`, and
    `scripts/type-system.test.mjs` pins it *plus* asserts preflight still ships
    the rule being defended against — so the guard cannot outlive its reason.
-2. **`npx next build` cannot run in a worktree.** Turbopack rejects the
-   junctioned `node_modules`: *"Symlink [project]/node_modules is invalid, it
-   points out of the filesystem root."* Verify the bundle on a Vercel build.
+2. **`npx next build` cannot run in a worktree** — see trap 0 above, which is
+   the same junction and the reason.
 3. **The junctioned `.next` makes `tsc` lie in a worktree.** `tsconfig.json`
    includes `.next/types/**/*.ts`, and the junction points at the *root*
    checkout's generated route validator — so deleting a route in a worktree
@@ -109,6 +176,54 @@ regenerate it.
    it. It predates this round.
 10. `lib/measurement.ts:38` trips `prefer-rest-params`. Pre-existing; `lib/` was
     out of scope.
+
+**Owner-only bookkeeping, left deliberately undone:**
+
+11. **Four finished Codex child tasks are still registered `active`** —
+    `session-p2-`, `session-p4-`, `session-p1b-` and `session-p5-of-docs-superpowers`.
+    Their branches are merged into `main` and their worktrees are clean, so this
+    is bookkeeping and not risk, but `shepherd exit-check` fails on them and on
+    their four worktrees until they are dropped.
+
+    They could not be cleared from inside the round: in
+    `bridge/spine/task-coordinator.mjs` **`land`, `park`, `drop` and `reconcile`
+    are owner-scoped — an agent may create a task but not end one.** `shepherd
+    wait <slug> --for task` times out because they sit idle awaiting input
+    rather than exiting, and messaging them to stop restarts their turn and
+    resets the idle clock, which is what kept them alive.
+
+    Clear with, from the console or cockpit:
+
+    ```
+    drop session-p2-of-docs-superpowers
+    drop session-p4-of-docs-superpowers
+    drop session-p1b-of-docs-superpowers
+    drop session-p5-of-docs-superpowers
+    ```
+
+    then `git worktree remove` each of the four paths. `exit-check -Force` was
+    deliberately **not** used: the gate is reporting a true condition, not an
+    environment quirk, and forcing past it would have put a false clean bill in
+    `TASKS.md`.
+
+## If you are the next parent, read this first
+
+- **Do not re-run the round.** It is landed and measured; the numbers are in the
+  plan under `### After — 2026-09-05` and frozen in `scripts/qa/baseline/`.
+- **The gate is the instrument to reuse.** `npm run test:qa` against production,
+  `MCSW_QA_STRICT=1` to assert instead of record. It takes ~3.3 minutes and
+  needs a one-use login link (see the re-run block above).
+- **Do not regenerate `scripts/qa/baseline/pre-retirement-globals.css`.** It is
+  the frozen 8,968-line original that `css-move-verbatim.test.mjs` diffs
+  against, and its git blob SHA was checked against `a2245dc:app/globals.css`.
+  Regenerating it would make that proof assert nothing.
+- **The routing that worked here**: four Codex `gpt-5.6-sol` sessions at high in
+  their own worktrees for plan-attached implementation, reviewed serially and
+  merged one at a time; a Fable reviewer as the approval gate because the owner
+  does not review; Claude for anything needing a browser, because the Codex
+  sandbox has no network. The Fable DECLINE caught what six implementation
+  sessions and every automated sweep had missed — it was worth more than any of
+  the passes.
 
 ## How this was built
 
