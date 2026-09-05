@@ -61,3 +61,22 @@ test("fonts come from next/font, not a Google @import", () => {
     assert.match(src, /chivo\.variable/, `${shell} applies the Chivo variable`)
   }
 })
+
+test("the floor survives Tailwind's preflight, which sizes small/sub/sup in percentages", () => {
+  // The floor is easy to believe and hard to hold, because the rule that broke
+  // it is not in this repo. app/globals.css opens with @import "tailwindcss",
+  // and preflight ships small{font-size:80%} and sub,sup{font-size:75%}. A
+  // percentage names no size, so a grep for px or rem under 14 finds nothing
+  // while a bare <small> renders at 80% of the 15px shell base -- 12px. The
+  // 2026-09-04 baseline caught exactly this element at 10.8px on the job route.
+  // 37 <small> elements are rendered under app/board and app/ops today.
+  assert.match(CONTROL, /(^|\n)small\{[^}]*font-size:var\(--t-caption\)/,
+    "control.css must floor bare <small>, or Tailwind preflight puts it under 14px")
+  assert.match(CONTROL, /(^|\n)sub,sup\{[^}]*font-size:var\(--t-caption\)/,
+    "control.css must floor bare <sub>/<sup> for the same reason")
+  // And the preflight rules this defends against must still be the ones shipped.
+  // If Tailwind ever drops them, this test is guarding nothing and should be
+  // re-read rather than deleted.
+  const preflight = readFileSync(new URL("../node_modules/tailwindcss/preflight.css", import.meta.url), "utf8")
+  assert.match(preflight, /small\s*\{\s*font-size:\s*80%/, "preflight no longer shrinks <small>; re-check this defence")
+})

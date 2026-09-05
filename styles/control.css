@@ -165,6 +165,19 @@
 .t-caption{font-size:var(--t-caption);color:var(--text-muted);line-height:var(--lh-caption)}
 .t-data{font-size:var(--t-data);font-weight:var(--w-med);line-height:var(--lh-data)}
 
+/* The floor has to survive Tailwind's preflight, which is the one stylesheet
+   nobody in this round wrote and everybody inherits. globals.css opens with
+   @import "tailwindcss", and preflight carries `small{font-size:80%}` and
+   `sub,sup{font-size:75%}` as *percentages* — so they scale off whatever the
+   shell base is rather than naming a size anyone can grep for. The ops shell
+   base is --t-body, 15px, so a bare <small> lands at 12px: under the floor,
+   with no px or rem value in this repo to find. That is exactly the element the
+   2026-09-04 baseline caught at 10.8px on the job route, and raising the body
+   size alone moved it to 12px rather than fixing it.
+   Element selectors, so any .t-* class on the same node still wins. */
+small{font-size:var(--t-caption);line-height:var(--lh-caption)}
+sub,sup{font-size:var(--t-caption)}
+
 .find{flex:1;max-width:420px;display:flex;align-items:center;gap:var(--s2);
   height:var(--control);padding:0 var(--s3);border-radius:var(--r-md);
   background:var(--surface-raised);transition:box-shadow .15s var(--ease)}

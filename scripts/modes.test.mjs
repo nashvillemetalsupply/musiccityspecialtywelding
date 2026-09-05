@@ -17,9 +17,25 @@ test("reduced motion is global, so /ops stops too", () => {
 })
 
 test("forced colours keep a boundary on every stateful control", () => {
-  const block = CONTROL.slice(CONTROL.indexOf("@media (forced-colors:active)"))
-  assert.ok(block.length > 0, "no forced-colors block")
-  for (const sel of [".chip", ".tab", ".btn", ".skip", ".chip i"]) assert.match(block, new RegExp(sel.replace(/\./g, "\\.")), `${sel} has no forced-colors rule`)
+  // The first version of this pin sliced from the block to end-of-file and
+  // substring-matched each selector. That could not fail for .chip: deleting
+  // .chip from the border rule left ".chip i" three lines below, which contains
+  // ".chip" and satisfied the match on its own. A pin that stays green while the
+  // thing it pins is deleted is worse than no pin, so it asserts the border
+  // rule's own selector list now, arm by arm.
+  const open = CONTROL.indexOf("@media (forced-colors:active){")
+  assert.ok(open > -1, "no forced-colors block")
+  const block = CONTROL.slice(open, CONTROL.indexOf("\n}", open))
+  const border = block.match(/\n\s*([^\n{]+)\{border:1px solid ButtonText\}/)
+  assert.ok(border, "no `border:1px solid ButtonText` rule in the forced-colors block")
+  const arms = border[1].split(",").map((s) => s.trim())
+  for (const sel of [".chip", ".tab", ".btn", ".skip", ".find"]) {
+    assert.ok(arms.includes(sel), `${sel} is not an arm of the forced-colors border rule (arms: ${arms.join(" ")})`)
+  }
+  // The dot inside a chip is a fill, not a border, so it is pinned separately.
+  assert.match(block, /\n\s*\.chip i\{background:CanvasText\}/, ".chip i has no forced-colors fill")
+  assert.match(block, /\n\s*\.tab\[aria-pressed="true"\],\.tab\[aria-current="page"\]\{border:2px solid Highlight\}/,
+    "the pressed/current tab loses its forced-colors boundary")
 })
 
 test("more contrast lifts the quiet tier", () => {
