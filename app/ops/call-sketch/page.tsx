@@ -18,14 +18,14 @@ export default async function OpsCallSketchPage() {
   if (!operator) redirect("/ops")
 
   if (operator.role !== "owner") {
-    return <main className="sketch-gate-page">
+    return <div className="sketch-gate-page">
       <section className="card sketch-gate">
         <p className="t-label">Owner workspace</p>
         <h1 className="t-title">Call Sketch</h1>
         <p>The live sketch and its practice workspace are owner-only.</p>
         <Link className="btn btn--edge" href="/ops">Back to Jobs</Link>
       </section>
-    </main>
+    </div>
   }
 
   return <CallSketchPrototype embedded />

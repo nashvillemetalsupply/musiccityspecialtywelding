@@ -9,24 +9,26 @@ import { SafeSubmitButton } from "../safe-action-controls"
 import { saveCrewMember, setCrewActive, setGlassAutoPost } from "./actions"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 
+export const metadata = { title: "Settings · MCSW Jobs" }
+
 export const dynamic = "force-dynamic"
 
 export default async function ShopPage() {
-  if (!dbConfigured()) return <main className="shop-page shop-state-page"><section className="card shop-state"><h1 className="t-title">MCSW Jobs</h1><p>Database not configured.</p></section></main>
+  if (!dbConfigured()) return <div className="shop-page shop-state-page"><section className="card shop-state"><h1 className="t-title">MCSW Jobs</h1><p>Database not configured.</p></section></div>
   const operator = await getAuthenticatedOperator()
   if (!operator) return <OpsLoginForm linkError={false} />
   if (operator.role !== "owner") {
     return (
-      <main className="shop-page">
+      <div className="shop-page">
         <header className="card shop-head"><Link className="shop-back t-caption" href="/ops">Back to Jobs</Link><h1 className="t-title">Settings</h1></header>
         <section className="card shop-state"><h2 className="t-sub">Owner settings</h2><p>Crew can work every job. Philippe manages team and paperwork settings.</p></section>
-      </main>
+      </div>
     )
   }
 
   const [operators, documents] = await Promise.all([listOperators(true), listShopDocuments()])
   return (
-    <main className="shop-page">
+    <div className="shop-page">
       <header className="card shop-head">
         <Link className="shop-back t-caption" href="/ops">Back to Jobs</Link><h1 className="t-title">Settings</h1><p className="t-caption">Team, documents, phone, and exports.</p>
       </header>
@@ -96,6 +98,6 @@ export default async function ShopPage() {
           </form>
         </div>
       </section>
-    </main>
+    </div>
   )
 }

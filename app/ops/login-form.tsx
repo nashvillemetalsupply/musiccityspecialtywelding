@@ -119,7 +119,7 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
 
   const chooseMode = (next: "email" | "sms") => { setMode(next); resetDelivery() }
 
-  return <main style={ground}>
+  return <div style={ground}>
     <div style={card}>
       <div style={plate}>
         <div style={mark}>
@@ -160,5 +160,5 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
       {!picked && operators.length > 0 && <details style={stack} open={manual}><summary className="t-label" style={{ minHeight: "44px", display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => setManual(true)}>My name isn&apos;t here</summary>{manual && <><p className="t-caption">Ask the owner to add you, or use manual sign-in below.</p><button type="button" className="btn btn--edge" style={wide()} onClick={() => setManual(true)}>Use manual sign-in</button></>}</details>}
       {message && <p id="ops-login-message" style={note(state === "error" ? "stop" : "good")} role={state === "error" ? "alert" : "status"}>{message}</p>}
     </div>
-  </main>
+  </div>
 }

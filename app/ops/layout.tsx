@@ -4,6 +4,7 @@ import { chivo, golos } from "@/app/fonts"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { ConnectivityStatus } from "./connectivity-status"
+import { SkipLink } from "../board/skip-link"
 import { OpsLive } from "./ops-live"
 import { OpsCompactHeader } from "./ops-header"
 import "../../styles/control.css"
@@ -32,9 +33,10 @@ export default async function OpsLayout({ children }: { children: ReactNode }) {
   const voiceReady = voiceTranscriptionConfigured()
   return <div className={`${golos.variable} ${chivo.variable} ops-shell`}>
     <div className="ops-frame">
+      {!operator && <SkipLink />}
       {operator && <OpsCompactHeader name={operator.name || operator.email} role={operator.role} voiceReady={voiceReady} />}
       {operator && <ConnectivityStatus />}
-      {children}
+      <main id="main" tabIndex={-1}>{children}</main>
     </div>
     {operator && <OpsLive />}
   </div>

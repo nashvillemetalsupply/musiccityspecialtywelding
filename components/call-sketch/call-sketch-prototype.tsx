@@ -484,9 +484,10 @@ export function CallSketchPrototype({
   const factWidth = spec.width ? formatShopInches(spec.width) : "Not caught"
   const factHeight = spec.height ? formatShopInches(spec.height) : "Not caught"
   const factStock = spec.stockSize ? `${formatShopInches(spec.stockSize)} square tube` : "Not caught"
+  const Surface = embedded ? "div" : "main"
 
   return (
-    <main className={`${styles.page}${embedded ? ` ${styles.embedded}` : ""}${hierarchyMode === "task-first" ? ` ${styles.taskFirst}` : ""}`}>
+    <Surface className={`${styles.page}${embedded ? ` ${styles.embedded}` : ""}${hierarchyMode === "task-first" ? ` ${styles.taskFirst}` : ""}`}>
       {compareHierarchy && <section className={styles.hierarchyCompare} aria-label="Call Sketch hierarchy comparison">
         <div><strong>Type hierarchy</strong><span>Compare without changing production.</span></div>
         <div role="group" aria-label="Choose a hierarchy">
@@ -669,6 +670,6 @@ export function CallSketchPrototype({
       </div>
 
       <p className={styles.srOnly} aria-live="polite">{announcement}</p>
-    </main>
+    </Surface>
   )
 }

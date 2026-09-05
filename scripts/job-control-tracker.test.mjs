@@ -12,7 +12,7 @@ const LINE_ITEMS_SOURCE = readFileSync(new URL("../lib/job-line-items.ts", impor
 const CALL_SKETCH_SOURCE = readFileSync(new URL("../lib/call-sketch-store.ts", import.meta.url), "utf8")
 const BOARD_SOURCE = `${PAGE_SOURCE}\n${PREVIEW_SOURCE}`
 const APP_DIRECTORY = fileURLToPath(new URL("../app/", import.meta.url))
-const TRACKER_SOURCE = PREVIEW_SOURCE.slice(PREVIEW_SOURCE.indexOf('<h2 className="t-title">Job tracker</h2>'))
+const TRACKER_SOURCE = PREVIEW_SOURCE.slice(PREVIEW_SOURCE.indexOf('<h1 className="t-title">Job tracker</h1>'))
 const RAIL_SOURCE = PREVIEW_SOURCE.slice(
   PREVIEW_SOURCE.indexOf('<nav className="rail"'),
   PREVIEW_SOURCE.indexOf("</nav>", PREVIEW_SOURCE.indexOf('<nav className="rail"')),
@@ -268,7 +268,7 @@ test("the board carries a one-tap calls-to-save dropdown above the tracker", () 
   assert.match(PAGE_SOURCE, /listPendingCallIntakes\(\{ pageSize: 10 \}\)/)
   assert.match(PAGE_SOURCE, /calls=\{calls\}/)
   // the slot sits in main before the tracker card
-  const main = PREVIEW_SOURCE.indexOf('<main className="main">')
+  const main = PREVIEW_SOURCE.indexOf('<main id="main" tabIndex={-1} className="main">')
   const slot = PREVIEW_SOURCE.indexOf("{calls}")
   const tracker = PREVIEW_SOURCE.indexOf('<div className="track-top">')
   assert.ok(main > -1 && main < slot && slot < tracker, `expected main < calls slot < tracker, got ${[main, slot, tracker]}`)

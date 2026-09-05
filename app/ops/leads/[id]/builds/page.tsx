@@ -16,6 +16,8 @@ import {
 import { ActionKeyField } from "./action-key"
 import "./builds.css"
 
+export const metadata = { title: "Fabrication · MCSW Jobs" }
+
 export const dynamic = "force-dynamic"
 
 type Params = Promise<{ id: string }>
@@ -83,7 +85,7 @@ export default async function BuildsPage({ params }: { params: Params }) {
     }
   }
 
-  return <main className="ops-builds">
+  return <div className="ops-builds">
     <header className="ops-builds-header">
       <div>
         <p className="t-caption">Job #{workspace.lead.id}</p>
@@ -275,5 +277,5 @@ export default async function BuildsPage({ params }: { params: Params }) {
         </section>
       </div>
     </div>
-  </main>
+  </div>
 }

@@ -63,6 +63,18 @@ import {
 
 export const dynamic = "force-dynamic"
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  if (!dbConfigured()) return { title: "Job · MCSW Jobs" }
+  const operator = await getAuthenticatedOperator()
+  if (!operator) return { title: "Sign in · MCSW Jobs" }
+  const leadId = Number((await params).id)
+  if (!Number.isInteger(leadId) || leadId <= 0) return { title: "Job not found · MCSW Jobs" }
+  const lead = await getLead(leadId, operator.role, { includeTests: canAccessInternalTests(operator.role) })
+  const name = lead ? `${lead.first_name} ${lead.last_name}`.trim() : "Job not found"
+  return { title: `${name} · MCSW Jobs` }
+}
+
+
 function formatCentral(iso: string | null) {
   if (!iso) return "Not recorded"
   return new Date(iso).toLocaleString("en-US", {
@@ -185,10 +197,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
   if (!dbConfigured()) {
     return (
-      <main className="job-page job-state-page">
+      <div className="job-page job-state-page">
         <h1>Shop operations</h1>
         <p className="job-alert job-alert--stop">The operations database is not configured.</p>
-      </main>
+      </div>
     )
   }
 
@@ -375,7 +387,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   }
 
   return (
-    <main className="job-page">
+    <div className="job-page">
       <section className="card job-lead" aria-labelledby="work-order-title">
       <header className="job-head">
         <div>
@@ -996,6 +1008,6 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           </nav>}
         </details>
       </section>
-    </main>
+    </div>
   )
 }
