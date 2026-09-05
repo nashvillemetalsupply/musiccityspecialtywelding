@@ -42,7 +42,7 @@ client-side value import from `lib/` also runs `npx next build`.
 | P3 | Task 3: forms — autofill, keypads, labels, focus on first error | Codex `gpt-5.6-sol` | medium | S | P0 | open |
 | P4 | Task 4: focus ring, reduced motion, forced colours, more-contrast | Codex `gpt-5.6-sol` | medium | S | P1 (control.css settled) | open |
 | P4c | Mid-round gate: `test:qa` on the P1–P4 preview; capture `pre-retirement-fingerprint.json` | Claude Sonnet | low | S | P1–P4 merged | open |
-| P5 | Task 5: retire dead CSS into `ops-legacy.css`; delete the nine preview routes | Codex `gpt-5.6-sol` | high | L | P4c | open |
+| P5 | Task 5: retire dead CSS into `ops-legacy.css`; delete the seven preview routes | Codex `gpt-5.6-sol` | high | L | P4c | done offline; P6 verification pending |
 | P6 | Task 6: strict gate, fingerprint diff, owner walk, before/after tables, record | Claude Fable | high | M | P5 merged + deployed | open |
 
 **Recommended order:** P0 → P1 → P3 (gap-filler, independent of P1's approval) → P2 →

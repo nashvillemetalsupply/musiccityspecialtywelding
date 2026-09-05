@@ -1,3 +1,4 @@
+import "../../styles/ops-legacy.css"
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { after } from "next/server"
