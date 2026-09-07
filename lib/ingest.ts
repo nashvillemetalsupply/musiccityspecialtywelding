@@ -221,9 +221,9 @@ export async function reconcileRawInboundCalls(limit = 20) {
       crewBody: prepared.kind === "draft" ? "The call is safe. Tap Save call as job when you are ready." : "Their active job is ready.",
       url: prepared.kind === "draft" ? `/ops/intake/${prepared.draft.public_id}` : `/ops/leads/${prepared.leadId}`,
       sourceEventId: eventId,
-      capExempt: prepared.kind === "draft",
-      quietHoursExempt: prepared.kind === "draft",
-      smsFallback: prepared.kind === "draft",
+      capExempt: true,
+      quietHoursExempt: true,
+      smsFallback: true,
       dedupeKey: `raw-call-recovered:${row.twilio_sid}`,
     })
     recovered += 1
