@@ -1,8 +1,8 @@
-.backups/
-.next/
-.scratch/
-.tmp/
-.vercel/
-error_discovery_data/
-node_modules/
-tmp/
+.backups
+.next
+.scratch
+.tmp
+.vercel
+error_discovery_data
+node_modules
+tmp
