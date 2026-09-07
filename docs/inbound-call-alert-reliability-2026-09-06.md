@@ -1,6 +1,6 @@
 # Inbound-call operator alert reliability
 
-Scope: local implementation and isolated tests only. No production data was inspected or changed, no migration was applied, and no live alerts were sent.
+Scope: inbound-call operator alert implementation, isolated verification, additive production migration, and deployment. No historical alert was replayed and no synthetic live alert was sent.
 
 ## Evidence and reproduction
 
@@ -55,8 +55,8 @@ Files changed:
 - `package.json`
 - This evidence and activation note.
 
-## Live activation remaining
+## Live activation
 
-After review, apply the additive migration and deploy through a separately authorized release. Verify active operators have valid email addresses, the configured email sender is verified, and the email provider and signed webhook are configured. Then perform a separately authorized real call acceptance check, including provider delivery receipts. Internal-test calls must remain silent.
+The additive receipt migration completed, both active owners have an email address, Resend and its signed webhook are configured, and production deployment `dpl_7GagPJE1W3NwMqPFcAC5BGxfDzaG` is Ready on the canonical domain. Public health returned 200; unsigned Resend and Twilio receipt requests returned 403. A fresh call from a phone not marked as an internal test caller remains the final delivery proof. Internal-test calls must remain silent.
 
 Existing dead and unknown notifications require owner review; this fix must not automatically revive them or replay historical alerts. SMS carrier/A2P delivery failures and browser push enrollment remain separate operational checks.
