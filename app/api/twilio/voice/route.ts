@@ -74,9 +74,9 @@ export async function POST(req: Request) {
         crewBody: prepared.kind === "draft" ? "The call is safe. Tap after you hang up, then Save Job." : "Their active job is ready.",
         url: prepared.kind === "draft" ? `/ops/intake/${prepared.draft.public_id}` : `/ops/leads/${prepared.leadId}`,
         sourceEventId: eventId,
-        capExempt: prepared.kind === "draft",
-        quietHoursExempt: prepared.kind === "draft",
-        smsFallback: prepared.kind === "draft",
+        capExempt: true,
+        quietHoursExempt: true,
+        smsFallback: true,
       })
     } catch (error) {
       console.error("Call forwarded; Shop Brain persistence failed:", error)

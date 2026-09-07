@@ -29,6 +29,94 @@ export async function POST(req: Request) {
   if (!["email.delivered", "email.delivery_delayed", "email.bounced", "email.failed", "email.suppressed"].includes(webhook.type)) return Response.json({ ok: true })
 
   const sql = getSql()
+  const failed = ["email.bounced", "email.failed", "email.suppressed"].includes(webhook.type)
+  const delayed = webhook.type === "email.delivery_delayed"
+  const reason = webhook.type === "email.bounced"
+    ? webhook.data.bounce.message
+    : webhook.type === "email.failed"
+      ? webhook.data.failed.reason
+      : webhook.type === "email.suppressed"
+        ? webhook.data.suppressed.message
+        : delayed ? "Email delivery is delayed." : "Email delivered."
+  const notification = (await sql`
+    SELECT id, sms_fallback, sms_only, provider_message_sid, provider_email_status, delivery_status
+    FROM notifications
+    WHERE provider_email_id = ${webhook.data.email_id}::text
+    LIMIT 1`) as {
+      id: number
+      sms_fallback: boolean
+      sms_only: boolean
+      provider_message_sid: string | null
+      provider_email_status: string | null
+      delivery_status: string
+    }[]
+  if (notification[0]) {
+    const retrySms = failed && notification[0].sms_fallback && !notification[0].sms_only
+      && !notification[0].provider_message_sid
+      && notification[0].provider_email_status !== webhook.type
+      && !["dead", "delivered"].includes(notification[0].delivery_status)
+    if (retrySms) {
+      await sql`
+        UPDATE notifications SET
+          sent_at = NULL,
+          interrupt_reserved_at = NULL,
+          delivery_attempts = LEAST(delivery_attempts, 4),
+          delivery_next_attempt_at = now(),
+          provider_email_status = ${webhook.type}::text,
+          delivery_status = 'retry',
+          delivery_error = ${reason}::text
+        WHERE id = ${notification[0].id}::bigint
+          AND provider_email_id = ${webhook.data.email_id}::text
+          AND provider_message_sid IS NULL
+          AND provider_email_status IS DISTINCT FROM ${webhook.type}::text
+          AND delivery_status NOT IN ('dead','delivered')`
+      return Response.json({ ok: true })
+    }
+    // A duplicate email-failure callback must never reopen a replacement SMS
+    // that is already queued, accepted, delivered, or definitively failed.
+    if (failed && notification[0].sms_fallback && !notification[0].sms_only) {
+      return Response.json({ ok: true })
+    }
+    await sql`
+      UPDATE notifications SET
+        sent_at = COALESCE(sent_at, now()),
+        interrupt_reserved_at = NULL,
+        delivery_next_attempt_at = NULL,
+        provider_email_status = CASE
+          WHEN delivery_status = 'dead' THEN provider_email_status
+          WHEN ${failed}::boolean THEN ${webhook.type}::text
+          WHEN delivery_status = 'delivered' THEN provider_email_status
+          ELSE ${webhook.type}::text
+        END,
+        delivery_status = CASE
+          WHEN delivery_status = 'dead' THEN 'dead'
+          WHEN ${failed}::boolean THEN 'dead'
+          WHEN delivery_status = 'delivered' THEN 'delivered'
+          WHEN ${!failed && !delayed}::boolean THEN 'delivered'
+          ELSE 'accepted'
+        END,
+        delivery_error = CASE
+          WHEN delivery_status = 'dead' THEN delivery_error
+          WHEN ${failed}::boolean THEN ${reason}::text
+          WHEN delivery_status = 'delivered' THEN delivery_error
+          WHEN ${delayed}::boolean THEN ${reason}::text
+          ELSE ''
+        END,
+        stock = CASE
+          WHEN delivery_status = 'dead' THEN stock
+          WHEN ${failed}::boolean THEN 'red'
+          ELSE stock
+        END,
+        title = CASE
+          WHEN delivery_status = 'dead' THEN title
+          WHEN ${failed}::boolean AND title NOT LIKE 'Alert delivery failed - %'
+            THEN left('Alert delivery failed - ' || title, 120)
+          ELSE title
+        END
+      WHERE id = ${notification[0].id}::bigint
+        AND provider_email_id = ${webhook.data.email_id}::text`
+    return Response.json({ ok: true })
+  }
   const accepted = (await sql`
     SELECT accepted_event.lead_id, accepted_event.person_id, accepted_event.detail,
       COALESCE(source_event.detail->>'audience', '') AS audience
@@ -53,15 +141,6 @@ export async function POST(req: Request) {
     )
   }
 
-  const failed = ["email.bounced", "email.failed", "email.suppressed"].includes(webhook.type)
-  const delayed = webhook.type === "email.delivery_delayed"
-  const reason = webhook.type === "email.bounced"
-    ? webhook.data.bounce.message
-    : webhook.type === "email.failed"
-      ? webhook.data.failed.reason
-      : webhook.type === "email.suppressed"
-        ? webhook.data.suppressed.message
-        : delayed ? "Email delivery is delayed." : "Email delivered."
   const eventKind = failed ? "email.failed" : delayed ? "email.delayed" : "email.delivered"
   let eventId = await recordEvent({
     kind: eventKind,

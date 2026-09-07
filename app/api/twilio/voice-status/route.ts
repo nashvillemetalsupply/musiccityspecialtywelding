@@ -116,6 +116,7 @@ export async function POST(req: Request) {
       sourceEventId: eventId,
       capExempt: true,
       quietHoursExempt: true,
+      smsFallback: true,
     })
   }
   if (call && ["no-answer", "busy", "failed", "canceled"].includes(status)) {
@@ -143,6 +144,9 @@ export async function POST(req: Request) {
       body: draft ? "Call back, then Save Job or mark Not a job." : "Call them back. Their job is ready.",
       url: call.lead_id ? `/ops/leads/${call.lead_id}` : draft ? `/ops/intake/${draft.public_id}` : "/ops",
       sourceEventId: eventId,
+      capExempt: true,
+      quietHoursExempt: true,
+      smsFallback: true,
     })
     if (twilioSmsConfigured() && normalizePhone(call.from_phone)) await sendSmsPersisted({
       to: call.from_phone,
