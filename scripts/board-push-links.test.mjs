@@ -28,8 +28,13 @@ test("leadless call and text alerts fall back to the board's Updates surface", (
 test("both coalesced-interrupt pushes point at the board's Updates surface", () => {
   // Two separate senders: the inline coalescer in notify() and the retry
   // sweep. Fixing one and missing the other is the whole failure mode.
-  assert.match(NOTIFY, /url: "\/board\/updates",/)
-  assert.match(NOTIFY, /url: "\/board\/updates#wire" \}\)/)
+  const initial = NOTIFY.slice(0, NOTIFY.indexOf("export async function retryPendingInterrupts"))
+  const retry = NOTIFY.slice(NOTIFY.indexOf("export async function retryPendingInterrupts"))
+  assert.match(initial, /const summaryUrl = "\/board\/updates"/)
+  assert.match(retry, /const summaryUrl = "\/board\/updates#wire"/)
+  for (const sender of [initial, retry]) {
+    assert.match(sender, /sendPushToOperator\([^,]+, \{[^}]*url: summaryUrl[\s,]*\}\)/)
+  }
   assert.equal(NOTIFY.match(/\/board\/updates/g)?.length, 2)
 })
 

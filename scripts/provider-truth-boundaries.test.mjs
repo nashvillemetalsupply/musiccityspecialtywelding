@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import "./inbound-call-alerts.test.mjs"
+import "./inbound-call-alert-reliability.test.mjs"
+import "./inbound-call-alert-callbacks.test.mjs"
 import {
   EmailProviderError,
   sendEmailWithProviderTruth,

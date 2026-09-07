@@ -64,6 +64,11 @@ export async function POST(req: Request) {
         ELSE title
       END
     WHERE id = ${notificationId}::bigint
+      AND (
+        provider_email_id IS NULL
+        OR provider_email_status = ANY(ARRAY['rejected','email.bounced','email.failed','email.suppressed']::text[])
+      )
+      AND provider_email_status IS DISTINCT FROM 'sending'
       AND (provider_message_sid IS NULL OR provider_message_sid = ${sid}::text)`
   return twiml("")
 }

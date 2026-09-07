@@ -654,6 +654,9 @@ const statements = [
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sms_only BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS provider_message_sid TEXT`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS provider_status TEXT`,
+  `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS provider_email_id TEXT`,
+  `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS provider_email_status TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS notifications_provider_email_idx ON notifications(provider_email_id) WHERE provider_email_id IS NOT NULL`,
   `CREATE INDEX IF NOT EXISTS notifications_delivery_retry_idx ON notifications(delivery_status, delivery_next_attempt_at) WHERE sent_at IS NULL AND priority = 'interrupt'`,
   `UPDATE notifications SET budget_exempt = true
     WHERE budget_exempt = false AND (
