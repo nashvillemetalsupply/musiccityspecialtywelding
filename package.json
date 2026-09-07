@@ -7,6 +7,7 @@
     "dev": "next dev",
     "lint": "eslint .",
     "migrate": "node scripts/migrate.mjs",
+    "prebuild": "node -e \"require('node:fs').mkdirSync('.backups',{recursive:true})\"",
     "start": "next start",
     "test:inbound-call-alerts": "node --test scripts/inbound-call-alerts.test.mjs",
     "test:qa": "node scripts/qa/run.mjs",
