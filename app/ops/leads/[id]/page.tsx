@@ -56,6 +56,7 @@ import {
   saveNotes,
   saveOutcome,
   setPhotoShared,
+  scheduleLead,
   setJobTravelerStage,
   setFollowUp,
   updateLeadStatus,
@@ -85,6 +86,20 @@ function formatCentral(iso: string | null) {
     hour: "numeric",
     minute: "2-digit",
   })
+}
+
+function centralDateTimeInputValue(iso: string | null) {
+  if (!iso) return undefined
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(iso)).map((part) => [part.type, part.value]))
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`
 }
 
 function centsToDollars(cents: number | null) {
@@ -862,9 +877,23 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           <div className="job-traveler" aria-label="Customer job status">
             <span>Job Status</span>
+            <form action={scheduleLead} className="job-form job-schedule-form">
+              <input type="hidden" name="leadId" value={lead.id} />
+              <label htmlFor="lead-scheduled-at">Schedule date and time <small>Central time</small></label>
+              <input
+                id="lead-scheduled-at"
+                name="scheduledAt"
+                type="datetime-local"
+                defaultValue={centralDateTimeInputValue(lead.scheduled_at)}
+                aria-describedby="lead-scheduled-help"
+                required
+              />
+              <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">{lead.scheduled_at ? "Reschedule job" : "Add to calendar"}</SafeSubmitButton>
+              <small id="lead-scheduled-help" className="job-current">This is the same schedule shown on the main Job Control calendar.</small>
+            </form>
             <form action={setJobTravelerStage}>
               <input type="hidden" name="leadId" value={lead.id} />
-              <SafeSubmitButton name="stage" value="scheduled" className={`btn btn--sm btn--edge${lead.scheduled_at ? " is-stamped" : ""}`} pendingLabel="Saving...">{lead.scheduled_at ? "On schedule" : "Mark scheduled"}</SafeSubmitButton>
+              <SafeSubmitButton name="stage" value="scheduled" className={`btn btn--sm btn--edge${lead.scheduled_at ? " is-stamped" : ""}`} pendingLabel="Saving...">{lead.scheduled_at ? "On schedule" : "Schedule now"}</SafeSubmitButton>
               <SafeSubmitButton name="stage" value="work_started" className={`btn btn--sm btn--edge${lead.work_started_at ? " is-stamped" : ""}`} pendingLabel="Saving...">{lead.work_started_at ? "On the job" : "Mark work started"}</SafeSubmitButton>
             </form>
           </div>

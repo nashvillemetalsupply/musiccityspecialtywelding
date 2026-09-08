@@ -23,6 +23,8 @@ import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
 import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.mjs"
 import { canAccessInternalTests } from "@/lib/operators"
+import { emptyThirtyDayJobCalendar, listThirtyDayJobCalendar } from "@/lib/job-calendar-data"
+import { JobCalendar } from "./job-calendar"
 import "./board.css"
 
 export const metadata: Metadata = {
@@ -75,6 +77,10 @@ const EMPTY_BOARD: BoardPaneData = {
 
 export default async function BoardPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
+  // One clock feeds the heading, rolling calendar and relative-time labels.
+  // The board's existing visible-tab refresh re-runs this route every minute,
+  // so a page left open rolls to the new Central day without a reload.
+  const now = new Date()
   const query = params.q?.trim().slice(0, 80) ?? ""
   const requestedPage = normalizePage(params.p)
   // The stage tab is validated strictly against
@@ -102,14 +108,20 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // search form can carry the mode forward without the client ever deciding it.
   const includeTests = params.tests === "1" && Boolean(operator && canAccessInternalTests(operator.role))
   const chrome = {
-    date: BOARD_DATE.format(new Date()),
+    date: BOARD_DATE.format(now),
     operatorInitial: (operator?.name || operator?.email || "").trim().charAt(0).toLocaleUpperCase("en-US"),
     owner: operator?.role === "owner",
     query,
     includeTests,
   }
-  const nowMs = new Date().getTime()
-  if (!operator) return <JobControl board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }} chrome={chrome} nowMs={nowMs} fontClass={FONT_CLASS} />
+  const nowMs = now.getTime()
+  if (!operator) return <JobControl
+    board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }}
+    calendar={<JobCalendar days={emptyThirtyDayJobCalendar(now)} />}
+    chrome={chrome}
+    nowMs={nowMs}
+    fontClass={FONT_CLASS}
+  />
 
   const gmailWakeOrigin = operator.role === "owner" ? requestOriginFromHeaders(await headers()) : ""
   if (operator.role === "owner") after(async () => {
@@ -126,7 +138,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // the Morning Brief and Ask Jobs here too. Signed out there is no menu,
   // which is exactly the /ops layout's own gate.
   const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} initialSearch={query} includeTests={includeTests} />
-  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice, pendingCalls] = await Promise.all([
+  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice, pendingCalls, calendar] = await Promise.all([
     // Newest first is the tracker's own sort (owner's call, 2026-09-03). The
     // pane's counts are aggregates over the same query and do not depend on
     // row order.
@@ -141,6 +153,9 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     // The same queue the Calls tab reads, ten at most. Test drafts are already
     // excluded inside the query, the same way the Calls tab excludes them.
     listPendingCallIntakes({ pageSize: 10 }),
+    // Always production-only, even when an owner opens the board's explicit
+    // test mode: test work is not a real shop appointment.
+    listThirtyDayJobCalendar(role, now),
   ])
   const calls = <RecentCalls owner={role === "owner"} nowMs={nowMs} total={pendingCalls.total}
     calls={pendingCalls.items.map((draft) => ({
@@ -154,7 +169,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     }))} />
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
-  return <JobControl chrome={chrome} menu={menu} calls={calls} nowMs={nowMs} fontClass={FONT_CLASS} board={{
+  return <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,

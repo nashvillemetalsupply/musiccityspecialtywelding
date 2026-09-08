@@ -1,6 +1,7 @@
 .backups
 .next
 .scratch
+.shepherd-signals.jsonl
 .tmp
 .vercel
 error_discovery_data

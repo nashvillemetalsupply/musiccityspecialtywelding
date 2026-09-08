@@ -1524,6 +1524,42 @@ export async function setJobTravelerStage(formData: FormData) {
   revalidatePath(`/ops/leads/${leadId}`)
 }
 
+export async function scheduleLead(formData: FormData) {
+  const operator = await requireOperator()
+  const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
+  const scheduledAt = String(formData.get("scheduledAt") ?? "").trim()
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(scheduledAt)
+  if (!match) throw new Error("Pick a valid Central date and time.")
+
+  const [, year, month, day, hour, minute] = match
+  const check = new Date(`${year}-${month}-${day}T${hour}:${minute}:00Z`)
+  if (Number.isNaN(check.getTime())
+    || check.getUTCFullYear() !== Number(year)
+    || check.getUTCMonth() + 1 !== Number(month)
+    || check.getUTCDate() !== Number(day)
+    || check.getUTCHours() !== Number(hour)
+    || check.getUTCMinutes() !== Number(minute)) {
+    throw new Error("Pick a valid Central date and time.")
+  }
+
+  const sql = getSql()
+  const rows = (await sql`
+    UPDATE leads
+    SET scheduled_at = ${scheduledAt}::timestamp AT TIME ZONE 'America/Chicago', updated_at = now()
+    WHERE id = ${leadId}::bigint AND completed_at IS NULL AND handed_off_at IS NULL
+    RETURNING scheduled_at`) as { scheduled_at: string }[]
+  if (!rows[0]) throw new Error("This job is closed and cannot be scheduled.")
+
+  await recordLeadEvent(leadId, "scheduled", actorId(operator), {
+    scheduledAt: rows[0].scheduled_at,
+    timeZone: "America/Chicago",
+    source: "job_profile_calendar",
+  })
+  revalidatePath("/board")
+  revalidatePath("/ops")
+  revalidatePath(`/ops/leads/${leadId}`)
+}
+
 export async function classifyLeadAttachment(formData: FormData) {
   const operator = await requireOperator()
   requireOwner(operator)

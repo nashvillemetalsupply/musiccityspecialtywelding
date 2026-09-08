@@ -20,6 +20,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   const [dragging, setDragging] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [keyboardArmed, setKeyboardArmed] = useState(false)
+  const [buttonArmed, setButtonArmed] = useState(false)
   const [addendumOpen, setAddendumOpen] = useState(false)
   const [undoExpired, setUndoExpired] = useState(false)
   const [note, setNote] = useState("")
@@ -58,6 +59,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       setProgress(0)
       setDragging(false)
       setKeyboardArmed(false)
+      setButtonArmed(false)
       setNote("")
       setReview(null)
       setVoiceError("")
@@ -76,6 +78,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       setProgress(0)
       setDragging(false)
       setKeyboardArmed(false)
+      setButtonArmed(false)
       setAddendumOpen(false)
     }, 0)
     return () => window.clearTimeout(timer)
@@ -104,6 +107,12 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
     if (submitting) return
     if (keyboardArmed) finish()
     else setKeyboardArmed(true)
+  }
+
+  function armButtonOrFinish() {
+    if (submitting) return
+    if (buttonArmed) finish()
+    else setButtonArmed(true)
   }
 
   function updateReview<K extends keyof CloseoutReview>(key: K, value: CloseoutReview[K]) {
@@ -193,6 +202,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
             swipeStartRef.current = { x: event.clientX, y: event.clientY, width }
             setDragging(true)
             setKeyboardArmed(false)
+            setButtonArmed(false)
           }}
           onPointerMove={(event) => {
             const start = swipeStartRef.current
@@ -219,6 +229,22 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           {reviewedCloseout ? "Swipe right after reviewing the outcome. Vertical scrolling stays safe." : "Swipe right to finish work. Vertical scrolling stays safe."}
           <span className="ops-sr-only"> Keyboard users press Enter twice.</span>
         </small>
+        <button
+          type="button"
+          className="ops-finish-button"
+          aria-pressed={buttonArmed}
+          aria-describedby="finish-button-help"
+          disabled={submitting}
+          onClick={armButtonOrFinish}
+          onBlur={() => setButtonArmed(false)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") { setButtonArmed(false); return }
+            if (event.repeat && (event.key === "Enter" || event.key === " ")) event.preventDefault()
+          }}
+        >
+          {submitting ? "Completing job…" : buttonArmed ? "Confirm completion" : "Complete job"}
+        </button>
+        <small id="finish-button-help">No swipe needed. Press twice to protect against a stray tap.</small>
       </div>}
       {finishState.message && <p id="finish-job-result" className={`job-action-result is-${finishState.status}`} role={finishState.status === "error" ? "alert" : "status"} aria-live="polite">{finishState.message}</p>}
     </form>}

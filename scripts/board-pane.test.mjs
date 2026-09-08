@@ -13,8 +13,11 @@ const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.met
 
 test("relative board times share the server render clock", () => {
   assert.doesNotMatch(PREVIEW_SOURCE, /Date\.now\(\)/)
-  assert.match(PAGE_SOURCE, /const nowMs = new Date\(\)\.getTime\(\)/)
-  assert.equal((PAGE_SOURCE.match(/<JobControl[^>]*nowMs=\{nowMs\}/g) ?? []).length, 2)
+  assert.match(PAGE_SOURCE, /const now = new Date\(\)/)
+  assert.match(PAGE_SOURCE, /const nowMs = now\.getTime\(\)/)
+  // Signed-out JobControl, authenticated JobControl, and RecentCalls all use
+  // the same render instant; none samples a later clock of its own.
+  assert.equal((PAGE_SOURCE.match(/nowMs=\{nowMs\}/g) ?? []).length, 3)
   for (const helper of ["sinceInWords", "callLine", "waitingAge"]) {
     assert.match(PREVIEW_SOURCE, new RegExp(`function ${helper}\\([^)]*nowMs: number`))
   }

@@ -66,7 +66,8 @@ test("tracker rows come from listBoardJobs and keep its reason string verbatim",
 
 test("header date is generated for today in America/Chicago", () => {
   assert.match(PAGE_SOURCE, /const BOARD_DATE = new Intl\.DateTimeFormat\("en-US", \{\s*timeZone: "America\/Chicago",\s*weekday: "long",\s*month: "short",\s*day: "numeric",\s*\}\)/)
-  assert.match(PAGE_SOURCE, /date: BOARD_DATE\.format\(new Date\(\)\)/)
+  assert.match(PAGE_SOURCE, /const now = new Date\(\)/)
+  assert.match(PAGE_SOURCE, /date: BOARD_DATE\.format\(now\)/)
   assert.match(PREVIEW_SOURCE, /<span className="when">\{chrome\.date\}<\/span>/)
   assert.doesNotMatch(PREVIEW_SOURCE, /<span className="when">[A-Z][^<{]*<\/span>/)
 })

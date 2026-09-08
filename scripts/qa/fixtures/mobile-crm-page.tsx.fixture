@@ -1,0 +1,87 @@
+import "../../../styles/ops-legacy.css"
+import "../../../styles/control.css"
+import "../../ops/ops-shell.css"
+import "../../ops/leads/[id]/job.css"
+import "../board.css"
+import { notFound } from "next/navigation"
+import { DoneStamp } from "../../ops/leads/[id]/done-stamp"
+import { JobControl, type BoardPaneData } from "../board"
+import { JobCalendar } from "../job-calendar"
+import type { CalendarDay } from "../../../lib/job-calendar-data"
+
+const CALENDAR: CalendarDay[] = Array.from({ length: 30 }, (_, index) => {
+  const dateKey = new Date(Date.UTC(2026, 8, 8 + index)).toISOString().slice(0, 10)
+  return {
+    dateKey,
+    jobs: index === 2 ? [{
+      id: 4242,
+      publicId: "MCSW-4242",
+      customer: "Riverbend Fabrication",
+      service: "Trailer repair",
+      scheduledAt: "2026-09-10T15:30:00.000Z",
+    }] : [],
+  }
+})
+
+const BOARD: BoardPaneData = {
+  counts: { board: 7, attention: 3, shop: 2, waiting: 1, ready: 1, closed: 12 },
+  signalCounts: { waiting: 1, noreply: 1, promise: 1, followup: 0, bounced: 0 },
+  promises: { kept: 9, open: 2, broken: 1, overdue: null },
+  week: [],
+  outTheDoor: { jobs: 5, paidJobs: 4, revenueCents: 482500, stillOutCents: 77500 },
+  medianFirstResponseMinutes: 6,
+  todayTrail: [],
+  callSketch: null,
+  voice: {
+    displayName: "the owner",
+    lineCount: 48,
+    sourceCount: 11,
+    usable: true,
+    builtAt: "2026-09-08T12:00:00.000Z",
+    samples: ["Bring it by the shop and I will take a look at it."],
+  },
+  items: [],
+  details: new Map(),
+  resultTotal: 0,
+  pageSize: 8,
+  page: 1,
+  hasNext: false,
+  stage: "board",
+  signal: undefined,
+  stages: ["board", "attention", "shop", "waiting", "ready", "closed"],
+}
+
+export default function MobileCrmFixture() {
+  if (process.env.NODE_ENV !== "development") notFound()
+
+  return <JobControl
+    board={BOARD}
+    chrome={{
+      date: "Tuesday, Sep 8",
+      operatorInitial: "D",
+      owner: true,
+      query: "",
+      includeTests: true,
+    }}
+    nowMs={new Date("2026-09-08T17:00:00.000Z").getTime()}
+    calendar={<>
+      <JobCalendar days={CALENDAR} />
+      <div className="ops-shell">
+        <div className="ops-frame">
+          <main>
+            <section className="job-page job-finish-close" aria-label="Completion fixture">
+              <DoneStamp
+                leadId={987654321}
+                completed={false}
+                undoUntil={null}
+                voiceReady={false}
+                reviewedCloseout
+                closeoutKey="mobile-fixture"
+              />
+            </section>
+          </main>
+        </div>
+      </div>
+    </>}
+  />
+}

@@ -240,7 +240,7 @@ const PANEL_OPEN_LINES = 4
 // fontClass carries the next/font variable classes down from page.tsx. The font
 // instances are created in a server module (app/fonts.ts), so this client
 // component can only be handed the class names, never the instances.
-export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode; calls?: React.ReactNode; nowMs: number; fontClass?: string }) {
+export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontClass = "" }: { board: BoardPaneData; chrome: BoardChrome; menu?: React.ReactNode; calls?: React.ReactNode; calendar?: React.ReactNode; nowMs: number; fontClass?: string }) {
   const [openJobId, setOpenJobId] = useState<number | null>(null)
   const router = useRouter()
   // Owner-only usage counts (see ./usage.ts). Flipped here, once, from the
@@ -826,6 +826,8 @@ export function JobControl({ board, chrome, menu, calls, nowMs, fontClass = "" }
             </nav>
           )}
         </section>
+
+        {calendar}
 
         <aside className="card" aria-label="Last call">
           <div className="call-top">

@@ -357,6 +357,10 @@
 .job-check > input { width: 24px; min-height: 24px; margin: 0; }
 .job-current { display: block; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .job-traveler { display: grid; gap: var(--s2); padding-bottom: var(--s4); border-bottom: 1px solid var(--border-subtle); }
+.job-schedule-form { padding: 0 0 var(--s2); border-bottom: 0; }
+.job-schedule-form label { display: grid; gap: var(--s1); }
+.job-schedule-form label small { color: var(--text-muted); font-size: var(--t-caption); font-weight: var(--w-reg); }
+.job-schedule-form input[type="datetime-local"] { min-height: 44px; }
 .job-traveler form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
 .job-traveler .is-stamped { color: var(--status-good-ink) !important; background: var(--status-good-sur) !important; }
 .job-paid-line { color: var(--status-good-ink); }
@@ -408,7 +412,27 @@
 .job-page .ops-closeout-review-sheet,
 .job-page .ops-done-note { min-width: 0; display: grid; gap: var(--s3); }
 .job-page .ops-closeout-review-sheet { margin: 0; padding: var(--s3); border: 1px solid var(--border); }
-.job-page .ops-closeout-review-sheet label { min-width: 0; }
+.job-page .ops-closeout-form { display: grid !important; gap: var(--s3); }
+.job-page .ops-closeout-form > label,
+.job-page .ops-closeout-review-sheet label { min-width: 0; display: grid; gap: var(--s2); color: var(--text-secondary);
+  font-size: var(--t-label); line-height: var(--lh-label); }
+.job-page .ops-closeout-form > textarea,
+.job-page .ops-closeout-review-sheet :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 48px;
+  padding: var(--s3); border: 1px solid var(--border-strong); border-radius: 0; color: var(--text-primary);
+  background: var(--surface-raised); font-size: var(--t-name); line-height: 1.5; }
+.job-page .ops-closeout-form > textarea,
+.job-page .ops-closeout-review-sheet textarea { min-height: 96px; resize: vertical; }
+.job-page .ops-swipe-track { padding-left: 72px; padding-right: var(--s4);
+  font-size: var(--t-name); line-height: var(--lh-name); }
+.job-page .ops-closeout-finish > small { margin-top: var(--s2); color: var(--text-secondary) !important;
+  font-size: var(--t-caption); line-height: var(--lh-caption); }
+.job-page .ops-finish-button { width: 100%; min-height: 52px; margin-top: var(--s3); padding: 0 var(--s4);
+  border: 1px solid var(--border-strong); color: var(--text-primary); background: var(--surface-raised);
+  font-size: var(--t-data); font-weight: var(--w-semi); }
+.job-page .ops-finish-button:hover { border-color: var(--action); }
+.job-page .ops-finish-button[aria-pressed="true"] { border-color: var(--action); color: var(--action-ink); background: var(--action);
+  outline: 2px solid var(--focus); outline-offset: 2px; }
+.job-page .ops-finish-button:disabled { cursor: wait; opacity: .68; }
 .job-page .ops-handoff-receipt { min-width: 0; }
 
 .job-events { overflow: clip; }

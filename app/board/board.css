@@ -98,7 +98,7 @@ svg{display:block}
 /* PHONE FIRST. Everything from here down is the phone board; the desktop
    shell is restored in the min-width layers at the end of the file. A rule
    that carries no width-dependent value simply never appears down there. */
-.app{min-width:0;display:block;min-height:100dvh}
+.app{width:100%;min-width:0;display:block;min-height:100dvh}
 
 /* the bar is sticky over a scrolling document on a phone, and a fixed grid
    row on the desktop, where the whole app is 100dvh and nothing scrolls it */
@@ -165,7 +165,9 @@ svg{display:block}
    `order:` rules are needed on either breakpoint. The gap does the spacing
    here, so `.card+.card` is desktop-only — that is what the old
    `.main>*{margin:0!important}` was fighting. */
-.main{min-width:0;display:flex;flex-direction:column;gap:var(--s5);padding:var(--s4)}
+.main{width:100%;min-width:0;display:flex;flex-direction:column;gap:var(--s5);
+  padding:var(--s4) var(--s4) calc(56px + var(--safe-area-bottom) + var(--s5));
+  scroll-padding-bottom:calc(56px + var(--safe-area-bottom) + var(--s5))}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
 .card.figures{border:0;background:none}
 
@@ -268,8 +270,8 @@ svg{display:block}
    goes up, and the preview reads back a little more like him. */
 .voice-strip{display:flex;flex-direction:column;gap:var(--s3);
   padding:var(--s4);border-top:1px solid var(--border)}
-.voice-strip .end{display:flex;flex-wrap:wrap;gap:var(--s2)}
-.voice-strip .btn{flex:1}
+.voice-strip .end{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2)}
+.voice-strip .btn{width:100%}
 .voice-said{margin:var(--s3) 0 0;font-size:var(--t-lede);color:var(--text-secondary);max-width:56ch}
 .spoke{display:flex;gap:var(--s3);padding:var(--s2) 0;font-size:var(--t-label)}
 /* min-width, not width: "Customer" at 14px is wider than 64px, and a fixed
@@ -479,6 +481,7 @@ svg{display:block}
    rest of the sheet is min-width. This one stays. */
 @media (pointer:coarse),(max-width:55rem){
   .doing{gap:var(--s2)}
+  .tab,.signal{min-height:44px}
 }
 
 /* 2 · Long content. A customer called "Hendersonville Fabrication & Millwright"
@@ -565,7 +568,7 @@ svg{display:block}
   .top .when{display:block}
   .top .find{display:flex}
 
-  .rail{position:static;height:auto;z-index:auto;
+  .rail{position:static;height:auto;z-index:auto;grid-area:2 / 1 / 3 / 2;
     flex-direction:column;justify-content:normal;
     border-top:0;border-right:1px solid var(--border);padding:var(--s2) 0}
   .rl-gap{display:block}
@@ -574,7 +577,10 @@ svg{display:block}
 
   /* The pane is gone (owner, 2026-09-03: "serves no purpose"). The tracker
      has the whole width beside the rail. */
-  .main{display:block;overflow-y:auto;grid-column:2;grid-row:2;padding:var(--s5) var(--s6) var(--s7)}
+  /* Place both shell rows explicitly. Extra chrome must never auto-place the
+     work area into an implicit narrow column beside the real desktop track. */
+  .main{display:block;min-height:0;overflow-y:auto;grid-area:2 / 2 / 3 / 3;
+    padding:var(--s5) var(--s6) var(--s7);scroll-padding-bottom:var(--s7)}
   .card+.card{margin-top:var(--s5)}
 
   /* --- the three numbers go back to a row -------------------------------- */
@@ -603,8 +609,8 @@ svg{display:block}
   .ask+p{font-size:var(--t-lede);max-width:30ch}
   .slots{gap:0 var(--s6)}
   .voice-strip{flex-direction:row;align-items:center;gap:var(--s5);padding:var(--s4) var(--s6)}
-  .voice-strip .end{margin-left:auto;flex-wrap:nowrap}
-  .voice-strip .btn{flex:none}
+  .voice-strip .end{margin-left:auto;display:flex;flex-wrap:nowrap}
+  .voice-strip .btn{width:auto;flex:none}
   .call-end{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:var(--s3)}
   .call-end .end{margin-left:auto;width:auto}
   .call-end .btn{width:auto}
