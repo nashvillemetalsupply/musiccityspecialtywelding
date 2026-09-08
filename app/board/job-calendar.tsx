@@ -17,6 +17,13 @@ const MONTH_YEAR = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 })
 
+const MONTH_DAY = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Chicago",
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+})
+
 const FULL_DATE = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Chicago",
   weekday: "long",
@@ -50,7 +57,6 @@ export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; today
   const selectedDay = selectedCalendarDay(days, selectedDateKey) ?? days[0]
   const selectedDate = dateFromKey(selectedDay.dateKey)
   const selectedFullDate = FULL_DATE.format(selectedDate)
-  const todayDate = todayDateKey ? dateFromKey(todayDateKey) : null
   const leadingBlankCount = firstDate.getUTCDay()
   const trailingBlankCount = (7 - ((leadingBlankCount + days.length) % 7)) % 7
 
@@ -71,7 +77,6 @@ export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; today
       </div>
       <div className={styles.headerMeta}>
         <span className={styles.total}><strong>{scheduledCount}</strong><small>{scheduledCount === 1 ? "scheduled job" : "scheduled jobs"}</small></span>
-        {todayDate && <span className={styles.todayLabel}>Today is {DAY_NAME.format(todayDate)} {todayDate.getUTCDate()}</span>}
       </div>
     </header>
 
@@ -117,10 +122,10 @@ export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; today
       <div className={styles.agenda} id="job-calendar-agenda" aria-live="polite">
         <div className={styles.agendaHeader}>
           <div>
-            <span className={styles.agendaKicker}>Selected day</span>
-            <h3>{selectedDay.dateKey === todayDateKey ? "Today" : DAY_NAME.format(selectedDate)}</h3>
+            <span className={styles.agendaKicker}>{selectedDay.dateKey === todayDateKey ? "Today" : "Selected day"}</span>
+            <h3>{MONTH_DAY.format(selectedDate)}</h3>
           </div>
-          <span>{selectedFullDate} · Central time</span>
+          <span>Central time</span>
         </div>
         {selectedDay.jobs.length === 0
           ? <p className={styles.empty}>Nothing scheduled.</p>

@@ -59,17 +59,10 @@
   font-size: var(--t-caption);
 }
 
-.todayLabel {
-  padding-left: var(--s3);
-  border-left: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: var(--t-label);
-  white-space: nowrap;
-}
-
 .body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-items: start;
 }
 
 .grid {
@@ -204,15 +197,15 @@
 
 .agenda {
   min-width: 0;
+  align-self: start;
   padding: var(--s4);
   border-top: 1px solid var(--border);
 }
 
 .agendaHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: var(--s3);
 }
 
@@ -225,6 +218,7 @@
   color: var(--text-muted);
   font-size: var(--t-label);
   text-align: right;
+  white-space: nowrap;
 }
 
 .empty {
