@@ -81,6 +81,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "",
           <Link href="/board/customers" onClick={close}>Customers</Link>
           <Link href="/board/updates" onClick={close}>Updates</Link>
           <Link href="/board?signal=promise" onClick={close}>Promises</Link>
+          <a href="https://drive.google.com/drive/u/2/folders/19dNpxjCuQoEsMZ2uX19ZDpZuW-_xReCa" target="_blank" rel="noreferrer" onClick={close}>Post to social</a>
           {role === "owner" && <Link href="/ops/analytics" onClick={close}>Analytics</Link>}
           <Link href="/ops/install" onClick={close}>Install MCSW Jobs</Link>
           {role === "owner" && <Link href="/ops/shop" onClick={close}>Settings</Link>}

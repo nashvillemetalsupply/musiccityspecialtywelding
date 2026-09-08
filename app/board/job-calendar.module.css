@@ -1,38 +1,80 @@
 .calendar {
   overflow: hidden;
+  box-shadow: inset 0 3px 0 var(--action);
 }
 
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--s3);
-  padding: var(--s4);
+  gap: var(--s4);
+  padding: var(--s5) var(--s4);
   border-bottom: 1px solid var(--border);
 }
 
-.header > div {
+.headerLead {
+  display: grid;
   min-width: 0;
+  gap: var(--s1);
+}
+
+.eyebrow,
+.agendaKicker {
+  color: var(--action);
+  font-size: var(--t-label);
+  font-weight: var(--w-semi);
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .header p {
-  margin-top: var(--s1);
   color: var(--text-muted);
   font-size: var(--t-label);
 }
 
-.total {
+.headerMeta {
+  display: flex;
+  align-items: center;
   flex: none;
-  padding: var(--s1) var(--s2);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-sm);
+  gap: var(--s3);
+}
+
+.total {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.total strong {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: var(--t-lede);
+  line-height: 1;
+}
+
+.total small {
+  font-size: var(--t-caption);
+}
+
+.todayLabel {
+  padding-left: var(--s3);
+  border-left: 1px solid var(--border);
   color: var(--text-secondary);
   font-size: var(--t-label);
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .grid {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 1px;
   background: var(--border);
@@ -48,7 +90,7 @@
 
 .weekdays span {
   min-width: 0;
-  padding: var(--s2) 1px;
+  padding: var(--s3) 1px;
   background: var(--surface-raised);
   color: var(--text-muted);
   font-size: var(--t-caption);
@@ -73,21 +115,21 @@
   display: grid;
   place-items: center;
   min-width: 0;
-  min-height: 64px;
-  gap: 1px;
-  padding: var(--s1) 1px;
+  min-height: 76px;
+  gap: var(--s1);
+  padding: var(--s2) 1px;
   background: var(--surface);
   color: var(--text-muted);
   text-align: center;
 }
 
 .blankDay {
-  min-height: 64px;
+  min-height: 76px;
   background: var(--surface);
 }
 
 .today {
-  box-shadow: inset 3px 0 0 var(--action);
+  box-shadow: inset 0 3px 0 var(--action);
   background: var(--surface-raised);
 }
 
@@ -114,7 +156,7 @@
   line-height: 1;
 }
 
-.dayButton span {
+.dayName {
   overflow: hidden;
   width: 100%;
   font-size: var(--t-caption);
@@ -122,52 +164,67 @@
   white-space: nowrap;
 }
 
+.dayNumber {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: var(--t-title);
+  font-weight: var(--w-semi);
+}
+
 .dayButton time {
-  font-size: var(--t-data);
   font-variant-numeric: tabular-nums;
 }
 
 .dayButton b {
-  min-width: 16px;
-  min-height: 16px;
-  padding: 2px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 2px 4px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--r-sm);
   font-size: var(--t-caption);
   font-variant-numeric: tabular-nums;
   font-weight: var(--w-med);
 }
 
 .dayButton.busy b {
-  border-color: var(--border-strong);
-  color: var(--text-primary);
+  border-color: var(--status-info-mark);
+  background: var(--status-info-sur);
+  color: var(--status-info-ink);
+}
+
+.dayButton[aria-pressed="true"] .dayNumber,
+.dayButton[aria-pressed="true"] b {
+  color: inherit;
 }
 
 .dayButton[aria-pressed="true"] b {
   border-color: currentColor;
-  color: inherit;
+  background: transparent;
 }
 
 .agenda {
+  min-width: 0;
   padding: var(--s4);
   border-top: 1px solid var(--border);
 }
 
-.agendaHeader,
-.jobTop {
+.agendaHeader {
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: var(--s2);
+  gap: var(--s3);
 }
 
 .agendaHeader h3 {
+  margin-top: var(--s1);
   font-size: var(--t-sub);
 }
 
-.agendaHeader span {
+.agendaHeader > span {
   color: var(--text-muted);
   font-size: var(--t-label);
+  text-align: right;
 }
 
 .empty {
@@ -190,6 +247,7 @@
   gap: 2px;
   padding: var(--s2);
   border: 1px solid var(--border);
+  border-left: 3px solid var(--action);
   border-radius: var(--r-sm);
   background: var(--surface-raised);
   color: var(--text-primary);
@@ -198,11 +256,19 @@
 
 .jobs a:hover {
   border-color: var(--border-strong);
+  border-left-color: var(--action);
 }
 
 .jobs a:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+
+.jobTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
 }
 
 .jobTop strong,
@@ -238,27 +304,43 @@
 @media (min-width: 26.2501rem) {
   .dayButton,
   .blankDay {
-    min-height: 68px;
+    min-height: 84px;
   }
 }
 
 @media (min-width: 55.0001rem) {
   .header {
-    align-items: center;
-    padding: var(--s4) var(--s6);
+    padding: var(--s5) var(--s6);
   }
 
   .dayButton,
   .blankDay {
-    min-height: 72px;
+    min-height: 92px;
+  }
+
+  .body {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 29%);
   }
 
   .agenda {
     padding: var(--s4) var(--s6);
+    border-top: 0;
+    border-left: 1px solid var(--border);
   }
 
   .jobs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 26.25rem) {
+  .headerMeta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .total {
+    justify-items: start;
   }
 }
 

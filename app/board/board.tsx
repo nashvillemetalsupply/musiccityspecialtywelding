@@ -113,6 +113,8 @@ const TAB_LABELS: Record<JobBoardStage, string> = {
 // tab order.
 const TAB_ORDER: JobBoardStage[] = ["board", "attention", "shop", "waiting", "ready", "closed"]
 
+const SOCIAL_POSTING_FOLDER_URL = "https://drive.google.com/drive/u/2/folders/19dNpxjCuQoEsMZ2uX19ZDpZuW-_xReCa"
+
 // The row mark draws the SERVICE, which the schema actually stores, not the
 // part's geometry, which it does not. `service` is TEXT, but every writer picks
 // from a fixed list — the public form in components/mainstreet-contact.tsx and
@@ -418,6 +420,10 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
           {chrome.includeTests && <input type="hidden" name="tests" value="1" />}
         </form>
         <div className="top-end">
+          <a className="btn btn--edge social-post-header" href={SOCIAL_POSTING_FOLDER_URL} target="_blank" rel="noreferrer">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><rect x="3" y="2.5" width="10" height="11" rx="1.5" /><circle cx="8" cy="6.2" r="1.5" /><path d="m4.5 11 2.2-2.2 1.7 1.7 1.1-1.1 2 2" /></svg>
+            Post to social
+          </a>
           <Link className="btn btn--go" href="/ops/intake/new">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M8 3.5v9M3.5 8h9"/></svg>New job
           </Link>
@@ -475,6 +481,17 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                 <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
             </div>
           </div>
+        </section>
+        <section className="card social-post-card" aria-labelledby="social-post-title">
+          <div className="social-post-copy">
+            <p className="social-post-kicker">After the job</p>
+            <h2 id="social-post-title">Share the work</h2>
+            <p>Upload a photo or video to the MCSW Social Posts folder. The automated poster handles the rest and sends it to our social channels.</p>
+          </div>
+          <a className="btn btn--go social-post-button" href={SOCIAL_POSTING_FOLDER_URL} target="_blank" rel="noreferrer">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="1.5" /><circle cx="8" cy="6.5" r="1.5" /><path d="m3.5 11 2.4-2.4 1.8 1.8 1.4-1.4 2.9 2.9" /></svg>
+            Upload photo or video
+          </a>
         </section>
         {/* Calls waiting to become jobs, collapsed to one bar so the tracker
             stays the first thing on the screen. Rendered by the server page;

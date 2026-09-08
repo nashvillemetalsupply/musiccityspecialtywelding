@@ -50,6 +50,7 @@ export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; today
   const selectedDay = selectedCalendarDay(days, selectedDateKey) ?? days[0]
   const selectedDate = dateFromKey(selectedDay.dateKey)
   const selectedFullDate = FULL_DATE.format(selectedDate)
+  const todayDate = todayDateKey ? dateFromKey(todayDateKey) : null
   const leadingBlankCount = firstDate.getUTCDay()
   const trailingBlankCount = (7 - ((leadingBlankCount + days.length) % 7)) % 7
 
@@ -63,70 +64,79 @@ export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; today
 
   return <section className={`card ${styles.calendar}`} aria-labelledby="job-calendar-title">
     <header className={styles.header}>
-      <div>
-        <h2 className="t-title" id="job-calendar-title">{MONTH_YEAR.format(firstDate)} schedule</h2>
-        <p>Full month · Central time · active scheduled jobs</p>
+      <div className={styles.headerLead}>
+        <span className={styles.eyebrow}>Schedule</span>
+        <h2 className="t-title" id="job-calendar-title">{MONTH_YEAR.format(firstDate)}</h2>
+        <p>Full month · Central time</p>
       </div>
-      <span className={styles.total}>{scheduledCount} {scheduledCount === 1 ? "job" : "jobs"}</span>
+      <div className={styles.headerMeta}>
+        <span className={styles.total}><strong>{scheduledCount}</strong><small>{scheduledCount === 1 ? "scheduled job" : "scheduled jobs"}</small></span>
+        {todayDate && <span className={styles.todayLabel}>Today is {DAY_NAME.format(todayDate)} {todayDate.getUTCDate()}</span>}
+      </div>
     </header>
 
     <p className={styles.instruction} id="job-calendar-instructions">
       Use arrow keys to move by day or week. Home and End move within a row.
     </p>
-    <div className={styles.grid} role="group" aria-label={`${MONTH_YEAR.format(firstDate)} calendar`} aria-describedby="job-calendar-instructions">
-      <div className={styles.weekdays} aria-hidden="true">
-        {WEEKDAY_LABELS.map((label) => <span key={label}>{label}</span>)}
+    <div className={styles.body}>
+      <div className={styles.grid} role="group" aria-label={`${MONTH_YEAR.format(firstDate)} calendar`} aria-describedby="job-calendar-instructions">
+        <div className={styles.weekdays} aria-hidden="true">
+          {WEEKDAY_LABELS.map((label) => <span key={label}>{label}</span>)}
+        </div>
+        <div className={styles.days}>
+          {Array.from({ length: leadingBlankCount }, (_, index) => <span className={styles.blankDay} aria-hidden="true" key={`leading-${index}`} />)}
+          {days.map((day, index) => {
+            const date = dateFromKey(day.dateKey)
+            const fullDate = FULL_DATE.format(date)
+            const selected = day.dateKey === selectedDay.dateKey
+            const isToday = day.dateKey === todayDateKey
+            const jobLabel = day.jobs.length === 0
+              ? "no jobs scheduled"
+              : `${day.jobs.length} ${day.jobs.length === 1 ? "job" : "jobs"} scheduled`
+            return <button
+              className={`${styles.dayButton}${isToday ? ` ${styles.today}` : ""}${day.jobs.length ? ` ${styles.busy}` : ""}`}
+              key={day.dateKey}
+              type="button"
+              ref={(element) => { dayButtonRefs.current[index] = element }}
+              aria-label={`${isToday ? "Today, " : ""}${fullDate}, ${jobLabel}`}
+              aria-pressed={selected}
+              aria-controls="job-calendar-agenda"
+              tabIndex={selected ? 0 : -1}
+              onClick={() => setSelectedDateKey(day.dateKey)}
+              onKeyDown={(event) => moveSelection(index, event)}
+            >
+              <span className={styles.dayName}>{isToday ? "Today" : DAY_NAME.format(date)}</span>
+              <time className={styles.dayNumber} dateTime={day.dateKey}>{date.getUTCDate()}</time>
+              <b aria-hidden="true">{day.jobs.length || "—"}</b>
+            </button>
+          })}
+          {Array.from({ length: trailingBlankCount }, (_, index) => <span className={styles.blankDay} aria-hidden="true" key={`trailing-${index}`} />)}
+        </div>
       </div>
-      <div className={styles.days}>
-      {Array.from({ length: leadingBlankCount }, (_, index) => <span className={styles.blankDay} aria-hidden="true" key={`leading-${index}`} />)}
-      {days.map((day, index) => {
-        const date = dateFromKey(day.dateKey)
-        const fullDate = FULL_DATE.format(date)
-        const selected = day.dateKey === selectedDay.dateKey
-        const isToday = day.dateKey === todayDateKey
-        const jobLabel = day.jobs.length === 0
-          ? "no jobs scheduled"
-          : `${day.jobs.length} ${day.jobs.length === 1 ? "job" : "jobs"} scheduled`
-        return <button
-          className={`${styles.dayButton}${isToday ? ` ${styles.today}` : ""}${day.jobs.length ? ` ${styles.busy}` : ""}`}
-          key={day.dateKey}
-          type="button"
-          ref={(element) => { dayButtonRefs.current[index] = element }}
-          aria-label={`${isToday ? "Today, " : ""}${fullDate}, ${jobLabel}`}
-          aria-pressed={selected}
-          aria-controls="job-calendar-agenda"
-          tabIndex={selected ? 0 : -1}
-          onClick={() => setSelectedDateKey(day.dateKey)}
-          onKeyDown={(event) => moveSelection(index, event)}
-        >
-          <span>{isToday ? "Today" : DAY_NAME.format(date)}</span>
-          <time dateTime={day.dateKey}>{date.getUTCDate()}</time>
-          <b aria-hidden="true">{day.jobs.length || "—"}</b>
-        </button>
-      })}
-      {Array.from({ length: trailingBlankCount }, (_, index) => <span className={styles.blankDay} aria-hidden="true" key={`trailing-${index}`} />)}
-      </div>
-    </div>
 
-    <div className={styles.agenda} id="job-calendar-agenda" aria-live="polite">
-      <div className={styles.agendaHeader}>
-        <h3>{selectedDay.dateKey === todayDateKey ? "Today" : DAY_NAME.format(selectedDate)}</h3>
-        <span>{selectedFullDate} · Central time</span>
+      <div className={styles.agenda} id="job-calendar-agenda" aria-live="polite">
+        <div className={styles.agendaHeader}>
+          <div>
+            <span className={styles.agendaKicker}>Selected day</span>
+            <h3>{selectedDay.dateKey === todayDateKey ? "Today" : DAY_NAME.format(selectedDate)}</h3>
+          </div>
+          <span>{selectedFullDate} · Central time</span>
+        </div>
+        {selectedDay.jobs.length === 0
+          ? <p className={styles.empty}>Nothing scheduled.</p>
+          : <ul className={styles.jobs} aria-label={`Jobs scheduled ${selectedFullDate}`}>
+              {selectedDay.jobs.map((job) => <li key={job.id}>
+                <Link href={`/ops/leads/${job.id}`} aria-label={`Open ${job.customer}, scheduled ${selectedFullDate} at ${JOB_TIME.format(new Date(job.scheduledAt))}`}>
+                  <span className={styles.jobTop}>
+                    <strong>{job.customer}</strong>
+                    <time dateTime={job.scheduledAt}>{JOB_TIME.format(new Date(job.scheduledAt))}</time>
+                  </span>
+                  <span className={styles.service}>{job.service || "Service not recorded"}</span>
+                  <span className={styles.jobNumber}>{job.publicId}</span>
+                </Link>
+              </li>)}
+            </ul>}
       </div>
-      {selectedDay.jobs.length === 0
-        ? <p className={styles.empty}>Nothing scheduled.</p>
-        : <ul className={styles.jobs} aria-label={`Jobs scheduled ${selectedFullDate}`}>
-            {selectedDay.jobs.map((job) => <li key={job.id}>
-              <Link href={`/ops/leads/${job.id}`} aria-label={`Open ${job.customer}, scheduled ${selectedFullDate} at ${JOB_TIME.format(new Date(job.scheduledAt))}`}>
-                <span className={styles.jobTop}>
-                  <strong>{job.customer}</strong>
-                  <time dateTime={job.scheduledAt}>{JOB_TIME.format(new Date(job.scheduledAt))}</time>
-                </span>
-                <span className={styles.service}>{job.service || "Service not recorded"}</span>
-                <span className={styles.jobNumber}>{job.publicId}</span>
-              </Link>
-            </li>)}
-          </ul>}
     </div>
   </section>
 }
