@@ -562,8 +562,11 @@ test("the work order has one captured action spine and a visible owner payment s
   assert.match(workOrder, /href="\?replyChannel=text#job-reply">Text/)
   assert.match(workOrder, /href="#onsite-payment">Take payment/)
   assert.match(workOrder, /lead\.handed_off_at \? "Job closed" : lead\.completed_at \? "Close job" : "Finish work"/)
+  assert.match(workOrder, /<section className="card job-details" aria-labelledby="job-details-title">/)
+  assert.match(workOrder, /<details className="job-ledger" aria-label="Customer and source" name="job-detail-group" open>/)
+  assert.match(workOrder, /<details className="job-drawer" open>/)
 
-  const detailsStart = workOrder.indexOf('<details className="card job-details">')
+  const detailsStart = workOrder.indexOf('<section className="card job-details" aria-labelledby="job-details-title">')
   const paymentStart = workOrder.indexOf('<section className="card job-payment"')
   assert.ok(detailsStart >= 0 && paymentStart > detailsStart)
   assert.doesNotMatch(workOrder.slice(detailsStart, paymentStart), /action=\{recordPayment\}/)

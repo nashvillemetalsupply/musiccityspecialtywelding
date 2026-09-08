@@ -601,14 +601,17 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       />}
       </div>
 
-      {!needsJobMatch && !routedToLeadId && <details className="card job-details">
-        <summary>
-          <span><strong>Job Details</strong><small>Contact, price, status, notes</small></span>
-          <b aria-hidden="true" />
-        </summary>
+      {!needsJobMatch && !routedToLeadId && <section className="card job-details" aria-labelledby="job-details-title">
+        <header className="job-details-head">
+          <div>
+            <span>Work context</span>
+            <h2 className="t-title" id="job-details-title">Job Details</h2>
+          </div>
+          <small>Contact, price, status, notes</small>
+        </header>
         <div className="job-details-body">
       <div className="job-columns">
-        <details className="job-ledger" aria-label="Customer and source" name="job-detail-group">
+        <details className="job-ledger" aria-label="Customer and source" name="job-detail-group" open>
           <summary><span><strong>Customer &amp; Source</strong><small>{lead.email || lead.preferred_contact || "Contact details"}</small></span><b aria-hidden="true" /></summary>
           <div className="job-ledger-body">
           <h2 className="t-sub">Customer</h2>
@@ -674,7 +677,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             })}
           </section>}
 
-          <details className="job-drawer" name="job-command" open={!lead.first_response_at}>
+          <details className={`job-drawer${!lead.first_response_at ? " is-needs-response" : ""}`} open>
             <summary>
               <span><strong>Contact</strong><small>{lead.first_response_at ? "Call-back logged" : "Call-back needed"}</small></span>
               <b aria-hidden="true" />
@@ -728,7 +731,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             </div>
           </details>
 
-          {operator.role === "owner" && <details className="job-drawer" name="job-command">
+          {operator.role === "owner" && <details className="job-drawer" open>
           <summary>
             <span><strong>Price &amp; Invoice</strong><small>{lead.invoice_number ? `Invoice #${lead.invoice_number}` : lead.estimate_value_cents !== null ? `${money(lead.estimate_value_cents)} estimate` : "No price saved"}</small></span>
             {lead.paid_at && <strong className="chip chip--good job-paid-stamp">PAID</strong>}
@@ -858,7 +861,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           </div>
           </details>}
 
-          <details className="job-drawer" name="job-command">
+          <details className="job-drawer" open>
           <summary>
             <span><strong>Status &amp; Notes</strong><small>{visibleJobStatus}, notes, review</small></span>
             <b aria-hidden="true" />
@@ -946,7 +949,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </section>
       </div>
         </div>
-      </details>}
+      </section>}
 
       {!needsJobMatch && !routedToLeadId && <><section className="card job-onsite-payment" id="onsite-payment" aria-labelledby="onsite-payment-title">
         <header>

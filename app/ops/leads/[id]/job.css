@@ -531,3 +531,152 @@
 @media (prefers-reduced-motion: reduce) {
   .job-page * { transition-duration: .001ms !important; }
 }
+
+/* Profile polish: one clear workbench, then a compact detail ledger. */
+.job-page {
+  width: min(100%, 78rem);
+  gap: clamp(var(--s3), 2vw, var(--s5));
+}
+
+.job-lead,
+.job-summary,
+.job-promises,
+.job-thread,
+.job-details,
+.job-events {
+  box-shadow: 0 1px 0 var(--border-subtle) !important;
+}
+
+.job-head {
+  padding: clamp(var(--s4), 3vw, var(--s5));
+  background: var(--surface-raised);
+}
+
+.job-head h1 {
+  letter-spacing: var(--tracking-heading);
+}
+
+.job-back a {
+  color: var(--action);
+  font-weight: var(--w-semi);
+}
+
+.job-contact {
+  padding: clamp(var(--s4), 3vw, var(--s5));
+}
+
+.job-contact > div > strong {
+  letter-spacing: var(--tracking-heading);
+}
+
+.job-summary > header,
+.job-promises > header,
+.job-thread > header,
+.job-events > header {
+  background: var(--surface-raised);
+}
+
+.job-brief {
+  padding: clamp(var(--s4), 3vw, var(--s5));
+}
+
+.job-brief > strong {
+  font-size: var(--t-title);
+  letter-spacing: var(--tracking-heading);
+}
+
+.job-details {
+  border-color: var(--border-strong) !important;
+}
+
+.job-details-head {
+  min-height: 4.5rem;
+  padding: var(--s4) clamp(var(--s4), 3vw, var(--s5));
+  background: var(--surface-raised);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  border-bottom: 1px solid var(--border);
+}
+
+.job-details-head > div {
+  display: grid;
+  gap: var(--s1);
+}
+
+.job-details-head > div > span,
+.job-details-head > small {
+  color: var(--text-muted);
+  font-size: var(--t-caption);
+}
+
+.job-details-head h2 {
+  font-size: var(--t-title);
+  letter-spacing: var(--tracking-heading);
+}
+
+.job-details-body {
+  background: var(--surface-sunken);
+}
+
+.job-columns {
+  gap: 1px;
+  background: var(--border);
+}
+
+.job-ledger,
+.job-command {
+  background: var(--surface);
+}
+
+.job-ledger > summary,
+.job-drawer > summary {
+  min-height: 4.5rem;
+  padding: var(--s4) clamp(var(--s4), 3vw, var(--s5));
+}
+
+.job-ledger > summary strong,
+.job-drawer > summary strong {
+  letter-spacing: var(--tracking-heading);
+}
+
+.job-drawer.is-needs-response > summary small {
+  color: var(--status-warn-ink);
+}
+
+@media (min-width: 56rem) {
+  .job-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .job-ledger {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .job-contact {
+    grid-template-columns: minmax(14rem, .7fr) minmax(0, 1.3fr);
+    align-items: center;
+    gap: var(--s5);
+  }
+
+  .job-action-spine {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media (max-width: 55.9999rem) {
+  .job-details-head,
+  .job-ledger > summary,
+  .job-drawer > summary {
+    min-height: 4rem;
+  }
+
+  .job-details-head {
+    align-items: start;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+}
