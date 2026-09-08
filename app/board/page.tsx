@@ -23,7 +23,8 @@ import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
 import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.mjs"
 import { canAccessInternalTests } from "@/lib/operators"
-import { emptyThirtyDayJobCalendar, listThirtyDayJobCalendar } from "@/lib/job-calendar-data"
+import { centralDateKey } from "@/lib/job-calendar.mjs"
+import { emptyMonthJobCalendar, listMonthJobCalendar } from "@/lib/job-calendar-data"
 import { JobCalendar } from "./job-calendar"
 import "./board.css"
 
@@ -77,7 +78,7 @@ const EMPTY_BOARD: BoardPaneData = {
 
 export default async function BoardPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
-  // One clock feeds the heading, rolling calendar and relative-time labels.
+  // One clock feeds the heading, month calendar and relative-time labels.
   // The board's existing visible-tab refresh re-runs this route every minute,
   // so a page left open rolls to the new Central day without a reload.
   const now = new Date()
@@ -117,7 +118,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   const nowMs = now.getTime()
   if (!operator) return <JobControl
     board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }}
-    calendar={<JobCalendar days={emptyThirtyDayJobCalendar(now)} />}
+    calendar={<JobCalendar days={emptyMonthJobCalendar(now)} todayDateKey={centralDateKey(now) ?? ""} />}
     chrome={chrome}
     nowMs={nowMs}
     fontClass={FONT_CLASS}
@@ -155,7 +156,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     listPendingCallIntakes({ pageSize: 10 }),
     // Always production-only, even when an owner opens the board's explicit
     // test mode: test work is not a real shop appointment.
-    listThirtyDayJobCalendar(role, now),
+    listMonthJobCalendar(role, now),
   ])
   const calls = <RecentCalls owner={role === "owner"} nowMs={nowMs} total={pendingCalls.total}
     calls={pendingCalls.items.map((draft) => ({
@@ -169,7 +170,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     }))} />
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
-  return <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
+  return <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,

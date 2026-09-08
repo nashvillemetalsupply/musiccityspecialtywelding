@@ -130,7 +130,7 @@ test("QA step 8: signed-out structure is zeroed and crew money is nulled server-
   assert.match(emptyBoard, /resultTotal: 0/)
   assert.match(emptyBoard, /hasNext: false/)
   assert.match(BOARD_PAGE_SOURCE, /if \(!operator\) return <JobControl\s+board=\{\{ \.\.\.EMPTY_BOARD, stage, signal, stages: \[\.\.\.JOB_BOARD_STAGES\] \}\}/)
-  assert.match(BOARD_PAGE_SOURCE, /calendar=\{<JobCalendar days=\{emptyThirtyDayJobCalendar\(now\)\} \/>\}/)
+  assert.match(BOARD_PAGE_SOURCE, /calendar=\{<JobCalendar days=\{emptyMonthJobCalendar\(now\)\} todayDateKey=\{centralDateKey\(now\) \?\? ""\} \/>\}/)
 
   const projection = OPS_DATA_SOURCE.slice(
     OPS_DATA_SOURCE.indexOf("export function projectLeadForRole"),

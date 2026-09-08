@@ -2,9 +2,9 @@ import { getSql } from "@/lib/db"
 import type { OperatorRole } from "@/lib/operators"
 import { redactCrewText } from "@/lib/visibility"
 import {
-  buildRollingJobCalendar,
+  buildMonthJobCalendar,
   calendarTimestampIso,
-  rollingCentralDateRange,
+  centralMonthRange,
 } from "@/lib/job-calendar.mjs"
 
 type CalendarQueryRow = {
@@ -48,16 +48,16 @@ export type CalendarDay = {
   jobs: CalendarJob[]
 }
 
-export function emptyThirtyDayJobCalendar(now = new Date()): CalendarDay[] {
-  return buildRollingJobCalendar([], now, 30)
+export function emptyMonthJobCalendar(now = new Date()): CalendarDay[] {
+  return buildMonthJobCalendar([], now)
 }
 
-export async function listThirtyDayJobCalendar(
+export async function listMonthJobCalendar(
   role: OperatorRole,
   now = new Date(),
 ): Promise<CalendarDay[]> {
   const sql = getSql()
-  const range = rollingCentralDateRange(now, 30)
+  const range = centralMonthRange(now)
   // Calendar rows are deliberately a narrow, non-financial projection. The
   // test boundary is fail-closed across both the work order and its person.
   const rows = (await sql`
@@ -93,7 +93,7 @@ export async function listThirtyDayJobCalendar(
     status: row.status,
   }))
 
-  return buildRollingJobCalendar(sourceRows, now, 30).map((day) => ({
+  return buildMonthJobCalendar(sourceRows, now).map((day) => ({
     dateKey: day.dateKey,
     jobs: day.jobs.map((job) => ({
       id: job.id,

@@ -10,31 +10,31 @@ export type CalendarSourceJob = {
   status: string
 }
 
-export type RollingCalendarDay<T> = {
+export type CalendarDay<T> = {
   dateKey: string
   jobs: T[]
 }
 
 export function centralDateKey(value: Date | string | number): string | null
 export function calendarTimestampIso(value: Date | string | number): string | null
-export function rollingCentralDateRange(now?: Date | string | number, dayCount?: number): {
+export function centralMonthRange(now?: Date | string | number): {
   dateKeys: string[]
   startInclusive: string
   endExclusive: string
 }
 export function isActiveScheduledJob(job: CalendarSourceJob | null | undefined): boolean
-export function buildRollingJobCalendar<T extends CalendarSourceJob>(
+export function buildMonthJobCalendar<T extends CalendarSourceJob>(
   jobs: T[],
   now?: Date | string | number,
-  dayCount?: number,
-): RollingCalendarDay<T>[]
+): CalendarDay<T>[]
 export function selectedCalendarDay<T>(
-  days: RollingCalendarDay<T>[],
+  days: CalendarDay<T>[],
   selectedDateKey: string,
-): RollingCalendarDay<T> | null
+): CalendarDay<T> | null
 export function calendarNavigationIndex(
   index: number,
   key: string,
   length: number,
   columns?: number,
+  leadingOffset?: number,
 ): number | null
