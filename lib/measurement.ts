@@ -14,9 +14,15 @@ export const ADS_PHONE_CONVERSION_SEND_TO =
   process.env.NEXT_PUBLIC_GOOGLE_ADS_PHONE_SEND_TO?.trim() ||
   "AW-17817632790/0aSACPS5ue4cEJaAjrBC"
 
+// The Meta dataset (pixel) this site reports to. Also interpolated into the
+// fbq init block in components/public-analytics.tsx — kept here so the two
+// cannot drift apart.
+export const META_PIXEL_ID = "1584753153193012"
+
 type MeasurementWindow = Window & {
   dataLayer?: unknown[]
   gtag?: (...args: unknown[]) => void
+  fbq?: (...args: unknown[]) => void
 }
 
 // A conversion the browser drops is gone: there is no retry and nothing
@@ -39,4 +45,14 @@ export function queueMeasurementEvent(name: string, params: Record<string, unkno
     }
   }
   target.gtag("event", name, params)
+}
+
+// fbq's own init shim (added in public-analytics.tsx) defines window.fbq as a
+// queueing stub before the real script loads, so this is safe to call from
+// first paint the same way queueMeasurementEvent's gtag shim is above.
+export function reportMetaLead() {
+  if (typeof window === "undefined") return
+  const target = window as MeasurementWindow
+  if (typeof target.fbq !== "function") return
+  target.fbq("track", "Lead")
 }

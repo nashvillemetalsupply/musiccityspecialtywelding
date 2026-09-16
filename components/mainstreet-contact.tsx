@@ -4,7 +4,7 @@ import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
 import { captureAttribution } from "@/lib/attribution"
-import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID, queueMeasurementEvent } from "@/lib/measurement"
+import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID, queueMeasurementEvent, reportMetaLead } from "@/lib/measurement"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 import { QUOTE_SERVICE_OPTIONS } from "@/lib/public-quote.mjs"
 
@@ -167,6 +167,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
       if (ADS_CONVERSION_SEND_TO) {
         queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
       }
+      reportMetaLead()
 
       previews.forEach((url) => URL.revokeObjectURL(url))
       setPreviews([])
