@@ -2,6 +2,10 @@ import { createHmac, timingSafeEqual } from "node:crypto"
 
 const DEFAULT_WEBHOOK_BASE_URL = "https://musiccityspecialtywelding.com"
 
+// Kept here rather than imported from lib/dni.mjs on purpose: the provider
+// suites transpile this file and import it as a data: URL, where no module
+// specifier -- aliased or relative -- can resolve. Same nine lines, one place
+// each side.
 function normalizedE164(value: string | undefined) {
   const raw = value?.trim() ?? ""
   const digits = raw.replace(/\D/g, "")
@@ -9,6 +13,15 @@ function normalizedE164(value: string | undefined) {
   if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`
   if (raw.startsWith("+") && digits.length >= 8 && digits.length <= 15) return `+${digits}`
   return ""
+}
+
+// The ad-tracking numbers for dynamic number insertion. Same variables
+// lib/dni.mjs reads; see that file for why they are NEXT_PUBLIC_.
+function trackingNumbers() {
+  return [
+    normalizedE164(process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER_GOOGLE),
+    normalizedE164(process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER_FACEBOOK),
+  ].filter(Boolean)
 }
 
 function accountCredentialsConfigured() {
@@ -45,9 +58,14 @@ export function twilioCallbackUrl(path: string) {
   return `${base}${path}`
 }
 
+// The ad-tracking numbers ring this same shop line, so their signed webhooks
+// have to be accepted here too. A number missing from this gate does not
+// degrade: Twilio gets a 403 and the phone never rings.
 export function isConfiguredTwilioNumber(value: string) {
+  const normalized = normalizedE164(value)
+  if (!normalized) return false
   const configured = normalizedE164(process.env.TWILIO_PHONE_NUMBER)
-  return Boolean(configured && normalizedE164(value) === configured)
+  return (Boolean(configured) && normalized === configured) || trackingNumbers().includes(normalized)
 }
 
 export function twilioConfigured() {

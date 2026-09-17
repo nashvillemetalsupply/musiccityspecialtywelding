@@ -5,6 +5,7 @@ import Link from "next/link"
 import { SkipLink } from "./skip-link"
 import { useRouter } from "next/navigation"
 import { AD_CHANNEL_LABELS } from "@/lib/ad-spend.mjs"
+import { dniConfigured } from "@/lib/dni.mjs"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import { setMonthAdSpend, updateLeadStatus } from "@/app/ops/actions"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
@@ -495,7 +496,7 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                     the two being read as the same metric. */}
                 <p className="cpl-note">{board.costPerLead.monthLabel} so far &middot; {board.costPerLead.channels
                   .map((channel) => `${channel.leads} leads on the books from ${AD_CHANNEL_LABELS[channel.channel]}`)
-                  .join(" · ")} &middot; calls not yet attributed</p>
+                  .join(" · ")}{dniConfigured() ? "" : " · calls not yet attributed"}</p>
                 <form action={setMonthAdSpend}>
                   {board.costPerLead.channels.map((channel) =>
                     <label key={channel.channel}>

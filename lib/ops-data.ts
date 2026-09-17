@@ -9,6 +9,7 @@ import type { LeadRow, LeadStatus } from "@/lib/leads"
 import { LEAD_STATUSES } from "@/lib/leads"
 import type { OperatorRole } from "@/lib/operators"
 import { AD_CHANNELS, costPerLeadCents } from "@/lib/ad-spend.mjs"
+import { dniNumber } from "@/lib/dni.mjs"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
 import { BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
@@ -1304,6 +1305,11 @@ export type MonthCostPerLead = {
 export async function getMonthCostPerLead(role: OperatorRole = "crew"): Promise<MonthCostPerLead | null> {
   if (role !== "owner") return null
   const sql = getSql()
+  // A caller leaves no gclid behind, so the only evidence of which ad sent them
+  // is the number they dialled. Empty until the tracking numbers are bought,
+  // and `= NULL` matches nothing, so the clause is inert rather than wrong.
+  const googleLine = dniNumber("google") || null
+  const facebookLine = dniNumber("facebook") || null
   const [leadRows, spendRows] = await Promise.all([
     sql`
       SELECT
@@ -1311,12 +1317,14 @@ export async function getMonthCostPerLead(role: OperatorRole = "crew"): Promise<
           WHERE btrim(gclid) <> ''
             OR landing_page ILIKE '%gclid=%'
             OR lower(btrim(utm_source)) IN ('google', 'google ads', 'google_ads', 'googleads')
+            OR EXISTS (SELECT 1 FROM calls c WHERE c.lead_id = leads.id AND c.to_phone = ${googleLine}::text)
         )::int AS google_leads,
         count(*) FILTER (
           WHERE landing_page ILIKE '%fbclid=%'
             OR lower(btrim(utm_source)) IN ('facebook', 'fb', 'meta', 'instagram', 'ig')
             OR referrer ILIKE '%facebook.%'
             OR referrer ILIKE '%instagram.%'
+            OR EXISTS (SELECT 1 FROM calls c WHERE c.lead_id = leads.id AND c.to_phone = ${facebookLine}::text)
         )::int AS facebook_leads
       FROM leads
       WHERE created_at >= (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
