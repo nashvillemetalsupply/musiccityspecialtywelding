@@ -4,6 +4,9 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { SkipLink } from "./skip-link"
 import { useRouter } from "next/navigation"
+import { AD_CHANNEL_LABELS } from "@/lib/ad-spend.mjs"
+import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
+import { setMonthAdSpend, updateLeadStatus } from "@/app/ops/actions"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
   PANEL_FACT_KEYS, PANEL_FACT_LABELS, answeredFactCount, dimensionMark,
@@ -15,7 +18,7 @@ import { VoicePreview } from "./voice-preview"
 import { TrackedCallButton } from "@/app/ops/tracked-call-button"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import type { PromiseSummary } from "@/lib/commitments"
-import type { BoardJobDetail, BoardJobRow, JobBoardStage, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
+import type { BoardJobDetail, BoardJobRow, JobBoardStage, MonthCostPerLead, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
 import { shopClaimLabel, shopClaimText, shopSourceLabel } from "@/lib/shop-language"
 import { outcomeLine } from "@/lib/call-summary-shared"
 import { enableUsage, tapped, TAPS } from "./usage"
@@ -36,6 +39,8 @@ export type BoardPaneData = {
   promises: PromiseSummary
   week: WeekAheadDay[]
   outTheDoor: OutTheDoorWeek
+  // Null for crew and signed out: cost per lead is money.
+  costPerLead: MonthCostPerLead | null
   medianFirstResponseMinutes: number | null
   todayTrail: TodayTrailItem[]
   callSketch: BoardCallSketch | null
@@ -477,6 +482,39 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                 <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
             </div>
           </div>
+          {/* What a paid lead costs this month. It sits with the other two
+              because it answers the same question they do -- is the shop
+              ahead -- and the leads it divides by are the ones on this page.
+              Owner only: it is money. */}
+          {board.costPerLead && <div className="figure figure--cpl">
+            <p className="figure-label">Cost per lead</p>
+            <p className="n">
+              {board.costPerLead.channels.map((channel) =>
+                <span className="cpl" key={channel.channel}>
+                  <b className="t-display">{money(channel.costPerLeadCents)}</b>
+                  <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
+                </span>)}
+            </p>
+            <div className="under">
+              <span>{board.costPerLead.monthLabel} so far &middot; {board.costPerLead.channels
+                .map((channel) => `${channel.leads} from ${AD_CHANNEL_LABELS[channel.channel]}`).join(" · ")}</span>
+            </div>
+            {/* Native disclosure, no state: the spend is typed once a month and
+                the box should not take room the other 30 days. */}
+            <details className="cpl-entry">
+              <summary>Enter this month&rsquo;s ad spend</summary>
+              <form action={setMonthAdSpend}>
+                {board.costPerLead.channels.map((channel) =>
+                  <label key={channel.channel}>
+                    <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
+                    <input name={channel.channel} type="text" inputMode="decimal" autoComplete="off"
+                      defaultValue={channel.spendCents === null ? "" : (channel.spendCents / 100).toFixed(2)}
+                      placeholder="0.00" aria-label={`${AD_CHANNEL_LABELS[channel.channel]} spend this month, in dollars`} />
+                  </label>)}
+                <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">Save spend</SafeSubmitButton>
+              </form>
+            </details>
+          </div>}
         </section>
         <section className="card social-post-card" aria-labelledby="social-post-title">
           <div className="social-post-copy">
@@ -793,6 +831,15 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                               {phone && <TrackedCallButton leadId={lead.id} phone={phone} label="Call" compact />}
                               {phone && lead.text_ready && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}?replyChannel=text#job-reply`}>Text</Link>}
                               {phone && !lead.text_ready && chrome.owner && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}#text-permission`}>Enable texting</Link>}
+                              {/* Junk gets off the board here rather than two pages away. Same
+                                  owner-only action the job page uses, so the immutable receipt
+                                  and the notification suppression come with it. */}
+                              {chrome.owner && <form action={updateLeadStatus}>
+                                <input type="hidden" name="leadId" value={lead.id} />
+                                <input type="hidden" name="status" value="spam" />
+                                <input type="hidden" name="reason" value="Marked Not a job from the board." />
+                                <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a job</SafeSubmitButton>
+                              </form>}
                             </span>
                           </div>
                         </div>

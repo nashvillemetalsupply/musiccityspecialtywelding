@@ -8,6 +8,7 @@ import type { JobLineItem } from "@/lib/job-line-items"
 import type { LeadRow, LeadStatus } from "@/lib/leads"
 import { LEAD_STATUSES } from "@/lib/leads"
 import type { OperatorRole } from "@/lib/operators"
+import { AD_CHANNELS, costPerLeadCents } from "@/lib/ad-spend.mjs"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
 import { BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
@@ -1275,6 +1276,70 @@ export async function getOutTheDoorWeek(role: OperatorRole = "crew"): Promise<Ou
     paidJobs: Number(row?.paid_jobs ?? 0),
     revenueCents: role === "owner" ? Number(row?.revenue_cents ?? 0) : null,
     stillOutCents: role === "owner" ? Number(row?.still_out_cents ?? 0) : null,
+  }
+}
+
+export type ChannelCostPerLead = {
+  channel: "google" | "facebook"
+  leads: number
+  // Null when nothing has been recorded for the month yet. Zero is a real
+  // answer -- "I paused it" -- and reads differently from "nobody told us".
+  spendCents: number | null
+  costPerLeadCents: number | null
+}
+
+export type MonthCostPerLead = {
+  monthLabel: string
+  channels: ChannelCostPerLead[]
+}
+
+// Paid leads this Central month, by channel, against what the month cost.
+// Crew money is removed server-side, so crew get null and the board renders
+// nothing -- the same boundary every other money figure here uses.
+//
+// A lead counts for Google when it carried a gclid or a Google paid tag, and
+// for Facebook when it carried an fbclid or a Meta/Instagram tag. Junk the
+// owner has marked Not a job is out of the count on purpose: cost per lead is
+// the price of a real lead, and counting spam flatters the number.
+export async function getMonthCostPerLead(role: OperatorRole = "crew"): Promise<MonthCostPerLead | null> {
+  if (role !== "owner") return null
+  const sql = getSql()
+  const [leadRows, spendRows] = await Promise.all([
+    sql`
+      SELECT
+        count(*) FILTER (
+          WHERE btrim(gclid) <> ''
+            OR landing_page ILIKE '%gclid=%'
+            OR lower(btrim(utm_source)) IN ('google', 'google ads', 'google_ads', 'googleads')
+        )::int AS google_leads,
+        count(*) FILTER (
+          WHERE landing_page ILIKE '%fbclid=%'
+            OR lower(btrim(utm_source)) IN ('facebook', 'fb', 'meta', 'instagram', 'ig')
+            OR referrer ILIKE '%facebook.%'
+            OR referrer ILIKE '%instagram.%'
+        )::int AS facebook_leads
+      FROM leads
+      WHERE created_at >= (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
+        AND routed_to_lead_id IS NULL AND is_test = false AND status <> 'spam'`,
+    sql`
+      SELECT channel, amount_cents::bigint AS amount_cents FROM ad_spend
+      WHERE month_start = date_trunc('month', now() AT TIME ZONE 'America/Chicago')::date`,
+  ])
+  const counts = (leadRows as { google_leads: number; facebook_leads: number }[])[0]
+  const spend = new Map((spendRows as { channel: string; amount_cents: number | string }[])
+    .map((row) => [row.channel, Number(row.amount_cents)]))
+  const leadsFor = { google: Number(counts?.google_leads ?? 0), facebook: Number(counts?.facebook_leads ?? 0) }
+  return {
+    monthLabel: new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", month: "long" }).format(new Date()),
+    channels: (AD_CHANNELS as ChannelCostPerLead["channel"][]).map((channel) => {
+      const spendCents = spend.has(channel) ? spend.get(channel)! : null
+      return {
+        channel,
+        leads: leadsFor[channel],
+        spendCents,
+        costPerLeadCents: costPerLeadCents(spendCents, leadsFor[channel]),
+      }
+    }),
   }
 }
 
