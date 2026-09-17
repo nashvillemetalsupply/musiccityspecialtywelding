@@ -5,11 +5,10 @@ import { OPS_SESSION_COOKIE, validateSessionToken } from "@/lib/ops-auth"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-// Owner-only feature-tap counts, first party. Vercel Web Analytics on the
-// Hobby plan carries no custom events (its enable dialog says so), and a
-// $20/month plan for ten counters is the wrong trade for a one-man shop. One
-// row per day per tap name, incremented in place. No content, no job id, no
-// customer: the name is the whole payload, plus the stage tab's own name.
+// Owner-only feature-tap counts, first party. The private board does not load
+// third-party analytics. One row per day per tap name is incremented in place.
+// No content, job id, or customer is stored: the name is the whole payload,
+// plus the stage tab's own name.
 //
 // Crew are refused here even if a tap reaches the route, which keeps the
 // repo's no-surveillance rule at the server, not only in the client gate.

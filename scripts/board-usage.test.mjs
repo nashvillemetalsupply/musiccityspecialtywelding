@@ -12,7 +12,7 @@ const MIGRATE = read("../scripts/migrate.mjs")
 // The repo rule: no worker surveillance. Usage counts exist so the next board
 // change is built on what the owner taps; they must never count a crew tap.
 test("usage counting is owner-only at the source, not in a dashboard filter", () => {
-  assert.match(BOARD, /\{chrome\.owner && <Analytics \/>\}/, "the script only loads for the owner")
+  assert.doesNotMatch(BOARD, /@vercel\/analytics|<Analytics\b/, "private board pages must not load Vercel Analytics")
   assert.match(BOARD, /useEffect\(\(\) => \{ enableUsage\(chrome\.owner\) \}, \[chrome\.owner\]\)/)
   assert.match(USAGE, /if \(!enabled\) return/, "a crew tap is a no-op before it leaves the browser")
   assert.doesNotMatch(USAGE, /enabled = true/)

@@ -1,11 +1,13 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import { findBoundGa4MeasurementIds } from "./verify-ads-tag.mjs"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
 const AW_CONTAINER = "AW-17817632790"
 const SEND_TO = "AW-17817632790/CZF4CMyQhPEbEJaAjrBC"
+const PHONE_SEND_TO = "AW-17817632790/0aSACPS5ue4cEJaAjrBC"
 
 test("the shipped conversion label is the one the Ads conversion action listens on", () => {
   const measurement = source("lib/measurement.ts")
@@ -116,6 +118,101 @@ test("health reports how long the public quote form has been silent", () => {
     monitor.includes("verify-ads-tag.mjs"),
     "The health monitor must run the live Ads tag probe.",
   )
+})
+
+test("release health gates both Ads destinations and GA4 configuration", () => {
+  const health = source("app/api/health/route.ts")
+  assert.match(
+    health,
+    /import \{[^}]*ADS_CONVERSION_SEND_TO[^}]*ADS_PHONE_CONVERSION_SEND_TO[^}]*GA_MEASUREMENT_ID[^}]*\} from "@\/lib\/measurement"/s,
+    "Health must use the same public measurement IDs as the browser bundle.",
+  )
+  for (const gate of [
+    "adsConversionConfigured",
+    "adsPhoneConversionConfigured",
+    "analyticsMeasurementConfigured",
+  ]) {
+    const launchGateStart = health.indexOf("const launchGatePassed")
+    const launchGate = health.slice(launchGateStart, health.indexOf("return Response.json", launchGateStart))
+    assert.ok(launchGate.includes(gate), `${gate} must participate in the release gate.`)
+  }
+  assert.ok(health.includes("phoneConversionSendTo: ADS_PHONE_CONVERSION_SEND_TO"))
+
+  const monitor = source(".github/workflows/health-monitor.yml")
+  assert.ok(
+    monitor.includes(".googleAds.phoneConversionConfigured == true"),
+    "Production verification must fail when the phone Ads destination is missing.",
+  )
+  assert.ok(
+    monitor.includes(".googleAnalytics.measurementConfigured == true"),
+    "Production verification must fail when GA4 is missing.",
+  )
+})
+
+test("the live tag probe checks form, phone, and GA4 runtime wiring", () => {
+  const verifier = source("scripts/verify-ads-tag.mjs")
+  assert.ok(verifier.includes(PHONE_SEND_TO), "The phone conversion destination must be probed.")
+  assert.match(verifier, /G-\[A-Z0-9\]/, "The probe must discover a shipped GA4 measurement ID.")
+  assert.ok(
+    verifier.includes("GA4") && verifier.includes("gtag config"),
+    "The probe must require GA4 runtime config, not merely a G- string elsewhere in the bundle.",
+  )
+})
+
+test("the live tag probe binds the discovered GA4 ID to its exact config call", () => {
+  const html = '<script>self.__next_f.push([1,"{\\"measurementId\\":\\"G-BOUND123\\"}"])</script>'
+  const boundBundle = "function({measurementId:e}){return `${e?`window.gtag('config', ${JSON.stringify(e)});`:\"\"}`}"
+  assert.deepEqual(findBoundGa4MeasurementIds(html, boundBundle), ["G-BOUND123"])
+
+  const unrelatedHtml = '<script>window.unrelatedMeasurement = "G-STRAY123"</script>'
+  const unrelatedBundle = "window.gtag('config', 'GT-CONTAINER1')"
+  assert.deepEqual(
+    findBoundGa4MeasurementIds(unrelatedHtml, unrelatedBundle),
+    [],
+    "A stray G-* ID and a different config call must not pass GA4 verification.",
+  )
+
+  const wrongBindingBundle = "function({measurementId:e}){return `${e?`window.gtag('config', ${JSON.stringify(other)});`:\"\"}`}"
+  assert.deepEqual(
+    findBoundGa4MeasurementIds(html, wrongBindingBundle),
+    [],
+    "The config expression must use the exact variable receiving measurementId.",
+  )
+})
+
+test("Meta measurement shares verification suppression and queues an early Lead", () => {
+  const analytics = source("components/public-analytics.tsx")
+  const metaStart = analytics.indexOf('<Script id="meta-pixel"')
+  const metaBody = analytics.slice(metaStart, analytics.indexOf("</Script>", metaStart))
+  assert.ok(metaBody.includes("internal-verify"), "Meta PageView must ignore internal verification.")
+  assert.ok(metaBody.includes("e2e"), "Meta PageView must ignore end-to-end verification.")
+  assert.doesNotMatch(
+    analytics,
+    /facebook\.com\/tr\?[^\n]*noscript/i,
+    "A no-script pixel must not bypass internal-verification suppression.",
+  )
+  assert.ok(
+    metaBody.includes("__mcswMetaQueue") && metaBody.includes("fbq.apply"),
+    "The Meta bootstrap must drain Leads queued before fbq becomes available.",
+  )
+
+  const measurement = source("lib/measurement.ts")
+  const reportMetaLead = measurement.slice(measurement.indexOf("export function reportMetaLead"))
+  assert.ok(reportMetaLead.includes("internal-verify"), "Meta Lead must ignore internal verification.")
+  assert.ok(reportMetaLead.includes("e2e"), "Meta Lead must ignore end-to-end verification.")
+  assert.ok(
+    reportMetaLead.includes("__mcswMetaQueue") && reportMetaLead.includes('["track", "Lead"]'),
+    "A Lead must queue when fbq is temporarily unavailable.",
+  )
+  assert.doesNotMatch(reportMetaLead, /eventID|receipt/i, "Do not fabricate a Meta provider receipt.")
+})
+
+test("privacy copy names Meta measurement without claiming enhanced data sharing", () => {
+  const privacy = source("app/privacy/page.tsx")
+  assert.match(privacy, /Meta Pixel/)
+  assert.match(privacy, /Facebook/)
+  assert.match(privacy, /quote request/)
+  assert.doesNotMatch(privacy, /enhanced conversions|enhanced data sharing/i)
 })
 
 test("a limited-signal ad click is still filed as paid", () => {

@@ -5,9 +5,9 @@
 // customer, no number, no money, no job id ever rides on a tap. The one
 // detail allowed is the stage tab's own name, folded into the tap name.
 //
-// Counted first party (POST /api/ops/usage into usage_taps): Vercel Web
-// Analytics on the Hobby plan carries no custom events, and a paid plan for
-// ten counters is the wrong trade. Page views still go to Vercel, free.
+// Counted first party (POST /api/ops/usage into usage_taps). The private board
+// does not load third-party analytics; these bounded owner-only counters are
+// the complete usage measurement for this surface.
 //
 // Crew are never counted. JobControl flips this switch only for the owner,
 // and the route refuses anyone else besides. That is the repo's

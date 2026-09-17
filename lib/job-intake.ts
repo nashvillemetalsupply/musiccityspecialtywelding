@@ -44,6 +44,20 @@ export type PreparedInboundCall =
   | { kind: "existing"; leadId: number; person: PersonRow }
   | { kind: "draft"; draft: CallIntakeDraft; person: PersonRow | null }
 
+export type InboundCallReceiptInput = {
+  callSid: string
+  actorId?: string | number | null
+  leadId?: number | null
+  personId?: number | null
+  body: string
+  crewBody: string
+  detail: Record<string, unknown>
+}
+
+export function inboundCallNotificationDedupeKey(callSid: string) {
+  return `inbound-call:${callSid}:interrupt`
+}
+
 function cleanCallerName(value: string) {
   const name = value.replace(/\s+/g, " ").trim().slice(0, 120)
   return /^(unknown|anonymous|private)$/i.test(name) ? "" : name
@@ -60,6 +74,59 @@ async function projectRecoveredTestCallBuildFacts(callSid: string, leadId: numbe
     ON CONFLICT (lead_id) DO UPDATE SET call_sid = EXCLUDED.call_sid
     WHERE build_sketch_job_links.is_test = true`
   await ingestCallSketchBuildFacts(leadId)
+}
+
+// The immutable receipt is the first recovery boundary. The raw call remains
+// eligible until the stable operator-notification intent is also durable.
+export async function persistInboundCallReceipt(input: InboundCallReceiptInput): Promise<number> {
+  const sql = getSql()
+  let eventId = await recordEvent({
+    kind: "call.in",
+    actorType: "customer",
+    actorId: input.actorId ?? "",
+    leadId: input.leadId ?? null,
+    personId: input.personId ?? null,
+    externalId: input.callSid,
+    body: input.body,
+    crewBody: input.crewBody,
+    detail: input.detail,
+  })
+  if (!eventId) {
+    const prior = (await sql`
+      SELECT id FROM events
+      WHERE kind = 'call.in' AND external_id = ${input.callSid}::text
+      LIMIT 1`) as { id: number }[]
+    eventId = Number(prior[0]?.id) || null
+  }
+  if (!eventId) throw new Error("The inbound call receipt could not be confirmed.")
+
+  return eventId
+}
+
+export async function markInboundCallReconciliationHandled(input: {
+  callSid: string
+  eventId: number
+  notificationRequired: boolean
+}): Promise<boolean> {
+  const sql = getSql()
+  const rows = (await sql`
+    UPDATE calls SET
+      detail = COALESCE(detail, '{}'::jsonb) || '{"reconciliationHandled":true}'::jsonb,
+      updated_at = now()
+    WHERE twilio_sid = ${input.callSid}::text AND EXISTS (
+      SELECT 1 FROM events
+      WHERE id = ${input.eventId}::bigint
+        AND kind = 'call.in'
+        AND external_id = ${input.callSid}::text
+    ) AND (
+      ${input.notificationRequired}::boolean = false OR EXISTS (
+        SELECT 1 FROM notifications
+        WHERE source_event_id = ${input.eventId}::bigint
+          AND dedupe_key = ${inboundCallNotificationDedupeKey(input.callSid)}::text
+      )
+    )
+    RETURNING twilio_sid`) as { twilio_sid: string }[]
+  return Boolean(rows[0])
 }
 
 export async function prepareInboundCallIntake(input: {
@@ -88,7 +155,6 @@ export async function prepareInboundCallIntake(input: {
           person_id = COALESCE(person_id, ${person.id}::bigint),
           detail = COALESCE(detail, '{}'::jsonb) || ${JSON.stringify({
             isTest: person.is_test,
-            reconciliationHandled: true,
             reconciliationOutcome: "existing-job",
           })}::jsonb,
           updated_at = now()
@@ -118,7 +184,6 @@ export async function prepareInboundCallIntake(input: {
     UPDATE calls SET person_id = COALESCE(person_id, ${person?.id ?? null}::bigint),
       detail = COALESCE(detail, '{}'::jsonb) || ${JSON.stringify({
         isTest: person?.is_test ?? isTest,
-        reconciliationHandled: true,
         reconciliationOutcome: "call-draft",
       })}::jsonb,
       updated_at = now()

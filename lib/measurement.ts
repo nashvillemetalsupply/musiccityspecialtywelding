@@ -23,6 +23,7 @@ type MeasurementWindow = Window & {
   dataLayer?: unknown[]
   gtag?: (...args: unknown[]) => void
   fbq?: (...args: unknown[]) => void
+  __mcswMetaQueue?: Array<["track", "Lead"]>
 }
 
 // A conversion the browser drops is gone: there is no retry and nothing
@@ -41,6 +42,8 @@ export function queueMeasurementEvent(name: string, params: Record<string, unkno
   target.dataLayer = target.dataLayer || []
   if (typeof target.gtag !== "function") {
     target.gtag = function gtag() {
+      // Google replays the Arguments object exactly as queued by its standard shim.
+      // eslint-disable-next-line prefer-rest-params
       target.dataLayer!.push(arguments)
     }
   }
@@ -52,7 +55,16 @@ export function queueMeasurementEvent(name: string, params: Record<string, unkno
 // first paint the same way queueMeasurementEvent's gtag shim is above.
 export function reportMetaLead() {
   if (typeof window === "undefined") return
+  const params = new URLSearchParams(window.location.search)
+  if (params.get("utm_source") === "internal-verify" || params.get("utm_medium") === "e2e") return
   const target = window as MeasurementWindow
-  if (typeof target.fbq !== "function") return
-  target.fbq("track", "Lead")
+  if (typeof target.fbq === "function") {
+    target.fbq("track", "Lead")
+    return
+  }
+  // Do not pretend Meta accepted the event. Hold the command until the real
+  // browser bootstrap is available; public-analytics drains this queue through
+  // fbq after initialization.
+  target.__mcswMetaQueue = target.__mcswMetaQueue || []
+  target.__mcswMetaQueue.push(["track", "Lead"])
 }
