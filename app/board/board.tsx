@@ -487,17 +487,29 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
               ahead -- and the leads it divides by are the ones on this page.
               Owner only: it is money. */}
           {board.costPerLead && <div className="figure figure--cpl">
-            <p className="figure-label">Cost per lead</p>
+            <p className="figure-label">Ad spend</p>
             <p className="n">
+              {/* Spend and the lead count are shown as two facts, never as
+                  their quotient. Full spend over a count that can only see web
+                  forms is a wrong number, not an under-labelled one: 30 of last
+                  month's 42 leads came in by phone, where no ad platform can
+                  follow. The quotient comes back when calls are attributed --
+                  costPerLeadCents is kept for that day, not dead code. */}
               {board.costPerLead.channels.map((channel) =>
                 <span className="cpl" key={channel.channel}>
-                  <b className="t-display">{money(channel.costPerLeadCents)}</b>
-                  <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
+                  <b className="t-display">{money(channel.spendCents)}</b>
+                  <span>{AD_CHANNEL_LABELS[channel.channel]} spent</span>
                 </span>)}
             </p>
             <div className="under">
+              {/* "Leads on the books" is the database count -- real people,
+                  minus the ones marked Not a job. It is deliberately not the
+                  number Google and Meta report, which counts a tel: tap
+                  whether or not the call connected. Naming it here is what
+                  stops the two being read as the same metric. */}
               <span>{board.costPerLead.monthLabel} so far &middot; {board.costPerLead.channels
-                .map((channel) => `${channel.leads} from ${AD_CHANNEL_LABELS[channel.channel]}`).join(" · ")}</span>
+                .map((channel) => `${channel.leads} leads on the books from ${AD_CHANNEL_LABELS[channel.channel]}`)
+                .join(" · ")} &middot; calls not yet attributed</span>
             </div>
             {/* Native disclosure, no state: the spend is typed once a month and
                 the box should not take room the other 30 days. */}
