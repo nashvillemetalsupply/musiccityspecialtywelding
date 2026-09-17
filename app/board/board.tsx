@@ -465,6 +465,48 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
             <div className="under">
               <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
               <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
+              {/* Ad spend rides under the open-jobs count as one collapsed
+                  line, not a tile of its own. Owner 2026-09-17: the third
+                  field was "too big up top" for something he reads once a
+                  month. Closed by default; the summary carries the two spend
+                  figures so scrolling past costs one line, and the lead
+                  counts, the caveat and the entry form only appear on a tap.
+                  Owner only: it is money. */}
+              {board.costPerLead && <details className="cpl-entry">
+                <summary>
+                  <span>Ad spend</span>
+                  {board.costPerLead.channels.map((channel) =>
+                    <span className="cpl" key={channel.channel}>
+                      <b>{money(channel.spendCents)}</b> {AD_CHANNEL_LABELS[channel.channel]}
+                    </span>)}
+                </summary>
+                {/* Spend and the lead count are shown as two facts, never as
+                    their quotient. Full spend over a count that can only see
+                    web forms is a wrong number, not an under-labelled one: 30
+                    of last month's 42 leads came in by phone, where no ad
+                    platform can follow. The quotient comes back when calls are
+                    attributed -- costPerLeadCents is kept for that day, not
+                    dead code.
+
+                    "Leads on the books" is the database count -- real people,
+                    minus the ones marked Not a job. It is deliberately not the
+                    number Google and Meta report, which counts a tel: tap
+                    whether or not the call connected. Naming it is what stops
+                    the two being read as the same metric. */}
+                <p className="cpl-note">{board.costPerLead.monthLabel} so far &middot; {board.costPerLead.channels
+                  .map((channel) => `${channel.leads} leads on the books from ${AD_CHANNEL_LABELS[channel.channel]}`)
+                  .join(" · ")} &middot; calls not yet attributed</p>
+                <form action={setMonthAdSpend}>
+                  {board.costPerLead.channels.map((channel) =>
+                    <label key={channel.channel}>
+                      <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
+                      <input name={channel.channel} type="text" inputMode="decimal" autoComplete="off"
+                        defaultValue={channel.spendCents === null ? "" : (channel.spendCents / 100).toFixed(2)}
+                        placeholder="0.00" aria-label={`${AD_CHANNEL_LABELS[channel.channel]} spend this month, in dollars`} />
+                    </label>)}
+                  <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">Save spend</SafeSubmitButton>
+                </form>
+              </details>}
             </div>
           </div>
           <div className="figure">
@@ -482,51 +524,6 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                 <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
             </div>
           </div>
-          {/* What a paid lead costs this month. It sits with the other two
-              because it answers the same question they do -- is the shop
-              ahead -- and the leads it divides by are the ones on this page.
-              Owner only: it is money. */}
-          {board.costPerLead && <div className="figure figure--cpl">
-            <p className="figure-label">Ad spend</p>
-            <p className="n">
-              {/* Spend and the lead count are shown as two facts, never as
-                  their quotient. Full spend over a count that can only see web
-                  forms is a wrong number, not an under-labelled one: 30 of last
-                  month's 42 leads came in by phone, where no ad platform can
-                  follow. The quotient comes back when calls are attributed --
-                  costPerLeadCents is kept for that day, not dead code. */}
-              {board.costPerLead.channels.map((channel) =>
-                <span className="cpl" key={channel.channel}>
-                  <b className="t-display">{money(channel.spendCents)}</b>
-                  <span>{AD_CHANNEL_LABELS[channel.channel]} spent</span>
-                </span>)}
-            </p>
-            <div className="under">
-              {/* "Leads on the books" is the database count -- real people,
-                  minus the ones marked Not a job. It is deliberately not the
-                  number Google and Meta report, which counts a tel: tap
-                  whether or not the call connected. Naming it here is what
-                  stops the two being read as the same metric. */}
-              <span>{board.costPerLead.monthLabel} so far &middot; {board.costPerLead.channels
-                .map((channel) => `${channel.leads} leads on the books from ${AD_CHANNEL_LABELS[channel.channel]}`)
-                .join(" · ")} &middot; calls not yet attributed</span>
-            </div>
-            {/* Native disclosure, no state: the spend is typed once a month and
-                the box should not take room the other 30 days. */}
-            <details className="cpl-entry">
-              <summary>Enter this month&rsquo;s ad spend</summary>
-              <form action={setMonthAdSpend}>
-                {board.costPerLead.channels.map((channel) =>
-                  <label key={channel.channel}>
-                    <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
-                    <input name={channel.channel} type="text" inputMode="decimal" autoComplete="off"
-                      defaultValue={channel.spendCents === null ? "" : (channel.spendCents / 100).toFixed(2)}
-                      placeholder="0.00" aria-label={`${AD_CHANNEL_LABELS[channel.channel]} spend this month, in dollars`} />
-                  </label>)}
-                <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">Save spend</SafeSubmitButton>
-              </form>
-            </details>
-          </div>}
         </section>
         <section className="card social-post-card" aria-labelledby="social-post-title">
           <div className="social-post-copy">

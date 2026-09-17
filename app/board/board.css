@@ -212,14 +212,14 @@ svg{display:block}
    belong to row states alone. */
 .figures .figure:nth-child(1){background:var(--field-info)}
 .figures .figure:nth-child(2){background:var(--field-neutral)}
-/* Cost per lead takes the whole second row: two channel figures will not fit
-   in half a phone screen beside the tiles above. Graphite again -- it is money,
-   not a state. */
-.figures .figure--cpl{grid-column:1/-1;background:var(--field-neutral)}
-.figure--cpl .n{flex-direction:row;flex-wrap:wrap;gap:var(--s4)}
-.figure--cpl .cpl{display:flex;flex-direction:column;align-items:flex-start}
-.cpl-entry{margin:var(--s3) 0 0;font-size:var(--t-caption)}
-.cpl-entry>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--on-field-muted)}
+/* Ad spend is one collapsed line inside the open-jobs tile, not a field of its
+   own -- it is read once a month and used to cost a whole grid row. The summary
+   stays on one line and wraps rather than pushing the tile wider. */
+.cpl-entry{width:100%;font-size:var(--t-caption)}
+.cpl-entry>summary{cursor:pointer;min-height:44px;display:flex;flex-wrap:wrap;
+  align-items:center;gap:var(--s1) var(--s3);color:var(--on-field-muted)}
+.cpl-entry .cpl b{font-weight:var(--w-semi)}
+.cpl-note{margin:0 0 var(--s2);color:var(--on-field-muted)}
 .cpl-entry form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--s3);margin:var(--s2) 0 0}
 .cpl-entry label{display:flex;flex-direction:column;gap:var(--s2);color:var(--on-field-muted)}
 .cpl-entry input{min-height:44px;width:8rem;max-width:100%;padding:0 var(--s3);
