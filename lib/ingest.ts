@@ -8,9 +8,13 @@ import {
   type PersonRow,
 } from "@/lib/people"
 import { getSql } from "@/lib/db"
-import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
-import { prepareInboundCallIntake } from "@/lib/job-intake"
+import {
+  inboundCallNotificationDedupeKey,
+  markInboundCallReconciliationHandled,
+  persistInboundCallReceipt,
+  prepareInboundCallIntake,
+} from "@/lib/job-intake"
 
 export { attachRecoveredCallArtifacts } from "@/lib/call-artifacts"
 
@@ -173,8 +177,14 @@ export async function reconcileRawInboundCalls(limit = 20) {
   const rows = (await sql`
     SELECT twilio_sid, from_phone, detail
     FROM calls
-    WHERE direction = 'in' AND lead_id IS NULL
-      AND lower(COALESCE(detail->>'reconciliationHandled', 'false')) <> 'true'
+    WHERE direction = 'in'
+      AND (
+        lower(COALESCE(detail->>'reconciliationHandled', 'false')) <> 'true'
+        OR NOT EXISTS (
+          SELECT 1 FROM events
+          WHERE kind = 'call.in' AND external_id = calls.twilio_sid
+        )
+      )
       AND started_at < now() - interval '2 minutes'
     ORDER BY started_at ASC LIMIT ${Math.min(Math.max(limit, 1), 50)}::bigint`) as Array<{
       twilio_sid: string
@@ -194,26 +204,18 @@ export async function reconcileRawInboundCalls(limit = 20) {
     const leadId = prepared.kind === "existing" ? prepared.leadId : null
     const normalized = normalizePhone(row.from_phone)
     const name = person?.display_name || row.detail?.callerName || (normalized ? `Caller ${normalized.slice(-4)}` : "Private caller")
-    let eventId = await recordEvent({
-      kind: "call.in",
-      actorType: "customer",
+    const eventId = await persistInboundCallReceipt({
+      callSid: row.twilio_sid,
       actorId: person?.id ?? "",
       leadId,
       personId: person?.id ?? null,
-      externalId: row.twilio_sid,
       body: `${name} called the shop`,
       crewBody: `${name} called the shop`,
       detail: { recovered: true, intake: prepared.kind, isTest },
     })
-    if (!eventId) {
-      const prior = (await sql`SELECT id FROM events WHERE kind = 'call.in' AND external_id = ${row.twilio_sid}::text LIMIT 1`) as { id: number }[]
-      eventId = Number(prior[0]?.id) || null
-      if (eventId && prepared.kind === "existing") await sql`
-        UPDATE events SET lead_id = COALESCE(lead_id, ${prepared.leadId}::bigint),
-          person_id = COALESCE(person_id, ${person?.id ?? null}::bigint)
-        WHERE id = ${eventId}::bigint`
-    }
-    if (!person?.is_test && !(prepared.kind === "draft" && prepared.draft.is_test)) await notifyAll({
+    const notificationRequired = !person?.is_test
+      && !(prepared.kind === "draft" && prepared.draft.is_test)
+    if (notificationRequired) await notifyAll({
       priority: "interrupt",
       stock: "white",
       title: `${name} called`,
@@ -224,8 +226,14 @@ export async function reconcileRawInboundCalls(limit = 20) {
       capExempt: true,
       quietHoursExempt: true,
       smsFallback: true,
-      dedupeKey: `raw-call-recovered:${row.twilio_sid}`,
+      dedupeKey: inboundCallNotificationDedupeKey(row.twilio_sid),
     })
+    const handled = await markInboundCallReconciliationHandled({
+      callSid: row.twilio_sid,
+      eventId,
+      notificationRequired,
+    })
+    if (!handled) continue
     recovered += 1
   }
   return { scanned: rows.length, recovered }

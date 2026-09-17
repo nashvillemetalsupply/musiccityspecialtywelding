@@ -22,7 +22,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="text-sm text-muted-foreground mb-10 sm:mb-12">
-              Last updated: August 11, 2026
+              Last updated: September 17, 2026
             </p>
 
             <div className="space-y-8 text-base text-foreground leading-relaxed">
@@ -132,7 +132,7 @@ export default function PrivacyPage() {
                   <li>Improve performance and usability</li>
                 </ul>
                 <p>
-                  We use Vercel Analytics and Google Analytics on our public marketing pages to understand website usage, and Google advertising technology to measure whether an ad leads to a successful quote request. Internal shop pages and private customer job pages are excluded from these analytics. These providers may process device, browser, page, and conversion-event information under their own privacy terms. Learn more about{" "}
+                  We use Google Analytics on our public marketing pages to understand website usage, Google advertising technology to measure whether an ad leads to a successful quote request or phone tap, and the Meta Pixel to measure page views and whether a Facebook or Instagram ad leads to a successful quote request. Internal shop pages and private customer job pages are excluded from these analytics. These providers may process device, browser, page, and conversion-event information under their own privacy terms. Learn more about{" "}
                   <a
                     href="https://policies.google.com/technologies/partner-sites"
                     className="text-primary hover:text-primary/80 transition-colors"

@@ -6,6 +6,7 @@ import { after } from "next/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { Resend } from "resend"
+import { AD_CHANNELS, parseSpendDollars } from "@/lib/ad-spend.mjs"
 import { getSql } from "@/lib/db"
 import { brandedEmail, escapeHtml } from "@/lib/email-templates"
 import { createLead, LEAD_STATUSES, recordLeadEvent, type LeadStatus } from "@/lib/leads"
@@ -347,6 +348,34 @@ export async function updateLeadStatus(formData: FormData) {
   }
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
+  // The board shows open work and prices leads against ad spend; both change
+  // the moment a job is marked Not a job, and the board can be the page the
+  // press came from.
+  revalidatePath("/board")
+}
+
+// What the shop paid a channel this Central month. Owner only, because the
+// figure it feeds is money. Blank leaves the saved number alone; zero is a
+// real answer and is stored.
+export async function setMonthAdSpend(formData: FormData) {
+  const operator = await requireOperator()
+  if (operator.role !== "owner") throw new Error("Only the owner can record ad spend.")
+  const sql = getSql()
+  for (const channel of AD_CHANNELS as string[]) {
+    const parsed = parseSpendDollars(formData.get(channel))
+    if (!parsed.ok) throw new Error(`Enter ${channel} spend as dollars, like 450 or 450.75.`)
+    if (parsed.cents === null) continue
+    await sql`
+      INSERT INTO ad_spend (month_start, channel, amount_cents, source, updated_at)
+      VALUES (
+        date_trunc('month', now() AT TIME ZONE 'America/Chicago')::date,
+        ${channel}::text, ${parsed.cents}::bigint, 'manual'::text, now())
+      ON CONFLICT (month_start, channel) DO UPDATE SET
+        amount_cents = EXCLUDED.amount_cents,
+        source = EXCLUDED.source,
+        updated_at = now()`
+  }
+  revalidatePath("/board")
 }
 
 export async function markFirstResponse(formData: FormData) {

@@ -46,11 +46,15 @@ jobs:
               morningBriefStale: .automation.morningBriefStale
             },
             googleAds: {
+              conversionConfigured: .googleAds.conversionConfigured,
               conversionSendTo: .googleAds.conversionSendTo,
+              phoneConversionConfigured: .googleAds.phoneConversionConfigured,
+              phoneConversionSendTo: .googleAds.phoneConversionSendTo,
               lastWebQuoteAt: .googleAds.lastWebQuoteAt,
               webQuoteSilenceHours: .googleAds.webQuoteSilenceHours,
               webQuoteSilent: .googleAds.webQuoteSilent
             },
+            googleAnalytics: .googleAnalytics,
             shopBrain: {
               ready: .shopBrain.ready,
               gateSatisfied: .shopBrain.gateSatisfied,
@@ -59,6 +63,7 @@ jobs:
               callTranscriptBacklog: .shopBrain.callTranscriptBacklog,
               callTranscriptExhausted: .shopBrain.callTranscriptExhausted,
               voiceTranscriptBacklog: .shopBrain.voiceTranscriptBacklog,
+              inboundCallReceipts: .shopBrain.inboundCallReceipts,
               durableFailures: .shopBrain.durableFailures
             }
           }' 2>/dev/null || printf '%s' '{"diagnostic":"invalid-health-json"}')
@@ -67,8 +72,8 @@ jobs:
             echo "::error::Health endpoint returned HTTP $status"
             exit 1
           fi
-          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true and .shopBrain.durableFailures.healthy == true' >/dev/null; then
-            echo "::error::Launch gate, Shop Brain readiness, or durable delivery health is failing"
+          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true and .shopBrain.durableFailures.healthy == true and .googleAds.conversionConfigured == true and .googleAds.phoneConversionConfigured == true and .googleAnalytics.measurementConfigured == true' >/dev/null; then
+            echo "::error::Launch gate, measurement wiring, Shop Brain readiness, or durable delivery health is failing"
             exit 1
           fi
           # Google Ads conversion tracking went dead for eleven days from
@@ -79,6 +84,13 @@ jobs:
             hours=$(printf '%s' "$body" | jq -r '.googleAds.webQuoteSilenceHours // "never"')
             echo "::error::No web quote has reached the database in ${hours} hours; Google Ads has nothing to record"
             exit 1
+          fi
+          # This is a Shop Brain database-receipt watchdog, not Twilio call-log
+          # truth. Keep it a warning until provider truth can prove divergence.
+          if printf '%s' "$body" | jq -e '.shopBrain.inboundCallReceipts.silent == true' >/dev/null; then
+            hours=$(printf '%s' "$body" | jq -r '.shopBrain.inboundCallReceipts.silenceHours // "never"')
+            limit=$(printf '%s' "$body" | jq -r '.shopBrain.inboundCallReceipts.silenceLimitHours')
+            echo "::warning::No non-test inbound call receipt reached Shop Brain in ${hours} hours (limit ${limit}); compare Twilio call logs before diagnosing the cause"
           fi
 
       - name: Check the Google Ads conversion tag is on the live site

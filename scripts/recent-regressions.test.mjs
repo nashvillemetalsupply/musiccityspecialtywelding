@@ -2,6 +2,10 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import ts from "typescript"
+import {
+  evaluateInboundCallReceiptHealth,
+  INBOUND_CALL_SILENCE_LIMIT_HOURS,
+} from "../lib/call-health.mjs"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
@@ -61,6 +65,91 @@ test("health distinguishes exhausted call transcriptions from retryable backlog"
 
   assert.match(health, /transcript_attempts >= 8/)
   assert.match(health, /callTranscriptExhausted: database\.callTranscriptExhausted/)
+})
+
+test("inbound call reconciliation confirms the immutable receipt before marking the raw call handled", () => {
+  const intake = source("lib/job-intake.ts")
+  const ingest = source("lib/ingest.ts")
+  const voice = source("app/api/twilio/voice/route.ts")
+  const prepare = section(intake, "export async function prepareInboundCallIntake", "export async function getCallIntakeDraft")
+  const persist = section(intake, "export async function persistInboundCallReceipt", "export async function markInboundCallReconciliationHandled")
+  const markHandled = section(intake, "export async function markInboundCallReconciliationHandled", "export async function prepareInboundCallIntake")
+
+  assert.doesNotMatch(prepare, /reconciliationHandled/)
+  assertInOrder(persist, [
+    "await recordEvent",
+    "if (!eventId)",
+    "SELECT id FROM events",
+    "return eventId",
+  ], "The immutable call receipt must be resolved idempotently")
+  assert.doesNotMatch(persist, /reconciliationHandled/)
+  assert.match(markHandled, /SELECT 1 FROM events[\s\S]*id = \$\{input\.eventId\}::bigint/)
+  assert.match(markHandled, /SELECT 1 FROM notifications[\s\S]*source_event_id = \$\{input\.eventId\}::bigint[\s\S]*dedupe_key = \$\{inboundCallNotificationDedupeKey\(input\.callSid\)\}::text/)
+  assertInOrder(voice, [
+    "await persistInboundCallReceipt",
+    "await notifyAll",
+    "await markInboundCallReconciliationHandled",
+  ], "Live intake must persist the event and deduped alert intent before marking reconciliation handled")
+  assertInOrder(ingest, [
+    "await persistInboundCallReceipt",
+    "await notifyAll",
+    "await markInboundCallReconciliationHandled",
+  ], "Recovery must reuse the same receipt-alert-marker order")
+  assert.match(voice, /dedupeKey: inboundCallNotificationDedupeKey\(sid\)/)
+  assert.match(ingest, /dedupeKey: inboundCallNotificationDedupeKey\(row\.twilio_sid\)/)
+  assert.match(ingest, /OR NOT EXISTS \([\s\S]*kind = 'call\.in'[\s\S]*external_id = calls\.twilio_sid/)
+  assert.doesNotMatch(ingest, /UPDATE events SET lead_id/)
+})
+
+test("inbound call silence is bounded, database-only, and unknown while the database is unavailable", () => {
+  assert.equal(INBOUND_CALL_SILENCE_LIMIT_HOURS, 96)
+  const nowMs = Date.parse("2026-09-17T12:00:00Z")
+
+  assert.deepEqual(
+    evaluateInboundCallReceiptHealth({ connected: false, lastReceiptAt: null, recentNonTestCount: null, nowMs }),
+    {
+      source: "shop-brain-database",
+      providerVerified: false,
+      recentNonTestCount: null,
+      lastReceiptAt: null,
+      silenceHours: null,
+      silenceLimitHours: 96,
+      silent: null,
+    },
+  )
+  assert.equal(evaluateInboundCallReceiptHealth({
+    connected: true,
+    lastReceiptAt: "2026-09-17T11:00:00Z",
+    recentNonTestCount: 1,
+    nowMs,
+  }).silent, false)
+  const silent = evaluateInboundCallReceiptHealth({
+    connected: true,
+    lastReceiptAt: "2026-09-13T11:59:59Z",
+    recentNonTestCount: 0,
+    nowMs,
+  })
+  assert.equal(silent.silent, true)
+  assert.equal(silent.silenceHours, 96)
+})
+
+test("authenticated health and its monitor expose only aggregate inbound-call receipt truth", () => {
+  const health = source("app/api/health/route.ts")
+  const monitor = source(".github/workflows/health-monitor.yml")
+
+  assert.match(health, /recentInboundCallCount/)
+  assert.match(health, /c\.started_at >= now\(\) - \$\{INBOUND_CALL_SILENCE_LIMIT_HOURS\}::int \* interval '1 hour'/)
+  assert.match(health, /COALESCE\(l\.is_test, false\) = false/)
+  assert.match(health, /COALESCE\(p\.is_test, false\) = false/)
+  assert.match(health, /c\.detail->>'isTest'/)
+  assert.match(health, /NOT ILIKE '%\[INTERNAL TEST\]%'/)
+  assert.ok(health.indexOf("if (!isAuthorizedCron(req))") < health.indexOf("const inboundCallReceipts"))
+  assert.match(monitor, /inboundCallReceipts: \.shopBrain\.inboundCallReceipts/)
+  assert.match(monitor, /\.shopBrain\.inboundCallReceipts\.silent == true/)
+  assert.match(monitor, /compare Twilio call logs before diagnosing the cause/)
+  assert.match(monitor, /::warning::No non-test inbound call receipt/)
+  assert.doesNotMatch(monitor, /::error::No non-test inbound call receipt/)
+  assert.doesNotMatch(monitor, /fromPhone|callerName|callSid/i)
 })
 
 test("health fails readiness and reports the exact unresolved durable delivery states", () => {

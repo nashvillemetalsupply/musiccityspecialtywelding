@@ -1067,6 +1067,19 @@ const statements = [
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
   `COMMENT ON TABLE lead_events IS 'Frozen 2026-08-21. The journal is events; this table is retained history only. Do not write.'`,
+  // What the shop paid each ad channel in a Central month. One row per month
+  // per channel, so a later API pull (Google Ads, Meta) writes the same row
+  // the owner types today.
+  `CREATE TABLE IF NOT EXISTS ad_spend (
+    month_start DATE NOT NULL,
+    channel TEXT NOT NULL,
+    amount_cents BIGINT NOT NULL DEFAULT 0,
+    source TEXT NOT NULL DEFAULT 'manual',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT ad_spend_channel_check CHECK (channel IN ('google','facebook')),
+    CONSTRAINT ad_spend_amount_check CHECK (amount_cents >= 0),
+    PRIMARY KEY (month_start, channel)
+  )`,
 ]
 
 for (const statement of statements) {

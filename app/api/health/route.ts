@@ -1,4 +1,8 @@
-import { ADS_CONVERSION_SEND_TO } from "@/lib/measurement"
+import {
+  ADS_CONVERSION_SEND_TO,
+  ADS_PHONE_CONVERSION_SEND_TO,
+  GA_MEASUREMENT_ID,
+} from "@/lib/measurement"
 import { dbConfigured, getSql } from "@/lib/db"
 import { getOwnerEmail, isAuthorizedCron } from "@/lib/ops-auth"
 import { aiConfigured } from "@/lib/ai"
@@ -19,6 +23,7 @@ import {
 import { callTranscriptionConfigured, deepgramCallbackSecretConfigured } from "@/lib/call-transcription"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { automationRunIsStale, gmailFreshnessWindowMs } from "@/lib/automation-health.mjs"
+import { evaluateInboundCallReceiptHealth, INBOUND_CALL_SILENCE_LIMIT_HOURS } from "@/lib/call-health.mjs"
 
 export const dynamic = "force-dynamic"
 
@@ -95,6 +100,8 @@ type DatabaseHealth = {
   messageDeliveryUnknown: number | null
   callDeliveryUnknown: number | null
   lastWebQuoteAt: string | null
+  lastInboundCallAt: string | null
+  recentInboundCallCount: number | null
 }
 
 async function checkDatabase(): Promise<DatabaseHealth> {
@@ -123,6 +130,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     messageDeliveryUnknown: null,
     callDeliveryUnknown: null,
     lastWebQuoteAt: null,
+    lastInboundCallAt: null,
+    recentInboundCallCount: null,
   }
   if (!result.configured) return result
   try {
@@ -134,6 +143,23 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         -- public form actually reached the database.
         (SELECT max(created_at) FROM leads
           WHERE coalesce(landing_page, '') <> '' AND is_test = false) AS last_web_quote_at,
+        (SELECT max(c.started_at) FROM calls c
+          LEFT JOIN leads l ON l.id = c.lead_id
+          LEFT JOIN people p ON p.id = c.person_id
+          WHERE c.direction = 'in'
+            AND COALESCE(l.is_test, false) = false
+            AND COALESCE(p.is_test, false) = false
+            AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true'
+            AND COALESCE(c.detail->>'callerName', '') NOT ILIKE '%[INTERNAL TEST]%') AS last_inbound_call_at,
+        (SELECT count(*)::int FROM calls c
+          LEFT JOIN leads l ON l.id = c.lead_id
+          LEFT JOIN people p ON p.id = c.person_id
+          WHERE c.direction = 'in'
+            AND c.started_at >= now() - ${INBOUND_CALL_SILENCE_LIMIT_HOURS}::int * interval '1 hour'
+            AND COALESCE(l.is_test, false) = false
+            AND COALESCE(p.is_test, false) = false
+            AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true'
+            AND COALESCE(c.detail->>'callerName', '') NOT ILIKE '%[INTERNAL TEST]%') AS recent_inbound_call_count,
         (SELECT count(*)::int FROM leads
           WHERE email_delivery_status = 'failed' AND is_test = false) AS failed_deliveries,
         (SELECT count(*)::int FROM calls
@@ -186,6 +212,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
             AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true') AS call_delivery_unknown`) as {
       lead_count: number
       last_web_quote_at: string | null
+      last_inbound_call_at: string | null
+      recent_inbound_call_count: number
       failed_deliveries: number
       call_transcript_backlog: number
       call_transcript_exhausted: number
@@ -204,6 +232,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.lastWebQuoteAt = counts.last_web_quote_at
       ? new Date(counts.last_web_quote_at).toISOString()
       : null
+    result.lastInboundCallAt = counts.last_inbound_call_at
+      ? new Date(counts.last_inbound_call_at).toISOString()
+      : null
+    result.recentInboundCallCount = counts.recent_inbound_call_count
     result.failedDeliveries = counts.failed_deliveries
     result.callTranscriptBacklog = counts.call_transcript_backlog
     result.callTranscriptExhausted = counts.call_transcript_exhausted
@@ -278,6 +310,7 @@ export async function GET(req: Request) {
     checkTwilioProviderReadiness(),
   ])
   const adsConversionConfigured = Boolean(ADS_CONVERSION_SEND_TO)
+  const adsPhoneConversionConfigured = Boolean(ADS_PHONE_CONVERSION_SEND_TO)
   // The Ads conversion action only ever hears from the public quote form, so a
   // long silence on that form is indistinguishable from a dead tag -- and that
   // silence ran eleven days from 2026-08-24 with nothing watching it. Report it
@@ -287,9 +320,15 @@ export async function GET(req: Request) {
     : null
   const webQuoteSilent = database.connected
     && (webQuoteSilenceHours === null || webQuoteSilenceHours >= WEB_QUOTE_SILENCE_LIMIT_HOURS)
-  const analyticsMeasurementConfigured = Boolean(
-    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
-  )
+  // This is deliberately database-receipt health, not a claim about Twilio's
+  // call log. A red signal means compare provider truth with Shop Brain before
+  // diagnosing whether demand was quiet or webhook ingestion was interrupted.
+  const inboundCallReceipts = evaluateInboundCallReceiptHealth({
+    connected: database.connected,
+    lastReceiptAt: database.lastInboundCallAt,
+    recentNonTestCount: database.recentInboundCallCount,
+  })
+  const analyticsMeasurementConfigured = Boolean(GA_MEASUREMENT_ID)
   const opsAuthConfigured = Boolean(getOwnerEmail()) && database.connected
   const cronSecretConfigured = Buffer.byteLength(process.env.CRON_SECRET?.trim() ?? "", "utf8") >= 32
   const resendWebhookConfigured = Boolean(process.env.RESEND_WEBHOOK_SECRET?.trim())
@@ -386,6 +425,8 @@ export async function GET(req: Request) {
     quoteEmailConfigured &&
     quoteEmailCredentialValid &&
     adsConversionConfigured &&
+    adsPhoneConversionConfigured &&
+    analyticsMeasurementConfigured &&
     database.configured &&
     database.connected &&
     (database.failedDeliveries ?? 0) === 0 &&
@@ -469,6 +510,7 @@ export async function GET(req: Request) {
         callTranscriptBacklog: database.callTranscriptBacklog,
         callTranscriptExhausted: database.callTranscriptExhausted,
         voiceTranscriptBacklog: database.voiceTranscriptBacklog,
+        inboundCallReceipts,
         durableFailures: {
           healthy: durableFailuresHealthy,
           degraded: !durableFailuresHealthy,
@@ -486,6 +528,8 @@ export async function GET(req: Request) {
       googleAds: {
         conversionConfigured: adsConversionConfigured,
         conversionSendTo: ADS_CONVERSION_SEND_TO,
+        phoneConversionConfigured: adsPhoneConversionConfigured,
+        phoneConversionSendTo: ADS_PHONE_CONVERSION_SEND_TO,
         lastWebQuoteAt: database.lastWebQuoteAt,
         webQuoteSilenceHours,
         webQuoteSilenceLimitHours: WEB_QUOTE_SILENCE_LIMIT_HOURS,
@@ -500,10 +544,10 @@ export async function GET(req: Request) {
       launchGate: {
         passed: launchGatePassed,
         detail: launchGatePassed
-          ? "Quote delivery, lead persistence, Ads conversion, and activated MCSW Jobs checks passed."
+          ? "Quote delivery, lead persistence, Ads form and phone conversions, GA4, and activated MCSW Jobs checks passed."
           : shopBrainRequired && !shopBrainReady
             ? "MCSW Jobs is activated but an ingestion, brief, transcription, or configuration check is degraded."
-            : "Quote delivery, lead persistence, or Ads conversion configuration failed.",
+            : "Quote delivery, lead persistence, Ads conversion, or GA4 measurement configuration failed.",
       },
     },
     {

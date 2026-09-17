@@ -14,7 +14,7 @@ import { chivo, golos } from "@/app/fonts"
 import { MoreMenu } from "@/app/ops/more-menu"
 import { listPendingCallIntakes } from "@/lib/job-intake"
 import { RecentCalls } from "./recent-calls"
-import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getOpsStats, getOutTheDoorWeek, getWeekAhead, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
+import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getMonthCostPerLead, getOpsStats, getOutTheDoorWeek, getWeekAhead, JOB_BOARD_STAGES, listBoardJobs } from "@/lib/ops-data"
 import type { JobBoardStage } from "@/lib/ops-data"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { JobControl } from "./board"
@@ -61,6 +61,7 @@ const EMPTY_BOARD: BoardPaneData = {
   promises: { kept: 0, open: 0, broken: 0, overdue: null },
   week: [],
   outTheDoor: { jobs: 0, paidJobs: 0, revenueCents: null, stillOutCents: null },
+  costPerLead: null,
   medianFirstResponseMinutes: null,
   todayTrail: [],
   callSketch: null,
@@ -139,7 +140,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // the Morning Brief and Ask Jobs here too. Signed out there is no menu,
   // which is exactly the /ops layout's own gate.
   const menu = <MoreMenu role={role} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim() ?? ""} voiceReady={voiceTranscriptionConfigured()} initialSearch={query} includeTests={includeTests} />
-  const [page, promises, week, outTheDoor, stats, todayEvents, callSketch, voice, pendingCalls, calendar] = await Promise.all([
+  const [page, promises, week, outTheDoor, costPerLead, stats, todayEvents, callSketch, voice, pendingCalls, calendar] = await Promise.all([
     // Newest first is the tracker's own sort (owner's call, 2026-09-03). The
     // pane's counts are aggregates over the same query and do not depend on
     // row order.
@@ -147,6 +148,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     getPromiseSummary(role),
     getWeekAhead(role, includeTests),
     getOutTheDoorWeek(role),
+    getMonthCostPerLead(role),
     getOpsStats(role),
     listTodayEvents(role),
     getLatestBoardCallSketch(role),
@@ -176,6 +178,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     promises,
     week,
     outTheDoor,
+    costPerLead,
     medianFirstResponseMinutes: stats.medianFirstResponseMinutes,
     todayTrail: todayEvents.map(({ id, occurred_at: occurredAt, kind, body, customer }) => ({ id, occurredAt, kind, body: trailBody(body), customer })),
     callSketch,

@@ -1,7 +1,11 @@
 import { getSql } from "@/lib/db"
 import { after } from "next/server"
-import { recordEvent } from "@/lib/events"
-import { prepareInboundCallIntake } from "@/lib/job-intake"
+import {
+  inboundCallNotificationDedupeKey,
+  markInboundCallReconciliationHandled,
+  persistInboundCallReceipt,
+  prepareInboundCallIntake,
+} from "@/lib/job-intake"
 import { notifyAll } from "@/lib/notify"
 import { normalizePhone } from "@/lib/people"
 import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioCallbackUrl, twilioInboundDialTarget, twilioLiveTranscriptionStart, twilioVoiceConfigured, twiml } from "@/lib/twilio"
@@ -55,18 +59,17 @@ export async function POST(req: Request) {
       const normalized = normalizePhone(from)
       const name = person?.display_name || callerName || (normalized ? `Caller ${normalized.slice(-4)}` : "Private caller")
       const leadId = prepared.kind === "existing" ? prepared.leadId : null
-      const eventId = await recordEvent({
-        kind: "call.in",
-        actorType: "customer",
+      const eventId = await persistInboundCallReceipt({
+        callSid: sid,
         actorId: person?.id ?? "",
         leadId,
         personId: person?.id ?? null,
-        externalId: sid,
         body: `${name} called the shop`,
         crewBody: `${name} called the shop`,
         detail: { isTest: person?.is_test ?? isTestCall, intake: prepared.kind },
       })
-      if (eventId && !isTestCall && !person?.is_test && !(prepared.kind === "draft" && prepared.draft.is_test)) await notifyAll({
+      const notificationRequired = !isTestCall && !person?.is_test && !(prepared.kind === "draft" && prepared.draft.is_test)
+      if (notificationRequired) await notifyAll({
         priority: "interrupt",
         stock: "white",
         title: `MCSW call · ${name}`,
@@ -77,7 +80,14 @@ export async function POST(req: Request) {
         capExempt: true,
         quietHoursExempt: true,
         smsFallback: true,
+        dedupeKey: inboundCallNotificationDedupeKey(sid),
       })
+      const handled = await markInboundCallReconciliationHandled({
+        callSid: sid,
+        eventId,
+        notificationRequired,
+      })
+      if (!handled) throw new Error("The inbound call alert intent could not be confirmed.")
     } catch (error) {
       console.error("Call forwarded; Shop Brain persistence failed:", error)
     }
