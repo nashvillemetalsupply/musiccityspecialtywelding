@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import { SafeActionButton } from "./safe-action-controls"
 
-export function TrackedCallButton({ leadId, phone, label = "Call from shop number", compact = false }: { leadId: number; phone: string; label?: string; compact?: boolean }) {
+export function TrackedCallButton({ leadId, phone, label = "Call from shop number", compact = false, className = "" }: { leadId: number; phone: string; label?: string; compact?: boolean; className?: string }) {
   const [status, setStatus] = useState("")
   const intentRef = useRef(crypto.randomUUID())
   async function call() {
@@ -19,7 +19,7 @@ export function TrackedCallButton({ leadId, phone, label = "Call from shop numbe
     }
   }
   return <span className={`ops-tracked-call${compact ? " is-compact" : ""}`}>
-    <SafeActionButton onAction={call} busyLabel="Ringing…">{label}</SafeActionButton>
+    <SafeActionButton className={className} onAction={call} busyLabel="Ringing…">{label}</SafeActionButton>
     {!compact && <small className="ops-tracked-call-help">Your phone rings first. Answer it, then we connect the customer. The call and notes stay with this job.</small>}
     {!compact && <details><summary>Call directly — not saved</summary><a href={`tel:${phone.replace(/[^\d+]/g, "")}`} title="Open the Phone app without saving this call">Open Phone app</a></details>}
     {status && <small aria-live="polite">{status}</small>}

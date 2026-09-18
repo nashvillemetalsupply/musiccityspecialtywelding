@@ -8,7 +8,7 @@ import type { JobLineItem } from "@/lib/job-line-items"
 import type { LeadRow, LeadStatus } from "@/lib/leads"
 import { LEAD_STATUSES } from "@/lib/leads"
 import type { OperatorRole } from "@/lib/operators"
-import { AD_CHANNELS, costPerLeadCents } from "@/lib/ad-spend.mjs"
+import { AD_CHANNELS } from "@/lib/ad-spend.mjs"
 import { dniNumber } from "@/lib/dni.mjs"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
 import { BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
@@ -1286,15 +1286,25 @@ export type ChannelCostPerLead = {
   // Null when nothing has been recorded for the month yet. Zero is a real
   // answer -- "I paused it" -- and reads differently from "nobody told us".
   spendCents: number | null
-  costPerLeadCents: number | null
 }
 
 export type MonthCostPerLead = {
   monthLabel: string
+  // Every real lead on the books this Central month, any source -- the
+  // denominator Fable ruled for the owner's tile on 2026-09-18.
+  totalLeads: number
   channels: ChannelCostPerLead[]
+  // Newest ad_spend.updated_at this month, so the tile can say how fresh the
+  // spend is. Null when nothing has arrived.
+  spendAsOf: string | null
+  // True only when both tracking numbers had taken a call before this month
+  // began. Until then callers are unattributed and a per-channel split
+  // undercounts whichever channel drives the phone.
+  perChannelReady: boolean
 }
 
-// Paid leads this Central month, by channel, against what the month cost.
+// Leads this Central month -- every real one, and the paid ones by channel --
+// against what the month cost.
 // Crew money is removed server-side, so crew get null and the board renders
 // nothing -- the same boundary every other money figure here uses.
 //
@@ -1310,9 +1320,11 @@ export async function getMonthCostPerLead(role: OperatorRole = "crew"): Promise<
   // and `= NULL` matches nothing, so the clause is inert rather than wrong.
   const googleLine = dniNumber("google") || null
   const facebookLine = dniNumber("facebook") || null
-  const [leadRows, spendRows] = await Promise.all([
+  const lines = [googleLine, facebookLine].filter((line): line is string => line !== null)
+  const [leadRows, spendRows, coverageRows] = await Promise.all([
     sql`
       SELECT
+        count(*)::int AS total_leads,
         count(*) FILTER (
           WHERE btrim(gclid) <> ''
             OR landing_page ILIKE '%gclid=%'
@@ -1330,24 +1342,32 @@ export async function getMonthCostPerLead(role: OperatorRole = "crew"): Promise<
       WHERE created_at >= (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')
         AND routed_to_lead_id IS NULL AND is_test = false AND status <> 'spam'`,
     sql`
-      SELECT channel, amount_cents::bigint AS amount_cents FROM ad_spend
+      SELECT channel, amount_cents::bigint AS amount_cents, updated_at FROM ad_spend
       WHERE month_start = date_trunc('month', now() AT TIME ZONE 'America/Chicago')::date`,
+    lines.length === AD_CHANNELS.length
+      ? sql`
+        SELECT count(DISTINCT to_phone)::int AS covered FROM calls
+        WHERE to_phone = ANY(${lines}::text[])
+          AND started_at < (date_trunc('month', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago')`
+      : Promise.resolve([]),
   ])
-  const counts = (leadRows as { google_leads: number; facebook_leads: number }[])[0]
-  const spend = new Map((spendRows as { channel: string; amount_cents: number | string }[])
-    .map((row) => [row.channel, Number(row.amount_cents)]))
+  const counts = (leadRows as { total_leads: number; google_leads: number; facebook_leads: number }[])[0]
+  const spendList = spendRows as { channel: string; amount_cents: number | string; updated_at: string | Date }[]
+  const spend = new Map(spendList.map((row) => [row.channel, Number(row.amount_cents)]))
   const leadsFor = { google: Number(counts?.google_leads ?? 0), facebook: Number(counts?.facebook_leads ?? 0) }
+  const covered = Number((coverageRows as { covered: number }[])[0]?.covered ?? 0)
   return {
     monthLabel: new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", month: "long" }).format(new Date()),
-    channels: (AD_CHANNELS as ChannelCostPerLead["channel"][]).map((channel) => {
-      const spendCents = spend.has(channel) ? spend.get(channel)! : null
-      return {
-        channel,
-        leads: leadsFor[channel],
-        spendCents,
-        costPerLeadCents: costPerLeadCents(spendCents, leadsFor[channel]),
-      }
-    }),
+    totalLeads: Number(counts?.total_leads ?? 0),
+    channels: (AD_CHANNELS as ChannelCostPerLead["channel"][]).map((channel) => ({
+      channel,
+      leads: leadsFor[channel],
+      spendCents: spend.has(channel) ? spend.get(channel)! : null,
+    })),
+    spendAsOf: spendList.length
+      ? new Date(Math.max(...spendList.map((row) => new Date(row.updated_at).getTime()))).toISOString()
+      : null,
+    perChannelReady: covered === AD_CHANNELS.length,
   }
 }
 

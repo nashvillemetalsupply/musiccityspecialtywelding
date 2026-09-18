@@ -4,8 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { SkipLink } from "./skip-link"
 import { useRouter } from "next/navigation"
-import { AD_CHANNEL_LABELS } from "@/lib/ad-spend.mjs"
-import { dniConfigured } from "@/lib/dni.mjs"
+import { AD_CHANNEL_LABELS, costPerLeadTile } from "@/lib/ad-spend.mjs"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import { setMonthAdSpend, updateLeadStatus } from "@/app/ops/actions"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
@@ -240,6 +239,10 @@ function chipTone(lead: BoardJobRow): "stop" | "warn" | "good" | "info" {
 
 const CHIP_CLASS = { stop: "chip--stop", warn: "chip--warn", good: "chip--good", info: "chip--info" } as const
 
+// The open card's progress line, one step per milestone the row already
+// carries: created, newest photo, quoted, won, paid.
+const STAGE_NAMES = ["Came in", "Photos", "Quoted", "Booked", "Paid"]
+
 // How much of the call stays unfolded. Four lines is the opening exchange; a
 // live call only ever carries three, so it never folds at all.
 const PANEL_OPEN_LINES = 4
@@ -255,6 +258,9 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
   useEffect(() => { enableUsage(chrome.owner) }, [chrome.owner])
   const { details: jobDetails } = board
   const outTheDoor = board.outTheDoor
+  // Owner only: getMonthCostPerLead returns null for crew, so crew never
+  // get the tile at all.
+  const cpl = board.costPerLead && costPerLeadTile(board.costPerLead, nowMs)
   const sketch = board.callSketch
   // Signed out, or with nothing sketched yet, the panel renders the same
   // frame against an empty spec: seven facts unstated, zero answered.
@@ -456,9 +462,9 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
     
     
       <main id="main" tabIndex={-1} className="main">
-        {/* The two figures lead: open jobs and this week's money, one thin
-            strip. Owner moved them up on 2026-09-03 — at the bottom they read
-            as an afterthought. */}
+        {/* The figures lead: open jobs, this week's money and, for the owner,
+            cost per lead. Owner moved them up on 2026-09-03 — at the bottom
+            they read as an afterthought. */}
         <section className="card figures">
           <div className="figure">
             <p className="figure-label">Open jobs</p>
@@ -466,48 +472,6 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
             <div className="under">
               <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
               <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
-              {/* Ad spend rides under the open-jobs count as one collapsed
-                  line, not a tile of its own. Owner 2026-09-17: the third
-                  field was "too big up top" for something he reads once a
-                  month. Closed by default; the summary carries the two spend
-                  figures so scrolling past costs one line, and the lead
-                  counts, the caveat and the entry form only appear on a tap.
-                  Owner only: it is money. */}
-              {board.costPerLead && <details className="cpl-entry">
-                <summary>
-                  <span>Ad spend</span>
-                  {board.costPerLead.channels.map((channel) =>
-                    <span className="cpl" key={channel.channel}>
-                      <b>{money(channel.spendCents)}</b> {AD_CHANNEL_LABELS[channel.channel]}
-                    </span>)}
-                </summary>
-                {/* Spend and the lead count are shown as two facts, never as
-                    their quotient. Full spend over a count that can only see
-                    web forms is a wrong number, not an under-labelled one: 30
-                    of last month's 42 leads came in by phone, where no ad
-                    platform can follow. The quotient comes back when calls are
-                    attributed -- costPerLeadCents is kept for that day, not
-                    dead code.
-
-                    "Leads on the books" is the database count -- real people,
-                    minus the ones marked Not a job. It is deliberately not the
-                    number Google and Meta report, which counts a tel: tap
-                    whether or not the call connected. Naming it is what stops
-                    the two being read as the same metric. */}
-                <p className="cpl-note">{board.costPerLead.monthLabel} so far &middot; {board.costPerLead.channels
-                  .map((channel) => `${channel.leads} leads on the books from ${AD_CHANNEL_LABELS[channel.channel]}`)
-                  .join(" · ")}{dniConfigured() ? "" : " · calls not yet attributed"}</p>
-                <form action={setMonthAdSpend}>
-                  {board.costPerLead.channels.map((channel) =>
-                    <label key={channel.channel}>
-                      <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
-                      <input name={channel.channel} type="text" inputMode="decimal" autoComplete="off"
-                        defaultValue={channel.spendCents === null ? "" : (channel.spendCents / 100).toFixed(2)}
-                        placeholder="0.00" aria-label={`${AD_CHANNEL_LABELS[channel.channel]} spend this month, in dollars`} />
-                    </label>)}
-                  <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">Save spend</SafeSubmitButton>
-                </form>
-              </details>}
             </div>
           </div>
           <div className="figure">
@@ -525,6 +489,32 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                 <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
             </div>
           </div>
+          {/* Cost per lead, as Fable ruled it 2026-09-18: all ad spend over
+              every real lead this Central month, from any source. The owner
+              wants it seen, so it is a field of its own with the number big
+              and the sum spelled out under it. Spend arrives from One Roof
+              each morning; the hand-entry box stays folded underneath only
+              until the first pushed row lands, then it is deleted. Owner only:
+              costPerLead is null for crew. */}
+          {cpl && board.costPerLead && <div className="figure figure--cpl">
+            <p className="figure-label">Cost per lead</p>
+            <p className="n"><b className="t-display">{cpl.big}</b>{cpl.beside && <span>{cpl.beside}</span>}</p>
+            <p className="under">{cpl.under}</p>
+            {cpl.channelsLine && <p className="under">{cpl.channelsLine}</p>}
+            <details className="cpl-entry">
+              <summary>Enter spend by hand</summary>
+              <form action={setMonthAdSpend}>
+                {board.costPerLead.channels.map((channel) =>
+                  <label key={channel.channel}>
+                    <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
+                    <input name={channel.channel} type="text" inputMode="decimal" autoComplete="off"
+                      defaultValue={channel.spendCents === null ? "" : (channel.spendCents / 100).toFixed(2)}
+                      placeholder="0.00" aria-label={`${AD_CHANNEL_LABELS[channel.channel]} spend this month, in dollars`} />
+                  </label>)}
+                <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">Save spend</SafeSubmitButton>
+              </form>
+            </details>
+          </div>}
         </section>
         <section className="card social-post-card" aria-labelledby="social-post-title">
           <div className="social-post-copy">
@@ -601,8 +591,14 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                   && commitment.status === "open"
                   && commitment.due_at !== null
                   && new Date(commitment.due_at).getTime() < nowMs)
-                const datedCommitment = commitments.find((commitment) => commitment.due_at)
-                const bookedDate = datedCommitment?.due_at ?? lead.scheduled_at
+                // With nothing overdue, the promise worth showing is the next one due.
+                const nextPromise = commitments
+                  .filter((commitment) => commitment.direction === "we_promised"
+                    && commitment.status === "open" && commitment.due_at !== null)
+                  .sort((a, b) => Date.parse(a.due_at!) - Date.parse(b.due_at!))[0]
+                // An open card carries one green button -- Close job or Call --
+                // so the row's Open job steps back to an outline while it is open.
+                const hasPrimary = Boolean(phone) || lead.board_stage === "ready"
                 const lineItemTotal = lineItems.reduce((total, item) => total + item.amountCents, 0)
                 const lineItemsMismatch = lineItems.length > 0
                   && lead.estimate_value_cents !== null
@@ -624,24 +620,13 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                   minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
                   maximumFractionDigits: 2,
                 })}`
-                const elapsed = (startIso: string, endIso: string | null) => {
-                  if (!endIso) return "none yet"
-                  const start = new Date(startIso).getTime()
-                  const end = new Date(endIso).getTime()
-                  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return "not recorded"
-                  const minutes = Math.floor((end - start) / 60_000)
-                  if (minutes < 60) return `${minutes} min`
-                  const hours = Math.floor(minutes / 60)
-                  const remainder = minutes % 60
-                  return remainder ? `${hours}h ${remainder}m` : `${hours}h`
-                }
-                const quotedDays = (() => {
-                  if (!lead.quoted_at) return "Not quoted"
-                  const quotedAt = new Date(lead.quoted_at).getTime()
-                  if (!Number.isFinite(quotedAt)) return "Date not recorded"
-                  const days = Math.max(0, Math.floor((nowMs - quotedAt) / 86_400_000))
-                  return `${days} ${days === 1 ? "day" : "days"}`
-                })()
+                const promiseLine = brokenPromise
+                  ? { label: "Missed promise", text: `${brokenPromise.summary} · was due ${centralDate(brokenPromise.due_at)}`, late: true }
+                  : nextPromise
+                    ? { label: "We promised", text: `${nextPromise.summary} · due ${centralDate(nextPromise.due_at)}`, late: false }
+                    : lead.scheduled_at
+                      ? { label: "Scheduled", text: centralDate(lead.scheduled_at), late: false }
+                      : null
                 const stageMilestones = [
                   lead.created_at,
                   newestPhotoAt,
@@ -658,51 +643,6 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                   if (index < furthestStage || (index === stageMilestones.length - 1 && lead.paid_at)) return "done"
                   return "now"
                 }
-                const stageFacts: Array<{
-                  name: string
-                  firstLabel: string
-                  firstValue: React.ReactNode
-                  secondLabel: string
-                  secondValue: React.ReactNode
-                }> = [
-                  {
-                    name: "Asked",
-                    firstLabel: centralDate(lead.created_at),
-                    firstValue: shopSourceLabel(lead.source),
-                    secondLabel: "First reply",
-                    secondValue: elapsed(lead.created_at, lead.first_response_at),
-                  },
-                  {
-                    name: "Measured",
-                    firstLabel: newestPhotoAt ? centralDate(newestPhotoAt) : "No photo date",
-                    firstValue: `${lead.photo_count} ${lead.photo_count === 1 ? "photo" : "photos"}`,
-                    secondLabel: "Active facts",
-                    secondValue: activeClaims.length,
-                  },
-                  {
-                    name: "Priced",
-                    firstLabel: lead.quoted_at ? centralDate(lead.quoted_at) : "Not quoted",
-                    firstValue: lead.estimate_value_cents === null
-                      ? "No price"
-                      : formatCents(lead.estimate_value_cents),
-                    secondLabel: "Since quote",
-                    secondValue: quotedDays,
-                  },
-                  {
-                    name: "Booked",
-                    firstLabel: datedCommitment ? "Promise due" : lead.scheduled_at ? "Scheduled" : "Date",
-                    firstValue: bookedDate ? centralDate(bookedDate) : "No date",
-                    secondLabel: "Status",
-                    secondValue: lead.won_at ? "Booked" : "Not booked",
-                  },
-                  {
-                    name: "Paid",
-                    firstLabel: "Terms",
-                    firstValue: lead.invoice_due_at ? `Due ${centralDate(lead.invoice_due_at)}` : "On pickup",
-                    secondLabel: "Prior jobs",
-                    secondValue: priorJobs ?? "—",
-                  },
-                ]
 
                 return <article className="job" data-open={isOpen ? "" : undefined} key={lead.id}>
                   {/* The whole row toggles the panel — the mockup's hover wash
@@ -744,8 +684,8 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                     </span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
-                      <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}`} onClick={() => tapped(TAPS.jobOpen)}>Open job</Link>
-                      <button className="icon" style={{ "width": "28px", "height": "28px" }} type="button"
+                      <Link className={`btn btn--sm ${isOpen && hasPrimary ? "btn--edge" : "btn--go"}`} href={`/ops/leads/${lead.id}`} onClick={() => tapped(TAPS.jobOpen)}>Open job</Link>
+                      <button className="icon" type="button"
                         aria-label={`${isOpen ? "Collapse" : "Expand"} ${customerName(lead)} job details`}
                         aria-expanded={isOpen} aria-controls={`job-detail-${lead.id}`}
                         onClick={() => { tapped(TAPS.jobExpand); setOpenJobId((current) => current === lead.id ? null : lead.id) }}>
@@ -756,129 +696,127 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                     </span>
                   </div>
 
+                  {/* Open, the card reads in the order he asks: what do I do
+                      now, where is the job, what is it -- then the photo, the
+                      specs and the money. Open job stays in the row above. */}
                   {isOpen && <div className="detail" id={`job-detail-${lead.id}`}>
-                    <div className="drawing">
-                      <div className="drawing-top">
-                        <span className="t-sub">The part</span>
-                        <span className="end">
-                          {lead.photo_count > 0
-                            ? `${lead.photo_count} ${lead.photo_count === 1 ? "photo" : "photos"} · ${newestPhotoAt ? `newest ${centralDate(newestPhotoAt)}` : "newest date not recorded"}`
-                            : "No photos yet"}
-                        </span>
+                    {/* Handoff belongs with the actions, not in the row: the
+                        row's cell is a fixed track shared with the reason chip,
+                        and a third control there overran it. Text permission
+                        lives on the job page; the card keeps one obvious
+                        action, green, and everything else outlined. */}
+                    {hasPrimary && <div className="why-end acts">
+                      <span className="end">
+                        {lead.board_stage === "ready" && <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}#finish-close`}>Close job</Link>}
+                        {phone && <TrackedCallButton leadId={lead.id} phone={phone} label="Call" compact
+                          className={`btn btn--sm ${lead.board_stage === "ready" ? "btn--edge" : "btn--go"}`} />}
+                        {phone && lead.text_ready && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}?replyChannel=text#job-reply`}>Text</Link>}
+                      </span>
+                    </div>}
+
+                    <ol className="stages" aria-label="Where the job is">
+                      {STAGE_NAMES.map((name, index) => {
+                        const state = stageState(index)
+                        return <li className={`stage${state === "off" ? " off" : ""}`} key={name}>
+                          <div className="stage-top">
+                            <span className={`knot${state === "now" ? " now" : state === "off" ? " off" : ""}`}>
+                              {state === "done"
+                                ? <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.6" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg>
+                                : state === "now"
+                                  ? <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/></svg>
+                                  : null}
+                            </span>
+                            {index < STAGE_NAMES.length - 1 && <span className={`wire${state === "done" ? "" : " off"}`}></span>}
+                          </div>
+                          <div className="stage-body">
+                            <b>{name}</b>
+                            {state !== "off" && <span>{centralDate(stageMilestones[index])}</span>}
+                          </div>
+                        </li>
+                      })}
+                    </ol>
+
+                    <div className="detail-main">
+                      <dl className="facts">
+                        {lead.service.trim() && <div><dt>Job type</dt><dd>{lead.service.trim()}</dd></div>}
+                        <div><dt>Came in</dt><dd>{waitingDate(lead.created_at)} &middot; {shopSourceLabel(lead.source)}</dd></div>
+                        {/* Crew rows arrive with every money field nulled, so
+                            a price line would only ever say "not priced". */}
+                        {chrome.owner && <div><dt>Price</dt><dd>
+                          {moneyCell.confirmHref
+                            ? <Link className="heard-quote" href={moneyCell.confirmHref} onClick={() => tapped(TAPS.heardPrice)}>{money(lead.heard_quote_cents)} heard on the call — tap to confirm</Link>
+                            : moneyCell.value === "—" ? "Not priced yet" : `${moneyCell.value} ${moneyCell.note}`}
+                        </dd></div>}
+                        {promiseLine && <div className={promiseLine.late ? "late" : undefined}><dt>{promiseLine.label}</dt><dd>{promiseLine.text}</dd></div>}
+                        <div><dt>Photos</dt><dd>{lead.photo_count > 0
+                          ? `${lead.photo_count} ${lead.photo_count === 1 ? "photo" : "photos"}${newestPhotoAt ? ` · newest ${centralDate(newestPhotoAt)}` : ""}`
+                          : "None yet"}</dd></div>
+                        {priorJobs !== null && priorJobs > 0 && <div><dt>Repeat customer</dt><dd>{priorJobs} earlier {priorJobs === 1 ? "job" : "jobs"}</dd></div>}
+                      </dl>
+                      <div className="want">
+                        <h2>What they want</h2>
+                        <p>{lead.message.trim() || lead.service}</p>
+                        {lead.status_reason.trim() && <p>{lead.status_reason.trim()}</p>}
+                        {lead.notes.trim() && <p>{lead.notes.trim()}</p>}
                       </div>
-                      {panelPhoto
-                        ? <svg className="plan" viewBox="0 0 380 244" role="img"
-                            aria-label={`Job photo for ${customerName(lead)}`}>
-                            <rect width="380" height="244" fill="var(--draw-fill)" />
-                            <image href={`/api/ops/photo?lead=${lead.id}&path=${encodeURIComponent(panelPhoto.pathname)}`}
-                              width="380" height="244" preserveAspectRatio="xMidYMid slice" />
-                          </svg>
-                        : <svg className="plan" viewBox="0 0 380 244" fill="none" role="img"
-                            aria-label={lead.service.trim() || "Job part not yet identified"}>
-                            <rect width="380" height="244" fill="var(--draw-fill)" />
-                            <g transform="translate(79 35) scale(4.8)" stroke="var(--draw-line)" strokeWidth=".35"
-                              strokeLinejoin="round" strokeLinecap="round">
-                              {serviceMark(lead.service)}
-                            </g>
-                          </svg>}
-                      <div className="spec">
-                        {activeClaims.map((claim) => <span key={claim.id}>
-                          {shopClaimLabel(claim.predicate)} <b>{shopClaimText(claim.value)}</b>
-                        </span>)}
-                      </div>
-                      <p className="t-caption">
-                        {activeClaims.length} {activeClaims.length === 1 ? "fact is" : "facts are"} still open.
-                      </p>
                     </div>
 
-                    <div>
-                      <div className="stages">
-                        {stageFacts.map((stage, index) => {
-                          const state = stageState(index)
-                          return <div className={`stage${state === "off" ? " off" : ""}`} key={stage.name}>
-                            <div className="stage-top">
-                              <span className={`knot${state === "now" ? " now" : state === "off" ? " off" : ""}`}>
-                                {state === "done"
-                                  ? <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg>
-                                  : state === "now"
-                                    ? <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="4.5"/></svg>
-                                    : null}
-                              </span>
-                              {index < stageFacts.length - 1 && <span className={`wire${state === "done" ? "" : " off"}`}></span>}
-                            </div>
-                            <div className="stage-body">
-                              <h2>{stage.name}</h2>
-                              <p><span>{stage.firstLabel}</span><b>{stage.firstValue}</b></p>
-                              <p><span>{stage.secondLabel}</span><b>{stage.secondValue}</b></p>
-                            </div>
-                          </div>
-                        })}
-                      </div>
-
-                      <div className="why">
-                        <div>
-                          <h2>Why it needs you</h2>
-                          <p>
-                            {moneyCell.value === "—"
-                              ? "No price is available for this job."
-                              : <>This job is <b>{moneyCell.value}</b> {moneyCell.note}.</>}
-                            {lead.status_reason.trim() && <> {lead.status_reason.trim()}</>}
-                            {lead.notes.trim() && <> {lead.notes.trim()}</>}
-                          </p>
-                          <div className="why-end">
-                            <span>
-                              {brokenPromise
-                                ? <>Broken promise: {brokenPromise.summary}{brokenPromise.due_at && ` · due ${centralDate(brokenPromise.due_at)}`}</>
-                                : "No broken promise is recorded."}
-                            </span>
-                            <span className="end">
-                              {/* Handoff belongs with the actions, not in the row: the row's
-                                  cell is a fixed track shared with the reason chip, and a
-                                  third control there overran it. Opening the job is the
-                                  look before the click anyway. */}
-                              {lead.board_stage === "ready" && <Link className="btn btn--sm btn--go" href={`/ops/leads/${lead.id}#finish-close`}>Close job</Link>}
-                              <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}`}>Open job</Link>
-                              {phone && <TrackedCallButton leadId={lead.id} phone={phone} label="Call" compact />}
-                              {phone && lead.text_ready && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}?replyChannel=text#job-reply`}>Text</Link>}
-                              {phone && !lead.text_ready && chrome.owner && <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}#text-permission`}>Enable texting</Link>}
-                              {/* Junk gets off the board here rather than two pages away. Same
-                                  owner-only action the job page uses, so the immutable receipt
-                                  and the notification suppression come with it. */}
-                              {chrome.owner && <form action={updateLeadStatus}>
-                                <input type="hidden" name="leadId" value={lead.id} />
-                                <input type="hidden" name="status" value="spam" />
-                                <input type="hidden" name="reason" value="Marked Not a job from the board." />
-                                <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a job</SafeSubmitButton>
-                              </form>}
-                            </span>
-                          </div>
+                    <div className="detail-side">
+                      {panelPhoto && <a className="photo" href={`/api/ops/photo?lead=${lead.id}&path=${encodeURIComponent(panelPhoto.pathname)}`} target="_blank" rel="noreferrer">
+                        <svg className="plan" viewBox="0 0 380 244" role="img"
+                          aria-label={`Job photo for ${customerName(lead)}, opens full size`}>
+                          <rect width="380" height="244" fill="var(--draw-fill)" />
+                          <image href={`/api/ops/photo?lead=${lead.id}&path=${encodeURIComponent(panelPhoto.pathname)}`}
+                            width="380" height="244" preserveAspectRatio="xMidYMid slice" />
+                        </svg>
+                      </a>}
+                      {activeClaims.length > 0 && <div>
+                        <h2>Specs</h2>
+                        <div className="spec">
+                          {activeClaims.map((claim) => <span key={claim.id}>
+                            {shopClaimLabel(claim.predicate)} <b>{shopClaimText(claim.value)}</b>
+                          </span>)}
                         </div>
-                        <div>
-                          <h2>What is in it</h2>
-                          <table className="sum">
-                            <tbody>
-                              {lineItems.length > 0
-                                ? lineItems.map((item) => <tr key={item.id}>
-                                    <td>{item.label}{item.note && <> <span className="q">{item.note}</span></>}</td>
-                                    <td>{formatCents(item.amountCents)}</td>
-                                  </tr>)
-                                : <tr><td colSpan={2}>No line items entered. <Link href={`/ops/leads/${lead.id}#lead-line-items`}>Add them</Link></td></tr>}
-                              <tr className="total">
-                                <td>Quoted</td>
-                                <td>{lead.estimate_value_cents === null ? "No price" : formatCents(lead.estimate_value_cents)}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                          {lineItemsMismatch && <p className="t-caption">
-                            Entered lines total {formatCents(lineItemTotal)}; the quoted price is {formatCents(lead.estimate_value_cents!)}.
-                          </p>}
-                          <div className="why-end">
-                            <span className="end">
-                              <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}#lead-estimate`}>Change the price</Link>
-                            </span>
-                          </div>
+                      </div>}
+                      {/* Owner only: line items are empty and the quote is
+                          nulled for crew, so the table would claim neither
+                          exists. */}
+                      {chrome.owner && <div>
+                        <h2>Price breakdown</h2>
+                        <table className="sum">
+                          <tbody>
+                            {lineItems.length > 0
+                              ? lineItems.map((item) => <tr key={item.id}>
+                                  <td>{item.label}{item.note && <> <span className="q">{item.note}</span></>}</td>
+                                  <td>{formatCents(item.amountCents)}</td>
+                                </tr>)
+                              : <tr><td colSpan={2}>No line items entered. <Link href={`/ops/leads/${lead.id}#lead-line-items`}>Add them</Link></td></tr>}
+                            <tr className="total">
+                              <td>Quoted</td>
+                              <td>{lead.estimate_value_cents === null ? "No price" : formatCents(lead.estimate_value_cents)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        {lineItemsMismatch && <p className="t-caption">
+                          Entered lines total {formatCents(lineItemTotal)}; the quoted price is {formatCents(lead.estimate_value_cents!)}.
+                        </p>}
+                        <div className="why-end">
+                          <span className="end">
+                            <Link className="btn btn--sm btn--edge" href={`/ops/leads/${lead.id}#lead-estimate`}>Change the price</Link>
+                          </span>
                         </div>
-                      </div>
+                      </div>}
+                      {/* Junk gets off the board here rather than two pages
+                          away, last and small so it is never the thumb's first
+                          target. Same owner-only action the job page uses, so
+                          the immutable receipt and the notification
+                          suppression come with it. */}
+                      {chrome.owner && <form className="not-a-job" action={updateLeadStatus}>
+                        <input type="hidden" name="leadId" value={lead.id} />
+                        <input type="hidden" name="status" value="spam" />
+                        <input type="hidden" name="reason" value="Marked Not a job from the board." />
+                        <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a job</SafeSubmitButton>
+                      </form>}
                     </div>
                   </div>}
                 </article>
