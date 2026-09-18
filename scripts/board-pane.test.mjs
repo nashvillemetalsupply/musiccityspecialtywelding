@@ -366,7 +366,8 @@ test("board text actions require consent and crew receive no money-derived score
   assert.equal((OPS_DATA_SOURCE.match(/COALESCE\(tc\.text_ready, false\) AS text_ready/g) ?? []).length, 2)
   assert.match(OPS_DATA_SOURCE, /role === "owner"\s+\? \{ \.\.\.projected, heard_quote_cents: row\.heard_quote_cents == null \? null : Number\(row\.heard_quote_cents\) \}\s+: \{ \.\.\.projected, board_score: 0, board_hot: false, heard_quote_cents: null \}/)
   assert.match(PREVIEW_SOURCE, /phone && lead\.text_ready && <Link[\s\S]{0,180}>Text<\/Link>/)
-  assert.match(PREVIEW_SOURCE, /phone && !lead\.text_ready && chrome\.owner && <Link[\s\S]{0,180}>Enable texting<\/Link>/)
+  // Text permission lives on the job page; the card keeps one obvious action.
+  assert.doesNotMatch(PREVIEW_SOURCE, />Enable texting<\/Link>/)
   assert.doesNotMatch(PREVIEW_SOURCE, />Open to text<\/Link>/)
 })
 

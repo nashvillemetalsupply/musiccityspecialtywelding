@@ -173,8 +173,9 @@ svg{display:block}
 
 /* The three numbers are colour fields, not cards: the shop's own positive,
    warning and danger, deepened enough to hold bone text at 4.5:1. */
-/* Two tiles side by side on every screen; stacked they cost the phone a whole
-   screen before the tracker. */
+/* Two tiles side by side on a phone; stacked they cost a whole screen before
+   the tracker. The owner's cost-per-lead field takes the full row under them,
+   and on a wide screen all three share one row. */
 .figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);border:0;background:none}
 .figure{border-radius:var(--r-md)}
 .figure{padding:var(--s3) var(--s4);min-width:0}
@@ -212,14 +213,16 @@ svg{display:block}
    belong to row states alone. */
 .figures .figure:nth-child(1){background:var(--field-info)}
 .figures .figure:nth-child(2){background:var(--field-neutral)}
-/* Ad spend is one collapsed line inside the open-jobs tile, not a field of its
-   own -- it is read once a month and used to cost a whole grid row. The summary
-   stays on one line and wraps rather than pushing the tile wider. */
-.cpl-entry{width:100%;font-size:var(--t-caption)}
+/* Cost per lead is money, so graphite like the week's money. The number and
+   "per lead" share a baseline even on a phone -- it has the full row. */
+.figures .figure:nth-child(3){background:var(--field-neutral);grid-column:1/-1}
+.figure--cpl .n{flex-direction:row;align-items:baseline;gap:var(--s2)}
+.figure--cpl .under{display:block}
+.figure--cpl .under+.under{margin-top:var(--s1)}
+/* The hand-entry fallback, folded under the sum until the pushed spend lands. */
+.cpl-entry{width:100%;margin:var(--s2) 0 0;font-size:var(--t-caption)}
 .cpl-entry>summary{cursor:pointer;min-height:44px;display:flex;flex-wrap:wrap;
   align-items:center;gap:var(--s1) var(--s3);color:var(--on-field-muted)}
-.cpl-entry .cpl b{font-weight:var(--w-semi)}
-.cpl-note{margin:0 0 var(--s2);color:var(--on-field-muted)}
 .cpl-entry form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--s3);margin:var(--s2) 0 0}
 .cpl-entry label{display:flex;flex-direction:column;gap:var(--s2);color:var(--on-field-muted)}
 .cpl-entry input{min-height:44px;width:8rem;max-width:100%;padding:0 var(--s3);
@@ -423,60 +426,75 @@ svg{display:block}
 .heard-quote em{color:var(--status-warn-ink);opacity:.85}
 .right{text-align:right}
 .doing{display:flex;justify-content:flex-end;gap:var(--s1)}
+/* the chevron matches the small button beside it; the coarse layer lifts both to 44 */
+.doing .icon{width:28px;height:28px}
 
 /* --- the expanded job --- */
-/* the expanded job on a phone: the drawing first, then the stages, then money */
+/* On a phone it reads top to bottom: the call or close button, where the job
+   is, the facts, what they want, then the photo, specs and money. */
 .detail{padding:0 var(--s4) var(--s4);display:grid;
-  grid-template-columns:1fr;gap:var(--s5)}
-.drawing{border-radius:var(--r-md);background:var(--surface);
-  box-shadow:inset 0 0 0 1px var(--border);overflow:hidden}
-/* every row that pairs a sentence with buttons stacks rather than squeezing
-   the sentence into a column two words wide */
-.drawing-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);
-  padding:var(--s3) var(--s4)}
-.drawing-top .end{margin-left:0;width:100%;font-size:var(--t-caption);color:var(--text-muted)}
-.drawing svg.plan{width:100%;height:auto;background:var(--draw-fill)}
-.spec{display:flex;flex-wrap:wrap;gap:var(--s2);padding:var(--s4)}
-/* min-height: --chip is 24px and a 14px label line box is close enough to it
-   that a fixed height clipped descenders. */
-.spec span{display:inline-flex;align-items:center;gap:var(--s2);min-height:var(--chip);
-  padding:0 var(--s3);border-radius:var(--r-sm);background:var(--surface-raised);
-  font-size:var(--t-label);color:var(--text-secondary)}
-.spec b{color:var(--text-primary);font-weight:var(--w-semi)}
-.drawing>p{padding:0 var(--s4) var(--s4)}
+  grid-template-columns:minmax(0,1fr);gap:var(--s5)}
+.detail h2{margin:0 0 var(--s2);font-size:var(--t-sub);font-weight:var(--w-semi)}
 
-.stages{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s4);align-items:start}
+/* Five steps on one line, a phone included: a word and a date each. */
+.stages{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));align-items:start}
 .stage-top{display:flex;align-items:center}
 .knot{width:20px;height:20px;border-radius:50%;flex:none;display:grid;place-items:center;
   background:var(--status-good-mark);color:var(--surface)}
 .knot.now{background:var(--surface);box-shadow:inset 0 0 0 2px var(--status-warn-mark);
   color:var(--status-warn-mark)}
 .knot.off{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--border-strong)}
-/* five stages on two rows have no single line to run a wire along */
-.wire{display:none;flex:1;height:2px;background:var(--status-good-mark);opacity:.4;margin:0 var(--s2)}
+.wire{flex:1;height:2px;background:var(--status-good-mark);opacity:.4;margin:0 var(--s1)}
 .wire.off{background:var(--border-strong);opacity:1}
-.stage-body{margin:var(--s3) 0 0;padding-right:0}
-.stage-body h2{margin:0;font-size:var(--t-name);font-weight:var(--w-semi);letter-spacing:-.01em}
-.stage-body p{margin:var(--s1) 0 0;font-size:var(--t-caption);color:var(--text-muted);
-  display:flex;justify-content:space-between;gap:var(--s2)}
-.stage-body p b{color:var(--text-secondary);font-weight:var(--w-med)}
-.stage.off h2{color:var(--text-muted)}
+.stage-body{margin:var(--s2) 0 0;padding-right:var(--s1);display:flex;flex-direction:column;gap:2px}
+.stage-body b{font-size:var(--t-label);font-weight:var(--w-semi);color:var(--text-primary)}
+.stage-body span{font-size:var(--t-caption);color:var(--text-muted)}
+.stage.off b{color:var(--text-muted)}
 
-.why{display:grid;grid-template-columns:1fr;gap:var(--s7);
-  margin:var(--s6) 0 0;padding:var(--s5) 0 0;border-top:1px solid var(--border)}
-.why h2{margin:0;font-size:var(--t-sub);font-weight:var(--w-semi)}
-.why>div>p{margin:var(--s2) 0 0;font-size:var(--t-body);color:var(--text-secondary);
-  line-height:var(--lh-body);max-width:58ch}
-.why b{color:var(--text-primary);font-weight:var(--w-semi)}
+/* The facts are a label column and an answer, so the eye runs down the left. */
+.detail-main{display:grid;gap:var(--s5);min-width:0;align-content:start}
+.facts{margin:0;display:grid;gap:var(--s2)}
+.facts div{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:var(--s3);align-items:baseline}
+.facts dt{font-size:var(--t-label);color:var(--text-muted)}
+.facts dd{margin:0;font-size:var(--t-body);color:var(--text-primary)}
+.facts .late dt,.facts .late dd{color:var(--status-stop-ink)}
+.want p{margin:0;font-size:var(--t-body);line-height:var(--lh-body);color:var(--text-secondary);max-width:62ch}
+.want p+p{margin-top:var(--s2)}
+
+.detail-side{display:grid;gap:var(--s5);align-content:start;min-width:0}
+/* A border, not an inset shadow: the photo would paint over a shadow. */
+.photo{display:block;max-width:30rem;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.detail svg.plan{display:block;width:100%;height:auto;background:var(--draw-fill)}
+.spec{display:flex;flex-wrap:wrap;gap:var(--s2)}
+/* min-height: --chip is 24px and a 14px label line box is close enough to it
+   that a fixed height clipped descenders. */
+.spec span{display:inline-flex;align-items:center;gap:var(--s2);min-height:var(--chip);
+  padding:0 var(--s3);border-radius:var(--r-sm);background:var(--surface-raised);
+  font-size:var(--t-label);color:var(--text-secondary)}
+.spec b{color:var(--text-primary);font-weight:var(--w-semi)}
+.not-a-job{display:flex;justify-content:flex-end}
+
 .why-end{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
   font-size:var(--t-caption);color:var(--text-muted)}
-.why-end .end{margin-left:0;width:100%;display:flex;gap:var(--s2)}
-/* The handoff form is a wrapper, not a control: contents lets its button sit
-   in the action row exactly like the links beside it. */
-.why-end .end form{display:contents}
+.why-end.acts{margin:0}
+.why-end .end{margin-left:0;width:100%;display:flex;align-items:flex-start;gap:var(--s2)}
 .why-end .end .btn{flex:1}
+/* ops-legacy.css loads on this page and paints every tracked-call button grey,
+   condensed and uppercase at 0,1,1, which outranks .btn. In the card the Call
+   button is a board button like the ones beside it. */
+.detail .ops-tracked-call{flex:1;display:flex;flex-direction:column;gap:var(--s1);min-width:0}
+.detail .ops-tracked-call>.btn{flex:none;width:100%;min-width:0;min-height:0;padding:0 var(--s3);
+  border:0;font:inherit;font-size:var(--t-label);font-weight:var(--w-semi);text-transform:none}
+.detail .ops-tracked-call>.btn--go{background:var(--action);color:var(--action-ink)}
+.detail .ops-tracked-call>.btn--edge{background:transparent;color:var(--text-primary)}
+.detail .ops-tracked-call>.btn--edge:hover{background:var(--surface-raised)}
+.detail .ops-tracked-call>small{max-width:none;font:inherit;font-size:var(--t-caption);color:var(--text-muted)}
+@media (pointer:coarse),(max-width:55rem){
+  .detail .ops-tracked-call>.btn{min-height:44px;padding-inline:var(--s4)}
+}
 /* final.html has no doctype, so its table uses the UA's normal line height. */
-.sum{width:100%;border-collapse:collapse;font-size:var(--t-label);line-height:normal;margin:var(--s3) 0 0}
+.sum{width:100%;border-collapse:collapse;font-size:var(--t-label);line-height:normal;margin:0}
 .sum td{padding:var(--s1) 0;color:var(--text-secondary)}
 .sum td+td{text-align:right;color:var(--text-primary);font-weight:var(--w-med);white-space:nowrap}
 .sum .q{color:var(--text-muted)}
@@ -513,7 +531,7 @@ svg{display:block}
    or a part with no spaces must not push a column open. Every string that can
    come from the database now either truncates or breaks inside the word. */
 .cust b,.cust span,.val,.bay-name,.signal span{min-width:0}
-.ask+p,.due p,.why>div>p,.spoke span,.trail b{overflow-wrap:anywhere}
+.ask+p,.due p,.facts dd,.want p,.spoke span,.trail b{overflow-wrap:anywhere}
 
 /* 3 · Safe areas. On a phone with a gesture bar the rail sat under the system
    inset, so the last 12-20px of it could not be tapped. Both halves of that
@@ -576,7 +594,6 @@ svg{display:block}
 @media (min-width:26.2501rem){
   :root{--t-display:44px}
   .slots{grid-template-columns:1fr 1fr;gap:0 var(--s4)}
-  .stage-body{padding-right:var(--s4)}
 }
 
 /* -------------------------------------------------------- 55rem · 880px ---- */
@@ -682,14 +699,15 @@ svg{display:block}
   .part svg{width:46px;height:32px}
 
   /* --- the expanded job -------------------------------------------------- */
-  .detail{padding:0 var(--s6) var(--s6);gap:var(--s7)}
-  .drawing-top{flex-wrap:nowrap;gap:var(--s2)}
-  .drawing-top .end{margin-left:auto;width:auto}
-  .stages{grid-template-columns:repeat(5,minmax(0,1fr));gap:normal}
-  .wire{display:block}
+  /* Facts on the left, photo and money on the right; the actions and the
+     progress line run across both. */
+  .detail{padding:0 var(--s6) var(--s6);gap:var(--s5) var(--s7);
+    grid-template-columns:minmax(0,1fr) minmax(0,340px)}
+  .detail>.acts,.detail>.stages{grid-column:1/-1}
   .why-end{flex-wrap:nowrap}
   .why-end .end{margin-left:auto;width:auto}
   .why-end .end .btn{flex:0 1 auto}
+  .detail .ops-tracked-call{flex:0 1 auto}
 }
 
 /* ----------------------------------------------------- 73.75rem · 1180px ---- */
@@ -698,8 +716,11 @@ svg{display:block}
   .cols{gap:0 var(--s5);
     grid-template-columns:56px minmax(220px,1.8fr) minmax(108px,max-content) minmax(120px,max-content) minmax(180px,max-content) minmax(116px,max-content)}
   .cols .c-money{display:block}
-  .detail{grid-template-columns:minmax(0,380px) minmax(0,1fr)}
-  .why{grid-template-columns:minmax(0,1fr) 292px}
+  .detail{grid-template-columns:minmax(0,1fr) minmax(0,380px)}
+  /* The owner's three fields share one row once each has room for a
+     five-figure number. */
+  .figures:has(>.figure:nth-child(3)){grid-template-columns:repeat(3,minmax(0,1fr))}
+  .figures .figure:nth-child(3){grid-column:auto}
 }
 
 /* ------------------------------------------------------ 82.5rem · 1320px ---- */
