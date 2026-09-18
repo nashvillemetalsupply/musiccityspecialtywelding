@@ -174,8 +174,7 @@ svg{display:block}
 /* The three numbers are colour fields, not cards: the shop's own positive,
    warning and danger, deepened enough to hold bone text at 4.5:1. */
 /* Two tiles side by side on a phone; stacked they cost a whole screen before
-   the tracker. The owner's cost-per-lead field takes the full row under them,
-   and on a wide screen all three share one row. */
+   the tracker. */
 .figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);border:0;background:none}
 .figure{border-radius:var(--r-md)}
 .figure{padding:var(--s3) var(--s4);min-width:0}
@@ -213,20 +212,13 @@ svg{display:block}
    belong to row states alone. */
 .figures .figure:nth-child(1){background:var(--field-info)}
 .figures .figure:nth-child(2){background:var(--field-neutral)}
-/* Cost per lead is money, so graphite like the week's money. The number and
-   "per lead" share a baseline even on a phone -- it has the full row. */
-.figures .figure:nth-child(3){background:var(--field-neutral);grid-column:1/-1}
-.figure--cpl .n{flex-direction:row;align-items:baseline;gap:var(--s2)}
-.figure--cpl .under{display:block}
-.figure--cpl .under+.under{margin-top:var(--s1)}
-/* The hand-entry fallback, folded under the sum until the pushed spend lands. */
-.cpl-entry{width:100%;margin:var(--s2) 0 0;font-size:var(--t-caption)}
-.cpl-entry>summary{cursor:pointer;min-height:44px;display:flex;flex-wrap:wrap;
-  align-items:center;gap:var(--s1) var(--s3);color:var(--on-field-muted)}
-.cpl-entry form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--s3);margin:var(--s2) 0 0}
-.cpl-entry label{display:flex;flex-direction:column;gap:var(--s2);color:var(--on-field-muted)}
-.cpl-entry input{min-height:44px;width:8rem;max-width:100%;padding:0 var(--s3);
-  border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text-primary)}
+/* Cost per lead: one money line under the tracker, not a colour field up top.
+   The number and "per lead" share a baseline; the sum wraps under them. */
+.cpl{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s1) var(--s3);padding:var(--s3) var(--s5)}
+.cpl-label{font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
+.cpl .n{display:flex;align-items:baseline;gap:var(--s2)}
+.cpl .n span{color:var(--text-muted);font-size:var(--t-data)}
+.cpl .under{flex-basis:100%;font-size:var(--t-caption);color:var(--text-secondary)}
 .figures .figure,
 .figures .figure p:where(.figure-label),
 .figures .figure .n span,
@@ -717,10 +709,6 @@ svg{display:block}
     grid-template-columns:56px minmax(220px,1.8fr) minmax(108px,max-content) minmax(120px,max-content) minmax(180px,max-content) minmax(116px,max-content)}
   .cols .c-money{display:block}
   .detail{grid-template-columns:minmax(0,1fr) minmax(0,380px)}
-  /* The owner's three fields share one row once each has room for a
-     five-figure number. */
-  .figures:has(>.figure:nth-child(3)){grid-template-columns:repeat(3,minmax(0,1fr))}
-  .figures .figure:nth-child(3){grid-column:auto}
 }
 
 /* ------------------------------------------------------ 82.5rem · 1320px ---- */

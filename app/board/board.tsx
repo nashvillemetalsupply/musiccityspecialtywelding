@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { SkipLink } from "./skip-link"
 import { useRouter } from "next/navigation"
-import { AD_CHANNEL_LABELS, costPerLeadTile } from "@/lib/ad-spend.mjs"
+import { costPerLeadTile } from "@/lib/ad-spend.mjs"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
-import { setMonthAdSpend, updateLeadStatus } from "@/app/ops/actions"
+import { updateLeadStatus } from "@/app/ops/actions"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
 import {
   PANEL_FACT_KEYS, PANEL_FACT_LABELS, answeredFactCount, dimensionMark,
@@ -462,8 +462,8 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
     
     
       <main id="main" tabIndex={-1} className="main">
-        {/* The figures lead: open jobs, this week's money and, for the owner,
-            cost per lead. Owner moved them up on 2026-09-03 — at the bottom
+        {/* The figures lead: open jobs and this week's money. Owner moved
+            them up on 2026-09-03 — at the bottom
             they read as an afterthought. */}
         <section className="card figures">
           <div className="figure">
@@ -489,32 +489,6 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                 <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
             </div>
           </div>
-          {/* Cost per lead, as Fable ruled it 2026-09-18: all ad spend over
-              every real lead this Central month, from any source. The owner
-              wants it seen, so it is a field of its own with the number big
-              and the sum spelled out under it. Spend arrives from One Roof
-              each morning; the hand-entry box stays folded underneath only
-              until the first pushed row lands, then it is deleted. Owner only:
-              costPerLead is null for crew. */}
-          {cpl && board.costPerLead && <div className="figure figure--cpl">
-            <p className="figure-label">Cost per lead</p>
-            <p className="n"><b className="t-display">{cpl.big}</b>{cpl.beside && <span>{cpl.beside}</span>}</p>
-            <p className="under">{cpl.under}</p>
-            {cpl.channelsLine && <p className="under">{cpl.channelsLine}</p>}
-            <details className="cpl-entry">
-              <summary>Enter spend by hand</summary>
-              <form action={setMonthAdSpend}>
-                {board.costPerLead.channels.map((channel) =>
-                  <label key={channel.channel}>
-                    <span>{AD_CHANNEL_LABELS[channel.channel]}</span>
-                    <input name={channel.channel} type="text" inputMode="decimal" autoComplete="off"
-                      defaultValue={channel.spendCents === null ? "" : (channel.spendCents / 100).toFixed(2)}
-                      placeholder="0.00" aria-label={`${AD_CHANNEL_LABELS[channel.channel]} spend this month, in dollars`} />
-                  </label>)}
-                <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">Save spend</SafeSubmitButton>
-              </form>
-            </details>
-          </div>}
         </section>
         <section className="card social-post-card" aria-labelledby="social-post-title">
           <div className="social-post-copy">
@@ -835,6 +809,17 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
           )}
         </section>
 
+        {/* Cost per lead, as Fable ruled it 2026-09-18: all ad spend over
+            every real lead this Central month, from any source. It sits under
+            the tracker -- the top of the board belongs to the jobs -- as one
+            money line. Spend arrives from One Roof each morning; there is no
+            hand entry. Owner only: costPerLead is null for crew. */}
+        {cpl && <section className="card cpl" aria-label="Cost per lead">
+          <p className="cpl-label">Cost per lead</p>
+          <p className="n"><b className="t-title">{cpl.big}</b>{cpl.beside && <span>{cpl.beside}</span>}</p>
+          <p className="under">{cpl.under}</p>
+          {cpl.channelsLine && <p className="under">{cpl.channelsLine}</p>}
+        </section>}
         {calendar}
 
         <aside className="card" aria-label="Last call">
