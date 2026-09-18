@@ -106,13 +106,18 @@ test("health reports how long the public quote form has been silent", () => {
   )
   assert.ok(health.includes("webQuoteSilent"), "The health payload must expose webQuoteSilent.")
   assert.ok(
-    health.includes("WEB_QUOTE_SILENCE_LIMIT_HOURS = 96"),
-    "The silence limit must stay at 96 hours; the outage it was written for ran 264.",
+    health.includes("WEB_QUOTE_SILENCE_LIMIT_HOURS = 240"),
+    "The silence limit is 240 hours: the form takes about one lead a week, so four days of quiet is normal and reddened the monitor for ten runs straight.",
   )
   const monitor = source(".github/workflows/health-monitor.yml")
   assert.ok(
     monitor.includes("webQuoteSilent"),
-    "The health monitor must fail on quote-form silence, or nothing reads the field.",
+    "The health monitor must read quote-form silence, or nothing reads the field.",
+  )
+  assert.match(
+    monitor,
+    /::warning::No web quote has reached the database/,
+    "Form silence is a warning; inbound-call silence is the red build.",
   )
   assert.ok(
     monitor.includes("verify-ads-tag.mjs"),
