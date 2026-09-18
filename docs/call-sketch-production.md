@@ -50,6 +50,16 @@ If the variable is missing or invalid, inbound TwiML keeps the existing direct b
 9. Enable `TWILIO_PUBLIC_NUMBER_ENABLED` and `CALL_SKETCH_PUBLIC_ENABLED`, deploy the exact pushed commit, and verify every public phone surface plus structured data.
 10. In the exact **Music City Specialty Welding** Google Ads account, change only the call-forwarding destination to the verified Twilio number. Do not change campaign state, budgets, bidding, targeting, keywords, ads, assets, or conversion settings. Capture the account/customer ID and before/after destination. Google may display a Google forwarding number while routing calls to Twilio.
 
+## Ad tracking numbers (DNI) — activation
+
+Two extra Twilio numbers let calls from Google and Facebook visitors be told apart from organic ones (`calls.to_phone`). Do these in order; skipping step 2 prints a number that rings nothing.
+
+1. Buy one Voice/SMS local number for Google and one for Facebook in the same Twilio account.
+2. On each, set the Voice webhook to `https://musiccityspecialtywelding.com/api/twilio/voice` (`POST`) and the Voice fallback to the same provider-hosted `MCSW Voice Fallback` TwiML Bin as the main line. Add each to the `MCSW Job Updates` Messaging Service sender pool.
+3. In Vercel Production set `NEXT_PUBLIC_TWILIO_PHONE_NUMBER_GOOGLE` and `NEXT_PUBLIC_TWILIO_PHONE_NUMBER_FACEBOOK`, then redeploy (they are build-time values).
+4. Verify `/api/health`: `twilioProvider.trackingNumbersConfigured` is `2` and `trackingNumbersReady` is `true`. An unwired tracking number fails `voiceReady`.
+5. In the Google Ads account `747-818-3137`, set the call asset's phone number to the Google tracking number and keep call reporting on. Change nothing else. Until this is done, every ad-button call lands in Shop Brain as organic while Google counts it as "Calls from ads".
+
 ## Current activation state — 2026-08-16
 
 - Twilio Primary Customer Profile `NCW LLC` is **Approved**. The verified legal business is Neverlift Chassis Works, LLC and the customer-facing Brand name is Music City Specialty Welding.

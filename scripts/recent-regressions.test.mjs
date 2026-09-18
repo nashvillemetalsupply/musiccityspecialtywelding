@@ -102,7 +102,7 @@ test("inbound call reconciliation confirms the immutable receipt before marking 
 })
 
 test("inbound call silence is bounded, database-only, and unknown while the database is unavailable", () => {
-  assert.equal(INBOUND_CALL_SILENCE_LIMIT_HOURS, 96)
+  assert.equal(INBOUND_CALL_SILENCE_LIMIT_HOURS, 48)
   const nowMs = Date.parse("2026-09-17T12:00:00Z")
 
   assert.deepEqual(
@@ -113,7 +113,7 @@ test("inbound call silence is bounded, database-only, and unknown while the data
       recentNonTestCount: null,
       lastReceiptAt: null,
       silenceHours: null,
-      silenceLimitHours: 96,
+      silenceLimitHours: 48,
       silent: null,
     },
   )
@@ -125,12 +125,12 @@ test("inbound call silence is bounded, database-only, and unknown while the data
   }).silent, false)
   const silent = evaluateInboundCallReceiptHealth({
     connected: true,
-    lastReceiptAt: "2026-09-13T11:59:59Z",
+    lastReceiptAt: "2026-09-15T11:59:59Z",
     recentNonTestCount: 0,
     nowMs,
   })
   assert.equal(silent.silent, true)
-  assert.equal(silent.silenceHours, 96)
+  assert.equal(silent.silenceHours, 48)
 })
 
 test("authenticated health and its monitor expose only aggregate inbound-call receipt truth", () => {
@@ -147,8 +147,8 @@ test("authenticated health and its monitor expose only aggregate inbound-call re
   assert.match(monitor, /inboundCallReceipts: \.shopBrain\.inboundCallReceipts/)
   assert.match(monitor, /\.shopBrain\.inboundCallReceipts\.silent == true/)
   assert.match(monitor, /compare Twilio call logs before diagnosing the cause/)
-  assert.match(monitor, /::warning::No non-test inbound call receipt/)
-  assert.doesNotMatch(monitor, /::error::No non-test inbound call receipt/)
+  assert.match(monitor, /::error::No non-test inbound call receipt/)
+  assert.doesNotMatch(monitor, /::warning::No non-test inbound call receipt/)
   assert.doesNotMatch(monitor, /fromPhone|callerName|callSid/i)
 })
 
@@ -555,4 +555,16 @@ test("extract.ts parses and the ops feature modules resolve their exports", () =
   for (const [file, name] of modules) {
     assert.match(source(file), new RegExp(`export function ${name}\\b`), `${file} must export ${name}`)
   }
+})
+
+test("health checks every DNI tracking number's voice webhook, not only the main line", () => {
+  const twilio = source("lib/twilio.ts")
+  const health = source("app/api/health/route.ts")
+  const inspect = section(twilio, "async function inspectTwilioProviderReadiness", "let providerReadinessCache")
+  assert.match(inspect, /const tracking = trackingNumbers\(\)/)
+  assert.match(inspect, /sameWebhookUrl\(found\.voice_url, expectedVoiceUrl\)/)
+  assert.match(inspect, /isProviderHostedFallback\(found\.voice_fallback_url\)/)
+  assert.match(inspect, /trackingNumbersReady: trackingResults\.every\(Boolean\)/)
+  const voiceReady = section(health, "const providerVoiceReady", ")\n")
+  assert.match(voiceReady, /twilioProvider\.trackingNumbersReady/, "An unwired tracking number must fail voice readiness")
 })

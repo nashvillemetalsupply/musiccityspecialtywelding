@@ -27,9 +27,13 @@ import { evaluateInboundCallReceiptHealth, INBOUND_CALL_SILENCE_LIMIT_HOURS } fr
 
 export const dynamic = "force-dynamic"
 
-// Four days with no web quote is roughly a one-in-a-hundred quiet stretch at
-// the shop's observed rate, so it is worth a red build rather than a shrug.
-const WEB_QUOTE_SILENCE_LIMIT_HOURS = 96
+// The form takes roughly one lead a week, so four days of silence is the
+// normal state and a monitor that reddens on it is a monitor nobody reads --
+// the authenticated run was failing ten times running for exactly that reason.
+// Ten days is the quiet stretch that is genuinely unusual at this rate, and the
+// monitor now reports it as a warning. Call silence is the red signal instead:
+// see INBOUND_CALL_SILENCE_LIMIT_HOURS.
+const WEB_QUOTE_SILENCE_LIMIT_HOURS = 240
 
 async function hasWorkingResendCredential(apiKey: string) {
   try {
@@ -352,7 +356,8 @@ export async function GET(req: Request) {
       twilioProvider.numberFound &&
       twilioProvider.voiceCapable &&
       twilioProvider.voiceWebhookMatches &&
-      twilioProvider.voiceFallbackProviderHosted
+      twilioProvider.voiceFallbackProviderHosted &&
+      twilioProvider.trackingNumbersReady
   )
   const providerMessagingReady = Boolean(
     twilioProvider.checked &&
@@ -496,6 +501,8 @@ export async function GET(req: Request) {
           messagingInboundWebhookMatches: twilioProvider.messagingInboundWebhookMatches,
           messagingStatusCallbackMatches: twilioProvider.messagingStatusCallbackMatches,
           numberInSenderPool: twilioProvider.numberInSenderPool,
+          trackingNumbersConfigured: twilioProvider.trackingNumbersConfigured,
+          trackingNumbersReady: twilioProvider.trackingNumbersReady,
           voiceReady: providerVoiceReady,
           messagingReady: providerMessagingReady,
         },

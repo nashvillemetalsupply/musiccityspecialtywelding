@@ -197,6 +197,8 @@ export type TwilioProviderReadiness = {
   messagingInboundWebhookMatches: boolean
   messagingStatusCallbackMatches: boolean
   numberInSenderPool: boolean
+  trackingNumbersConfigured: number
+  trackingNumbersReady: boolean
 }
 
 const EMPTY_PROVIDER_READINESS: TwilioProviderReadiness = {
@@ -212,6 +214,8 @@ const EMPTY_PROVIDER_READINESS: TwilioProviderReadiness = {
   messagingInboundWebhookMatches: false,
   messagingStatusCallbackMatches: false,
   numberInSenderPool: false,
+  trackingNumbersConfigured: 0,
+  trackingNumbersReady: false,
 }
 
 function sameWebhookUrl(actual: string | undefined, expected: string) {
@@ -279,6 +283,30 @@ async function inspectTwilioProviderReadiness(): Promise<TwilioProviderReadiness
   const number = numberList?.incoming_phone_numbers?.find((item) => normalizedE164(item.phone_number) === phone)
   const expectedVoiceUrl = twilioCallbackUrl("/api/twilio/voice")
 
+  // The DNI numbers are printed to every paid visitor. One set in env but not
+  // pointed at this app rings nothing, and nothing else would notice, so each
+  // gets the same voice checks as the main line. None configured is vacuously
+  // ready: there is nothing a visitor could dial.
+  const tracking = trackingNumbers()
+  const trackingResults = await Promise.all(tracking.map(async (trackingNumber) => {
+    const list = await twilioApiJson<{
+      incoming_phone_numbers?: Array<{
+        phone_number?: string
+        voice_url?: string
+        voice_method?: string
+        voice_fallback_url?: string
+        capabilities?: { voice?: boolean }
+      }>
+    }>(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/IncomingPhoneNumbers.json?PhoneNumber=${encodeURIComponent(trackingNumber)}&PageSize=20`)
+    const found = list?.incoming_phone_numbers?.find((item) => normalizedE164(item.phone_number) === trackingNumber)
+    return Boolean(
+      found?.capabilities?.voice &&
+        sameWebhookUrl(found.voice_url, expectedVoiceUrl) &&
+        (found.voice_method ?? "POST").toUpperCase() === "POST" &&
+        isProviderHostedFallback(found.voice_fallback_url)
+    )
+  }))
+
   let messagingServiceFound = false
   let messagingInboundWebhookMatches = false
   let messagingStatusCallbackMatches = false
@@ -325,6 +353,8 @@ async function inspectTwilioProviderReadiness(): Promise<TwilioProviderReadiness
     messagingInboundWebhookMatches,
     messagingStatusCallbackMatches,
     numberInSenderPool,
+    trackingNumbersConfigured: tracking.length,
+    trackingNumbersReady: trackingResults.every(Boolean),
   }
 }
 

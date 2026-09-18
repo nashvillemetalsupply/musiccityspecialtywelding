@@ -78,19 +78,26 @@ jobs:
           fi
           # Google Ads conversion tracking went dead for eleven days from
           # 2026-08-24 and nothing here noticed, because every check watched
-          # configuration and none watched the outcome. A quote form that has
-          # taken nothing in four days is the outage, whatever the cause.
+          # configuration and none watched the outcome. The outcome still gets
+          # watched -- but the form takes about one lead a week, so form silence
+          # is a warning at ten days, not a red build at four. A monitor that is
+          # red at the healthy rate is a monitor nobody reads, and this one was
+          # failing ten runs straight before the severities were swapped.
           if printf '%s' "$body" | jq -e '.googleAds.webQuoteSilent == true' >/dev/null; then
             hours=$(printf '%s' "$body" | jq -r '.googleAds.webQuoteSilenceHours // "never"')
-            echo "::error::No web quote has reached the database in ${hours} hours; Google Ads has nothing to record"
-            exit 1
+            limit=$(printf '%s' "$body" | jq -r '.googleAds.webQuoteSilenceLimitHours')
+            echo "::warning::No web quote has reached the database in ${hours} hours (limit ${limit}); check GA4 form_start against leads before assuming a dead tag"
           fi
-          # This is a Shop Brain database-receipt watchdog, not Twilio call-log
-          # truth. Keep it a warning until provider truth can prove divergence.
+          # The phone is the channel -- about twenty inbound calls a week, all of
+          # them through the Twilio webhook -- so two days of receipt silence is
+          # the signal worth a red build. This is a Shop Brain database-receipt
+          # watchdog, not Twilio call-log truth: compare the provider call log
+          # before diagnosing the cause.
           if printf '%s' "$body" | jq -e '.shopBrain.inboundCallReceipts.silent == true' >/dev/null; then
             hours=$(printf '%s' "$body" | jq -r '.shopBrain.inboundCallReceipts.silenceHours // "never"')
             limit=$(printf '%s' "$body" | jq -r '.shopBrain.inboundCallReceipts.silenceLimitHours')
-            echo "::warning::No non-test inbound call receipt reached Shop Brain in ${hours} hours (limit ${limit}); compare Twilio call logs before diagnosing the cause"
+            echo "::error::No non-test inbound call receipt reached Shop Brain in ${hours} hours (limit ${limit}); compare Twilio call logs before diagnosing the cause"
+            exit 1
           fi
 
       - name: Check the Google Ads conversion tag is on the live site
