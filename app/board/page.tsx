@@ -1,5 +1,6 @@
 import "../../styles/ops-legacy.css"
 import type { Metadata } from "next"
+import { randomUUID } from "node:crypto"
 import { headers } from "next/headers"
 import { after } from "next/server"
 import { dbConfigured } from "@/lib/db"
@@ -172,7 +173,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     }))} />
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
-  return <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
+  return <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,

@@ -1,9 +1,12 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useActionState, useRef, useState } from "react"
 import Link from "next/link"
+import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import type { CalendarDay } from "@/lib/job-calendar-data"
+import { calendarQuickAddIntakeKey } from "@/lib/calendar-quick-add.mjs"
 import { calendarNavigationIndex, selectedCalendarDay } from "@/lib/job-calendar.mjs"
+import { createCalendarJobAction, type CalendarQuickAddState } from "./calendar-actions"
 import styles from "./job-calendar.module.css"
 
 const DAY_NAME = new Intl.DateTimeFormat("en-US", {
@@ -46,11 +49,22 @@ function dateFromKey(dateKey: string) {
   return new Date(`${dateKey}T12:00:00.000Z`)
 }
 
-export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; todayDateKey: string }) {
+const QUICK_ADD_INITIAL: CalendarQuickAddState = { status: "idle" }
+
+export function JobCalendar({
+  days,
+  todayDateKey,
+  quickAddIntakeKey,
+}: {
+  days: CalendarDay[]
+  todayDateKey: string
+  quickAddIntakeKey?: string
+}) {
   const [selectedDateKey, setSelectedDateKey] = useState(() => (
     days.some((day) => day.dateKey === todayDateKey) ? todayDateKey : days[0]?.dateKey ?? ""
   ))
   const dayButtonRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const [quickAddState, quickAddAction, quickAddPending] = useActionState(createCalendarJobAction, QUICK_ADD_INITIAL)
   if (days.length < 28 || days.length > 31) return null
   const scheduledCount = days.reduce((total, day) => total + day.jobs.length, 0)
   const firstDate = dateFromKey(days[0].dateKey)
@@ -59,6 +73,7 @@ export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; today
   const selectedFullDate = FULL_DATE.format(selectedDate)
   const leadingBlankCount = firstDate.getUTCDay()
   const trailingBlankCount = (7 - ((leadingBlankCount + days.length) % 7)) % 7
+  const activeIntakeKey = quickAddIntakeKey ? calendarQuickAddIntakeKey(quickAddState, quickAddIntakeKey) : ""
 
   function moveSelection(index: number, event: React.KeyboardEvent<HTMLButtonElement>) {
     const nextIndex = calendarNavigationIndex(index, event.key, days.length, 7, leadingBlankCount)
@@ -141,6 +156,55 @@ export function JobCalendar({ days, todayDateKey }: { days: CalendarDay[]; today
                 </Link>
               </li>)}
             </ul>}
+        {quickAddIntakeKey && <div className={styles.quickAdd}>
+          <div className={styles.quickAddHeading}>
+            <span className={styles.agendaKicker}>Add appointment</span>
+            <h4>Put a job on this day</h4>
+          </div>
+          <form key={activeIntakeKey} action={quickAddAction} aria-busy={quickAddPending}>
+            <input type="hidden" name="intakeKey" value={activeIntakeKey} />
+            <div className={styles.whenFields}>
+              <label>
+                <span>Date</span>
+                <input
+                  name="scheduledDate"
+                  type="date"
+                  value={selectedDay.dateKey}
+                  required
+                  onChange={(event) => {
+                    if (days.some((day) => day.dateKey === event.currentTarget.value)) {
+                      setSelectedDateKey(event.currentTarget.value)
+                    }
+                  }}
+                />
+              </label>
+              <label>
+                <span>Time <small>Central</small></span>
+                <input name="scheduledTime" type="time" defaultValue="08:00" required />
+              </label>
+            </div>
+            <label>
+              <span>Name or company</span>
+              <input name="firstName" type="text" autoComplete="name" maxLength={120} required />
+            </label>
+            <label>
+              <span>Phone</span>
+              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="(615) 555-0123" maxLength={40} required />
+            </label>
+            <label>
+              <span>What do they need?</span>
+              <textarea name="message" rows={3} maxLength={2000} placeholder="Repair, fabrication, location, timing..." required />
+            </label>
+            <SafeSubmitButton className={styles.quickAddButton} pendingLabel="Adding to calendar..." disabled={quickAddPending}>Add to calendar</SafeSubmitButton>
+          </form>
+          {quickAddState.status === "error" && <p className={styles.quickAddError} role="alert">{quickAddState.message}</p>}
+          {quickAddState.status === "partial" && <p className={styles.quickAddError} role="alert">
+            {quickAddState.message} <Link href={`/ops/leads/${quickAddState.leadId}`}>Open saved job</Link>
+          </p>}
+          {quickAddState.status === "saved" && <p className={styles.quickAddSuccess} role="status">
+            {quickAddState.customer} was added. <Link href={`/ops/leads/${quickAddState.leadId}`}>Open job</Link>
+          </p>}
+        </div>}
       </div>
     </div>
   </section>

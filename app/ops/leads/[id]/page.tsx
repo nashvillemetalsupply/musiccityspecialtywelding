@@ -882,6 +882,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <span>Job Status</span>
             <form action={scheduleLead} className="job-form job-schedule-form">
               <input type="hidden" name="leadId" value={lead.id} />
+              <input type="hidden" name="scheduleKey" value={randomUUID()} />
               <label htmlFor="lead-scheduled-at">Schedule date and time <small>Central time</small></label>
               <input
                 id="lead-scheduled-at"

@@ -10,6 +10,42 @@ html:has(.ms-home) {
   scroll-behavior: auto;
 }
 
+/* Keep the homepage type as direct as the shop voice. The former marker face
+ * read as cursive; Barlow Condensed keeps the hand-painted scale without the
+ * handwritten tone. This override is scoped so customer and Shop Brain pages
+ * retain their own type systems. */
+.ms-home {
+  --font-ms-marker: var(--font-ms-display);
+}
+
+.ms-home :where(
+  .sw-paint,
+  .sw-plank small,
+  .sw-plank strong,
+  .ms-hero-image::after,
+  .ms-work-shot figcaption,
+  .ms-get-it h2,
+  .ms-problem-lines,
+  .ms-process-call strong,
+  .ms-form-heading span,
+  .ms-footer-mark p,
+  .sw-proof-note
+) {
+  font-family: var(--font-ms-display), sans-serif;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.ms-home .ms-service-copy::before {
+  font-family: var(--font-ms-mono), monospace;
+  font-weight: 700;
+}
+
+.ms-home .ms-service-copy > strong {
+  font-family: var(--font-ms-sans), sans-serif;
+  font-weight: 700;
+}
+
 /* Keep every homepage anchor clear of the pinned shop navigation. */
 .ms-home :where(section[id]) {
   scroll-margin-top: 5rem;

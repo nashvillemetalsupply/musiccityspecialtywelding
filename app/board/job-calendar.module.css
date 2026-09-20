@@ -295,6 +295,112 @@
   justify-self: start;
 }
 
+.quickAdd {
+  display: grid;
+  gap: var(--s3);
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+
+.quickAddHeading {
+  display: grid;
+  gap: var(--s1);
+}
+
+.quickAddHeading h4 {
+  font-size: var(--t-data);
+}
+
+.quickAdd form,
+.quickAdd label {
+  display: grid;
+}
+
+.quickAdd form {
+  gap: var(--s3);
+}
+
+.quickAdd label {
+  min-width: 0;
+  gap: var(--s1);
+  color: var(--text-secondary);
+  font-size: var(--t-caption);
+  font-weight: var(--w-med);
+}
+
+.quickAdd label small {
+  color: var(--text-muted);
+  font-weight: var(--w-regular);
+}
+
+.quickAdd input,
+.quickAdd textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.quickAdd textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.quickAdd input:focus-visible,
+.quickAdd textarea:focus-visible,
+.quickAddButton:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.whenFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .85fr);
+  gap: var(--s2);
+}
+
+.quickAddButton {
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  background: var(--action);
+  color: var(--action-ink);
+  font-weight: var(--w-semi);
+}
+
+.quickAddButton:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.quickAddError,
+.quickAddSuccess {
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  font-size: var(--t-caption);
+}
+
+.quickAddError {
+  background: var(--status-danger-sur);
+  color: var(--status-danger-ink);
+}
+
+.quickAddSuccess {
+  background: var(--status-good-sur);
+  color: var(--status-good-ink);
+}
+
+.quickAddSuccess a,
+.quickAddError a {
+  color: inherit;
+  font-weight: var(--w-semi);
+}
+
 @media (min-width: 26.2501rem) {
   .dayButton,
   .blankDay {

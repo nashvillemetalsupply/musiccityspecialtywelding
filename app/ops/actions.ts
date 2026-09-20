@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { Resend } from "resend"
 import { getSql } from "@/lib/db"
+import { resolveCentralDateTime } from "@/lib/central-date-time.mjs"
 import { brandedEmail, escapeHtml } from "@/lib/email-templates"
 import { createLead, LEAD_STATUSES, recordLeadEvent, type LeadStatus } from "@/lib/leads"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
@@ -1528,40 +1529,92 @@ export async function setJobTravelerStage(formData: FormData) {
   revalidatePath(`/ops/leads/${leadId}`)
 }
 
-export async function scheduleLead(formData: FormData) {
+export async function scheduleLeadRecord(
+  formData: FormData,
+  options: { source?: string } = {},
+) {
   const operator = await requireOperator()
   const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const scheduledAt = String(formData.get("scheduledAt") ?? "").trim()
+  const scheduleKey = String(formData.get("scheduleKey") ?? "").trim()
+  if (!/^[a-zA-Z0-9_-]{12,80}$/.test(scheduleKey)) {
+    throw new Error("This schedule form expired. Reload the job and try again.")
+  }
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(scheduledAt)
   if (!match) throw new Error("Pick a valid Central date and time.")
 
   const [, year, month, day, hour, minute] = match
-  const check = new Date(`${year}-${month}-${day}T${hour}:${minute}:00Z`)
-  if (Number.isNaN(check.getTime())
-    || check.getUTCFullYear() !== Number(year)
-    || check.getUTCMonth() + 1 !== Number(month)
-    || check.getUTCDate() !== Number(day)
-    || check.getUTCHours() !== Number(hour)
-    || check.getUTCMinutes() !== Number(minute)) {
-    throw new Error("Pick a valid Central date and time.")
-  }
+  const scheduledInstant = resolveCentralDateTime(`${year}-${month}-${day}`, `${hour}:${minute}`)
+  if (!scheduledInstant) throw new Error("Pick an unambiguous Central date and time.")
 
   const sql = getSql()
+  const source = options.source ?? "job_profile_calendar"
+  const externalId = `lead-scheduled:${leadId}:${scheduleKey}`
   const rows = (await sql`
-    UPDATE leads
-    SET scheduled_at = ${scheduledAt}::timestamp AT TIME ZONE 'America/Chicago', updated_at = now()
-    WHERE id = ${leadId}::bigint AND completed_at IS NULL AND handed_off_at IS NULL
-    RETURNING scheduled_at`) as { scheduled_at: string }[]
-  if (!rows[0]) throw new Error("This job is closed and cannot be scheduled.")
-
-  await recordLeadEvent(leadId, "scheduled", actorId(operator), {
-    scheduledAt: rows[0].scheduled_at,
-    timeZone: "America/Chicago",
-    source: "job_profile_calendar",
-  })
+    WITH target AS MATERIALIZED (
+      SELECT id, person_id, is_test FROM leads
+      WHERE id = ${leadId}::bigint AND completed_at IS NULL AND handed_off_at IS NULL
+      FOR UPDATE
+    ), new_receipt AS (
+      INSERT INTO events (
+        occurred_at, kind, actor_type, actor_id, lead_id, person_id,
+        external_id, body, crew_body, detail
+      )
+      SELECT now(), 'lead.scheduled'::text, 'operator'::text, ${actorId(operator)}::text,
+        t.id, t.person_id, ${externalId}::text,
+        CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Appointment scheduled'::text,
+        NULL::text,
+        jsonb_build_object(
+          'scheduledAt', ${scheduledInstant}::text,
+          'timeZone', 'America/Chicago'::text,
+          'source', ${source}::text,
+          'legacyType', 'scheduled'::text,
+          'isTest', t.is_test
+        )
+      FROM target t
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING lead_id
+    ), lead_update AS (
+      UPDATE leads l
+      SET scheduled_at = ${scheduledInstant}::timestamptz, updated_at = now()
+      FROM new_receipt r WHERE l.id = r.lead_id
+      RETURNING l.scheduled_at
+    ), replayed AS (
+      SELECT (e.detail->>'scheduledAt')::timestamptz AS scheduled_at
+      FROM target t
+      JOIN events e ON e.lead_id = t.id
+      WHERE e.kind = 'lead.scheduled'
+        AND e.external_id = ${externalId}::text
+        AND e.actor_id = ${actorId(operator)}::text
+        AND e.detail->>'scheduledAt' = ${scheduledInstant}::text
+        AND NOT EXISTS (SELECT 1 FROM new_receipt)
+    )
+    SELECT scheduled_at FROM lead_update
+    UNION ALL
+    SELECT scheduled_at FROM replayed`) as { scheduled_at: string }[]
+  if (!rows[0]) {
+    const prior = (await sql`
+      SELECT detail->>'scheduledAt' AS scheduled_at, actor_id
+      FROM events
+      WHERE kind = 'lead.scheduled' AND external_id = ${externalId}::text
+      LIMIT 1`) as { scheduled_at: string | null; actor_id: string }[]
+    if (prior[0]?.scheduled_at === scheduledInstant && prior[0].actor_id === actorId(operator)) {
+      revalidatePath("/board")
+      revalidatePath("/ops")
+      revalidatePath(`/ops/leads/${leadId}`)
+      return { leadId, scheduledAt: prior[0].scheduled_at }
+    }
+    if (prior[0]) throw new Error("This schedule form changed after it was saved. Reload the job before scheduling again.")
+    throw new Error("This job is closed and cannot be scheduled.")
+  }
   revalidatePath("/board")
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
+  return { leadId, scheduledAt: rows[0].scheduled_at }
+}
+
+export async function scheduleLead(formData: FormData) {
+  await scheduleLeadRecord(formData)
 }
 
 export async function classifyLeadAttachment(formData: FormData) {

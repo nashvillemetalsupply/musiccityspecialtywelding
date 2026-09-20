@@ -39,8 +39,8 @@ const services = [
     line: "Repair the failure, not just the crack.",
     detail: "Frames, crossmembers, ramps, fenders, brackets, and attachment points evaluated around the load they still have to carry.",
     href: "/services/trailer-welding-repair",
-    image: "/images/owner-work/IMG_20250809_180018.webp",
-    alt: "Trailer frame and axle exposed during structural welding repair",
+    image: "/images/owner-work/trailer-repair.webp",
+    alt: "Trailer undergoing structural welding repair",
   },
   {
     title: "Equipment repair",
@@ -266,28 +266,28 @@ export default function Page() {
 
           <div className="ms-work-grid">
             <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.webp" alt="Finished custom mobile food-service trailer fabrication" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
-              <figcaption><strong>Custom BBQ trailer — full steel build-out.</strong></figcaption>
+              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.webp" alt="Mobile trailer undergoing repairs and custom modifications" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <figcaption><strong>Mobile trailer repairs and customizations.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/stainless-worktable.webp" alt="Finished custom stainless steel worktable and sink installed in a Middle Tennessee workspace" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Stainless worktable and sink, fitted to the room.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20250723_161108.webp" alt="Steel frame being fitted and fabricated in the Music City Specialty Welding shop" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
-              <figcaption><strong>Steel frame, jigged square in our shop.</strong></figcaption>
+              <Image src="/images/owner-work/steel-frame-onsite.webp" alt="Steel canopy frame being fitted and welded on-site" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <figcaption><strong>Steel frame, fitted and welded on-site.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_3994.webp" alt="Music City Specialty Welding crew completing a commercial on-site installation" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
-              <figcaption><strong>Commercial manifold, installed on-site.</strong></figcaption>
+              <Image src="/images/owner-work/staircase-onsite.webp" alt="On-site aluminum staircase TIG welding repair" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <figcaption><strong>On-site aluminum TIG welding repair.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame"><FrameGussets />
               <Image src="/images/owner-work/IMG_20250527_141244.webp" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel gate, hung level where it sits.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.webp" alt="Custom-cut steel letters being welded on the fabrication table" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
-              <figcaption><strong>Custom-cut letters, right off the table.</strong></figcaption>
+              <Image src="/images/owner-work/little-brick-church.webp" alt="Custom-made metal signage installed on a brick church" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <figcaption><strong>Custom-made signage, built to fit.</strong></figcaption>
             </figure>
           </div>
 

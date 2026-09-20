@@ -7,7 +7,7 @@ import {
   INBOUND_CALL_SILENCE_LIMIT_HOURS,
 } from "../lib/call-health.mjs"
 
-const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 function section(value, startMarker, endMarker) {
   const start = value.indexOf(startMarker)
