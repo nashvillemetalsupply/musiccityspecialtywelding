@@ -1,0 +1,16 @@
+{
+  "env": [],
+  "secrets": "inject",
+  "prerequisites": [
+    {
+      "id": "repository",
+      "class": "repo",
+      "unlocks": "Shepherd worktrees and task execution",
+      "provides": [],
+      "verify": [{ "kind": "path", "path": ".git" }],
+      "provisionedBy": "owner",
+      "onMissing": "stop",
+      "blocks": ["Shepherd task creation"]
+    }
+  ]
+}
