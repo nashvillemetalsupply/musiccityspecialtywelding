@@ -244,6 +244,7 @@ unless the step says production. Never on a worktree dev server.
   `npm run test:shop-brain && npm run typecheck && npm run lint`, deploy a
   preview, click through `/`, `/board`, a job page, a glass link.
   - Observation: lint is clean and Preview is READY; `/` returns 200, `/board` returns 200, and `/ops/leads/34` returns 200 for `[INTERNAL TEST] Gate Build`; the valid glass link remains blocked because Preview `GLASS_TOKEN_SECRET` is 11 bytes and does not reconstruct the active test token.
+  - Owner item: set Preview `GLASS_TOKEN_SECRET` to the production value (32+ bytes), redeploy the preview, then open the glass link and tick this item.
 - [x] **Fix the sharp pin.** Both `overrides` blocks pin `sharp` to 0.35.3,
   which is inside GHSA-rgj7-g3m4-5g8c (`<0.35.4`). Remove the pin or raise to
   ≥0.35.4. Remove the `nanoid`, `undici` and `postcss` overrides too; re-add
