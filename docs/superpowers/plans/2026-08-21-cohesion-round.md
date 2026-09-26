@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-09-26.** Folded into the single MCSW plan, `docs/superpowers/plans/2026-09-25-mcsw-full-optimization-SESSION-PLAN.md` (see its *Folded plans* section). Kept for history; do not execute from this file.
+
 # Cohesion Round Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

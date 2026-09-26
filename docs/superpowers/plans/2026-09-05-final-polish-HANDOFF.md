@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-09-26.** Folded into the single MCSW plan, `docs/superpowers/plans/2026-09-25-mcsw-full-optimization-SESSION-PLAN.md` (see its *Folded plans* section). Kept for history; do not execute from this file.
+
 # Final polish — handoff
 
 **Landed 2026-09-05. Deployed to production and measured. Nothing is in flight.**

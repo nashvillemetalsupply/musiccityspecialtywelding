@@ -1,4 +1,6 @@
-﻿> Extracted from SHOP-BRAIN-PLAN.md Part E. One row = one fresh chat. Sessions mark their own status row as they close.
+﻿> **SUPERSEDED 2026-09-26.** Folded into the single MCSW plan, `docs/superpowers/plans/2026-09-25-mcsw-full-optimization-SESSION-PLAN.md` (see its *Folded plans* section). Kept for history; do not execute from this file.
+
+> Extracted from SHOP-BRAIN-PLAN.md Part E. One row = one fresh chat. Sessions mark their own status row as they close.
 
 # PART E â€” SESSION PLAN (/phase-plan output)
 
@@ -14,18 +16,18 @@
 
 | ID | Mission | Model | Effort | Size | Depends | Status |
 |---|---|---|---|---|---|---|
-| S1 | Phase 0: operators, roles, Punch Rack login, /ops/shop | **top-tier** (auth/schema) | high | M | â€” | pending |
-| S2 | Phase 1: events+people substrate, backfills, dual-write | **top-tier** (data model) | high | M | S1 | pending |
-| S3 | Phase 2a+2b: Twilio voice â€” forward, whisper, record, missed-call flow, Deepgram | **top-tier** (telephony/money path) | high | M | S2 | pending |
-| S4 | Phase 2c: the Spike SMS UI, MMSâ†’Blob, auto-text-back, SMS-code sign-in | mid (Sonnet-class; UI from spec) | high | M | S3 + A2P approved | pending |
-| S5 | Phase 3: gmail ingestion + QB PAID moment + envelope | mid | high | M | S2 (not S3/S4 â€” gap-filler while A2P pends) | pending |
-| S6 | Phase 4a: extraction pipeline (claims, commitments, churn, quote capture) | **top-tier**, **xhigh** (prompt quality is the product) | xhigh | L | S3 or S5 (needs a text feed) | pending |
-| S7 | Phase 4b: Promise Rack UI + Regulars' Rail + account page | mid (props from spec) | high | M | S6 | pending |
-| S8 | Phase 5: the Handset â€” ask tool-loop + printed-slip UI + hold-to-talk | **top-tier**, xhigh | xhigh | L | S6 | pending |
-| S9 | Phase 6: notify gate + 3-budget, the Wire, Radio brief (textâ†’TTS) | mid | high | M | S6 (brief needs commitments) | pending |
-| S10 | Phase 7: GLASS clipboard page + corrections + review card | **top-tier** (customer-facing design + token security) | xhigh | L | S4 (SMS delivery), S6 (promises) | pending |
-| S11 | Phase 8 + closeout: DONE-stamp voice flow, SPEAK readback, health checks, CLAUDE.md invariants, memory | mid | medium | S | S8, S9 | pending |
-| S12 | Exit verification: run PART D end-to-end, real call + real QB email + crew-role sweep, tick checklist | mid | medium | S | all | pending |
+| S1 | Phase 0: operators, roles, Punch Rack login, /ops/shop | **top-tier** (auth/schema) | high | M | â€” | done in code (census 2026-09-26) |
+| S2 | Phase 1: events+people substrate, backfills, dual-write | **top-tier** (data model) | high | M | S1 | done in code (census 2026-09-26) |
+| S3 | Phase 2a+2b: Twilio voice â€” forward, whisper, record, missed-call flow, Deepgram | **top-tier** (telephony/money path) | high | M | S2 | done in code (census 2026-09-26) |
+| S4 | Phase 2c: the Spike SMS UI, MMSâ†’Blob, auto-text-back, SMS-code sign-in | mid (Sonnet-class; UI from spec) | high | M | S3 + A2P approved | done in code (census 2026-09-26) |
+| S5 | Phase 3: gmail ingestion + QB PAID moment + envelope | mid | high | M | S2 (not S3/S4 â€” gap-filler while A2P pends) | done in code (census 2026-09-26) |
+| S6 | Phase 4a: extraction pipeline (claims, commitments, churn, quote capture) | **top-tier**, **xhigh** (prompt quality is the product) | xhigh | L | S3 or S5 (needs a text feed) | done in code (census 2026-09-26) |
+| S7 | Phase 4b: Promise Rack UI + Regulars' Rail + account page | mid (props from spec) | high | M | S6 | done in code (census 2026-09-26) |
+| S8 | Phase 5: the Handset â€” ask tool-loop + printed-slip UI + hold-to-talk | **top-tier**, xhigh | xhigh | L | S6 | done in code (census 2026-09-26) |
+| S9 | Phase 6: notify gate + 3-budget, the Wire, Radio brief (textâ†’TTS) | mid | high | M | S6 (brief needs commitments) | done in code (census 2026-09-26) |
+| S10 | Phase 7: GLASS clipboard page + corrections + review card | **top-tier** (customer-facing design + token security) | xhigh | L | S4 (SMS delivery), S6 (promises) | done in code (census 2026-09-26) |
+| S11 | Phase 8 + closeout: DONE-stamp voice flow, SPEAK readback, health checks, CLAUDE.md invariants, memory | mid | medium | S | S8, S9 | done in code (census 2026-09-26) |
+| S12 | Exit verification: run PART D end-to-end, real call + real QB email + crew-role sweep, tick checklist | mid | medium | S | all | done in code (census 2026-09-26) |
 
 **Recommended order:** S1 â†’ S2 â†’ S3 â†’ (S5 fills the A2P wait) â†’ S4 â†’ S6 â†’ S7 â†’ S8 â†’ S9 â†’ S10 â†’ S11 â†’ S12.
 **Top-tier spend concentrated in:** S1-S3 (auth/schema/telephony foundations), S6 (extraction prompts), S8 (handset), S10 (GLASS) â€” everything else executes from spec on mid-tier. Inside every session: cheap subagents for code-location, mechanical edits, running migrations/tests, closing notes; main model keeps judgment work.

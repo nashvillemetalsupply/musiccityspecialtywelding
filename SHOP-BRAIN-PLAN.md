@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-09-26.** Folded into the single MCSW plan, `docs/superpowers/plans/2026-09-25-mcsw-full-optimization-SESSION-PLAN.md` (see its *Folded plans* section). Kept for history; do not execute from this file.
+
 # MCSW "SHOP BRAIN" — Future CRM Plan (v-next of /ops)
 
 ## Context

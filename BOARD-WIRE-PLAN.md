@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-09-26.** Folded into the single MCSW plan, `docs/superpowers/plans/2026-09-25-mcsw-full-optimization-SESSION-PLAN.md` (see its *Folded plans* section). Kept for history; do not execute from this file.
+
 # /board — finish the wiring
 
 The redesign shipped the frame. The mockup (`3db03ad`) had an expanded job row

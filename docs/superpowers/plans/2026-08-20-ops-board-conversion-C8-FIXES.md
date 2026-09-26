@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-09-26.** Folded into the single MCSW plan, `docs/superpowers/plans/2026-09-25-mcsw-full-optimization-SESSION-PLAN.md` (see its *Folded plans* section). Kept for history; do not execute from this file.
+
 # C8 exit verification — findings and closeout
 
 Session C8 of `2026-08-20-ops-board-conversion-SESSION-PLAN.md`, executing Task 8 of
