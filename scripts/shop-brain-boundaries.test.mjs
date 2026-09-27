@@ -295,10 +295,19 @@ test("deterministic private Blob writes can resume after response loss", () => {
   const transcribe = source("app/api/ops/transcribe/route.ts")
   const brief = source("app/api/ops/brief/route.ts")
   const actions = source("app/ops/actions.ts")
+  const closeoutUpload = source("app/api/ops/closeout-upload/route.ts")
+  const closeoutPhotos = source("lib/closeout-photo-uploads.ts")
+  const closeoutPhotoInput = source("app/ops/leads/[id]/closeout-photo-input.tsx")
   const attachments = source("lib/attachment-retry.ts")
   assert.match(transcribe, /voice-notes\/\$\{operator\.id\}\/\$\{id\}[\s\S]{0,180}allowOverwrite: true/)
   assert.equal((brief.match(/allowOverwrite: true/g) ?? []).length, 2)
-  assert.ok((actions.match(/allowOverwrite: true/g) ?? []).length >= 4)
+  assert.ok((actions.match(/allowOverwrite: true/g) ?? []).length >= 2)
+  assert.ok(closeoutUpload.indexOf("await createCloseoutPhotoUpload") < closeoutUpload.indexOf("return {"))
+  assert.match(closeoutUpload, /onUploadCompleted/)
+  assert.match(closeoutPhotos, /INSERT INTO closeout_photo_uploads/)
+  assert.match(closeoutPhotos, /status = 'uploaded'/)
+  assert.match(closeoutPhotoInput, /await upload\(pathname, file/)
+  assert.match(closeoutPhotoInput, /access: "private"/)
   assert.match(attachments, /allowOverwrite: true/)
 })
 
@@ -980,11 +989,15 @@ test("voice capture persists audio locally before upload and never calls a missi
 
 test("Swipe to Finish keeps the closeout cue and one-tap photo", () => {
   const done = source("app/ops/leads/[id]/done-stamp.tsx")
+  const photoInput = source("app/ops/leads/[id]/closeout-photo-input.tsx")
   assert.match(done, /SpeechSynthesisUtterance\("Say what you did\."\)/)
   assert.match(done, /navigator\.vibrate/)
   assert.match(done, /swipeFinishDecision/)
   assert.match(done, /Press again to finish/)
-  assert.match(done, /files\?\.length[\s\S]{0,120}requestSubmit\(\)/)
+  assert.match(done, /<CloseoutPhotoInput[\s\S]{0,120}mode="addendum"/)
+  assert.match(done, /onUploaded=\{\(\) => window\.setTimeout\(\(\) => addendumRef\.current\?\.requestSubmit\(\), 0\)\}/)
+  assert.match(photoInput, /clientPayload: JSON\.stringify/)
+  assert.match(photoInput, /MAX_PHOTO_BYTES = 12 \* 1024 \* 1024/)
 })
 
 test("the paperwork envelope addresses the exact active contact with email", () => {

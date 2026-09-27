@@ -31,7 +31,6 @@ export const runtime = "nodejs"; // important for email libs
 const MAX_PHOTO_COUNT = 5;
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
 const MAX_TOTAL_SIZE = 4 * 1024 * 1024;
-const MAX_REQUEST_SIZE = 6 * 1024 * 1024;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 6;
 
@@ -182,14 +181,6 @@ export async function POST(req: Request) {
       req.headers.get("x-real-ip") ||
       "unknown";
     const userAgent = sanitize(req.headers.get("user-agent"), 400);
-
-    const contentLength = Number(req.headers.get("content-length") || "0");
-    if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_SIZE) {
-      return Response.json(
-        { ok: false, error: "This request is too large. Please attach fewer or smaller photos." },
-        { status: 413 }
-      );
-    }
 
     if (isRateLimitedLocal(ip)) {
       return Response.json(

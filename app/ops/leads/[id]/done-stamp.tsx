@@ -5,6 +5,7 @@ import { deriveCloseoutDraft, type CloseoutReview } from "@/lib/closeout-domain.
 import { swipeFinishDecision } from "@/lib/shop-brain-invariants.mjs"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import { VoiceCaptureButton } from "../../voice-capture-button"
+import { CloseoutPhotoInput } from "./closeout-photo-input"
 import { addLeadCompletionNote, markLeadCompleteState, undoLeadComplete, type OpsActionState } from "../../actions"
 
 type SwipeStart = { x: number; y: number; width: number } | null
@@ -27,6 +28,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   const [noteSource, setNoteSource] = useState<"typed" | "voice">("typed")
   const [voiceIntentId, setVoiceIntentId] = useState("")
   const [voiceError, setVoiceError] = useState("")
+  const [photoUploading, setPhotoUploading] = useState(false)
   const [review, setReview] = useState<CloseoutReview | null>(null)
   const [finishState, finishAction] = useActionState(markLeadCompleteState, INITIAL_FINISH_STATE)
 
@@ -85,7 +87,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   }, [finishState])
 
   function finish() {
-    if (completed || submitting || submittedRef.current) return
+    if (completed || submitting || photoUploading || submittedRef.current) return
     if (reviewedCloseout && (!review || review.completion !== "complete" || review.remainingWork.trim())) return
     submittedRef.current = true
     setSubmitting(true)
@@ -104,13 +106,13 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   }
 
   function armOrFinish() {
-    if (submitting) return
+    if (submitting || photoUploading) return
     if (keyboardArmed) finish()
     else setKeyboardArmed(true)
   }
 
   function armButtonOrFinish() {
-    if (submitting) return
+    if (submitting || photoUploading) return
     if (buttonArmed) finish()
     else setButtonArmed(true)
   }
@@ -122,7 +124,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   return <section className={`ops-done-bench${completed ? " is-done" : ""}`} aria-labelledby="finish-job-title">
     <div><strong id="finish-job-title">{completed ? "Work finished" : "Finish work"}</strong></div>
 
-    {!completed && <form ref={finishRef} action={finishAction} className={reviewedCloseout ? "ops-closeout-form" : undefined} aria-busy={submitting}>
+    {!completed && <form ref={finishRef} action={finishAction} className={reviewedCloseout ? "ops-closeout-form" : undefined} aria-busy={submitting || photoUploading}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="reviewedCloseout" value={reviewedCloseout ? "1" : "0"} />
       {reviewedCloseout && <input type="hidden" name="closeoutKey" value={closeoutKey} />}
@@ -178,6 +180,12 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
 
       </>}
 
+      {(!reviewedCloseout || review?.completion === "complete") && <CloseoutPhotoInput
+        leadId={leadId}
+        mode="completion"
+        onBusyChange={setPhotoUploading}
+      />}
+
       {reviewedCloseout && review?.completion === "partial" && <div className="ops-closeout-finish is-partial">
         <SafeSubmitButton pendingLabel="Filing update…">File update · keep job open</SafeSubmitButton>
         <small>Records the reviewed outcome without finishing the job or closing promises.</small>
@@ -187,7 +195,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         <button
           type="button"
           className={`ops-swipe-finish${dragging ? " is-dragging" : ""}${submitting ? " is-submitting" : ""}`}
-          aria-disabled={submitting}
+          aria-disabled={submitting || photoUploading}
           aria-pressed={keyboardArmed}
           aria-describedby="swipe-finish-help"
           aria-label={keyboardArmed ? "Press again to finish work" : "Swipe to finish work. Activate twice without swiping."}
@@ -197,7 +205,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           }}
           onBlur={() => setKeyboardArmed(false)}
           onPointerDown={(event) => {
-            if (submitting) return
+            if (submitting || photoUploading) return
             const width = Math.max(1, event.currentTarget.getBoundingClientRect().width - 64)
             swipeStartRef.current = { x: event.clientX, y: event.clientY, width }
             setDragging(true)
@@ -234,7 +242,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           className="ops-finish-button"
           aria-pressed={buttonArmed}
           aria-describedby="finish-button-help"
-          disabled={submitting}
+          disabled={submitting || photoUploading}
           onClick={armButtonOrFinish}
           onBlur={() => setButtonArmed(false)}
           onKeyDown={(event) => {
@@ -271,8 +279,13 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         }}
       />
       {voiceError && <small className="ops-done-voice-error" aria-live="polite">{voiceError}</small>}
-      <label className="ops-done-photo" htmlFor="done-photo"><span>Add a finished-work photo</span><input id="done-photo" type="file" name="photo" accept="image/*" capture="environment" onChange={(event) => { if (event.currentTarget.files?.length) window.setTimeout(() => addendumRef.current?.requestSubmit(), 100) }} /></label>
-      <SafeSubmitButton className="ops-ghost" pendingLabel="Filing…">File typed note</SafeSubmitButton>
+      <CloseoutPhotoInput
+        leadId={leadId}
+        mode="addendum"
+        onBusyChange={setPhotoUploading}
+        onUploaded={() => window.setTimeout(() => addendumRef.current?.requestSubmit(), 0)}
+      />
+      <SafeSubmitButton className="ops-ghost" disabled={photoUploading} pendingLabel="Filing…">File closeout note</SafeSubmitButton>
     </form>}
 
     {completed && (undoUntil && !undoExpired

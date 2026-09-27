@@ -26,6 +26,7 @@ import { replaceJobLineItems } from "@/lib/job-line-items"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { isSafeRasterImage } from "@/lib/media-safety"
 import { reconcileRoutedLeadProjections } from "@/lib/routing"
+import { attachCloseoutPhotoToLead, getCloseoutPhotoUpload, isCloseoutUploadId } from "@/lib/closeout-photo-uploads"
 
 async function sendCustomerEmail(options: {
   leadId: number
@@ -1152,6 +1153,16 @@ export async function markLeadComplete(formData: FormData) {
   }) : null
   const note = closeout?.sourceWords ?? ""
   const noteSource = String(formData.get("noteSource") ?? "typed") === "voice" ? "voice" : "typed"
+  const photoUploadId = String(formData.get("photoUploadId") ?? "").trim()
+  if (photoUploadId && !isCloseoutUploadId(photoUploadId)) throw new Error("The closeout photo receipt is invalid.")
+  if (closeout?.completion === "partial" && photoUploadId) throw new Error("File closeout photos after the job is finished.")
+  const closeoutPhoto = photoUploadId ? await getCloseoutPhotoUpload({
+    id: photoUploadId,
+    leadId,
+    operatorId: Number(operator.id),
+    mode: "completion",
+    isTest: before[0].is_test,
+  }) : null
   const voiceIntentId = String(formData.get("voiceIntentId") ?? "").trim()
   const hasVoiceIntent = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(voiceIntentId)
   if (voiceIntentId && !hasVoiceIntent) throw new Error("That saved voice note is not valid.")
@@ -1217,11 +1228,7 @@ export async function markLeadComplete(formData: FormData) {
     revalidatePath(`/ops/leads/${leadId}`)
     return
   }
-  const photo = formData.get("photo")
   const voiceNote = formData.get("voiceNote")
-  if (photo instanceof File && photo.size > 0 && (photo.size > 12 * 1024 * 1024 || !photo.type.startsWith("image/"))) {
-    throw new Error("Closeout photos must be an image under 12 MB.")
-  }
   if (voiceNote instanceof File && voiceNote.size > 0 && (voiceNote.size > 8 * 1024 * 1024 || !voiceNote.type.startsWith("audio/"))) {
     throw new Error("Closeout voice notes must be audio under 8 MB.")
   }
@@ -1342,37 +1349,21 @@ export async function markLeadComplete(formData: FormData) {
     }
   }
 
-  if (photo instanceof File && photo.size > 0) {
+  if (closeoutPhoto) {
     try {
-      const safeName = photo.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-120) || "closeout.jpg"
-      const blob = await put(`leads/${before[0].public_id}/closeout/${completionEventId}-${safeName}`, photo, {
-        access: "private",
-        contentType: photo.type,
-        allowOverwrite: true,
+      const added = await attachCloseoutPhotoToLead({
+        upload: closeoutPhoto,
+        eventId: completionEventId,
+        leadId,
+        completionEventId,
       })
-      const photoRecord = {
-        pathname: blob.pathname,
-        contentType: photo.type,
-        size: photo.size,
-        name: photo.name,
-        // Raw crew closeout speech is never customer copy. Extraction creates
-        // a separate DLP-checked caption revision after the durable DONE row.
-        shared: false,
-        caption: "",
-        sensitivity: "photo",
-        sourceCompletionEventId: completionEventId,
-      }
-      await sql`
-        UPDATE leads SET
-          photos = COALESCE(photos, '[]'::jsonb) || ${JSON.stringify([photoRecord])}::jsonb,
-          photo_count = photo_count + 1,
-          updated_at = now()
-        WHERE id = ${leadId}::bigint`
-      await recordLeadEvent(leadId, "photo_added", actorId(operator), {
-        pathname: blob.pathname,
+      if (added) await recordLeadEvent(leadId, "photo_added", actorId(operator), {
+        pathname: closeoutPhoto.pathname,
         closeout: true,
-        shared: photoRecord.shared,
+        shared: false,
+        isTest: closeoutPhoto.is_test,
         sourceCompletionEventId: completionEventId,
+        sourceCloseoutUploadId: closeoutPhoto.id,
       })
     } catch (error) {
       console.error("Closeout photo failed after durable DONE:", error)
@@ -1406,13 +1397,13 @@ export async function addLeadCompletionNote(formData: FormData) {
   const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const note = String(formData.get("note") ?? "").trim().slice(0, 2000)
   const noteSource = String(formData.get("noteSource") ?? "typed") === "voice" ? "voice" : "typed"
-  const photo = formData.get("photo")
+  const photoUploadId = String(formData.get("photoUploadId") ?? "").trim()
+  if (photoUploadId && !isCloseoutUploadId(photoUploadId)) throw new Error("The closeout photo receipt is invalid.")
   const voiceNote = formData.get("voiceNote")
   const voiceIntentId = String(formData.get("voiceIntentId") ?? "").trim()
   const hasVoiceIntent = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(voiceIntentId)
   if (voiceIntentId && !hasVoiceIntent) throw new Error("That saved voice note is not valid.")
-  if (!note && !(photo instanceof File && photo.size > 0) && !(voiceNote instanceof File && voiceNote.size > 0) && !hasVoiceIntent) return
-  if (photo instanceof File && photo.size > 0 && (photo.size > 12 * 1024 * 1024 || !photo.type.startsWith("image/"))) throw new Error("Closeout photos must be an image under 12 MB.")
+  if (!note && !photoUploadId && !(voiceNote instanceof File && voiceNote.size > 0) && !hasVoiceIntent) return
   if (voiceNote instanceof File && voiceNote.size > 0 && (voiceNote.size > 8 * 1024 * 1024 || !voiceNote.type.startsWith("audio/"))) throw new Error("Closeout voice notes must be audio under 8 MB.")
   const sql = getSql()
   const rows = (await sql`
@@ -1428,13 +1419,20 @@ export async function addLeadCompletionNote(formData: FormData) {
     }>
   const lead = rows[0]
   if (!lead) throw new Error("Stamp DONE before adding the closeout note.")
+  const closeoutPhoto = photoUploadId ? await getCloseoutPhotoUpload({
+    id: photoUploadId,
+    leadId,
+    operatorId: Number(operator.id),
+    mode: "addendum",
+    isTest: lead.is_test,
+  }) : null
   const recoveredVoice = hasVoiceIntent ? (await sql`
     SELECT blob_path, content_type FROM voice_transcription_intents
     WHERE id = ${voiceIntentId}::text AND operator_id = ${operator.id}::bigint
       AND lead_id = ${leadId}::bigint AND recovery_key = ${`done:${leadId}`}::text
       AND status = 'completed' AND blob_path <> '' LIMIT 1`) as Array<{ blob_path: string; content_type: string }> : []
   if (hasVoiceIntent && !recoveredVoice[0]) throw new Error("That saved voice note does not belong to this closeout.")
-  const signature = createHash("sha256").update(JSON.stringify({ note, noteSource, voiceIntentId, voiceSize: voiceNote instanceof File ? voiceNote.size : 0, photoName: photo instanceof File ? photo.name : "", photoSize: photo instanceof File ? photo.size : 0 })).digest("hex")
+  const signature = createHash("sha256").update(JSON.stringify({ note, noteSource, voiceIntentId, voiceSize: voiceNote instanceof File ? voiceNote.size : 0, photoUploadId })).digest("hex")
   const externalId = `completion-addendum:${lead.completion_event_id}:${signature}`
   const noteBody = `${lead.is_test ? "[INTERNAL TEST] " : ""}${note || "Closeout media filed"}`
   let noteEventId = await recordEvent({ kind: noteSource === "voice" ? "note.voice" : "note.text", actorType: "operator", actorId: operator.id, leadId, personId: lead.person_id, externalId, body: noteBody, crewBody: redactCrewText(noteBody), detail: { noteSource, completionEventId: lead.completion_event_id, operatorName: operator.name, voiceIntentId: hasVoiceIntent ? voiceIntentId : null, isTest: lead.is_test } })
@@ -1453,16 +1451,22 @@ export async function addLeadCompletionNote(formData: FormData) {
   } else if (recoveredVoice[0]) {
     await sql`UPDATE events SET detail = COALESCE(detail, '{}'::jsonb) || ${JSON.stringify({ voicePath: recoveredVoice[0].blob_path, voiceContentType: recoveredVoice[0].content_type, recoveredVoiceIntentId: voiceIntentId })}::jsonb WHERE id = ${noteEventId}::bigint`
   }
-  if (photo instanceof File && photo.size > 0) {
-    const exists = (await sql`
-      SELECT EXISTS(SELECT 1 FROM leads l, jsonb_array_elements(COALESCE(l.photos, '[]'::jsonb)) p
-        WHERE l.id = ${leadId}::bigint AND p->>'sourceAddendumEventId' = ${String(noteEventId)}::text) AS found`) as { found: boolean }[]
-    if (!exists[0]?.found) {
-      const safeName = photo.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-120) || "closeout.jpg"
-      const blob = await put(`leads/${lead.public_id}/closeout/${noteEventId}-${safeName}`, photo, { access: "private", contentType: photo.type, allowOverwrite: true })
-      const photoRecord = { pathname: blob.pathname, contentType: photo.type, size: photo.size, name: photo.name, sensitivity: "photo", shared: false, caption: "", sourceCompletionEventId: lead.completion_event_id, sourceAddendumEventId: noteEventId }
-      await sql`UPDATE leads SET photos = COALESCE(photos, '[]'::jsonb) || ${JSON.stringify([photoRecord])}::jsonb, photo_count = photo_count + 1, updated_at = now() WHERE id = ${leadId}::bigint`
-    }
+  if (closeoutPhoto) {
+    const added = await attachCloseoutPhotoToLead({
+      upload: closeoutPhoto,
+      eventId: noteEventId,
+      leadId,
+      completionEventId: Number(lead.completion_event_id),
+    })
+    if (added) await recordLeadEvent(leadId, "photo_added", actorId(operator), {
+      pathname: closeoutPhoto.pathname,
+      closeout: true,
+      shared: false,
+      isTest: closeoutPhoto.is_test,
+      sourceCompletionEventId: Number(lead.completion_event_id),
+      sourceAddendumEventId: noteEventId,
+      sourceCloseoutUploadId: closeoutPhoto.id,
+    })
   }
   after(() => processEvent(noteEventId!).catch((error) => console.error("DONE addendum extraction failed:", error)))
   revalidatePath("/ops")
