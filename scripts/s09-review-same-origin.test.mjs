@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 
-const route = readFileSync(new URL("../app/j/[token]/review/route.ts", import.meta.url), "utf8")
+const route = readFileSync(new URL("../app/j/[token]/review/route.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 function loadSameOrigin() {
   const start = route.indexOf("function sameOrigin(req: Request) {")
