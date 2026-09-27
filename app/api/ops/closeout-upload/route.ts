@@ -37,10 +37,6 @@ function parseClientPayload(value: string | null | undefined): ClientPayload {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const operator = await validateSessionToken(cookieStore.get(OPS_SESSION_COOKIE)?.value)
-  if (!operator) return Response.json({ error: "Not signed in." }, { status: 401, headers: { "Cache-Control": "no-store" } })
-
   const contentLength = Number(request.headers.get("content-length") || "0")
   if (Number.isFinite(contentLength) && contentLength > 16 * 1024) {
     return Response.json({ error: "The upload request is too large." }, { status: 413, headers: { "Cache-Control": "no-store" } })
@@ -52,6 +48,12 @@ export async function POST(request: Request) {
       request,
       body,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
+        // Vercel calls this handler again for its signed completion callback,
+        // which has no operator cookie. Authenticate only token issuance here;
+        // handleUpload validates the provider callback signature itself.
+        const cookieStore = await cookies()
+        const operator = await validateSessionToken(cookieStore.get(OPS_SESSION_COOKIE)?.value)
+        if (!operator) throw new Error("Not signed in.")
         const payload = parseClientPayload(clientPayload)
         await createCloseoutPhotoUpload({
           operator,

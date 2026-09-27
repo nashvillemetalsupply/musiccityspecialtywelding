@@ -328,10 +328,11 @@ this path fires.
 - [ ] **Quiet-hours interrupts are never delivered.** `lib/notify.ts:194-198`
   defers and nothing resumes them. Deliver at the next window open from the
   sweep.
-- [ ] **Closeout photos exceed body limits.** `app/ops/actions.ts:1222,1415`
+- [x] **Closeout photos exceed body limits.** `app/ops/actions.ts:1222,1415`
   accept up to 12 MB through a Server Action against Next's 1 MB default and
   Vercel's 4.5 MB cap. Route through the existing Blob client-upload path and
   delete the dead 6 MB `MAX_REQUEST_SIZE` on quote.
+  Observation: Completion and addendum forms send private 12 MB Blob uploads with persisted, size-verified receipts; quote no longer applies the dead request-size gate.
 - [ ] **Error reporting.** `app/board/error.tsx` reports nothing; logging is
   console only. Minimum: `error.tsx` POSTs to `/api/ops/client-error`, which
   writes a `trouble` row (is_test aware) that health surfaces. No new vendor.
