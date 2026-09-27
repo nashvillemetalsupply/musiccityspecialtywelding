@@ -450,10 +450,12 @@ this path fires.
   `lib/public-quote.mjs:147-159` on the first bytes. Confirm the Blob store is
   private-only regardless of the `access` value the client sends
   (`glass-upload.tsx`). Observation: finalization compares the stored MIME to the first 12 private Blob bytes and server token policy fixes access to private; signature tests pass.
-- [ ] **Photos serve EXIF and GPS.** Strip at serve time in
+- [x] **Photos serve EXIF and GPS.** Strip at serve time in
   `app/api/glass/photo` and the attachment route with `sharp` (already a
-  dependency): `.rotate().withMetadata({})`. Strip on upload too where the
-  server sees the bytes.
+  dependency): `.rotate().toBuffer()` (Sharp's `withMetadata()` retains EXIF/GPS).
+  Strip on upload too where the server sees the bytes. Observation: Both glass
+  media routes normalize raster bytes before serving; a GPS-bearing EXIF fixture
+  confirms the served result has no EXIF.
 - [ ] **Glass tokens never expire for unconverted jobs.** `lib/glass.ts`
   `createGlassLink` writes `expires_at NULL`. Set 180 days idle, and expire on
   `lost`. Extend on any customer activity.

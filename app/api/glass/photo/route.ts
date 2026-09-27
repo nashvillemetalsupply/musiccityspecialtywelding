@@ -1,5 +1,6 @@
 import { get } from "@vercel/blob"
 import { getGlassJob } from "@/lib/glass"
+import { stripImageMetadata } from "@/lib/glass-media.mjs"
 import { isSafeRasterImage } from "@/lib/media-safety"
 
 export const runtime = "nodejs"
@@ -14,5 +15,11 @@ export async function GET(req: Request) {
   if (!result?.stream || result.statusCode !== 200) return new Response("Not found.", { status: 404 })
   const contentType = result.blob.contentType || photo.contentType
   if (!isSafeRasterImage(contentType)) return new Response("Not found.", { status: 404 })
-  return new Response(result.stream, { headers: { "Content-Type": contentType, "Content-Disposition": "inline", "Cache-Control": "private, max-age=900", "X-Robots-Tag": "noindex", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox; default-src 'none'" } })
+  try {
+    const bytes = Buffer.from(await new Response(result.stream).arrayBuffer())
+    const clean = await stripImageMetadata(bytes, contentType)
+    return new Response(clean, { headers: { "Content-Type": contentType, "Content-Disposition": "inline", "Cache-Control": "private, max-age=900", "X-Robots-Tag": "noindex", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox; default-src 'none'" } })
+  } catch {
+    return new Response("This photo could not be processed safely.", { status: 422 })
+  }
 }

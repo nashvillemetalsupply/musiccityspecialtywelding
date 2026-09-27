@@ -1,5 +1,6 @@
 import { get } from "@vercel/blob"
 import { getStoredGlassUpload } from "@/lib/glass-uploads"
+import { stripImageMetadata } from "@/lib/glass-media.mjs"
 import { isSafeRasterImage } from "@/lib/media-safety"
 
 export const runtime = "nodejs"
@@ -16,7 +17,16 @@ export async function GET(request: Request) {
   const contentType = result.blob.contentType || upload.content_type || "application/octet-stream"
   const inline = isSafeRasterImage(contentType)
   const filename = upload.filename.replace(/["\r\n]/g, "_")
-  return new Response(result.stream, {
+  let body: ReadableStream<Uint8Array> | Uint8Array = result.stream
+  if (inline) {
+    try {
+      const bytes = Buffer.from(await new Response(result.stream).arrayBuffer())
+      body = new Uint8Array(await stripImageMetadata(bytes, contentType))
+    } catch {
+      return new Response("This photo could not be processed safely.", { status: 422 })
+    }
+  }
+  return new Response(body, {
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${filename}"`,
