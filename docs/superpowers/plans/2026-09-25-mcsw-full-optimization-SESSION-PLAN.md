@@ -45,13 +45,13 @@ Plan: `2026-09-25-mcsw-full-optimization.md` (same folder). Generated 2026-09-25
 | ID | Mission (plan item) | Session model | Effort | Size | Depends on | Status |
 |----|---------------------|---------------|--------|------|------------|--------|
 | S00 | P0: next 16.3.6 + sharp unpin + real lockfile + Node pin | Opus 5.5 | high | M | — | done (landed 792836e, factory-mcsw-s00-r5) |
-| S01 | P1a: owner-cell SMS park/retry/abort, delivery history, preview `is_test` gate, `sms_only` email leg, quiet-hours delivery | Opus 5.5 | high | M | S00 | open |
+| S01 | P1a: owner-cell SMS park/retry/abort, delivery history, preview `is_test` gate, `sms_only` email leg, quiet-hours delivery | Opus 5.5 | high | M | S00 | done (landed bc525c0, factory-mcsw-s01-r2) |
 | S02 | P1b: brief DST + dedupe + TTS reuse, Gmail lease/maxDuration/cap, DeepSeek zod, double extraction, `automation_runs` truth, health `recentErrors` + red-alert text | Opus 5.5 | high | M | S00 | open |
-| S03 | P1c: closeout photos via Blob client upload, dead 6 MB check, `error.tsx` trouble row | Opus 5.5 | medium | S | S00 | open |
+| S03 | P1c: closeout photos via Blob client upload, dead 6 MB check, `error.tsx` trouble row | Opus 5.5 | medium | S | S00 | done (landed c6719e7, factory-mcsw-s03-r2) |
 | S04 | P2a: `events`/`lead_events` triggers, migrate advisory lock + `schema_migrations`, weekly `pg_dump` workflow, export excludes test rows | Opus 5.5 | high | M | S00 | open |
 | S05 | P2b: pulse endpoint + board/ops cadence, job page `cache()`, `getAccount` write-on-read, health scan bounds | Opus 5.5 | high | M | S04 | open |
 | S06 | P2c: indexes (EXPLAIN-verified), rate limiter off hot path + login strict limiter, single-statement CTE rewrites, month boundary | Opus 5.5 | medium | M | S05 | open |
-| S07 | P4a: `ci.yml` + Vercel check, test discovery, two stale tests, behavioral tests for digest/export/ad-spend/document/templates/rate-limit, keepalive | Opus 5.5 | medium | M | S00 | open |
+| S07 | P4a: `ci.yml` + Vercel check, test discovery, two stale tests, behavioral tests for digest/export/ad-spend/document/templates/rate-limit, keepalive | Opus 5.5 | medium | M | S00 | done (landed 57649de, factory-mcsw-s07-r2; Vercel required-check registration still open) |
 | S08 | P4b: dead deps + `components/ui` + `styles/globals.css` + repo hygiene moves + README + tsconfig/prebuild + patch bumps | Opus 5.5 | low | M | S07 | open |
 | S09 | P3a: owner gates ×2, claims in-place decision, NaN validation, raw errors, glass magic bytes + private store, `/review` sameOrigin, session hygiene, build-fact numbers | Opus 5.5 | high | M | S07 | open |
 | S10 | P3b: EXIF/GPS strip, glass token expiry, HMAC media URLs, view-counter beacon, customer SMS quiet hours, `payment.reversed` | Opus 5.5 | high | M | S09 | open |
