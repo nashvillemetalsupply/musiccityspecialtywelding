@@ -13,7 +13,7 @@ test("S06 adds only idempotent indexes whose leading columns serve named queries
     ["events_occurred_at_idx", /ON events\(occurred_at\)/, source("lib/events.ts"), /export async function listTodayEvents[\s\S]*?WHERE e\.occurred_at >=[\s\S]*?ORDER BY e\.occurred_at DESC/],
     ["commitments_person_open_idx", /ON commitments\(person_id, due_at\) WHERE status = 'open'/, source("lib/accounts.ts"), /c\.status = 'open'[\s\S]*?c\.person_id = ANY/],
     ["calls_to_phone_idx", /ON calls\(to_phone\)/, source("lib/ops-data.ts"), /SELECT count\(DISTINCT to_phone\)[\s\S]*?WHERE to_phone = ANY/],
-    ["rate_limits_ts_idx", /ON rate_limits\(ts\)/, source("lib/leads.ts"), /DELETE FROM rate_limits WHERE ts </],
+    ["rate_limits_ts_idx", /ON rate_limits\(ts\)/, source("lib/recovery-sweep.ts"), /DELETE FROM rate_limits WHERE ts </],
   ]
 
   for (const [name, definition, querySource, queryShape] of indexes) {

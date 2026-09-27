@@ -1,6 +1,6 @@
 import { Resend } from "resend"
 import { dbConfigured } from "@/lib/db"
-import { isRateLimitedDurable } from "@/lib/leads"
+import { consumeStrictRateLimit, rateLimitFingerprint } from "@/lib/rate-limit"
 import { brandedEmail } from "@/lib/email-templates"
 import { CANONICAL_ORIGIN, createLoginToken } from "@/lib/ops-auth"
 import { getOperatorByEmail, getOperatorByPunchSelector } from "@/lib/operators"
@@ -24,15 +24,15 @@ export async function POST(req: Request) {
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown"
-    if (await isRateLimitedDurable(`ops-login:${ip}`, 15 * 60 * 1000, 5)) {
+    const body = (await req.json().catch(() => null)) as { email?: string; selector?: string } | null
+    const requestedEmail = (body?.email ?? "").trim().toLowerCase()
+    const loginLimitKey = `ops-login:ip:${ip.slice(0, 128)}:email:${rateLimitFingerprint(requestedEmail)}`
+    if (await consumeStrictRateLimit(loginLimitKey, 15 * 60 * 1000, 5)) {
       return Response.json(
         { ok: false, error: "Too many sign-in attempts. Wait a few minutes." },
         { status: 429 }
       )
     }
-
-    const body = (await req.json().catch(() => null)) as { email?: string; selector?: string } | null
-    const requestedEmail = (body?.email ?? "").trim()
     const apiKey = process.env.RESEND_API_KEY
     const from = process.env.QUOTE_FROM_EMAIL
 
