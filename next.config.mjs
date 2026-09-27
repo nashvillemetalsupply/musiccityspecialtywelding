@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    OPS_SW_BUILD_SHA: process.env.VERCEL_GIT_COMMIT_SHA?.trim() || "dev",
+  },
   turbopack: {
     root: process.cwd(),
   },
@@ -24,6 +27,10 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/ops-sw.js",
+        headers: [{ key: "Service-Worker-Allowed", value: "/" }],
+      },
       {
         source: "/(.*)",
         headers: [

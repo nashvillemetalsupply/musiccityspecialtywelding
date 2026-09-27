@@ -7,7 +7,7 @@ import { dbConfigured } from "@/lib/db"
 import { getPromiseSummary } from "@/lib/commitments"
 import { listTodayEvents } from "@/lib/events"
 import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
-import { getAuthenticatedOperator } from "@/lib/ops-auth"
+import { getAuthenticatedOperator, getOpsCacheSessionId } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character"
 import { normalizePage } from "@/lib/pagination"
@@ -27,6 +27,7 @@ import { canAccessInternalTests } from "@/lib/operators"
 import { centralDateKey } from "@/lib/job-calendar.mjs"
 import { emptyMonthJobCalendar, listMonthJobCalendar } from "@/lib/job-calendar-data"
 import { JobCalendar } from "./job-calendar"
+import { OpsOfflineSupport } from "@/app/ops/offline-support"
 import "./board.css"
 
 export const metadata: Metadata = {
@@ -104,6 +105,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // fixtures are never a fallback: a hand-typed number that survives onto a
   // wired page is exactly the failure this redesign exists to kill.
   const operator = dbConfigured() ? await getAuthenticatedOperator() : null
+  const sessionCacheId = operator ? await getOpsCacheSessionId() : null
   // Internal test rows are owner-only. The flag is decided here, on the server,
   // from the role the session resolved to -- a crew member or a signed-out
   // request that hand-types ?tests=1 gets the ordinary board, because the URL
@@ -118,13 +120,16 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     includeTests,
   }
   const nowMs = now.getTime()
-  if (!operator) return <JobControl
-    board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }}
-    calendar={<JobCalendar days={emptyMonthJobCalendar(now)} todayDateKey={centralDateKey(now) ?? ""} />}
-    chrome={chrome}
-    nowMs={nowMs}
-    fontClass={FONT_CLASS}
-  />
+  if (!operator) return <>
+    <OpsOfflineSupport sessionCacheId={null} />
+    <JobControl
+      board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }}
+      calendar={<JobCalendar days={emptyMonthJobCalendar(now)} todayDateKey={centralDateKey(now) ?? ""} />}
+      chrome={chrome}
+      nowMs={nowMs}
+      fontClass={FONT_CLASS}
+    />
+  </>
 
   const gmailWakeOrigin = operator.role === "owner" ? requestOriginFromHeaders(await headers()) : ""
   if (operator.role === "owner") after(async () => {
@@ -173,7 +178,9 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     }))} />
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
-  return <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
+  return <>
+    <OpsOfflineSupport sessionCacheId={sessionCacheId} />
+    <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,
@@ -194,4 +201,5 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     signal,
     stages: [...JOB_BOARD_STAGES],
   }} />
+  </>
 }

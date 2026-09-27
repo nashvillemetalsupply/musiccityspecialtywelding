@@ -600,10 +600,11 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   maskable PNGs; have push payloads carry `url: /ops/leads/<id>` and the
   service worker open it.
   - Observation: the installed app starts at `/board`; push URLs are relative and same-origin, with 192/512 maskable icons.
-- [ ] **No offline.** The service worker has no fetch handler. Add
+- [x] **No offline.** The service worker has no fetch handler. Add
   stale-while-revalidate for `/board*`, `/ops/leads/*` and `_next/static`,
   versioned by commit SHA, with an offline banner component. Writes are never
   queued offline (Call precedes Text; a failed write must be visible).
+  - Observation: root worker caches session-keyed GET navigations and SHA-versioned static assets; logout or a session change purges private pages, and writes stay network-only.
 - [ ] **Signed-out `/board` shows the empty board.** Show the login screen.
   Push toggle vanishes on error (`push-toggle.tsx:255-257`); show the error.
   `glass-actions.ts` and `calendar-actions.ts` never `revalidatePath`; add it.

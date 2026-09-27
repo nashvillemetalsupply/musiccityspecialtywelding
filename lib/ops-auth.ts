@@ -187,3 +187,12 @@ export async function getAuthenticatedOperator(): Promise<Operator | null> {
   const cookieStore = await cookies()
   return validateSessionToken(cookieStore.get(OPS_SESSION_COOKIE)?.value)
 }
+
+// The service worker needs a stable cache partition for this authenticated
+// browser session. This is a separate one-way digest, never the raw cookie.
+export async function getOpsCacheSessionId(): Promise<string | null> {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(OPS_SESSION_COOKIE)?.value
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) return null
+  return createHash("sha256").update(`ops-cache-session:${token}`).digest("hex")
+}
