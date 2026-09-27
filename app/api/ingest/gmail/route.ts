@@ -168,6 +168,7 @@ export async function GET(req: Request) {
   }
   const counters = { scanned: listing.ids.length, inserted: 0, payments: 0, skipped: 0, gone: 0, failures: 0, deadLettered: 0 }
   for (const id of listing.ids.reverse()) {
+    let isTest = false
     try {
       let message
       try {
@@ -184,7 +185,7 @@ export async function GET(req: Request) {
       const from = emailAddress(headers.from)
       const to = emailAddress(headers.to)
       const body = gmailPlaintext(message)
-      const isTest = `${subject}\n${body}`.includes("[INTERNAL TEST]")
+      isTest = `${subject}\n${body}`.includes("[INTERNAL TEST]")
       const occurredAt = new Date(Number(message.internalDate)).toISOString()
       const sent = message.labelIds?.includes("SENT") ?? false
       const categorizedNoise = message.labelIds?.some((label) =>
@@ -287,7 +288,7 @@ export async function GET(req: Request) {
       const attempts = Number(failures[0]?.attempts ?? 1)
       if (attempts >= 5) {
         await sql`UPDATE gmail_ingest_failures SET dead_lettered_at = COALESCE(dead_lettered_at, now()) WHERE message_id = ${id}::text`
-        const deadEventId = await recordEvent({ kind: "email.ingest-dead-letter", actorType: "system", externalId: `gmail-dead:${id}`, body: `Gmail message could not be filed after ${attempts} attempts`, detail: { messageId: id, error: message } })
+        const deadEventId = await recordEvent({ kind: "email.ingest-dead-letter", actorType: "system", externalId: `gmail-dead:${id}`, body: `${isTest ? "[INTERNAL TEST] " : ""}Gmail message could not be filed after ${attempts} attempts`, detail: { messageId: id, error: message, isTest } })
         await notifyAll({ priority: "digest", stock: "red", title: "One Gmail update needs a human", body: "MCSW Jobs held it after five safe retries.", url: "/board/updates", sourceEventId: deadEventId, ownerOnly: true, dedupeKey: `gmail-dead:${id}` }).catch(() => undefined)
         counters.deadLettered++
       } else counters.failures++

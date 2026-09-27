@@ -25,7 +25,8 @@ const owner = {
 }
 
 async function withEnv(values, run) {
-  const prior = new Map(Object.keys(values).map((key) => [key, process.env[key]]))
+  const configuredValues = { VERCEL_ENV: "production", ...values }
+  const prior = new Map(Object.keys(configuredValues).map((key) => [key, process.env[key]]))
   const RealDate = globalThis.Date
   const fixedNow = RealDate.parse("2026-09-06T18:00:00.000Z")
   globalThis.Date = class extends RealDate {
@@ -37,7 +38,7 @@ async function withEnv(values, run) {
       return fixedNow
     }
   }
-  for (const [key, value] of Object.entries(values)) {
+  for (const [key, value] of Object.entries(configuredValues)) {
     if (value === undefined) delete process.env[key]
     else process.env[key] = value
   }
@@ -324,6 +325,71 @@ test("an internal-test inbound call never crosses a production alert provider", 
   })
 })
 
+test("production notify honors an explicit test flag without a source event", async () => {
+  await withEnv({}, async () => {
+    const harness = createNotifyHarness({ sourceIsTest: false })
+    const results = await harness.notifyAll({ ...missedCallAlert, sourceEventId: null, isTest: true })
+
+    assert.equal(results[0]?.reason, "internal-test")
+    assert.equal(harness.sqlCalls.filter(({ text }) => text.includes("INSERT INTO notifications")).length, 0)
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.smsCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 0)
+  })
+})
+
+test("preview notify persists isTest and stops before any real alert provider", async () => {
+  await withEnv({ VERCEL_ENV: "preview" }, async () => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, pushSent: 1 })
+    const results = await harness.notifyAll({ ...missedCallAlert, sourceEventId: null, smsOnly: true })
+    const insert = harness.sqlCalls.find(({ text }) => text.includes("INSERT INTO notifications"))
+    const detail = JSON.parse(insert.values[10])
+
+    assert.equal(results[0]?.reason, "internal-test")
+    assert.equal(detail.isTest, true)
+    assert.match(insert.values[3], /^\[INTERNAL TEST\]/)
+    assert.match(insert.values[4], /^\[INTERNAL TEST\]/)
+    assert.equal(insert.values[12], "filed")
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.smsCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 0)
+  })
+})
+
+test("MCSW_TEST_SMS_FAIL runs only fake inline attempts on a preview", async () => {
+  await withEnv({ VERCEL_ENV: "preview", MCSW_TEST_SMS_FAIL: "1" }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: false })
+    const results = await harness.notifyAll({
+      ...missedCallAlert,
+      sourceEventId: null,
+      smsOnly: true,
+      ownerOnly: true,
+      capExempt: true,
+      quietHoursExempt: true,
+    })
+    const insert = harness.sqlCalls.find(({ text }) => text.includes("INSERT INTO notifications"))
+
+    assert.equal(JSON.parse(insert.values[10]).isTest, true)
+    assert.equal(insert.values[12], "pending")
+    assert.equal(harness.smsCalls.length, 2)
+    assert.deepEqual(delays, [2_000])
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 0)
+    assert.equal(results[0]?.sent, false)
+    assert.ok(harness.sqlCalls.some(({ text, values }) =>
+      text.includes("delivery_next_attempt_at = CASE") && values.includes(true)),
+    "the simulated failure must be due immediately for recovery")
+  }))
+})
+
+test("Gmail dead-letter events carry their test partition into notification checks", () => {
+  const gmail = readFileSync(resolve(root, "app/api/ingest/gmail/route.ts"), "utf8")
+  assert.match(gmail, /let isTest = false[\s\S]*?isTest = `\$\{subject\}\\n\$\{body\}`\.includes\("\[INTERNAL TEST\]"\)/)
+  const deadLetter = gmail.slice(gmail.indexOf('kind: "email.ingest-dead-letter"'))
+  assert.match(deadLetter, /\$\{isTest \? "\[INTERNAL TEST\] " : ""\}/)
+  assert.match(deadLetter, /detail: \{ messageId: id, error: message, isTest \}/)
+})
+
 test("a retry of a persisted inbound-call interrupt uses the same email fallback", async () => {
   await withEnv({ RESEND_API_KEY: "test-resend-key", QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>" }, async () => {
     const harness = createNotifyHarness({
@@ -496,6 +562,13 @@ test("Twilio, DeepSeek, and weather fetches use bounded abort signals", async ()
   }, async () => withFakeProviderFetch(async ({ durations, calls, signal }) => {
     const twilio = loadStandaloneTs("lib/twilio.ts")
     const ai = loadStandaloneTs("lib/ai.ts")
+
+    await withEnv({ VERCEL_ENV: "preview", MCSW_TEST_SMS_FAIL: "1" }, () =>
+      assert.rejects(
+        twilio.sendSms({ to: "+16155550141", body: "[INTERNAL TEST] fake failure" }),
+        (error) => twilio.isDefinitiveTwilioError(error) && /Simulated preview SMS failure/.test(error.message),
+      ))
+    assert.equal(calls.length, 0, "the preview failure switch must not contact Twilio")
 
     await twilio.sendSms({ to: "+16155550141", body: "[INTERNAL TEST] timeout fixture" })
     await ai.draftWithDeepSeek({ system: "fixture", prompt: "fixture" })

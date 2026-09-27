@@ -443,6 +443,13 @@ export async function sendSms(input: {
   statusCallback?: string
   signal?: AbortSignal
 }): Promise<{ sid: string; status: string; providerPayload?: unknown }> {
+  if (process.env.VERCEL_ENV !== "production" && process.env.MCSW_TEST_SMS_FAIL === "1") {
+    throw new TwilioProviderError(
+      "Simulated preview SMS failure (MCSW_TEST_SMS_FAIL).",
+      true,
+      { simulated: true, trigger: "MCSW_TEST_SMS_FAIL" },
+    )
+  }
   if (!twilioSmsConfigured()) throw new Error("Twilio SMS is waiting for A2P approval.")
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim()
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim()

@@ -159,6 +159,7 @@ export async function notify(input: {
   crewBody?: string
   url?: string
   sourceEventId?: number | null
+  isTest?: boolean
   capExempt?: boolean
   quietHoursExempt?: boolean
   smsFallback?: boolean
@@ -173,6 +174,8 @@ export async function notify(input: {
     return { id: 0, sent: false, reason: "not-for-role" as const }
   }
   const sql = getSql()
+  const previewEnvironment = process.env.VERCEL_ENV !== "production"
+  let sourceIsTest = false
   // Test traffic may be recorded and exercised end-to-end, but it may never
   // cross the operator-alert boundary. Enforce that here—the only alert gate—
   // so a future ingestion path cannot accidentally buzz a real person.
@@ -198,12 +201,29 @@ export async function notify(input: {
       LEFT JOIN people p ON p.id = e.person_id
       WHERE e.id = ${input.sourceEventId}::bigint
       LIMIT 1`) as { is_test: boolean; source_kind: string }[]
-    if (source[0]?.is_test) return { id: 0, sent: false, reason: "internal-test" as const }
+    sourceIsTest = Boolean(source[0]?.is_test)
     sourceKind = source[0]?.source_kind ?? ""
   }
+  const explicitlyMarkedTest = input.isTest === true
+    || input.actionDetail?.isTest === true
+    || [input.title, input.body, input.crewBody].some((value) => value?.includes("[INTERNAL TEST]"))
+  if (!previewEnvironment && (sourceIsTest || explicitlyMarkedTest)) {
+    return { id: 0, sent: false, reason: "internal-test" as const }
+  }
+  const isTest = previewEnvironment || sourceIsTest || explicitlyMarkedTest
+  const previewSmsFailureProbe = previewEnvironment
+    && process.env.MCSW_TEST_SMS_FAIL === "1"
+    && input.priority === "interrupt"
+    && input.smsOnly === true
   const storedBody = recipient.role === "crew"
     ? redactCrewText(input.crewBody ?? (input.sourceEventId ? "Open the work order for the crew-safe copy." : input.body ?? ""))
     : input.body ?? ""
+  const storedTitle = isTest && !input.title.includes("[INTERNAL TEST]")
+    ? `[INTERNAL TEST] ${input.title}`.slice(0, 120)
+    : input.title.slice(0, 120)
+  const markedBody = isTest && !storedBody.includes("[INTERNAL TEST]")
+    ? `[INTERNAL TEST] ${storedBody}`.slice(0, 500)
+    : storedBody.slice(0, 500)
   const dedupeKey = input.dedupeKey
     ? input.dedupeKey.slice(0, 240)
     : input.sourceEventId
@@ -220,16 +240,16 @@ export async function notify(input: {
       ${input.operatorId}::bigint,
       ${input.priority}::text,
       ${input.stock ?? "white"}::text,
-      ${input.title.slice(0, 120)}::text,
-      ${storedBody.slice(0, 500)}::text,
+      ${storedTitle}::text,
+      ${markedBody}::text,
       ${(input.url ?? "").slice(0, 500)}::text,
       ${input.sourceEventId ?? null}::bigint,
       ${input.ownerOnly ?? false}::boolean,
       ${dedupeKey}::text,
       ${input.actionKind ?? ""}::text,
-      ${JSON.stringify(input.actionDetail ?? {})}::jsonb,
+      ${JSON.stringify({ ...(input.actionDetail ?? {}), ...(isTest ? { isTest: true } : {}) })}::jsonb,
       ${input.capExempt ?? false}::boolean,
-      ${input.priority === "digest" ? "filed" : "pending"}::text,
+      ${previewSmsFailureProbe ? "pending" : isTest || input.priority === "digest" ? "filed" : "pending"}::text,
       ${input.quietHoursExempt ?? false}::boolean,
       ${input.smsFallback ?? false}::boolean,
       ${input.smsOnly ?? false}::boolean
@@ -240,13 +260,14 @@ export async function notify(input: {
       await sql`
         UPDATE notifications SET
           stock = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN 'red' ELSE stock END,
-          title = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN ${input.title.slice(0, 120)}::text ELSE title END,
-          body = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN ${storedBody.slice(0, 500)}::text ELSE body END
+          title = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN ${storedTitle}::text ELSE title END,
+          body = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN ${markedBody}::text ELSE body END
         WHERE operator_id = ${input.operatorId}::bigint AND dedupe_key = ${dedupeKey}::text`
     }
     return { id: 0, sent: false, reason: "duplicate" as const }
   }
   const id = Number(rows[0].id)
+  if (isTest && !previewSmsFailureProbe) return { id, sent: false, reason: "internal-test" as const }
   if (input.priority === "digest") return { id, sent: false, reason: "filed" as const }
 
   const centralMinute = centralMinuteOfDay()
@@ -255,7 +276,7 @@ export async function notify(input: {
     return { id, sent: false, reason: "quiet-hours" as const }
   }
 
-  if (!input.capExempt) {
+  if (!input.capExempt && !isTest) {
     const reserved = (await sql`
       WITH held AS MATERIALIZED (
         SELECT pg_advisory_xact_lock(${input.operatorId}::bigint)
@@ -371,7 +392,7 @@ export async function notify(input: {
     RETURNING id`) as { id: number }[]
   if (!claimed[0]) return { id, sent: false, reason: "already-claimed" as const }
 
-  const push = input.smsOnly
+  const push = input.smsOnly || isTest
     ? { sent: 0 }
     : await sendPushToOperator(input.operatorId, {
         title: input.title,
@@ -381,7 +402,7 @@ export async function notify(input: {
   let sent = push.sent > 0
   let emailDeliveryUnknown = false
   let emailFailure = ""
-  if (!sent && !input.smsOnly && CALL_ALERT_EVENT_KINDS.has(sourceKind)) {
+  if (!sent && !input.smsOnly && !isTest && CALL_ALERT_EVENT_KINDS.has(sourceKind)) {
     const email = await sendOperatorAlertEmail({
       notificationId: id,
       recipient,
@@ -420,7 +441,7 @@ export async function notify(input: {
   // attempt one 100% of the time and no row could say why.
   let smsFailure = ""
   if (wantsSms) {
-    if (!twilioSmsConfigured()) {
+    if (!twilioSmsConfigured() && !previewSmsFailureProbe) {
       smsFailure = "SMS channel not configured: TWILIO_SMS_ENABLED, messaging service, or webhook base URL is missing."
     } else {
       const operators = await listOperators()
@@ -503,6 +524,7 @@ export async function notifyAll(input: Omit<Parameters<typeof notify>[0], "opera
 
 export async function retryPendingInterrupts(limit = 10) {
   const sql = getSql()
+  const allowPreviewSmsProbe = process.env.VERCEL_ENV !== "production" && process.env.MCSW_TEST_SMS_FAIL === "1"
   // A stable Resend idempotency key lets us safely replay an email handoff
   // whose acceptance receipt was lost before its provider id was persisted.
   await sql`
@@ -551,9 +573,11 @@ export async function retryPendingInterrupts(limit = 10) {
       SELECT o.id AS operator_id, o.email, o.role AS recipient_role, n.owner_only,
         e.kind AS source_kind,
         (
+          (
           COALESCE(l.is_test, false)
           OR COALESCE(p.is_test, false)
           OR lower(COALESCE(e.detail->>'isTest', 'false')) = 'true'
+          OR lower(COALESCE(n.action_detail->>'isTest', 'false')) = 'true'
           OR EXISTS (
             SELECT 1 FROM calls c
             WHERE e.kind = ANY(ARRAY['call.in','call.missed','call.answered']::text[])
@@ -563,6 +587,7 @@ export async function retryPendingInterrupts(limit = 10) {
                 OR COALESCE(c.detail->>'callerName', '') LIKE '%[INTERNAL TEST]%'
               )
           )
+          ) AND NOT (n.sms_only = true AND ${allowPreviewSmsProbe}::boolean)
         ) AS is_test
       FROM notifications n
       JOIN operators o ON o.id = n.operator_id AND o.active = true
@@ -586,7 +611,7 @@ export async function retryPendingInterrupts(limit = 10) {
         WHERE id = ${row.id}::bigint`
       continue
     }
-    if (!row.budget_exempt) {
+    if (!row.budget_exempt && !allowPreviewSmsProbe) {
       const reserved = (await sql`
         WITH held AS MATERIALIZED (SELECT pg_advisory_xact_lock(${row.operator_id}::bigint)), used AS MATERIALIZED (
           SELECT count(*)::int AS count FROM notifications, held
