@@ -24,7 +24,7 @@ export function deepseekConfigured() {
   return Boolean(process.env.DEEPSEEK_API_KEY?.trim())
 }
 
-export async function draftWithDeepSeek(input: { system: string; prompt: string; maxTokens?: number }) {
+export async function draftWithDeepSeek(input: { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal }) {
   const key = process.env.DEEPSEEK_API_KEY?.trim()
   if (!key) throw new Error("DEEPSEEK_API_KEY is not set.")
   const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -39,6 +39,7 @@ export async function draftWithDeepSeek(input: { system: string; prompt: string;
       max_tokens: input.maxTokens ?? 300,
       stream: false,
     }),
+    signal: input.signal ?? AbortSignal.timeout(30_000),
   })
   if (!response.ok) {
     // The body carries DeepSeek's own reason -- out of balance, bad key, unknown
@@ -55,7 +56,7 @@ export async function draftWithDeepSeek(input: { system: string; prompt: string;
 // rate-limits a burst -- the first call-summary sweep lost 14 of 30 to "Free
 // tier requests on this model are rate-limited" -- and the shop already pays
 // for this key. The caller validates the object; this only parses it.
-export async function jsonWithDeepSeek(input: { system: string; prompt: string; maxTokens?: number }): Promise<unknown> {
+export async function jsonWithDeepSeek(input: { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal }): Promise<unknown> {
   const key = process.env.DEEPSEEK_API_KEY?.trim()
   if (!key) throw new Error("DEEPSEEK_API_KEY is not set.")
   const response = await fetch("https://api.deepseek.com/chat/completions", {
@@ -71,6 +72,7 @@ export async function jsonWithDeepSeek(input: { system: string; prompt: string; 
       max_tokens: input.maxTokens ?? 600,
       stream: false,
     }),
+    signal: input.signal ?? AbortSignal.timeout(30_000),
   })
   if (!response.ok) {
     const detail = (await response.text().catch(() => "")).slice(0, 300)

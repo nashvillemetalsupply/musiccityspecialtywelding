@@ -63,6 +63,59 @@ function modulePath(candidate) {
   return candidate
 }
 
+function loadStandaloneTs(relativePath) {
+  const absolute = resolve(root, relativePath)
+  const source = readFileSync(absolute, "utf8")
+  const output = ts.transpileModule(source, {
+    fileName: absolute,
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true,
+    },
+  }).outputText
+  const loadedModule = { exports: {} }
+  const localRequire = (specifier) => nativeRequire(specifier)
+  Function("exports", "require", "module", "__filename", "__dirname", output)(
+    loadedModule.exports,
+    localRequire,
+    loadedModule,
+    absolute,
+    dirname(absolute),
+  )
+  return loadedModule.exports
+}
+
+async function withFakeProviderFetch(run) {
+  const originalFetch = globalThis.fetch
+  const timeoutDescriptor = Object.getOwnPropertyDescriptor(AbortSignal, "timeout")
+  const durations = []
+  const calls = []
+  const signal = new AbortController().signal
+  Object.defineProperty(AbortSignal, "timeout", {
+    configurable: true,
+    writable: true,
+    value: (milliseconds) => {
+      durations.push(milliseconds)
+      return signal
+    },
+  })
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options })
+    return new Response(JSON.stringify({
+      sid: "SM-test-123",
+      status: "queued",
+      choices: [{ message: { content: "{\"ok\":true}" } }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } })
+  }
+  try {
+    return await run({ durations, calls, signal })
+  } finally {
+    globalThis.fetch = originalFetch
+    if (timeoutDescriptor) Object.defineProperty(AbortSignal, "timeout", timeoutDescriptor)
+  }
+}
+
 function createNotifyHarness({
   sourceIsTest,
   sourceKind = "call.missed",
@@ -429,6 +482,33 @@ test("a Twilio-triggered recovery pass bypasses only the ten-minute cooldown", (
   assert.match(smsRoute, /runRecoverySweep\(\{ trigger: "twilio-sms", force: true \}\)/)
   assert.match(recovery, /WHERE automation_leases\.lease_expires_at <= now\(\)/)
   assert.match(recovery, /\$\{force\}::boolean OR automation_leases\.last_finished_at/)
+})
+
+test("Twilio, DeepSeek, and weather fetches use bounded abort signals", async () => {
+  await withEnv({
+    TWILIO_ACCOUNT_SID: `AC${"a".repeat(32)}`,
+    TWILIO_AUTH_TOKEN: "fake-auth-token",
+    TWILIO_MESSAGING_SERVICE_SID: `MG${"b".repeat(32)}`,
+    TWILIO_PHONE_NUMBER: "+16155550100",
+    TWILIO_SMS_ENABLED: "true",
+    TWILIO_WEBHOOK_BASE_URL: "https://example.test",
+    DEEPSEEK_API_KEY: "fake-deepseek-key",
+  }, async () => withFakeProviderFetch(async ({ durations, calls, signal }) => {
+    const twilio = loadStandaloneTs("lib/twilio.ts")
+    const ai = loadStandaloneTs("lib/ai.ts")
+
+    await twilio.sendSms({ to: "+16155550141", body: "[INTERNAL TEST] timeout fixture" })
+    await ai.draftWithDeepSeek({ system: "fixture", prompt: "fixture" })
+    await ai.jsonWithDeepSeek({ system: "fixture", prompt: "fixture" })
+
+    assert.deepEqual(durations, [8_000, 30_000, 30_000])
+    assert.equal(calls.length, 3)
+    assert.ok(calls.every(({ options }) => options.signal === signal))
+
+    const brief = readFileSync(resolve(root, "app/api/ops/brief/route.ts"), "utf8")
+    assert.match(brief, /const signal = AbortSignal\.timeout\(8_000\)/)
+    assert.equal((brief.match(/\{ headers, cache: "no-store", signal \}/g) ?? []).length, 2)
+  }))
 })
 
 test("an interrupted email handoff is replayed with the same idempotency key", async () => {

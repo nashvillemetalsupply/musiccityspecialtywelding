@@ -441,6 +441,7 @@ export async function sendSms(input: {
   to: string
   body: string
   statusCallback?: string
+  signal?: AbortSignal
 }): Promise<{ sid: string; status: string; providerPayload?: unknown }> {
   if (!twilioSmsConfigured()) throw new Error("Twilio SMS is waiting for A2P approval.")
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim()
@@ -460,6 +461,7 @@ export async function sendSms(input: {
       },
       body: form,
       cache: "no-store",
+      signal: input.signal ?? AbortSignal.timeout(8_000),
     })
   } catch {
     throw new TwilioProviderError("Twilio may have accepted the text, but its response did not return. Check Calls & Messages before retrying.", false)

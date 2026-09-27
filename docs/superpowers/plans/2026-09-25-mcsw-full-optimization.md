@@ -286,9 +286,10 @@ this path fires.
   the last error and provider payload (append to a `delivery_history jsonb`
   column, additive) before retrying.
   Observation: a fake-Twilio retry appended both the rejected response and accepted receipt to `delivery_history`; claims no longer clear `delivery_error`.
-- [ ] **No timeouts on Twilio or DeepSeek.** `lib/twilio.ts:437-478` `sendSms`
+- [x] **No timeouts on Twilio or DeepSeek.** `lib/twilio.ts:437-478` `sendSms`
   and `lib/ai.ts:30,61` have no `AbortSignal`. Add 8 s for SMS, 30 s for AI,
   and a timeout on the weather fetch in `app/api/ops/brief/route.ts:29-31`.
+  Observation: fake fetch recorded 8 s for SMS and weather and 30 s for both DeepSeek helpers; both weather requests share the timeout signal.
 - [ ] **Previews can alert the real owner.** Gate in `notify()`
   (`lib/notify.ts:113-145`): `process.env.VERCEL_ENV !== 'production'` forces
   `is_test`. Also close the two holes where `is_test` is only honoured with a
