@@ -129,5 +129,6 @@ test("marketing, customer glass, theme and global imports remain verbatim in ord
   const actual = blocks(current).map(projection)
   assert.deepEqual(actual, expected, "a retained selector arm, declaration block, context or source order changed")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
-  assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")
+  const expectedImports = imports(original).map((statement) => statement === '@import "../tokens.css";' ? '@import "../docs/tokens.css";' : statement)
+  assert.deepEqual(imports(current), expectedImports, "global imports and leaf at-rules must remain byte-identical apart from the token-file move")
 })

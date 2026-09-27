@@ -529,7 +529,7 @@ this path fires.
   `.codex/`, `skill-staging/` to `.gitignore`. Delete the untracked lighthouse
   JSONs, logs, `tsconfig.tsbuildinfo`, `error_discovery_data/`, `tmp/`,
   `.scratch/`.
-  Observation: Documentation/archive paths moved intact, duplicate metadata and skill mirror were removed, scratch junctions were unlinked without touching their main-checkout targets, and no lighthouse JSON/log files were present; memory-pointer update is handled at landing.
+  Observation: Documentation/archive paths moved intact, token-file references now follow `docs/tokens.css`, duplicate metadata and skill mirror were removed, scratch junctions were unlinked without touching their main-checkout targets, and no lighthouse JSON/log files were present; memory-pointer update is handled at landing.
 - [x] **README.** Currently a UTF-16 one-liner. Rewrite as UTF-8: stack, run,
   the worktree rule, test commands, QA env vars, deploy = push to main, cron
   topology (Vercel is the daily backstop, Actions carry cadence), env var
