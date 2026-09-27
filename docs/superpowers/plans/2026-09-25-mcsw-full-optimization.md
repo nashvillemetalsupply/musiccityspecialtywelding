@@ -300,13 +300,14 @@ this path fires.
   failed SMS on an `sms_only` interrupt should fall through to email after the
   inline retry.
   Observation: fake SMS failures produced two attempts 2 s apart before the email fallback; ambiguous SMS stayed quarantined, and an uncertain email replayed idempotently before any later SMS.
-- [ ] **Morning brief cron and resume.** `morning-brief.yml` runs `30 11 * * *`,
+- [x] **Morning brief cron and resume.** `morning-brief.yml` runs `30 11,12 * * *`,
   which is 06:30 CDT and 05:30 CST after 2026-11-01; change to `30 11,12` and
   let the route reject the off-hour one. The resumed path
   (`app/api/ops/brief/route.ts:82-86`) re-runs TTS and re-sends the interrupt
   without a `dedupeKey` (`:83`); use `brief:${day}` and reuse the stored audio.
   `automation_runs` writes `ok = true` unconditionally (`:173`); record the real
   outcome.
+  Observation: The paired UTC runs now pass only during the intended Central 6 AM hour; resume shares the per-day notification key and records whether a brief event exists.
 - [ ] **Gmail ingest lease and accounting.** `app/api/ingest/gmail/route.ts:99`
   throws out of `gmailAccessToken()` with no `automation_runs` row and the
   8-minute lease not released (`:303` is not in `finally`). Add `maxDuration`,

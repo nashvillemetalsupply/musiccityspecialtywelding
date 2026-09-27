@@ -7,19 +7,12 @@ import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 import { isAuthorizedCron } from "@/lib/ops-auth"
 import { redactCrewText } from "@/lib/visibility"
+import { isCentralBriefHour, morningBriefDedupeKey } from "@/lib/brief-schedule.mjs"
 
 export const maxDuration = 60
 
 function centralDay() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())
-}
-
-function isCentralBriefWindow() {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date())
-  const hour = Number(parts.find((part) => part.type === "hour")?.value)
-  const minute = Number(parts.find((part) => part.type === "minute")?.value)
-  const total = hour * 60 + minute
-  return total >= 6 * 60 + 30 && total < 12 * 60
 }
 
 async function nashvilleWeatherLine(needed: boolean) {
@@ -75,14 +68,15 @@ async function shelveBriefAudio(eventId: number, day: string) {
 
 export async function GET(req: Request) {
   if (!isAuthorizedCron(req)) return Response.json({ ok: false }, { status: 401 })
-  if (!isCentralBriefWindow()) return Response.json({ ok: true, skipped: "Outside the 6:30 AM-noon America/Chicago recovery window." })
+  if (!isCentralBriefHour()) return Response.json({ ok: true, skipped: "Outside the 6 AM America/Chicago brief hour." })
   const sql = getSql()
   const day = centralDay()
   const existing = (await sql`
     SELECT id, body FROM events WHERE kind = 'brief.morning' AND external_id = ${`brief:${day}`}::text LIMIT 1`) as { id: number; body: string }[]
   if (existing[0]) {
-    await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: "Open today’s jobs and promises.", url: "/board#radio", sourceEventId: existing[0].id, quietHoursExempt: true, capExempt: true })
+    await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: "Open today’s jobs and promises.", url: "/board#radio", sourceEventId: existing[0].id, quietHoursExempt: true, capExempt: true, dedupeKey: morningBriefDedupeKey(day) })
     const audio = await shelveBriefAudio(Number(existing[0].id), day)
+    await sql`INSERT INTO automation_runs (job, ok, detail) VALUES ('morning-brief'::text, true::boolean, ${JSON.stringify({ eventId: existing[0].id, resumed: true, audio })}::jsonb)`
     return Response.json({ ok: true, resumed: true, eventId: existing[0].id, audio })
   }
   const [promises, unanswered, quotes, invoices, wins, outdoor] = await Promise.all([
@@ -169,8 +163,9 @@ export async function GET(req: Request) {
     }
   }
   const eventId = await recordEvent({ kind: "brief.morning", actorType: "ai", externalId: `brief:${day}`, body: text, crewBody, detail: { facts, crewBody, daySheet, crewDaySheet, model: briefModel } })
-  if (eventId) await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: `${promises.length + unanswered.length + quotes.length} items · about 90 seconds`, url: "/board#radio", sourceEventId: eventId, quietHoursExempt: true, capExempt: true })
-  if (eventId) await shelveBriefAudio(eventId, day)
-  await sql`INSERT INTO automation_runs (job, ok, detail) VALUES ('morning-brief'::text, true, ${JSON.stringify({ eventId, counts: { promises: promises.length, unanswered: unanswered.length, quotes: quotes.length, invoices: invoices.length } })}::jsonb)`
-  return Response.json({ ok: true, eventId, text })
+  if (eventId) await notifyAll({ priority: "interrupt", stock: "white", title: "Morning Brief is ready", body: `${promises.length + unanswered.length + quotes.length} items · about 90 seconds`, url: "/board#radio", sourceEventId: eventId, quietHoursExempt: true, capExempt: true, dedupeKey: morningBriefDedupeKey(day) })
+  const audio = eventId ? await shelveBriefAudio(eventId, day) : { status: "not-created" }
+  const ok = Boolean(eventId)
+  await sql`INSERT INTO automation_runs (job, ok, detail) VALUES ('morning-brief'::text, ${ok}::boolean, ${JSON.stringify({ eventId, audio, counts: { promises: promises.length, unanswered: unanswered.length, quotes: quotes.length, invoices: invoices.length } })}::jsonb)`
+  return Response.json({ ok, eventId, text })
 }

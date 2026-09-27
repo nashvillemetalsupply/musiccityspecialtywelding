@@ -2,7 +2,7 @@ name: The Works morning Radio
 
 on:
   schedule:
-    # 6:30 America/Chicago in CDT and CST. The route's Central-day claim is idempotent.
+    # Both candidate UTC hours; the route accepts only 6 AM America/Chicago.
     - cron: "30 11,12 * * *"
   workflow_dispatch:
 
