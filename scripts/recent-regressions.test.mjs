@@ -498,7 +498,8 @@ test("internal test call receipts and Ask Jobs stay in the test partition", () =
 
   const workOrder = source("app/ops/leads/[id]/page.tsx")
   assert.match(workOrder, /const includeTests = canAccessInternalTests\(operator\.role\)/)
-  assert.match(workOrder, /getLead\(leadId, operator\.role, \{ includeTests \}\)/)
+  assert.match(workOrder, /const getCachedLead = cache\([\s\S]*getLead\(leadId, role, \{ includeTests: canAccessInternalTests\(role\) \}\)/)
+  assert.match(workOrder, /getCachedLead\(leadId, operator\.role\)/)
   assert.match(workOrder, /listCommitments\(\{ leadId, status: "open", includeTests \}\)/)
   assert.match(source("app/ops/leads/[id]/promise-actions.ts"), /if \(lead\?\.is_test\) throw new Error\("Internal test jobs never send customer promise updates\."\)/)
 })

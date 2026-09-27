@@ -91,8 +91,9 @@ test("the owner-only flag reaches rows and their batched details", () => {
 
 test("direct work-order URLs resolve the test partition from the role", () => {
   assert.match(WORK_ORDER, /const includeTests = canAccessInternalTests\(operator\.role\)/)
-  assert.match(WORK_ORDER, /const lead = await getLead\(leadId, operator\.role, \{ includeTests \}\)/)
-  assert.ok(WORK_ORDER.indexOf("const lead = await getLead") < WORK_ORDER.indexOf("Promise.all(["), "authorize the lead before loading related facts")
+  assert.match(WORK_ORDER, /const getCachedLead = cache\([\s\S]*getLead\(leadId, role, \{ includeTests: canAccessInternalTests\(role\) \}\)/)
+  assert.match(WORK_ORDER, /const lead = await getCachedLead\(leadId, operator\.role\)/)
+  assert.ok(WORK_ORDER.indexOf("const lead = await getCachedLead") < WORK_ORDER.indexOf("Promise.all(["), "authorize the lead before loading related facts")
   assert.match(WORK_ORDER, /listCommitments\(\{ leadId, status: "open", includeTests \}\)/)
   assert.match(WORK_ORDER, /listJobLineItems\(leadId, operator\.role, includeTests\)/)
   assert.doesNotMatch(WORK_ORDER, /includeTests: true/)
