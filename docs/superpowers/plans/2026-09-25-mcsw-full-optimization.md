@@ -465,8 +465,10 @@ this path fires.
   server component. Observation: Server-issued URLs sign link ID, media kind, exact media ID, and 15-minute expiry with HKDF-derived `GLASS_TOKEN_SECRET`; expired, tampered, revoked, or lost-link requests fail closed, and URLs are never cached.
 - [x] **`/j/[token]/review` lacks `sameOrigin()`.** Add it; every other write
   under `/j` has it. Observation: review POSTs reject missing and cross-origin Origin headers before loading the token; focused test passes.
-- [ ] **View counter counts bots.** `app/j/[token]/page.tsx:55-70`. Count only
-  on a client beacon after 3 s visible.
+- [x] **View counter counts bots.** `app/j/[token]/page.tsx:55-70`. Count only
+  on a client beacon after 3 s visible. Observation: server rendering does not
+  count; a same-origin POST follows three continuous visible seconds, resets
+  when hidden, and fires once per mount; focused regressions pass.
 - [ ] **Customer SMS has no quiet hours.** `sendSmsPersisted` will text a
   customer at 3 a.m. Enforce 8 a.m.–9 p.m. `America/Chicago` (TCPA) with
   deferral to the window, owner-initiated replies excepted with a visible
