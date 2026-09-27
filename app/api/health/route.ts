@@ -6,7 +6,11 @@ import {
 import { dbConfigured, getSql } from "@/lib/db"
 import { getOwnerEmail, isAuthorizedCron } from "@/lib/ops-auth"
 import { aiConfigured } from "@/lib/ai"
+import { listRecentDeliveryErrors } from "@/lib/delivery-errors"
 import { gmailConfigured } from "@/lib/gmail"
+import { buildHealthMonitorFailureAlert } from "@/lib/health-monitor-alert.mjs"
+import { notifyAll } from "@/lib/notify"
+import type { RecentDeliveryError } from "@/lib/delivery-errors.mjs"
 import {
   checkTwilioProviderReadiness,
   twilioMessagingServiceConfigured,
@@ -84,6 +88,7 @@ type DatabaseHealth = {
   connected: boolean
   leadCount: number | null
   failedDeliveries: number | null
+  recentDeliveryErrors: RecentDeliveryError[]
   lastDigestAt: string | null
   lastDigestOk: boolean | null
   lastReminderAt: string | null
@@ -116,6 +121,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     connected: false,
     leadCount: null,
     failedDeliveries: null,
+    recentDeliveryErrors: [],
     lastDigestAt: null,
     lastDigestOk: null,
     lastReminderAt: null,
@@ -253,6 +259,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       : null
     result.recentInboundCallCount = counts.recent_inbound_call_count
     result.failedDeliveries = counts.failed_deliveries
+    result.recentDeliveryErrors = await listRecentDeliveryErrors()
     result.callTranscriptBacklog = counts.call_transcript_backlog
     result.callTranscriptExhausted = counts.call_transcript_exhausted
     result.voiceTranscriptBacklog = counts.voice_transcript_backlog
@@ -402,6 +409,7 @@ export async function GET(req: Request) {
     (database.messageDeliveryUnknown ?? 0) === 0 &&
     (database.callDeliveryUnknown ?? 0) === 0
   )
+  const recentDeliveryErrorsHealthy = database.recentDeliveryErrors.length === 0
   const shopBrainReady = (
     database.connected &&
     database.consentRecordCount !== null &&
@@ -432,7 +440,8 @@ export async function GET(req: Request) {
     (database.voiceTranscriptBacklog ?? 0) === 0 &&
     (database.uploadRecoveryBacklog ?? 0) === 0 &&
     (database.quotePhotoBacklog ?? 0) === 0 &&
-    durableFailuresHealthy
+    durableFailuresHealthy &&
+    recentDeliveryErrorsHealthy
   )
   const shopBrainGateSatisfied = !shopBrainRequired || shopBrainReady
 
@@ -449,6 +458,7 @@ export async function GET(req: Request) {
     database.configured &&
     database.connected &&
     (database.failedDeliveries ?? 0) === 0 &&
+    recentDeliveryErrorsHealthy &&
     shopBrainGateSatisfied
 
   return Response.json(
@@ -466,6 +476,8 @@ export async function GET(req: Request) {
       },
       delivery: {
         failedCount: database.failedDeliveries,
+        recentErrors: database.recentDeliveryErrors,
+        recentErrorsHealthy: recentDeliveryErrorsHealthy,
       },
       operations: {
         authConfigured: opsAuthConfigured,
@@ -578,4 +590,23 @@ export async function GET(req: Request) {
       headers: { "Cache-Control": "no-store" },
     }
   )
+}
+
+export async function POST(req: Request) {
+  if (!isAuthorizedCron(req)) {
+    return Response.json({ error: "Unauthorized." }, { status: 401, headers: { "Cache-Control": "no-store" } })
+  }
+  const input = await req.json().catch(() => ({})) as { runId?: unknown; isTest?: unknown }
+  const alert = buildHealthMonitorFailureAlert(String(input.runId ?? ""), { isTest: input.isTest === true })
+  if (!alert) return Response.json({ error: "A valid runId is required." }, { status: 400, headers: { "Cache-Control": "no-store" } })
+
+  // notifyAll persists a deduplicated owner-only notification before its SMS
+  // side effect; isTest is carried into that durable intent and blocks sends.
+  const deliveries = await notifyAll(alert)
+  return Response.json({
+    ok: true,
+    persisted: deliveries.length,
+    sent: deliveries.filter((delivery) => delivery.sent).length,
+    isTest: alert.isTest,
+  }, { status: 202, headers: { "Cache-Control": "no-store" } })
 }

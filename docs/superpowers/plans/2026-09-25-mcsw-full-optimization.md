@@ -300,36 +300,42 @@ this path fires.
   failed SMS on an `sms_only` interrupt should fall through to email after the
   inline retry.
   Observation: fake SMS failures produced two attempts 2 s apart before the email fallback; ambiguous SMS stayed quarantined, and an uncertain email replayed idempotently before any later SMS.
-- [ ] **Morning brief cron and resume.** `morning-brief.yml` runs `30 11 * * *`,
+- [x] **Morning brief cron and resume.** `morning-brief.yml` runs `30 11,12 * * *`,
   which is 06:30 CDT and 05:30 CST after 2026-11-01; change to `30 11,12` and
   let the route reject the off-hour one. The resumed path
   (`app/api/ops/brief/route.ts:82-86`) re-runs TTS and re-sends the interrupt
   without a `dedupeKey` (`:83`); use `brief:${day}` and reuse the stored audio.
   `automation_runs` writes `ok = true` unconditionally (`:173`); record the real
   outcome.
-- [ ] **Gmail ingest lease and accounting.** `app/api/ingest/gmail/route.ts:99`
+  Observation: The paired UTC runs now pass only during the intended Central 6 AM hour; resume shares the per-day notification key and records whether a brief event exists.
+- [x] **Gmail ingest lease and accounting.** `app/api/ingest/gmail/route.ts:99`
   throws out of `gmailAccessToken()` with no `automation_runs` row and the
   8-minute lease not released (`:303` is not in `finally`). Add `maxDuration`,
   cap 50 messages per run, checkpoint per message, release in `finally`,
   record the failure.
-- [ ] **DeepSeek fallback is unvalidated but auto-creates jobs.**
+  Observation: Gmail now handles at most 50 message IDs per run, checkpoints remaining and failed IDs after each message, and releases the lease while writing one truthful run row even when token refresh fails; internal test dead letters do not notify.
+- [x] **DeepSeek fallback is unvalidated but auto-creates jobs.**
   `lib/call-summary.ts:90-94, 175-183`. Run the fallback output through the
   same zod schema as the primary; on failure record the summary and skip job
   creation.
-- [ ] **Extraction runs twice per call.**
+  Observation: Both provider results pass through the shared Zod parser before persistence or settlement; a malformed fallback fixture rejects with zero summary writes or job creation.
+- [x] **Extraction runs twice per call.**
   `app/api/twilio/live-transcript/route.ts:47` and
   `app/api/twilio/transcript/route.ts:74` both extract. Make the second one
   skip when a claim with the same `sourceEventId` already exists.
-- [ ] **AI calls carry no `maxRetries`, no usage logging.** Add both across
+  Observation: Both Twilio transcript callbacks now check claims by their immutable source event before scheduling extraction; tests prove an existing claim suppresses a second model pass.
+- [x] **AI calls carry no `maxRetries`, no usage logging.** Add both across
   `lib/ai.ts` call sites and write `usage` into `automation_runs.meta`. Confirm
   the production extraction model in code matches what the docs claim
   (`claude-haiku-4.5` in code, `gemini-2.5-flash-lite` in docs; fix the doc).
+  Observation: AI requests retry transient failures twice, usage writes include token counts and `is_test`, and the docs now label the August Gemini result as historical; the source default remains Claude Haiku.
   Check gateway 403s are surfaced, not swallowed.
-- [ ] **Health shows delivery failures and pages the owner on red.** Add
+- [x] **Health shows delivery failures and pages the owner on red.** Add
   `delivery.recentErrors` (last 24 h `delivery_error` rows) to
-  `app/api/ops/health/route.ts` and to the `/board/updates` view. Add
+  `app/api/health/route.ts` and to the `/board/updates` view. Add
   `if: failure()` step to `health-monitor.yml` that texts the owner via Twilio
   (persist intent row first, `is_test` honoured).
+  Observation: `/api/health` now fails its launch gate on bounded last-24-hour production delivery errors; owners see the rows on Updates, and each failing monitor run posts an owner-only, persisted Twilio alert intent with `is_test` suppression.
 - [x] **Quiet-hours interrupts are never delivered.** `lib/notify.ts:194-198`
   defers and nothing resumes them. Deliver at the next window open from the
   sweep.

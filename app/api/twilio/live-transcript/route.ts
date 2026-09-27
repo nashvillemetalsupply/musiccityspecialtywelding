@@ -1,5 +1,7 @@
 import { recordLiveTranscriptionEvent } from "@/lib/call-sketch-store"
 import { processEvent } from "@/lib/extract"
+import { getSql } from "@/lib/db"
+import { processTranscriptEventIfUnclaimed } from "@/lib/transcript-extraction.mjs"
 import { readTwilioForm } from "@/lib/twilio"
 import { after } from "next/server"
 
@@ -44,7 +46,15 @@ export async function POST(req: Request) {
       stability: finiteNumber(params.get("Stability")),
     })
     if (result?.transcriptEventId) {
-      after(() => processEvent(result.transcriptEventId!).catch((error) => console.error("Live transcript extraction failed:", error)))
+      after(() => processTranscriptEventIfUnclaimed(
+        result.transcriptEventId!,
+        async (sourceEventId) => {
+          const sql = getSql()
+          const claims = (await sql`SELECT id FROM claims WHERE source_event_id = ${sourceEventId}::bigint LIMIT 1`) as { id: number }[]
+          return Boolean(claims[0])
+        },
+        processEvent,
+      ).catch((error) => console.error("Live transcript extraction failed:", error)))
     }
     return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
   } catch (error) {

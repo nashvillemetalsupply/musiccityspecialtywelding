@@ -72,7 +72,7 @@ jobs:
             echo "::error::Health endpoint returned HTTP $status"
             exit 1
           fi
-          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true and .shopBrain.durableFailures.healthy == true and .googleAds.conversionConfigured == true and .googleAds.phoneConversionConfigured == true and .googleAnalytics.measurementConfigured == true' >/dev/null; then
+          if ! printf '%s' "$body" | jq -e '.ok == true and .leadsAccepted == true and .shopBrain.ready == true and .shopBrain.durableFailures.healthy == true and (.delivery.recentErrors | length == 0) and .googleAds.conversionConfigured == true and .googleAds.phoneConversionConfigured == true and .googleAnalytics.measurementConfigured == true' >/dev/null; then
             echo "::error::Launch gate, measurement wiring, Shop Brain readiness, or durable delivery health is failing"
             exit 1
           fi
@@ -111,6 +111,28 @@ jobs:
           echo "HTTP $status"
           if [ "$status" != "200" ]; then
             echo "::error::Homepage returned HTTP $status"
+            exit 1
+          fi
+
+      - name: Text owner when the health monitor fails
+        if: failure()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          response=$(curl -sS --max-time 20 -w '\n%{http_code}' \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --data "{\"runId\":\"${RUN_ID}\"}" \
+            "https://musiccityspecialtywelding.com/api/health")
+          body=$(printf '%s' "$response" | sed '$d')
+          status=$(printf '%s' "$response" | tail -n 1)
+          echo "Alert handoff HTTP $status"
+          echo "Health failure alert: $(printf '%s' "$body" | jq -c '{persisted, sent, isTest}' 2>/dev/null || printf '%s' "$body")"
+          if [ "$status" != "202" ]; then
+            echo "::error::Owner alert intent could not be persisted (HTTP $status)"
             exit 1
           fi
 

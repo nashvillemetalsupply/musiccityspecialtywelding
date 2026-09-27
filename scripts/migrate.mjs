@@ -1117,6 +1117,7 @@ const statements = [
     CONSTRAINT ad_spend_amount_check CHECK (amount_cents >= 0),
     PRIMARY KEY (month_start, channel)
   )`,
+  `ALTER TABLE automation_runs ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb`,
 ]
 
 export const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$

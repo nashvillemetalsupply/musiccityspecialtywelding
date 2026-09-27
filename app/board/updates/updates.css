@@ -35,6 +35,18 @@
 .updates-page .ops-wire-line{display:flex;flex-direction:column;gap:var(--s2)}
 .updates-page .ops-wire-empty{font-size:var(--t-body);color:var(--text-muted)}
 
+.updates-page .updates-delivery{display:flex;flex-direction:column;gap:var(--s3);
+  padding:var(--s4);border:1px solid var(--border);background:var(--surface)}
+.updates-page .updates-delivery > header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s4)}
+.updates-page .updates-delivery > header > div{display:flex;flex-direction:column;gap:var(--s1)}
+.updates-page .updates-delivery h2{font-size:var(--t-name);font-weight:var(--w-semi);line-height:var(--lh-name)}
+.updates-page .updates-delivery ul{list-style:none;display:flex;flex-direction:column;gap:var(--s2);margin:0;padding:0}
+.updates-page .updates-delivery li{display:flex;flex-direction:column;gap:var(--s1);padding-top:var(--s2);border-top:1px solid var(--border-subtle)}
+.updates-page .updates-delivery li > div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s2)}
+.updates-page .updates-delivery li strong{font-size:var(--t-body);font-weight:var(--w-semi)}
+.updates-page .updates-delivery li time,.updates-page .updates-delivery p{font-size:var(--t-caption);color:var(--text-muted);line-height:var(--lh-caption)}
+.updates-page .updates-delivery li p,.updates-page .updates-delivery-empty{margin:0;overflow-wrap:anywhere}
+
 .updates-page .ops-wire-slip{
   display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s3);
   padding:var(--s3) var(--s4);background:var(--surface);
