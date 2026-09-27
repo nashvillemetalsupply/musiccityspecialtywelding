@@ -400,6 +400,7 @@ const statements = [
     extracted_by TEXT NOT NULL,
     superseded_by BIGINT REFERENCES claims(id)
   )`,
+  `ALTER TABLE claims ADD COLUMN IF NOT EXISTS superseded_by BIGINT REFERENCES claims(id)`,
   `CREATE INDEX IF NOT EXISTS claims_subject_idx ON claims(subject_type, subject_id) WHERE superseded_by IS NULL`,
   `ALTER TABLE claims ADD COLUMN IF NOT EXISTS item_key TEXT NOT NULL DEFAULT ''`,
   `CREATE UNIQUE INDEX IF NOT EXISTS claims_source_item_idx ON claims(source_event_id, item_key) WHERE item_key <> ''`,

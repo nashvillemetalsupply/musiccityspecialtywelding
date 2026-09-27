@@ -432,12 +432,12 @@ this path fires.
   `app/ops/actions.ts:1696` `undoLeadComplete` has no owner check. Gate both
   server-side through the existing `requireOwner` helper; add tests that call
   them with a crew session and assert refusal. Observation: both actions reject crew before data or provider side effects; focused tests pass.
-- [ ] **Claims mutated in place.** `app/ops/actions.ts:848-852` and
+- [x] **Claims mutated in place.** `app/ops/actions.ts:848-852` and
   `lib/routing.ts:76-81` UPDATE claims on routing. Either write a replacement
   claim with `superseded_by` or record a written exemption in `CLAUDE.md`
-  naming the field and why. Decide, do not leave it.
-- [ ] **`NaN` reaches `::int`.** `app/api/twilio/voice-status/route.ts:20,23`
-  and `outbound-status/route.ts:14,51`. Validate with zod; 400 on bad id.
+  naming the field and why. Decide, do not leave it. Observation: routing inserts a replacement row and points the original to it through `superseded_by`; source checks and additive migration check pass.
+- [x] **`NaN` reaches `::int`.** `app/api/twilio/voice-status/route.ts:20,23`
+  and `outbound-status/route.ts:14,51`. Validate with zod; 400 on bad id. Observation: both callbacks validate provider IDs and integer durations before SQL; source regression test passes.
 - [ ] **Raw error messages reach customers.**
   `app/api/glass/upload/route.ts:30-34` and the finalize route return
   `error.message`. Map to plain-language copy from the voice corpus; log the

@@ -846,11 +846,35 @@ export async function routeConversationToJob(formData: FormData) {
       WHERE commitment.lead_id = routed.source_id
         AND NOT EXISTS (SELECT 1 FROM duplicate_commitments duplicate WHERE duplicate.id = commitment.id)
       RETURNING commitment.id
+    ), claim_candidates AS MATERIALIZED (
+      SELECT claim.*, routed.target_id
+      FROM claims claim CROSS JOIN routed
+      WHERE claim.subject_type = 'lead'
+        AND claim.subject_id = routed.source_id
+        AND claim.superseded_by IS NULL
+    ), replacement_claims AS (
+      INSERT INTO claims (
+        subject_type, subject_id, predicate, value, confidence,
+        source_event_id, extracted_by, item_key
+      )
+      SELECT candidate.subject_type, candidate.target_id, candidate.predicate,
+        candidate.value, candidate.confidence, candidate.source_event_id,
+        candidate.extracted_by,
+        CASE WHEN candidate.item_key = '' THEN 'routed:'::text
+          ELSE candidate.item_key || ':routed:'::text END ||
+          candidate.target_id::text || ':'::text || candidate.id::text
+      FROM claim_candidates candidate
+      RETURNING id, source_event_id, item_key
     ), moved_claims AS (
-      UPDATE claims claim SET subject_id = routed.target_id
-      FROM routed
-      WHERE claim.subject_type = 'lead' AND claim.subject_id = routed.source_id
-      RETURNING claim.id
+      UPDATE claims prior SET superseded_by = replacement.id
+      FROM claim_candidates candidate
+      JOIN replacement_claims replacement
+        ON replacement.source_event_id = candidate.source_event_id
+        AND replacement.item_key = CASE WHEN candidate.item_key = '' THEN 'routed:'::text
+          ELSE candidate.item_key || ':routed:'::text END ||
+          candidate.target_id::text || ':'::text || candidate.id::text
+      WHERE prior.id = candidate.id AND prior.superseded_by IS NULL
+      RETURNING prior.id
     ), claim_write AS (
       UPDATE inbound_conversation_claims claim
       SET lead_id = routed.target_id, claimed_at = now(), updated_at = now()
