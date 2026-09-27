@@ -26,9 +26,10 @@ async function nashvilleWeatherLine(needed: boolean) {
   if (!needed) return ""
   try {
     const headers = { "User-Agent": "MCSW-Shop-Brain/1.0 sales@musiccityspecialtywelding.com", Accept: "application/geo+json" }
-    const point = await fetch("https://api.weather.gov/points/36.1627,-86.7816", { headers, cache: "no-store" }).then((response) => response.ok ? response.json() : null) as { properties?: { forecast?: string } } | null
+    const signal = AbortSignal.timeout(8_000)
+    const point = await fetch("https://api.weather.gov/points/36.1627,-86.7816", { headers, cache: "no-store", signal }).then((response) => response.ok ? response.json() : null) as { properties?: { forecast?: string } } | null
     if (!point?.properties?.forecast) return "Outdoor work is on the board; check conditions before rolling."
-    const forecast = await fetch(point.properties.forecast, { headers, cache: "no-store" }).then((response) => response.ok ? response.json() : null) as { properties?: { periods?: Array<{ name?: string; temperature?: number; temperatureUnit?: string; shortForecast?: string }> } } | null
+    const forecast = await fetch(point.properties.forecast, { headers, cache: "no-store", signal }).then((response) => response.ok ? response.json() : null) as { properties?: { periods?: Array<{ name?: string; temperature?: number; temperatureUnit?: string; shortForecast?: string }> } } | null
     const today = forecast?.properties?.periods?.[0]
     return today ? `Outdoor work: ${today.shortForecast || "check conditions"}, ${today.temperature ?? "?"}°${today.temperatureUnit || "F"}.` : "Outdoor work is on the board; check conditions before rolling."
   } catch { return "Outdoor work is on the board; check conditions before rolling." }

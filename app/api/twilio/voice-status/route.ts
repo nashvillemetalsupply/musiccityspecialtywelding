@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   // this callback is registered. Later alert or auto-reply failure cannot
   // prevent a real inbound call from waking the bounded recovery pass.
   if (call && !call.is_test) after(async () => {
-    const result = await runRecoverySweep({ trigger: "twilio-call" })
+    const result = await runRecoverySweep({ trigger: "twilio-call", force: true })
     if (!result.ok) console.error("Inbound call recovery failed:", result.error)
     if (!result.skipped) {
       const gmailResult = await wakeGmailIngest(new URL(req.url).origin)

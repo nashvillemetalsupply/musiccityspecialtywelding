@@ -271,7 +271,7 @@ unless the step says production. Never on a worktree dev server.
 Owner-cell delivery is the business. Everything else in this repo exists so
 this path fires.
 
-- [ ] **Failed owner SMS parks for 10 minutes and can lag hours.**
+- [x] **Failed owner SMS parks for 10 minutes and can lag hours.**
   `lib/notify.ts:411-416` parks a failed interrupt for 10 min; only
   `retryPendingInterrupts`, the last step of `runRecoverySweep`
   (`lib/recovery-sweep.ts:180`), revives it; the sweep has its own 10-minute
@@ -280,21 +280,26 @@ this path fires.
   overnight hourly cadence makes the worst case ~6 h 45 m. Fix: one inline
   retry at ~2 s, park at `now()` rather than +10 min, pass `force: true` on
   Twilio-triggered sweeps.
-- [ ] **Retry blanks the evidence.** `lib/notify.ts:491` sets
+  Observation: fake-Twilio tests recorded two attempts 2 s apart after a definitive failure; ambiguous outcomes stayed quarantined, and Twilio sweeps use `force: true`.
+- [x] **Retry blanks the evidence.** `lib/notify.ts:491` sets
   `delivery_error = ''` and the Twilio message at L664-700 is discarded. Keep
   the last error and provider payload (append to a `delivery_history jsonb`
   column, additive) before retrying.
-- [ ] **No timeouts on Twilio or DeepSeek.** `lib/twilio.ts:437-478` `sendSms`
+  Observation: a fake-Twilio retry appended both the rejected response and accepted receipt to `delivery_history`; claims no longer clear `delivery_error`.
+- [x] **No timeouts on Twilio or DeepSeek.** `lib/twilio.ts:437-478` `sendSms`
   and `lib/ai.ts:30,61` have no `AbortSignal`. Add 8 s for SMS, 30 s for AI,
   and a timeout on the weather fetch in `app/api/ops/brief/route.ts:29-31`.
-- [ ] **Previews can alert the real owner.** Gate in `notify()`
+  Observation: fake fetch recorded 8 s for SMS and weather and 30 s for both DeepSeek helpers; both weather requests share the timeout signal.
+- [x] **Previews can alert the real owner.** Gate in `notify()`
   (`lib/notify.ts:113-145`): `process.env.VERCEL_ENV !== 'production'` forces
   `is_test`. Also close the two holes where `is_test` is only honoured with a
   `sourceEventId` (`notify.ts:118-122`) and where the Gmail dead-letter path
   writes without `isTest` (`app/api/ingest/gmail/route.ts:290`).
-- [ ] **`sms_only` alerts have no email leg.** `lib/notify.ts:326, :634`. A
+  Observation: preview-mode tests persisted `isTest` for a source-less interrupt and called no real provider; Vercel deploy was blocked before preview creation by sandbox `EACCES`.
+- [x] **`sms_only` alerts have no email leg.** `lib/notify.ts:326, :634`. A
   failed SMS on an `sms_only` interrupt should fall through to email after the
   inline retry.
+  Observation: fake SMS failures produced two attempts 2 s apart before the email fallback; ambiguous SMS stayed quarantined, and an uncertain email replayed idempotently before any later SMS.
 - [ ] **Morning brief cron and resume.** `morning-brief.yml` runs `30 11 * * *`,
   which is 06:30 CDT and 05:30 CST after 2026-11-01; change to `30 11,12` and
   let the route reject the off-hour one. The resumed path
@@ -325,9 +330,10 @@ this path fires.
   `app/api/ops/health/route.ts` and to the `/board/updates` view. Add
   `if: failure()` step to `health-monitor.yml` that texts the owner via Twilio
   (persist intent row first, `is_test` honoured).
-- [ ] **Quiet-hours interrupts are never delivered.** `lib/notify.ts:194-198`
+- [x] **Quiet-hours interrupts are never delivered.** `lib/notify.ts:194-198`
   defers and nothing resumes them. Deliver at the next window open from the
   sweep.
+  Observation: deferred rows target the next 06:30 America/Chicago opening; fake-clock sweeps held through 06:29 and delivered at 06:30.
 - [x] **Closeout photos exceed body limits.** `app/ops/actions.ts:1222,1415`
   accept up to 12 MB through a Server Action against Next's 1 MB default and
   Vercel's 4.5 MB cap. Route through the existing Blob client-upload path and

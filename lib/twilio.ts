@@ -377,7 +377,10 @@ export async function checkTwilioProviderReadiness(): Promise<TwilioProviderRead
 }
 
 export class TwilioProviderError extends Error {
-  constructor(message: string, readonly definitive: boolean) { super(message); this.name = "TwilioProviderError" }
+  constructor(message: string, readonly definitive: boolean, readonly providerPayload: unknown = null) {
+    super(message)
+    this.name = "TwilioProviderError"
+  }
 }
 
 export function isDefinitiveTwilioError(error: unknown) {
@@ -438,7 +441,15 @@ export async function sendSms(input: {
   to: string
   body: string
   statusCallback?: string
-}): Promise<{ sid: string; status: string }> {
+  signal?: AbortSignal
+}): Promise<{ sid: string; status: string; providerPayload?: unknown }> {
+  if (process.env.VERCEL_ENV !== "production" && process.env.MCSW_TEST_SMS_FAIL === "1") {
+    throw new TwilioProviderError(
+      "Simulated preview SMS failure (MCSW_TEST_SMS_FAIL).",
+      true,
+      { simulated: true, trigger: "MCSW_TEST_SMS_FAIL" },
+    )
+  }
   if (!twilioSmsConfigured()) throw new Error("Twilio SMS is waiting for A2P approval.")
   const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim()
   const authToken = process.env.TWILIO_AUTH_TOKEN?.trim()
@@ -457,6 +468,7 @@ export async function sendSms(input: {
       },
       body: form,
       cache: "no-store",
+      signal: input.signal ?? AbortSignal.timeout(8_000),
     })
   } catch {
     throw new TwilioProviderError("Twilio may have accepted the text, but its response did not return. Check Calls & Messages before retrying.", false)
@@ -471,10 +483,10 @@ export async function sendSms(input: {
     const message = definitive
       ? data?.message || "Twilio rejected the text."
       : `Twilio returned ${response.status} after the text request. It may have been accepted; verify before retrying.`
-    throw new TwilioProviderError(message, definitive)
+    throw new TwilioProviderError(message, definitive, data)
   }
-  if (!data?.sid) throw new TwilioProviderError("Twilio responded without a text receipt. Verify before retrying.", false)
-  return { sid: data.sid, status: data.status ?? "queued" }
+  if (!data?.sid) throw new TwilioProviderError("Twilio responded without a text receipt. Verify before retrying.", false, data)
+  return { sid: data.sid, status: data.status ?? "queued", providerPayload: data }
 }
 
 async function twilioVerifyPost(path: string, form: URLSearchParams) {

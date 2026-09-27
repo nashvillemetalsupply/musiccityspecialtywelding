@@ -24,10 +24,11 @@ const owner = {
   glass_auto_post: false,
 }
 
-async function withEnv(values, run) {
-  const prior = new Map(Object.keys(values).map((key) => [key, process.env[key]]))
+async function withEnv(values, run, fixedTime = "2026-09-06T18:00:00.000Z") {
+  const configuredValues = { VERCEL_ENV: "production", ...values }
+  const prior = new Map(Object.keys(configuredValues).map((key) => [key, process.env[key]]))
   const RealDate = globalThis.Date
-  const fixedNow = RealDate.parse("2026-09-06T18:00:00.000Z")
+  const fixedNow = RealDate.parse(fixedTime)
   globalThis.Date = class extends RealDate {
     constructor(...args) {
       super(...(args.length ? args : [fixedNow]))
@@ -37,7 +38,7 @@ async function withEnv(values, run) {
       return fixedNow
     }
   }
-  for (const [key, value] of Object.entries(values)) {
+  for (const [key, value] of Object.entries(configuredValues)) {
     if (value === undefined) delete process.env[key]
     else process.env[key] = value
   }
@@ -63,6 +64,59 @@ function modulePath(candidate) {
   return candidate
 }
 
+function loadStandaloneTs(relativePath) {
+  const absolute = resolve(root, relativePath)
+  const source = readFileSync(absolute, "utf8")
+  const output = ts.transpileModule(source, {
+    fileName: absolute,
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true,
+    },
+  }).outputText
+  const loadedModule = { exports: {} }
+  const localRequire = (specifier) => nativeRequire(specifier)
+  Function("exports", "require", "module", "__filename", "__dirname", output)(
+    loadedModule.exports,
+    localRequire,
+    loadedModule,
+    absolute,
+    dirname(absolute),
+  )
+  return loadedModule.exports
+}
+
+async function withFakeProviderFetch(run) {
+  const originalFetch = globalThis.fetch
+  const timeoutDescriptor = Object.getOwnPropertyDescriptor(AbortSignal, "timeout")
+  const durations = []
+  const calls = []
+  const signal = new AbortController().signal
+  Object.defineProperty(AbortSignal, "timeout", {
+    configurable: true,
+    writable: true,
+    value: (milliseconds) => {
+      durations.push(milliseconds)
+      return signal
+    },
+  })
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options })
+    return new Response(JSON.stringify({
+      sid: "SM-test-123",
+      status: "queued",
+      choices: [{ message: { content: "{\"ok\":true}" } }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } })
+  }
+  try {
+    return await run({ durations, calls, signal })
+  } finally {
+    globalThis.fetch = originalFetch
+    if (timeoutDescriptor) Object.defineProperty(AbortSignal, "timeout", timeoutDescriptor)
+  }
+}
+
 function createNotifyHarness({
   sourceIsTest,
   sourceKind = "call.missed",
@@ -70,6 +124,9 @@ function createNotifyHarness({
   emailMode = "accepted",
   smsConfigured = false,
   smsSucceeds = false,
+  smsOutcomes = null,
+  smsDefinitive = true,
+  smsErrorPayload = { code: 30003, message: "Unreachable test destination" },
   operator = owner,
   retryCandidate = null,
   retryContext = null,
@@ -115,6 +172,15 @@ function createNotifyHarness({
     }
   }
 
+  class FakeTwilioProviderError extends Error {
+    constructor(message, definitive, providerPayload = null) {
+      super(message)
+      this.name = "TwilioProviderError"
+      this.definitive = definitive
+      this.providerPayload = providerPayload
+    }
+  }
+
   const fakes = new Map([
     ["@/lib/db", { getSql: () => sql }],
     ["@/lib/push", {
@@ -124,11 +190,14 @@ function createNotifyHarness({
       },
     }],
     ["@/lib/twilio", {
-      isDefinitiveTwilioError: () => true,
+      TwilioProviderError: FakeTwilioProviderError,
+      isDefinitiveTwilioError: (error) => error instanceof FakeTwilioProviderError && error.definitive,
       sendSms: async (payload) => {
         smsCalls.push(payload)
-        if (smsSucceeds) return { sid: "SM-notification-901", status: "queued" }
-        throw new Error("SMS provider rejected the alert")
+        timeline.push({ kind: "sms" })
+        const outcome = smsOutcomes?.[smsCalls.length - 1] ?? (smsSucceeds ? "accepted" : "failed")
+        if (outcome === "accepted") return { sid: `SM-notification-${smsCalls.length}`, status: "queued" }
+        throw new FakeTwilioProviderError("SMS provider rejected the alert", smsDefinitive, smsErrorPayload)
       },
       twilioCallbackUrl: (path) => `https://example.test${path}`,
       twilioSmsConfigured: () => smsConfigured,
@@ -177,6 +246,20 @@ function createNotifyHarness({
     smsCalls,
     emailCalls,
     timeline,
+  }
+}
+
+async function withFastSmsRetry(run) {
+  const realSetTimeout = globalThis.setTimeout
+  const delays = []
+  globalThis.setTimeout = (callback, delay, ...args) => {
+    delays.push(delay)
+    return realSetTimeout(callback, 0, ...args)
+  }
+  try {
+    return await run(delays)
+  } finally {
+    globalThis.setTimeout = realSetTimeout
   }
 }
 
@@ -241,6 +324,71 @@ test("an internal-test inbound call never crosses a production alert provider", 
     assert.equal(harness.emailCalls.length, 0)
     assert.equal(harness.sqlCalls.filter(({ text }) => text.includes("INSERT INTO notifications")).length, 0)
   })
+})
+
+test("production notify honors an explicit test flag without a source event", async () => {
+  await withEnv({}, async () => {
+    const harness = createNotifyHarness({ sourceIsTest: false })
+    const results = await harness.notifyAll({ ...missedCallAlert, sourceEventId: null, isTest: true })
+
+    assert.equal(results[0]?.reason, "internal-test")
+    assert.equal(harness.sqlCalls.filter(({ text }) => text.includes("INSERT INTO notifications")).length, 0)
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.smsCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 0)
+  })
+})
+
+test("preview notify persists isTest and stops before any real alert provider", async () => {
+  await withEnv({ VERCEL_ENV: "preview" }, async () => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, pushSent: 1 })
+    const results = await harness.notifyAll({ ...missedCallAlert, sourceEventId: null, smsOnly: true })
+    const insert = harness.sqlCalls.find(({ text }) => text.includes("INSERT INTO notifications"))
+    const detail = JSON.parse(insert.values[10])
+
+    assert.equal(results[0]?.reason, "internal-test")
+    assert.equal(detail.isTest, true)
+    assert.match(insert.values[3], /^\[INTERNAL TEST\]/)
+    assert.match(insert.values[4], /^\[INTERNAL TEST\]/)
+    assert.equal(insert.values[12], "filed")
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.smsCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 0)
+  })
+})
+
+test("MCSW_TEST_SMS_FAIL runs only fake inline attempts on a preview", async () => {
+  await withEnv({ VERCEL_ENV: "preview", MCSW_TEST_SMS_FAIL: "1" }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: false })
+    const results = await harness.notifyAll({
+      ...missedCallAlert,
+      sourceEventId: null,
+      smsOnly: true,
+      ownerOnly: true,
+      capExempt: true,
+      quietHoursExempt: true,
+    })
+    const insert = harness.sqlCalls.find(({ text }) => text.includes("INSERT INTO notifications"))
+
+    assert.equal(JSON.parse(insert.values[10]).isTest, true)
+    assert.equal(insert.values[12], "pending")
+    assert.equal(harness.smsCalls.length, 2)
+    assert.deepEqual(delays, [2_000])
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 0)
+    assert.equal(results[0]?.sent, false)
+    assert.ok(harness.sqlCalls.some(({ text, values }) =>
+      text.includes("delivery_next_attempt_at = CASE") && values.includes(true)),
+    "the simulated failure must be due immediately for recovery")
+  }))
+})
+
+test("Gmail dead-letter events carry their test partition into notification checks", () => {
+  const gmail = readFileSync(resolve(root, "app/api/ingest/gmail/route.ts"), "utf8")
+  assert.match(gmail, /let isTest = false[\s\S]*?isTest = `\$\{subject\}\\n\$\{body\}`\.includes\("\[INTERNAL TEST\]"\)/)
+  const deadLetter = gmail.slice(gmail.indexOf('kind: "email.ingest-dead-letter"'))
+  assert.match(deadLetter, /\$\{isTest \? "\[INTERNAL TEST\] " : ""\}/)
+  assert.match(deadLetter, /detail: \{ messageId: id, error: message, isTest \}/)
 })
 
 test("a retry of a persisted inbound-call interrupt uses the same email fallback", async () => {
@@ -311,6 +459,272 @@ test("a bounced email retry skips Resend and falls through to SMS", async () => 
     assert.equal(harness.smsCalls.length, 1)
     assert.equal(result.sent, 1)
   })
+})
+
+test("a definitive owner-cell SMS failure retries once after two seconds and parks for the next sweep", async () => {
+  await withEnv({ VERCEL_ENV: "production" }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, smsSucceeds: false })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+
+    assert.equal(harness.smsCalls.length, 2)
+    assert.deepEqual(delays, [2_000])
+    assert.equal(result[0]?.sent, false)
+    assert.ok(harness.sqlCalls.some(({ text, values }) =>
+      text.includes("delivery_next_attempt_at = CASE") && values.includes(true)),
+    "a definitive SMS rejection must be due immediately for the next recovery pass")
+  }))
+})
+
+test("sms_only sends email only after both definitive SMS attempts fail", async () => {
+  await withEnv({
+    RESEND_API_KEY: "test-resend-key",
+    QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>",
+  }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      sourceKind: "sms.inbound",
+      smsConfigured: true,
+      smsOutcomes: ["failed", "failed"],
+    })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+    const providerOrder = harness.timeline.filter(({ kind }) => kind === "sms" || kind === "email").map(({ kind }) => kind)
+
+    assert.deepEqual(providerOrder, ["sms", "sms", "email"])
+    assert.deepEqual(delays, [2_000])
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.emailCalls[0].options.idempotencyKey, "notification-alert:901")
+    assert.equal(result[0]?.sent, true)
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("provider_email_status") && text.includes("'accepted'")))
+  }))
+})
+
+test("sms_only does not email or retry another channel after an ambiguous SMS result", async () => {
+  await withEnv({
+    RESEND_API_KEY: "test-resend-key",
+    QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>",
+  }, async () => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, smsDefinitive: false })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+
+    assert.equal(result[0]?.reason, "delivery-unknown")
+    assert.equal(harness.smsCalls.length, 1)
+    assert.equal(harness.emailCalls.length, 0)
+    assert.equal(harness.pushCalls.length, 0)
+  })
+})
+
+test("sms_only retries replay an uncertain email handoff before sending SMS", async () => {
+  await withEnv({
+    RESEND_API_KEY: "test-resend-key",
+    QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>",
+  }, async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      smsConfigured: true,
+      smsSucceeds: true,
+      emailMode: "ambiguous",
+      retryCandidate: {
+        id: 901,
+        operator_id: owner.id,
+        title: missedCallAlert.title,
+        body: missedCallAlert.body,
+        url: missedCallAlert.url,
+        budget_exempt: true,
+        quiet_hours_exempt: true,
+        sms_fallback: false,
+        sms_only: true,
+        provider_email_id: null,
+        provider_email_status: "sending",
+      },
+      retryContext: {
+        operator_id: owner.id,
+        email: owner.email,
+        recipient_role: "owner",
+        owner_only: true,
+        source_kind: "sms.inbound",
+        is_test: false,
+      },
+    })
+    const result = await harness.retryPendingInterrupts()
+
+    assert.equal(result.sent, 0)
+    assert.equal(harness.emailCalls.length, 1)
+    assert.equal(harness.emailCalls[0].options.idempotencyKey, "notification-alert:901")
+    assert.equal(harness.smsCalls.length, 0)
+  })
+})
+
+test("quiet-hours interrupts persist for the next 06:30 Central window", async () => {
+  for (const fixedTime of ["2026-09-06T08:00:00.000Z", "2026-09-07T02:00:00.000Z"]) {
+    await withEnv({}, async () => {
+      const harness = createNotifyHarness({ sourceIsTest: false })
+      const result = await harness.notifyAll({ ...missedCallAlert, quietHoursExempt: false })
+      const schedule = harness.sqlCalls.find(({ text }) => text.includes("delivery_status = 'retry'")
+        && text.includes("delivery_next_attempt_at = (") )
+
+      assert.equal(result[0]?.reason, "quiet-hours")
+      assert.match(schedule.text, /timezone\('America\/Chicago', now\(\)\)::time < time '06:30'/)
+      assert.match(schedule.text, /ELSE interval '1 day 6 hours 30 minutes'/)
+      assert.equal(harness.pushCalls.length, 0)
+      assert.equal(harness.smsCalls.length, 0)
+      assert.equal(harness.emailCalls.length, 0)
+    }, fixedTime)
+  }
+})
+
+test("the recovery sweep sends due quiet-hours interrupts when Central time opens", async () => {
+  const quietCandidate = {
+    id: 901,
+    operator_id: owner.id,
+    title: missedCallAlert.title,
+    body: missedCallAlert.body,
+    url: missedCallAlert.url,
+    budget_exempt: true,
+    quiet_hours_exempt: false,
+    sms_fallback: false,
+    sms_only: false,
+    provider_email_id: null,
+    provider_email_status: null,
+  }
+  const quietContext = {
+    operator_id: owner.id,
+    email: owner.email,
+    recipient_role: "owner",
+    owner_only: false,
+    source_kind: "call.missed",
+    is_test: false,
+  }
+  const beforeOpen = createNotifyHarness({
+    sourceIsTest: false,
+    pushSent: 1,
+    retryCandidate: quietCandidate,
+    retryContext: quietContext,
+  })
+  await withEnv({}, () => beforeOpen.retryPendingInterrupts(), "2026-09-06T11:29:00.000Z")
+  assert.equal(beforeOpen.pushCalls.length, 0, "the sweep must hold alerts until 06:30 Central")
+  assert.equal(beforeOpen.sqlCalls.some(({ text }) => text.includes("delivery_attempts = delivery_attempts + 1")), false)
+
+  const atOpen = createNotifyHarness({
+    sourceIsTest: false,
+    pushSent: 1,
+    retryCandidate: quietCandidate,
+    retryContext: quietContext,
+  })
+  const result = await withEnv({}, () => atOpen.retryPendingInterrupts(), "2026-09-06T11:30:00.000Z")
+  assert.equal(atOpen.pushCalls.length, 1)
+  assert.equal(result.sent, 1)
+  const recovery = readFileSync(resolve(root, "lib/recovery-sweep.ts"), "utf8")
+  assert.match(recovery, /detail\.interruptDeliveryRetries = await retryPendingInterrupts\(\)/)
+})
+
+test("an ambiguous Twilio result is quarantined without an inline repeat", async () => {
+  await withEnv({ VERCEL_ENV: "production" }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, smsDefinitive: false })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+
+    assert.equal(harness.smsCalls.length, 1)
+    assert.deepEqual(delays, [])
+    assert.equal(result[0]?.reason, "delivery-unknown")
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("delivery_status = 'unknown'")))
+  }))
+})
+
+test("SMS retry history appends the rejected Twilio payload and the accepted receipt", async () => {
+  await withEnv({ VERCEL_ENV: "production" }, async () => withFastSmsRetry(async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      smsConfigured: true,
+      smsOutcomes: ["failed", "accepted"],
+      retryCandidate: {
+        id: 901,
+        operator_id: owner.id,
+        title: missedCallAlert.title,
+        body: missedCallAlert.body,
+        url: missedCallAlert.url,
+        budget_exempt: true,
+        quiet_hours_exempt: true,
+        sms_fallback: false,
+        sms_only: true,
+        provider_email_id: null,
+        provider_email_status: null,
+      },
+      retryContext: {
+        operator_id: owner.id,
+        email: owner.email,
+        recipient_role: "owner",
+        owner_only: true,
+        source_kind: "call.missed",
+        is_test: false,
+      },
+    })
+
+    const result = await harness.retryPendingInterrupts()
+    const historyWrites = harness.sqlCalls.filter(({ text }) => text.includes("delivery_history = COALESCE"))
+    const history = historyWrites.map(({ text, values }) => {
+      assert.match(text, /COALESCE\(delivery_history, '\[\]'::jsonb\) \|\|/)
+      const encoded = values.find((value) => typeof value === "string" && value.startsWith("[{\"provider\""))
+      return JSON.parse(encoded)[0]
+    })
+
+    assert.equal(result.sent, 1)
+    assert.equal(harness.smsCalls.length, 2)
+    assert.equal(history.length, 2)
+    assert.equal(history[0].outcome, "failed")
+    assert.match(history[0].error, /SMS provider rejected the alert/)
+    assert.deepEqual(history[0].payload, { code: 30003, message: "Unreachable test destination" })
+    assert.equal(history[1].outcome, "accepted")
+    assert.deepEqual(history[1].payload, { sid: "SM-notification-2", status: "queued" })
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("provider_message_sid = COALESCE")))
+    const claim = harness.sqlCalls.find(({ text }) => text.includes("delivery_status = 'sending'") && text.includes("delivery_attempts = delivery_attempts + 1"))
+    assert.doesNotMatch(claim.text, /delivery_error\s*=\s*''/)
+
+    const migration = readFileSync(resolve(root, "scripts/migrate.mjs"), "utf8")
+    assert.match(migration, /ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_history JSONB NOT NULL DEFAULT '\[\]'::jsonb/)
+  }))
+})
+
+test("a Twilio-triggered recovery pass bypasses only the ten-minute cooldown", () => {
+  const voiceStatus = readFileSync(resolve(root, "app/api/twilio/voice-status/route.ts"), "utf8")
+  const smsRoute = readFileSync(resolve(root, "app/api/twilio/sms/route.ts"), "utf8")
+  const recovery = readFileSync(resolve(root, "lib/recovery-sweep.ts"), "utf8")
+  assert.match(voiceStatus, /runRecoverySweep\(\{ trigger: "twilio-call", force: true \}\)/)
+  assert.match(smsRoute, /runRecoverySweep\(\{ trigger: "twilio-sms", force: true \}\)/)
+  assert.match(recovery, /WHERE automation_leases\.lease_expires_at <= now\(\)/)
+  assert.match(recovery, /\$\{force\}::boolean OR automation_leases\.last_finished_at/)
+})
+
+test("Twilio, DeepSeek, and weather fetches use bounded abort signals", async () => {
+  await withEnv({
+    TWILIO_ACCOUNT_SID: `AC${"a".repeat(32)}`,
+    TWILIO_AUTH_TOKEN: "fake-auth-token",
+    TWILIO_MESSAGING_SERVICE_SID: `MG${"b".repeat(32)}`,
+    TWILIO_PHONE_NUMBER: "+16155550100",
+    TWILIO_SMS_ENABLED: "true",
+    TWILIO_WEBHOOK_BASE_URL: "https://example.test",
+    DEEPSEEK_API_KEY: "fake-deepseek-key",
+  }, async () => withFakeProviderFetch(async ({ durations, calls, signal }) => {
+    const twilio = loadStandaloneTs("lib/twilio.ts")
+    const ai = loadStandaloneTs("lib/ai.ts")
+
+    await withEnv({ VERCEL_ENV: "preview", MCSW_TEST_SMS_FAIL: "1" }, () =>
+      assert.rejects(
+        twilio.sendSms({ to: "+16155550141", body: "[INTERNAL TEST] fake failure" }),
+        (error) => twilio.isDefinitiveTwilioError(error) && /Simulated preview SMS failure/.test(error.message),
+      ))
+    assert.equal(calls.length, 0, "the preview failure switch must not contact Twilio")
+
+    await twilio.sendSms({ to: "+16155550141", body: "[INTERNAL TEST] timeout fixture" })
+    await ai.draftWithDeepSeek({ system: "fixture", prompt: "fixture" })
+    await ai.jsonWithDeepSeek({ system: "fixture", prompt: "fixture" })
+
+    assert.deepEqual(durations, [8_000, 30_000, 30_000])
+    assert.equal(calls.length, 3)
+    assert.ok(calls.every(({ options }) => options.signal === signal))
+
+    const brief = readFileSync(resolve(root, "app/api/ops/brief/route.ts"), "utf8")
+    assert.match(brief, /const signal = AbortSignal\.timeout\(8_000\)/)
+    assert.equal((brief.match(/\{ headers, cache: "no-store", signal \}/g) ?? []).length, 2)
+  }))
 })
 
 test("an interrupted email handoff is replayed with the same idempotency key", async () => {
