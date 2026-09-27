@@ -290,11 +290,12 @@ this path fires.
   and `lib/ai.ts:30,61` have no `AbortSignal`. Add 8 s for SMS, 30 s for AI,
   and a timeout on the weather fetch in `app/api/ops/brief/route.ts:29-31`.
   Observation: fake fetch recorded 8 s for SMS and weather and 30 s for both DeepSeek helpers; both weather requests share the timeout signal.
-- [ ] **Previews can alert the real owner.** Gate in `notify()`
+- [x] **Previews can alert the real owner.** Gate in `notify()`
   (`lib/notify.ts:113-145`): `process.env.VERCEL_ENV !== 'production'` forces
   `is_test`. Also close the two holes where `is_test` is only honoured with a
   `sourceEventId` (`notify.ts:118-122`) and where the Gmail dead-letter path
   writes without `isTest` (`app/api/ingest/gmail/route.ts:290`).
+  Observation: preview-mode tests persisted `isTest` for a source-less interrupt and called no real provider; Vercel deploy was blocked before preview creation by sandbox `EACCES`.
 - [x] **`sms_only` alerts have no email leg.** `lib/notify.ts:326, :634`. A
   failed SMS on an `sms_only` interrupt should fall through to email after the
   inline retry.
