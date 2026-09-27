@@ -40,7 +40,7 @@ test("payment reversal appends a locked ledger event and projects the remaining 
   assert.match(body, /current_paid_cents >= \$\{amountCents\}::bigint/)
   assert.match(body, /INSERT INTO events[\s\S]{0,300}'payment\.reversed'::text/)
   assert.match(body, /paid_amount_cents = c\.net_paid_cents/)
-  assert.match(body, /paid_at = CASE[\s\S]{0,220}ELSE NULL END/)
+  assert.match(body, /paid_at = CASE\s+WHEN c\.invoice_total_cents IS NOT NULL AND c\.net_paid_cents >= c\.invoice_total_cents THEN l\.paid_at\s+ELSE NULL\s+END/)
   assert.match(body, /'amountCents', \$\{amountCents\}::bigint/)
   assert.match(body, /'reason', \$\{reason\}::text/)
   assert.match(body, /'netPaidCents', c\.net_paid_cents/)

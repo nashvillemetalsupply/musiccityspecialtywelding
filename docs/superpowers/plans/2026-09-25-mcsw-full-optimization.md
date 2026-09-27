@@ -473,9 +473,9 @@ this path fires.
   customer at 3 a.m. Enforce 8 a.m.–9 p.m. `America/Chicago` (TCPA) with
   deferral to the window, owner-initiated replies excepted with a visible
   warning. Observation: queued intents release once at the next 8 a.m. Central; only owner replies bypass with a visible warning; DST and concurrent-claim tests pass.
-- [ ] **No refund path.** `parseDollarsToCents` rejects negatives. Add a
+- [x] **No refund path.** `parseDollarsToCents` rejects negatives. Add a
   `payment.reversed` event and ledger entry, owner-only, with reason required.
-  Do not touch the existing rows or types.
+  Do not touch the existing rows or types. Observation: the owner-only reversal appends `payment.reversed` and reduces locked net paid; crew attempts write nothing; amount, reason, immutability, and payment regressions pass.
 - [x] **Session hygiene.** `validateSessionToken` swallows DB errors (fail
   closed); 90-day cookie has no idle timeout (add 14-day idle, sliding); expose
   `revokeSession` on the Shop card. Owner quote email includes the customer's

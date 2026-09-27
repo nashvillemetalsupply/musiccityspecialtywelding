@@ -132,9 +132,14 @@ test("both automatic and manually attached QuickBooks receipts use the shared le
 })
 
 test("QuickBooks payment receipts preserve internal-test truth", () => {
+  const quickbooksLedger = LEDGER_SOURCE.slice(
+    LEDGER_SOURCE.indexOf("export async function applyQuickBooksPayment("),
+    LEDGER_SOURCE.indexOf("// Reversals append a compensating financial event."),
+  )
+  assert.ok(quickbooksLedger.length > 0)
   assert.match(LEDGER_SOURCE, /const body = `\$\{input\.isTest \? "\[INTERNAL TEST\] " : ""\}/)
-  assert.match(LEDGER_SOURCE, /WHERE id = \$\{input\.leadId\}::bigint AND is_test = \$\{input\.isTest\}::boolean/)
-  assert.equal((LEDGER_SOURCE.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
+  assert.match(quickbooksLedger, /WHERE id = \$\{input\.leadId\}::bigint AND is_test = \$\{input\.isTest\}::boolean/)
+  assert.equal((quickbooksLedger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
 })
 
 test("the job offers field collection without putting card data in Shop Brain", () => {

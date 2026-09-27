@@ -514,7 +514,12 @@ test("PAID receipts come only from verified payment ingestion", () => {
   assert.match(paymentIngest, /const testPrefix = isTest \? "\[INTERNAL TEST\] " : ""/)
   assert.match(paymentIngest, /isTest: lead\.is_test/)
   assert.match(ledger, /const body = `\$\{input\.isTest \? "\[INTERNAL TEST\] " : ""\}/)
-  assert.equal((ledger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
+  const receiptLedger = ledger.slice(
+    ledger.indexOf("export async function applyQuickBooksPayment("),
+    ledger.indexOf("// Reversals append a compensating financial event."),
+  )
+  assert.ok(receiptLedger.length > 0)
+  assert.equal((receiptLedger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
 })
 
 test("DONE and peel-back atomically preserve their Wire receipts", () => {
