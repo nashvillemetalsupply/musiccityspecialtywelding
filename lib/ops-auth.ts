@@ -2,6 +2,7 @@ import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 
 import { cookies } from "next/headers"
 import { getSql } from "@/lib/db"
 import type { Operator } from "@/lib/operators"
+import { validateSessionTokenWithSql, type SessionTokenSql } from "@/lib/ops-session-validation.mjs"
 
 export const OPS_SESSION_COOKIE = "mcw_ops_session"
 export const OPS_SESSION_MAX_AGE_SECONDS = 90 * 24 * 60 * 60
@@ -167,22 +168,10 @@ export async function validateSessionToken(token: string | undefined): Promise<O
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return null
   try {
     const sql = getSql()
-    const rows = (await sql`
-      UPDATE ops_tokens t SET
-        last_used_at = now(),
-        expires_at = now() + interval '14 days'
-      FROM operators o
-      WHERE t.token_hash = ${hashToken(token)}::text
-        AND t.purpose = 'session'
-        AND t.expires_at > now()
-        AND t.last_used_at > now() - interval '14 days'
-        AND o.active = true
-        AND (
-          o.id = t.operator_id OR
-          (t.operator_id IS NULL AND lower(o.email) = lower(t.email))
-        )
-      RETURNING o.*`) as { email: string }[]
-    return rows.length ? (rows[0] as Operator) : null
+    return await validateSessionTokenWithSql(
+      sql as unknown as SessionTokenSql,
+      hashToken(token),
+    ) as Operator | null
   } catch {
     return null
   }

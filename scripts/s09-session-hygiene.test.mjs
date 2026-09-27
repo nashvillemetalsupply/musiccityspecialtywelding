@@ -6,10 +6,12 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 
 test("sessions fail closed and slide a 14-day idle expiry", () => {
   const auth = source("lib/ops-auth.ts")
+  const validation = source("lib/ops-session-validation.mjs")
   const migration = source("scripts/migrate.mjs")
-  const validation = auth.slice(auth.indexOf("export async function validateSessionToken"), auth.indexOf("export async function revokeSession"))
 
   assert.match(auth, /SESSION_IDLE_TTL_MS = 14 \* 24 \* 60 \* 60 \* 1000/)
+  assert.match(auth, /validateSessionTokenWithSql\(/)
+  assert.match(validation, /SELECT o\.\*, \(t\.last_used_at < now\(\) - interval '1 hour'\) AS refresh_due/)
   assert.match(validation, /UPDATE ops_tokens t SET[\s\S]*last_used_at = now\(\)/)
   assert.match(validation, /expires_at = now\(\) \+ interval '14 days'/)
   assert.match(validation, /last_used_at > now\(\) - interval '14 days'/)
