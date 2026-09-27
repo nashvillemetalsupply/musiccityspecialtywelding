@@ -554,6 +554,69 @@ test("sms_only retries replay an uncertain email handoff before sending SMS", as
   })
 })
 
+test("quiet-hours interrupts persist for the next 06:30 Central window", async () => {
+  for (const fixedTime of ["2026-09-06T08:00:00.000Z", "2026-09-07T02:00:00.000Z"]) {
+    await withEnv({}, async () => {
+      const harness = createNotifyHarness({ sourceIsTest: false })
+      const result = await harness.notifyAll({ ...missedCallAlert, quietHoursExempt: false })
+      const schedule = harness.sqlCalls.find(({ text }) => text.includes("delivery_status = 'retry'")
+        && text.includes("delivery_next_attempt_at = (") )
+
+      assert.equal(result[0]?.reason, "quiet-hours")
+      assert.match(schedule.text, /timezone\('America\/Chicago', now\(\)\)::time < time '06:30'/)
+      assert.match(schedule.text, /ELSE interval '1 day 6 hours 30 minutes'/)
+      assert.equal(harness.pushCalls.length, 0)
+      assert.equal(harness.smsCalls.length, 0)
+      assert.equal(harness.emailCalls.length, 0)
+    }, fixedTime)
+  }
+})
+
+test("the recovery sweep sends due quiet-hours interrupts when Central time opens", async () => {
+  const quietCandidate = {
+    id: 901,
+    operator_id: owner.id,
+    title: missedCallAlert.title,
+    body: missedCallAlert.body,
+    url: missedCallAlert.url,
+    budget_exempt: true,
+    quiet_hours_exempt: false,
+    sms_fallback: false,
+    sms_only: false,
+    provider_email_id: null,
+    provider_email_status: null,
+  }
+  const quietContext = {
+    operator_id: owner.id,
+    email: owner.email,
+    recipient_role: "owner",
+    owner_only: false,
+    source_kind: "call.missed",
+    is_test: false,
+  }
+  const beforeOpen = createNotifyHarness({
+    sourceIsTest: false,
+    pushSent: 1,
+    retryCandidate: quietCandidate,
+    retryContext: quietContext,
+  })
+  await withEnv({}, () => beforeOpen.retryPendingInterrupts(), "2026-09-06T11:29:00.000Z")
+  assert.equal(beforeOpen.pushCalls.length, 0, "the sweep must hold alerts until 06:30 Central")
+  assert.equal(beforeOpen.sqlCalls.some(({ text }) => text.includes("delivery_attempts = delivery_attempts + 1")), false)
+
+  const atOpen = createNotifyHarness({
+    sourceIsTest: false,
+    pushSent: 1,
+    retryCandidate: quietCandidate,
+    retryContext: quietContext,
+  })
+  const result = await withEnv({}, () => atOpen.retryPendingInterrupts(), "2026-09-06T11:30:00.000Z")
+  assert.equal(atOpen.pushCalls.length, 1)
+  assert.equal(result.sent, 1)
+  const recovery = readFileSync(resolve(root, "lib/recovery-sweep.ts"), "utf8")
+  assert.match(recovery, /detail\.interruptDeliveryRetries = await retryPendingInterrupts\(\)/)
+})
+
 test("an ambiguous Twilio result is quarantined without an inline repeat", async () => {
   await withEnv({ VERCEL_ENV: "production" }, async () => withFastSmsRetry(async (delays) => {
     const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, smsDefinitive: false })

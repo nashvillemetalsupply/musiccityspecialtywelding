@@ -329,9 +329,10 @@ this path fires.
   `app/api/ops/health/route.ts` and to the `/board/updates` view. Add
   `if: failure()` step to `health-monitor.yml` that texts the owner via Twilio
   (persist intent row first, `is_test` honoured).
-- [ ] **Quiet-hours interrupts are never delivered.** `lib/notify.ts:194-198`
+- [x] **Quiet-hours interrupts are never delivered.** `lib/notify.ts:194-198`
   defers and nothing resumes them. Deliver at the next window open from the
   sweep.
+  Observation: deferred rows target the next 06:30 America/Chicago opening; fake-clock sweeps held through 06:29 and delivered at 06:30.
 - [ ] **Closeout photos exceed body limits.** `app/ops/actions.ts:1222,1415`
   accept up to 12 MB through a Server Action against Next's 1 MB default and
   Vercel's 4.5 MB cap. Route through the existing Blob client-upload path and
