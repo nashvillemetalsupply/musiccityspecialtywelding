@@ -1117,6 +1117,7 @@ const statements = [
     CONSTRAINT ad_spend_amount_check CHECK (amount_cents >= 0),
     PRIMARY KEY (month_start, channel)
   )`,
+  `ALTER TABLE automation_runs ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb`,
 ]
 
 for (const statement of statements) {
@@ -1409,8 +1410,6 @@ await sql`
       btrim(lower(summary)), COALESCE(due_at, '-infinity'::timestamptz)
     )
     WHERE status = 'open' AND (lead_id IS NOT NULL OR person_id IS NOT NULL)`
-
-await sql`ALTER TABLE automation_runs ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb`
 
 const tables = await sql`
   SELECT table_name FROM information_schema.tables
