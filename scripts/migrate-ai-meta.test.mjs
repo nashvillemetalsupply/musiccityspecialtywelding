@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 
-const migration = readFileSync(new URL("./migrate.mjs", import.meta.url), "utf8")
+const migration = readFileSync(new URL("./migrate.mjs", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const metaStep = "ALTER TABLE automation_runs ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb"
 const opsSessionStep = "ALTER TABLE ops_tokens ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ NOT NULL DEFAULT now()"
 const claimSupersessionStep = "ALTER TABLE claims ADD COLUMN IF NOT EXISTS superseded_by BIGINT REFERENCES claims(id)"
