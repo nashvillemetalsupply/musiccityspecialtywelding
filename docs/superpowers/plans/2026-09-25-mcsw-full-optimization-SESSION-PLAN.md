@@ -44,7 +44,7 @@ Plan: `2026-09-25-mcsw-full-optimization.md` (same folder). Generated 2026-09-25
 
 | ID | Mission (plan item) | Session model | Effort | Size | Depends on | Status |
 |----|---------------------|---------------|--------|------|------------|--------|
-| S00 | P0: next 16.3.6 + sharp unpin + real lockfile + Node pin | Opus 5.5 | high | M | — | open |
+| S00 | P0: next 16.3.6 + sharp unpin + real lockfile + Node pin | Opus 5.5 | high | M | — | done (landed 792836e, factory-mcsw-s00-r5) |
 | S01 | P1a: owner-cell SMS park/retry/abort, delivery history, preview `is_test` gate, `sms_only` email leg, quiet-hours delivery | Opus 5.5 | high | M | S00 | open |
 | S02 | P1b: brief DST + dedupe + TTS reuse, Gmail lease/maxDuration/cap, DeepSeek zod, double extraction, `automation_runs` truth, health `recentErrors` + red-alert text | Opus 5.5 | high | M | S00 | open |
 | S03 | P1c: closeout photos via Blob client upload, dead 6 MB check, `error.tsx` trouble row | Opus 5.5 | medium | S | S00 | open |
