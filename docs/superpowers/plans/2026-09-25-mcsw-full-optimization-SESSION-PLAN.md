@@ -49,7 +49,7 @@ Plan: `2026-09-25-mcsw-full-optimization.md` (same folder). Generated 2026-09-25
 | S02 | P1b: brief DST + dedupe + TTS reuse, Gmail lease/maxDuration/cap, DeepSeek zod, double extraction, `automation_runs` truth, health `recentErrors` + red-alert text | Opus 5.5 | high | M | S00 | done (landed 2c45aa8, factory-mcsw-s02-r2) |
 | S03 | P1c: closeout photos via Blob client upload, dead 6 MB check, `error.tsx` trouble row | Opus 5.5 | medium | S | S00 | done (landed c6719e7, factory-mcsw-s03-r2) |
 | S04 | P2a: `events`/`lead_events` triggers, migrate advisory lock + `schema_migrations`, weekly `pg_dump` workflow, export excludes test rows | Opus 5.5 | high | M | S00 | done (landed 8c37502, factory-mcsw-s04-r2) |
-| S05 | P2b: pulse endpoint + board/ops cadence, job page `cache()`, `getAccount` write-on-read, health scan bounds | Opus 5.5 | high | M | S04 | open |
+| S05 | P2b: pulse endpoint + board/ops cadence, job page `cache()`, `getAccount` write-on-read, health scan bounds | Opus 5.5 | high | M | S04 | done (landed 9d5cbfe, factory-mcsw-s05-r2) |
 | S06 | P2c: indexes (EXPLAIN-verified), rate limiter off hot path + login strict limiter, single-statement CTE rewrites, month boundary | Opus 5.5 | medium | M | S05 | open |
 | S07 | P4a: `ci.yml` + Vercel check, test discovery, two stale tests, behavioral tests for digest/export/ad-spend/document/templates/rate-limit, keepalive | Opus 5.5 | medium | M | S00 | done (landed 57649de, factory-mcsw-s07-r2; Vercel required-check registration still open) |
 | S08 | P4b: dead deps + `components/ui` + `styles/globals.css` + repo hygiene moves + README + tsconfig/prebuild + patch bumps | Opus 5.5 | low | M | S07 | open |
