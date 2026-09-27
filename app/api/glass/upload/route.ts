@@ -28,8 +28,9 @@ export async function POST(request: Request) {
     })
     return Response.json(response, { headers: { "Cache-Control": "no-store" } })
   } catch (error) {
+    console.error("Glass upload failed:", error)
     return Response.json(
-      { error: error instanceof Error ? error.message : "Upload authorization failed." },
+      { error: "This file could not be uploaded. Check it and try again." },
       { status: 400, headers: { "Cache-Control": "no-store" } },
     )
   }

@@ -438,10 +438,10 @@ this path fires.
   naming the field and why. Decide, do not leave it. Observation: routing inserts a replacement row and points the original to it through `superseded_by`; source checks and additive migration check pass.
 - [x] **`NaN` reaches `::int`.** `app/api/twilio/voice-status/route.ts:20,23`
   and `outbound-status/route.ts:14,51`. Validate with zod; 400 on bad id. Observation: both callbacks validate provider IDs and integer durations before SQL; source regression test passes.
-- [ ] **Raw error messages reach customers.**
+- [x] **Raw error messages reach customers.**
   `app/api/glass/upload/route.ts:30-34` and the finalize route return
   `error.message`. Map to plain-language copy from the voice corpus; log the
-  real one.
+  real one. Observation: both routes log the underlying exception and return fixed retry guidance; focused test passes.
 - [ ] **Glass uploads trust the extension.** `finalizeGlassUpload` validates
   extension and declared MIME only. Reuse `imageTypeMatches` from
   `lib/public-quote.mjs:147-159` on the first bytes. Confirm the Blob store is
