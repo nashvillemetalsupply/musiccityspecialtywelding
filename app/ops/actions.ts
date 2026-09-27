@@ -1699,6 +1699,7 @@ export async function setPhotoShared(formData: FormData) {
 
 export async function undoLeadComplete(formData: FormData) {
   const operator = await requireOperator()
+  requireOwner(operator)
   const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
   const sql = getSql()
   const rows = (await sql`

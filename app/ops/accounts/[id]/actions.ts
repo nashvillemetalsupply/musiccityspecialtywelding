@@ -15,6 +15,7 @@ import { EmailProviderError, isDefinitiveEmailProviderError, sendEmailWithProvid
 export async function sendUsualPaperwork(formData: FormData) {
   const operator = await getAuthenticatedOperator()
   if (!operator) throw new Error("Sign in required.")
+  if (operator.role !== "owner") throw new Error("Owner access is required.")
   const personId = Number(formData.get("personId"))
   const requestedKey = String(formData.get("idempotencyKey") ?? "").trim().slice(0, 150)
   const centralDay = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())
@@ -32,7 +33,7 @@ export async function sendUsualPaperwork(formData: FormData) {
   // fresh attempt after the operator checks an ambiguous or failed delivery.
   const idempotencyKey = `paperwork:${personId}:${ready.map((item) => item.id).sort((a, b) => Number(a) - Number(b)).join("-")}:${centralDay}:${requestedKey}`
   const leadId = account.leads[0]?.id ?? null
-  let eventId = await recordEvent({ kind: "email.out", actorType: "operator", actorId: operator.id, leadId, personId: recipient?.id ?? personId, externalId: idempotencyKey, body: "Attached: W-9 and current certificate of insurance.", crewBody: "The usual paperwork is queued for delivery.", detail: { deliveryStatus: "pending", documentIds: ready.map((item) => item.id) } })
+  let eventId = await recordEvent({ kind: "email.out", actorType: "operator", actorId: operator.id, leadId, personId: recipient?.id ?? personId, externalId: idempotencyKey, body: "Attached: W-9 and current certificate of insurance.", crewBody: "The usual paperwork is queued for delivery.", detail: { deliveryStatus: "pending", documentIds: ready.map((item) => item.id), isTest: false } })
   if (!eventId && idempotencyKey) {
     const prior = (await getSql()`SELECT id FROM events WHERE kind = 'email.out' AND external_id = ${idempotencyKey}::text LIMIT 1`) as { id: number }[]
     eventId = Number(prior[0]?.id) || null

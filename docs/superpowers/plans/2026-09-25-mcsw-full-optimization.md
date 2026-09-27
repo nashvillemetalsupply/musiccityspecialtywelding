@@ -427,11 +427,11 @@ this path fires.
 
 ## P3 — Authorization, input hardening, customer privacy
 
-- [ ] **Three missing owner gates.** `app/ops/accounts/[id]/actions.ts:15`
+- [x] **Three missing owner gates.** `app/ops/accounts/[id]/actions.ts:15`
   `sendUsualPaperwork` has no owner check and no `is_test`;
   `app/ops/actions.ts:1696` `undoLeadComplete` has no owner check. Gate both
   server-side through the existing `requireOwner` helper; add tests that call
-  them with a crew session and assert refusal.
+  them with a crew session and assert refusal. Observation: both actions reject crew before data or provider side effects; focused tests pass.
 - [ ] **Claims mutated in place.** `app/ops/actions.ts:848-852` and
   `lib/routing.ts:76-81` UPDATE claims on routing. Either write a replacement
   claim with `superseded_by` or record a written exemption in `CLAUDE.md`
