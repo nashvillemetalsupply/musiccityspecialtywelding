@@ -456,9 +456,9 @@ this path fires.
   Strip on upload too where the server sees the bytes. Observation: Both glass
   media routes normalize raster bytes before serving; a GPS-bearing EXIF fixture
   confirms the served result has no EXIF.
-- [ ] **Glass tokens never expire for unconverted jobs.** `lib/glass.ts`
+- [x] **Glass tokens never expire for unconverted jobs.** `lib/glass.ts`
   `createGlassLink` writes `expires_at NULL`. Set 180 days idle, and expire on
-  `lost`. Extend on any customer activity.
+  `lost`. Extend on any customer activity. Observation: New and rotated links use a 180-day idle TTL, existing NULL expiries are backfilled additively, active views and customer actions renew it, and lost jobs close the link.
 - [ ] **Bearer token in query strings.** `app/j/[token]/page.tsx:127` and
   `glass-upload.tsx:198` put the token in media URLs (logged by CDNs and
   browsers). Issue short-lived HMAC-signed media URLs (15 min) from the page

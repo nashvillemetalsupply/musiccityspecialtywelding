@@ -1120,6 +1120,7 @@ const statements = [
   `ALTER TABLE automation_runs ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb`,
   `ALTER TABLE ops_tokens ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ NOT NULL DEFAULT now()`,
   `ALTER TABLE claims ADD COLUMN IF NOT EXISTS superseded_by BIGINT REFERENCES claims(id)`,
+  `UPDATE glass_links SET expires_at = created_at + interval '180 days' WHERE expires_at IS NULL`,
 ]
 
 export const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$

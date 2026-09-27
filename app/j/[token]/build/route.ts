@@ -1,6 +1,6 @@
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { respondToCustomerBuildFact } from "@/lib/build-sheets"
-import { getGlassJob } from "@/lib/glass"
+import { extendGlassLinkExpiry, getGlassJob } from "@/lib/glass"
 import { consumeStrictRateLimit, rateLimitFingerprint } from "@/lib/rate-limit"
 
 function sameOrigin(req: Request) {
@@ -27,6 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   const job = await getGlassJob(token)
   if (!job || !job.is_test) return new Response("Not found.", { status: 404 })
   if (job.status === "closed") return new Response("This Customer Page is closed.", { status: 410 })
+  if (!await extendGlassLinkExpiry(job.token_hash)) return new Response("This Customer Page is closed.", { status: 410 })
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown"
   const limitKey = `customer-build:${rateLimitFingerprint(`${token}:${ip}`)}`
   if (await consumeStrictRateLimit(limitKey, 10 * 60 * 1000, 12)) {

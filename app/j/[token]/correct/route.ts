@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { getGlassJob } from "@/lib/glass"
+import { extendGlassLinkExpiry, getGlassJob } from "@/lib/glass"
 import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 import { getShopPhone } from "@/lib/shop-contact"
@@ -33,6 +33,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   const job = await getGlassJob(token)
   if (!job) return new Response("Customer Page not found.", { status: 404 })
   if (job.status === "closed") return new Response("This Customer Page is closed.", { status: 410 })
+  if (!await extendGlassLinkExpiry(job.token_hash)) return new Response("This Customer Page is closed.", { status: 410 })
   if (job.is_test) return new Response("Internal test Customer Page — no shop alert sent.", { status: 200 })
   const fact = new URL(req.url).searchParams.get("fact")?.slice(0, 80) || "job"
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown"

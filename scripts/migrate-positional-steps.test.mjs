@@ -13,13 +13,14 @@ function statementBodies(source) {
     .map((match) => match[1].replace(/\r\n/g, "\n"))
 }
 
-test("legacy migration steps preserve main's prefix and keep S09 ALTERs last", () => {
+test("legacy migration steps preserve main's prefix and append only recorded S09/S10 steps", () => {
   const mainMigration = execFileSync("git", ["show", "main:scripts/migrate.mjs"], { encoding: "utf8" })
   const originalSteps = statementBodies(mainMigration)
   const currentSteps = statementBodies(migration)
   const appendedSteps = [
     "ALTER TABLE ops_tokens ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ NOT NULL DEFAULT now()",
     "ALTER TABLE claims ADD COLUMN IF NOT EXISTS superseded_by BIGINT REFERENCES claims(id)",
+    "UPDATE glass_links SET expires_at = created_at + interval '180 days' WHERE expires_at IS NULL",
   ]
 
   assert.ok(originalSteps.length > 0, "main contains the recorded legacy statements")

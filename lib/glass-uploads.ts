@@ -1,6 +1,6 @@
 import { get, head } from "@vercel/blob"
 import { getSql } from "@/lib/db"
-import { getGlassJob, hashGlassToken, type GlassJob } from "@/lib/glass"
+import { extendGlassLinkExpiry, getGlassJob, hashGlassToken, type GlassJob } from "@/lib/glass"
 import { notifyAll } from "@/lib/notify"
 import { imageTypeMatches } from "@/lib/public-quote.mjs"
 import {
@@ -122,6 +122,7 @@ export async function createGlassUploadIntent(input: {
   if (!validClientId(input.uploadId) || !validClientId(input.batchId)) throw new Error("Reload the Customer Page before adding files.")
   const job = await getGlassJob(input.token)
   if (!job || job.status === "closed") throw new Error("This Customer Page is closed.")
+  if (!await extendGlassLinkExpiry(job.token_hash)) throw new Error("This Customer Page is closed.")
   const metadata = validateGlassUploadMetadata(input.filename, input.contentType, input.size)
   const pathname = `glass/${job.lead_id}/${job.token_hash.slice(0, 16)}/${input.uploadId}/${metadata.safeName}`
   // Keep cleanup in its own locked statement so the quota reservation below
@@ -203,6 +204,7 @@ export async function authorizeGlassUploadToken(pathname: string, clientPayload:
   const tokenHash = hashGlassToken(token)
   const job = await getGlassJob(token)
   if (!job || job.status === "closed") throw new Error("This Customer Page is closed.")
+  if (!await extendGlassLinkExpiry(job.token_hash)) throw new Error("This Customer Page is closed.")
   const sql = getSql()
   const rows = (await sql`
     WITH candidate AS MATERIALIZED (
@@ -216,10 +218,12 @@ export async function authorizeGlassUploadToken(pathname: string, clientPayload:
       SELECT u.id
       FROM glass_uploads u
       JOIN glass_links g ON g.token_hash = u.token_hash
+      JOIN leads l ON l.id = u.lead_id
       CROSS JOIN (SELECT count(*) FROM held) lock_guard
       WHERE u.id = ${uploadId}::text AND u.pathname = ${pathname}::text
         AND u.token_hash = ${tokenHash}::text
         AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+        AND l.status <> 'lost'
         AND u.expired_at IS NULL
         AND u.status IN ('pending','uploading','failed','unknown')
       FOR UPDATE OF g, u
@@ -258,6 +262,7 @@ async function projectGlassUpload(uploadId: string) {
       WHERE u.id = ${uploadId}::text
         AND (u.status = 'uploaded' OR (u.status = 'projecting' AND u.updated_at < now() - interval '5 minutes'))
         AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+        AND l.status <> 'lost'
       FOR UPDATE OF g, u
     ), claimed AS (
       UPDATE glass_uploads u SET status = 'projecting', error = '', updated_at = now()
@@ -360,9 +365,11 @@ async function projectGlassUpload(uploadId: string) {
       SELECT 1 AS allowed
       FROM glass_uploads u
       JOIN glass_links g ON g.token_hash = u.token_hash
+      JOIN leads l ON l.id = u.lead_id
       CROSS JOIN (SELECT count(*) FROM held) lock_guard
       WHERE u.id = ${upload.id}::text AND u.status = 'stored'
         AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+        AND l.status <> 'lost'
       FOR UPDATE OF g
       LIMIT 1`) as { allowed: number }[]
     if (notifyGate[0]) await notifyAll({
@@ -382,15 +389,16 @@ export async function finalizeGlassUpload(input: { uploadId: string; token?: str
   if (!validClientId(input.uploadId)) throw new Error("Invalid upload receipt.")
   const sql = getSql()
   const rows = (await sql`
-    SELECT u.*, g.revoked_at, g.expires_at
+    SELECT u.*, g.revoked_at, g.expires_at, l.status AS lead_status
     FROM glass_uploads u JOIN glass_links g ON g.token_hash = u.token_hash
+    JOIN leads l ON l.id = u.lead_id
     WHERE u.id = ${input.uploadId}::text LIMIT 1`) as Array<GlassUploadRow & { revoked_at: string | null; expires_at: string | null }>
   const upload = rows[0]
   if (!upload) throw new Error("Upload not found.")
   if (input.token && hashGlassToken(input.token) !== upload.token_hash) throw new Error("Upload bearer does not match.")
   if (input.callbackPathname && input.callbackPathname !== upload.pathname) throw new Error("Blob callback path does not match the filed intent.")
   if (upload.expired_at) throw new GlassUploadIntentExpiredError()
-  if (upload.revoked_at || (upload.expires_at && new Date(upload.expires_at).getTime() <= Date.now())) {
+  if (upload.lead_status === "lost" || upload.revoked_at || (upload.expires_at && new Date(upload.expires_at).getTime() <= Date.now())) {
     await sql`UPDATE glass_uploads SET status = 'failed', error = 'Customer Page closed before filing.', updated_at = now() WHERE id = ${upload.id}::text AND status <> 'stored'`
     throw new Error("This Customer Page is closed.")
   }
@@ -427,10 +435,12 @@ export async function finalizeGlassUpload(input: { uploadId: string; token?: str
         SELECT u.id
         FROM glass_uploads u
         JOIN glass_links g ON g.token_hash = u.token_hash
+        JOIN leads l ON l.id = u.lead_id
         CROSS JOIN (SELECT count(*) FROM held) lock_guard
         WHERE u.id = ${upload.id}::text AND u.status <> 'stored'
           AND u.expired_at IS NULL
           AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+          AND l.status <> 'lost'
         FOR UPDATE OF g, u
       )
       UPDATE glass_uploads u SET status = 'uploaded', blob_url = ${blob.url}::text,
