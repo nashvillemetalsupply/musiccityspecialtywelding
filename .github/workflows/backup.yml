@@ -1,0 +1,47 @@
+name: Weekly Neon backup
+
+on:
+  schedule:
+    - cron: "5 12 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-neon-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dump database in custom format
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$DATABASE_URL_UNPOOLED" ]]; then
+            echo "::error::Set the DATABASE_URL_UNPOOLED repository secret before enabling backups."
+            exit 1
+          fi
+
+          docker run --rm \
+            --env DATABASE_URL_UNPOOLED \
+            --volume "$GITHUB_WORKSPACE:/backup" \
+            --workdir /backup \
+            postgres:17-alpine \
+            pg_dump --format=custom --no-owner --no-acl \
+              --file=/backup/mcsw-backup.dump "$DATABASE_URL_UNPOOLED"
+          test -s mcsw-backup.dump
+
+      - name: Upload 90-day backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcsw-neon-backup-${{ github.run_id }}
+          path: mcsw-backup.dump
+          if-no-files-found: error
+          retention-days: 90
