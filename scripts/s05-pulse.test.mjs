@@ -210,7 +210,7 @@ test("crew pulse excludes test calls and owner-only notifications before hashing
   assert.equal(JSON.stringify(pulse).includes("[INTERNAL TEST]"), false)
 })
 
-test("board polls with fake time/fetch, refreshes only on pulse changes, and backs off when hidden", async () => {
+test("board polls with fake time/fetch, refreshes on pulse changes, and stops polling when hidden", async () => {
   const clock = fakeClock()
   const doc = eventTarget({ visibilityState: "visible", hasFocus: () => true })
   const win = eventTarget()
@@ -253,21 +253,50 @@ test("board polls with fake time/fetch, refreshes only on pulse changes, and bac
   doc.visibilityState = "hidden"
   doc.dispatch("visibilitychange")
   await clock.flush()
-  assert.equal(fetches.length, 4)
+  assert.equal(fetches.length, 3)
   assert.equal(refreshes, 1)
-  assert.deepEqual(clock.pendingDelays, [OPS_PULSE_IDLE_INTERVAL_MS])
-  await clock.advance(OPS_PULSE_IDLE_INTERVAL_MS - 1)
-  assert.equal(fetches.length, 4)
-  await clock.advance(1)
-  assert.equal(fetches.length, 5)
-  assert.equal(refreshes, 1)
+  assert.deepEqual(clock.pendingDelays, [])
+  await clock.advance(60 * 60_000)
+  assert.equal(fetches.length, 3)
 
   doc.visibilityState = "visible"
   doc.dispatch("visibilitychange")
   await clock.flush()
+  assert.equal(fetches.length, 4)
   assert.equal(refreshes, 2)
+  assert.deepEqual(clock.pendingDelays, [OPS_PULSE_ACTIVE_INTERVAL_MS])
   poller.stop()
   assert.equal(clock.pendingDelays.length, 0)
+})
+
+test("a tab hidden for an hour makes no pulse request, then checks immediately when visible", async () => {
+  const clock = fakeClock()
+  const doc = eventTarget({ visibilityState: "hidden", hasFocus: () => true })
+  const win = eventTarget()
+  const fetches = []
+  const poller = startOpsPulsePolling({
+    documentRef: doc,
+    windowRef: win,
+    timers: clock.timers,
+    now: clock.now,
+    fetchPulse: async (url, options) => {
+      fetches.push({ url, options })
+      return { ok: true, json: async () => pulseRow() }
+    },
+  })
+  await clock.flush()
+  poller.checkNow()
+  await clock.advance(60 * 60_000)
+  assert.equal(fetches.length, 0)
+  assert.deepEqual(clock.pendingDelays, [])
+
+  doc.visibilityState = "visible"
+  doc.dispatch("visibilitychange")
+  await clock.flush()
+  assert.equal(fetches.length, 1)
+  assert.deepEqual(fetches[0], { url: "/api/ops/pulse", options: { cache: "no-store" } })
+  assert.deepEqual(clock.pendingDelays, [OPS_PULSE_ACTIVE_INTERVAL_MS])
+  poller.stop()
 })
 
 test("foreground focused polling remains ten seconds even without recent pointer activity", async () => {
@@ -284,6 +313,23 @@ test("foreground focused polling remains ten seconds even without recent pointer
   await clock.advance(OPS_PULSE_ACTIVE_INTERVAL_MS)
   await clock.advance(OPS_PULSE_ACTIVE_INTERVAL_MS)
   assert.deepEqual(clock.pendingDelays, [OPS_PULSE_ACTIVE_INTERVAL_MS])
+  poller.stop()
+})
+
+test("visible unfocused polling keeps the five-minute idle schedule", async () => {
+  const clock = fakeClock()
+  const doc = eventTarget({ visibilityState: "visible", hasFocus: () => false })
+  const win = eventTarget()
+  const poller = startOpsPulsePolling({
+    documentRef: doc,
+    windowRef: win,
+    timers: clock.timers,
+    now: clock.now,
+    idleActivityWindowMs: 0,
+    fetchPulse: async () => ({ ok: true, json: async () => pulseRow() }),
+  })
+  await clock.flush()
+  assert.deepEqual(clock.pendingDelays, [OPS_PULSE_IDLE_INTERVAL_MS])
   poller.stop()
 })
 
