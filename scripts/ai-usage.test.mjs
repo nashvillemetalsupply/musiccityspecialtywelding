@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { AI_MAX_RETRIES, buildAiUsageRun, runLoggedAiCall } from "../lib/ai-usage.mjs"
+import { AI_MAX_RETRIES, buildAiUsageRun, retryAiRequest, runLoggedAiCall } from "../lib/ai-usage.mjs"
 
 test("AI calls use two explicit retries and preserve token usage plus test status", () => {
   assert.equal(AI_MAX_RETRIES, 2)
@@ -17,6 +17,36 @@ test("AI calls use two explicit retries and preserve token usage plus test statu
     detail: { operation: "call-summary", provider: "deepseek", model: "deepseek-chat" },
     meta: { usage: { prompt_tokens: 90, completion_tokens: 30, total_tokens: 120 }, isTest: true },
   })
+})
+
+test("AI requests retry transient network and provider failures up to maxRetries", async () => {
+  const waits = []
+  let attempts = 0
+  const response = await retryAiRequest(async () => {
+    attempts += 1
+    if (attempts === 1) throw new Error("network reset")
+    if (attempts === 2) return { status: 429, ok: false }
+    return { status: 200, ok: true }
+  }, (result) => !result.ok && (result.status === 429 || result.status >= 500), AI_MAX_RETRIES, async (ms) => waits.push(ms))
+  assert.equal(response.status, 200)
+  assert.equal(attempts, 3)
+  assert.deepEqual(waits, [250, 500])
+})
+
+test("AI requests do not retry a 403 response or hide a terminal network error", async () => {
+  let attempts = 0
+  const forbidden = await retryAiRequest(async () => {
+    attempts += 1
+    return { status: 403, ok: false }
+  }, (response) => !response.ok && (response.status === 429 || response.status >= 500), AI_MAX_RETRIES, async () => {})
+  assert.equal(forbidden.status, 403)
+  assert.equal(attempts, 1)
+
+  await assert.rejects(() => retryAiRequest(async () => {
+    attempts += 1
+    throw new Error("final network failure")
+  }, () => false, 1, async () => {}), /final network failure/)
+  assert.equal(attempts, 3)
 })
 
 test("successful model results are logged and returned even if usage persistence fails", async () => {

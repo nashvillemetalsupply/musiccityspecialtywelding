@@ -324,10 +324,11 @@ this path fires.
   `app/api/twilio/transcript/route.ts:74` both extract. Make the second one
   skip when a claim with the same `sourceEventId` already exists.
   Observation: Both Twilio transcript callbacks now check claims by their immutable source event before scheduling extraction; tests prove an existing claim suppresses a second model pass.
-- [ ] **AI calls carry no `maxRetries`, no usage logging.** Add both across
+- [x] **AI calls carry no `maxRetries`, no usage logging.** Add both across
   `lib/ai.ts` call sites and write `usage` into `automation_runs.meta`. Confirm
   the production extraction model in code matches what the docs claim
   (`claude-haiku-4.5` in code, `gemini-2.5-flash-lite` in docs; fix the doc).
+  Observation: AI requests retry transient failures twice, usage writes include token counts and `is_test`, and the docs now label the August Gemini result as historical; the source default remains Claude Haiku.
   Check gateway 403s are surfaced, not swallowed.
 - [ ] **Health shows delivery failures and pages the owner on red.** Add
   `delivery.recentErrors` (last 24 h `delivery_error` rows) to

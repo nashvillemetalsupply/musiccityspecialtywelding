@@ -1,5 +1,5 @@
 import { getSql } from "@/lib/db"
-import { AI_MAX_RETRIES, buildAiUsageRun, runLoggedAiCall, type AiCallOptions, type AiCallRecord, type AiUsageRun } from "@/lib/ai-usage.mjs"
+import { AI_MAX_RETRIES, buildAiUsageRun, retryAiRequest, runLoggedAiCall, type AiCallOptions, type AiCallRecord, type AiUsageRun } from "@/lib/ai-usage.mjs"
 
 export { AI_MAX_RETRIES }
 
@@ -53,41 +53,25 @@ async function postDeepSeek(input: { system: string; prompt: string; maxTokens?:
   if (!key) throw new Error("DEEPSEEK_API_KEY is not set.")
   const maxRetries = Math.max(0, Math.min(input.maxRetries ?? AI_MAX_RETRIES, 4))
   return runAiCall({ operation: input.operation, provider: "deepseek", model: DEEPSEEK_MODEL, isTest: input.isTest }, async () => {
-    let response: Response | null = null
-    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-      try {
-        response = await fetch("https://api.deepseek.com/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-          body: JSON.stringify({
-            model: DEEPSEEK_MODEL,
-            messages: [
-              { role: "system", content: input.system },
-              { role: "user", content: input.prompt },
-            ],
-            ...(responseFormat === "json" ? { response_format: { type: "json_object" } } : {}),
-            max_tokens: input.maxTokens ?? (responseFormat === "json" ? 600 : 300),
-            stream: false,
-          }),
-          signal: input.signal ?? AbortSignal.timeout(30_000),
-        })
-      } catch (error) {
-        if (attempt >= maxRetries) throw error
-        await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)))
-        continue
-      }
-      if (response.ok) break
-      if (response.status !== 429 && response.status < 500) {
-        const detail = (await response.text().catch(() => "")).slice(0, 300)
-        throw new Error(`DeepSeek refused the request (${response.status}). ${detail}`)
-      }
-      if (attempt >= maxRetries) {
-        const detail = (await response.text().catch(() => "")).slice(0, 300)
-        throw new Error(`DeepSeek refused the request (${response.status}). ${detail}`)
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)))
+    const response = await retryAiRequest(() => fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
+          { role: "system", content: input.system },
+          { role: "user", content: input.prompt },
+        ],
+        ...(responseFormat === "json" ? { response_format: { type: "json_object" } } : {}),
+        max_tokens: input.maxTokens ?? (responseFormat === "json" ? 600 : 300),
+        stream: false,
+      }),
+      signal: input.signal ?? AbortSignal.timeout(30_000),
+    }), (candidate) => !candidate.ok && (candidate.status === 429 || candidate.status >= 500), maxRetries)
+    if (!response.ok) {
+      const detail = (await response.text().catch(() => "")).slice(0, 300)
+      throw new Error(`DeepSeek refused the request (${response.status}). ${detail}`)
     }
-    if (!response?.ok) throw new Error("DeepSeek request did not produce a response.")
     const json = await response.json() as { choices?: { message?: { content?: string } }[]; usage?: unknown }
     const content = String(json.choices?.[0]?.message?.content ?? "").trim()
     if (!content) throw new Error("DeepSeek returned no content.")
