@@ -509,7 +509,7 @@ this path fires.
   survives), `lib/rate-limit.ts` (window arithmetic with injected clock). Policy
   going forward: new tests exercise code, not source text.
   Observation: The six import-and-call behavior files passed all 9 targeted tests for digest, export, ad-spend, shop documents, email templates, and rate limits.
-- [ ] **Dead weight out.** `components/ui/*` (56 files, zero importers outside
+- [x] **Dead weight out.** `components/ui/*` (56 files, zero importers outside
   itself), `hooks/`, `lib/utils.ts`, `components.json`, and every dependency
   listed in the P4 acceptance criterion. Keep `lucide-react` (12 importers) and
   upgrade it to 1.x, fixing renamed icons where typecheck flags them. Delete
@@ -517,6 +517,7 @@ this path fires.
   `app/layout.tsx:7`), `app/ops/intake/job-intake-form.tsx`, the 15 unused
   selectors in `styles/ops-legacy.css`, `autoprefixer` (not in
   `postcss.config`). Consolidate the token roots in five files into one.
+  Observation: The 14 removed baseline rules cover 15 selector arms, including both arms at line 5629; all 729 tests (727 passed, 0 failed, 2 skipped), typecheck, and lint passed.
 - [ ] **Repo hygiene.** Delete tracked `.hallmark/`, `skills-lock.json`, and
   one of the two identical skill mirrors (`.agents/skills/`, 453 KB; keep
   `.claude/skills/`). Move `output/`, `design-previews/`,

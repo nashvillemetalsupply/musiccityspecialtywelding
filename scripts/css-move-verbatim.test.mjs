@@ -95,10 +95,10 @@ const projection = ({ body, arms, context }) => ({ body, arms, context })
 // by a later rule with the same selector and at-rule context. Keep their
 // frozen source lines here so the provenance test permits this proven cleanup
 // without broadening the set of rules that can disappear.
-// Fourteen baseline rule starts cover fifteen selector arms; line 5729 is a
+// Fourteen baseline rule starts cover fifteen selector arms; line 5629 is a
 // comma-separated rule containing both the handset and radio panel arms.
 const REDUNDANT_LEGACY_RULE_LINES = new Set([
-  1788, 1831, 1833, 5000, 5003, 5264, 5629, 5729, 5731, 5753, 6930, 5775,
+  1788, 1831, 1833, 5000, 5003, 5264, 5629, 5729, 5731, 5753, 5768, 5775,
   5782, 5783,
 ])
 
