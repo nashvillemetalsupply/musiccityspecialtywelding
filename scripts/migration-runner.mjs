@@ -12,8 +12,7 @@ async function applyNamedStep(client, step) {
   )
   if (existing.rows.length > 0) return
 
-  await client.query("BEGIN")
-  try {
+  await runInTransaction(client, async () => {
     if (step.run) await step.run(client)
     else await client.query(step.query)
 
@@ -23,6 +22,13 @@ async function applyNamedStep(client, step) {
        ON CONFLICT (name) DO NOTHING`,
       [step.name],
     )
+  })
+}
+
+async function runInTransaction(client, run) {
+  await client.query("BEGIN")
+  try {
+    await run()
     await client.query("COMMIT")
   } catch (error) {
     try {
@@ -52,7 +58,7 @@ export async function runWithMigrationLock({ pool, steps, runTail, onComplete })
     await client.query(SCHEMA_MIGRATIONS_SQL)
 
     for (const step of steps) await applyNamedStep(client, step)
-    if (runTail) await applyNamedStep(client, { name: "legacy-procedural-tail", run: runTail })
+    if (runTail) await runInTransaction(client, () => runTail(client))
     if (onComplete) await onComplete(client)
   } catch (error) {
     failure = error

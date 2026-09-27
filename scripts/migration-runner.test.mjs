@@ -99,17 +99,17 @@ test("concurrent migration runs serialize and record every named step once", asy
   assert.equal(maximumActiveSteps, 1, "only one runner may execute migration work at a time")
   assert.deepEqual([...executions.entries()].sort(), [
     ["first", 1],
-    ["legacy-procedural-tail", 1],
+    ["legacy-procedural-tail", 2],
     ["second", 1],
   ])
   assert.deepEqual([...database.applied.entries()].sort(), [
     ["first", 1],
-    ["legacy-procedural-tail", 1],
     ["second", 1],
   ])
+  assert.equal(database.applied.has("legacy-procedural-tail"), false)
   assert.equal(database.queries.filter(({ text }) => text.startsWith("SELECT pg_advisory_lock")).length, 2)
-  assert.equal(database.queries.filter(({ text }) => text.startsWith("BEGIN")).length, 3)
-  assert.equal(database.queries.filter(({ text }) => text.startsWith("COMMIT")).length, 3)
+  assert.equal(database.queries.filter(({ text }) => text.startsWith("BEGIN")).length, 4)
+  assert.equal(database.queries.filter(({ text }) => text.startsWith("COMMIT")).length, 4)
   assert.ok(database.queries.some(({ text }) => text.includes("CREATE TABLE IF NOT EXISTS schema_migrations")))
   assert.ok(database.queries.some(({ text, values }) => text.includes("SET lock_timeout") && values.length === 0))
   assert.ok(database.queries.some(({ text }) => text.includes("SET statement_timeout")))
@@ -119,6 +119,25 @@ test("concurrent migration runs serialize and record every named step once", asy
   assert.ok(database.queries.some(({ text }) => text.includes("VALUES ($1::text, now())")))
   assert.equal(poolA.ended, true)
   assert.equal(poolB.ended, true)
+  assert.equal(database.lockHolder, null)
+})
+
+test("a second run replays the unrecorded tail and leaves named steps applied once", async () => {
+  const database = new MemoryMigrationDatabase()
+  let namedExecutions = 0
+  let tailExecutions = 0
+  const run = () => runWithMigrationLock({
+    pool: database.createPool(),
+    steps: [{ name: "recorded-step", run: () => { namedExecutions += 1 } }],
+    runTail: () => { tailExecutions += 1 },
+  })
+
+  await run()
+  await run()
+
+  assert.equal(tailExecutions, 2, "the procedural tail runs on every locked migration invocation")
+  assert.equal(namedExecutions, 1, "a recorded statement step is not re-applied")
+  assert.deepEqual([...database.applied.entries()], [["recorded-step", 1]])
   assert.equal(database.lockHolder, null)
 })
 

@@ -367,7 +367,7 @@ this path fires.
   `scripts/migrate.mjs` in `SELECT pg_advisory_lock(hashtext('mcsw-migrate'))`
   on a WebSocket `Pool` connection, add `schema_migrations(name text primary
   key, applied_at timestamptz)`, record each named step once.
-  Observation: A checked-out WebSocket session holds the advisory lock across per-step transactions; fake concurrent runs serialize, record once, and recover after failure.
+  Observation: A checked-out WebSocket session holds the advisory lock across per-step transactions; named steps record once while the unrecorded idempotent tail reruns under lock, verified by fake concurrent and sequential replays.
 - [x] **No backup exists.** `.backups` is empty; the export route is leads-only
   `LIMIT 5000` and includes test rows. Add `.github/workflows/backup.yml` on
   `5 12 * * 0` running `pg_dump --format=custom` to a workflow artifact (90-day
