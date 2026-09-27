@@ -346,7 +346,7 @@ this path fires.
 
 ## P2 — Database integrity and compute budget
 
-- [ ] **`events` can be deleted; `lead_events` can be written.**
+- [x] **`events` can be deleted; `lead_events` can be written.**
   `events_truth_immutable` is UPDATE-only and `lead_events` has an FK CASCADE.
   Add in `scripts/migrate.mjs` (idempotent `CREATE OR REPLACE` / `DROP TRIGGER
   IF EXISTS`):
@@ -362,15 +362,18 @@ this path fires.
     FOR EACH ROW EXECUTE FUNCTION events_no_delete();
   ```
   Prove with the QA step, not a source regex.
-- [ ] **Migrations have no lock, no transaction, no version table.** Wrap
+  Observation: Added idempotent delete/write guards; fake-client behavior tests reject protected operations and confirm rerunning the DDL leaves two triggers.
+- [x] **Migrations have no lock, no transaction, no version table.** Wrap
   `scripts/migrate.mjs` in `SELECT pg_advisory_lock(hashtext('mcsw-migrate'))`
   on a WebSocket `Pool` connection, add `schema_migrations(name text primary
   key, applied_at timestamptz)`, record each named step once.
-- [ ] **No backup exists.** `.backups` is empty; the export route is leads-only
+  Observation: A checked-out WebSocket session holds the advisory lock across per-step transactions; named steps record once while the unrecorded idempotent tail reruns under lock, verified by fake concurrent and sequential replays.
+- [x] **No backup exists.** `.backups` is empty; the export route is leads-only
   `LIMIT 5000` and includes test rows. Add `.github/workflows/backup.yml` on
   `5 12 * * 0` running `pg_dump --format=custom` to a workflow artifact (90-day
   retention). Change `app/api/ops/export/route.ts` to `WHERE is_test = false`
-  unless `?includeTests=1`, and make it stream, not `LIMIT`.
+  for every format, and make it stream, not `LIMIT`.
+  Observation: Added the weekly custom-format backup and retained 90-day artifacts; both CSV exports stream and exclude test rows. Microsecond boundary tests confirm full-precision cursors neither skip leads nor duplicate conversions.
 - [ ] **The board is the compute bill.** `app/board/board.tsx:373`
   `router.refresh()` every 60 s (8 s when active), 11 loaders plus
   `getBoardJobDetails` plus an `after()` sweep per refresh; `/ops`
