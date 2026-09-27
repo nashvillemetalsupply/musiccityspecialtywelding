@@ -71,6 +71,6 @@ test("all five route entry points load legacy CSS before component and control s
   for (const path of ["app/ops/layout.tsx", "app/board/page.tsx", "app/board/calls/page.tsx", "app/board/customers/page.tsx", "app/board/updates/page.tsx"]) {
     assert.match(read(path), /^import "(?:\.\.\/)+styles\/ops-legacy\.css"\n/, `${path} must import legacy first to preserve the old cascade`)
   }
-  assert.match(read("app/globals.css"), /^@import "\.\.\/tokens\.css";/m)
+  assert.match(read("app/globals.css"), /^@import "\.\.\/docs\/tokens\.css";/m)
   assert.doesNotMatch(read("styles/ops-legacy.css"), /@import/)
 })
