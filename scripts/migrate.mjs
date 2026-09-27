@@ -148,8 +148,10 @@ const statements = [
     email TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     expires_at TIMESTAMPTZ NOT NULL,
-    used_at TIMESTAMPTZ
+    used_at TIMESTAMPTZ,
+    last_used_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
+  `ALTER TABLE ops_tokens ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ NOT NULL DEFAULT now()`,
   `CREATE TABLE IF NOT EXISTS push_subscriptions (
     endpoint TEXT PRIMARY KEY,
     p256dh TEXT NOT NULL,

@@ -7,7 +7,7 @@ export const OPS_SESSION_COOKIE = "mcw_ops_session"
 export const OPS_SESSION_MAX_AGE_SECONDS = 90 * 24 * 60 * 60
 const LOGIN_TOKEN_TTL_MS = 15 * 60 * 1000
 const SMS_CODE_TTL_MS = 10 * 60 * 1000
-const SESSION_TTL_MS = OPS_SESSION_MAX_AGE_SECONDS * 1000
+const SESSION_IDLE_TTL_MS = 14 * 24 * 60 * 60 * 1000
 
 export function getOwnerEmail(): string {
   return (
@@ -67,7 +67,7 @@ export async function createLoginToken(operator: Operator): Promise<string> {
 async function createSession(operatorId: number, email: string): Promise<string> {
   const sql = getSql()
   const sessionToken = randomBytes(32).toString("hex")
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString()
+  const expiresAt = new Date(Date.now() + SESSION_IDLE_TTL_MS).toISOString()
   await sql`
     INSERT INTO ops_tokens (token_hash, purpose, email, operator_id, expires_at)
     VALUES (
@@ -168,23 +168,27 @@ export async function validateSessionToken(token: string | undefined): Promise<O
   try {
     const sql = getSql()
     const rows = (await sql`
-      SELECT o.* FROM ops_tokens t
-      JOIN operators o ON (
-        o.id = t.operator_id OR
-        (t.operator_id IS NULL AND lower(o.email) = lower(t.email))
-      )
+      UPDATE ops_tokens t SET
+        last_used_at = now(),
+        expires_at = now() + interval '14 days'
+      FROM operators o
       WHERE t.token_hash = ${hashToken(token)}::text
         AND t.purpose = 'session'
         AND t.expires_at > now()
+        AND t.last_used_at > now() - interval '14 days'
         AND o.active = true
-      LIMIT 1`) as { email: string }[]
+        AND (
+          o.id = t.operator_id OR
+          (t.operator_id IS NULL AND lower(o.email) = lower(t.email))
+        )
+      RETURNING o.*`) as { email: string }[]
     return rows.length ? (rows[0] as Operator) : null
   } catch {
     return null
   }
 }
 
-export async function destroySession(token: string | undefined) {
+export async function revokeSession(token: string | undefined) {
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return
   const sql = getSql()
   await sql`DELETE FROM ops_tokens WHERE token_hash = ${hashToken(token)}::text`

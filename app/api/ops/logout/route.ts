@@ -1,12 +1,12 @@
 import { cookies } from "next/headers"
-import { destroySession, OPS_SESSION_COOKIE } from "@/lib/ops-auth"
+import { revokeSession, OPS_SESSION_COOKIE } from "@/lib/ops-auth"
 
 export const runtime = "nodejs"
 
 export async function POST(req: Request) {
   const cookieStore = await cookies()
   const token = cookieStore.get(OPS_SESSION_COOKIE)?.value
-  await destroySession(token).catch(() => undefined)
+  await revokeSession(token).catch(() => undefined)
 
   const headers = new Headers()
   headers.append(

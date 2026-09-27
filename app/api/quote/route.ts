@@ -542,7 +542,6 @@ export async function POST(req: Request) {
         `Meta:`,
         leadId !== null ? `Job #${leadId}` : `Job number: (not persisted)`,
         `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"}`,
-        `IP: ${ip}`,
         `Time: ${now}`,
         leadPublicId
           ? `Manage: https://musiccityspecialtywelding.com/ops`

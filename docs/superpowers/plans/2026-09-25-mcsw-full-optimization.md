@@ -469,10 +469,10 @@ this path fires.
 - [ ] **No refund path.** `parseDollarsToCents` rejects negatives. Add a
   `payment.reversed` event and ledger entry, owner-only, with reason required.
   Do not touch the existing rows or types.
-- [ ] **Session hygiene.** `validateSessionToken` swallows DB errors (fail
+- [x] **Session hygiene.** `validateSessionToken` swallows DB errors (fail
   closed); 90-day cookie has no idle timeout (add 14-day idle, sliding); expose
   `revokeSession` on the Shop card. Owner quote email includes the customer's
-  IP (`app/api/quote/route.ts:~571`); drop it.
+  IP (`app/api/quote/route.ts:~571`); drop it. Observation: DB validation updates last-use and a 14-day idle expiry; Shop offers session revocation; the owner email omits IP; focused tests pass.
 - [ ] **Build-fact numbers unchecked.** `app/ops/builds/actions.ts:58,72`
   `Number()` without `Number.isFinite`. Validate.
 - [ ] **CSP and HSTS.** `next.config.mjs` has no CSP; HSTS lacks
