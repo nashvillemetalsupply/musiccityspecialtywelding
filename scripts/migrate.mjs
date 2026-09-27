@@ -1003,6 +1003,42 @@ const statements = [
     CONSTRAINT job_closeout_updates_rework_check CHECK (rework_state IN ('yes','no'))
   )`,
   `CREATE INDEX IF NOT EXISTS job_closeout_updates_lead_idx ON job_closeout_updates(lead_id, reviewed_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS closeout_photo_uploads (
+    id TEXT PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    operator_id BIGINT NOT NULL REFERENCES operators(id),
+    upload_mode TEXT NOT NULL,
+    pathname TEXT NOT NULL UNIQUE,
+    original_name TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    size_bytes BIGINT NOT NULL,
+    is_test BOOLEAN NOT NULL DEFAULT false,
+    status TEXT NOT NULL DEFAULT 'pending',
+    attached_event_id BIGINT REFERENCES events(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    uploaded_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT closeout_photo_uploads_mode_check CHECK (upload_mode IN ('completion','addendum')),
+    CONSTRAINT closeout_photo_uploads_size_check CHECK (size_bytes > 0 AND size_bytes <= 12582912),
+    CONSTRAINT closeout_photo_uploads_status_check CHECK (status IN ('pending','uploaded','attached'))
+  )`,
+  `CREATE INDEX IF NOT EXISTS closeout_photo_uploads_lead_idx
+    ON closeout_photo_uploads(lead_id, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS closeout_photo_uploads_pending_idx
+    ON closeout_photo_uploads(updated_at) WHERE status = 'pending'`,
+  `CREATE TABLE IF NOT EXISTS trouble_reports (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    source TEXT NOT NULL,
+    message TEXT NOT NULL DEFAULT '',
+    digest TEXT NOT NULL DEFAULT '',
+    route TEXT NOT NULL DEFAULT '',
+    reported_by BIGINT REFERENCES operators(id),
+    is_test BOOLEAN NOT NULL DEFAULT true
+  )`,
+  `CREATE INDEX IF NOT EXISTS trouble_reports_client_errors_idx
+    ON trouble_reports(created_at DESC, is_test) WHERE source = 'board-client-error'`,
   // What is in the price. One row per line of the board panel's breakdown:
   // label, the grey qualifier beside it, and the money. The quoted price stays
   // on leads.estimate_value_cents -- these lines explain that number, they do
