@@ -66,7 +66,7 @@ test("public phone taps are measured as intent without firing the quote conversi
   const phoneClicks = read("components/phone-click-tracker.tsx")
   assert.match(analytics, /<PhoneClickTracker\s*\/>/)
   assert.match(phoneClicks, /closest<HTMLAnchorElement>\('a\[href\^="tel:"\]'\)/)
-  assert.match(phoneClicks, /window\.gtag\("event", "phone_click"/)
+  assert.match(phoneClicks, /queueMeasurementEvent\("phone_click"/)
   assert.doesNotMatch(phoneClicks, /AW-17817632790|conversion/)
 })
 

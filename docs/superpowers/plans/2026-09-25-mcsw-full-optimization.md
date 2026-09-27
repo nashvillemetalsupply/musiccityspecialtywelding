@@ -466,10 +466,11 @@ this path fires.
 
 ## P4 — Engineering health
 
-- [ ] **No CI gate.** All four workflows are `schedule` + `workflow_dispatch`
+- [x] **No CI gate.** All four workflows are `schedule` + `workflow_dispatch`
   against production. Add `.github/workflows/ci.yml` on `pull_request` and
   `push: main`: `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`.
   Register it as a Vercel deployment check so a red suite cannot promote.
+  Observation: Added a `CI / CI` check context and verified the YAML and `npm test` command; Vercel project check selection could not be reached in the browser session.
 - [ ] **Test discovery.** Seven `scripts/*.test.mjs` are in no npm script
   (`board-final-navigation`, `board-internal-tests`, `control-css`,
   `job-calendar`, `job-scheduling`, `ops-conversion-exit`,
