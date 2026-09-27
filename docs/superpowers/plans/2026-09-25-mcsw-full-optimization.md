@@ -281,10 +281,11 @@ this path fires.
   retry at ~2 s, park at `now()` rather than +10 min, pass `force: true` on
   Twilio-triggered sweeps.
   Observation: fake-Twilio tests recorded two attempts 2 s apart after a definitive failure; ambiguous outcomes stayed quarantined, and Twilio sweeps use `force: true`.
-- [ ] **Retry blanks the evidence.** `lib/notify.ts:491` sets
+- [x] **Retry blanks the evidence.** `lib/notify.ts:491` sets
   `delivery_error = ''` and the Twilio message at L664-700 is discarded. Keep
   the last error and provider payload (append to a `delivery_history jsonb`
   column, additive) before retrying.
+  Observation: a fake-Twilio retry appended both the rejected response and accepted receipt to `delivery_history`; claims no longer clear `delivery_error`.
 - [ ] **No timeouts on Twilio or DeepSeek.** `lib/twilio.ts:437-478` `sendSms`
   and `lib/ai.ts:30,61` have no `AbortSignal`. Add 8 s for SMS, 30 s for AI,
   and a timeout on the weather fetch in `app/api/ops/brief/route.ts:29-31`.

@@ -649,6 +649,7 @@ const statements = [
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_last_attempt_at TIMESTAMPTZ`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_next_attempt_at TIMESTAMPTZ`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_error TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_history JSONB NOT NULL DEFAULT '[]'::jsonb`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS quiet_hours_exempt BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sms_fallback BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS sms_only BOOLEAN NOT NULL DEFAULT false`,

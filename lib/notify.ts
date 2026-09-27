@@ -2,7 +2,7 @@ import { getSql } from "@/lib/db"
 import { Resend } from "resend"
 import { getOperatorById, getOperatorByPhone, listOperators, operatorHasEmail, type Operator } from "@/lib/operators"
 import { sendPushToOperator } from "@/lib/push"
-import { isDefinitiveTwilioError, sendSms, twilioCallbackUrl, twilioSmsConfigured } from "@/lib/twilio"
+import { isDefinitiveTwilioError, sendSms, TwilioProviderError, twilioCallbackUrl, twilioSmsConfigured } from "@/lib/twilio"
 import { isDefinitiveEmailProviderError, sendEmailWithProviderTruth } from "@/lib/email-provider-truth.mjs"
 import { formatSmsBody, normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
@@ -38,8 +38,8 @@ const DEFAULT_OPERATOR_ORIGIN = "https://musiccityspecialtywelding.com"
 const SMS_INLINE_RETRY_DELAY_MS = 2_000
 
 type SmsAttempt =
-  | { attempt: number; outcome: "accepted"; sid: string; status: string }
-  | { attempt: number; outcome: "failed" | "unknown"; error: string }
+  | { attempt: number; outcome: "accepted"; sid: string; status: string; providerPayload: unknown }
+  | { attempt: number; outcome: "failed" | "unknown"; error: string; providerPayload: unknown }
 
 async function sendSmsWithInlineRetry(
   input: Parameters<typeof sendSms>[0],
@@ -48,18 +48,50 @@ async function sendSmsWithInlineRetry(
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
       const receipt = await sendSms(input)
-      await onAttempt({ attempt, outcome: "accepted", sid: receipt.sid, status: receipt.status })
+      await onAttempt({
+        attempt,
+        outcome: "accepted",
+        sid: receipt.sid,
+        status: receipt.status,
+        providerPayload: receipt.providerPayload ?? { sid: receipt.sid, status: receipt.status },
+      })
       return { sent: true, unknown: false, error: "" }
     } catch (error) {
       const definitive = isDefinitiveTwilioError(error)
       const message = `Twilio send failed: ${error instanceof Error ? error.message : String(error)}`
-      await onAttempt({ attempt, outcome: definitive ? "failed" : "unknown", error: message })
+      await onAttempt({
+        attempt,
+        outcome: definitive ? "failed" : "unknown",
+        error: message,
+        providerPayload: error instanceof TwilioProviderError ? error.providerPayload : null,
+      })
       if (!definitive) return { sent: false, unknown: true, error: message }
       if (attempt === 2) return { sent: false, unknown: false, error: message }
       await new Promise<void>((resolve) => setTimeout(resolve, SMS_INLINE_RETRY_DELAY_MS))
     }
   }
   return { sent: false, unknown: false, error: "Twilio send failed without a provider result." }
+}
+
+async function persistSmsAttempt(sql: ReturnType<typeof getSql>, notificationId: number, attempt: SmsAttempt) {
+  const accepted = attempt.outcome === "accepted"
+  const providerSid = accepted ? attempt.sid : null
+  const providerStatus = accepted ? attempt.status : null
+  const error = accepted ? null : attempt.error.slice(0, 500)
+  const entry = {
+    provider: "twilio",
+    attempt: attempt.attempt,
+    outcome: attempt.outcome,
+    recordedAt: new Date().toISOString(),
+    error,
+    payload: attempt.providerPayload ?? null,
+  }
+  await sql`UPDATE notifications SET
+    delivery_history = COALESCE(delivery_history, '[]'::jsonb) || ${JSON.stringify([entry])}::jsonb,
+    delivery_error = CASE WHEN ${accepted}::boolean THEN delivery_error ELSE ${error}::text END,
+    provider_message_sid = COALESCE(provider_message_sid, ${providerSid}::text),
+    provider_status = COALESCE(provider_status, ${providerStatus}::text)
+    WHERE id = ${notificationId}::bigint`
 }
 
 function operatorAlertUrl(value: string) {
@@ -265,7 +297,7 @@ export async function notify(input: {
       if (coalesced[0]) {
         const claimed = (await sql`
           UPDATE notifications SET delivery_status = 'sending', delivery_attempts = delivery_attempts + 1,
-            delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
+            delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL
           WHERE id = ${id}::bigint AND sent_at IS NULL AND delivery_status = 'pending'
           RETURNING id`) as { id: number }[]
         if (!claimed[0]) return { id, sent: false, reason: "already-claimed" as const }
@@ -401,14 +433,7 @@ export async function notify(input: {
             to: operator.cell_phone,
             body: smsBody,
             statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${id}`),
-          }, async (attempt) => {
-            if (attempt.outcome === "accepted") {
-              await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${attempt.sid}::text),
-                provider_status = COALESCE(provider_status, ${attempt.status}::text) WHERE id = ${id}::bigint`
-            } else {
-              await sql`UPDATE notifications SET delivery_error = ${attempt.error.slice(0, 500)}::text WHERE id = ${id}::bigint`
-            }
-          })
+          }, (attempt) => persistSmsAttempt(sql, id, attempt))
         sent = sms.sent
         smsDeliveryUnknown = sms.unknown
         smsFailure = sms.error
@@ -704,14 +729,7 @@ export async function retryPendingInterrupts(limit = 10) {
             to: recipient.cell_phone,
             body: smsBody,
             statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${row.id}`),
-          }, async (attempt) => {
-            if (attempt.outcome === "accepted") {
-              await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${attempt.sid}::text),
-                provider_status = COALESCE(provider_status, ${attempt.status}::text) WHERE id = ${row.id}::bigint`
-            } else {
-              await sql`UPDATE notifications SET delivery_error = ${attempt.error.slice(0, 500)}::text WHERE id = ${row.id}::bigint`
-            }
-          })
+          }, (attempt) => persistSmsAttempt(sql, row.id, attempt))
         delivered = sms.sent
         smsDeliveryUnknown = sms.unknown
         smsFailure = sms.error

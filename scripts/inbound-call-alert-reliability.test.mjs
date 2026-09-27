@@ -72,6 +72,7 @@ function createNotifyHarness({
   smsSucceeds = false,
   smsOutcomes = null,
   smsDefinitive = true,
+  smsErrorPayload = { code: 30003, message: "Unreachable test destination" },
   operator = owner,
   retryCandidate = null,
   retryContext = null,
@@ -117,6 +118,15 @@ function createNotifyHarness({
     }
   }
 
+  class FakeTwilioProviderError extends Error {
+    constructor(message, definitive, providerPayload = null) {
+      super(message)
+      this.name = "TwilioProviderError"
+      this.definitive = definitive
+      this.providerPayload = providerPayload
+    }
+  }
+
   const fakes = new Map([
     ["@/lib/db", { getSql: () => sql }],
     ["@/lib/push", {
@@ -126,12 +136,13 @@ function createNotifyHarness({
       },
     }],
     ["@/lib/twilio", {
-      isDefinitiveTwilioError: () => smsDefinitive,
+      TwilioProviderError: FakeTwilioProviderError,
+      isDefinitiveTwilioError: (error) => error instanceof FakeTwilioProviderError && error.definitive,
       sendSms: async (payload) => {
         smsCalls.push(payload)
         const outcome = smsOutcomes?.[smsCalls.length - 1] ?? (smsSucceeds ? "accepted" : "failed")
         if (outcome === "accepted") return { sid: `SM-notification-${smsCalls.length}`, status: "queued" }
-        throw new Error("SMS provider rejected the alert")
+        throw new FakeTwilioProviderError("SMS provider rejected the alert", smsDefinitive, smsErrorPayload)
       },
       twilioCallbackUrl: (path) => `https://example.test${path}`,
       twilioSmsConfigured: () => smsConfigured,
@@ -353,6 +364,60 @@ test("an ambiguous Twilio result is quarantined without an inline repeat", async
     assert.deepEqual(delays, [])
     assert.equal(result[0]?.reason, "delivery-unknown")
     assert.ok(harness.sqlCalls.some(({ text }) => text.includes("delivery_status = 'unknown'")))
+  }))
+})
+
+test("SMS retry history appends the rejected Twilio payload and the accepted receipt", async () => {
+  await withEnv({ VERCEL_ENV: "production" }, async () => withFastSmsRetry(async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      smsConfigured: true,
+      smsOutcomes: ["failed", "accepted"],
+      retryCandidate: {
+        id: 901,
+        operator_id: owner.id,
+        title: missedCallAlert.title,
+        body: missedCallAlert.body,
+        url: missedCallAlert.url,
+        budget_exempt: true,
+        quiet_hours_exempt: true,
+        sms_fallback: false,
+        sms_only: true,
+        provider_email_id: null,
+        provider_email_status: null,
+      },
+      retryContext: {
+        operator_id: owner.id,
+        email: owner.email,
+        recipient_role: "owner",
+        owner_only: true,
+        source_kind: "call.missed",
+        is_test: false,
+      },
+    })
+
+    const result = await harness.retryPendingInterrupts()
+    const historyWrites = harness.sqlCalls.filter(({ text }) => text.includes("delivery_history = COALESCE"))
+    const history = historyWrites.map(({ text, values }) => {
+      assert.match(text, /COALESCE\(delivery_history, '\[\]'::jsonb\) \|\|/)
+      const encoded = values.find((value) => typeof value === "string" && value.startsWith("[{\"provider\""))
+      return JSON.parse(encoded)[0]
+    })
+
+    assert.equal(result.sent, 1)
+    assert.equal(harness.smsCalls.length, 2)
+    assert.equal(history.length, 2)
+    assert.equal(history[0].outcome, "failed")
+    assert.match(history[0].error, /SMS provider rejected the alert/)
+    assert.deepEqual(history[0].payload, { code: 30003, message: "Unreachable test destination" })
+    assert.equal(history[1].outcome, "accepted")
+    assert.deepEqual(history[1].payload, { sid: "SM-notification-2", status: "queued" })
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("provider_message_sid = COALESCE")))
+    const claim = harness.sqlCalls.find(({ text }) => text.includes("delivery_status = 'sending'") && text.includes("delivery_attempts = delivery_attempts + 1"))
+    assert.doesNotMatch(claim.text, /delivery_error\s*=\s*''/)
+
+    const migration = readFileSync(resolve(root, "scripts/migrate.mjs"), "utf8")
+    assert.match(migration, /ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_history JSONB NOT NULL DEFAULT '\[\]'::jsonb/)
   }))
 })
 
