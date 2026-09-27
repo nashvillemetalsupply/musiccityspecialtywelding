@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { randomUUID } from "node:crypto"
 import { headers } from "next/headers"
 import { after } from "next/server"
+import { redirect } from "next/navigation"
 import { dbConfigured } from "@/lib/db"
 import { getPromiseSummary } from "@/lib/commitments"
 import { listTodayEvents } from "@/lib/events"
@@ -19,13 +20,12 @@ import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getMonthCostPerLead, getOpsStat
 import type { JobBoardStage } from "@/lib/ops-data"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { JobControl } from "./board"
-import type { BoardPaneData } from "./board"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
 import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.mjs"
 import { canAccessInternalTests } from "@/lib/operators"
 import { centralDateKey } from "@/lib/job-calendar.mjs"
-import { emptyMonthJobCalendar, listMonthJobCalendar } from "@/lib/job-calendar-data"
+import { listMonthJobCalendar } from "@/lib/job-calendar-data"
 import { JobCalendar } from "./job-calendar"
 import { OpsOfflineSupport } from "@/app/ops/offline-support"
 import "./board.css"
@@ -55,30 +55,6 @@ function trailBody(body: string) {
   return oneLine.length <= 140 ? oneLine : `${oneLine.slice(0, 137).trimEnd()}...`
 }
 
-// This value must stay in the server module. Exporting it from the client
-// component turns it into a client reference instead of serializable data.
-const EMPTY_BOARD: BoardPaneData = {
-  counts: { board: 0, attention: 0, shop: 0, waiting: 0, ready: 0, closed: 0 },
-  signalCounts: { waiting: 0, noreply: 0, promise: 0, followup: 0, bounced: 0 },
-  promises: { kept: 0, open: 0, broken: 0, overdue: null },
-  week: [],
-  outTheDoor: { jobs: 0, paidJobs: 0, revenueCents: null, stillOutCents: null },
-  costPerLead: null,
-  medianFirstResponseMinutes: null,
-  todayTrail: [],
-  callSketch: null,
-  voice: null,
-  items: [],
-  details: new Map(),
-  resultTotal: 0,
-  pageSize: 8,
-  page: 1,
-  hasNext: false,
-  stage: "board",
-  signal: undefined,
-  stages: [...JOB_BOARD_STAGES],
-}
-
 export default async function BoardPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
   // One clock feeds the heading, month calendar and relative-time labels.
@@ -99,13 +75,11 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     ? (requestedSignal as BoardSignalKind)
     : undefined
 
-  // This route carries real customer names and real money, so it is gated the
-  // way /ops is. Signed out, the board renders its structural zero state —
-  // every frame, label and weight, with real zeros and no rows. The mockup's
-  // fixtures are never a fallback: a hand-typed number that survives onto a
-  // wired page is exactly the failure this redesign exists to kill.
+  // This route carries real customer names and money, so signed-out requests
+  // use the same sign-in door as the rest of the operations app.
   const operator = dbConfigured() ? await getAuthenticatedOperator() : null
-  const sessionCacheId = operator ? await getOpsCacheSessionId() : null
+  if (!operator) redirect("/ops")
+  const sessionCacheId = await getOpsCacheSessionId()
   // Internal test rows are owner-only. The flag is decided here, on the server,
   // from the role the session resolved to -- a crew member or a signed-out
   // request that hand-types ?tests=1 gets the ordinary board, because the URL
@@ -114,23 +88,12 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   const includeTests = params.tests === "1" && Boolean(operator && canAccessInternalTests(operator.role))
   const chrome = {
     date: BOARD_DATE.format(now),
-    operatorInitial: (operator?.name || operator?.email || "").trim().charAt(0).toLocaleUpperCase("en-US"),
-    owner: operator?.role === "owner",
+    operatorInitial: (operator.name || operator.email || "").trim().charAt(0).toLocaleUpperCase("en-US"),
+    owner: operator.role === "owner",
     query,
     includeTests,
   }
   const nowMs = now.getTime()
-  if (!operator) return <>
-    <OpsOfflineSupport sessionCacheId={null} />
-    <JobControl
-      board={{ ...EMPTY_BOARD, stage, signal, stages: [...JOB_BOARD_STAGES] }}
-      calendar={<JobCalendar days={emptyMonthJobCalendar(now)} todayDateKey={centralDateKey(now) ?? ""} />}
-      chrome={chrome}
-      nowMs={nowMs}
-      fontClass={FONT_CLASS}
-    />
-  </>
-
   const gmailWakeOrigin = operator.role === "owner" ? requestOriginFromHeaders(await headers()) : ""
   if (operator.role === "owner") after(async () => {
     const result = await runRecoverySweep({ trigger: "owner-board" })

@@ -14,12 +14,14 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
   const [state, setState] = useState<
     "unsupported" | "checking" | "off" | "on" | "enabling" | "disabling" | "denied"
   >("checking")
+  const [errorMessage, setErrorMessage] = useState("")
 
   useEffect(() => {
     let cancelled = false
     const detect = async () => {
       await Promise.resolve()
       if (cancelled) return
+      setErrorMessage("")
       if (!vapidPublicKey || !("serviceWorker" in navigator) || !("PushManager" in window)) {
         setState("unsupported")
         return
@@ -44,7 +46,10 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
         }
         if (!cancelled) setState(subscription ? "on" : "off")
       } catch {
-        if (!cancelled) setState("unsupported")
+        if (!cancelled) {
+          setState("off")
+          setErrorMessage("Alerts could not be checked. Check your connection and try again.")
+        }
       }
     }
     void detect()
@@ -54,6 +59,7 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
   }, [vapidPublicKey])
 
   const enable = async () => {
+    setErrorMessage("")
     setState("enabling")
     try {
       const registration = await registerOpsServiceWorker()
@@ -70,27 +76,32 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
       if (!response.ok) throw new Error("subscribe failed")
       setState("on")
     } catch {
-      setState(Notification.permission === "denied" ? "denied" : "off")
+      const denied = Notification.permission === "denied"
+      setState(denied ? "denied" : "off")
+      if (!denied) setErrorMessage("Alerts could not be enabled. Check your connection and try again.")
     }
   }
 
   const disable = async () => {
+    setErrorMessage("")
     setState("disabling")
     try {
       const registration = await registerOpsServiceWorker()
       if (!registration) throw new Error("service worker unavailable")
       const subscription = await registration.pushManager.getSubscription()
       if (subscription) {
-        await fetch("/api/ops/push", {
+        const response = await fetch("/api/ops/push", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         })
+        if (!response.ok) throw new Error("push removal failed")
         await subscription.unsubscribe()
       }
       setState("off")
     } catch {
       setState("on")
+      setErrorMessage("Alerts could not be turned off. Check your connection and try again.")
     }
   }
 
@@ -98,7 +109,7 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
   if (state === "denied") {
     return <span className="ops-followup-current">notifications blocked in browser settings</span>
   }
-  return (
+  return <>
     <button
       type="button"
       className="ops-ghost"
@@ -114,5 +125,6 @@ export function PushToggle({ vapidPublicKey }: { vapidPublicKey: string }) {
             ? "Turning alerts off"
             : "Alerts"}
     </button>
-  )
+    {errorMessage && <span className="ops-followup-current" role="alert">{errorMessage}</span>}
+  </>
 }

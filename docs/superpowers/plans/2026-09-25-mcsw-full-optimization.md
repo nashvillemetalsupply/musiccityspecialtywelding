@@ -605,8 +605,9 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   versioned by commit SHA, with an offline banner component. Writes are never
   queued offline (Call precedes Text; a failed write must be visible).
   - Observation: root worker caches session-keyed GET navigations and SHA-versioned static assets; logout or a session change purges private pages, and writes stay network-only.
-- [ ] **Signed-out `/board` shows the empty board.** Show the login screen.
+- [x] **Signed-out `/board` shows the empty board.** Show the login screen.
   Push toggle vanishes on error (`push-toggle.tsx:255-257`); show the error.
+  - Observation: signed-out board requests redirect to the existing `/ops` login, and push errors render as alerts.
   `glass-actions.ts` and `calendar-actions.ts` never `revalidatePath`; add it.
 - [ ] **Client bundle.** 15 KB base64 logo inline in `board.tsx:422` (serve
   the file); theme boot duplicated (`board.tsx:383-414` vs `theme-boot.tsx`,

@@ -47,12 +47,13 @@ test("notification click accepts /board and focuses an existing same-origin wind
     async openWindow(target) { navigatedTo = target; return client },
   }
   const self = {
-    location: { origin: "https://mcsw.test" },
+    location: { origin: "https://mcsw.test", href: "https://mcsw.test/ops-sw.js?build=test" },
     registration: { scope: "https://mcsw.test/", async showNotification() {} },
+    clients: fakeClients,
     addEventListener(name, handler) { handlers[name] = handler },
     async skipWaiting() {},
   }
-  vm.runInNewContext(WORKER, { self, clients: fakeClients, URL, Promise })
+  vm.runInNewContext(WORKER, { self, URL, Request, Response, Promise })
 
   const click = async (url) => {
     let pending

@@ -13,6 +13,8 @@ const REGISTER = readFileSync(new URL("../app/ops/register-ops-service-worker.ts
 const NEXT_CONFIG = readFileSync(new URL("../next.config.mjs", import.meta.url), "utf8")
 const CALENDAR_ACTIONS = readFileSync(new URL("../app/board/calendar-actions.ts", import.meta.url), "utf8")
 const GLASS_ACTIONS = readFileSync(new URL("../app/ops/leads/[id]/glass-actions.ts", import.meta.url), "utf8")
+const BOARD_PAGE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8")
+const PUSH_TOGGLE = readFileSync(new URL("../app/ops/push-toggle.tsx", import.meta.url), "utf8")
 
 function createHarness(fetchImpl = async () => new Response("network"), sessionImpl = async () => Response.json({ sessionId: SESSION_A })) {
   const listeners = new Map()
@@ -187,4 +189,15 @@ test("calendar and Customer Page mutations revalidate their affected paths", () 
   assert.match(CALENDAR_ACTIONS, /revalidatePath\("\/board"\)/)
   assert.match(CALENDAR_ACTIONS, /revalidatePath\(`\/ops\/leads\/\$\{created\.leadId\}`\)/)
   assert.match(GLASS_ACTIONS, /revalidatePath\(`\/ops\/leads\/\$\{leadId\}`\)/)
+})
+
+test("signed-out /board requests use the login door instead of a zero-state board", () => {
+  assert.match(BOARD_PAGE, /if \(!operator\) redirect\("\/ops"\)/)
+  assert.doesNotMatch(BOARD_PAGE, /EMPTY_BOARD/)
+})
+
+test("push-toggle failures remain visible to the operator", () => {
+  assert.match(PUSH_TOGGLE, /errorMessage && <span[^>]*role="alert"/)
+  assert.match(PUSH_TOGGLE, /Alerts could not be checked/)
+  assert.match(PUSH_TOGGLE, /Alerts could not be enabled/)
 })
