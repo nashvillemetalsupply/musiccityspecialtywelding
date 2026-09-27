@@ -2,7 +2,9 @@
 // Usage: node scripts/migrate.mjs  (reads DATABASE_URL from env or .env.local)
 import { readFileSync, existsSync } from "node:fs"
 import { createHash } from "node:crypto"
-import { neon } from "@neondatabase/serverless"
+import { pathToFileURL } from "node:url"
+import { Pool } from "@neondatabase/serverless"
+import { runWithMigrationLock } from "./migration-runner.mjs"
 
 function resolveDatabaseUrl() {
   if (process.env.DATABASE_URL_UNPOOLED?.trim()) return process.env.DATABASE_URL_UNPOOLED.trim()
@@ -16,8 +18,6 @@ function resolveDatabaseUrl() {
   }
   throw new Error("DATABASE_URL_UNPOOLED or DATABASE_URL not found in env or .env.local")
 }
-
-const sql = neon(resolveDatabaseUrl())
 
 const statements = [
   `CREATE EXTENSION IF NOT EXISTS pg_trgm`,
@@ -1119,7 +1119,7 @@ const statements = [
   )`,
 ]
 
-const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$
+export const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$
   BEGIN RAISE EXCEPTION 'events is immutable'; END $$ LANGUAGE plpgsql;
   DROP TRIGGER IF EXISTS events_truth_no_delete ON events;
   CREATE TRIGGER events_truth_no_delete BEFORE DELETE ON events
@@ -1128,10 +1128,7 @@ const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete
   CREATE TRIGGER lead_events_frozen BEFORE INSERT OR UPDATE OR DELETE ON lead_events
     FOR EACH ROW EXECUTE FUNCTION events_no_delete();`
 
-for (const statement of statements) {
-  await sql.query(statement)
-}
-await sql.query(eventsImmutabilityStatement)
+async function runLegacyProceduralTail(sql) {
 
 const ownerEmail = (
   process.env.OPS_LOGIN_EMAIL?.trim() ||
@@ -1420,7 +1417,54 @@ await sql`
     )
     WHERE status = 'open' AND (lead_id IS NOT NULL OR person_id IS NOT NULL)`
 
-const tables = await sql`
-  SELECT table_name FROM information_schema.tables
-  WHERE table_schema = 'public' ORDER BY table_name`
-console.log("Migration complete. Tables:", tables.map((t) => t.table_name).join(", "))
+}
+
+function createTaggedSql(client) {
+  return async (strings, ...values) => {
+    const query = strings.reduce(
+      (text, segment, index) => text + segment + (index < values.length ? `$${index + 1}` : ""),
+      "",
+    )
+    const result = await client.query(query, values)
+    return result.rows
+  }
+}
+
+export async function runMigrations({
+  connectionString = resolveDatabaseUrl(),
+  poolFactory = (options) => new Pool(options),
+} = {}) {
+  const pool = poolFactory({
+    connectionString,
+    max: 1,
+    connectionTimeoutMillis: 30_000,
+    idleTimeoutMillis: 1_000,
+  })
+  const steps = [
+    // Keep the existing list append-only so recorded positional names remain stable.
+    ...statements.map((query, index) => ({
+      name: `legacy-sql-${String(index + 1).padStart(4, "0")}`,
+      query,
+    })),
+    { name: "events-lead-events-immutable", query: eventsImmutabilityStatement },
+  ]
+
+  await runWithMigrationLock({
+    pool,
+    steps,
+    runTail: (client) => runLegacyProceduralTail(createTaggedSql(client)),
+    onComplete: async (client) => {
+      const { rows: tables } = await client.query(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name",
+      )
+      console.log("Migration complete. Tables:", tables.map((table) => table.table_name).join(", "))
+    },
+  })
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runMigrations().catch((error) => {
+    console.error("Migration failed:", error)
+    process.exitCode = 1
+  })
+}
