@@ -6,16 +6,15 @@ import { CustomerBuildDrawing } from "@/components/build-sheets/customer-build-d
 import type { Viewport } from "next"
 import { Chivo } from "next/font/google"
 import { Check } from "lucide-react"
-import { getGlassJob, listGlassPromises, noteGlassView } from "@/lib/glass"
+import { getGlassJob, listGlassPromises } from "@/lib/glass"
 import { createGlassMediaUrl as issueGlassMediaUrl } from "@/lib/glass-media.mjs"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { getCustomerBuildProjection } from "@/lib/build-sheets"
-import { recordEvent } from "@/lib/events"
-import { notifyAll } from "@/lib/notify"
 import { getShopPhone } from "@/lib/shop-contact"
 import { glassStageIndex } from "@/lib/shop-brain-invariants.mjs"
 import { listGlassUploads } from "@/lib/glass-uploads"
 import { GlassUpload } from "./glass-upload"
+import { GlassViewBeacon } from "./view-beacon"
 import "./customer-page.css"
 
 const chivo = Chivo({
@@ -53,22 +52,11 @@ export default async function GlassPage({ params, searchParams }: { params: Prom
   if (!job) notFound()
   if (job.status === "closed") return <main className={`${chivo.variable} glass-page glass-page-brand`}><section className="glass-closed"><span>MCSW Customer Page</span><h1>This page is closed.</h1><p>Need the shop again? Call us. We still answer our phone.</p><a href={shopPhone.href}>Call the shop</a></section></main>
   const showReview = Boolean(job.completed_at && job.paid_at && !job.review_shown_at && process.env.GOOGLE_REVIEW_URL?.trim())
-  const [promises, view, uploads, customerBuild] = await Promise.all([
+  const [promises, uploads, customerBuild] = await Promise.all([
     listGlassPromises(job.lead_id),
-    noteGlassView(job),
     listGlassUploads(job),
     job.is_test && buildSheetsEnabled() ? getCustomerBuildProjection(job.lead_id) : Promise.resolve(null),
   ])
-  if (!job.is_test && view && Number(view.daily_view_count) >= 3) {
-    const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date())
-    let eventId = await recordEvent({ kind: "glass.view", actorType: "customer", leadId: job.lead_id, externalId: `glass:${job.token_hash}:${day}:buying-signal`, body: "Customer checked the Customer Page 3 times today", crewBody: "Customer checked the Customer Page 3 times today" })
-    if (!eventId) {
-      const { getSql } = await import("@/lib/db")
-      const existing = (await getSql()`SELECT id FROM events WHERE kind = 'glass.view' AND external_id = ${`glass:${job.token_hash}:${day}:buying-signal`}::text LIMIT 1`) as { id: number }[]
-      eventId = Number(existing[0]?.id) || null
-    }
-    if (eventId) await notifyAll({ priority: "digest", stock: "white", title: `${job.first_name} checked the Customer Page 3×`, body: "They are watching the job today.", crewBody: "They are watching the job today.", url: `/ops/leads/${job.lead_id}`, sourceEventId: eventId })
-  }
   const promise = promises.find((item) => item.status === "open")
   const stageIndex = glassStageIndex(job)
   const sharedPhotos = Array.isArray(job.photos) ? job.photos.filter((photo) => photo.shared).map((photo) => ({
@@ -85,7 +73,7 @@ export default async function GlassPage({ params, searchParams }: { params: Prom
     expired: Boolean(item.expired_at),
     mediaUrl: item.status === "stored" ? issueGlassMediaUrl(job.token_hash, "attachment", item.id) : null,
   }))
-  return <main className={`${chivo.variable} glass-page glass-page-brand`}><article className="glass-clipboard">
+  return <main className={`${chivo.variable} glass-page glass-page-brand`}><GlassViewBeacon token={token} /><article className="glass-clipboard">
     <header><div className="glass-brand-lockup"><Image src="/images/optimized/mcs_welding_logo.webp" alt="MCS Welding" width={240} height={160} sizes="72px" priority unoptimized /><strong>Customer Page</strong></div><div className="glass-contact"><span>{shopPhone.textReady ? "Call or text us" : "Call the shop"}</span><a href={shopPhone.href}>{shopPhone.display}</a></div></header>
     <section className="glass-job"><span>Your job</span><h1>{job.first_name}’s {job.service}</h1><CorrectionStub token={token} fact="job status" /></section>
     <section className="glass-promise"><span>Timing</span><strong>{promise ? date(promise.due_at) : job.completed_at ? "Finished" : "We’re confirming the date"}</strong>{promise && <><p>{promise.summary}</p>{promise.history.length > 0 && <div className="glass-promise-history">{promise.history.map((move) => <p key={`${move.changed_at}-${move.previous_due_at}`}><del>{date(move.previous_due_at)}</del><span>{move.reason || "The shop called and moved the date."}</span></p>)}</div>}</>}<CorrectionStub token={token} fact="promised date" /></section>
