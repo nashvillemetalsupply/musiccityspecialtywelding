@@ -44,8 +44,9 @@ export async function runWithMigrationLock({ pool, steps, runTail, onComplete })
     await client.query("SET lock_timeout = '30s'")
     await client.query("SET statement_timeout = '5min'")
     // Neon may suspend a compute after inactivity even while a client is connected.
-    // Ending a stalled idle session releases its session-level advisory lock.
+    // Ending a stalled idle session or transaction releases its session lock.
     await client.query("SET idle_session_timeout = '4min'")
+    await client.query("SET idle_in_transaction_session_timeout = '4min'")
     await client.query(ADVISORY_LOCK_SQL)
     lockAcquired = true
     await client.query(SCHEMA_MIGRATIONS_SQL)

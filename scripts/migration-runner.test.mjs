@@ -114,6 +114,7 @@ test("concurrent migration runs serialize and record every named step once", asy
   assert.ok(database.queries.some(({ text, values }) => text.includes("SET lock_timeout") && values.length === 0))
   assert.ok(database.queries.some(({ text }) => text.includes("SET statement_timeout")))
   assert.ok(database.queries.some(({ text }) => text.includes("SET idle_session_timeout")))
+  assert.ok(database.queries.some(({ text }) => text.includes("SET idle_in_transaction_session_timeout")))
   assert.ok(database.queries.some(({ text }) => text.includes("WHERE name = $1::text")))
   assert.ok(database.queries.some(({ text }) => text.includes("VALUES ($1::text, now())")))
   assert.equal(poolA.ended, true)
