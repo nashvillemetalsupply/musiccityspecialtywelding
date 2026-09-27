@@ -458,8 +458,8 @@ this path fires.
   `glass-upload.tsx:198` put the token in media URLs (logged by CDNs and
   browsers). Issue short-lived HMAC-signed media URLs (15 min) from the page
   server component.
-- [ ] **`/j/[token]/review` lacks `sameOrigin()`.** Add it; every other write
-  under `/j` has it.
+- [x] **`/j/[token]/review` lacks `sameOrigin()`.** Add it; every other write
+  under `/j` has it. Observation: review POSTs reject missing and cross-origin Origin headers before loading the token; focused test passes.
 - [ ] **View counter counts bots.** `app/j/[token]/page.tsx:55-70`. Count only
   on a client beacon after 3 s visible.
 - [ ] **Customer SMS has no quiet hours.** `sendSmsPersisted` will text a
