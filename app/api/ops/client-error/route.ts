@@ -11,9 +11,39 @@ type ClientErrorReport = {
   route?: unknown
 }
 
+const MAX_REPORT_BYTES = 4096
+
+class ClientErrorPayloadTooLarge extends Error {}
+
 function safeText(value: unknown, maximumLength: number) {
   if (typeof value !== "string") return ""
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maximumLength)
+}
+
+async function readReport(request: Request): Promise<unknown> {
+  const reader = request.body?.getReader()
+  if (!reader) throw new Error("The error report is empty.")
+
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    totalBytes += value.byteLength
+    if (totalBytes > MAX_REPORT_BYTES) {
+      await reader.cancel().catch(() => undefined)
+      throw new ClientErrorPayloadTooLarge()
+    }
+    chunks.push(value)
+  }
+
+  const bytes = new Uint8Array(totalBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return JSON.parse(new TextDecoder().decode(bytes)) as unknown
 }
 
 export async function POST(request: Request) {
@@ -22,16 +52,19 @@ export async function POST(request: Request) {
   if (!operator) return Response.json({ error: "Not signed in." }, { status: 401, headers: { "Cache-Control": "no-store" } })
 
   const contentLength = Number(request.headers.get("content-length") || "0")
-  if (Number.isFinite(contentLength) && contentLength > 4096) {
+  if (Number.isFinite(contentLength) && contentLength > MAX_REPORT_BYTES) {
     return Response.json({ error: "The error report is too large." }, { status: 413, headers: { "Cache-Control": "no-store" } })
   }
 
   let report: ClientErrorReport
   try {
-    const body: unknown = await request.json()
+    const body: unknown = await readReport(request)
     if (!body || typeof body !== "object") throw new Error("Not an object.")
     report = body as ClientErrorReport
-  } catch {
+  } catch (error) {
+    if (error instanceof ClientErrorPayloadTooLarge) {
+      return Response.json({ error: "The error report is too large." }, { status: 413, headers: { "Cache-Control": "no-store" } })
+    }
     return Response.json({ error: "The error report is invalid." }, { status: 400, headers: { "Cache-Control": "no-store" } })
   }
   const message = safeText(report.message, 500)

@@ -1027,6 +1027,18 @@ const statements = [
     ON closeout_photo_uploads(lead_id, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS closeout_photo_uploads_pending_idx
     ON closeout_photo_uploads(updated_at) WHERE status = 'pending'`,
+  `CREATE TABLE IF NOT EXISTS trouble_reports (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    source TEXT NOT NULL,
+    message TEXT NOT NULL DEFAULT '',
+    digest TEXT NOT NULL DEFAULT '',
+    route TEXT NOT NULL DEFAULT '',
+    reported_by BIGINT REFERENCES operators(id),
+    is_test BOOLEAN NOT NULL DEFAULT true
+  )`,
+  `CREATE INDEX IF NOT EXISTS trouble_reports_client_errors_idx
+    ON trouble_reports(created_at DESC, is_test) WHERE source = 'board-client-error'`,
   // What is in the price. One row per line of the board panel's breakdown:
   // label, the grey qualifier beside it, and the money. The quoted price stays
   // on leads.estimate_value_cents -- these lines explain that number, they do

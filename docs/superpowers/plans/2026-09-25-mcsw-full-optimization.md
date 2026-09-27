@@ -333,9 +333,10 @@ this path fires.
   Vercel's 4.5 MB cap. Route through the existing Blob client-upload path and
   delete the dead 6 MB `MAX_REQUEST_SIZE` on quote.
   Observation: Completion and addendum forms send private 12 MB Blob uploads with persisted, size-verified receipts; quote no longer applies the dead request-size gate.
-- [ ] **Error reporting.** `app/board/error.tsx` reports nothing; logging is
+- [x] **Error reporting.** `app/board/error.tsx` reports nothing; logging is
   console only. Minimum: `error.tsx` POSTs to `/api/ops/client-error`, which
   writes a `trouble` row (is_test aware) that health surfaces. No new vendor.
+  Observation: Authenticated board errors now write bounded, sanitized, is_test-aware trouble rows; health reports production and internal-test counts.
 
 ## P2 — Database integrity and compute budget
 
