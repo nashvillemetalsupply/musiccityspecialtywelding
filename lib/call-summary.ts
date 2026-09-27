@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
 import { getSql } from "@/lib/db"
-import { AI_MODELS, aiConfigured, deepseekConfigured, jsonWithDeepSeek } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, aiConfigured, deepseekConfigured, jsonWithDeepSeek, runAiCall } from "@/lib/ai"
 import { fileCallOntoOpenLead, saveInboundCallAsJob } from "@/lib/job-intake"
 import { findOpenLeadResolutionForPerson } from "@/lib/people"
 import { notifyAll } from "@/lib/notify"
@@ -78,19 +78,16 @@ const JSON_SHAPE = 'Reply with one JSON object and nothing else: {"caller_name":
 // The gateway first (structured output, the same model the extractor uses).
 // When it refuses -- the free tier rate-limits a burst -- the shop's own
 // DeepSeek key reads the same call. Both answers pass the same schema.
-async function readCall(prompt: string): Promise<CallSummary> {
+async function readCall(prompt: string, isTest: boolean): Promise<CallSummary> {
   return readWithSchemaFallback({
-    primary: async () => {
-      const result = await generateText({
-        model: AI_MODELS.extraction,
-        output: Output.object({ schema: callSummarySchema }),
-        system: SYSTEM,
-        prompt,
-      })
-      if (!result.output) throw new Error("Summary returned no object.")
-      return result.output
-    },
-    fallback: () => jsonWithDeepSeek({ system: `${SYSTEM} ${JSON_SHAPE}`, prompt }),
+    primary: async () => (await runAiCall({ operation: "call-summary", model: AI_MODELS.extraction, isTest }, () => generateText({
+      model: AI_MODELS.extraction,
+      output: Output.object({ schema: callSummarySchema }),
+      system: SYSTEM,
+      prompt,
+      maxRetries: AI_MAX_RETRIES,
+    }))).output,
+    fallback: () => jsonWithDeepSeek({ system: `${SYSTEM} ${JSON_SHAPE}`, prompt, isTest, operation: "call-summary" }),
     fallbackConfigured: deepseekConfigured(),
     parse: (value) => callSummarySchema.parse(value),
   })
@@ -120,14 +117,14 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
   if (!claimed[0]) return { summarized: false, reason: "already-claimed" }
 
   try {
+    const isTest = draft.is_test || /\[INTERNAL TEST\]/i.test(draft.transcript)
     await applyOnlyValidatedSummary(
       async () => scrub(await readCall(JSON.stringify({
         caller_id_name: PLACEHOLDER_NAME.test(draft.caller_name.trim()) ? null : draft.caller_name,
         duration_seconds: draft.duration_sec,
         transcript: draft.transcript.slice(0, 24_000),
-      }))),
+      }), isTest)),
       async (summary) => {
-        const isTest = draft.is_test || /\[INTERNAL TEST\]/i.test(draft.transcript)
         const name = summary.caller_name?.trim() ?? ""
         await sql`
           UPDATE call_intake_drafts SET

@@ -1,7 +1,7 @@
 import { experimental_generateSpeech, generateText } from "ai"
 import { gateway } from "@ai-sdk/gateway"
 import { put } from "@vercel/blob"
-import { AI_MODELS, aiConfigured } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, aiConfigured, runAiCall } from "@/lib/ai"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
@@ -46,8 +46,8 @@ async function shelveBriefAudio(eventId: number, day: string) {
     const voice = process.env.AI_SPEECH_VOICE?.trim() || "onyx"
     const crewText = claimed[0].crew_body || "Your work is waiting in Jobs."
     const [ownerSpeech, crewSpeech] = await Promise.all([
-      experimental_generateSpeech({ model: gateway.speechModel(AI_MODELS.speech), text: claimed[0].body, voice, outputFormat: "mp3", speed: 1.02 }),
-      experimental_generateSpeech({ model: gateway.speechModel(AI_MODELS.speech), text: crewText, voice, outputFormat: "mp3", speed: 1.02 }),
+      runAiCall({ operation: "morning-brief-speech-owner", model: AI_MODELS.speech, fallbackUsage: { inputCharacters: claimed[0].body.length } }, () => experimental_generateSpeech({ model: gateway.speechModel(AI_MODELS.speech), text: claimed[0].body, voice, outputFormat: "mp3", speed: 1.02, maxRetries: AI_MAX_RETRIES })),
+      runAiCall({ operation: "morning-brief-speech-crew", model: AI_MODELS.speech, fallbackUsage: { inputCharacters: crewText.length } }, () => experimental_generateSpeech({ model: gateway.speechModel(AI_MODELS.speech), text: crewText, voice, outputFormat: "mp3", speed: 1.02, maxRetries: AI_MAX_RETRIES })),
     ])
     const [ownerBlob, crewBlob] = await Promise.all([
       put(`briefs/${day}-${eventId}-owner.mp3`, Buffer.from(ownerSpeech.audio.uint8Array), { access: "private", contentType: ownerSpeech.audio.mediaType || "audio/mpeg", allowOverwrite: true }),
@@ -155,7 +155,7 @@ export async function GET(req: Request) {
   let briefModel = "deterministic"
   if (aiConfigured()) {
     try {
-      const result = await generateText({ model: AI_MODELS.reasoning, system: "Write a plainspoken morning shop brief in at most 200 words. Put urgent promises and uncalled customers first. Then stale quotes and invoices. Credit crew by first name only for completed work. Never invent. No greeting fluff, no management jargon, no markdown.", prompt: JSON.stringify(facts) })
+      const result = await runAiCall({ operation: "morning-brief-copy", model: AI_MODELS.reasoning }, () => generateText({ model: AI_MODELS.reasoning, system: "Write a plainspoken morning shop brief in at most 200 words. Put urgent promises and uncalled customers first. Then stale quotes and invoices. Credit crew by first name only for completed work. Never invent. No greeting fluff, no management jargon, no markdown.", prompt: JSON.stringify(facts), maxRetries: AI_MAX_RETRIES }))
       text = result.text.trim().split(/\s+/).slice(0, 200).join(" ")
       briefModel = AI_MODELS.reasoning
     } catch (error) {

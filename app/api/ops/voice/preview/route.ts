@@ -1,6 +1,6 @@
 import { gateway } from "@ai-sdk/gateway"
 import { experimental_generateSpeech, generateText } from "ai"
-import { AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek, runAiCall } from "@/lib/ai"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getOwnerVoiceProfile, ownerVoiceGuide } from "@/lib/voice-of-character"
@@ -76,8 +76,8 @@ export async function POST(req: Request) {
   let text = ""
   try {
     text = deepseekConfigured()
-      ? await draftWithDeepSeek({ system, prompt: ask })
-      : (await generateText({ model: AI_MODELS.reasoning, system, prompt: ask })).text
+      ? await draftWithDeepSeek({ system, prompt: ask, isTest: true, operation: "voice-preview-copy", maxRetries: AI_MAX_RETRIES })
+      : (await runAiCall({ operation: "voice-preview-copy", model: AI_MODELS.reasoning, isTest: true }, () => generateText({ model: AI_MODELS.reasoning, system, prompt: ask, maxRetries: AI_MAX_RETRIES }))).text
     text = text.replace(/\s+/g, " ").trim().slice(0, 600)
     if (!text) return Response.json({ error: "The preview came back empty." }, { status: 502 })
   } catch (error) {
@@ -100,13 +100,14 @@ export async function POST(req: Request) {
   let audioType = ""
   try {
     if (!aiConfigured()) throw new Error("No speech provider is configured.")
-    const speech = await experimental_generateSpeech({
+    const speech = await runAiCall({ operation: "voice-preview-speech", model: AI_MODELS.speech, isTest: true, fallbackUsage: { inputCharacters: text.length } }, () => experimental_generateSpeech({
       model: gateway.speechModel(AI_MODELS.speech),
       text,
       voice: process.env.AI_SPEECH_VOICE?.trim() || "onyx",
       outputFormat: "mp3",
       speed: 1.02,
-    })
+      maxRetries: AI_MAX_RETRIES,
+    }))
     audio = Buffer.from(speech.audio.uint8Array).toString("base64")
     audioType = speech.audio.mediaType || "audio/mpeg"
   } catch (error) {

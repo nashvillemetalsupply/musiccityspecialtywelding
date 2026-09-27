@@ -1410,6 +1410,8 @@ await sql`
     )
     WHERE status = 'open' AND (lead_id IS NOT NULL OR person_id IS NOT NULL)`
 
+await sql`ALTER TABLE automation_runs ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb`
+
 const tables = await sql`
   SELECT table_name FROM information_schema.tables
   WHERE table_schema = 'public' ORDER BY table_name`

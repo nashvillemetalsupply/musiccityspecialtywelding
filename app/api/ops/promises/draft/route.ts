@@ -1,5 +1,5 @@
 import { generateText } from "ai"
-import { AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek, runAiCall } from "@/lib/ai"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
@@ -98,8 +98,8 @@ You are writing one short text message to a customer, in that voice. The shop is
   let text = ""
   try {
     text = deepseekConfigured()
-      ? await draftWithDeepSeek({ system, prompt: ask })
-      : (await generateText({ model: AI_MODELS.reasoning, system, prompt: ask })).text
+      ? await draftWithDeepSeek({ system, prompt: ask, isTest: promise.is_test, operation: "late-promise-draft", maxRetries: AI_MAX_RETRIES })
+      : (await runAiCall({ operation: "late-promise-draft", model: AI_MODELS.reasoning, isTest: promise.is_test }, () => generateText({ model: AI_MODELS.reasoning, system, prompt: ask, maxRetries: AI_MAX_RETRIES }))).text
     text = text.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "").slice(0, 400)
     if (!text) return Response.json({ error: "The draft came back empty.", reason: "model" }, { status: 502 })
   } catch (error) {

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 import { generateText, Output } from "ai"
 import { z } from "zod"
 import { getSql } from "@/lib/db"
-import { AI_MODELS, aiConfigured } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, aiConfigured, runAiCall } from "@/lib/ai"
 import { addClaim } from "@/lib/claims"
 import { addCommitment, setCommitmentStatus } from "@/lib/commitments"
 import { getEvent, markEventProcessed, recordEvent } from "@/lib/events"
@@ -135,7 +135,7 @@ export async function processEvent(eventId: number) {
   if (event.extraction_result) {
     object = extractionSchema.parse(event.extraction_result)
   } else {
-    const result = await generateText({
+    const result = await runAiCall({ operation: "event-extraction", model: AI_MODELS.extraction, isTest }, () => generateText({
       model: AI_MODELS.extraction,
       output: Output.object({ schema: extractionSchema }),
       system: [
@@ -154,7 +154,8 @@ export async function processEvent(eventId: number) {
       "For an active closeout receipt only (job.completed or a linked closeout note), glass_caption_draft is a short customer-safe progress caption: no money, access codes, blame, profanity, internal caveats, or private detail. Otherwise null.",
       ].join(" "),
       prompt: JSON.stringify({ event: { kind: event.kind, occurred_at: event.occurred_at, actor_type: event.actor_type, body: event.body, is_closeout_receipt: isCloseoutSource }, lead: leads[0] ?? null, open_commitments: open, active_claims: activeClaims }),
-    })
+      maxRetries: AI_MAX_RETRIES,
+    }))
     if (!result.output) throw new Error("Extraction returned no object.")
     object = result.output
     await sql`UPDATE events SET extraction_result = ${JSON.stringify(object)}::jsonb WHERE id = ${event.id}::bigint AND extraction_result IS NULL`

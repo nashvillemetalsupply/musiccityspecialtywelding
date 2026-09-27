@@ -1,6 +1,6 @@
 import { stepCountIs, streamText, tool } from "ai"
 import { z } from "zod"
-import { AI_MODELS, aiConfigured } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, aiConfigured, recordAiUsage } from "@/lib/ai"
 import { listCommitments } from "@/lib/commitments"
 import { getSql } from "@/lib/db"
 import { listLeadEvents, searchEvents } from "@/lib/events"
@@ -67,6 +67,9 @@ export async function POST(req: Request) {
   const allowedReceipts = new Set<number>()
   const result = streamText({
     model: AI_MODELS.reasoning,
+    maxRetries: AI_MAX_RETRIES,
+    onFinish: async ({ totalUsage }) => recordAiUsage({ operation: "board-ask", model: AI_MODELS.reasoning, ok: true, usage: totalUsage }),
+    onError: async ({ error }) => recordAiUsage({ operation: "board-ask", model: AI_MODELS.reasoning, ok: false, error: error instanceof Error ? error.message : String(error) }),
     stopWhen: stepCountIs(8),
     system: [
       "You answer questions about the MCSW shop using tools only.",
