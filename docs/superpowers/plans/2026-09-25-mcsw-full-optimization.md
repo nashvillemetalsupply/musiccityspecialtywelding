@@ -459,10 +459,10 @@ this path fires.
 - [x] **Glass tokens never expire for unconverted jobs.** `lib/glass.ts`
   `createGlassLink` writes `expires_at NULL`. Set 180 days idle, and expire on
   `lost`. Extend on any customer activity. Observation: New and rotated links use a 180-day idle TTL, existing NULL expiries are backfilled additively, active views and customer actions renew it, and lost jobs close the link.
-- [ ] **Bearer token in query strings.** `app/j/[token]/page.tsx:127` and
+- [x] **Bearer token in query strings.** `app/j/[token]/page.tsx:127` and
   `glass-upload.tsx:198` put the token in media URLs (logged by CDNs and
   browsers). Issue short-lived HMAC-signed media URLs (15 min) from the page
-  server component.
+  server component. Observation: Server-issued URLs sign link ID, media kind, exact media ID, and 15-minute expiry with HKDF-derived `GLASS_TOKEN_SECRET`; expired, tampered, revoked, or lost-link requests fail closed, and URLs are never cached.
 - [x] **`/j/[token]/review` lacks `sameOrigin()`.** Add it; every other write
   under `/j` has it. Observation: review POSTs reject missing and cross-origin Origin headers before loading the token; focused test passes.
 - [ ] **View counter counts bots.** `app/j/[token]/page.tsx:55-70`. Count only

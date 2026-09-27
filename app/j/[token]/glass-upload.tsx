@@ -11,6 +11,7 @@ type ExistingUpload = {
   status: string
   error: string
   expired: boolean
+  mediaUrl?: string | null
 }
 
 type LocalUpload = ExistingUpload & {
@@ -195,7 +196,7 @@ export function GlassUpload({ token, initialUploads }: { token: string; initialU
     {allItems.length > 0 && <ul className="glass-upload-list">
       {allItems.map((item) => {
         const local = items.find((candidate) => candidate.id === item.id)
-        const href = item.status === "stored" ? `/api/glass/attachment?token=${token}&upload=${encodeURIComponent(item.id)}` : ""
+        const href = item.status === "stored" ? item.mediaUrl || "" : ""
         return <li className={`is-${item.expired ? "expired" : item.status}`} key={item.id}>
           <div><strong>{item.filename}</strong><small>{readableBytes(Number(item.size_bytes))}</small></div>
           {href ? <a href={href} target="_blank" rel="noreferrer">Added</a> : local && !local.expired && ["failed", "unknown"].includes(local.status)

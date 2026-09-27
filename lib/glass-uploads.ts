@@ -1,6 +1,6 @@
 import { get, head } from "@vercel/blob"
 import { getSql } from "@/lib/db"
-import { extendGlassLinkExpiry, getGlassJob, hashGlassToken, type GlassJob } from "@/lib/glass"
+import { extendGlassLinkExpiry, getGlassJob, getGlassJobByLinkId, hashGlassToken, type GlassJob } from "@/lib/glass"
 import { notifyAll } from "@/lib/notify"
 import { imageTypeMatches } from "@/lib/public-quote.mjs"
 import {
@@ -392,7 +392,7 @@ export async function finalizeGlassUpload(input: { uploadId: string; token?: str
     SELECT u.*, g.revoked_at, g.expires_at, l.status AS lead_status
     FROM glass_uploads u JOIN glass_links g ON g.token_hash = u.token_hash
     JOIN leads l ON l.id = u.lead_id
-    WHERE u.id = ${input.uploadId}::text LIMIT 1`) as Array<GlassUploadRow & { revoked_at: string | null; expires_at: string | null }>
+    WHERE u.id = ${input.uploadId}::text LIMIT 1`) as Array<GlassUploadRow & { revoked_at: string | null; expires_at: string | null; lead_status: string }>
   const upload = rows[0]
   if (!upload) throw new Error("Upload not found.")
   if (input.token && hashGlassToken(input.token) !== upload.token_hash) throw new Error("Upload bearer does not match.")
@@ -492,13 +492,13 @@ export async function listGlassUploads(job: GlassJob) {
     LIMIT 60`) as GlassUploadRow[]
 }
 
-export async function getStoredGlassUpload(token: string, uploadId: string) {
-  const job = await getGlassJob(token)
+export async function getStoredGlassUploadByLinkId(linkId: string, uploadId: string) {
+  const job = await getGlassJobByLinkId(linkId)
   if (!job || job.status === "closed") return null
   const sql = getSql()
   const rows = (await sql`
     SELECT * FROM glass_uploads
-    WHERE id = ${uploadId}::text AND token_hash = ${job.token_hash}::text
+    WHERE id = ${uploadId}::text AND token_hash = ${linkId}::text
       AND lead_id = ${job.lead_id}::bigint AND status = 'stored'
     LIMIT 1`) as GlassUploadRow[]
   return rows[0] ?? null

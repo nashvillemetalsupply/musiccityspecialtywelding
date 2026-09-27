@@ -27,7 +27,7 @@ test("glass photo and raster attachment responses pass through metadata strippin
   for (const route of ["app/api/glass/photo/route.ts", "app/api/glass/attachment/route.ts"]) {
     const code = source(route)
     assert.match(code, /stripImageMetadata/)
-    assert.match(code, /new Response\(body|new Response\(clean/)
+    assert.match(code, /new Response\((?:body|clean|responseBytes\.buffer)/)
     assert.match(code, /could not be processed safely/i)
   }
 })
