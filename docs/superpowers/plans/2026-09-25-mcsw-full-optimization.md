@@ -405,9 +405,10 @@ this path fires.
   on every check and fails open on error. Move the delete to the sweep, fail
   closed for the strict limiter, and use `consumeStrictRateLimit` on
   `app/api/ops/login/route.ts` keyed on `ip + emailHash`.
-- [ ] **Health endpoint does six full scans 60+ times a day.**
+- [x] **Health endpoint does six full scans 60+ times a day.**
   `app/api/ops/health/route.ts:143`. Bound each scan by time window and index,
   and cache the result for 5 minutes in-process.
+  Observation: Health aggregates now use one-year or existing 24-hour windows with row limits, automation reads are limited, and an in-process 5-minute cache coalesces concurrent SQL reads; the S02 recent-delivery-error gate remains in place and its tests pass.
 - [ ] **`getAccount` writes on read.** `lib/accounts.ts` issues an UPDATE on
   GET, twice per view under `cache()`. Move the "last seen" write to a
   fire-and-forget `after()` with a 15-minute guard.
