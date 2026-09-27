@@ -398,6 +398,12 @@
 .job-payment-form { padding: var(--s4); display: grid; gap: var(--s2); }
 .job-payment-form > label:not(.job-check) { color: var(--text-secondary); font-size: var(--t-label); font-weight: var(--w-med); }
 .job-payment-form > small { color: var(--text-muted); }
+.job-payment-workflow { display: grid; gap: var(--s4); }
+.job-payment-reversal { display: grid; gap: var(--s2); padding-top: var(--s4); border-top: 1px solid var(--border); }
+.job-payment-reversal > strong { color: var(--status-warn-ink); }
+.job-payment-reversal > label { color: var(--text-secondary); font-size: var(--t-label); font-weight: var(--w-med); }
+.job-payment-reversal :is(input, textarea) { min-height: 44px; padding: var(--s2) var(--s3); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text-primary); background: var(--surface-raised); }
+.job-payment-reversal > small { color: var(--text-muted); }
 .job-action-result { margin:0; padding:var(--s2) var(--s3); border-left:3px solid var(--status-good-mark); background:var(--status-good-sur); color:var(--status-good-ink); }
 .job-action-result.is-error { border-left-color:var(--status-bad-mark); background:var(--status-bad-sur); color:var(--status-bad-ink); }
 .job-page .ops-spike-reply > p.is-warning { grid-column:1 / -1; border-left:3px solid var(--status-warn-mark); background:var(--status-warn-sur); color:var(--status-warn-ink); padding:var(--s2) var(--s3); }

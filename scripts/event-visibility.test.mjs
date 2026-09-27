@@ -13,6 +13,7 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 test("crew financial event visibility fails closed for known and future namespaces", () => {
   for (const kind of [
     "invoice.payment-received",
+    "payment.reversed",
     "email.deposit",
     "quote.confirmed",
     "lead.invoice.cleared",
@@ -24,6 +25,7 @@ test("crew financial event visibility fails closed for known and future namespac
   }
 
   assert.ok(OWNER_ONLY_EVENT_KINDS.includes("invoice.payment-received"))
+  assert.ok(OWNER_ONLY_EVENT_KINDS.includes("payment.reversed"))
   assert.ok(OWNER_ONLY_EVENT_KINDS.includes("email.deposit"))
   assert.match("lead.invoice.cleared", new RegExp(OWNER_ONLY_EVENT_NAMESPACE_PATTERN, "i"))
 })

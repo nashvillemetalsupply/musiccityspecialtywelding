@@ -999,6 +999,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         <PaymentForm
           leadId={lead.id}
           receiptKey={randomUUID()}
+          reversalKey={randomUUID()}
           paidAmountCents={Number(lead.paid_amount_cents ?? 0)}
           invoiceTotalCents={lead.invoice_total_cents === null ? null : Number(lead.invoice_total_cents)}
           paidAt={lead.paid_at}
