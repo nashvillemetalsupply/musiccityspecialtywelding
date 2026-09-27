@@ -518,7 +518,7 @@ this path fires.
   selectors in `styles/ops-legacy.css`, `autoprefixer` (not in
   `postcss.config`). Consolidate the token roots in five files into one.
   Observation: The 14 removed baseline rules cover 15 selector arms, including both arms at line 5629; all 729 tests (727 passed, 0 failed, 2 skipped), typecheck, and lint passed.
-- [ ] **Repo hygiene.** Delete tracked `.hallmark/`, `skills-lock.json`, and
+- [x] **Repo hygiene.** Delete tracked `.hallmark/`, `skills-lock.json`, and
   one of the two identical skill mirrors (`.agents/skills/`, 453 KB; keep
   `.claude/skills/`). Move `output/`, `design-previews/`,
   `archive/ops-legacy-2026-08-20/`, `CLOSEOUT-2026-08-03.md`,
@@ -529,6 +529,7 @@ this path fires.
   `.codex/`, `skill-staging/` to `.gitignore`. Delete the untracked lighthouse
   JSONs, logs, `tsconfig.tsbuildinfo`, `error_discovery_data/`, `tmp/`,
   `.scratch/`.
+  Observation: Documentation/archive paths moved intact, duplicate metadata and skill mirror were removed, scratch junctions were unlinked without touching their main-checkout targets, and no lighthouse JSON/log files were present; memory-pointer update is handled at landing.
 - [ ] **README.** Currently a UTF-16 one-liner. Rewrite as UTF-8: stack, run,
   the worktree rule, test commands, QA env vars, deploy = push to main, cron
   topology (Vercel is the daily backstop, Actions carry cadence), env var
