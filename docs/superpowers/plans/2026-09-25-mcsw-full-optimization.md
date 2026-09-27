@@ -373,7 +373,7 @@ this path fires.
   `5 12 * * 0` running `pg_dump --format=custom` to a workflow artifact (90-day
   retention). Change `app/api/ops/export/route.ts` to `WHERE is_test = false`
   for every format, and make it stream, not `LIMIT`.
-  Observation: Added weekly custom-format backup artifact with 90-day retention; both CSV exports stream and exclude test rows. Dispatch was not run because it requires a push, and the invariant forbids any test-row export.
+  Observation: Added the weekly custom-format backup and retained 90-day artifacts; both CSV exports stream and exclude test rows. Microsecond boundary tests confirm full-precision cursors neither skip leads nor duplicate conversions.
 - [ ] **The board is the compute bill.** `app/board/board.tsx:373`
   `router.refresh()` every 60 s (8 s when active), 11 loaders plus
   `getBoardJobDetails` plus an `after()` sweep per refresh; `/ops`

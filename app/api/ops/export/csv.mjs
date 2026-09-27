@@ -57,7 +57,7 @@ function streamCsv({ columns, filename, loadPage, rowToCsv, cursorFor }) {
 }
 
 async function loadLeadPage(sql, cursor) {
-  const selectedColumns = [...COLUMNS, "id"].join(", ")
+  const selectedColumns = [...COLUMNS, "id", "created_at::text AS cursor_created_at"].join(", ")
   const query = cursor
     ? `SELECT ${selectedColumns} FROM leads
        WHERE is_test = false
@@ -76,12 +76,12 @@ async function loadLeadPage(sql, cursor) {
 
 async function loadGoogleConversionPage(sql, cursor) {
   const query = cursor
-    ? `SELECT id, gclid, won_at, revenue_cents FROM leads
+    ? `SELECT id, gclid, won_at, revenue_cents, won_at::text AS cursor_won_at FROM leads
        WHERE status = 'won' AND gclid <> '' AND won_at IS NOT NULL AND is_test = false
          AND (won_at, id) > ($1::timestamptz, $2::bigint)
        ORDER BY won_at ASC, id ASC
        LIMIT $3::int`
-    : `SELECT id, gclid, won_at, revenue_cents FROM leads
+    : `SELECT id, gclid, won_at, revenue_cents, won_at::text AS cursor_won_at FROM leads
        WHERE status = 'won' AND gclid <> '' AND won_at IS NOT NULL AND is_test = false
        ORDER BY won_at ASC, id ASC
        LIMIT $1::int`
@@ -106,7 +106,7 @@ export function createExportResponse(sql, format = "full") {
       filename: `mcsw-google-offline-conversions-${new Date().toISOString().slice(0, 10)}.csv`,
       loadPage: (cursor) => loadGoogleConversionPage(sql, cursor),
       rowToCsv: googleConversionCsvRow,
-      cursorFor: (row) => ({ timestamp: row.won_at, id: row.id }),
+      cursorFor: (row) => ({ timestamp: row.cursor_won_at, id: row.id }),
     })
   }
 
@@ -115,6 +115,6 @@ export function createExportResponse(sql, format = "full") {
     filename: `mcsw-leads-${new Date().toISOString().slice(0, 10)}.csv`,
     loadPage: (cursor) => loadLeadPage(sql, cursor),
     rowToCsv: (row) => COLUMNS.map((column) => csvCell(row[column])).join(","),
-    cursorFor: (row) => ({ timestamp: String(row.created_at), id: row.id }),
+    cursorFor: (row) => ({ timestamp: row.cursor_created_at, id: row.id }),
   })
 }
