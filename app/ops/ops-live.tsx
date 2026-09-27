@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import { startOpsPulsePolling } from "@/lib/ops-pulse-polling.mjs"
 
 function editing() {
   const node = document.activeElement
@@ -13,20 +14,27 @@ export function OpsLive() {
   const pathname = usePathname()
 
   useEffect(() => {
-    let lastRefresh = Date.now()
+    let refreshPending = false
     const refresh = () => {
-      if (document.visibilityState !== "visible" || editing()) return
-      lastRefresh = Date.now()
+      if (editing()) {
+        refreshPending = true
+        return
+      }
+      refreshPending = false
       router.refresh()
     }
-    const timer = window.setInterval(refresh, 30_000)
-    const visible = () => { if (document.visibilityState === "visible" && Date.now() - lastRefresh > 15_000) refresh() }
-    const serviceWorkerMessage = (event: MessageEvent) => { if (event.data?.type === "ops-refresh") refresh() }
-    document.addEventListener("visibilitychange", visible)
+    const polling = startOpsPulsePolling({ onChange: refresh })
+    const finishEditing = () => {
+      window.setTimeout(() => {
+        if (refreshPending && !editing()) refresh()
+      }, 0)
+    }
+    const serviceWorkerMessage = (event: MessageEvent) => { if (event.data?.type === "ops-refresh") polling.checkNow() }
+    document.addEventListener("focusout", finishEditing)
     navigator.serviceWorker?.addEventListener("message", serviceWorkerMessage)
     return () => {
-      window.clearInterval(timer)
-      document.removeEventListener("visibilitychange", visible)
+      polling.stop()
+      document.removeEventListener("focusout", finishEditing)
       navigator.serviceWorker?.removeEventListener("message", serviceWorkerMessage)
     }
   }, [router, pathname])

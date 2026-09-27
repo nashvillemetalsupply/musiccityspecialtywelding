@@ -388,6 +388,7 @@ this path fires.
   returning `max(events.id)` and `max(calls.updated_at)` (one cheap query), the
   client polls that every 10 s and only calls `router.refresh()` on change;
   idle tabs back off to 5 min; wrap the job page loaders in `cache()`.
+  Observation: `/api/ops/pulse` returns only the two aggregates to signed-in owner/crew sessions, crew aggregates exclude internal-test and owner-only events, and both clients poll with 10 s foreground / 5 min away cadence; fake fetch/timer/SQL tests pass. Neon CU-hours before/after were not run from the worktree.
 - [ ] **Missing indexes.** Add, idempotently (`CREATE INDEX IF NOT EXISTS`):
   `leads(follow_up_at) WHERE follow_up_at IS NOT NULL`,
   `leads(scheduled_at)`, `leads(phone)`, `leads(id) WHERE open_invoice`,

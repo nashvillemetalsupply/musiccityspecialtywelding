@@ -5,6 +5,7 @@ import Link from "next/link"
 import { SkipLink } from "./skip-link"
 import { useRouter } from "next/navigation"
 import { costPerLeadTile } from "@/lib/ad-spend.mjs"
+import { startOpsPulsePolling } from "@/lib/ops-pulse-polling.mjs"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import { updateLeadStatus } from "@/app/ops/actions"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.mjs"
@@ -350,35 +351,12 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
     const search = params.toString()
     return `/board${search ? `?${search}` : ""}`
   }
-  // The call panel was labelled live and was not. Every field on it comes from
-  // the server render, and the board mounted no timer at all, so a call that
-  // arrived while the owner was looking at the board never appeared, and a call
-  // in progress never gained a line until he reloaded the page.
-  //
-  // router.refresh() re-runs this route's server render, which is six queries.
-  // ponytail: whole-page refresh, not a sketch-only endpoint — one line here
-  // beats a second read path, and the two guards below keep it cheap. A call on
-  // the line ticks fast because that is the minute the panel is for; otherwise
-  // it ticks slowly, just often enough to notice a new call. Both stop dead
-  // while the tab is hidden, so a board left open overnight lets Neon suspend.
+  // The pulse read is one aggregate-only request. The board's expensive server
+  // loaders rerun only after a visible change in events or calls.
   useEffect(() => {
-    let timer: number | undefined
-    function tick() {
-      if (document.visibilityState !== "visible") return
-      router.refresh()
-    }
-    function start() {
-      window.clearInterval(timer)
-      if (document.visibilityState !== "visible") return
-      timer = window.setInterval(tick, onTheLine ? 8_000 : 60_000)
-    }
-    start()
-    document.addEventListener("visibilitychange", start)
-    return () => {
-      window.clearInterval(timer)
-      document.removeEventListener("visibilitychange", start)
-    }
-  }, [router, onTheLine])
+    const polling = startOpsPulsePolling({ onChange: () => router.refresh() })
+    return () => polling.stop()
+  }, [router])
 
   useEffect(() => {
     const root = document.documentElement

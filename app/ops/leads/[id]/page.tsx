@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { cache } from "react"
 import { randomUUID } from "node:crypto"
 import { notFound } from "next/navigation"
 import "./job.css"
@@ -64,13 +65,17 @@ import {
 
 export const dynamic = "force-dynamic"
 
+const getCachedLead = cache((leadId: number, role: OperatorRole) =>
+  getLead(leadId, role, { includeTests: canAccessInternalTests(role) }),
+)
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   if (!dbConfigured()) return { title: "Job · MCSW Jobs" }
   const operator = await getAuthenticatedOperator()
   if (!operator) return { title: "Sign in · MCSW Jobs" }
   const leadId = Number((await params).id)
   if (!Number.isInteger(leadId) || leadId <= 0) return { title: "Job not found · MCSW Jobs" }
-  const lead = await getLead(leadId, operator.role, { includeTests: canAccessInternalTests(operator.role) })
+  const lead = await getCachedLead(leadId, operator.role)
   const name = lead ? `${lead.first_name} ${lead.last_name}`.trim() : "Job not found"
   return { title: `${name} · MCSW Jobs` }
 }
@@ -223,7 +228,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   if (!operator) return <OpsLoginForm linkError={false} />
 
   const includeTests = canAccessInternalTests(operator.role)
-  const lead = await getLead(leadId, operator.role, { includeTests })
+  const lead = await getCachedLead(leadId, operator.role)
   if (!lead) notFound()
   const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems, attachmentClassifications, routingChoices] = await Promise.all([
     listLeadMessages(leadId),
