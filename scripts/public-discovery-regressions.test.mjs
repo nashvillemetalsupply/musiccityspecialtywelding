@@ -67,7 +67,14 @@ test("public phone taps are measured as intent without firing the quote conversi
   assert.match(analytics, /<PhoneClickTracker\s*\/>/)
   assert.match(phoneClicks, /closest<HTMLAnchorElement>\('a\[href\^="tel:"\]'\)/)
   assert.match(phoneClicks, /queueMeasurementEvent\("phone_click"/)
-  assert.doesNotMatch(phoneClicks, /AW-17817632790|conversion/)
+  const queuedConversionCount = [...phoneClicks.matchAll(/queueMeasurementEvent\(\s*["']conversion["']/g)].length
+  const conversionCalls = [...phoneClicks.matchAll(/queueMeasurementEvent\(\s*["']conversion["']\s*,\s*\{([^}]*)\}\s*\)/g)]
+  assert.ok(queuedConversionCount > 0, "phone taps keep the phone-call conversion")
+  assert.equal(conversionCalls.length, queuedConversionCount, "every conversion has an explicit payload")
+  for (const [, payload] of conversionCalls) {
+    assert.match(payload, /\bsend_to:\s*ADS_PHONE_CONVERSION_SEND_TO\b/)
+  }
+  assert.doesNotMatch(phoneClicks, /ADS_CONVERSION_SEND_TO|AW-17817632790/)
 })
 
 test("high-intent trailer repair has a proven landing page and every service shows breadcrumbs", () => {
