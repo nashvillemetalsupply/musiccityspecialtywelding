@@ -473,8 +473,8 @@ this path fires.
   closed); 90-day cookie has no idle timeout (add 14-day idle, sliding); expose
   `revokeSession` on the Shop card. Owner quote email includes the customer's
   IP (`app/api/quote/route.ts:~571`); drop it. Observation: DB validation updates last-use and a 14-day idle expiry; Shop offers session revocation; the owner email omits IP; focused tests pass.
-- [ ] **Build-fact numbers unchecked.** `app/ops/builds/actions.ts:58,72`
-  `Number()` without `Number.isFinite`. Validate.
+- [x] **Build-fact numbers unchecked.** `app/ops/builds/actions.ts:58,72`
+  `Number()` without `Number.isFinite`. Validate. Observation: build action inputs reject malformed and non-finite values before write calls; integer fact values are safe, non-negative, and bounded; focused tests pass.
 - [ ] **CSP and HSTS.** `next.config.mjs` has no CSP; HSTS lacks
   `includeSubDomains; preload`. Ship `Content-Security-Policy-Report-Only`
   first with a report endpoint that writes a trouble row, run it for one week
