@@ -1119,9 +1119,19 @@ const statements = [
   )`,
 ]
 
+const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$
+  BEGIN RAISE EXCEPTION 'events is immutable'; END $$ LANGUAGE plpgsql;
+  DROP TRIGGER IF EXISTS events_truth_no_delete ON events;
+  CREATE TRIGGER events_truth_no_delete BEFORE DELETE ON events
+    FOR EACH ROW EXECUTE FUNCTION events_no_delete();
+  DROP TRIGGER IF EXISTS lead_events_frozen ON lead_events;
+  CREATE TRIGGER lead_events_frozen BEFORE INSERT OR UPDATE OR DELETE ON lead_events
+    FOR EACH ROW EXECUTE FUNCTION events_no_delete();`
+
 for (const statement of statements) {
   await sql.query(statement)
 }
+await sql.query(eventsImmutabilityStatement)
 
 const ownerEmail = (
   process.env.OPS_LOGIN_EMAIL?.trim() ||
