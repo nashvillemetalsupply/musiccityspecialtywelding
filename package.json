@@ -11,7 +11,6 @@
     "dev": "next dev",
     "lint": "eslint .",
     "migrate": "node scripts/migrate.mjs",
-    "prebuild": "node -e \"require('node:fs').mkdirSync('.backups',{recursive:true})\"",
     "start": "next start",
     "test:inbound-call-alerts": "node --test scripts/inbound-call-alerts.test.mjs scripts/inbound-call-alert-reliability.test.mjs scripts/inbound-call-alert-callbacks.test.mjs",
     "test:qa": "node scripts/qa/run.mjs",
@@ -22,7 +21,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-sdk/gateway": "3.0.166",
+    "@ai-sdk/gateway": "3.0.203",
     "@hookform/resolvers": "^3.10.0",
     "@neondatabase/serverless": "^1.1.0",
     "@radix-ui/react-accordion": "1.2.2",
@@ -54,7 +53,7 @@
     "@radix-ui/react-tooltip": "1.1.6",
     "@vercel/analytics": "1.3.1",
     "@vercel/blob": "^2.6.1",
-    "ai": "^6.0.246",
+    "ai": "^6.0.293",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -91,7 +90,7 @@
     "eslint": "^10.11.0",
     "eslint-config-next": "16.3.6",
     "postcss": "^8.5",
-    "tailwindcss": "^4.1.9",
+    "tailwindcss": "^4.1.18",
     "tw-animate-css": "1.3.3",
     "typescript": "^5",
     "ws": "^8.21.3"

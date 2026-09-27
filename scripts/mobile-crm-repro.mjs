@@ -21,6 +21,7 @@ const capture = process.argv.includes("--capture") || Boolean(process.env.MCSW_C
 const allowedOrigin = new URL(baseURL).origin
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(scriptDir, "..")
+if (capture) await mkdir(path.join(repoRoot, ".backups"), { recursive: true })
 const fixtureSource = path.join(repoRoot, "scripts", "qa", "fixtures", "mobile-crm-page.tsx.fixture")
 const fixtureDir = path.join(repoRoot, "app", "board", "mobile-fixture")
 const fixtureRoute = path.join(fixtureDir, "page.tsx")

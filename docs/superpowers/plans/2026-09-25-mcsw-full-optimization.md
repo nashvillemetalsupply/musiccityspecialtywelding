@@ -532,11 +532,12 @@ this path fires.
   the worktree rule, test commands, QA env vars, deploy = push to main, cron
   topology (Vercel is the daily backstop, Actions carry cadence), env var
   names only.
-- [ ] **Small config.** `tsconfig.json` `target` ES6 to ES2022. Move the
+- [x] **Small config.** `tsconfig.json` `target` ES6 to ES2022. Move the
   `prebuild` `mkdirSync('.backups')` (`package.json:10`) into
   `scripts/mobile-crm-repro.mjs`. Comment why `ws`/`@types/ws` exist. Patch-bump
   `ai`, `@ai-sdk/gateway`, `@vercel/blob`, `resend`, `tailwindcss`. Stay on
   zod 3 and TypeScript 5.9.
+  Observation: Target is ES2022, backup setup runs only in capture repros, ai/gateway/tailwindcss are patch-bumped, blob/resend were already at their latest patches, and the lockfile changed without touching shared `node_modules`.
 
 ## P5 — Public site: performance, SEO, correctness
 
