@@ -52,7 +52,7 @@ Plan: `2026-09-25-mcsw-full-optimization.md` (same folder). Generated 2026-09-25
 | S05 | P2b: pulse endpoint + board/ops cadence, job page `cache()`, `getAccount` write-on-read, health scan bounds | Opus 5.5 | high | M | S04 | done (landed 9d5cbfe, factory-mcsw-s05-r2) |
 | S06 | P2c: indexes (EXPLAIN-verified), rate limiter off hot path + login strict limiter, single-statement CTE rewrites, month boundary | Opus 5.5 | medium | M | S05 | open |
 | S07 | P4a: `ci.yml` + Vercel check, test discovery, two stale tests, behavioral tests for digest/export/ad-spend/document/templates/rate-limit, keepalive | Opus 5.5 | medium | M | S00 | done (landed 57649de, factory-mcsw-s07-r2; Vercel required-check registration still open) |
-| S08 | P4b: dead deps + `components/ui` + `styles/globals.css` + repo hygiene moves + README + tsconfig/prebuild + patch bumps | Opus 5.5 | low | M | S07 | done (2026-09-27) |
+| S08 | P4b: dead deps + `components/ui` + `styles/globals.css` + repo hygiene moves + README + tsconfig/prebuild + patch bumps | Opus 5.5 | low | M | S07 | done (landed d20a2ab, factory-mcsw-s08-r4) |
 | S09 | P3a: owner gates ×2, claims in-place decision, NaN validation, raw errors, glass magic bytes + private store, `/review` sameOrigin, session hygiene, build-fact numbers | Opus 5.5 | high | M | S07 | done (landed 69b43b0, factory-mcsw-s09-r3; run migrate before deploying: ops_tokens.last_used_at, claims.superseded_by) |
 | S10 | P3b: EXIF/GPS strip, glass token expiry, HMAC media URLs, view-counter beacon, customer SMS quiet hours, `payment.reversed` | Opus 5.5 | high | M | S09 | open |
 | S11 | P5a: Lighthouse script + baseline, hero image, pixel defer, dead-CSS retirement with fingerprint proof | Opus 5.5 | medium | M | S08 | open |
