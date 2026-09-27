@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { dbConfigured, getSql } from "@/lib/db"
+import { listRecentDeliveryErrors } from "@/lib/delivery-errors"
 import { getReadableEventById } from "@/lib/event-access"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { countUnreadWire, listWire } from "@/lib/notify"
@@ -53,9 +54,10 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
   const requestedWirePage = normalizePage(params.wirePage)
   const wireQuery = params.wireQ?.trim() ?? ""
   const wirePageSize = wireHistory ? 50 : 12
-  const [wireResult, unreadWireTotal] = await Promise.all([
+  const [wireResult, unreadWireTotal, recentDeliveryErrors] = await Promise.all([
     listWire(operator.id, operator.role, { unreadOnly: !wireHistory, page: requestedWirePage, pageSize: wirePageSize, query: wireQuery }),
     countUnreadWire(operator.id, operator.role),
+    operator.role === "owner" ? listRecentDeliveryErrors() : Promise.resolve([]),
   ])
   const wire = wireResult.items
   const wirePage = wireResult.page
@@ -101,6 +103,22 @@ export default async function BoardUpdatesPage({ searchParams }: { searchParams:
         actionDetail: slip.action_detail,
       }))}
     />
+
+    {operator.role === "owner" && <section className="updates-delivery" aria-labelledby="updates-delivery-title">
+      <header>
+        <div>
+          <p className="t-label">Delivery</p>
+          <h2 className="t-title" id="updates-delivery-title">Recent failures</h2>
+        </div>
+        <span className="t-caption">Last 24 hours</span>
+      </header>
+      {recentDeliveryErrors.length ? <ul>
+        {recentDeliveryErrors.map((error) => <li key={`${error.at}:${error.title}`}>
+          <div><strong>{error.title}</strong><time dateTime={error.at}>{formatCentral(error.at)}</time></div>
+          <p>{error.error}</p>
+        </li>)}
+      </ul> : <p className="updates-delivery-empty">No delivery failures in the last 24 hours.</p>}
+    </section>}
 
     {receiptRequested && <section className="updates-receipt" id="receipt">
       <header>

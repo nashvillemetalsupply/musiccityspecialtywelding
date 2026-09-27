@@ -330,11 +330,12 @@ this path fires.
   (`claude-haiku-4.5` in code, `gemini-2.5-flash-lite` in docs; fix the doc).
   Observation: AI requests retry transient failures twice, usage writes include token counts and `is_test`, and the docs now label the August Gemini result as historical; the source default remains Claude Haiku.
   Check gateway 403s are surfaced, not swallowed.
-- [ ] **Health shows delivery failures and pages the owner on red.** Add
+- [x] **Health shows delivery failures and pages the owner on red.** Add
   `delivery.recentErrors` (last 24 h `delivery_error` rows) to
-  `app/api/ops/health/route.ts` and to the `/board/updates` view. Add
+  `app/api/health/route.ts` and to the `/board/updates` view. Add
   `if: failure()` step to `health-monitor.yml` that texts the owner via Twilio
   (persist intent row first, `is_test` honoured).
+  Observation: `/api/health` now fails its launch gate on bounded last-24-hour production delivery errors; owners see the rows on Updates, and each failing monitor run posts an owner-only, persisted Twilio alert intent with `is_test` suppression.
 - [x] **Quiet-hours interrupts are never delivered.** `lib/notify.ts:194-198`
   defers and nothing resumes them. Deliver at the next window open from the
   sweep.
