@@ -530,10 +530,11 @@ this path fires.
   JSONs, logs, `tsconfig.tsbuildinfo`, `error_discovery_data/`, `tmp/`,
   `.scratch/`.
   Observation: Documentation/archive paths moved intact, duplicate metadata and skill mirror were removed, scratch junctions were unlinked without touching their main-checkout targets, and no lighthouse JSON/log files were present; memory-pointer update is handled at landing.
-- [ ] **README.** Currently a UTF-16 one-liner. Rewrite as UTF-8: stack, run,
+- [x] **README.** Currently a UTF-16 one-liner. Rewrite as UTF-8: stack, run,
   the worktree rule, test commands, QA env vars, deploy = push to main, cron
   topology (Vercel is the daily backstop, Actions carry cadence), env var
   names only.
+  Observation: README is UTF-8 and documents the stack, safe worktree/install rule, local run and checks, QA variable names only, push-to-main deploy, and Vercel/Actions schedule split.
 - [x] **Small config.** `tsconfig.json` `target` ES6 to ES2022. Move the
   `prebuild` `mkdirSync('.backups')` (`package.json:10`) into
   `scripts/mobile-crm-repro.mjs`. Comment why `ws`/`@types/ws` exist. Patch-bump
