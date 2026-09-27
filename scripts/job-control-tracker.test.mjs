@@ -159,7 +159,6 @@ test("every service a form can write has a row mark", () => {
   // of the forms rather than trusting a copy of the list.
   const forms = [
     "../components/mainstreet-contact.tsx",
-    "../app/ops/intake/job-intake-form.tsx",
     "../app/ops/intake/inline-job-intake.tsx",
   ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"))
 

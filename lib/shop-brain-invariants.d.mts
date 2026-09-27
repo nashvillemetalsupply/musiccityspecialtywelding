@@ -58,26 +58,4 @@ export function webTextConsentResolution(state: unknown): { grant: boolean; cons
 
 export type BoardSignalKind = "waiting" | "noreply" | "promise" | "followup" | "bounced"
 
-export type BoardWeights = {
-  signal: Record<BoardSignalKind, number>
-  latenessCapMultiple: number
-  latenessHalfLifeHours: number
-  valueDivisorCents: number
-  valueCapPoints: number
-  repeatPointsPerPriorJob: number
-  repeatCapPoints: number
-  hotThreshold: number
-}
-
-export const BOARD_WEIGHTS: Readonly<BoardWeights>
-
 export const BOARD_SIGNAL_LABELS: Readonly<Record<BoardSignalKind, string>>
-
-export function signalWeight(kind: string, hoursLate: number, weights?: BoardWeights): number
-
-export function scoreBoardJob(
-  job: { signals?: { kind: string; hoursLate: number }[]; valueCents?: number; priorJobs?: number },
-  weights?: BoardWeights,
-): number
-
-export function isBoardJobHot(score: number, weights?: BoardWeights): boolean

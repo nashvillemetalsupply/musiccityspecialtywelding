@@ -232,8 +232,7 @@ function moneyFor(lead: BoardJobRow): { value: string; note: string; confirmHref
 function chipTone(lead: BoardJobRow): "stop" | "warn" | "good" | "info" {
   if (lead.board_stage === "ready") return "good"
   if (lead.board_stage === "attention") {
-    const stopKind = lead.board_signals.some((signal) => signal.kind === "waiting" || signal.kind === "noreply")
-    return stopKind ? "stop" : "warn"
+    return lead.board_stop_signal ? "stop" : "warn"
   }
   return "info"
 }

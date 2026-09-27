@@ -150,7 +150,7 @@ test("a price heard on the call shows on the board row for the owner to confirm,
   const OPS = read("../lib/ops-data.ts")
   assert.match(OPS, /heard_quote_cents: number \| null/)
   assert.match(OPS, /WHERE n\.action_kind = 'quote-capture' AND n\.read_at IS NULL\s+AND \(n\.action_detail->>'leadId'\)::bigint = p\.id/)
-  assert.match(OPS, /: \{ \.\.\.projected, board_score: 0, board_hot: false, heard_quote_cents: null \}/, "crew money is removed server-side")
+  assert.match(OPS, /: \{ \.\.\.projected, heard_quote_cents: null \}/, "crew money is removed server-side")
   assert.match(BOARD, /if \(lead\.heard_quote_cents !== null && lead\.heard_quote_cents > 0\)/)
   assert.match(BOARD, /confirmHref: `\/ops\/leads\/\$\{lead\.id\}#quote-capture`/)
   // the row order stays honest: a confirmed estimate beats a heard one

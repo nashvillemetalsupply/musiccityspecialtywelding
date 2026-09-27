@@ -48,7 +48,7 @@ test("/board has its own error, not-found and loading surfaces in the board lang
 })
 
 test("ops fallback and form components inherit the layout landmark", () => {
-  for (const p of ["error.tsx", "loading.tsx", "not-found.tsx", "login-form.tsx", "intake/job-intake-form.tsx"]) {
+  for (const p of ["error.tsx", "loading.tsx", "not-found.tsx", "login-form.tsx", "intake/inline-job-intake.tsx"]) {
     assert.doesNotMatch(read(`app/ops/${p}`), /<main[\s>]/, `${p} renders a nested main`)
   }
   assert.match(read("app/ops/layout.tsx"), /!operator && <SkipLink/)

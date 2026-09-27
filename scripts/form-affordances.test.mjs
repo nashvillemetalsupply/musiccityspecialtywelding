@@ -8,7 +8,7 @@ import test from "node:test"
 // form the rest of scripts/*.test.mjs already uses.
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
-const FORMS = ["app/ops/intake/job-intake-form.tsx", "app/ops/intake/inline-job-intake.tsx"]
+const FORMS = ["app/ops/intake/inline-job-intake.tsx"]
 
 test("phone fields open the tel keypad and autofill", () => {
   for (const f of FORMS) {
