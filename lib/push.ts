@@ -1,5 +1,6 @@
 import webpush from "web-push"
 import { getSql } from "@/lib/db"
+import { normalizePushUrl } from "@/lib/push-url.mjs"
 
 export function pushConfigured() {
   return Boolean(
@@ -57,7 +58,7 @@ async function sendPush(payload: { title: string; body: string; url: string }, o
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify(payload),
+          JSON.stringify({ ...payload, url: normalizePushUrl(payload.url) }),
           { TTL: 3600 }
         )
         sent += 1

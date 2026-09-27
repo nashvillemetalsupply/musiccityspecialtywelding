@@ -593,12 +593,13 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
 
 ## P6 — CRM client, PWA, owner loop
 
-- [ ] **Manifest scope is wrong.** `app/ops/manifest.webmanifest/route.ts`
+- [x] **Manifest scope is wrong.** `app/ops/manifest.webmanifest/route.ts`
   sets `scope: "/ops/"` while `/ops` redirects to `/board`, and
   `public/ops-sw.js:164-185` `notificationclick` only matches `startsWith("/ops")`.
   Set scope `/`, `start_url` `/board`, dark `background_color`, 192/512
   maskable PNGs; have push payloads carry `url: /ops/leads/<id>` and the
   service worker open it.
+  - Observation: the installed app starts at `/board`; push URLs are relative and same-origin, with 192/512 maskable icons.
 - [ ] **No offline.** The service worker has no fetch handler. Add
   stale-while-revalidate for `/board*`, `/ops/leads/*` and `_next/static`,
   versioned by commit SHA, with an offline banner component. Writes are never

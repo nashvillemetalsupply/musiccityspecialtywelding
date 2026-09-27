@@ -16,12 +16,13 @@ self.addEventListener("activate", (event) => {
 })
 
 self.addEventListener("push", (event) => {
-  let payload = { title: "Music City Specialty Welding", body: "Open the board.", url: "/ops" }
+  let payload = { title: "Music City Specialty Welding", body: "Open the board.", url: "/board" }
   try {
     payload = { ...payload, ...event.data.json() }
   } catch {
     /* keep defaults */
   }
+  payload.url = safeNotificationPath(payload.url)
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
@@ -34,23 +35,30 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
-  const url = (event.notification.data && event.notification.data.url) || "/ops"
+  const url = safeNotificationPath(event.notification.data && event.notification.data.url)
+  const target = new URL(url, self.location.origin).href
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      const requested = new URL(url, self.location.origin)
-      const target = requested.origin === self.location.origin && requested.pathname.startsWith("/ops")
-        ? requested.href
-        : new URL("/ops", self.location.origin).href
-      for (const client of windowClients) {
-        if (new URL(client.url).pathname.startsWith("/ops") && "navigate" in client) {
-          return client.navigate(target).then((navigated) => {
-            const active = navigated || client
-            active.postMessage({ type: "ops-refresh", url: target })
-            return active.focus()
-          })
-        }
-      }
-      return clients.openWindow(target)
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windowClients) => {
+      const client = windowClients.find((candidate) => {
+        try { return new URL(candidate.url).origin === self.location.origin } catch { return false }
+      })
+      if (!client) return clients.openWindow(target)
+      if (new URL(client.url).href === target) return client.focus()
+      if (!("navigate" in client)) return clients.openWindow(target)
+      const navigated = await client.navigate(target)
+      return (navigated || client).focus()
     })
   )
 })
+
+function safeNotificationPath(value) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return "/board"
+  try {
+    const requested = new URL(value, self.location.origin)
+    return requested.origin === self.location.origin
+      ? `${requested.pathname}${requested.search}${requested.hash}`
+      : "/board"
+  } catch {
+    return "/board"
+  }
+}
