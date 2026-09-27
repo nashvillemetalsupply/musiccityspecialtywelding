@@ -699,7 +699,7 @@ test("bounded recovery has a daily catch-up, an honest lease, and safe opportuni
     "reconcileGlassUploads", "retryPendingInterrupts",
   ]) assert.match(recovery, new RegExp(`${reconciler}\\(\\)`))
 
-  assert.ok(vercel.crons.some((cron) => cron.path === "/api/ops/reminders" && cron.schedule === "0 13,14 * * *"))
+  assert.ok(vercel.crons.some((cron) => cron.path === "/api/ops/reminders" && cron.schedule === "0 14 * * *"))
   assert.match(board, /operator\.role === "owner"[\s\S]{0,220}after\([\s\S]{0,300}trigger: "owner-board"/)
   assert.match(action, /operator\.role !== "owner"/)
   assert.match(action, /trigger: "owner-manual", force: true/)

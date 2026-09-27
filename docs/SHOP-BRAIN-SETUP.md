@@ -127,7 +127,7 @@ Deepgram Production uses project `a953c9b4-767e-4715-a0a6-4d63a82a2164`; its API
 
 ## Recovery and release gate
 
-The Morning Brief cron runs at both possible Central-time UTC offsets and claims the Central calendar day once. The scheduled reminders route also reconciles stale Customer Page uploads.
+Only the Morning Brief cron runs at both possible Central-time UTC offsets and claims the Central calendar day once. The reminders route runs daily at 14:00 UTC (8 a.m. CST / 9 a.m. CDT) and also reconciles stale Customer Page uploads; its GitHub workflow continues draining deferred texts earlier during daylight saving time.
 
 `shopBrain.ready` always reports the real configuration state. `shopBrain.gateSatisfied` is the release-gate result and can remain true while `SHOP_BRAIN_REQUIRED=false`; this distinction prevents a disabled feature from appearing configured.
 

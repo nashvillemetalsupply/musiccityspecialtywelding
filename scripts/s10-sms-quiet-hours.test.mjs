@@ -53,13 +53,13 @@ test("deferred sends persist first and use one conditional queued-to-sending cla
   assert.match(messages, /sendIfClaimed\(/)
 })
 
-test("due deferred texts run from the existing authorized reminders cron at Central 8 a.m.", () => {
+test("due deferred texts run from the existing authorized reminders cron in the Central morning window", () => {
   const route = read("app/api/ops/reminders/route.ts")
   const vercel = JSON.parse(read("vercel.json"))
   assert.match(route, /isAuthorizedCron/)
   assert.match(route, /sendDeferredSms\(/)
   const reminders = vercel.crons.find((cron) => cron.path === "/api/ops/reminders")
-  assert.equal(reminders.schedule, "0 13,14 * * *")
+  assert.equal(reminders.schedule, "0 14 * * *")
 })
 
 test("only owner replies may bypass quiet hours and the result exposes a visible warning", () => {
