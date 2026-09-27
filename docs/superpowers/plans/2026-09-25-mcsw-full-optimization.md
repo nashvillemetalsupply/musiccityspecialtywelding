@@ -319,10 +319,11 @@ this path fires.
   same zod schema as the primary; on failure record the summary and skip job
   creation.
   Observation: Both provider results pass through the shared Zod parser before persistence or settlement; a malformed fallback fixture rejects with zero summary writes or job creation.
-- [ ] **Extraction runs twice per call.**
+- [x] **Extraction runs twice per call.**
   `app/api/twilio/live-transcript/route.ts:47` and
   `app/api/twilio/transcript/route.ts:74` both extract. Make the second one
   skip when a claim with the same `sourceEventId` already exists.
+  Observation: Both Twilio transcript callbacks now check claims by their immutable source event before scheduling extraction; tests prove an existing claim suppresses a second model pass.
 - [ ] **AI calls carry no `maxRetries`, no usage logging.** Add both across
   `lib/ai.ts` call sites and write `usage` into `automation_runs.meta`. Confirm
   the production extraction model in code matches what the docs claim
