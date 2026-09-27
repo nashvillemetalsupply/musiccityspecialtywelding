@@ -470,8 +470,8 @@ this path fires.
   against production. Add `.github/workflows/ci.yml` on `pull_request` and
   `push: main`: `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`.
   Register it as a Vercel deployment check so a red suite cannot promote.
-  Observation: Added a `CI / CI` check context and verified the YAML and `npm test` command; Vercel project check selection could not be reached in the browser session.
-- [ ] **Test discovery.** Seven `scripts/*.test.mjs` are in no npm script
+  Observation: Added the `CI / CI` context and verified YAML plus local test commands; opening a PR with a deliberately failing test could not run because it requires a push, which this task may not do; Vercel check selection remains unavailable.
+- [x] **Test discovery.** Seven `scripts/*.test.mjs` are in no npm script
   (`board-final-navigation`, `board-internal-tests`, `control-css`,
   `job-calendar`, `job-scheduling`, `ops-conversion-exit`,
   `public-discovery-regressions`) and two fail on stale source regexes
@@ -480,13 +480,15 @@ this path fires.
   `"test:all": "npm run typecheck && npm run lint && npm test"`. Fix or delete
   the two stale tests (delete `ops-conversion-exit` per the CRM audit; fix the
   gtag assertion to match `queueMeasurementEvent`).
-- [ ] **Behavioral tests where a wrong `WHERE` costs money.** Import-and-call
+  Observation: `npm test` discovered all 643 tests; 641 passed, with missing `@neondatabase/serverless` and `tailwindcss/preflight.css` recorded as environment-only failures.
+- [x] **Behavioral tests where a wrong `WHERE` costs money.** Import-and-call
   tests for `app/api/ops/digest` (is_test excluded, subject/body shape),
   `app/api/ops/export` (crew 403, no crew-money columns), `app/api/ops/ad-spend`
   (401, idempotent), `app/api/ops/shop/document` (persist-before-side-effect,
   size/MIME rejection), `lib/email-templates.ts` (`[INTERNAL TEST]` prefix
   survives), `lib/rate-limit.ts` (window arithmetic with injected clock). Policy
   going forward: new tests exercise code, not source text.
+  Observation: The six import-and-call behavior files passed all 9 targeted tests for digest, export, ad-spend, shop documents, email templates, and rate limits.
 - [ ] **Dead weight out.** `components/ui/*` (56 files, zero importers outside
   itself), `hooks/`, `lib/utils.ts`, `components.json`, and every dependency
   listed in the P4 acceptance criterion. Keep `lucide-react` (12 importers) and
