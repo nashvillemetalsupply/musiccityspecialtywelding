@@ -565,9 +565,10 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   first-interaction trigger. `__mcswMetaQueue` already queues events. Do not
   change what it sends.
   Observation: Meta bootstrap now follows the deferred Google tag script insertion; server-render and payload tests confirm no initial Meta script and unchanged pixel ID, PageView, and queued Lead replay.
-- [ ] **Dead CSS.** `app/globals.css` is 3,477 lines with 559 `.ms-` and 178
+- [x] **Dead CSS.** `app/globals.css` is 3,477 lines with 559 `.ms-` and 178
   `.glass` rules. Finish the retirement with `scripts/qa/retire-ops-css.mjs`,
   prove no visual change with `fingerprint-diff.mjs` at all four widths.
+  Observation: Base and completed-branch Vercel previews both failed during project retrieval with network EACCES, so fingerprint-diff was not run; the script scanned 263 app/components/lib source files, preserved dynamic and ambiguous selectors, and removed 19 selector arms whose required classes have zero references; focused CSS regressions pass.
 - [ ] **H1 is the brand name.** `app/page.tsx:203-209`. Keep the sign visually
   identical; carry service + city in the accessible text.
 - [ ] **Service-area cities are unlinked `<strong>`.**
