@@ -113,3 +113,48 @@ jobs:
             echo "::error::Homepage returned HTTP $status"
             exit 1
           fi
+
+  monthly-keepalive:
+    if: github.event_name == 'schedule' && github.event.schedule == '5 0-11 * * *'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: monthly-health-monitor-keepalive
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Commit monthly keepalive file
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$(date -u +%d)" != "01" ]]; then
+            echo "Not the first UTC day of the month; skipping."
+            exit 0
+          fi
+
+          month="$(date -u +%Y-%m)"
+          if git ls-remote --exit-code --heads origin keepalive >/dev/null 2>&1; then
+            git fetch origin keepalive
+            git switch --create keepalive --track origin/keepalive
+          else
+            git switch --orphan keepalive
+            git rm -r --quiet --ignore-unmatch .
+          fi
+
+          path="keepalive/${month}.md"
+          if [[ -f "$path" ]]; then
+            echo "A keepalive commit already exists for ${month}."
+            exit 0
+          fi
+
+          mkdir -p keepalive
+          printf 'Scheduled-workflow keepalive for %s.\n' "$month" > "$path"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$path"
+          git commit -m "chore: monthly workflow keepalive ${month}"
+          git push origin keepalive
