@@ -11,9 +11,11 @@ import { findPersonByEmail, getPerson } from "@/lib/people"
 import { classifyAttachmentSensitivity, queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-retry"
 import { isGmailMessageGone } from "@/lib/shop-brain-invariants.mjs"
 import { applyQuickBooksPayment } from "@/lib/payment-ledger"
+import { GMAIL_MESSAGE_CAP, pendingGmailMessageIds, settleGmailRun, shouldNotifyGmailDeadLetter, splitGmailMessageBatch } from "@/lib/gmail-ingest-checkpoint.mjs"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 async function ingestPayment(messageId: string, occurredAt: string, subject: string, body: string, isTest: boolean) {
   const facts = extractQuickBooksPaymentFacts({ subject, body })
@@ -96,6 +98,10 @@ export async function GET(req: Request) {
     WHERE sync_state.updated_at < now() - interval '8 minutes'
     RETURNING key`) as { key: string }[]
   if (!lease[0]) return Response.json({ ok: true, skipped: "Gmail sync already in progress." }, { status: 202 })
+  let runJob = "gmail-ingest"
+  let runOk = false
+  let runDetail: Record<string, unknown> = { error: "Gmail ingest did not finish." }
+  try {
   const token = await gmailAccessToken()
   // One-time repair hatch. Gmail hands the sweep only new mail, so receipts that a
   // broken auth check quarantined are invisible to it forever. The done marker is
@@ -105,8 +111,7 @@ export async function GET(req: Request) {
   // exact failure that made this endpoint necessary.
   if (new URL(req.url).searchParams.get("replay") === "quarantined") {
     const replay = { scanned: 0, payments: 0, deposits: 0, stillRejected: 0, failures: 0 }
-    try {
-      const rejected = (await sql`
+    const rejected = (await sql`
         SELECT rejected.external_id FROM events rejected
         WHERE rejected.kind = 'email.payment-rejected'::text
           AND COALESCE(rejected.external_id, ''::text) <> ''::text
@@ -116,7 +121,7 @@ export async function GET(req: Request) {
               AND done.kind = 'email.payment-replayed'::text
           )
         ORDER BY rejected.occurred_at ASC
-        LIMIT 200`) as { external_id: string }[]
+        LIMIT ${GMAIL_MESSAGE_CAP}::bigint`) as { external_id: string }[]
       replay.scanned = rejected.length
       for (const row of rejected) {
         try {
@@ -149,25 +154,38 @@ export async function GET(req: Request) {
           console.error(`Gmail replay ${row.external_id} failed:`, error)
         }
       }
-      await sql`
-        INSERT INTO automation_runs (job, ok, detail)
-        VALUES ('gmail-replay-quarantined'::text, ${replay.failures === 0}::boolean, ${JSON.stringify(replay)}::jsonb)`
-    } finally {
-      // The sweep releases the lease on its way out; an early return has to as well,
-      // or the next cron tick is locked out for the full eight minutes.
-      await sql`UPDATE sync_state SET updated_at = 'epoch'::timestamptz WHERE key = 'gmail-ingest-lease'::text`
     }
+    runJob = "gmail-replay-quarantined"
+    runOk = replay.failures === 0
+    runDetail = replay
     return Response.json({ ok: replay.failures === 0, replay })
   }
-  const state = (await sql`SELECT value FROM sync_state WHERE key = 'gmail'::text LIMIT 1`) as { value: { historyId?: string } }[]
-  let listing
-  try { listing = await listGmailMessageIds(token, state[0]?.value?.historyId ?? null) }
-  catch (error) {
-    if ((error as { status?: number }).status !== 404) throw error
-    listing = await listGmailMessageIds(token, null)
+  const checkpointRows = (await sql`SELECT value FROM sync_state WHERE key = 'gmail-ingest-checkpoint'::text LIMIT 1`) as { value: { pendingIds?: unknown; historyId?: unknown } }[]
+  const savedCheckpoint = checkpointRows[0]?.value
+  let ids: string[]
+  let historyId: string | null
+  if (savedCheckpoint) {
+    if (!Array.isArray(savedCheckpoint.pendingIds) || savedCheckpoint.pendingIds.some((id) => typeof id !== "string")) {
+      throw new Error("Gmail ingest checkpoint is malformed; refusing to advance the mailbox cursor.")
+    }
+    ids = savedCheckpoint.pendingIds as string[]
+    historyId = typeof savedCheckpoint.historyId === "string" ? savedCheckpoint.historyId : null
+  } else {
+    const state = (await sql`SELECT value FROM sync_state WHERE key = 'gmail'::text LIMIT 1`) as { value: { historyId?: string } }[]
+    let listing
+    try { listing = await listGmailMessageIds(token, state[0]?.value?.historyId ?? null) }
+    catch (error) {
+      if ((error as { status?: number }).status !== 404) throw error
+      listing = await listGmailMessageIds(token, null)
+    }
+    ids = listing.ids.reverse()
+    historyId = listing.historyId || await getMailboxHistoryId(token)
   }
-  const counters = { scanned: listing.ids.length, inserted: 0, payments: 0, skipped: 0, gone: 0, failures: 0, deadLettered: 0 }
-  for (const id of listing.ids.reverse()) {
+  const batch = splitGmailMessageBatch(ids)
+  const counters = { scanned: batch.batch.length, inserted: 0, payments: 0, skipped: 0, gone: 0, failures: 0, deadLettered: 0 }
+  let pendingIds = batch.remaining
+  const retryIds: string[] = []
+  for (const [messageIndex, id] of batch.batch.entries()) {
     let isTest = false
     try {
       let message
@@ -289,18 +307,45 @@ export async function GET(req: Request) {
       if (attempts >= 5) {
         await sql`UPDATE gmail_ingest_failures SET dead_lettered_at = COALESCE(dead_lettered_at, now()) WHERE message_id = ${id}::text`
         const deadEventId = await recordEvent({ kind: "email.ingest-dead-letter", actorType: "system", externalId: `gmail-dead:${id}`, body: `${isTest ? "[INTERNAL TEST] " : ""}Gmail message could not be filed after ${attempts} attempts`, detail: { messageId: id, error: message, isTest } })
-        await notifyAll({ priority: "digest", stock: "red", title: "One Gmail update needs a human", body: "MCSW Jobs held it after five safe retries.", url: "/board/updates", sourceEventId: deadEventId, ownerOnly: true, dedupeKey: `gmail-dead:${id}` }).catch(() => undefined)
+        if (shouldNotifyGmailDeadLetter(isTest)) await notifyAll({ priority: "digest", stock: "red", title: "One Gmail update needs a human", body: "MCSW Jobs held it after five safe retries.", url: "/board/updates", sourceEventId: deadEventId, ownerOnly: true, dedupeKey: `gmail-dead:${id}` }).catch(() => undefined)
         counters.deadLettered++
-      } else counters.failures++
+      } else {
+        counters.failures++
+        retryIds.push(id)
+      }
       console.error(`Gmail message ${id} failed:`, error)
     }
+    finally {
+      pendingIds = pendingGmailMessageIds({ batch: batch.batch, remaining: batch.remaining, processedIndex: messageIndex, retryIds })
+      await sql`
+        INSERT INTO sync_state (key, value, updated_at)
+        VALUES ('gmail-ingest-checkpoint'::text, ${JSON.stringify({ pendingIds, historyId })}::jsonb, now())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
+    }
   }
-  const historyId = listing.historyId || await getMailboxHistoryId(token)
-  if (counters.failures === 0) await sql`
-    INSERT INTO sync_state (key, value, updated_at) VALUES ('gmail'::text, ${JSON.stringify({ historyId })}::jsonb, now())
-    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
-  await sql`
-    INSERT INTO automation_runs (job, ok, detail) VALUES ('gmail-ingest'::text, ${counters.failures === 0}::boolean, ${JSON.stringify(counters)}::jsonb)`
-  await sql`UPDATE sync_state SET updated_at = 'epoch'::timestamptz WHERE key = 'gmail-ingest-lease'::text`
-  return Response.json({ ok: counters.failures === 0, ...counters, historyId, checkpointAdvanced: counters.failures === 0 })
+  const checkpointAdvanced = counters.failures === 0 && pendingIds.length === 0
+  if (checkpointAdvanced) {
+    await sql`
+      INSERT INTO sync_state (key, value, updated_at) VALUES ('gmail'::text, ${JSON.stringify({ historyId })}::jsonb, now())
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
+    await sql`DELETE FROM sync_state WHERE key = 'gmail-ingest-checkpoint'::text`
+  }
+  runOk = counters.failures === 0
+  runDetail = { ...counters, pending: pendingIds.length, historyId, checkpointAdvanced }
+  return Response.json({ ok: runOk, ...counters, pending: pendingIds.length, historyId, checkpointAdvanced })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    runOk = false
+    runDetail = { ...runDetail, error: message.slice(0, 1000) }
+    throw error
+  } finally {
+    await settleGmailRun({
+      job: runJob,
+      ok: runOk,
+      detail: runDetail,
+      release: () => sql`UPDATE sync_state SET updated_at = 'epoch'::timestamptz WHERE key = 'gmail-ingest-lease'::text`,
+      recordRun: ({ job, ok, detail }) => sql`INSERT INTO automation_runs (job, ok, detail) VALUES (${job}::text, ${ok}::boolean, ${JSON.stringify(detail)}::jsonb)`,
+      onReleaseError: (error) => console.error("Gmail ingest lease release failed:", error),
+    })
+  }
 }

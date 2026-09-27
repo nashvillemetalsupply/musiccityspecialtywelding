@@ -308,11 +308,12 @@ this path fires.
   `automation_runs` writes `ok = true` unconditionally (`:173`); record the real
   outcome.
   Observation: The paired UTC runs now pass only during the intended Central 6 AM hour; resume shares the per-day notification key and records whether a brief event exists.
-- [ ] **Gmail ingest lease and accounting.** `app/api/ingest/gmail/route.ts:99`
+- [x] **Gmail ingest lease and accounting.** `app/api/ingest/gmail/route.ts:99`
   throws out of `gmailAccessToken()` with no `automation_runs` row and the
   8-minute lease not released (`:303` is not in `finally`). Add `maxDuration`,
   cap 50 messages per run, checkpoint per message, release in `finally`,
   record the failure.
+  Observation: Gmail now handles at most 50 message IDs per run, checkpoints remaining and failed IDs after each message, and releases the lease while writing one truthful run row even when token refresh fails; internal test dead letters do not notify.
 - [ ] **DeepSeek fallback is unvalidated but auto-creates jobs.**
   `lib/call-summary.ts:90-94, 175-183`. Run the fallback output through the
   same zod schema as the primary; on failure record the summary and skip job
