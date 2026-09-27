@@ -11,7 +11,7 @@ import { findPersonByEmail, getPerson } from "@/lib/people"
 import { classifyAttachmentSensitivity, queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-retry"
 import { isGmailMessageGone } from "@/lib/shop-brain-invariants.mjs"
 import { applyQuickBooksPayment } from "@/lib/payment-ledger"
-import { GMAIL_MESSAGE_CAP, pendingGmailMessageIds, settleGmailRun, shouldNotifyGmailDeadLetter, splitGmailMessageBatch } from "@/lib/gmail-ingest-checkpoint.mjs"
+import { GMAIL_MESSAGE_CAP, canAdvanceGmailCheckpoint, pendingGmailMessageIds, settleGmailRun, shouldNotifyGmailDeadLetter, splitGmailMessageBatch } from "@/lib/gmail-ingest-checkpoint.mjs"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -154,7 +154,6 @@ export async function GET(req: Request) {
           console.error(`Gmail replay ${row.external_id} failed:`, error)
         }
       }
-    }
     runJob = "gmail-replay-quarantined"
     runOk = replay.failures === 0
     runDetail = replay
@@ -323,7 +322,7 @@ export async function GET(req: Request) {
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
     }
   }
-  const checkpointAdvanced = counters.failures === 0 && pendingIds.length === 0
+  const checkpointAdvanced = canAdvanceGmailCheckpoint({ failures: counters.failures, pendingIds })
   if (checkpointAdvanced) {
     await sql`
       INSERT INTO sync_state (key, value, updated_at) VALUES ('gmail'::text, ${JSON.stringify({ historyId })}::jsonb, now())

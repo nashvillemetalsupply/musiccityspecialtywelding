@@ -313,8 +313,9 @@ test("deterministic private Blob writes can resume after response loss", () => {
 
 test("Gmail does not advance its checkpoint after a partial failure", () => {
   const gmail = source("app/api/ingest/gmail/route.ts")
-  assert.match(gmail, /if \(counters\.failures === 0\) await sql/)
-  assert.match(gmail, /checkpointAdvanced: counters\.failures === 0/)
+  assert.match(gmail, /const checkpointAdvanced = canAdvanceGmailCheckpoint\(/)
+  assert.match(gmail, /if \(checkpointAdvanced\) \{/)
+  assert.match(gmail, /checkpointAdvanced \}\)/)
 })
 
 test("every real inbound Gmail reply reaches the capped interrupt gate", () => {
@@ -625,11 +626,13 @@ test("identity races, private attachments, and closed GLASS fail safely", () => 
 
 test("time, transcript, and activity windows preserve current truth", () => {
   const brief = source("app/api/ops/brief/route.ts")
+  const briefSchedule = source("lib/brief-schedule.mjs")
   const calls = source("lib/calls.ts")
   const messages = source("lib/messages.ts")
   const events = source("lib/events.ts")
   assert.match(brief, /timeZone: "America\/Chicago"/)
-  assert.match(brief, /6:30 AM-noon America\/Chicago recovery window/)
+  assert.match(briefSchedule, /timeZone: "America\/Chicago"/)
+  assert.match(briefSchedule, /return hour === 6/)
   assert.match(brief, /brief_audio_status = 'submitting'/)
   assert.match(calls, /ORDER BY started_at DESC, id DESC LIMIT 200\) recent ORDER BY started_at ASC/)
   assert.match(messages, /ORDER BY sent_at DESC, id DESC LIMIT 300[\s\S]{0,80}recent ORDER BY sent_at ASC/)
@@ -726,7 +729,7 @@ test("opportunistic recovery wakes only the canonical production Gmail ingest", 
   assert.match(wake, /cache: "no-store"/)
   assert.doesNotMatch(wake, /getSql|gmailAccessToken|listGmailMessageIds|console\./)
   assert.match(gmail, /INSERT INTO sync_state \(key, value, updated_at\)[\s\S]{0,140}'gmail-ingest-lease'/)
-  assert.match(gmail, /checkpointAdvanced: counters\.failures === 0/)
+  assert.match(gmail, /checkpointAdvanced/)
 
   assert.match(board, /trigger: "owner-board"[\s\S]{0,260}!result\.skipped[\s\S]{0,220}wakeGmailIngest\(gmailWakeOrigin\)/)
   assert.match(action, /wakeGmailIngest\(gmailWakeOrigin\)/)

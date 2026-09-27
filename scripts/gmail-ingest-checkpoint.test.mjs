@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { GMAIL_MESSAGE_CAP, pendingGmailMessageIds, settleGmailRun, shouldNotifyGmailDeadLetter, splitGmailMessageBatch } from "../lib/gmail-ingest-checkpoint.mjs"
+import { GMAIL_MESSAGE_CAP, canAdvanceGmailCheckpoint, pendingGmailMessageIds, settleGmailRun, shouldNotifyGmailDeadLetter, splitGmailMessageBatch } from "../lib/gmail-ingest-checkpoint.mjs"
 
 test("Gmail processes no more than fifty listed messages in one run", () => {
   const ids = Array.from({ length: 73 }, (_, index) => `message-${index}`)
@@ -17,6 +17,12 @@ test("each checkpoint retains unprocessed messages and retries a failed message"
   assert.deepEqual(pendingGmailMessageIds({ batch, remaining, processedIndex: 0 }), ["two", "three", "four"])
   assert.deepEqual(pendingGmailMessageIds({ batch, remaining, processedIndex: 1, retryIds: ["one", "two"] }), ["three", "four", "one", "two"])
   assert.deepEqual(pendingGmailMessageIds({ batch, remaining, processedIndex: 2, retryIds: ["one", "two"] }), ["four", "one", "two"])
+})
+
+test("the mailbox cursor advances only after every message succeeds and nothing remains pending", () => {
+  assert.equal(canAdvanceGmailCheckpoint({ failures: 0, pendingIds: [] }), true)
+  assert.equal(canAdvanceGmailCheckpoint({ failures: 1, pendingIds: [] }), false)
+  assert.equal(canAdvanceGmailCheckpoint({ failures: 0, pendingIds: ["retry-me"] }), false)
 })
 
 test("failed dead-letter data never pages for an internal test message", () => {

@@ -64,7 +64,7 @@ function modulePath(candidate) {
   return candidate
 }
 
-function loadStandaloneTs(relativePath) {
+async function loadStandaloneTs(relativePath) {
   const absolute = resolve(root, relativePath)
   const source = readFileSync(absolute, "utf8")
   const output = ts.transpileModule(source, {
@@ -76,7 +76,12 @@ function loadStandaloneTs(relativePath) {
     },
   }).outputText
   const loadedModule = { exports: {} }
-  const localRequire = (specifier) => nativeRequire(specifier)
+  const aiUsage = await import("../lib/ai-usage.mjs")
+  const localRequire = (specifier) => {
+    if (specifier === "@/lib/db") return { getSql: () => async () => [] }
+    if (specifier === "@/lib/ai-usage.mjs") return aiUsage
+    return nativeRequire(specifier)
+  }
   Function("exports", "require", "module", "__filename", "__dirname", output)(
     loadedModule.exports,
     localRequire,
@@ -703,8 +708,8 @@ test("Twilio, DeepSeek, and weather fetches use bounded abort signals", async ()
     TWILIO_WEBHOOK_BASE_URL: "https://example.test",
     DEEPSEEK_API_KEY: "fake-deepseek-key",
   }, async () => withFakeProviderFetch(async ({ durations, calls, signal }) => {
-    const twilio = loadStandaloneTs("lib/twilio.ts")
-    const ai = loadStandaloneTs("lib/ai.ts")
+    const twilio = await loadStandaloneTs("lib/twilio.ts")
+    const ai = await loadStandaloneTs("lib/ai.ts")
 
     await withEnv({ VERCEL_ENV: "preview", MCSW_TEST_SMS_FAIL: "1" }, () =>
       assert.rejects(
