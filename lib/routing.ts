@@ -72,13 +72,35 @@ export async function reconcileRoutedLeadProjections(
           WHERE duplicate.id = commitment.id
         )
       RETURNING commitment.id
-    ), moved_claims AS (
-      UPDATE claims claim
-      SET subject_id = pair.target_id
-      FROM pair
+    ), claim_candidates AS MATERIALIZED (
+      SELECT claim.*, pair.target_id
+      FROM claims claim CROSS JOIN pair
       WHERE claim.subject_type = 'lead'
         AND claim.subject_id = pair.source_id
-      RETURNING claim.id
+        AND claim.superseded_by IS NULL
+    ), replacement_claims AS (
+      INSERT INTO claims (
+        subject_type, subject_id, predicate, value, confidence,
+        source_event_id, extracted_by, item_key
+      )
+      SELECT candidate.subject_type, candidate.target_id, candidate.predicate,
+        candidate.value, candidate.confidence, candidate.source_event_id,
+        candidate.extracted_by,
+        CASE WHEN candidate.item_key = '' THEN 'routed:'::text
+          ELSE candidate.item_key || ':routed:'::text END ||
+          candidate.target_id::text || ':'::text || candidate.id::text
+      FROM claim_candidates candidate
+      RETURNING id, source_event_id, item_key
+    ), moved_claims AS (
+      UPDATE claims prior SET superseded_by = replacement.id
+      FROM claim_candidates candidate
+      JOIN replacement_claims replacement
+        ON replacement.source_event_id = candidate.source_event_id
+        AND replacement.item_key = CASE WHEN candidate.item_key = '' THEN 'routed:'::text
+          ELSE candidate.item_key || ':routed:'::text END ||
+          candidate.target_id::text || ':'::text || candidate.id::text
+      WHERE prior.id = candidate.id AND prior.superseded_by IS NULL
+      RETURNING prior.id
     )
     SELECT target_id,
       (SELECT count(*)::int FROM moved_messages) AS moved_messages,

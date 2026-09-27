@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
+import { parseBuildFactNumber } from "@/lib/build-fact-number.mjs"
 import {
   addWorkingBuildFact,
   decideBuildFact,
@@ -36,9 +37,14 @@ function refresh(leadId: number) {
 
 export async function decideBuildFactAction(formData: FormData) {
   const { operator, leadId } = await readOwnerBuild(formData)
-  const claimId = Number(formData.get("claimId"))
+  const claimId = parseBuildFactNumber(formData.get("claimId"), {
+    label: "current draft fact",
+    integer: true,
+    min: 1,
+    max: Number.MAX_SAFE_INTEGER,
+  })
   const kind = String(formData.get("kind") ?? "")
-  if (!Number.isInteger(claimId) || !["confirm", "working", "reject"].includes(kind)) {
+  if (!["confirm", "working", "reject"].includes(kind)) {
     throw new Error("Choose a current draft fact.")
   }
   await decideBuildFact({
@@ -53,9 +59,14 @@ export async function decideBuildFactAction(formData: FormData) {
 
 export async function proposeBuildFactChangeAction(formData: FormData) {
   const { operator, leadId } = await readOwnerBuild(formData)
-  const sourceClaimId = Number(formData.get("claimId"))
+  const sourceClaimId = parseBuildFactNumber(formData.get("claimId"), {
+    label: "number being corrected",
+    integer: true,
+    min: 1,
+    max: Number.MAX_SAFE_INTEGER,
+  })
   const value = String(formData.get("value") ?? "").trim()
-  if (!Number.isInteger(sourceClaimId)) throw new Error("Choose the number being corrected.")
+  if (!value) throw new Error("Enter the corrected build fact.")
   await proposeBuildFactChange({
     leadId,
     sourceClaimId,
@@ -69,7 +80,13 @@ export async function proposeBuildFactChangeAction(formData: FormData) {
 export async function addWorkingBuildFactAction(formData: FormData) {
   const { operator, leadId } = await readOwnerBuild(formData)
   const factKey = String(formData.get("factKey") ?? "").trim()
-  const value = Number(formData.get("value"))
+  const isRailCount = factKey === "frame.rail_count"
+  const value = parseBuildFactNumber(formData.get("value"), {
+    label: "shop estimate",
+    integer: isRailCount,
+    min: 0,
+    max: isRailCount ? 8 : Number.POSITIVE_INFINITY,
+  })
   await addWorkingBuildFact({
     leadId,
     factKey,

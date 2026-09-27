@@ -61,7 +61,9 @@ test("filing a holding conversation moves every mutable projection and late extr
   const routing = source("lib/routing.ts")
   assert.match(actions, /duplicate_commitments AS \(/)
   assert.match(actions, /moved_commitments AS \([\s\S]*UPDATE commitments[\s\S]*lead_id = routed\.target_id/)
-  assert.match(actions, /moved_claims AS \([\s\S]*UPDATE claims[\s\S]*subject_id = routed\.target_id/)
+  const immutableClaimTransfer = /replacement_claims AS \([\s\S]*?INSERT INTO claims \([\s\S]*?\)\s*SELECT candidate\.subject_type, candidate\.target_id,[\s\S]*?\), moved_claims AS \([\s\S]*?UPDATE claims prior SET superseded_by = replacement\.id/
+  assert.match(actions, immutableClaimTransfer)
+  assert.match(routing, immutableClaimTransfer)
   assert.match(routing, /SELECT COALESCE\(routed_to_lead_id, id\) AS projection_lead_id/)
   assert.ok((extract.match(/resolveProjectionLeadId\(event\.lead_id\)/g) ?? []).length >= 3)
   assert.match(extract, /reconcileRoutedLeadProjections\(event\.lead_id, finalProjectionLeadId\)/)

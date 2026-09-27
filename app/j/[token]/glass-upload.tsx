@@ -1,6 +1,6 @@
 "use client"
 
-import { upload } from "@vercel/blob/client"
+import { uploadPresigned } from "@vercel/blob/client"
 import { useRef, useState } from "react"
 
 type ExistingUpload = {
@@ -97,7 +97,7 @@ export function GlassUpload({ token, initialUploads }: { token: string; initialU
     try {
       const intent = await fileIntent(item)
       update(item.id, { status: "uploading", pathname: intent.pathname })
-      await upload(intent.pathname, item.file, {
+      await uploadPresigned(intent.pathname, item.file, {
         access: "private",
         handleUploadUrl: "/api/glass/upload",
         clientPayload: JSON.stringify({ uploadId: item.id, token }),

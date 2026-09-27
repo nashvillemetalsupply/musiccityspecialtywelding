@@ -427,26 +427,26 @@ this path fires.
 
 ## P3 — Authorization, input hardening, customer privacy
 
-- [ ] **Three missing owner gates.** `app/ops/accounts/[id]/actions.ts:15`
+- [x] **Three missing owner gates.** `app/ops/accounts/[id]/actions.ts:15`
   `sendUsualPaperwork` has no owner check and no `is_test`;
   `app/ops/actions.ts:1696` `undoLeadComplete` has no owner check. Gate both
   server-side through the existing `requireOwner` helper; add tests that call
-  them with a crew session and assert refusal.
-- [ ] **Claims mutated in place.** `app/ops/actions.ts:848-852` and
+  them with a crew session and assert refusal. Observation: both actions reject crew before data or provider side effects; focused tests pass.
+- [x] **Claims mutated in place.** `app/ops/actions.ts:848-852` and
   `lib/routing.ts:76-81` UPDATE claims on routing. Either write a replacement
   claim with `superseded_by` or record a written exemption in `CLAUDE.md`
-  naming the field and why. Decide, do not leave it.
-- [ ] **`NaN` reaches `::int`.** `app/api/twilio/voice-status/route.ts:20,23`
-  and `outbound-status/route.ts:14,51`. Validate with zod; 400 on bad id.
-- [ ] **Raw error messages reach customers.**
+  naming the field and why. Decide, do not leave it. Observation: routing inserts a replacement row and points the original to it through `superseded_by`; source checks and additive migration check pass.
+- [x] **`NaN` reaches `::int`.** `app/api/twilio/voice-status/route.ts:20,23`
+  and `outbound-status/route.ts:14,51`. Validate with zod; 400 on bad id. Observation: both callbacks validate provider IDs and integer durations before SQL; source regression test passes.
+- [x] **Raw error messages reach customers.**
   `app/api/glass/upload/route.ts:30-34` and the finalize route return
   `error.message`. Map to plain-language copy from the voice corpus; log the
-  real one.
-- [ ] **Glass uploads trust the extension.** `finalizeGlassUpload` validates
+  real one. Observation: both routes log the underlying exception and return fixed retry guidance; focused test passes.
+- [x] **Glass uploads trust the extension.** `finalizeGlassUpload` validates
   extension and declared MIME only. Reuse `imageTypeMatches` from
   `lib/public-quote.mjs:147-159` on the first bytes. Confirm the Blob store is
   private-only regardless of the `access` value the client sends
-  (`glass-upload.tsx`).
+  (`glass-upload.tsx`). Observation: finalization compares the stored MIME to the first 12 private Blob bytes and server token policy fixes access to private; signature tests pass.
 - [ ] **Photos serve EXIF and GPS.** Strip at serve time in
   `app/api/glass/photo` and the attachment route with `sharp` (already a
   dependency): `.rotate().withMetadata({})`. Strip on upload too where the
@@ -458,8 +458,8 @@ this path fires.
   `glass-upload.tsx:198` put the token in media URLs (logged by CDNs and
   browsers). Issue short-lived HMAC-signed media URLs (15 min) from the page
   server component.
-- [ ] **`/j/[token]/review` lacks `sameOrigin()`.** Add it; every other write
-  under `/j` has it.
+- [x] **`/j/[token]/review` lacks `sameOrigin()`.** Add it; every other write
+  under `/j` has it. Observation: review POSTs reject missing and cross-origin Origin headers before loading the token; focused test passes.
 - [ ] **View counter counts bots.** `app/j/[token]/page.tsx:55-70`. Count only
   on a client beacon after 3 s visible.
 - [ ] **Customer SMS has no quiet hours.** `sendSmsPersisted` will text a
@@ -469,12 +469,12 @@ this path fires.
 - [ ] **No refund path.** `parseDollarsToCents` rejects negatives. Add a
   `payment.reversed` event and ledger entry, owner-only, with reason required.
   Do not touch the existing rows or types.
-- [ ] **Session hygiene.** `validateSessionToken` swallows DB errors (fail
+- [x] **Session hygiene.** `validateSessionToken` swallows DB errors (fail
   closed); 90-day cookie has no idle timeout (add 14-day idle, sliding); expose
   `revokeSession` on the Shop card. Owner quote email includes the customer's
-  IP (`app/api/quote/route.ts:~571`); drop it.
-- [ ] **Build-fact numbers unchecked.** `app/ops/builds/actions.ts:58,72`
-  `Number()` without `Number.isFinite`. Validate.
+  IP (`app/api/quote/route.ts:~571`); drop it. Observation: DB validation updates last-use and a 14-day idle expiry; Shop offers session revocation; the owner email omits IP; focused tests pass.
+- [x] **Build-fact numbers unchecked.** `app/ops/builds/actions.ts:58,72`
+  `Number()` without `Number.isFinite`. Validate. Observation: build action inputs reject malformed and non-finite values before write calls; integer fact values are safe, non-negative, and bounded; focused tests pass.
 - [ ] **CSP and HSTS.** `next.config.mjs` has no CSP; HSTS lacks
   `includeSubDomains; preload`. Ship `Content-Security-Policy-Report-Only`
   first with a report endpoint that writes a trouble row, run it for one week

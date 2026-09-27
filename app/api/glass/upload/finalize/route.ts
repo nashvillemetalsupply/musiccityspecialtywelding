@@ -26,8 +26,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unknown upload action." }, { status: 400 })
   } catch (error) {
     const expired = error instanceof GlassUploadIntentExpiredError
+    if (!expired) console.error("Glass upload finalization failed:", error)
     return Response.json(
-      { error: error instanceof Error ? error.message : "The file could not be filed.", code: expired ? error.code : undefined },
+      { error: expired ? "That upload request expired. Choose the file again." : "The file could not be filed yet. Try again in a moment.", code: expired ? error.code : undefined },
       { status: expired ? 410 : 400, headers: { "Cache-Control": "no-store" } },
     )
   }

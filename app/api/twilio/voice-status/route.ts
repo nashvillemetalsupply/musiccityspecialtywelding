@@ -8,16 +8,23 @@ import { prepareInboundCallIntake, type CallIntakeDraft } from "@/lib/job-intake
 import { readTwilioForm, twilioSmsConfigured, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
+import { z } from "zod"
 
 export const runtime = "nodejs"
+
+const callSidSchema = z.string().regex(/^CA[0-9a-f]{32}$/i)
+const callDurationSchema = z.coerce.number().int().min(0).max(2_147_483_647)
 
 export async function POST(req: Request) {
   if (!twilioVoiceConfigured()) return twiml("", 503)
   const { params, valid } = await readTwilioForm(req)
   if (!valid) return twiml("", 403)
-  const sid = params.get("CallSid") ?? ""
+  const parsedSid = callSidSchema.safeParse(params.get("CallSid") ?? "")
+  const parsedDuration = callDurationSchema.safeParse(params.get("DialCallDuration") || params.get("CallDuration") || "0")
+  if (!parsedSid.success || !parsedDuration.success) return twiml("", 400)
+  const sid = parsedSid.data
   const status = params.get("DialCallStatus") || params.get("CallStatus") || "unknown"
-  const duration = Number(params.get("DialCallDuration") || params.get("CallDuration") || 0)
+  const duration = parsedDuration.data
   const sql = getSql()
   const rows = (await sql`
     UPDATE calls SET status = ${status}::text, duration_sec = ${duration}::int, updated_at = now()

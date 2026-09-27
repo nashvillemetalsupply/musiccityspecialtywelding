@@ -1,11 +1,22 @@
 import { claimGlassReviewClick, getGlassJob } from "@/lib/glass"
 import { recordEvent } from "@/lib/events"
 
+function sameOrigin(req: Request) {
+  const origin = req.headers.get("origin")
+  if (!origin) return false
+  try {
+    return new URL(origin).origin === new URL(req.url).origin
+  } catch {
+    return false
+  }
+}
+
 export async function GET() {
   return new Response("Use the review button on your Customer Page.", { status: 405, headers: { Allow: "POST", "X-Robots-Tag": "noindex" } })
 }
 
-export async function POST(_req: Request, { params }: { params: Promise<{ token: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ token: string }> }) {
+  if (!sameOrigin(req)) return new Response("Request origin did not match.", { status: 403 })
   const { token } = await params
   const job = await getGlassJob(token)
   const reviewUrl = process.env.GOOGLE_REVIEW_URL?.trim()
