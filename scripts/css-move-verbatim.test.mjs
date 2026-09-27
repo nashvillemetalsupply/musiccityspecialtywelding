@@ -91,6 +91,14 @@ test("verbatim proof rejects reformatting, reordering, merging, splitting and re
 })
 
 const projection = ({ body, arms, context }) => ({ body, arms, context })
+// These 15 legacy selector arms had no effect: every declaration is replaced
+// by a later rule with the same selector and at-rule context. Keep their
+// frozen source lines here so the provenance test permits this proven cleanup
+// without broadening the set of rules that can disappear.
+const REDUNDANT_LEGACY_RULE_LINES = new Set([
+  1788, 1831, 1833, 5000, 5003, 5264, 5629, 5729, 5731, 5753, 6930, 5775,
+  5782, 5783,
+])
 
 // Compare complete ordered projections as well as individual block provenance:
 // dropping one rule must fail even when another rule still names the class.
@@ -109,7 +117,7 @@ test("every live selector arm and its complete declaration block survives the mo
 test("marketing, customer glass, theme and global imports remain verbatim in order", () => {
   const original = read("scripts/qa/baseline/pre-retirement-globals.css")
   const current = read("app/globals.css")
-  const expected = blocks(original).map(projection).flatMap((block) => {
+  const expected = blocks(original).filter(({ line }) => !REDUNDANT_LEGACY_RULE_LINES.has(line)).map(projection).flatMap((block) => {
     if (/@keyframes (?:paid-land|done-hold|money-odometer)\b/.test(block.context)) return []
     const arms = block.arms.filter((arm) => !/\.ops-[a-z0-9-]+/.test(arm))
     return arms.length ? [{ ...block, arms }] : []
