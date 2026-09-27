@@ -233,12 +233,12 @@ export default function Page() {
               <span className="sw-tape-tl" aria-hidden="true" />
               <span className="sw-tape-tr" aria-hidden="true" />
               <Image
-                src="/images/optimized/welder.webp"
+                src="/images/optimized/welder-1600.webp"
                 alt="Music City Specialty Welding fabricating a steel frame in the shop"
                 fill
+                sizes="(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min(42vw, 40rem), 46vw"
                 priority
                 fetchPriority="high"
-                unoptimized
               />
             </figure>
           </div>

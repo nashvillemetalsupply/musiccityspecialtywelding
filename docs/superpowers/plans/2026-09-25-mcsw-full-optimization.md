@@ -556,9 +556,10 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   Lighthouse against production for `/`, one service page, `/service-areas`,
   and commits the JSON with a date. Run it before and after this phase.
   Observation: Committed the 2026-09-27 production mobile homepage baseline (performance 0.55, LCP 5.07 s); the tested runner covers home, mobile-welding, and service-areas; after-deploy production check is pending.
-- [ ] **Hero image.** `app/page.tsx:235-242` is `unoptimized`, 800×640 source
+- [x] **Hero image.** `app/page.tsx:235-242` is `unoptimized`, 800×640 source
   upscaled. Drop `unoptimized`, supply a 1600 px source, add `sizes`, keep
   `priority`. Visually identical.
+  Observation: Hero now uses the optimizer with responsive `sizes`, keeps `priority`, and points to a 1600×1280 rendition of the existing 1280×1024 photo; the source and dimension regression passes.
 - [ ] **Meta pixel loads eagerly.** gtag is deferred in
   `components/public-analytics.tsx`; put the pixel behind the same 8 s /
   first-interaction trigger. `__mcswMetaQueue` already queues events. Do not
