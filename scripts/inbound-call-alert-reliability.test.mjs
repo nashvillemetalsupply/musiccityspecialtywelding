@@ -70,6 +70,8 @@ function createNotifyHarness({
   emailMode = "accepted",
   smsConfigured = false,
   smsSucceeds = false,
+  smsOutcomes = null,
+  smsDefinitive = true,
   operator = owner,
   retryCandidate = null,
   retryContext = null,
@@ -124,10 +126,11 @@ function createNotifyHarness({
       },
     }],
     ["@/lib/twilio", {
-      isDefinitiveTwilioError: () => true,
+      isDefinitiveTwilioError: () => smsDefinitive,
       sendSms: async (payload) => {
         smsCalls.push(payload)
-        if (smsSucceeds) return { sid: "SM-notification-901", status: "queued" }
+        const outcome = smsOutcomes?.[smsCalls.length - 1] ?? (smsSucceeds ? "accepted" : "failed")
+        if (outcome === "accepted") return { sid: `SM-notification-${smsCalls.length}`, status: "queued" }
         throw new Error("SMS provider rejected the alert")
       },
       twilioCallbackUrl: (path) => `https://example.test${path}`,
@@ -177,6 +180,20 @@ function createNotifyHarness({
     smsCalls,
     emailCalls,
     timeline,
+  }
+}
+
+async function withFastSmsRetry(run) {
+  const realSetTimeout = globalThis.setTimeout
+  const delays = []
+  globalThis.setTimeout = (callback, delay, ...args) => {
+    delays.push(delay)
+    return realSetTimeout(callback, 0, ...args)
+  }
+  try {
+    return await run(delays)
+  } finally {
+    globalThis.setTimeout = realSetTimeout
   }
 }
 
@@ -311,6 +328,42 @@ test("a bounced email retry skips Resend and falls through to SMS", async () => 
     assert.equal(harness.smsCalls.length, 1)
     assert.equal(result.sent, 1)
   })
+})
+
+test("a definitive owner-cell SMS failure retries once after two seconds and parks for the next sweep", async () => {
+  await withEnv({ VERCEL_ENV: "production" }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, smsSucceeds: false })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+
+    assert.equal(harness.smsCalls.length, 2)
+    assert.deepEqual(delays, [2_000])
+    assert.equal(result[0]?.sent, false)
+    assert.ok(harness.sqlCalls.some(({ text, values }) =>
+      text.includes("delivery_next_attempt_at = CASE") && values.includes(true)),
+    "a definitive SMS rejection must be due immediately for the next recovery pass")
+  }))
+})
+
+test("an ambiguous Twilio result is quarantined without an inline repeat", async () => {
+  await withEnv({ VERCEL_ENV: "production" }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, smsDefinitive: false })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+
+    assert.equal(harness.smsCalls.length, 1)
+    assert.deepEqual(delays, [])
+    assert.equal(result[0]?.reason, "delivery-unknown")
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("delivery_status = 'unknown'")))
+  }))
+})
+
+test("a Twilio-triggered recovery pass bypasses only the ten-minute cooldown", () => {
+  const voiceStatus = readFileSync(resolve(root, "app/api/twilio/voice-status/route.ts"), "utf8")
+  const smsRoute = readFileSync(resolve(root, "app/api/twilio/sms/route.ts"), "utf8")
+  const recovery = readFileSync(resolve(root, "lib/recovery-sweep.ts"), "utf8")
+  assert.match(voiceStatus, /runRecoverySweep\(\{ trigger: "twilio-call", force: true \}\)/)
+  assert.match(smsRoute, /runRecoverySweep\(\{ trigger: "twilio-sms", force: true \}\)/)
+  assert.match(recovery, /WHERE automation_leases\.lease_expires_at <= now\(\)/)
+  assert.match(recovery, /\$\{force\}::boolean OR automation_leases\.last_finished_at/)
 })
 
 test("an interrupted email handoff is replayed with the same idempotency key", async () => {

@@ -165,7 +165,7 @@ export async function POST(req: Request) {
   // work below. Only a signed, durably projected, real customer message can
   // spend the recovery lease; consent controls, system codes, and tests cannot.
   if (eventId && !consentKeyword && !systemSms && !conversation.person?.is_test) after(async () => {
-    const result = await runRecoverySweep({ trigger: "twilio-sms" })
+    const result = await runRecoverySweep({ trigger: "twilio-sms", force: true })
     if (!result.ok) console.error("Inbound SMS recovery failed:", result.error)
     if (!result.skipped) {
       const gmailResult = await wakeGmailIngest(new URL(req.url).origin)

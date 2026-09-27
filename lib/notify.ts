@@ -35,6 +35,32 @@ export type NotificationRow = {
 const CALL_ALERT_EVENT_KINDS = new Set(["call.in", "call.missed", "call.answered"])
 const EMAIL_FAILURE_STATUSES = new Set(["rejected", "email.bounced", "email.failed", "email.suppressed"])
 const DEFAULT_OPERATOR_ORIGIN = "https://musiccityspecialtywelding.com"
+const SMS_INLINE_RETRY_DELAY_MS = 2_000
+
+type SmsAttempt =
+  | { attempt: number; outcome: "accepted"; sid: string; status: string }
+  | { attempt: number; outcome: "failed" | "unknown"; error: string }
+
+async function sendSmsWithInlineRetry(
+  input: Parameters<typeof sendSms>[0],
+  onAttempt: (attempt: SmsAttempt) => Promise<void>,
+) {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const receipt = await sendSms(input)
+      await onAttempt({ attempt, outcome: "accepted", sid: receipt.sid, status: receipt.status })
+      return { sent: true, unknown: false, error: "" }
+    } catch (error) {
+      const definitive = isDefinitiveTwilioError(error)
+      const message = `Twilio send failed: ${error instanceof Error ? error.message : String(error)}`
+      await onAttempt({ attempt, outcome: definitive ? "failed" : "unknown", error: message })
+      if (!definitive) return { sent: false, unknown: true, error: message }
+      if (attempt === 2) return { sent: false, unknown: false, error: message }
+      await new Promise<void>((resolve) => setTimeout(resolve, SMS_INLINE_RETRY_DELAY_MS))
+    }
+  }
+  return { sent: false, unknown: false, error: "Twilio send failed without a provider result." }
+}
 
 function operatorAlertUrl(value: string) {
   const path = value.startsWith("/") && !value.startsWith("//") ? value : "/ops"
@@ -371,19 +397,21 @@ export async function notify(input: {
         smsFailure = `Operator ${input.operatorId} has no cell_phone on file.`
       } else {
         const smsBody = formatSmsBody({ title: input.title, body: storedBody, url: input.url, smsOnly: input.smsOnly })
-        try {
-          const sms = await sendSms({
+        const sms = await sendSmsWithInlineRetry({
             to: operator.cell_phone,
             body: smsBody,
             statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${id}`),
+          }, async (attempt) => {
+            if (attempt.outcome === "accepted") {
+              await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${attempt.sid}::text),
+                provider_status = COALESCE(provider_status, ${attempt.status}::text) WHERE id = ${id}::bigint`
+            } else {
+              await sql`UPDATE notifications SET delivery_error = ${attempt.error.slice(0, 500)}::text WHERE id = ${id}::bigint`
+            }
           })
-          await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${sms.sid}::text),
-            provider_status = COALESCE(provider_status, ${sms.status}::text) WHERE id = ${id}::bigint`
-          sent = true
-        } catch (error) {
-          smsFailure = `Twilio send failed: ${error instanceof Error ? error.message : String(error)}`
-          smsDeliveryUnknown = !isDefinitiveTwilioError(error)
-        }
+        sent = sms.sent
+        smsDeliveryUnknown = sms.unknown
+        smsFailure = sms.error
       }
     }
   }
@@ -411,7 +439,8 @@ export async function notify(input: {
   } else {
     await sql`UPDATE notifications SET interrupt_reserved_at = NULL, delivery_status = 'retry',
       delivery_last_attempt_at = now(),
-      delivery_next_attempt_at = now() + interval '10 minutes',
+      delivery_next_attempt_at = CASE WHEN ${smsFailure !== "" && !smsDeliveryUnknown}::boolean
+        THEN now() ELSE now() + interval '10 minutes' END,
       delivery_error = ${(smsFailure || emailFailure || "No registered push, email, or SMS fallback channel accepted the alert.").slice(0, 500)}::text
       WHERE id = ${id}::bigint`
   }
@@ -488,7 +517,7 @@ export async function retryPendingInterrupts(limit = 10) {
     if (!row.quiet_hours_exempt && (minute >= 19 * 60 || minute < 6 * 60 + 30)) continue
     const claimed = (await sql`
       UPDATE notifications SET delivery_status = 'sending', delivery_attempts = delivery_attempts + 1,
-        delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL, delivery_error = ''
+        delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL
       WHERE id = ${row.id}::bigint AND sent_at IS NULL AND delivery_attempts < 5
         AND (delivery_status = 'retry' OR (delivery_status = 'pending' AND created_at < now() - interval '10 minutes'))
       RETURNING id`) as { id: number }[]
@@ -664,23 +693,29 @@ export async function retryPendingInterrupts(limit = 10) {
       }
     }
     let smsDeliveryUnknown = false
+    let smsFailure = ""
+    let smsRetryNow = false
     const wantsSms = !emailDeliveryUnknown && (row.sms_only || (!delivered && row.sms_fallback))
     if (wantsSms && twilioSmsConfigured()) {
       const recipient = await getOperatorById(row.operator_id)
       if (recipient?.cell_phone) {
         const smsBody = formatSmsBody({ title: row.title, body: retryBody, url: row.url, smsOnly: row.sms_only })
-        try {
-          const sms = await sendSms({
+        const sms = await sendSmsWithInlineRetry({
             to: recipient.cell_phone,
             body: smsBody,
             statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${row.id}`),
+          }, async (attempt) => {
+            if (attempt.outcome === "accepted") {
+              await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${attempt.sid}::text),
+                provider_status = COALESCE(provider_status, ${attempt.status}::text) WHERE id = ${row.id}::bigint`
+            } else {
+              await sql`UPDATE notifications SET delivery_error = ${attempt.error.slice(0, 500)}::text WHERE id = ${row.id}::bigint`
+            }
           })
-          await sql`UPDATE notifications SET provider_message_sid = COALESCE(provider_message_sid, ${sms.sid}::text),
-            provider_status = COALESCE(provider_status, ${sms.status}::text) WHERE id = ${row.id}::bigint`
-          delivered = true
-        } catch (error) {
-          smsDeliveryUnknown = !isDefinitiveTwilioError(error)
-        }
+        delivered = sms.sent
+        smsDeliveryUnknown = sms.unknown
+        smsFailure = sms.error
+        smsRetryNow = Boolean(smsFailure && !sms.unknown)
       }
     }
     if (emailDeliveryUnknown) {
@@ -697,7 +732,7 @@ export async function retryPendingInterrupts(limit = 10) {
       await sql`UPDATE notifications SET sent_at = now(), interrupt_reserved_at = NULL,
         delivery_status = 'unknown',
         delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
-        delivery_error = 'SMS fallback may have been accepted; automatic repeat is quarantined.',
+        delivery_error = ${smsFailure || "SMS fallback may have been accepted; automatic repeat is quarantined."}::text,
         stock = 'red', title = left('Check alert delivery - ' || title, 120)
         WHERE id = ${row.id}::bigint`
     } else if (delivered) {
@@ -711,8 +746,10 @@ export async function retryPendingInterrupts(limit = 10) {
       const failed = (await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
         delivery_last_attempt_at = now(),
         delivery_status = CASE WHEN delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
-        delivery_next_attempt_at = CASE WHEN delivery_attempts >= 5 THEN NULL ELSE now() + (LEAST(240, 10 * power(2, delivery_attempts - 1))::int || ' minutes')::interval END,
-        delivery_error = ${(emailFailure || "No configured alert channel accepted this retry.").slice(0, 500)}::text,
+        delivery_next_attempt_at = CASE WHEN delivery_attempts >= 5 THEN NULL
+          WHEN ${smsRetryNow}::boolean THEN now()
+          ELSE now() + (LEAST(240, 10 * power(2, delivery_attempts - 1))::int || ' minutes')::interval END,
+        delivery_error = ${(smsFailure || emailFailure || "No configured alert channel accepted this retry.").slice(0, 500)}::text,
         stock = CASE WHEN delivery_attempts >= 5 THEN 'red' ELSE stock END,
         title = CASE WHEN delivery_attempts >= 5 THEN left('Alert delivery failed - ' || title, 120) ELSE title END
         WHERE id = ${row.id}::bigint RETURNING delivery_status`) as { delivery_status: string }[]
