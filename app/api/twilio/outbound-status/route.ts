@@ -1,18 +1,24 @@
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { readTwilioForm, twilioVoiceConfigured, twiml } from "@/lib/twilio"
+import { z } from "zod"
 
 export const runtime = "nodejs"
+const intentIdSchema = z.coerce.number().int().positive().safe()
+const callDurationSchema = z.coerce.number().int().min(0).max(2_147_483_647)
+
 export async function POST(req: Request) {
   if (!twilioVoiceConfigured()) return twiml("", 503)
   const { params, valid } = await readTwilioForm(req)
   if (!valid) return twiml("", 403)
-  const intent = Number(new URL(req.url).searchParams.get("intent"))
+  const parsedIntent = intentIdSchema.safeParse(new URL(req.url).searchParams.get("intent"))
   const customerLeg = params.has("DialCallStatus")
   const status = customerLeg ? params.get("DialCallStatus") || "unknown" : params.get("CallStatus") || "unknown"
   const callSid = params.get("CallSid")?.trim() ?? ""
-  const duration = customerLeg ? Number(params.get("DialCallDuration") || 0) : 0
-  if (!Number.isInteger(intent) || intent <= 0) return twiml("", 400)
+  const parsedDuration = callDurationSchema.safeParse(customerLeg ? params.get("DialCallDuration") || "0" : 0)
+  if (!parsedIntent.success || !parsedDuration.success) return twiml("", 400)
+  const intent = parsedIntent.data
+  const duration = parsedDuration.data
   const sql = getSql()
   if (!customerLeg) {
     if (!callSid) return twiml("", 400)
