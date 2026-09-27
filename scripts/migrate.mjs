@@ -1121,6 +1121,9 @@ const statements = [
   `ALTER TABLE ops_tokens ADD COLUMN IF NOT EXISTS last_used_at TIMESTAMPTZ NOT NULL DEFAULT now()`,
   `ALTER TABLE claims ADD COLUMN IF NOT EXISTS superseded_by BIGINT REFERENCES claims(id)`,
   `UPDATE glass_links SET expires_at = created_at + interval '180 days' WHERE expires_at IS NULL`,
+  `ALTER TABLE messages ADD COLUMN IF NOT EXISTS send_after TIMESTAMPTZ`,
+  `ALTER TABLE messages ADD COLUMN IF NOT EXISTS quiet_hours_exempt BOOLEAN NOT NULL DEFAULT false`,
+  `CREATE INDEX IF NOT EXISTS messages_deferred_sms_due_idx ON messages(send_after, id) WHERE direction = 'out' AND status = 'queued' AND send_after IS NOT NULL`,
 ]
 
 export const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$

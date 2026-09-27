@@ -400,6 +400,7 @@
 .job-payment-form > small { color: var(--text-muted); }
 .job-action-result { margin:0; padding:var(--s2) var(--s3); border-left:3px solid var(--status-good-mark); background:var(--status-good-sur); color:var(--status-good-ink); }
 .job-action-result.is-error { border-left-color:var(--status-bad-mark); background:var(--status-bad-sur); color:var(--status-bad-ink); }
+.job-page .ops-spike-reply > p.is-warning { grid-column:1 / -1; border-left:3px solid var(--status-warn-mark); background:var(--status-warn-sur); color:var(--status-warn-ink); padding:var(--s2) var(--s3); }
 .job-payment-form > button { width: 100%; }
 
 .job-finish-close { min-width: 0; display: grid; gap: var(--s3); scroll-margin-top: var(--s4); }

@@ -50,6 +50,7 @@ export async function sendGlassClipboard(_state: GlassSendState, formData: FormD
   try {
     await requireLeadMutationAccess(operator, leadId)
     const result = await deliverGlassClipboard({ token, leadId, operatorId: operator.id })
+    if (result.deferred) return { message: "Customer Page text saved and queued for 8:00 a.m. Central. It has not sent yet.", error: "" }
     return { message: result.alreadySent ? "Already sent from the shop number." : "Sent from the shop number.", error: "" }
   } catch (error) {
     return { message: "", error: error instanceof Error ? error.message : "Customer Page text failed." }

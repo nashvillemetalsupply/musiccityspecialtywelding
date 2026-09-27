@@ -469,10 +469,10 @@ this path fires.
   on a client beacon after 3 s visible. Observation: server rendering does not
   count; a same-origin POST follows three continuous visible seconds, resets
   when hidden, and fires once per mount; focused regressions pass.
-- [ ] **Customer SMS has no quiet hours.** `sendSmsPersisted` will text a
+- [x] **Customer SMS has no quiet hours.** `sendSmsPersisted` will text a
   customer at 3 a.m. Enforce 8 a.m.–9 p.m. `America/Chicago` (TCPA) with
   deferral to the window, owner-initiated replies excepted with a visible
-  warning.
+  warning. Observation: queued intents release once at the next 8 a.m. Central; only owner replies bypass with a visible warning; DST and concurrent-claim tests pass.
 - [ ] **No refund path.** `parseDollarsToCents` rejects negatives. Add a
   `payment.reversed` event and ledger entry, owner-only, with reason required.
   Do not touch the existing rows or types.
