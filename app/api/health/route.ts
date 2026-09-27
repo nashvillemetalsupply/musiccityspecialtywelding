@@ -99,6 +99,8 @@ type DatabaseHealth = {
   quotePhotoBacklog: number | null
   consentRecordCount: number | null
   callSketchErrorCount: number | null
+  recentClientErrors: number | null
+  recentTestClientErrors: number | null
   notificationDeliveryDead: number | null
   notificationDeliveryUnknown: number | null
   messageDeliveryUnknown: number | null
@@ -129,6 +131,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     quotePhotoBacklog: null,
     consentRecordCount: null,
     callSketchErrorCount: null,
+    recentClientErrors: null,
+    recentTestClientErrors: null,
     notificationDeliveryDead: null,
     notificationDeliveryUnknown: null,
     messageDeliveryUnknown: null,
@@ -185,6 +189,12 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         (SELECT count(*)::int FROM messaging_consents) AS consent_record_count,
         (SELECT count(*)::int FROM call_sketches
           WHERE status = 'error' AND updated_at > now() - interval '24 hours') AS call_sketch_error_count,
+        (SELECT count(*)::int FROM trouble_reports
+          WHERE source = 'board-client-error' AND created_at > now() - interval '24 hours'
+            AND is_test = false) AS recent_client_errors,
+        (SELECT count(*)::int FROM trouble_reports
+          WHERE source = 'board-client-error' AND created_at > now() - interval '24 hours'
+            AND is_test = true) AS recent_test_client_errors,
         (SELECT count(*)::int FROM notifications n
           LEFT JOIN events e ON e.id = n.source_event_id
           LEFT JOIN leads l ON l.id = e.lead_id
@@ -226,6 +236,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       quote_photo_backlog: number
       consent_record_count: number
       call_sketch_error_count: number
+      recent_client_errors: number
+      recent_test_client_errors: number
       notification_delivery_dead: number
       notification_delivery_unknown: number
       message_delivery_unknown: number
@@ -248,6 +260,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.quotePhotoBacklog = counts.quote_photo_backlog
     result.consentRecordCount = counts.consent_record_count
     result.callSketchErrorCount = counts.call_sketch_error_count
+    result.recentClientErrors = counts.recent_client_errors
+    result.recentTestClientErrors = counts.recent_test_client_errors
     result.notificationDeliveryDead = counts.notification_delivery_dead
     result.notificationDeliveryUnknown = counts.notification_delivery_unknown
     result.messageDeliveryUnknown = counts.message_delivery_unknown
@@ -485,6 +499,8 @@ export async function GET(req: Request) {
         twilioLiveTranscriptionConfigured: liveTranscriptionConfigured,
         callSketchPublicEnabled,
         callSketchRecentErrors: database.callSketchErrorCount,
+        clientErrorsLast24Hours: database.recentClientErrors,
+        internalTestClientErrorsLast24Hours: database.recentTestClientErrors,
         twilioWebhookBaseConfigured: webhookBaseConfigured,
         publicNumberEnabled,
         messagingServiceConfigured,

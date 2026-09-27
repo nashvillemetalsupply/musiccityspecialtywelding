@@ -5,6 +5,7 @@ import { deriveCloseoutDraft, type CloseoutReview } from "@/lib/closeout-domain.
 import { swipeFinishDecision } from "@/lib/shop-brain-invariants.mjs"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import { VoiceCaptureButton } from "../../voice-capture-button"
+import { CloseoutPhotoInput } from "./closeout-photo-input"
 import { addLeadCompletionNote, markLeadCompleteState, undoLeadComplete, type OpsActionState } from "../../actions"
 
 type SwipeStart = { x: number; y: number; width: number } | null
@@ -27,6 +28,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   const [noteSource, setNoteSource] = useState<"typed" | "voice">("typed")
   const [voiceIntentId, setVoiceIntentId] = useState("")
   const [voiceError, setVoiceError] = useState("")
+  const [photoUploading, setPhotoUploading] = useState(false)
   const [review, setReview] = useState<CloseoutReview | null>(null)
   const [finishState, finishAction] = useActionState(markLeadCompleteState, INITIAL_FINISH_STATE)
 
@@ -271,8 +273,13 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         }}
       />
       {voiceError && <small className="ops-done-voice-error" aria-live="polite">{voiceError}</small>}
-      <label className="ops-done-photo" htmlFor="done-photo"><span>Add a finished-work photo</span><input id="done-photo" type="file" name="photo" accept="image/*" capture="environment" onChange={(event) => { if (event.currentTarget.files?.length) window.setTimeout(() => addendumRef.current?.requestSubmit(), 100) }} /></label>
-      <SafeSubmitButton className="ops-ghost" pendingLabel="Filing…">File typed note</SafeSubmitButton>
+      <CloseoutPhotoInput
+        leadId={leadId}
+        mode="addendum"
+        onBusyChange={setPhotoUploading}
+        onUploaded={() => window.setTimeout(() => addendumRef.current?.requestSubmit(), 0)}
+      />
+      <SafeSubmitButton className="ops-ghost" disabled={photoUploading} pendingLabel="Filing…">File closeout note</SafeSubmitButton>
     </form>}
 
     {completed && (undoUntil && !undoExpired
