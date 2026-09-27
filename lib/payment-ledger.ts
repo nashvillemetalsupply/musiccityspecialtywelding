@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db"
+import { normalizePaymentReversalInput } from "@/lib/payment-reversal.mjs"
 
 export type QuickBooksPaymentInput = {
   leadId: number
@@ -20,6 +21,20 @@ export type QuickBooksPaymentResult = {
   paidEventId: number | null
   paidTotalCents: number
   fullyPaid: boolean
+  duplicate: boolean
+}
+
+export type PaymentReversalInput = {
+  leadId: number
+  operatorId: string | number
+  amountCents: number
+  reason: string
+  idempotencyKey: string
+}
+
+export type PaymentReversalResult = {
+  eventId: number
+  netPaidCents: number
   duplicate: boolean
 }
 
@@ -49,6 +64,11 @@ export async function applyQuickBooksPayment(input: QuickBooksPaymentInput): Pro
       FOR UPDATE
     ), existing_receipt AS MATERIALIZED (
       SELECT e.id, e.lead_id, e.kind, e.detail,
+        EXISTS (
+          SELECT 1 FROM events reversal
+          WHERE reversal.kind = 'payment.reversed' AND reversal.lead_id = e.lead_id
+            AND reversal.id > e.id
+        ) AS reversed_after,
         (e.kind = 'invoice.paid' OR lower(COALESCE(e.detail->>'fullyPaid', 'false')) = 'true') AS fully_paid
       FROM events e
       WHERE e.lead_id = ${input.leadId}::bigint
@@ -98,8 +118,11 @@ export async function applyQuickBooksPayment(input: QuickBooksPaymentInput): Pro
       FROM receipt_write w
       UNION ALL
       SELECT e.id, e.lead_id,
-        (e.detail->>'paidTotalCents')::bigint AS paid_total_cents,
-        e.fully_paid
+        CASE WHEN e.reversed_after THEN t.current_paid_cents
+          ELSE (e.detail->>'paidTotalCents')::bigint END AS paid_total_cents,
+        CASE WHEN e.reversed_after THEN
+          (t.invoice_total_cents IS NOT NULL AND t.current_paid_cents >= t.invoice_total_cents)
+          ELSE e.fully_paid END AS fully_paid
       FROM existing_receipt e JOIN target t ON t.id = e.lead_id
       WHERE COALESCE(e.detail->>'paidTotalCents', '') ~ '^[0-9]+$'
         AND NOT EXISTS (SELECT 1 FROM receipt_write)
@@ -194,4 +217,89 @@ export async function applyQuickBooksPayment(input: QuickBooksPaymentInput): Pro
     fullyPaid: replay[0].detail.fullyPaid === true,
     duplicate: true,
   }
+}
+
+// Reversals append a compensating financial event. The lead's paid amount is a
+// projection of net money received, so lock and reduce that projection in the
+// same statement as the immutable ledger event.
+export async function applyPaymentReversal(input: PaymentReversalInput): Promise<PaymentReversalResult> {
+  const normalized = normalizePaymentReversalInput(input.amountCents, input.reason)
+  const amountCents = normalized.amountCents
+  const reason = normalized.reason
+  const idempotencyKey = String(input.idempotencyKey ?? "").trim()
+  if (!/^[a-zA-Z0-9:_-]{12,180}$/.test(idempotencyKey)) throw new Error("The reversal receipt is missing. Reload this work order before recording the reversal.")
+  const body = `Payment reversed: $${(amountCents / 100).toFixed(2)}. Reason: ${reason}`
+  const sql = getSql()
+  const rows = (await sql`
+    WITH target AS MATERIALIZED (
+      SELECT id, person_id, is_test,
+        COALESCE(paid_amount_cents, 0::bigint) AS current_paid_cents,
+        invoice_total_cents
+      FROM leads
+      WHERE id = ${input.leadId}::bigint
+      FOR UPDATE
+    ), calculation AS MATERIALIZED (
+      SELECT t.*, t.current_paid_cents - ${amountCents}::bigint AS net_paid_cents
+      FROM target t
+      WHERE t.current_paid_cents >= ${amountCents}::bigint
+        AND NOT EXISTS (
+          SELECT 1 FROM events e
+          WHERE e.kind = 'payment.reversed' AND e.external_id = ${idempotencyKey}::text
+        )
+    ), reversal_write AS (
+      INSERT INTO events (
+        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail
+      )
+      SELECT 'payment.reversed'::text, 'operator'::text, ${String(input.operatorId)}::text,
+        c.id, c.person_id, ${idempotencyKey}::text,
+        CASE WHEN c.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || ${body}::text,
+        NULL::text,
+        jsonb_build_object(
+          'amountCents', ${amountCents}::bigint,
+          'reason', ${reason}::text,
+          'previousNetPaidCents', c.current_paid_cents,
+          'netPaidCents', c.net_paid_cents,
+          'manual', true,
+          'isTest', c.is_test
+        )
+      FROM calculation c
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id, lead_id
+    ), projection_write AS (
+      UPDATE leads l SET
+        paid_amount_cents = c.net_paid_cents,
+        paid_at = CASE
+          WHEN c.invoice_total_cents IS NOT NULL AND c.net_paid_cents >= c.invoice_total_cents THEN l.paid_at
+          ELSE NULL
+        END,
+        updated_at = now()
+      FROM calculation c JOIN reversal_write e ON e.lead_id = c.id
+      WHERE l.id = c.id
+      RETURNING e.id AS event_id, l.paid_amount_cents AS net_paid_cents
+    )
+    SELECT event_id, net_paid_cents FROM projection_write LIMIT 1`) as Array<{
+      event_id: number
+      net_paid_cents: number
+    }>
+
+  if (rows[0]) return {
+    eventId: Number(rows[0].event_id),
+    netPaidCents: Number(rows[0].net_paid_cents),
+    duplicate: false,
+  }
+
+  const replay = (await sql`
+    SELECT id, lead_id, detail->>'netPaidCents' AS net_paid_cents
+    FROM events
+    WHERE kind = 'payment.reversed' AND external_id = ${idempotencyKey}::text
+    LIMIT 1`) as Array<{ id: number; lead_id: number | null; net_paid_cents: string | null }>
+  if (replay[0]) {
+    if (Number(replay[0].lead_id) !== input.leadId) throw new Error("That reversal receipt was used by another work order.")
+    return {
+      eventId: Number(replay[0].id),
+      netPaidCents: Number(replay[0].net_paid_cents) || 0,
+      duplicate: true,
+    }
+  }
+  throw new Error("The reversal cannot exceed the current net paid amount.")
 }

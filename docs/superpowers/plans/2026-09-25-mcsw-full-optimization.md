@@ -450,28 +450,32 @@ this path fires.
   `lib/public-quote.mjs:147-159` on the first bytes. Confirm the Blob store is
   private-only regardless of the `access` value the client sends
   (`glass-upload.tsx`). Observation: finalization compares the stored MIME to the first 12 private Blob bytes and server token policy fixes access to private; signature tests pass.
-- [ ] **Photos serve EXIF and GPS.** Strip at serve time in
+- [x] **Photos serve EXIF and GPS.** Strip at serve time in
   `app/api/glass/photo` and the attachment route with `sharp` (already a
-  dependency): `.rotate().withMetadata({})`. Strip on upload too where the
-  server sees the bytes.
-- [ ] **Glass tokens never expire for unconverted jobs.** `lib/glass.ts`
+  dependency): `.rotate().toBuffer()` (Sharp's `withMetadata()` retains EXIF/GPS).
+  Strip on upload too where the server sees the bytes. Observation: Both glass
+  media routes normalize raster bytes before serving; a GPS-bearing EXIF fixture
+  confirms the served result has no EXIF.
+- [x] **Glass tokens never expire for unconverted jobs.** `lib/glass.ts`
   `createGlassLink` writes `expires_at NULL`. Set 180 days idle, and expire on
-  `lost`. Extend on any customer activity.
-- [ ] **Bearer token in query strings.** `app/j/[token]/page.tsx:127` and
+  `lost`. Extend on any customer activity. Observation: New and rotated links use a 180-day idle TTL, existing NULL expiries are backfilled additively, active views and customer actions renew it, and lost jobs close the link.
+- [x] **Bearer token in query strings.** `app/j/[token]/page.tsx:127` and
   `glass-upload.tsx:198` put the token in media URLs (logged by CDNs and
   browsers). Issue short-lived HMAC-signed media URLs (15 min) from the page
-  server component.
+  server component. Observation: Server-issued URLs sign link ID, media kind, exact media ID, and 15-minute expiry with HKDF-derived `GLASS_TOKEN_SECRET`; expired, tampered, revoked, or lost-link requests fail closed, and URLs are never cached.
 - [x] **`/j/[token]/review` lacks `sameOrigin()`.** Add it; every other write
   under `/j` has it. Observation: review POSTs reject missing and cross-origin Origin headers before loading the token; focused test passes.
-- [ ] **View counter counts bots.** `app/j/[token]/page.tsx:55-70`. Count only
-  on a client beacon after 3 s visible.
-- [ ] **Customer SMS has no quiet hours.** `sendSmsPersisted` will text a
+- [x] **View counter counts bots.** `app/j/[token]/page.tsx:55-70`. Count only
+  on a client beacon after 3 s visible. Observation: server rendering does not
+  count; a same-origin POST follows three continuous visible seconds, resets
+  when hidden, and fires once per mount; focused regressions pass.
+- [x] **Customer SMS has no quiet hours.** `sendSmsPersisted` will text a
   customer at 3 a.m. Enforce 8 a.m.–9 p.m. `America/Chicago` (TCPA) with
   deferral to the window, owner-initiated replies excepted with a visible
-  warning.
-- [ ] **No refund path.** `parseDollarsToCents` rejects negatives. Add a
+  warning. Observation: queued intents release once at the next 8 a.m. Central; only owner replies bypass with a visible warning; DST and concurrent-claim tests pass.
+- [x] **No refund path.** `parseDollarsToCents` rejects negatives. Add a
   `payment.reversed` event and ledger entry, owner-only, with reason required.
-  Do not touch the existing rows or types.
+  Do not touch the existing rows or types. Observation: the owner-only reversal appends `payment.reversed` and reduces locked net paid; crew attempts write nothing; amount, reason, immutability, and payment regressions pass.
 - [x] **Session hygiene.** `validateSessionToken` swallows DB errors (fail
   closed); 90-day cookie has no idle timeout (add 14-day idle, sliding); expose
   `revokeSession` on the Shop card. Owner quote email includes the customer's

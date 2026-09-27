@@ -514,7 +514,12 @@ test("PAID receipts come only from verified payment ingestion", () => {
   assert.match(paymentIngest, /const testPrefix = isTest \? "\[INTERNAL TEST\] " : ""/)
   assert.match(paymentIngest, /isTest: lead\.is_test/)
   assert.match(ledger, /const body = `\$\{input\.isTest \? "\[INTERNAL TEST\] " : ""\}/)
-  assert.equal((ledger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
+  const receiptLedger = ledger.slice(
+    ledger.indexOf("export async function applyQuickBooksPayment("),
+    ledger.indexOf("// Reversals append a compensating financial event."),
+  )
+  assert.ok(receiptLedger.length > 0)
+  assert.equal((receiptLedger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
 })
 
 test("DONE and peel-back atomically preserve their Wire receipts", () => {
@@ -694,7 +699,7 @@ test("bounded recovery has a daily catch-up, an honest lease, and safe opportuni
     "reconcileGlassUploads", "retryPendingInterrupts",
   ]) assert.match(recovery, new RegExp(`${reconciler}\\(\\)`))
 
-  assert.ok(vercel.crons.some((cron) => cron.path === "/api/ops/reminders" && cron.schedule === "15 13 * * *"))
+  assert.ok(vercel.crons.some((cron) => cron.path === "/api/ops/reminders" && cron.schedule === "0 14 * * *"))
   assert.match(board, /operator\.role === "owner"[\s\S]{0,220}after\([\s\S]{0,300}trigger: "owner-board"/)
   assert.match(action, /operator\.role !== "owner"/)
   assert.match(action, /trigger: "owner-manual", force: true/)
@@ -866,7 +871,7 @@ test("stale provider claims become visible unknown receipts without automatic re
 
 test("GLASS corrections and Gmail test threads resume without crossing partitions", () => {
   const correction = source("app/j/[token]/correct/route.ts")
-  const glassPage = source("app/j/[token]/page.tsx")
+  const glassView = source("app/api/glass/view/route.ts")
   const gmail = source("app/api/ingest/gmail/route.ts")
   const notify = source("lib/notify.ts")
   assert.match(correction, /if \(!eventId\)[\s\S]{0,300}glass\.correction/)
@@ -874,8 +879,8 @@ test("GLASS corrections and Gmail test threads resume without crossing partition
   assert.match(gmail, /JOIN leads l ON l\.id = et\.lead_id/)
   assert.match(gmail, /l\.is_test = \$\{isTest\}::boolean/)
   assert.match(gmail, /deliveryStatus: sent \? "delivered" : null, isTest/)
-  assert.match(glassPage, /if \(!eventId\)[\s\S]{0,300}glass\.view/)
-  assert.match(glassPage, /daily_view_count\) >= 3/)
+  assert.match(glassView, /if \(!eventId\)[\s\S]{0,300}glass\.view/)
+  assert.match(glassView, /daily_view_count\) >= 3/)
   assert.match(notify, /COALESCE\(l\.is_test, false\)[\s\S]{0,140}COALESCE\(p\.is_test, false\)[\s\S]{0,140}detail->>'isTest'/)
 })
 

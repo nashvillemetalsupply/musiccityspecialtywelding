@@ -571,7 +571,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             }
             if (item.kind === "message") {
               const message = item.message
-              return <article className={`job-message is-${message.direction}${["failed", "undelivered"].includes(message.status) ? " is-failed" : ""}`} key={item.id}><span>{message.direction === "in" ? lead.first_name || "Customer" : "Shop"}</span><p>{(operator.role === "owner" ? message.body : redactCrewText(message.crew_body || "MCSW Jobs is preparing the crew-safe message.")) || `${message.media.length} attachment(s)`}</p><SpikeAttachments items={spikeAttachments(message.media).map((item) => ({ ...item, sensitivity: attachmentSensitivity.get(item.pathname) || item.sensitivity }))} leadId={lead.id} role={operator.role} /><time>{formatCentral(message.sent_at)}{message.direction === "out" ? `, ${shopDeliveryLabel(message.status)}` : ""}</time></article>
+              return <article className={`job-message is-${message.direction}${["failed", "undelivered"].includes(message.status) ? " is-failed" : ""}`} key={item.id}><span>{message.direction === "in" ? lead.first_name || "Customer" : "Shop"}</span><p>{(operator.role === "owner" ? message.body : redactCrewText(message.crew_body || "MCSW Jobs is preparing the crew-safe message.")) || `${message.media.length} attachment(s)`}</p><SpikeAttachments items={spikeAttachments(message.media).map((item) => ({ ...item, sensitivity: attachmentSensitivity.get(item.pathname) || item.sensitivity }))} leadId={lead.id} role={operator.role} /><time>{message.direction === "out" && message.send_after ? `Queued for ${formatCentral(message.send_after)}` : `${formatCentral(message.sent_at)}${message.direction === "out" ? `, ${shopDeliveryLabel(message.status)}` : ""}`}</time></article>
             }
             const event = item.event
             if (event.kind === "job.completed" || event.kind === "note.voice") {
@@ -999,6 +999,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         <PaymentForm
           leadId={lead.id}
           receiptKey={randomUUID()}
+          reversalKey={randomUUID()}
           paidAmountCents={Number(lead.paid_amount_cents ?? 0)}
           invoiceTotalCents={lead.invoice_total_cents === null ? null : Number(lead.invoice_total_cents)}
           paidAt={lead.paid_at}

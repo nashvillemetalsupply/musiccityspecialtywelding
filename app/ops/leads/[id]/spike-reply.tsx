@@ -46,7 +46,7 @@ export function SpikeReply({
   }, [focusOnMount])
 
   useEffect(() => {
-    if (state.status !== "sent") return
+    if (state.status !== "sent" && state.status !== "queued") return
     const timer = window.setTimeout(() => { setBody(""); setIntentKey(crypto.randomUUID()) }, 0)
     return () => window.clearTimeout(timer)
   }, [state.sentAt, state.status])
@@ -78,7 +78,7 @@ export function SpikeReply({
       <div className="ops-reply-chips" aria-label="Quick replies">
         {QUICK_COPIES.map((copy) => <button type="button" key={copy} onClick={() => setBody(copy)}>{copy}</button>)}
       </div>
-      {(voiceError || state.message) && <p id="job-reply-result" className={voiceError || state.status === "error" ? "is-error" : "is-ok"} role={voiceError || state.status === "error" ? "alert" : "status"} aria-live="polite">{voiceError || state.message}</p>}
+      {(voiceError || state.message) && <p id="job-reply-result" className={voiceError || state.status === "error" ? "is-error" : state.quietHoursExempt ? "is-warning" : "is-ok"} role={voiceError || state.status === "error" || state.quietHoursExempt ? "alert" : "status"} aria-live="polite">{voiceError || state.message}</p>}
       {state.status === "error" && state.retryable && <button type="button" className="ops-ghost" onClick={() => { setIntentKey(crypto.randomUUID()); setVoiceError("") }}>File a fresh retry attempt</button>}
     </form>
   )

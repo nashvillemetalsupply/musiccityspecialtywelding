@@ -82,6 +82,7 @@ export async function sendLeadReply(formData: FormData) {
   }
 
   let eventId: number | null = null
+  let smsOutcome: { deferred?: boolean; sendAfter?: string | null; quietHoursExempt?: boolean } | undefined
   if (channel === "email") {
     if (!replyEmail) throw new Error("This account contact has no email address.")
     const apiKey = process.env.RESEND_API_KEY?.trim()
@@ -154,12 +155,15 @@ export async function sendLeadReply(formData: FormData) {
       personId: replyPersonId,
       operatorId: operator.id,
       idempotencyKey: `ops-sms-reply:${operator.id}:${leadId}:${intentKey}`,
+      ownerInitiated: operator.role === "owner",
     })
     eventId = sent.eventId
+    smsOutcome = sent
   }
   if (eventId) after(() => processEvent(eventId!).catch((error) => console.error("Outbound reply extraction failed:", error)))
   revalidatePath(`/ops/leads/${leadId}`)
   revalidatePath("/ops")
+  return smsOutcome
 }
 
 export async function sendLeadText(formData: FormData) {
@@ -167,12 +171,23 @@ export async function sendLeadText(formData: FormData) {
   return sendLeadReply(formData)
 }
 
-export type ReplyActionState = { status: "idle" | "sent" | "error"; message: string; sentAt: number; retryable?: boolean }
+export type ReplyActionState = { status: "idle" | "sent" | "queued" | "error"; message: string; sentAt: number; retryable?: boolean; quietHoursExempt?: boolean }
 
 export async function sendLeadReplyState(_state: ReplyActionState, formData: FormData): Promise<ReplyActionState> {
   try {
     const channel = formData.get("channel") === "email" ? "email" : "text"
-    await sendLeadReply(formData)
+    const outcome = await sendLeadReply(formData)
+    if (outcome?.quietHoursExempt) return {
+      status: "sent",
+      message: "Warning: owner reply sent immediately during quiet hours (9 p.m.–8 a.m. Central). Use this after-hours exception only when the customer expects it.",
+      sentAt: Date.now(),
+      quietHoursExempt: true,
+    }
+    if (outcome?.deferred) return {
+      status: "queued",
+      message: "Text saved and queued for 8:00 a.m. Central. It has not sent yet.",
+      sentAt: Date.now(),
+    }
     return { status: "sent", message: `${channel === "email" ? "Email" : "Text"} added to Calls & Messages.`, sentAt: Date.now() }
   } catch (error) {
     return { status: "error", message: error instanceof Error ? error.message : "Reply failed.", sentAt: 0, retryable: isDefinitiveTwilioError(error) || isDefinitiveEmailProviderError(error) }

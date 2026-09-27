@@ -15,7 +15,7 @@
     },
     {
       "path": "/api/ops/reminders",
-      "schedule": "15 13 * * *"
+      "schedule": "0 14 * * *"
     }
   ]
 }

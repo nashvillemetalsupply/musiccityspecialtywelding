@@ -46,6 +46,14 @@ export async function deliverGlassClipboard(input: { token: string; leadId: numb
       LIMIT 1`) as GlassDelivery[]
     if (existing[0]?.sent_at) return { alreadySent: true, messageId: null }
     if (existing[0]?.send_status === "unknown") throw new Error("That Customer Page text may have sent. Check Calls & Messages before trying again.")
+    if (existing[0]?.send_status === "deferred") {
+      const queued = (await sql`
+        SELECT id FROM messages
+        WHERE idempotency_key LIKE ${`glass:${hash}:send:`}::text || '%'::text
+          AND status = 'queued' AND send_after IS NOT NULL
+        ORDER BY id DESC LIMIT 1`) as { id: number }[]
+      return { alreadySent: false, deferred: true, messageId: Number(queued[0]?.id) || null }
+    }
     if (existing[0]) throw new Error("That Customer Page is already being sent. Check Calls & Messages before trying again.")
     throw new Error("That Customer Page is no longer active for this job.")
   }
@@ -68,6 +76,13 @@ export async function deliverGlassClipboard(input: { token: string; leadId: numb
       operatorId: input.operatorId,
       idempotencyKey: `glass:${hash}:send:${lead.send_attempts}`,
     })
+    if (sent.deferred) {
+      await sql`
+        UPDATE glass_links SET send_claimed_at = NULL, send_status = 'deferred'
+        WHERE token_hash = ${hash}::text AND lead_id = ${input.leadId}::bigint
+          AND sent_at IS NULL AND send_status = 'sending'`
+      return { alreadySent: false, deferred: true, messageId: sent.id }
+    }
     await sql`
       UPDATE glass_links SET sent_at = COALESCE(sent_at, now()), send_claimed_at = NULL, send_status = 'accepted'
       WHERE token_hash = ${hash}::text AND lead_id = ${input.leadId}::bigint`

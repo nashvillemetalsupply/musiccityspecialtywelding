@@ -6,15 +6,15 @@ import { CustomerBuildDrawing } from "@/components/build-sheets/customer-build-d
 import type { Viewport } from "next"
 import { Chivo } from "next/font/google"
 import { Check } from "lucide-react"
-import { getGlassJob, listGlassPromises, noteGlassView } from "@/lib/glass"
+import { getGlassJob, listGlassPromises } from "@/lib/glass"
+import { createGlassMediaUrl as issueGlassMediaUrl } from "@/lib/glass-media.mjs"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { getCustomerBuildProjection } from "@/lib/build-sheets"
-import { recordEvent } from "@/lib/events"
-import { notifyAll } from "@/lib/notify"
 import { getShopPhone } from "@/lib/shop-contact"
 import { glassStageIndex } from "@/lib/shop-brain-invariants.mjs"
 import { listGlassUploads } from "@/lib/glass-uploads"
 import { GlassUpload } from "./glass-upload"
+import { GlassViewBeacon } from "./view-beacon"
 import "./customer-page.css"
 
 const chivo = Chivo({
@@ -52,26 +52,28 @@ export default async function GlassPage({ params, searchParams }: { params: Prom
   if (!job) notFound()
   if (job.status === "closed") return <main className={`${chivo.variable} glass-page glass-page-brand`}><section className="glass-closed"><span>MCSW Customer Page</span><h1>This page is closed.</h1><p>Need the shop again? Call us. We still answer our phone.</p><a href={shopPhone.href}>Call the shop</a></section></main>
   const showReview = Boolean(job.completed_at && job.paid_at && !job.review_shown_at && process.env.GOOGLE_REVIEW_URL?.trim())
-  const [promises, view, uploads, customerBuild] = await Promise.all([
+  const [promises, uploads, customerBuild] = await Promise.all([
     listGlassPromises(job.lead_id),
-    noteGlassView(job),
     listGlassUploads(job),
     job.is_test && buildSheetsEnabled() ? getCustomerBuildProjection(job.lead_id) : Promise.resolve(null),
   ])
-  if (!job.is_test && view && Number(view.daily_view_count) >= 3) {
-    const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date())
-    let eventId = await recordEvent({ kind: "glass.view", actorType: "customer", leadId: job.lead_id, externalId: `glass:${job.token_hash}:${day}:buying-signal`, body: "Customer checked the Customer Page 3 times today", crewBody: "Customer checked the Customer Page 3 times today" })
-    if (!eventId) {
-      const { getSql } = await import("@/lib/db")
-      const existing = (await getSql()`SELECT id FROM events WHERE kind = 'glass.view' AND external_id = ${`glass:${job.token_hash}:${day}:buying-signal`}::text LIMIT 1`) as { id: number }[]
-      eventId = Number(existing[0]?.id) || null
-    }
-    if (eventId) await notifyAll({ priority: "digest", stock: "white", title: `${job.first_name} checked the Customer Page 3×`, body: "They are watching the job today.", crewBody: "They are watching the job today.", url: `/ops/leads/${job.lead_id}`, sourceEventId: eventId })
-  }
   const promise = promises.find((item) => item.status === "open")
   const stageIndex = glassStageIndex(job)
-  const sharedPhotos = Array.isArray(job.photos) ? job.photos.filter((photo) => photo.shared) : []
-  return <main className={`${chivo.variable} glass-page glass-page-brand`}><article className="glass-clipboard">
+  const sharedPhotos = Array.isArray(job.photos) ? job.photos.filter((photo) => photo.shared).map((photo) => ({
+    ...photo,
+    mediaUrl: issueGlassMediaUrl(job.token_hash, "photo", photo.pathname),
+  })) : []
+  const customerUploads = uploads.map((item) => ({
+    id: item.id,
+    filename: item.filename,
+    content_type: item.content_type,
+    size_bytes: Number(item.size_bytes),
+    status: item.status,
+    error: item.error,
+    expired: Boolean(item.expired_at),
+    mediaUrl: item.status === "stored" ? issueGlassMediaUrl(job.token_hash, "attachment", item.id) : null,
+  }))
+  return <main className={`${chivo.variable} glass-page glass-page-brand`}><GlassViewBeacon token={token} /><article className="glass-clipboard">
     <header><div className="glass-brand-lockup"><Image src="/images/optimized/mcs_welding_logo.webp" alt="MCS Welding" width={240} height={160} sizes="72px" priority unoptimized /><strong>Customer Page</strong></div><div className="glass-contact"><span>{shopPhone.textReady ? "Call or text us" : "Call the shop"}</span><a href={shopPhone.href}>{shopPhone.display}</a></div></header>
     <section className="glass-job"><span>Your job</span><h1>{job.first_name}’s {job.service}</h1><CorrectionStub token={token} fact="job status" /></section>
     <section className="glass-promise"><span>Timing</span><strong>{promise ? date(promise.due_at) : job.completed_at ? "Finished" : "We’re confirming the date"}</strong>{promise && <><p>{promise.summary}</p>{promise.history.length > 0 && <div className="glass-promise-history">{promise.history.map((move) => <p key={`${move.changed_at}-${move.previous_due_at}`}><del>{date(move.previous_due_at)}</del><span>{move.reason || "The shop called and moved the date."}</span></p>)}</div>}</>}<CorrectionStub token={token} fact="promised date" /></section>
@@ -124,9 +126,9 @@ export default async function GlassPage({ params, searchParams }: { params: Prom
     </section>}
     {sharedPhotos.length > 0 && <section className="glass-progress"><h2>Progress from the shop</h2><div>{sharedPhotos.map((photo) => {
       const caption = photo.caption || job.glass_caption_draft || "Progress from the crew"
-      return <figure key={photo.pathname}><img src={`/api/glass/photo?token=${token}&path=${encodeURIComponent(photo.pathname)}`} alt={`Shop progress: ${caption}`} /><figcaption>{caption}</figcaption><CorrectionStub token={token} fact="progress photo" /></figure>
+      return <figure key={photo.pathname}>{photo.mediaUrl ? <img src={photo.mediaUrl} alt={`Shop progress: ${caption}`} /> : <p>Photo is temporarily unavailable.</p>}<figcaption>{caption}</figcaption><CorrectionStub token={token} fact="progress photo" /></figure>
     })}</div></section>}
-    <GlassUpload token={token} initialUploads={uploads.map((item) => ({ id: item.id, filename: item.filename, content_type: item.content_type, size_bytes: Number(item.size_bytes), status: item.status, error: item.error, expired: Boolean(item.expired_at) }))} />
+    <GlassUpload token={token} initialUploads={customerUploads} />
     {job.show_quote && ((job.quoted_at && job.estimate_value_cents != null) || job.invoice_number) && <section className="glass-money"><h2>Price &amp; Invoice</h2>{job.quoted_at && job.estimate_value_cents != null && <p><span>Approved quote</span><strong>{money(job.estimate_value_cents)}</strong></p>}{job.invoice_number && <p><span>Invoice #{job.invoice_number}{job.invoice_due_at ? `, due ${date(job.invoice_due_at)}` : ""}</span><strong>{job.paid_at ? "Paid" : money(job.invoice_total_cents ?? job.revenue_cents ?? job.estimate_value_cents)}</strong></p>}{job.invoice_pay_url && !job.paid_at && <a className="glass-pay" href={job.invoice_pay_url} rel="noreferrer">Pay invoice</a>}<CorrectionStub token={token} fact="invoice or amount" /></section>}
     {showReview && <section className="glass-review"><span>Job finished, invoice paid</span><h2>How did the weld hold up?</h2><p>A straight answer helps the next person who needs a real shop.</p><form action={`/j/${token}/review`} method="post"><button type="submit">Leave a Google review</button></form></section>}
     <footer><strong>We answer our phone.</strong><p>{shopPhone.textReady ? "If we miss you, text this number with photos of what’s broke." : "Call the shop if anything on this page needs a correction."}</p><a href={shopPhone.href}>Call</a>{shopPhone.textReady && <a href={shopPhone.smsHref}>Text</a>}</footer>

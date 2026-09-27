@@ -27,6 +27,8 @@ import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { isSafeRasterImage } from "@/lib/media-safety"
 import { reconcileRoutedLeadProjections } from "@/lib/routing"
 import { attachCloseoutPhotoToLead, getCloseoutPhotoUpload, isCloseoutUploadId } from "@/lib/closeout-photo-uploads"
+import { applyPaymentReversal } from "@/lib/payment-ledger"
+import { normalizePaymentReversalInput, runOwnerPaymentReversal } from "@/lib/payment-reversal.mjs"
 
 async function sendCustomerEmail(options: {
   leadId: number
@@ -686,7 +688,12 @@ export async function recordPayment(formData: FormData) {
       WHERE id = ${leadId}::bigint
       FOR UPDATE
     ), existing_key AS MATERIALIZED (
-      SELECT e.id, e.lead_id, e.detail
+      SELECT e.id, e.lead_id, e.detail,
+        EXISTS (
+          SELECT 1 FROM events reversal
+          WHERE reversal.kind = 'payment.reversed' AND reversal.lead_id = e.lead_id
+            AND reversal.id > e.id
+        ) AS reversed_after
       FROM events e
       WHERE e.kind = ANY(ARRAY['invoice.payment-received','invoice.paid']::text[])
         AND e.external_id = ${externalId}::text
@@ -734,8 +741,11 @@ export async function recordPayment(formData: FormData) {
       FROM event_write w
       UNION ALL
       SELECT e.id, e.lead_id,
-        (e.detail->>'paidTotalCents')::bigint AS paid_total_cents,
-        (e.detail->>'fullyPaid')::boolean AS fully_paid
+        CASE WHEN e.reversed_after THEN t.paid_amount_cents
+          ELSE (e.detail->>'paidTotalCents')::bigint END AS paid_total_cents,
+        CASE WHEN e.reversed_after THEN
+          (t.invoice_total_cents IS NOT NULL AND t.paid_amount_cents >= t.invoice_total_cents)
+          ELSE (e.detail->>'fullyPaid')::boolean END AS fully_paid
       FROM existing_key e JOIN target t ON t.id = e.lead_id
       WHERE COALESCE(e.detail->>'paidTotalCents', '') ~ '^[0-9]+$'
         AND lower(COALESCE(e.detail->>'fullyPaid', '')) = ANY(ARRAY['true','false']::text[])
@@ -926,6 +936,38 @@ export async function recordPaymentState(_previous: OpsActionState, formData: Fo
     return { status: "success", message: "Payment recorded." }
   } catch (error) {
     return recoverableActionError(error, "Payment was not recorded. Check the amount and try again.")
+  }
+}
+
+export async function reversePayment(formData: FormData) {
+  const operator = await requireOperator()
+  return runOwnerPaymentReversal(operator.role, async () => {
+    const leadId = await requireMutableLeadId(operator, formData.get("leadId"))
+    const parsedAmount = parseDollarsToCents(formData.get("reversalAmount"))
+    const input = normalizePaymentReversalInput(parsedAmount ?? 0, formData.get("reason"))
+    const reversalKey = String(formData.get("reversalKey") ?? "").trim()
+    if (!/^[a-zA-Z0-9_-]{12,80}$/.test(reversalKey)) {
+      throw new Error("The reversal receipt is missing. Reload this work order before recording the reversal.")
+    }
+    const result = await applyPaymentReversal({
+      leadId,
+      operatorId: operator.id,
+      amountCents: input.amountCents,
+      reason: input.reason,
+      idempotencyKey: `manual-payment-reversal:${reversalKey}`,
+    })
+    revalidatePath(`/ops/leads/${leadId}`)
+    revalidatePath("/board")
+    return result
+  })
+}
+
+export async function reversePaymentState(_previous: OpsActionState, formData: FormData): Promise<OpsActionState> {
+  try {
+    const result = await reversePayment(formData)
+    return { status: "success", message: result.duplicate ? "That payment reversal is already recorded." : "Payment reversal recorded." }
+  } catch (error) {
+    return recoverableActionError(error, "Payment reversal was not recorded. Check the amount and reason.")
   }
 }
 

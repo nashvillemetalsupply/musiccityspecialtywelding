@@ -45,7 +45,7 @@ export async function createGlassLink(leadId: number, operatorId: number) {
   const sql = getSql()
   const rows = (await sql`
     WITH target AS (
-      SELECT id, completed_at FROM leads WHERE id = ${leadId}::bigint
+      SELECT id, status FROM leads WHERE id = ${leadId}::bigint
     ), active AS MATERIALIZED (
       SELECT token_hash FROM glass_links
       WHERE lead_id = (SELECT id FROM target) AND revoked_at IS NULL
@@ -60,8 +60,8 @@ export async function createGlassLink(leadId: number, operatorId: number) {
     )
     INSERT INTO glass_links (token_hash, lead_id, created_by, expires_at, token_nonce)
     SELECT ${hash}::text, t.id, ${operatorId}::bigint,
-      CASE WHEN t.completed_at IS NOT NULL THEN t.completed_at + interval '90 days' ELSE NULL END
-      , ${nonce}::text
+      CASE WHEN t.status = 'lost' THEN now() ELSE now() + interval '180 days' END,
+      ${nonce}::text
     FROM target t
     RETURNING token_hash`) as { token_hash: string }[]
   if (!rows[0]) throw new Error("Work order not found.")
@@ -102,7 +102,7 @@ export async function rotateGlassLink(leadId: number, operatorId: number) {
   const sql = getSql()
   const rows = (await sql`
     WITH target AS (
-      SELECT id, person_id, completed_at FROM leads WHERE id = ${leadId}::bigint
+      SELECT id, person_id, status FROM leads WHERE id = ${leadId}::bigint
     ), active AS MATERIALIZED (
       SELECT token_hash FROM glass_links
       WHERE lead_id = (SELECT id FROM target) AND revoked_at IS NULL
@@ -125,7 +125,7 @@ export async function rotateGlassLink(leadId: number, operatorId: number) {
     )
     INSERT INTO glass_links (token_hash, lead_id, created_by, expires_at, token_nonce)
     SELECT ${hash}::text, t.id, ${operatorId}::bigint,
-      CASE WHEN t.completed_at IS NOT NULL THEN t.completed_at + interval '90 days' ELSE NULL END,
+      CASE WHEN t.status = 'lost' THEN now() ELSE now() + interval '180 days' END,
       ${nonce}::text
     FROM target t CROSS JOIN receipt
     RETURNING token_hash`) as { token_hash: string }[]
@@ -159,8 +159,8 @@ export async function revokeGlassLinks(leadId: number, operatorId: number) {
   return rows.length
 }
 
-export async function getGlassJob(token: string): Promise<GlassJob | null> {
-  if (!/^[a-f0-9]{64}$/i.test(token)) return null
+export async function getGlassJobByLinkId(linkId: string): Promise<GlassJob | null> {
+  if (!/^[a-f0-9]{64}$/i.test(linkId)) return null
   const sql = getSql()
   const rows = (await sql`
     SELECT g.token_hash, g.lead_id, g.expires_at, g.show_quote, g.review_shown_at,
@@ -172,22 +172,50 @@ export async function getGlassJob(token: string): Promise<GlassJob | null> {
     FROM glass_links g
     JOIN leads l ON l.id = g.lead_id
     LEFT JOIN operators o ON o.id = l.assigned_operator_id
-    WHERE g.token_hash = ${hashGlassToken(token)}::text
+    WHERE g.token_hash = ${linkId}::text
       AND g.revoked_at IS NULL
     LIMIT 1`) as GlassJob[]
   const job = rows[0]
   if (!job) return null
+  if (job.status === "lost") {
+    await sql`
+      UPDATE glass_links SET expires_at = now()
+      WHERE token_hash = ${job.token_hash}::text AND revoked_at IS NULL
+        AND (expires_at IS NULL OR expires_at > now())`
+    return { ...job, status: "closed" }
+  }
   const expired = job.expires_at && new Date(job.expires_at).getTime() <= Date.now()
   if (expired) return { ...job, status: "closed" }
   return job
+}
+
+export async function getGlassJob(token: string): Promise<GlassJob | null> {
+  if (!/^[a-f0-9]{64}$/i.test(token)) return null
+  return getGlassJobByLinkId(hashGlassToken(token))
+}
+
+export async function extendGlassLinkExpiry(linkId: string) {
+  const sql = getSql()
+  const rows = (await sql`
+    UPDATE glass_links g SET expires_at = now() + interval '180 days'
+    FROM leads l
+    WHERE g.token_hash = ${linkId}::text AND l.id = g.lead_id
+      AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+      AND l.status <> 'lost'
+    RETURNING g.expires_at`) as { expires_at: string }[]
+  return rows[0]?.expires_at ?? null
 }
 
 export async function noteGlassView(job: GlassJob) {
   const sql = getSql()
   const rows = (await sql`
     WITH total AS (
-      UPDATE glass_links SET view_count = view_count + 1, last_viewed_at = now()
-      WHERE token_hash = ${job.token_hash}::text AND revoked_at IS NULL
+      UPDATE glass_links g SET view_count = view_count + 1, last_viewed_at = now(),
+        expires_at = now() + interval '180 days'
+      FROM leads l
+      WHERE g.token_hash = ${job.token_hash}::text AND g.lead_id = l.id
+        AND g.revoked_at IS NULL AND (g.expires_at IS NULL OR g.expires_at > now())
+        AND l.status <> 'lost'
       RETURNING view_count, last_viewed_at
     ), daily AS (
       INSERT INTO glass_daily_views (token_hash, view_date, view_count)
@@ -203,10 +231,12 @@ export async function noteGlassView(job: GlassJob) {
 export async function claimGlassReviewClick(job: GlassJob) {
   const sql = getSql()
   const rows = (await sql`
-    UPDATE glass_links SET review_shown_at = now()
-    WHERE token_hash = ${job.token_hash}::text AND review_shown_at IS NULL
-      AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())
-    RETURNING review_shown_at`) as { review_shown_at: string }[]
+    UPDATE glass_links g SET review_shown_at = now(), expires_at = now() + interval '180 days'
+    FROM leads l
+    WHERE g.token_hash = ${job.token_hash}::text AND g.lead_id = l.id
+      AND g.review_shown_at IS NULL AND g.revoked_at IS NULL
+      AND (g.expires_at IS NULL OR g.expires_at > now()) AND l.status <> 'lost'
+    RETURNING g.review_shown_at`) as { review_shown_at: string }[]
   return Boolean(rows[0])
 }
 
