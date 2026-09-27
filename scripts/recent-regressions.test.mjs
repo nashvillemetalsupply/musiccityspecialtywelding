@@ -396,7 +396,7 @@ test("Swipe to Finish separates assistive clicks, key repeats, and blur cancella
   const click = section(control, "onClick={(event) => {", "onBlur=")
   const keyboard = section(control, "onKeyDown={(event) => {", "\n      >")
 
-  assertInOrder(arming, ["if (submitting) return", "if (keyboardArmed) finish()", "else setKeyboardArmed(true)"], "Assistive activation must arm before it can finish")
+  assertInOrder(arming, ["if (submitting || photoUploading) return", "if (keyboardArmed) finish()", "else setKeyboardArmed(true)"], "Assistive activation must arm before it can finish")
   assert.match(click, /event\.detail\s*===\s*0/)
   assert.match(click, /armOrFinish\(\)/)
   assert.doesNotMatch(click, /\bfinish\(\)/)

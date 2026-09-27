@@ -133,7 +133,7 @@ test("Swipe to finish work is deliberate, scroll-canceling, single-submit, acces
   assert.match(done, /decision\.outcome === "cancel"/)
   assert.match(done, /decision\.outcome === "submit"\) finish\(\)/)
   assert.match(done, /submittedRef\.current = true/)
-  assert.match(done, /if \(completed \|\| submitting \|\| submittedRef\.current\) return/)
+  assert.match(done, /if \(completed \|\| submitting \|\| photoUploading \|\| submittedRef\.current\) return/)
   assert.match(done, /Press again to finish/)
   assert.match(done, /Swipe to finish work/)
   assert.match(done, /Keyboard users press Enter twice/)
