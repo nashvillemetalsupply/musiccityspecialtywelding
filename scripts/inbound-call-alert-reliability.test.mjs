@@ -24,11 +24,11 @@ const owner = {
   glass_auto_post: false,
 }
 
-async function withEnv(values, run) {
+async function withEnv(values, run, fixedTime = "2026-09-06T18:00:00.000Z") {
   const configuredValues = { VERCEL_ENV: "production", ...values }
   const prior = new Map(Object.keys(configuredValues).map((key) => [key, process.env[key]]))
   const RealDate = globalThis.Date
-  const fixedNow = RealDate.parse("2026-09-06T18:00:00.000Z")
+  const fixedNow = RealDate.parse(fixedTime)
   globalThis.Date = class extends RealDate {
     constructor(...args) {
       super(...(args.length ? args : [fixedNow]))
@@ -194,6 +194,7 @@ function createNotifyHarness({
       isDefinitiveTwilioError: (error) => error instanceof FakeTwilioProviderError && error.definitive,
       sendSms: async (payload) => {
         smsCalls.push(payload)
+        timeline.push({ kind: "sms" })
         const outcome = smsOutcomes?.[smsCalls.length - 1] ?? (smsSucceeds ? "accepted" : "failed")
         if (outcome === "accepted") return { sid: `SM-notification-${smsCalls.length}`, status: "queued" }
         throw new FakeTwilioProviderError("SMS provider rejected the alert", smsDefinitive, smsErrorPayload)
@@ -472,6 +473,85 @@ test("a definitive owner-cell SMS failure retries once after two seconds and par
       text.includes("delivery_next_attempt_at = CASE") && values.includes(true)),
     "a definitive SMS rejection must be due immediately for the next recovery pass")
   }))
+})
+
+test("sms_only sends email only after both definitive SMS attempts fail", async () => {
+  await withEnv({
+    RESEND_API_KEY: "test-resend-key",
+    QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>",
+  }, async () => withFastSmsRetry(async (delays) => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      sourceKind: "sms.inbound",
+      smsConfigured: true,
+      smsOutcomes: ["failed", "failed"],
+    })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+    const providerOrder = harness.timeline.filter(({ kind }) => kind === "sms" || kind === "email").map(({ kind }) => kind)
+
+    assert.deepEqual(providerOrder, ["sms", "sms", "email"])
+    assert.deepEqual(delays, [2_000])
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.emailCalls[0].options.idempotencyKey, "notification-alert:901")
+    assert.equal(result[0]?.sent, true)
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("provider_email_status") && text.includes("'accepted'")))
+  }))
+})
+
+test("sms_only does not email or retry another channel after an ambiguous SMS result", async () => {
+  await withEnv({
+    RESEND_API_KEY: "test-resend-key",
+    QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>",
+  }, async () => {
+    const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, smsDefinitive: false })
+    const result = await harness.notifyAll({ ...missedCallAlert, smsOnly: true })
+
+    assert.equal(result[0]?.reason, "delivery-unknown")
+    assert.equal(harness.smsCalls.length, 1)
+    assert.equal(harness.emailCalls.length, 0)
+    assert.equal(harness.pushCalls.length, 0)
+  })
+})
+
+test("sms_only retries replay an uncertain email handoff before sending SMS", async () => {
+  await withEnv({
+    RESEND_API_KEY: "test-resend-key",
+    QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>",
+  }, async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      smsConfigured: true,
+      smsSucceeds: true,
+      emailMode: "ambiguous",
+      retryCandidate: {
+        id: 901,
+        operator_id: owner.id,
+        title: missedCallAlert.title,
+        body: missedCallAlert.body,
+        url: missedCallAlert.url,
+        budget_exempt: true,
+        quiet_hours_exempt: true,
+        sms_fallback: false,
+        sms_only: true,
+        provider_email_id: null,
+        provider_email_status: "sending",
+      },
+      retryContext: {
+        operator_id: owner.id,
+        email: owner.email,
+        recipient_role: "owner",
+        owner_only: true,
+        source_kind: "sms.inbound",
+        is_test: false,
+      },
+    })
+    const result = await harness.retryPendingInterrupts()
+
+    assert.equal(result.sent, 0)
+    assert.equal(harness.emailCalls.length, 1)
+    assert.equal(harness.emailCalls[0].options.idempotencyKey, "notification-alert:901")
+    assert.equal(harness.smsCalls.length, 0)
+  })
 })
 
 test("an ambiguous Twilio result is quarantined without an inline repeat", async () => {

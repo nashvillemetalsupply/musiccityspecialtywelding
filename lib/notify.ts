@@ -138,6 +138,30 @@ async function sendOperatorAlertEmail(input: {
   }
 }
 
+function sendSmsOnlyEmailFallback(input: {
+  sql: ReturnType<typeof getSql>
+  notificationId: number
+  recipient: Pick<Operator, "id" | "email">
+  title: string
+  body: string
+  url: string
+}) {
+  return sendOperatorAlertEmail({
+    notificationId: input.notificationId,
+    recipient: input.recipient,
+    title: input.title,
+    body: input.body,
+    url: input.url,
+    markSending: async () => {
+      const marked = (await input.sql`UPDATE notifications SET provider_email_status = 'sending'
+        WHERE id = ${input.notificationId}::bigint AND provider_email_id IS NULL
+          AND delivery_status NOT IN ('delivered','dead')
+        RETURNING id`) as { id: number }[]
+      return Boolean(marked[0])
+    },
+  })
+}
+
 function centralMinuteOfDay() {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Chicago",
@@ -272,7 +296,15 @@ export async function notify(input: {
 
   const centralMinute = centralMinuteOfDay()
   if (!input.quietHoursExempt && (centralMinute >= 19 * 60 || centralMinute < 6 * 60 + 30)) {
-    await sql`UPDATE notifications SET delivery_status = 'filed' WHERE id = ${id}::bigint`
+    await sql`UPDATE notifications SET delivery_status = 'retry',
+      delivery_next_attempt_at = (
+        (date_trunc('day', timezone('America/Chicago', now())) +
+          CASE WHEN timezone('America/Chicago', now())::time < time '06:30'
+            THEN interval '6 hours 30 minutes'
+            ELSE interval '1 day 6 hours 30 minutes' END
+        ) AT TIME ZONE 'America/Chicago'
+      )
+      WHERE id = ${id}::bigint`
     return { id, sent: false, reason: "quiet-hours" as const }
   }
 
@@ -459,6 +491,31 @@ export async function notify(input: {
         smsDeliveryUnknown = sms.unknown
         smsFailure = sms.error
       }
+    }
+  }
+  if (input.smsOnly && !isTest && !smsDeliveryUnknown && !sent) {
+    const email = await sendSmsOnlyEmailFallback({
+      sql,
+      notificationId: id,
+      recipient,
+      title: input.title,
+      body: storedBody,
+      url: input.url ?? "/ops",
+    })
+    if (email.state === "accepted") {
+      await sql`UPDATE notifications SET
+        provider_email_id = COALESCE(provider_email_id, ${email.providerId}::text),
+        provider_email_status = CASE WHEN delivery_status IN ('delivered','dead') THEN provider_email_status ELSE 'accepted' END
+        WHERE id = ${id}::bigint`
+      sent = true
+    } else if (email.state === "settled") {
+      return { id, sent: false, reason: "already-claimed" as const }
+    } else {
+      emailFailure = email.error
+      emailDeliveryUnknown = email.state === "unknown"
+      if (email.state === "failed") await sql`UPDATE notifications SET
+        provider_email_status = CASE WHEN delivery_status IN ('delivered','dead') THEN provider_email_status ELSE 'rejected' END
+        WHERE id = ${id}::bigint`
     }
   }
   if (emailDeliveryUnknown) {
@@ -707,24 +764,89 @@ export async function retryPendingInterrupts(limit = 10) {
     const push = row.sms_only
       ? { sent: 0 }
       : await sendPushToOperator(row.operator_id, { title: row.title, body: retryBody, url: row.url || "/ops" })
-    let delivered = push.sent > 0
+    const priorSmsOnlyEmailAccepted = row.sms_only && (row.provider_email_status === "accepted"
+      || (row.provider_email_id != null && !EMAIL_FAILURE_STATUSES.has(row.provider_email_status ?? "")))
+    let delivered = push.sent > 0 || priorSmsOnlyEmailAccepted
     let emailDeliveryUnknown = false
     let emailFailure = ""
-    if (!delivered && !row.sms_only && CALL_ALERT_EVENT_KINDS.has(context.source_kind ?? "")
-      && !EMAIL_FAILURE_STATUSES.has(row.provider_email_status ?? "")) {
-      const email = await sendOperatorAlertEmail({
+    let emailLegFailed = EMAIL_FAILURE_STATUSES.has(row.provider_email_status ?? "")
+    const replaySmsOnlyEmail = row.sms_only && row.provider_email_status === "sending"
+    if (!delivered && (replaySmsOnlyEmail || (!row.sms_only && CALL_ALERT_EVENT_KINDS.has(context.source_kind ?? "")
+      && !emailLegFailed))) {
+      const email = row.sms_only
+        ? await sendSmsOnlyEmailFallback({
+            sql,
+            notificationId: row.id,
+            recipient: { id: context.operator_id, email: context.email },
+            title: row.title,
+            body: retryBody,
+            url: row.url || "/ops",
+          })
+        : await sendOperatorAlertEmail({
+            notificationId: row.id,
+            recipient: { id: context.operator_id, email: context.email },
+            title: row.title,
+            body: retryBody,
+            url: row.url || "/ops",
+            markSending: async () => {
+              const marked = (await sql`UPDATE notifications SET provider_email_status = 'sending'
+                WHERE id = ${row.id}::bigint AND provider_email_id IS NULL
+                  AND delivery_status NOT IN ('delivered','dead')
+                RETURNING id`) as { id: number }[]
+              return Boolean(marked[0])
+            },
+          })
+      if (email.state === "accepted") {
+        await sql`UPDATE notifications SET
+          provider_email_id = COALESCE(provider_email_id, ${email.providerId}::text),
+          provider_email_status = CASE WHEN delivery_status IN ('delivered','dead') THEN provider_email_status ELSE 'accepted' END
+          WHERE id = ${row.id}::bigint`
+        delivered = true
+      } else if (email.state === "settled") {
+        continue
+      } else {
+        emailFailure = email.error
+        emailDeliveryUnknown = email.state === "unknown" || (replaySmsOnlyEmail && email.state === "unavailable")
+        if (email.state === "failed") await sql`UPDATE notifications SET
+          provider_email_status = CASE WHEN delivery_status IN ('delivered','dead') THEN provider_email_status ELSE 'rejected' END
+          WHERE id = ${row.id}::bigint`
+        if (email.state === "failed") emailLegFailed = true
+      }
+    }
+    let smsDeliveryUnknown = false
+    let smsFailure = ""
+    let smsRetryNow = false
+    const wantsSms = !emailDeliveryUnknown && !delivered && (row.sms_only || row.sms_fallback)
+    if (wantsSms) {
+      if (!twilioSmsConfigured()) {
+        smsFailure = "SMS channel not configured: TWILIO_SMS_ENABLED, messaging service, or webhook base URL is missing."
+      } else {
+        const recipient = await getOperatorById(row.operator_id)
+        if (recipient?.cell_phone) {
+          const smsBody = formatSmsBody({ title: row.title, body: retryBody, url: row.url, smsOnly: row.sms_only })
+          const sms = await sendSmsWithInlineRetry({
+              to: recipient.cell_phone,
+              body: smsBody,
+              statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${row.id}`),
+            }, (attempt) => persistSmsAttempt(sql, row.id, attempt))
+          delivered = sms.sent
+          smsDeliveryUnknown = sms.unknown
+          smsFailure = sms.error
+          smsRetryNow = Boolean(smsFailure && !sms.unknown)
+        } else {
+          smsFailure = `Operator ${row.operator_id} has no cell_phone on file.`
+        }
+      }
+    }
+    if (row.sms_only && !allowPreviewSmsProbe && !delivered && !smsDeliveryUnknown
+      && !emailDeliveryUnknown && !emailLegFailed && !replaySmsOnlyEmail) {
+      const email = await sendSmsOnlyEmailFallback({
+        sql,
         notificationId: row.id,
         recipient: { id: context.operator_id, email: context.email },
         title: row.title,
         body: retryBody,
         url: row.url || "/ops",
-        markSending: async () => {
-          const marked = (await sql`UPDATE notifications SET provider_email_status = 'sending'
-            WHERE id = ${row.id}::bigint AND provider_email_id IS NULL
-              AND delivery_status NOT IN ('delivered','dead')
-            RETURNING id`) as { id: number }[]
-          return Boolean(marked[0])
-        },
       })
       if (email.state === "accepted") {
         await sql`UPDATE notifications SET
@@ -740,25 +862,6 @@ export async function retryPendingInterrupts(limit = 10) {
         if (email.state === "failed") await sql`UPDATE notifications SET
           provider_email_status = CASE WHEN delivery_status IN ('delivered','dead') THEN provider_email_status ELSE 'rejected' END
           WHERE id = ${row.id}::bigint`
-      }
-    }
-    let smsDeliveryUnknown = false
-    let smsFailure = ""
-    let smsRetryNow = false
-    const wantsSms = !emailDeliveryUnknown && (row.sms_only || (!delivered && row.sms_fallback))
-    if (wantsSms && twilioSmsConfigured()) {
-      const recipient = await getOperatorById(row.operator_id)
-      if (recipient?.cell_phone) {
-        const smsBody = formatSmsBody({ title: row.title, body: retryBody, url: row.url, smsOnly: row.sms_only })
-        const sms = await sendSmsWithInlineRetry({
-            to: recipient.cell_phone,
-            body: smsBody,
-            statusCallback: twilioCallbackUrl(`/api/twilio/notification-status?notification=${row.id}`),
-          }, (attempt) => persistSmsAttempt(sql, row.id, attempt))
-        delivered = sms.sent
-        smsDeliveryUnknown = sms.unknown
-        smsFailure = sms.error
-        smsRetryNow = Boolean(smsFailure && !sms.unknown)
       }
     }
     if (emailDeliveryUnknown) {

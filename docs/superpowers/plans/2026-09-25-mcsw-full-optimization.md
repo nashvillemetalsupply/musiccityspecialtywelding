@@ -295,9 +295,10 @@ this path fires.
   `is_test`. Also close the two holes where `is_test` is only honoured with a
   `sourceEventId` (`notify.ts:118-122`) and where the Gmail dead-letter path
   writes without `isTest` (`app/api/ingest/gmail/route.ts:290`).
-- [ ] **`sms_only` alerts have no email leg.** `lib/notify.ts:326, :634`. A
+- [x] **`sms_only` alerts have no email leg.** `lib/notify.ts:326, :634`. A
   failed SMS on an `sms_only` interrupt should fall through to email after the
   inline retry.
+  Observation: fake SMS failures produced two attempts 2 s apart before the email fallback; ambiguous SMS stayed quarantined, and an uncertain email replayed idempotently before any later SMS.
 - [ ] **Morning brief cron and resume.** `morning-brief.yml` runs `30 11 * * *`,
   which is 06:30 CDT and 05:30 CST after 2026-11-01; change to `30 11,12` and
   let the route reject the off-hour one. The resumed path
