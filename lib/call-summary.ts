@@ -5,6 +5,7 @@ import { fileCallOntoOpenLead, saveInboundCallAsJob } from "@/lib/job-intake"
 import { findOpenLeadResolutionForPerson } from "@/lib/people"
 import { notifyAll } from "@/lib/notify"
 import { recordEvent } from "@/lib/events"
+import { applyOnlyValidatedSummary, readWithSchemaFallback } from "@/lib/call-summary-fallback.mjs"
 
 // One read of a finished call, written onto its intake draft. The live sketch
 // only understood gates and frames and identified a part on 4 of 56 calls in
@@ -78,20 +79,21 @@ const JSON_SHAPE = 'Reply with one JSON object and nothing else: {"caller_name":
 // When it refuses -- the free tier rate-limits a burst -- the shop's own
 // DeepSeek key reads the same call. Both answers pass the same schema.
 async function readCall(prompt: string): Promise<CallSummary> {
-  try {
-    const result = await generateText({
-      model: AI_MODELS.extraction,
-      output: Output.object({ schema: callSummarySchema }),
-      system: SYSTEM,
-      prompt,
-    })
-    if (!result.output) throw new Error("Summary returned no object.")
-    return callSummarySchema.parse(result.output)
-  } catch (gatewayError) {
-    if (!deepseekConfigured()) throw gatewayError
-    const object = await jsonWithDeepSeek({ system: `${SYSTEM} ${JSON_SHAPE}`, prompt })
-    return callSummarySchema.parse(object)
-  }
+  return readWithSchemaFallback({
+    primary: async () => {
+      const result = await generateText({
+        model: AI_MODELS.extraction,
+        output: Output.object({ schema: callSummarySchema }),
+        system: SYSTEM,
+        prompt,
+      })
+      if (!result.output) throw new Error("Summary returned no object.")
+      return result.output
+    },
+    fallback: () => jsonWithDeepSeek({ system: `${SYSTEM} ${JSON_SHAPE}`, prompt }),
+    fallbackConfigured: deepseekConfigured(),
+    parse: (value) => callSummarySchema.parse(value),
+  })
 }
 
 export async function summarizeCallDraft(callSid: string): Promise<{ summarized: boolean; reason?: string }> {
@@ -118,28 +120,32 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
   if (!claimed[0]) return { summarized: false, reason: "already-claimed" }
 
   try {
-    const summary = scrub(await readCall(JSON.stringify({
-      caller_id_name: PLACEHOLDER_NAME.test(draft.caller_name.trim()) ? null : draft.caller_name,
-      duration_seconds: draft.duration_sec,
-      transcript: draft.transcript.slice(0, 24_000),
-    })))
-    const isTest = draft.is_test || /\[INTERNAL TEST\]/i.test(draft.transcript)
-    const name = summary.caller_name?.trim() ?? ""
-    await sql`
-      UPDATE call_intake_drafts SET
-        summary = ${JSON.stringify(summary)}::jsonb,
-        summary_status = 'ready',
-        summary_at = now(),
-        summary_error = '',
-        -- The draft's own words win. The summary only fills what ring time
-        -- left blank: an empty need, or a "Caller 7041" placeholder name.
-        need = CASE WHEN need = '' THEN ${(isTest && !/\[INTERNAL TEST\]/i.test(summary.need) ? "[INTERNAL TEST] " : "") + summary.need}::text ELSE need END,
-        caller_name = CASE
-          WHEN ${name !== ""}::boolean AND (caller_name = '' OR caller_name ~* '^(caller \\d{4}|private caller|caller)$') THEN ${name}::text
-          ELSE caller_name END,
-        updated_at = now()
-      WHERE id = ${draft.id}::bigint`
-    await settleCall(draft, summary, name, isTest)
+    await applyOnlyValidatedSummary(
+      async () => scrub(await readCall(JSON.stringify({
+        caller_id_name: PLACEHOLDER_NAME.test(draft.caller_name.trim()) ? null : draft.caller_name,
+        duration_seconds: draft.duration_sec,
+        transcript: draft.transcript.slice(0, 24_000),
+      }))),
+      async (summary) => {
+        const isTest = draft.is_test || /\[INTERNAL TEST\]/i.test(draft.transcript)
+        const name = summary.caller_name?.trim() ?? ""
+        await sql`
+          UPDATE call_intake_drafts SET
+            summary = ${JSON.stringify(summary)}::jsonb,
+            summary_status = 'ready',
+            summary_at = now(),
+            summary_error = '',
+            -- The draft's own words win. The summary only fills what ring time
+            -- left blank: an empty need, or a "Caller 7041" placeholder name.
+            need = CASE WHEN need = '' THEN ${(isTest && !/\[INTERNAL TEST\]/i.test(summary.need) ? "[INTERNAL TEST] " : "") + summary.need}::text ELSE need END,
+            caller_name = CASE
+              WHEN ${name !== ""}::boolean AND (caller_name = '' OR caller_name ~* '^(caller \\d{4}|private caller|caller)$') THEN ${name}::text
+              ELSE caller_name END,
+            updated_at = now()
+          WHERE id = ${draft.id}::bigint`
+        await settleCall(draft, summary, name, isTest)
+      },
+    )
     return { summarized: true }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
