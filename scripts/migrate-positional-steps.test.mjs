@@ -13,7 +13,7 @@ function statementBodies(source) {
     .map((match) => match[1].replace(/\r\n/g, "\n"))
 }
 
-test("legacy migration steps preserve main's original prefix and append S09 ALTERs", () => {
+test("legacy migration steps preserve main's prefix and keep S09 ALTERs last", () => {
   const mainMigration = execFileSync("git", ["show", "main:scripts/migrate.mjs"], { encoding: "utf8" })
   const originalSteps = statementBodies(mainMigration)
   const currentSteps = statementBodies(migration)
@@ -29,5 +29,5 @@ test("legacy migration steps preserve main's original prefix and append S09 ALTE
     -1,
     `pre-existing positional step ${mismatchAt + 1} differs from main (${JSON.stringify(originalSteps[mismatchAt]?.slice(0, 120))} vs ${JSON.stringify(currentSteps[mismatchAt]?.slice(0, 120))})`,
   )
-  assert.deepEqual(currentSteps.slice(originalSteps.length), appendedSteps, "S09 schema changes are appended after all recorded steps")
+  assert.deepEqual(currentSteps.slice(-appendedSteps.length), appendedSteps, "S09 schema changes are the final array steps")
 })

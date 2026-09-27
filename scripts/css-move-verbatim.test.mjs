@@ -95,6 +95,8 @@ const projection = ({ body, arms, context }) => ({ body, arms, context })
 // by a later rule with the same selector and at-rule context. Keep their
 // frozen source lines here so the provenance test permits this proven cleanup
 // without broadening the set of rules that can disappear.
+// Fourteen baseline rule starts cover fifteen selector arms; line 5729 is a
+// comma-separated rule containing both the handset and radio panel arms.
 const REDUNDANT_LEGACY_RULE_LINES = new Set([
   1788, 1831, 1833, 5000, 5003, 5264, 5629, 5729, 5731, 5753, 6930, 5775,
   5782, 5783,
@@ -102,14 +104,16 @@ const REDUNDANT_LEGACY_RULE_LINES = new Set([
 
 // Compare complete ordered projections as well as individual block provenance:
 // dropping one rule must fail even when another rule still names the class.
-test("every live selector arm and its complete declaration block survives the move", () => {
+test("every retained live selector arm and declaration block survives the move", () => {
   const root = fileURLToPath(new URL("..", import.meta.url))
   const out = execFileSync("git", ["grep", "-ho", "ops-[a-z0-9-]*", "--", "app/board", "app/ops", "components"], { cwd: root, encoding: "utf8" })
   const used = new Set(out.trim().split(/\s+/).filter(Boolean).map((name) => `.${name}`))
-  const expected = blocks(read("scripts/qa/baseline/pre-retirement-globals.css")).map(projection).flatMap((block) => {
-    const arms = block.context.includes("@keyframes paid-land") ? block.arms : block.arms.filter((arm) => (arm.match(/\.ops-[a-z0-9-]+/g) ?? []).some((name) => used.has(name)))
-    return arms.length ? [{ ...block, arms }] : []
-  })
+  const expected = blocks(read("scripts/qa/baseline/pre-retirement-globals.css"))
+    .filter(({ line }) => !REDUNDANT_LEGACY_RULE_LINES.has(line))
+    .map(projection).flatMap((block) => {
+      const arms = block.context.includes("@keyframes paid-land") ? block.arms : block.arms.filter((arm) => (arm.match(/\.ops-[a-z0-9-]+/g) ?? []).some((name) => used.has(name)))
+      return arms.length ? [{ ...block, arms }] : []
+    })
   const actual = blocks(read("styles/ops-legacy.css")).map(projection)
   assert.deepEqual(actual, expected, "a live selector arm, declaration block, context or source order changed")
 })
