@@ -1307,15 +1307,68 @@ export async function getMonthCostPerLead(role: OperatorRole = "crew"): Promise<
   }
 }
 
-export async function getMonthRevenueCents(): Promise<number> {
+const CENTRAL_TIME_ZONE = "America/Chicago"
+
+function centralMonthBoundaryUtc(year: number, month: number): string {
+  const localMidnight = new Date(0)
+  localMidnight.setUTCFullYear(year, month - 1, 1)
+  localMidnight.setUTCHours(0, 0, 0, 0)
+  const desiredWallClock = localMidnight.getTime()
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: CENTRAL_TIME_ZONE,
+    calendar: "gregory",
+    numberingSystem: "latn",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  })
+  let candidate = desiredWallClock
+
+  // Convert local Central midnight to an instant by correcting the wall-clock
+  // difference reported by the IANA zone. This handles a DST change between
+  // the month start and the current date without a fixed UTC offset.
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(candidate)).map((part) => [part.type, Number(part.value)]))
+    const representedWallClock = Date.UTC(
+      parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second,
+    )
+    const correction = desiredWallClock - representedWallClock
+    if (correction === 0) return new Date(candidate).toISOString()
+    candidate += correction
+  }
+
+  throw new RangeError("Could not resolve a Central month boundary.")
+}
+
+function centralMonthBounds(now: Date) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: CENTRAL_TIME_ZONE, calendar: "gregory", numberingSystem: "latn",
+    year: "numeric", month: "2-digit",
+  }).formatToParts(now).map((part) => [part.type, Number(part.value)]))
+  const year = parts.year as number
+  const month = parts.month as number
+  const nextYear = month === 12 ? year + 1 : year
+  const nextMonth = month === 12 ? 1 : month + 1
+  return {
+    startInclusive: centralMonthBoundaryUtc(year, month),
+    endExclusive: centralMonthBoundaryUtc(nextYear, nextMonth),
+  }
+}
+
+export async function getMonthRevenueCents(now = new Date()): Promise<number> {
   const sql = getSql()
+  const { startInclusive, endExclusive } = centralMonthBounds(now)
   const rows = (await sql`
     SELECT COALESCE(sum(revenue_cents), 0)::bigint AS cents FROM leads
-    WHERE status = 'won' AND won_at >= date_trunc('month', now())
+    WHERE status = 'won' AND won_at >= ${startInclusive}::timestamptz
+      AND won_at < ${endExclusive}::timestamptz
       AND routed_to_lead_id IS NULL AND is_test = false`) as { cents: number }[]
   return Number(rows[0]?.cents ?? 0)
 }
-
 export async function getStatusCounts(includeTests: boolean): Promise<Record<string, number>> {
   const sql = getSql()
   const rows = (await sql`

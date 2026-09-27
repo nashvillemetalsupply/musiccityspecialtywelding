@@ -427,9 +427,10 @@ this path fires.
   existing predicate; set at write time through the one helper; leave the old
   predicate in place as a belt until the source-regex test proves every writer
   sets the column. Additive; nothing dropped.
-- [ ] **Small correctness.** `getMonthRevenueCents` uses UTC month boundaries;
+- [x] **Small correctness.** `getMonthRevenueCents` uses UTC month boundaries;
   use `America/Chicago`. Retire the test jobs #34 and #19 by marking, not
   deleting.
+  Observation: Revenue uses half-open America/Chicago month bounds and passes March DST boundary tests; jobs #34 and #19 remain untouched for owner cleanup.
 
 ## P3 — Authorization, input hardening, customer privacy
 
