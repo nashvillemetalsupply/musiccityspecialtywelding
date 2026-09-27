@@ -11,4 +11,4 @@ export type HealthMonitorFailureAlert = {
   actionDetail: { source: "health-monitor"; runId: string; isTest: boolean }
   dedupeKey: string
 }
-export function buildHealthMonitorFailureAlert(runId: string, options?: { isTest?: boolean }): HealthMonitorFailureAlert | null
+export function buildHealthMonitorFailureAlert(runId: string, options?: { isTest?: boolean }, now?: Date): HealthMonitorFailureAlert | null
