@@ -388,6 +388,7 @@ this path fires.
   returning `max(events.id)` and `max(calls.updated_at)` (one cheap query), the
   client polls that every 10 s and only calls `router.refresh()` on change;
   idle tabs back off to 5 min; wrap the job page loaders in `cache()`.
+  Observation: `/api/ops/pulse` returns only the two aggregates to signed-in owner/crew sessions, crew aggregates exclude internal-test and owner-only events, and both clients poll with 10 s foreground / 5 min away cadence; fake fetch/timer/SQL tests pass. Neon CU-hours before/after were not run from the worktree.
 - [ ] **Missing indexes.** Add, idempotently (`CREATE INDEX IF NOT EXISTS`):
   `leads(follow_up_at) WHERE follow_up_at IS NOT NULL`,
   `leads(scheduled_at)`, `leads(phone)`, `leads(id) WHERE open_invoice`,
@@ -404,12 +405,14 @@ this path fires.
   on every check and fails open on error. Move the delete to the sweep, fail
   closed for the strict limiter, and use `consumeStrictRateLimit` on
   `app/api/ops/login/route.ts` keyed on `ip + emailHash`.
-- [ ] **Health endpoint does six full scans 60+ times a day.**
+- [x] **Health endpoint does six full scans 60+ times a day.**
   `app/api/ops/health/route.ts:143`. Bound each scan by time window and index,
   and cache the result for 5 minutes in-process.
-- [ ] **`getAccount` writes on read.** `lib/accounts.ts` issues an UPDATE on
+  Observation: Health aggregates now use one-year or existing 24-hour windows with row limits, automation reads are limited, and an in-process 5-minute cache coalesces concurrent SQL reads; the S02 recent-delivery-error gate remains in place and its tests pass.
+- [x] **`getAccount` writes on read.** `lib/accounts.ts` issues an UPDATE on
   GET, twice per view under `cache()`. Move the "last seen" write to a
   fire-and-forget `after()` with a 15-minute guard.
+  Observation: This checkout has no last-seen write in `getAccount`; its account-key repair UPDATEs now run through `after()` with a 15-minute per-account-group guard, while the current render still includes unmigrated group members. Fake after/SQL tests pass.
 - [ ] **Non-transactional multi-statement writes.** `createLead`,
   `replaceJobLineItems` (`lib/job-line-items.ts:81` DELETE then loop),
   `supersedeClaim`. Rewrite each as a single-statement `MATERIALIZED` CTE in the

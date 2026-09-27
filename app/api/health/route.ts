@@ -28,6 +28,7 @@ import { callTranscriptionConfigured, deepgramCallbackSecretConfigured } from "@
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
 import { automationRunIsStale, gmailFreshnessWindowMs } from "@/lib/automation-health.mjs"
 import { evaluateInboundCallReceiptHealth, INBOUND_CALL_SILENCE_LIMIT_HOURS } from "@/lib/call-health.mjs"
+import { createInProcessTtlCache } from "@/lib/in-process-cache.mjs"
 
 export const dynamic = "force-dynamic"
 
@@ -152,20 +153,29 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     const sql = getSql()
     const [counts] = (await sql`
       SELECT
-        (SELECT count(*)::int FROM leads WHERE is_test = false) AS lead_count,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM leads
+          WHERE is_test = false AND created_at >= now() - interval '1 year'
+          ORDER BY created_at DESC LIMIT 10000
+        ) recent_leads) AS lead_count,
         -- Only /api/quote writes landing_page, so this is the last time the
         -- public form actually reached the database.
-        (SELECT max(created_at) FROM leads
-          WHERE coalesce(landing_page, '') <> '' AND is_test = false) AS last_web_quote_at,
-        (SELECT max(c.started_at) FROM calls c
+        (SELECT created_at FROM leads
+          WHERE coalesce(landing_page, '') <> '' AND is_test = false
+            AND created_at >= now() - interval '1 year'
+          ORDER BY created_at DESC LIMIT 1) AS last_web_quote_at,
+        (SELECT c.started_at FROM calls c
           LEFT JOIN leads l ON l.id = c.lead_id
           LEFT JOIN people p ON p.id = c.person_id
           WHERE c.direction = 'in'
+            AND c.started_at >= now() - interval '1 year'
             AND COALESCE(l.is_test, false) = false
             AND COALESCE(p.is_test, false) = false
             AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true'
-            AND COALESCE(c.detail->>'callerName', '') NOT ILIKE '%[INTERNAL TEST]%') AS last_inbound_call_at,
-        (SELECT count(*)::int FROM calls c
+            AND COALESCE(c.detail->>'callerName', '') NOT ILIKE '%[INTERNAL TEST]%'
+          ORDER BY c.started_at DESC, c.id DESC LIMIT 1) AS last_inbound_call_at,
+        (SELECT count(*)::int FROM (
+          SELECT c.id FROM calls c
           LEFT JOIN leads l ON l.id = c.lead_id
           LEFT JOIN people p ON p.id = c.person_id
           WHERE c.direction = 'in'
@@ -173,63 +183,118 @@ async function checkDatabase(): Promise<DatabaseHealth> {
             AND COALESCE(l.is_test, false) = false
             AND COALESCE(p.is_test, false) = false
             AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true'
-            AND COALESCE(c.detail->>'callerName', '') NOT ILIKE '%[INTERNAL TEST]%') AS recent_inbound_call_count,
-        (SELECT count(*)::int FROM leads
-          WHERE email_delivery_status = 'failed' AND is_test = false) AS failed_deliveries,
-        (SELECT count(*)::int FROM calls
+            AND COALESCE(c.detail->>'callerName', '') NOT ILIKE '%[INTERNAL TEST]%'
+          ORDER BY c.started_at DESC, c.id DESC LIMIT 10000
+        ) recent_inbound_calls) AS recent_inbound_call_count,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM leads
+          WHERE email_delivery_status = 'failed' AND is_test = false
+            AND updated_at >= now() - interval '1 year'
+          ORDER BY updated_at DESC LIMIT 10000
+        ) recent_failed_deliveries) AS failed_deliveries,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM calls
           WHERE recording_sid <> '' AND transcript_status IN ('queued','failed','submitting','submitted')
-            AND updated_at < now() - interval '30 minutes') AS call_transcript_backlog,
-        (SELECT count(*)::int FROM calls
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '30 minutes'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) recent_call_transcripts) AS call_transcript_backlog,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM calls
           WHERE recording_sid <> '' AND transcript_status IN ('queued','failed','submitting','submitted')
             AND transcript_attempts >= 8
-            AND updated_at < now() - interval '30 minutes') AS call_transcript_exhausted,
-        (SELECT count(*)::int FROM voice_transcription_intents
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '30 minutes'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) recent_exhausted_transcripts) AS call_transcript_exhausted,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM voice_transcription_intents
           WHERE status IN ('persisted','queued','failed','submitting')
-            AND updated_at < now() - interval '20 minutes') AS voice_transcript_backlog,
-        (SELECT count(*)::int FROM glass_uploads
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '20 minutes'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) recent_voice_transcripts) AS voice_transcript_backlog,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM glass_uploads
           WHERE status IN ('uploading','uploaded','projecting','unknown')
-            AND updated_at < now() - interval '20 minutes') AS upload_recovery_backlog,
-        (SELECT count(*)::int FROM lead_photo_intents
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '20 minutes'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) recent_upload_recovery) AS upload_recovery_backlog,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM lead_photo_intents
           WHERE status <> 'attached'
-            AND updated_at < now() - interval '20 minutes') AS quote_photo_backlog,
-        (SELECT count(*)::int FROM messaging_consents) AS consent_record_count,
-        (SELECT count(*)::int FROM call_sketches
-          WHERE status = 'error' AND updated_at > now() - interval '24 hours') AS call_sketch_error_count,
-        (SELECT count(*)::int FROM trouble_reports
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '20 minutes'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) recent_quote_photos) AS quote_photo_backlog,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM messaging_consents
+          WHERE created_at >= now() - interval '1 year'
+          ORDER BY created_at DESC LIMIT 10000
+        ) recent_consents) AS consent_record_count,
+        (SELECT count(*)::int FROM (
+          SELECT call_sid FROM call_sketches
+          WHERE status = 'error' AND updated_at > now() - interval '24 hours'
+          ORDER BY updated_at DESC LIMIT 10000
+        ) recent_call_sketch_errors) AS call_sketch_error_count,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM trouble_reports
           WHERE source = 'board-client-error' AND created_at > now() - interval '24 hours'
-            AND is_test = false) AS recent_client_errors,
-        (SELECT count(*)::int FROM trouble_reports
+            AND is_test = false
+          ORDER BY created_at DESC LIMIT 10000
+        ) recent_client_errors) AS recent_client_errors,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM trouble_reports
           WHERE source = 'board-client-error' AND created_at > now() - interval '24 hours'
-            AND is_test = true) AS recent_test_client_errors,
-        (SELECT count(*)::int FROM notifications n
+            AND is_test = true
+          ORDER BY created_at DESC LIMIT 10000
+        ) recent_test_client_errors) AS recent_test_client_errors,
+        (SELECT count(*)::int FROM (
+          SELECT n.id FROM notifications n
           LEFT JOIN events e ON e.id = n.source_event_id
           LEFT JOIN leads l ON l.id = e.lead_id
           LEFT JOIN people p ON p.id = e.person_id
           WHERE n.delivery_status = 'dead' AND n.read_at IS NULL
+            AND n.created_at >= now() - interval '1 year'
             AND COALESCE(l.is_test, false) = false
             AND COALESCE(p.is_test, false) = false
-            AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true') AS notification_delivery_dead,
-        (SELECT count(*)::int FROM notifications n
+            AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+          ORDER BY n.created_at DESC LIMIT 10000
+        ) recent_dead_notifications) AS notification_delivery_dead,
+        (SELECT count(*)::int FROM (
+          SELECT n.id FROM notifications n
           LEFT JOIN events e ON e.id = n.source_event_id
           LEFT JOIN leads l ON l.id = e.lead_id
           LEFT JOIN people p ON p.id = e.person_id
           WHERE n.delivery_status = 'unknown' AND n.read_at IS NULL
+            AND n.created_at >= now() - interval '1 year'
             AND COALESCE(l.is_test, false) = false
             AND COALESCE(p.is_test, false) = false
-            AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true') AS notification_delivery_unknown,
-        (SELECT count(*)::int FROM messages m
+            AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
+          ORDER BY n.created_at DESC LIMIT 10000
+        ) recent_unknown_notifications) AS notification_delivery_unknown,
+        (SELECT count(*)::int FROM (
+          SELECT m.id FROM messages m
           LEFT JOIN leads l ON l.id = m.lead_id
           LEFT JOIN people p ON p.id = m.person_id
           WHERE m.status = 'unknown'
+            AND m.sent_at >= now() - interval '1 year'
             AND COALESCE(l.is_test, false) = false
-            AND COALESCE(p.is_test, false) = false) AS message_delivery_unknown,
-        (SELECT count(*)::int FROM calls c
+            AND COALESCE(p.is_test, false) = false
+          ORDER BY m.sent_at DESC LIMIT 10000
+        ) recent_unknown_messages) AS message_delivery_unknown,
+        (SELECT count(*)::int FROM (
+          SELECT c.id FROM calls c
           LEFT JOIN leads l ON l.id = c.lead_id
           LEFT JOIN people p ON p.id = c.person_id
           WHERE c.status = 'unknown'
+            AND c.updated_at >= now() - interval '1 year'
             AND COALESCE(l.is_test, false) = false
             AND COALESCE(p.is_test, false) = false
-            AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true') AS call_delivery_unknown`) as {
+            AND lower(COALESCE(c.detail->>'isTest', 'false')) <> 'true'
+          ORDER BY c.updated_at DESC LIMIT 10000
+        ) recent_unknown_calls) AS call_delivery_unknown`) as {
       lead_count: number
       last_web_quote_at: string | null
       last_inbound_call_at: string | null
@@ -275,7 +340,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.callDeliveryUnknown = counts.call_delivery_unknown
     const digest = (await sql`
       SELECT ran_at, ok FROM automation_runs
-      WHERE job = 'daily-digest' ORDER BY ran_at DESC LIMIT 1`) as {
+      WHERE job = 'daily-digest' AND ran_at >= now() - interval '1 year'
+      ORDER BY ran_at DESC LIMIT 1`) as {
       ran_at: string
       ok: boolean
     }[]
@@ -285,7 +351,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     }
     const reminder = (await sql`
       SELECT ran_at, ok FROM automation_runs
-      WHERE job = 'follow-up-reminders' ORDER BY ran_at DESC LIMIT 1`) as {
+      WHERE job = 'follow-up-reminders' AND ran_at >= now() - interval '1 year'
+      ORDER BY ran_at DESC LIMIT 1`) as {
       ran_at: string
       ok: boolean
     }[]
@@ -296,7 +363,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     const integrations = (await sql`
       SELECT DISTINCT ON (job) job, ran_at, ok FROM automation_runs
       WHERE job IN ('gmail-ingest', 'morning-brief')
-      ORDER BY job, ran_at DESC`) as { job: string; ran_at: string; ok: boolean }[]
+        AND ran_at >= now() - interval '1 year'
+      ORDER BY job, ran_at DESC LIMIT 2`) as { job: string; ran_at: string; ok: boolean }[]
     for (const run of integrations) {
       if (run.job === "gmail-ingest") { result.lastGmailAt = new Date(run.ran_at).toISOString(); result.lastGmailOk = run.ok }
       if (run.job === "morning-brief") { result.lastBriefAt = new Date(run.ran_at).toISOString(); result.lastBriefOk = run.ok }
@@ -306,6 +374,8 @@ async function checkDatabase(): Promise<DatabaseHealth> {
   }
   return result
 }
+
+const getCachedDatabase = createInProcessTtlCache(checkDatabase, 5 * 60_000)
 
 export async function GET(req: Request) {
   const resendApiKey = process.env.RESEND_API_KEY?.trim() || ""
@@ -331,7 +401,7 @@ export async function GET(req: Request) {
   }
   const [quoteEmailCredentialValid, database, twilioProvider] = await Promise.all([
     quoteEmailConfigured ? hasWorkingResendCredential(resendApiKey) : Promise.resolve(false),
-    checkDatabase(),
+    getCachedDatabase(),
     checkTwilioProviderReadiness(),
   ])
   const adsConversionConfigured = Boolean(ADS_CONVERSION_SEND_TO)

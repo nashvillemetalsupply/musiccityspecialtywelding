@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import { QUOTE_SERVICE_OPTIONS } from "../lib/public-quote.mjs"
 
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8")
+const PULSE_POLLING_SOURCE = readFileSync(new URL("../lib/ops-pulse-polling.mjs", import.meta.url), "utf8")
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8")
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8")
 const LINE_ITEMS_SOURCE = readFileSync(new URL("../lib/job-line-items.ts", import.meta.url), "utf8")
@@ -207,24 +208,15 @@ test("one tracker page stays bounded for a phone", () => {
   assert.match(PREVIEW_SOURCE, /Showing \$\{board\.items\.length\} of \$\{board\.resultTotal\}/)
 })
 
-// Every field on the call panel comes from the server render. Without a timer
-// the panel labelled live never gained a line, and a call that arrived while
-// the board was open never appeared at all.
-test("the call panel refreshes itself, faster while a call is on the line", () => {
+// A cheap pulse replaces periodic full board renders, while a changed event or
+// call still refreshes the live panel promptly.
+test("the board polls a compact pulse and refreshes only when the pulse changes", () => {
   assert.match(PREVIEW_SOURCE, /import \{ useRouter \} from "next\/navigation"/)
-  assert.match(PREVIEW_SOURCE, /router\.refresh\(\)/)
-  const effect = PREVIEW_SOURCE.slice(
-    PREVIEW_SOURCE.indexOf("let timer: number | undefined"),
-    PREVIEW_SOURCE.indexOf("}, [router, onTheLine])"),
-  )
-  assert.ok(effect.length > 0, "the refresh effect lost its onTheLine dependency")
-  const delays = effect.match(/onTheLine \? ([\d_]+) : ([\d_]+)/)
-  assert.ok(delays, "the refresh interval stopped depending on whether a call is live")
-  assert.ok(Number(delays[1].replace(/_/g, "")) < Number(delays[2].replace(/_/g, "")),
-    "a live call must poll faster than an idle board")
-  // Neon is billed by compute time. A hidden tab must not hold it awake.
-  assert.match(effect, /document\.visibilityState !== "visible"/)
-  assert.match(effect, /visibilitychange/)
+  assert.match(PREVIEW_SOURCE, /startOpsPulsePolling\(\{ onChange: \(\) => router\.refresh\(\) \}\)/)
+  assert.match(PULSE_POLLING_SOURCE, /OPS_PULSE_ACTIVE_INTERVAL_MS = 10_000/)
+  assert.match(PULSE_POLLING_SOURCE, /OPS_PULSE_IDLE_INTERVAL_MS = 5 \* 60_000/)
+  assert.match(PULSE_POLLING_SOURCE, /fetchPulse\("\/api\/ops\/pulse", \{ cache: "no-store" \}\)/)
+  assert.match(PULSE_POLLING_SOURCE, /if \(lastPulseKey !== null && nextPulseKey !== lastPulseKey\) pendingChange = true/)
 })
 
 // Fourteen transcript lines pushed the tracker most of a screen down the page.
