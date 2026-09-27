@@ -124,6 +124,8 @@ jobs:
       group: monthly-health-monitor-keepalive
       cancel-in-progress: false
     steps:
+      - uses: actions/checkout@v4
+
       - name: Re-enable scheduled workflows
         shell: bash
         env:
@@ -135,6 +137,7 @@ jobs:
             exit 0
           fi
 
+          enabled_count=0
           for workflow_file in .github/workflows/*; do
             [[ -f "$workflow_file" ]] || continue
             if ! grep -Eq '^[[:space:]]*schedule:' "$workflow_file"; then
@@ -145,4 +148,10 @@ jobs:
             echo "Re-enabling scheduled workflow ${workflow_name}"
             gh api --method PUT \
               "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_name}/enable"
+            enabled_count=$((enabled_count + 1))
           done
+
+          if [[ "$enabled_count" -eq 0 ]]; then
+            echo "::error::No scheduled workflow files were found to re-enable."
+            exit 1
+          fi
