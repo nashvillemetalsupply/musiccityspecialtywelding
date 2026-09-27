@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import type { CSSProperties } from "react"
 import { useState } from "react"
 
@@ -62,6 +63,7 @@ const pick = (on: boolean): CSSProperties => ({
 const wide = (busy = false): CSSProperties => ({ width: "100%", opacity: busy ? 0.65 : 1 })
 
 export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { linkError: boolean; operators?: PunchCard[]; smsReady?: boolean }) {
+  const router = useRouter()
   const [mode, setMode] = useState<"email" | "sms">("email")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -113,7 +115,7 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
     event.preventDefault()
     try {
       await request("/api/ops/sms-login/verify", picked ? { selector, code } : { phone, code }, "That code did not work.")
-      window.location.assign("/ops")
+      router.push("/ops")
     } catch (error) { setState("error"); setMessage(error instanceof Error ? error.message : "That code did not work.") }
   }
 

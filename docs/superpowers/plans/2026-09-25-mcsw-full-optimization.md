@@ -243,11 +243,14 @@ unless the step says production. Never on a worktree dev server.
   to 19.3, `eslint` to 10 (9.39.5 is deprecated per the build log). Run
   `npm run test:shop-brain && npm run typecheck && npm run lint`, deploy a
   preview, click through `/`, `/board`, a job page, a glass link.
-- [ ] **Fix the sharp pin.** Both `overrides` blocks pin `sharp` to 0.35.3,
+  - Observation: lint is clean and Preview is READY; `/` returns 200, `/board` returns 200, and `/ops/leads/34` returns 200 for `[INTERNAL TEST] Gate Build`; the valid glass link remains blocked because Preview `GLASS_TOKEN_SECRET` is 11 bytes and does not reconstruct the active test token.
+  - Owner item: set Preview `GLASS_TOKEN_SECRET` to the production value (32+ bytes), redeploy the preview, then open the glass link and tick this item.
+- [x] **Fix the sharp pin.** Both `overrides` blocks pin `sharp` to 0.35.3,
   which is inside GHSA-rgj7-g3m4-5g8c (`<0.35.4`). Remove the pin or raise to
   ≥0.35.4. Remove the `nanoid`, `undici` and `postcss` overrides too; re-add
   only one that a current advisory names, with a one-line comment naming it.
-- [ ] **Make the lockfile real.** `pnpm-lock.yaml` is a 92-byte v0 stub (zero
+  - Observation: the verified production audit reports no high/critical advisory on `next` or `sharp`; no override was added for out-of-scope nested `undici` findings.
+- [x] **Make the lockfile real.** `pnpm-lock.yaml` is a 92-byte v0 stub (zero
   packages). The last production build log
   (`dpl_GHuKFRK1g42rNJUekU4g9yd5AxeT`) reads `Detected pnpm-lock.yaml 9 …
   resolved 595, reused 0, downloaded 515`. Every deploy resolves every `^`
@@ -256,10 +259,12 @@ unless the step says production. Never on a worktree dev server.
   `pnpm` block, add `"packageManager": "npm@10.8.3"`, confirm the next build
   log says `npm ci`. (Alternative of committing to pnpm is acceptable if the
   session finds a reason; say which and why.)
-- [ ] **Pin Node.** Add `"engines": {"node": ">=22"}` and `.nvmrc` = `24`.
+  - Observation: `pnpm-lock.yaml` is absent; Vercel used `npm ci` and finished the Next build successfully.
+- [x] **Pin Node.** Add `"engines": {"node": ">=22"}` and `.nvmrc` = `24`.
   Vercel is already on 24.x; local is 20.17; Node 20 is deprecated on Vercel
   2026-10-01. Bump `@types/node` to match. This unblocks the strip-types
   migration in P7.
+  - Observation: `.nvmrc` is `24`, `engines.node` is `>=22`, and `@types/node` is `^24.19.0`; Preview TypeScript compilation passes.
 
 ## P1 — Owner alerting and automation correctness
 
