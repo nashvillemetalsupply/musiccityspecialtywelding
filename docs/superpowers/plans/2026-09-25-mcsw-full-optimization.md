@@ -409,9 +409,10 @@ this path fires.
   `app/api/ops/health/route.ts:143`. Bound each scan by time window and index,
   and cache the result for 5 minutes in-process.
   Observation: Health aggregates now use one-year or existing 24-hour windows with row limits, automation reads are limited, and an in-process 5-minute cache coalesces concurrent SQL reads; the S02 recent-delivery-error gate remains in place and its tests pass.
-- [ ] **`getAccount` writes on read.** `lib/accounts.ts` issues an UPDATE on
+- [x] **`getAccount` writes on read.** `lib/accounts.ts` issues an UPDATE on
   GET, twice per view under `cache()`. Move the "last seen" write to a
   fire-and-forget `after()` with a 15-minute guard.
+  Observation: This checkout has no last-seen write in `getAccount`; its account-key repair UPDATEs now run through `after()` with a 15-minute per-account-group guard, while the current render still includes unmigrated group members. Fake after/SQL tests pass.
 - [ ] **Non-transactional multi-statement writes.** `createLead`,
   `replaceJobLineItems` (`lib/job-line-items.ts:81` DELETE then loop),
   `supersedeClaim`. Rewrite each as a single-statement `MATERIALIZED` CTE in the

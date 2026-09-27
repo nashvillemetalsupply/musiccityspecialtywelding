@@ -1,3 +1,4 @@
+import { after } from "next/server"
 import { projectClaimForRole, projectCommitmentForRole } from "@/lib/visibility"
 import { getSql } from "@/lib/db"
 import type { CommitmentRow } from "@/lib/commitments"
@@ -7,6 +8,7 @@ import { isReservedShopPhone, type PersonRow } from "@/lib/people"
 import { deriveAccountKey } from "@/lib/account-key"
 import { projectLeadForRole } from "@/lib/ops-data"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
+import { scheduleAccountReadRepair } from "@/lib/account-read-maintenance.mjs"
 
 export function accountKeyForPerson(person: Pick<PersonRow, "id" | "company" | "emails">) {
   return deriveAccountKey(person)
@@ -24,11 +26,21 @@ export async function getAccount(personId: number, role: OperatorRole, options: 
   if (target.company_key) {
     const aliases = (await sql`SELECT account_key FROM people WHERE company_key = ${target.company_key}::text AND account_key LIKE 'domain:%' AND merged_into IS NULL ORDER BY id LIMIT 1`) as { account_key: string }[]
     if (aliases[0]) key = aliases[0].account_key
-    await sql`UPDATE people SET account_key = ${key}::text WHERE company_key = ${target.company_key}::text AND merged_into IS NULL AND account_key IS DISTINCT FROM ${key}::text`
-  } else if (!target.account_key) await sql`UPDATE people SET account_key = ${key}::text WHERE id = ${personId}::bigint`
+    scheduleAccountReadRepair({
+      key: `company:${target.company_key}`,
+      after,
+      write: () => sql`UPDATE people SET account_key = ${key}::text WHERE company_key = ${target.company_key}::text AND merged_into IS NULL AND account_key IS DISTINCT FROM ${key}::text`,
+    })
+  } else if (!target.account_key) scheduleAccountReadRepair({
+    key: `person:${personId}`,
+    after,
+    write: () => sql`UPDATE people SET account_key = ${key}::text WHERE id = ${personId}::bigint`,
+  })
   const people = (await sql`
     SELECT * FROM people
-    WHERE account_key = ${key}::text AND merged_into IS NULL AND is_test = false
+    WHERE (account_key = ${key}::text OR id = ${personId}::bigint
+      OR (${target.company_key}::text IS NOT NULL AND company_key = ${target.company_key}::text))
+      AND merged_into IS NULL AND is_test = false
     ORDER BY status ASC, created_at ASC`) as PersonRow[]
   const personIds = people.map((person) => Number(person.id))
   const primary = people.find((person) => person.company) ?? target
