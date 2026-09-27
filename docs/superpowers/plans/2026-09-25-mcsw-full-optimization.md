@@ -560,10 +560,11 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   upscaled. Drop `unoptimized`, supply a 1600 px source, add `sizes`, keep
   `priority`. Visually identical.
   Observation: Hero now uses the optimizer with responsive `sizes`, keeps `priority`, and points to a 1600×1280 rendition of the existing 1280×1024 photo; the source and dimension regression passes.
-- [ ] **Meta pixel loads eagerly.** gtag is deferred in
+- [x] **Meta pixel loads eagerly.** gtag is deferred in
   `components/public-analytics.tsx`; put the pixel behind the same 8 s /
   first-interaction trigger. `__mcswMetaQueue` already queues events. Do not
   change what it sends.
+  Observation: Meta bootstrap now follows the deferred Google tag script insertion; server-render and payload tests confirm no initial Meta script and unchanged pixel ID, PageView, and queued Lead replay.
 - [ ] **Dead CSS.** `app/globals.css` is 3,477 lines with 559 `.ms-` and 178
   `.glass` rules. Finish the retirement with `scripts/qa/retire-ops-css.mjs`,
   prove no visual change with `fingerprint-diff.mjs` at all four widths.

@@ -2,6 +2,7 @@
 
 import Script from "next/script"
 import { usePathname } from "next/navigation"
+import { useEffect } from "react"
 import { AttributionTracker } from "@/components/attribution-tracker"
 import { DeferredGoogleTag } from "@/components/deferred-google-tag"
 import { PhoneClickTracker } from "@/components/phone-click-tracker"
@@ -11,6 +12,62 @@ function isPrivateSurface(pathname: string) {
   return ["/ops", "/board", "/j", "/design-preview"].some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   )
+}
+
+export function metaPixelBootstrapSource(pixelId: string) {
+  return `
+        (function(){
+          var params = new URLSearchParams(window.location.search);
+          if (params.get('utm_source') === 'internal-verify' || params.get('utm_medium') === 'e2e') return;
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '${pixelId}');
+          fbq('track', 'PageView');
+          var queued = window.__mcswMetaQueue || [];
+          window.__mcswMetaQueue = [];
+          for (var i = 0; i < queued.length; i += 1) window.fbq.apply(window, queued[i]);
+        })();
+      `
+}
+
+function DeferredMetaPixel() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("utm_source") === "internal-verify" || params.get("utm_medium") === "e2e") return
+
+    let loaded = false
+    function loadPixel() {
+      if (loaded || document.getElementById("meta-pixel")) return
+      loaded = true
+      const script = document.createElement("script")
+      script.id = "meta-pixel"
+      script.textContent = metaPixelBootstrapSource(META_PIXEL_ID)
+      document.head.appendChild(script)
+    }
+
+    if (document.getElementById("deferred-google-tag")) {
+      loadPixel()
+      return
+    }
+
+    // DeferredGoogleTag owns the single first-interaction / eight-second trigger.
+    // Load Meta when that trigger inserts its external Google tag script.
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById("deferred-google-tag")) return
+      loadPixel()
+      observer.disconnect()
+    })
+    observer.observe(document.head, { childList: true })
+    return () => observer.disconnect()
+  }, [])
+
+  return null
 }
 
 export function PublicAnalytics({ measurementId }: { measurementId?: string }) {
@@ -33,27 +90,7 @@ export function PublicAnalytics({ measurementId }: { measurementId?: string }) {
       `}
     </Script>
     <DeferredGoogleTag containerId="GT-TWZ9WFGX" />
-    <Script id="meta-pixel" strategy="afterInteractive">
-      {`
-        (function(){
-          var params = new URLSearchParams(window.location.search);
-          if (params.get('utm_source') === 'internal-verify' || params.get('utm_medium') === 'e2e') return;
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '${META_PIXEL_ID}');
-          fbq('track', 'PageView');
-          var queued = window.__mcswMetaQueue || [];
-          window.__mcswMetaQueue = [];
-          for (var i = 0; i < queued.length; i += 1) window.fbq.apply(window, queued[i]);
-        })();
-      `}
-    </Script>
+    <DeferredMetaPixel />
     <AttributionTracker />
     <PhoneClickTracker />
   </>
