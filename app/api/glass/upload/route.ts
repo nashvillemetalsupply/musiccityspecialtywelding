@@ -1,23 +1,36 @@
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client"
+import { issueSignedToken } from "@vercel/blob"
+import { handleUploadPresigned, type HandleUploadPresignedBody } from "@vercel/blob/client"
 import { authorizeGlassUploadToken, finalizeGlassUpload } from "@/lib/glass-uploads"
 
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as HandleUploadBody
-    const response = await handleUpload({
+    const body = await request.json() as HandleUploadPresignedBody
+    const response = await handleUploadPresigned({
       request,
       body,
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
+      getSignedToken: async (pathname, clientPayload) => {
         const authorized = await authorizeGlassUploadToken(pathname, clientPayload)
-        return {
+        const validUntil = Date.now() + 15 * 60 * 1000
+        const token = await issueSignedToken({
+          pathname,
+          operations: ["put"],
           allowedContentTypes: [authorized.contentType],
           maximumSizeInBytes: authorized.maximumSizeInBytes,
-          validUntil: Date.now() + 15 * 60 * 1000,
-          addRandomSuffix: false,
-          allowOverwrite: true,
-          tokenPayload: JSON.stringify({ uploadId: authorized.uploadId }),
+          validUntil,
+        })
+        return {
+          token,
+          urlOptions: {
+            access: "private",
+            allowedContentTypes: [authorized.contentType],
+            maximumSizeInBytes: authorized.maximumSizeInBytes,
+            validUntil,
+            addRandomSuffix: false,
+            allowOverwrite: true,
+            tokenPayload: JSON.stringify({ uploadId: authorized.uploadId }),
+          },
         }
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {

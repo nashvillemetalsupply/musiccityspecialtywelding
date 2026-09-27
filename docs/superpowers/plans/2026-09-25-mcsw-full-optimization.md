@@ -442,11 +442,11 @@ this path fires.
   `app/api/glass/upload/route.ts:30-34` and the finalize route return
   `error.message`. Map to plain-language copy from the voice corpus; log the
   real one. Observation: both routes log the underlying exception and return fixed retry guidance; focused test passes.
-- [ ] **Glass uploads trust the extension.** `finalizeGlassUpload` validates
+- [x] **Glass uploads trust the extension.** `finalizeGlassUpload` validates
   extension and declared MIME only. Reuse `imageTypeMatches` from
   `lib/public-quote.mjs:147-159` on the first bytes. Confirm the Blob store is
   private-only regardless of the `access` value the client sends
-  (`glass-upload.tsx`).
+  (`glass-upload.tsx`). Observation: finalization compares the stored MIME to the first 12 private Blob bytes and server token policy fixes access to private; signature tests pass.
 - [ ] **Photos serve EXIF and GPS.** Strip at serve time in
   `app/api/glass/photo` and the attachment route with `sharp` (already a
   dependency): `.rotate().withMetadata({})`. Strip on upload too where the

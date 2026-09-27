@@ -1,7 +1,8 @@
-import { head } from "@vercel/blob"
+import { get, head } from "@vercel/blob"
 import { getSql } from "@/lib/db"
 import { getGlassJob, hashGlassToken, type GlassJob } from "@/lib/glass"
 import { notifyAll } from "@/lib/notify"
+import { imageTypeMatches } from "@/lib/public-quote.mjs"
 import {
   GLASS_UPLOAD_PENDING_EXPIRY_MS,
   validateCustomerUploadMetadata,
@@ -13,6 +14,7 @@ export const GLASS_UPLOAD_MAX_FILES_PER_DAY = 30
 export const GLASS_UPLOAD_MAX_BYTES_PER_DAY = 100 * 1024 * 1024
 export const GLASS_UPLOAD_MAX_RESERVATIONS_PER_DAY = 60
 export const GLASS_UPLOAD_PENDING_EXPIRY_ERROR = "Upload request expired before the file was sent. Choose the file again."
+const GLASS_RASTER_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"])
 
 export class GlassUploadIntentExpiredError extends Error {
   readonly code = "UPLOAD_RESERVATION_EXPIRED"
@@ -51,6 +53,27 @@ export function validateGlassUploadMetadata(filenameValue: string, contentTypeVa
 
 function validClientId(value: string) {
   return /^[a-z0-9-]{16,80}$/i.test(value)
+}
+
+async function readGlassUploadPrefix(pathname: string): Promise<Uint8Array> {
+  const blob = await get(pathname, { access: "private" })
+  if (!blob || blob.statusCode !== 200 || !blob.stream) throw new Error("Uploaded file could not be read for verification.")
+  const reader = blob.stream.getReader()
+  const prefix = new Uint8Array(12)
+  let offset = 0
+  try {
+    while (offset < prefix.length) {
+      const { done, value } = await reader.read()
+      if (done) break
+      const count = Math.min(value.byteLength, prefix.length - offset)
+      prefix.set(value.subarray(0, count), offset)
+      offset += count
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined)
+    reader.releaseLock()
+  }
+  return prefix.subarray(0, offset)
 }
 
 async function expireStaleGlassUploadIntentsForToken(tokenHash: string) {
@@ -385,6 +408,13 @@ export async function finalizeGlassUpload(input: { uploadId: string; token?: str
         if (current[0]?.expired_at) throw new GlassUploadIntentExpiredError()
       }
       throw new Error("The uploaded file did not match its filed intent.")
+    }
+    if (GLASS_RASTER_CONTENT_TYPES.has(upload.content_type)
+      && !imageTypeMatches(await readGlassUploadPrefix(upload.pathname), upload.content_type)) {
+      await sql`
+        UPDATE glass_uploads SET status = 'failed', error = 'Uploaded file content did not match its declared type.', updated_at = now()
+        WHERE id = ${upload.id}::text AND status <> 'stored' AND expired_at IS NULL`
+      throw new Error("The uploaded file did not match its declared type.")
     }
     // Blob HEAD is an external await. Reacquire the per-link lock and recheck
     // active/unexpired state before allowing the receipt into projection.
