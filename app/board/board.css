@@ -27,7 +27,8 @@
    and scored 9/10, held back by three sentences that still were not true — a
    surviving "Bay" cell, two paraphrased reason strings, and a "drafted" quote
    the schema cannot hold. This pass closes all three, and gives one signal one
-   severity: red is reserved for the two signals weighted 50 and above.
+   severity: the stop chip is reserved for customer waiting or a lead that still
+   needs its first response.
 
    What was fiction and is now gone
    --------------------------------
@@ -35,10 +36,7 @@
    codebase — `grep -ril "\bbay\b" lib components app` returns one CSS class and
    nothing else. A third of the board was reporting state that nothing would
    ever populate. The left pane now shows the engine the product actually runs:
-   BOARD_WEIGHTS from lib/shop-brain-invariants.mjs, which defines "needs you"
-   as five weighted signals — no first response 60, customer waiting 50,
-   promise overdue 45, bounced email 25, follow-up due 20 — and Promises, the
-   system's signature concept, which the old board omitted entirely.
+   five live signals: no first response, customer waiting, promise overdue, bounced email, and follow-up due. Promises remain the system's signature concept that the old board omitted entirely. Ranking stays stage or time based because the current board has no weighted-order control.
 
    Vocabulary is the product's own
    -------------------------------

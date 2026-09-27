@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { BOARD_WEIGHTS, BOARD_SIGNAL_LABELS } from "../lib/shop-brain-invariants.mjs"
+import { BOARD_SIGNAL_LABELS } from "../lib/shop-brain-invariants.mjs"
 import { signalCountsFromCandidates } from "../lib/ops-data-testkit.mjs"
 
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
@@ -42,7 +42,7 @@ test("the Waiting date is identical on UTC servers and Central phones", () => {
 // emits. A previous design round was rejected for paraphrasing these, and a
 // paraphrase here would be invisible until someone read both files together.
 test("every signal kind has a label, and four of them are the query's own words", () => {
-  assert.deepEqual(Object.keys(BOARD_SIGNAL_LABELS).sort(), Object.keys(BOARD_WEIGHTS.signal).sort())
+  assert.deepEqual(Object.keys(BOARD_SIGNAL_LABELS).sort(), ["bounced", "followup", "noreply", "promise", "waiting"])
   for (const reason of ["Needs a call", "Promise overdue", "Follow-up due", "Email did not deliver"]) {
     assert.ok(
       Object.values(BOARD_SIGNAL_LABELS).includes(reason),
@@ -364,7 +364,8 @@ test("board text actions require consent and crew receive no money-derived score
   assert.match(OPS_DATA_SOURCE, /FILTER \(WHERE source IN \('STOP','START'\)\)\)\[1\] = 'STOP' THEN false/)
   assert.match(OPS_DATA_SOURCE, /ELSE bool_or\(effect = 'granted'\)/)
   assert.equal((OPS_DATA_SOURCE.match(/COALESCE\(tc\.text_ready, false\) AS text_ready/g) ?? []).length, 2)
-  assert.match(OPS_DATA_SOURCE, /role === "owner"\s+\? \{ \.\.\.projected, heard_quote_cents: row\.heard_quote_cents == null \? null : Number\(row\.heard_quote_cents\) \}\s+: \{ \.\.\.projected, board_score: 0, board_hot: false, heard_quote_cents: null \}/)
+  assert.match(OPS_DATA_SOURCE, /role === "owner"\s+\? \{ \.\.\.projected, heard_quote_cents: row\.heard_quote_cents == null \? null : Number\(row\.heard_quote_cents\) \}\s+: \{ \.\.\.projected, heard_quote_cents: null \}/)
+  assert.match(OPS_DATA_SOURCE, /board_stop_signal: boolean/)
   assert.match(PREVIEW_SOURCE, /phone && lead\.text_ready && <Link[\s\S]{0,180}>Text<\/Link>/)
   // Text permission lives on the job page; the card keeps one obvious action.
   assert.doesNotMatch(PREVIEW_SOURCE, />Enable texting<\/Link>/)

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto"
 import { existsSync, readFileSync } from "node:fs"
 import test from "node:test"
 import { neonConfig, Pool } from "@neondatabase/serverless"
+// ws is Neon's Node WebSocket transport here; @types/ws supplies its constructor types.
 import WebSocket from "ws"
 import { persistLockedBuildSheet, persistObservedBuildFacts } from "../lib/build-sheets-persistence.mjs"
 

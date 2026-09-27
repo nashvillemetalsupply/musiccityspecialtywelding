@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs"
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const SHELL = read("../app/ops/ops-shell.css")
 const CONTROL = read("../styles/control.css")
-const TOKENS = read("../tokens.css")
+const TOKENS = read("../docs/tokens.css")
 const LEGACY = read("../styles/ops-legacy.css")
 
 // Every marketing token that ops-legacy.css uses inside an .ops-* rule has

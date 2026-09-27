@@ -509,7 +509,7 @@ this path fires.
   survives), `lib/rate-limit.ts` (window arithmetic with injected clock). Policy
   going forward: new tests exercise code, not source text.
   Observation: The six import-and-call behavior files passed all 9 targeted tests for digest, export, ad-spend, shop documents, email templates, and rate limits.
-- [ ] **Dead weight out.** `components/ui/*` (56 files, zero importers outside
+- [x] **Dead weight out.** `components/ui/*` (56 files, zero importers outside
   itself), `hooks/`, `lib/utils.ts`, `components.json`, and every dependency
   listed in the P4 acceptance criterion. Keep `lucide-react` (12 importers) and
   upgrade it to 1.x, fixing renamed icons where typecheck flags them. Delete
@@ -517,7 +517,8 @@ this path fires.
   `app/layout.tsx:7`), `app/ops/intake/job-intake-form.tsx`, the 15 unused
   selectors in `styles/ops-legacy.css`, `autoprefixer` (not in
   `postcss.config`). Consolidate the token roots in five files into one.
-- [ ] **Repo hygiene.** Delete tracked `.hallmark/`, `skills-lock.json`, and
+  Observation: The 14 removed baseline rules cover 15 selector arms, including both arms at line 5629; all 729 tests (727 passed, 0 failed, 2 skipped), typecheck, and lint passed.
+- [x] **Repo hygiene.** Delete tracked `.hallmark/`, `skills-lock.json`, and
   one of the two identical skill mirrors (`.agents/skills/`, 453 KB; keep
   `.claude/skills/`). Move `output/`, `design-previews/`,
   `archive/ops-legacy-2026-08-20/`, `CLOSEOUT-2026-08-03.md`,
@@ -528,15 +529,18 @@ this path fires.
   `.codex/`, `skill-staging/` to `.gitignore`. Delete the untracked lighthouse
   JSONs, logs, `tsconfig.tsbuildinfo`, `error_discovery_data/`, `tmp/`,
   `.scratch/`.
-- [ ] **README.** Currently a UTF-16 one-liner. Rewrite as UTF-8: stack, run,
+  Observation: Documentation/archive paths moved intact, token-file references now follow `docs/tokens.css`, duplicate metadata and skill mirror were removed, scratch junctions were unlinked without touching their main-checkout targets, and no lighthouse JSON/log files were present; memory-pointer update is handled at landing.
+- [x] **README.** Currently a UTF-16 one-liner. Rewrite as UTF-8: stack, run,
   the worktree rule, test commands, QA env vars, deploy = push to main, cron
   topology (Vercel is the daily backstop, Actions carry cadence), env var
   names only.
-- [ ] **Small config.** `tsconfig.json` `target` ES6 to ES2022. Move the
+  Observation: README is UTF-8 and documents the stack, safe worktree/install rule, local run and checks, QA variable names only, push-to-main deploy, and Vercel/Actions schedule split.
+- [x] **Small config.** `tsconfig.json` `target` ES6 to ES2022. Move the
   `prebuild` `mkdirSync('.backups')` (`package.json:10`) into
   `scripts/mobile-crm-repro.mjs`. Comment why `ws`/`@types/ws` exist. Patch-bump
   `ai`, `@ai-sdk/gateway`, `@vercel/blob`, `resend`, `tailwindcss`. Stay on
   zod 3 and TypeScript 5.9.
+  Observation: Target is ES2022, backup setup runs only in capture repros, ai/gateway/tailwindcss are patch-bumped, blob/resend were already at their latest patches, and the lockfile changed without touching shared `node_modules`.
 
 ## P5 — Public site: performance, SEO, correctness
 

@@ -11,7 +11,7 @@ import type { OperatorRole } from "@/lib/operators"
 import { AD_CHANNELS } from "@/lib/ad-spend.mjs"
 import { dniNumber } from "@/lib/dni.mjs"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
-import { BOARD_WEIGHTS } from "@/lib/shop-brain-invariants.mjs"
+import { BOARD_SIGNAL_LABELS } from "@/lib/shop-brain-invariants.mjs"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { projectClaimForRole, projectCommitmentForRole, redactCrewText } from "@/lib/visibility"
 
@@ -31,22 +31,14 @@ export type LeadFilter = {
 export const JOB_BOARD_STAGES = ["attention", "shop", "waiting", "ready", "closed", "board"] as const
 export type JobBoardStage = (typeof JOB_BOARD_STAGES)[number]
 export const BOARD_SIGNAL_KINDS = Object.freeze(
-  Object.keys(BOARD_WEIGHTS.signal) as BoardSignalKind[],
+  Object.keys(BOARD_SIGNAL_LABELS) as BoardSignalKind[],
 )
-export type BoardSignal = {
-  kind: BoardSignalKind
-  reason: string
-  hoursLate: number
-  weight: number
-}
-export type BoardJobOrder = "stage" | "weight" | "oldest" | "newest"
+export type BoardJobOrder = "stage" | "oldest" | "newest"
 export type BoardJobRow = LeadRow & {
   board_stage: Exclude<JobBoardStage, "board">
   board_reason: string
   board_since: string
-  board_signals: BoardSignal[]
-  board_score: number
-  board_hot: boolean
+  board_stop_signal: boolean
   text_ready: boolean
   // A price the extractor heard on this job's call, still waiting for the
   // owner to confirm it (the quote-capture slip). Money, so crew get null.
@@ -214,14 +206,10 @@ export async function listBoardJobs(
   // without forcing the current call several thousand pixels down the page.
   const pageSize = Math.min(Math.max(Math.floor(options.pageSize ?? 8), 1), 50)
   const offset = (page - 1) * pageSize
-  const order: BoardJobOrder = options.order === "weight" ? "weight" : options.order === "oldest" ? "oldest" : options.order === "newest" ? "newest" : "stage"
+  const order: BoardJobOrder = options.order === "oldest" ? "oldest" : options.order === "newest" ? "newest" : "stage"
   const signal: BoardSignalKind | "" = options.signal && BOARD_SIGNAL_KINDS.includes(options.signal)
     ? options.signal
     : ""
-  const w = BOARD_WEIGHTS
-  const cap = w.latenessCapMultiple
-  const half = w.latenessHalfLifeHours
-
   const rows = (await sql`
     WITH comms AS (
       SELECT COALESCE(event_lead.routed_to_lead_id, e.lead_id) AS lead_id,
@@ -285,23 +273,13 @@ export async function listBoardJobs(
         END AS reason,
         c.inbound_at AS waiting_since,
         0 AS priority,
-        'waiting'::text AS kind,
-        GREATEST(0, EXTRACT(EPOCH FROM (now() - c.inbound_at)) / 3600.0) AS hours_late,
-        ${w.signal.waiting}::numeric * LEAST(
-          ${cap}::numeric,
-          1 + GREATEST(0, EXTRACT(EPOCH FROM (now() - c.inbound_at)) / 3600.0) / ${half}::numeric
-        ) AS weight
+        'waiting'::text AS kind
       FROM comms c
       WHERE c.inbound_at <= now() - interval '30 minutes'
         AND (c.outbound_at IS NULL OR c.outbound_at < c.inbound_at)
       UNION ALL
       SELECT c.lead_id, 'Promise overdue'::text, c.due_at, 1,
-        'promise'::text,
-        GREATEST(0, EXTRACT(EPOCH FROM (now() - c.due_at)) / 3600.0),
-        ${w.signal.promise}::numeric * LEAST(
-          ${cap}::numeric,
-          1 + GREATEST(0, EXTRACT(EPOCH FROM (now() - c.due_at)) / 3600.0) / ${half}::numeric
-        )
+        'promise'::text
       FROM commitments c
       LEFT JOIN leads commitment_lead ON commitment_lead.id = c.lead_id
       LEFT JOIN people commitment_person ON commitment_person.id = c.person_id
@@ -337,40 +315,19 @@ export async function listBoardJobs(
         ))
       UNION ALL
       SELECT l.id, 'Follow-up due'::text, l.next_follow_up_at, 2,
-        'followup'::text,
-        GREATEST(0, EXTRACT(EPOCH FROM (now() - l.next_follow_up_at)) / 3600.0),
-        ${w.signal.followup}::numeric * LEAST(
-          ${cap}::numeric,
-          1 + GREATEST(0, EXTRACT(EPOCH FROM (now() - l.next_follow_up_at)) / 3600.0) / ${half}::numeric
-        )
+        'followup'::text
       FROM leads l WHERE l.next_follow_up_at IS NOT NULL AND l.next_follow_up_at <= now()
       UNION ALL
       SELECT l.id, 'Needs a call'::text, l.created_at, 3,
-        'noreply'::text,
-        GREATEST(0, EXTRACT(EPOCH FROM (now() - l.created_at)) / 3600.0),
-        ${w.signal.noreply}::numeric * LEAST(
-          ${cap}::numeric,
-          1 + GREATEST(0, EXTRACT(EPOCH FROM (now() - l.created_at)) / 3600.0) / ${half}::numeric
-        )
+        'noreply'::text
       FROM leads l WHERE l.first_response_at IS NULL
       UNION ALL
       SELECT l.id, 'Email did not deliver'::text, l.updated_at, 4,
-        'bounced'::text,
-        GREATEST(0, EXTRACT(EPOCH FROM (now() - l.updated_at)) / 3600.0),
-        ${w.signal.bounced}::numeric * LEAST(
-          ${cap}::numeric,
-          1 + GREATEST(0, EXTRACT(EPOCH FROM (now() - l.updated_at)) / 3600.0) / ${half}::numeric
-        )
+        'bounced'::text
       FROM leads l WHERE l.email_delivery_status = 'failed'
     ), needs AS (
       SELECT lead_id,
-        jsonb_agg(jsonb_build_object(
-          'kind', kind,
-          'reason', reason,
-          'hoursLate', round(hours_late::numeric, 2),
-          'weight', round(weight::numeric, 2)
-        ) ORDER BY weight DESC, priority ASC) AS signals,
-        sum(weight) AS signal_weight,
+        bool_or(kind IN ('waiting','noreply')) AS stop_signal,
         (array_agg(waiting_since ORDER BY priority ASC, waiting_since ASC))[1] AS waiting_since,
         (array_agg(reason ORDER BY priority ASC, waiting_since ASC))[1] AS reason
       FROM candidates
@@ -408,29 +365,11 @@ export async function listBoardJobs(
           ELSE 'Waiting'
         END AS board_reason,
         COALESCE(n.waiting_since, l.completed_at, l.work_started_at, l.updated_at, l.created_at) AS board_since,
-        COALESCE(n.signals, '[]'::jsonb) AS board_signals,
-        round(
-          COALESCE(n.signal_weight, 0)
-          + LEAST(
-              ${w.valueCapPoints}::numeric,
-              GREATEST(0, COALESCE(l.invoice_total_cents, l.estimate_value_cents, 0)::numeric)
-                / ${w.valueDivisorCents}::numeric
-            )
-          + LEAST(
-              ${w.repeatCapPoints}::numeric,
-              COALESCE(pc.prior_jobs, 0)::numeric * ${w.repeatPointsPerPriorJob}::numeric
-            )
-        )::int AS board_score
+        COALESCE(n.stop_signal, false) AS board_stop_signal
       FROM leads l
       LEFT JOIN operators o ON o.id = l.assigned_operator_id
       LEFT JOIN text_consent tc ON tc.phone_e164 = l.phone
       LEFT JOIN needs n ON n.lead_id = l.id
-      LEFT JOIN (
-        SELECT person_id, is_test, GREATEST(0, count(*) - 1)::int AS prior_jobs
-        FROM leads
-        WHERE person_id IS NOT NULL AND routed_to_lead_id IS NULL
-        GROUP BY person_id, is_test
-      ) pc ON pc.person_id = l.person_id AND pc.is_test = l.is_test
       WHERE l.status NOT IN ('lost','spam')
         AND l.routed_to_lead_id IS NULL
         AND (
@@ -473,8 +412,7 @@ export async function listBoardJobs(
           ELSE 'Handed off'
         END AS board_reason,
         l.handed_off_at AS board_since,
-        '[]'::jsonb AS board_signals,
-        0 AS board_score
+        false::boolean AS board_stop_signal
       FROM leads l
       LEFT JOIN operators o ON o.id = l.assigned_operator_id
       LEFT JOIN text_consent tc ON tc.phone_e164 = l.phone
@@ -531,14 +469,12 @@ export async function listBoardJobs(
         -- newest is the board's default since 2026-09-03: the owner reads the
         -- list top-down and wants the job that just came in at the top.
         CASE WHEN ${order}::text = 'newest' THEN f.created_at END DESC NULLS LAST,
-        CASE WHEN ${order}::text = 'weight' THEN -f.board_score END ASC NULLS LAST,
-        CASE WHEN ${order}::text = 'weight' THEN f.board_since END ASC NULLS LAST,
         CASE WHEN ${order}::text = 'stage' AND f.board_stage = 'attention' THEN f.board_since END ASC NULLS LAST,
         CASE WHEN ${order}::text = 'stage' THEN f.updated_at END DESC NULLS LAST,
         f.id DESC
       LIMIT ${pageSize + 1}::int OFFSET ${offset}::int
     )
-    SELECT p.*, (p.board_score >= ${w.hotThreshold}::int) AS board_hot, bc.*, rc.result_total,
+    SELECT p.*, bc.*, rc.result_total,
       sc.signal_counts, cc.closed_count, hq.heard_quote_cents
     FROM board_counts bc
     CROSS JOIN result_count rc
@@ -578,7 +514,7 @@ export async function listBoardJobs(
       const projected = projectLeadForRole(row, role)
       return role === "owner"
         ? { ...projected, heard_quote_cents: row.heard_quote_cents == null ? null : Number(row.heard_quote_cents) }
-        : { ...projected, board_score: 0, board_hot: false, heard_quote_cents: null }
+        : { ...projected, heard_quote_cents: null }
     })
   return {
     items,
