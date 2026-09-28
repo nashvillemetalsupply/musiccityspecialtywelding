@@ -61,7 +61,7 @@ Plan: `2026-09-25-mcsw-full-optimization.md` (same folder). Generated 2026-09-25
 | S14 | P6b: base64 logo, theme dedupe, `/ops` hops, iOS install path, social link, sticky action strip + owner loop (screenshot sign-off first) | Opus 5.5 | medium | M | S13 | open |
 | S15 | P2d: `is_test` column denormalization across six tables, backfill, writers | Opus 5.5 | high | M | S06 | open |
 | S16 | P3c: CSP report-only + report endpoint + HSTS; enforce after one week clean | Opus 5.5 | high | S | S12, S13 | open |
-| S17 | P7a: bundle budget in CI, SQL cast guard, evals harness | Opus 5.5 | medium | M | S07 | open |
+| S17 | P7a: bundle budget in CI, SQL cast guard, evals harness | Opus 5.5 | medium | M | S07 | done (landed 69cd272, factory-mcsw-s17; post-build bundle budget on manifest bytes, thresholds +10% over the 09-20 .next artifact that predates S11-S13, first production build enforces them; AST SQL cast rule 0 findings; eval harness skips unless MCSW_RUN_AI_EVALS=1, not run against a model) |
 | S18 | P7b: strip-types migration (`lib/*.mjs` → `.ts`, delete 25 `.d.mts`) | Opus 5.5 | medium | M | S00, S07 | open |
 | S19 | P7c: photo-to-quote draft (owner sign-off on flow first) | Opus 5.5 | high | L | S10, S15 | open |
 | S20 | P7d: follow-up cadence from won jobs; preview-based QA gate workflow | Opus 5.5 | high | M | S07, S13 | open |
