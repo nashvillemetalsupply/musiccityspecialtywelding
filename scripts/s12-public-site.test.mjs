@@ -4,6 +4,7 @@ import test from "node:test"
 import ts from "typescript"
 import nextConfigModule from "../next.config.mjs"
 import { isQuoteHoneypotFilled, QUOTE_HONEYPOT_FIELD, quoteSubmissionOutcome } from "../lib/public-quote.mjs"
+import { enforceShopPhoneFallbackPolicy } from "../lib/shop-contact-policy.mjs"
 
 const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8")
 const serviceAreasPage = readFileSync(new URL("../app/service-areas/page.tsx", import.meta.url), "utf8")
@@ -26,6 +27,7 @@ const navbarComponent = readFileSync(new URL("../components/navbar.tsx", import.
 const footerComponent = readFileSync(new URL("../components/footer.tsx", import.meta.url), "utf8")
 const notFoundPage = readFileSync(new URL("../app/not-found.tsx", import.meta.url), "utf8")
 const sitemapSource = readFileSync(new URL("../app/sitemap.ts", import.meta.url), "utf8")
+const shopContactSource = readFileSync(new URL("../lib/shop-contact.ts", import.meta.url), "utf8")
 const sitemapTestModule = await import(`data:text/javascript;base64,${Buffer.from(
   ts.transpileModule(
     sitemapSource.replace(
@@ -165,4 +167,18 @@ test("Access-Control-Allow-Origin only applies to API routes", async () => {
   )
 
   assert.ok(originHeaders.every(({ source }) => source.startsWith("/api/")))
+})
+
+test("shop phone fallback throws only in production and logs in preview", () => {
+  const warnings = []
+  assert.throws(
+    () => enforceShopPhoneFallbackPolicy({ isFallback: true, nodeEnv: "production", vercelEnv: "production", warn: (message) => warnings.push(message) }),
+    /must be configured in production/
+  )
+  assert.equal(enforceShopPhoneFallbackPolicy({ isFallback: true, nodeEnv: "production", vercelEnv: "preview", warn: (message) => warnings.push(message) }), "fallback")
+  assert.equal(enforceShopPhoneFallbackPolicy({ isFallback: true, nodeEnv: "test", vercelEnv: "production", warn: (message) => warnings.push(message) }), "fallback")
+  assert.equal(enforceShopPhoneFallbackPolicy({ isFallback: false, nodeEnv: "production", vercelEnv: "production", warn: (message) => warnings.push(message) }), "configured")
+  assert.equal(warnings.length, 1)
+  assert.match(warnings[0], /preview is using the fallback number/)
+  assert.match(shopContactSource, /enforceShopPhoneFallbackPolicy\(\{\s*isFallback,\s*nodeEnv: process\.env\.NODE_ENV,\s*vercelEnv: process\.env\.VERCEL_ENV,/)
 })
