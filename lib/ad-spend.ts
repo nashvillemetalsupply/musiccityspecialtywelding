@@ -80,12 +80,12 @@ export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, p
   const spent = `${wholeDollars(spendCents)} in ads${asOf} ÷ ${leads} in ${monthLabel}`
   const channelsLine = perChannelReady
     ? recorded.map((channel) => channel.leads > 0
-      ? `${AD_CHANNEL_LABELS[channel.channel]} ${wholeDollars(costPerLeadCents(channel.spendCents, channel.leads) as number)}/lead`
+      ? `${AD_CHANNEL_LABELS[channel.channel]} ${wholeDollars(costPerLeadCents(channel.spendCents, channel.leads)!)}/lead`
       : `${AD_CHANNEL_LABELS[channel.channel]} ${wholeDollars(channel.spendCents)}, no leads`).join(" · ")
     : null
   if (totalLeads === 0) return { big: wholeDollars(spendCents), beside: null, under: `${spent}${stale}`, channelsLine }
   return {
-    big: wholeDollars(costPerLeadCents(spendCents, totalLeads) as number),
+    big: wholeDollars(costPerLeadCents(spendCents, totalLeads)!),
     beside: "per lead",
     under: `${spent}, any source${stale}`,
     channelsLine,
@@ -99,20 +99,19 @@ export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, p
 // month is optional and YYYY-MM. Omitted means "the Central month in progress",
 // which is what a nightly push wants; naming it is how a backfill works without
 // the server's clock deciding. Returned as YYYY-MM-01 or null.
-export function parseAdSpendPayload(body: unknown):
+export function parseAdSpendPayload(body: any):
   | { ok: false; error: string; updates?: never; monthStart?: never }
   | { ok: true; error?: never; monthStart: string | null; updates: Array<{ channel: AdChannel; cents: number }> } {
   if (!body || typeof body !== "object") return { ok: false, error: "Body must be a JSON object." }
 
-  const rawMonthValue = (body as Record<string, unknown>).month
-  const rawMonth = typeof rawMonthValue === "string" ? rawMonthValue.trim() : ""
+  const rawMonth = typeof body.month === "string" ? body.month.trim() : ""
   if (rawMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(rawMonth)) {
     return { ok: false, error: "month must be YYYY-MM." }
   }
 
   const updates: Array<{ channel: AdChannel; cents: number }> = []
   for (const channel of AD_CHANNELS) {
-    const parsed = parseSpendDollars((body as Record<string, unknown>)[channel])
+    const parsed = parseSpendDollars(body[channel])
     if (!parsed.ok) return { ok: false, error: `${channel} must be dollars, like 450 or 450.75.` }
     if (parsed.cents === null) continue
     updates.push({ channel, cents: parsed.cents })

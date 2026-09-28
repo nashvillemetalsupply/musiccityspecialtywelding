@@ -68,7 +68,7 @@ const REQUIRED_GATE_FACTS = Object.freeze([
 
 function deepFreeze<T>(value: T): T {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value
-  for (const nested of Object.values(value as Record<string, unknown>)) deepFreeze(nested)
+  for (const nested of Object.values(value)) deepFreeze(nested)
   return Object.freeze(value) as T
 }
 
@@ -273,8 +273,8 @@ export function lockBuildSheet(input: {
   const accepted = new Map<number, BuildDecision>(draft.decisions.map((decision) => [Number(decision.claimId), decision]))
   const facts = draft.claims.flatMap((claim): Array<BuildClaim & { decisionState: "shop-confirmed" | "working-number" }> => {
     const decision = accepted.get(Number(claim.id))
-    if (!decision || (decision.state !== "shop-confirmed" && decision.state !== "working-number")) return []
-    return [{ ...claim, decisionState: decision.state }]
+    if (!decision || !["shop-confirmed", "working-number"].includes(decision.state as never)) return []
+    return [{ ...claim, decisionState: decision.state as "shop-confirmed" | "working-number" }]
   })
   if (!facts.length) throw new Error("Confirm a fact or choose a shop estimate before locking a Build Sheet.")
   const jobId = Number(input.jobId)
