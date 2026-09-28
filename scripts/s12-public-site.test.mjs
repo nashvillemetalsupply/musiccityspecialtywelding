@@ -21,6 +21,8 @@ const servicePagesTestModule = await import(`data:text/javascript;base64,${Buffe
 ).toString("base64")}`)
 const contactComponent = readFileSync(new URL("../components/mainstreet-contact.tsx", import.meta.url), "utf8")
 const quoteRoute = readFileSync(new URL("../app/api/quote/route.ts", import.meta.url), "utf8")
+const navbarComponent = readFileSync(new URL("../components/navbar.tsx", import.meta.url), "utf8")
+const footerComponent = readFileSync(new URL("../components/footer.tsx", import.meta.url), "utf8")
 
 test("home sign keeps its visual text and names the service and city accessibly", () => {
   assert.match(
@@ -45,6 +47,17 @@ test("service pages offer the existing quote form below their content", () => {
   assert.match(servicePage, /href="#contact"/)
   assert.match(servicePage, /<MobileQuickActions quoteHref="#contact" phoneHref=\{shopPhone\.href\} \/>/)
   assert.doesNotMatch(servicePage, /href="\/#contact"|quoteHref="\/#contact"/)
+})
+
+test("home page uses the shared shell without changing its skip link or footer crest", () => {
+  assert.match(homePage, /<Navbar home \/>/)
+  assert.match(homePage, /<Footer home \/>/)
+  assert.doesNotMatch(homePage, /<header className="ms-nav"|<footer className="ms-footer"/)
+  assert.match(navbarComponent, /home && <PublicSkipLink label="Skip to the work" \/>/)
+  assert.match(navbarComponent, /home \? "ms-nav" : "ms-site ms-nav"/)
+  assert.match(navbarComponent, /href=\{home \? "#home" : "\/"\}/)
+  assert.match(footerComponent, /home && <ShopCrest className="wm-art wm-crest" style=\{\{ width: "7\.5rem", top: "2\.6rem", right: "6%", opacity: 0\.35 \}\} \/>/)
+  assert.match(footerComponent, /mailto:sales@musiccityspecialtywelding\.com">sales@musiccityspecialtywelding\.com/)
 })
 
 test("service JSON-LD has FAQ and breadcrumb schema with absolute URLs", () => {
