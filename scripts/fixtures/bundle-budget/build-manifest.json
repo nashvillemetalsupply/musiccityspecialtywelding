@@ -1,0 +1,7 @@
+{
+  "rootMainFiles": ["static/chunks/runtime.js"],
+  "pages": {
+    "/": [],
+    "/board": []
+  }
+}

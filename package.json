@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "next build",
+    "build": "next build && node scripts/bundle-budget.mjs",
     "dev": "next dev",
     "lint": "eslint .",
     "migrate": "node scripts/migrate.mjs",

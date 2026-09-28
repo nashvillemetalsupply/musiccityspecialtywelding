@@ -1,0 +1,43 @@
+{
+  "unit": "uncompressed bytes",
+  "measuredAt": "2026-09-27",
+  "measurement": "Cookie-free, read-only GETs of the public production route HTML and each referenced /_next/static JavaScript file with Accept-Encoding: identity.",
+  "routes": {
+    "/": {
+      "url": "https://musiccityspecialtywelding.com/",
+      "status": 200,
+      "totalBytes": 617584,
+      "thresholdBytes": 679343,
+      "scripts": [
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/1u50jxu5lohec.js", "status": 200, "bytes": 31916 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/1oy5sj36_bx-r.js", "status": 200, "bytes": 228424 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/1eibhq3l7s4k1.js", "status": 200, "bytes": 155444 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/turbopack-2apolii5a3c43.js", "status": 200, "bytes": 10986 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/07wcc6opemajw.js", "status": 200, "bytes": 11957 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/2corl6wyj4669.js", "status": 200, "bytes": 14377 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/2c_mv_l9d8kv2.js", "status": 200, "bytes": 38038 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/0c0hxoamwjsbw.js", "status": 200, "bytes": 112594 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/3bo-ic5uhosxz.js", "status": 200, "bytes": 13848 }
+      ]
+    },
+    "/board": {
+      "url": "https://musiccityspecialtywelding.com/board",
+      "status": 200,
+      "totalBytes": 628218,
+      "thresholdBytes": 691040,
+      "scripts": [
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/1u50jxu5lohec.js", "status": 200, "bytes": 31916 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/1oy5sj36_bx-r.js", "status": 200, "bytes": 228424 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/1eibhq3l7s4k1.js", "status": 200, "bytes": 155444 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/turbopack-2apolii5a3c43.js", "status": 200, "bytes": 10986 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/07wcc6opemajw.js", "status": 200, "bytes": 11957 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/2corl6wyj4669.js", "status": 200, "bytes": 14377 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/03nlifkr_qn72.js", "status": 200, "bytes": 8868 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/26m00ep2zgmex.js", "status": 200, "bytes": 29126 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/274h2yhuj-3ew.js", "status": 200, "bytes": 10678 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/0c0hxoamwjsbw.js", "status": 200, "bytes": 112594 },
+        { "url": "https://musiccityspecialtywelding.com/_next/static/immutable/chunks/3bo-ic5uhosxz.js", "status": 200, "bytes": 13848 }
+      ]
+    }
+  }
+}
