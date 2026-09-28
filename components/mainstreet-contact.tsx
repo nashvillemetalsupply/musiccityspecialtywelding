@@ -6,7 +6,7 @@ import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
 import { captureAttribution } from "@/lib/attribution"
 import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID, queueMeasurementEvent, reportMetaLead } from "@/lib/measurement"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
-import { QUOTE_SERVICE_OPTIONS } from "@/lib/public-quote.mjs"
+import { QUOTE_HONEYPOT_FIELD, QUOTE_SERVICE_OPTIONS, quoteSubmissionOutcome } from "@/lib/public-quote.mjs"
 
 declare global {
   interface Window {
@@ -25,7 +25,7 @@ type QuoteForm = {
   service: string
   message: string
   email: string
-  company: string
+  [QUOTE_HONEYPOT_FIELD]: string
   textConsent: boolean
 }
 
@@ -35,7 +35,7 @@ const emptyForm: QuoteForm = {
   service: "",
   message: "",
   email: "",
-  company: "",
+  [QUOTE_HONEYPOT_FIELD]: "",
   textConsent: false,
 }
 
@@ -135,7 +135,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
     payload.append("message", formData.message)
     payload.append("email", formData.email)
     payload.append("preferredContact", "Call")
-    payload.append("company", formData.company)
+    payload.append(QUOTE_HONEYPOT_FIELD, formData[QUOTE_HONEYPOT_FIELD])
     if (formData.textConsent) payload.append("textConsent", "yes")
     const attribution = captureAttribution()
     for (const [key, value] of Object.entries(attribution)) {
@@ -149,25 +149,28 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
       if (!contentType?.includes("application/json")) throw new Error("The server returned an invalid response.")
       const data = await response.json()
       if (!response.ok) throw new Error(data?.error || "The request did not go through.")
-      if (data?.accepted !== true) throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
+      const outcome = quoteSubmissionOutcome(data)
+      if (outcome === "rejected") throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
 
       // The server suppresses text updates (prior STOP or unverifiable
       // permission) and returns a phone-free warning with the success body.
-      if (data?.warning) {
+      if (outcome === "accepted" && data?.warning) {
         setWarning(data.warning)
       }
 
-      if (GA_MEASUREMENT_ID) {
-        queueMeasurementEvent("generate_lead", {
-          send_to: GA_MEASUREMENT_ID,
-          lead_source: "website_quote_form",
-          service_requested: formData.service,
-        })
+      if (outcome === "accepted") {
+        if (GA_MEASUREMENT_ID) {
+          queueMeasurementEvent("generate_lead", {
+            send_to: GA_MEASUREMENT_ID,
+            lead_source: "website_quote_form",
+            service_requested: formData.service,
+          })
+        }
+        if (ADS_CONVERSION_SEND_TO) {
+          queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
+        }
+        reportMetaLead()
       }
-      if (ADS_CONVERSION_SEND_TO) {
-        queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
-      }
-      reportMetaLead()
 
       previews.forEach((url) => URL.revokeObjectURL(url))
       setPreviews([])
@@ -263,7 +266,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
           </div>
         )}
 
-        <input className="ms-honeypot" name="company" value={formData.company} onChange={updateField} tabIndex={-1} autoComplete="off" aria-hidden="true" />
+        <input className="ms-honeypot" name={QUOTE_HONEYPOT_FIELD} value={formData[QUOTE_HONEYPOT_FIELD]} onChange={updateField} tabIndex={-1} autoComplete="off" aria-hidden="true" />
 
         {status !== "idle" && (
           <p className={`ms-form-status ${status === "success" ? "is-success" : "is-error"}`} role={status === "error" ? "alert" : "status"}>{message}</p>
