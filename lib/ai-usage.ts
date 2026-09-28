@@ -9,7 +9,7 @@ export type AiCallOptions = { operation: string; provider?: string; model: strin
 
 export type AiCallRecord = AiCallOptions & { ok: boolean; usage?: unknown; error?: string }
 
-export const AI_MAX_RETRIES: 2 = 2
+export const AI_MAX_RETRIES = 2 as const
 
 export async function retryAiRequest<T>(run: () => Promise<T>, shouldRetryResponse: (response: T) => boolean, maxRetries: number = AI_MAX_RETRIES, wait: (ms: number) => Promise<unknown> = (ms) => new Promise((resolve) => setTimeout(resolve, ms))) : Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {

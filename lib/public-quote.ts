@@ -11,7 +11,7 @@ export const QUOTE_SERVICE_OPTIONS: readonly string[] = Object.freeze([
   "Not Sure / Other",
 ])
 
-export const QUOTE_HONEYPOT_FIELD: "mcsw_9f3a2" = "mcsw_9f3a2"
+export const QUOTE_HONEYPOT_FIELD = "mcsw_9f3a2" as const
 
 export function isQuoteHoneypotFilled(formData: Pick<FormData, "get">) : boolean {
   const value = formData?.get(QUOTE_HONEYPOT_FIELD)
