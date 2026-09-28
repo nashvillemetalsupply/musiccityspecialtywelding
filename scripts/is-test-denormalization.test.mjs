@@ -153,3 +153,61 @@ test("existing read predicates and the shared backfill classifier keep every int
   assert.equal(fakeSqlIsTestRow({ text: "ordinary body with [INTERNAL TEST] marker" }), true)
   assert.equal(fakeSqlIsTestRow({ detail: { isTest: true }, text: "ordinary body" }), true)
 })
+
+test("each backfill covers the fields its current read predicates classify", () => {
+  const steps = statementBodies(migration)
+  const helper = steps.find((step) => step.startsWith("CREATE OR REPLACE FUNCTION mcsw_is_test_row("))
+  const backfills = new Map(steps
+    .filter((step) => /^UPDATE (events|claims|commitments|calls|messages|notifications) \w+ SET is_test = true/m.test(step))
+    .map((step) => [step.match(/^UPDATE (\w+)/m)[1], step]))
+
+  // Events readers disagree about linked person fields; calls readers mix
+  // ILIKE and a case-sensitive marker check. The helper deliberately takes
+  // their union, while each table backfill supplies the fields its row owns.
+  const readerChecks = {
+    events: [
+      ["../lib/events.ts", /e\.body, e\.crew_body, e\.detail::text/],
+      ["../lib/event-access.ts", /e\.body, e\.crew_body, e\.detail::text/],
+      ["../lib/ops-pulse.mjs", /e\.body, e\.crew_body, e\.detail::text/],
+      ["../lib/ops-data.ts", /e\.body, e\.crew_body, e\.detail::text/],
+    ],
+    claims: [["../lib/ops-data.ts", /c\.value::text/]],
+    commitments: [
+      ["../lib/commitments.ts", /c\.summary, c\.crew_summary[\s\S]*?source\.body, source\.crew_body, source\.detail::text/],
+      ["../app/api/ops/brief/route.ts", /c\.summary, c\.crew_summary, source\.body, source\.crew_body, source\.detail::text/],
+    ],
+    calls: [
+      ["../app/api/health/route.ts", /lower\(COALESCE\(c\.detail->>'isTest', 'false'\)\) <> 'true'[\s\S]*?c\.detail->>'callerName'.*?NOT ILIKE/],
+      ["../lib/ops-pulse.mjs", /COALESCE\(d\.is_test, false\) = false[\s\S]*?c\.detail->>'callerName'.*?NOT ILIKE/],
+      ["../lib/delivery-errors.ts", /c\.detail->>'isTest'[\s\S]*?c\.detail->>'callerName'.*?LIKE/],
+    ],
+    messages: [["../app/api/ops/attachment/route.ts", /COALESCE\(m\.body, ''\) ILIKE/]],
+    notifications: [["../lib/ops-pulse.mjs", /n\.title, n\.body, e\.body, e\.crew_body, e\.detail::text/]],
+  }
+  const backfillArguments = {
+    events: /mcsw_is_test_row\(e\.lead_id, e\.person_id, NULL::bigint, NULL::text,\s*e\.detail, concat_ws\(' ', e\.body, e\.crew_body, e\.detail::text\)\)/,
+    claims: /mcsw_is_test_row\([\s\S]*?CASE WHEN c\.subject_type = 'lead' THEN c\.subject_id END,[\s\S]*?CASE WHEN c\.subject_type = 'person' THEN c\.subject_id END,[\s\S]*?c\.source_event_id, NULL::text, NULL::jsonb, c\.value::text\s*\)/,
+    commitments: /mcsw_is_test_row\(c\.lead_id, c\.person_id, c\.source_event_id, NULL::text,\s*NULL::jsonb, concat_ws\(' ', c\.summary, c\.crew_summary\)\)/,
+    calls: /mcsw_is_test_row\(c\.lead_id, c\.person_id, NULL::bigint, c\.twilio_sid,\s*c\.detail, COALESCE\(c\.detail->>'callerName', ''\)\)/,
+    messages: /mcsw_is_test_row\(m\.lead_id, m\.person_id, NULL::bigint, NULL::text,\s*NULL::jsonb, m\.body\)/,
+    notifications: /mcsw_is_test_row\(NULL::bigint, NULL::bigint, n\.source_event_id, NULL::text,\s*NULL::jsonb, concat_ws\(' ', n\.title, n\.body\)\)/,
+  }
+  const helperInputs = [
+    "lead.is_test", "person.is_test", "lead_person.is_test",
+    "source_event_lead.is_test", "source_event_person.is_test", "source_event_lead_person.is_test",
+    "p_detail->>'isTest'", "source_event.detail->>'isTest'", "draft.is_test = true",
+    "p_text", "p_detail::text", "source_event.body", "source_event.crew_body", "source_event.detail::text",
+    "person.phones::text", "person.emails::text", "lead_person.phones::text", "lead_person.emails::text",
+  ]
+
+  for (const table of tableNames) {
+    const backfill = backfills.get(table)
+    assert.ok(backfill, `${table} has a backfill`)
+    assert.match(backfill, backfillArguments[table], `${table} passes its persisted classifier inputs`)
+    for (const [path, predicate] of readerChecks[table]) {
+      const reader = readFileSync(new URL(path, import.meta.url), "utf8")
+      assert.match(reader, predicate, `${table} read predicate in ${path} stays covered`)
+    }
+  }
+  for (const input of helperInputs) assert.ok(helper.includes(input), `shared backfill union includes ${input}`)
+})
