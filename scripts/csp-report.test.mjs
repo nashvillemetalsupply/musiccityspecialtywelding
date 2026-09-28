@@ -120,11 +120,14 @@ test("stores only redacted diagnostic fields and marks test context", async () =
 })
 
 test("garbage, unsupported media types, and storage failures all receive 204", async () => {
+  let rateLimitChecks = 0
   const post = endpoint({
+    rateLimit: async () => { rateLimitChecks += 1; return false },
     writeTroubleReport: async () => { throw new Error("persistence unavailable") },
   })
   assert.equal((await post(request("application/csp-report", "not-json"))).status, 204)
   assert.equal((await post(request("text/plain", "garbage"))).status, 204)
+  assert.equal(rateLimitChecks, 2, "malformed and unsupported reports also consume the client limit")
 
   const valid = JSON.stringify({ "csp-report": { "blocked-uri": "inline", "effective-directive": "script-src" } })
   assert.equal((await post(request("application/csp-report", valid))).status, 204)
