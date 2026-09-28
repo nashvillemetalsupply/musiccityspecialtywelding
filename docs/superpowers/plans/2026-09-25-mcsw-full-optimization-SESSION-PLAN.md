@@ -57,7 +57,7 @@ Plan: `2026-09-25-mcsw-full-optimization.md` (same folder). Generated 2026-09-25
 | S10 | P3b: EXIF/GPS strip, glass token expiry, HMAC media URLs, view-counter beacon, customer SMS quiet hours, `payment.reversed` | Opus 5.5 | high | M | S09 | done (landed 9860659, factory-mcsw-s10-r3; run migrate before deploying: messages.send_after, messages.quiet_hours_exempt, glass_links expiry backfill) |
 | S11 | P5a: Lighthouse script + baseline, hero image, pixel defer, dead-CSS retirement with fingerprint proof | Opus 5.5 | medium | M | S08 | open |
 | S12 | P5b: H1, city links, FAQPage + breadcrumb + geo/priceRange, honeypot, quote form on service pages, header/footer dedupe, favicon/404/sitemap/ACAO, NAP fallback throws | Opus 5.5 | medium | M | S11 | open |
-| S13 | P6a: manifest scope, push `url` deep link, offline SWR + banner, signed-out login, push-toggle error, `revalidatePath` | Opus 5.5 | high | M | S08 | open |
+| S13 | P6a: manifest scope, push `url` deep link, offline SWR + banner, signed-out login, push-toggle error, `revalidatePath` | Opus 5.5 | high | M | S08 | done (landed af9ca13, factory-mcsw-s13-r2; manifest scope `/` + start_url `/board`, signed-out `/board` redirects to `/ops`; offline cache is session-keyed and cleared on logout; on-device install and push walk not run) |
 | S14 | P6b: base64 logo, theme dedupe, `/ops` hops, iOS install path, social link, sticky action strip + owner loop (screenshot sign-off first) | Opus 5.5 | medium | M | S13 | open |
 | S15 | P2d: `is_test` column denormalization across six tables, backfill, writers | Opus 5.5 | high | M | S06 | open |
 | S16 | P3c: CSP report-only + report endpoint + HSTS; enforce after one week clean | Opus 5.5 | high | S | S12, S13 | open |
