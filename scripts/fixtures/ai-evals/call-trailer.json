@@ -1,0 +1,15 @@
+{
+  "id": "internal-test-call-trailer",
+  "kind": "call.transcript",
+  "occurredAt": "2026-09-27T10:00:00-05:00",
+  "body": "[INTERNAL TEST] Test caller says the utility trailer frame split near the rear crossmember. The shop says, We will call tomorrow after inspection. Caller mentions a prior estimate of $480.",
+  "expected": {
+    "facts": [
+      { "predicate": "quoted_price_cents", "value": 48000 }
+    ],
+    "commitments": [
+      { "direction": "we_promised", "summaryIncludes": "call" }
+    ],
+    "mustNotAppearInCrewSafeBody": ["$480"]
+  }
+}
