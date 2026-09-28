@@ -28,7 +28,8 @@ test("the sticky strip orders Call, Text, Photo, then the owner quote amount", (
   assert.match(strip, /compact directFallback/)
   assert.doesNotMatch(strip, /sms:/)
   assert.match(strip, /operator\.role === "owner"[\s\S]*?job-action-price[\s\S]*?money\(lead\.estimate_value_cents\)/)
-  assert.match(TRACKED_CALL, /href=\{`tel:\$\{phone\.replace/)
+  assert.match(TRACKED_CALL, /const directDialPhone = normalizeUsPhone\(phone\)/)
+  assert.match(TRACKED_CALL, /href=\{`tel:\$\{directDialPhone\}`\}/)
   const stripRule = JOB_CSS.match(/\.job-action-spine\s*\{([^}]*)\}/)?.[1] ?? ""
   const opsTopRule = OPS_SHELL_CSS.match(/\.ops-top\s*\{([^}]*)\}/)?.[1] ?? ""
   const stripZIndex = Number(stripRule.match(/z-index:\s*(\d+)/)?.[1])
