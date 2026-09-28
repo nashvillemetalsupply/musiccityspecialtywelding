@@ -1,12 +1,14 @@
+import type { LockedBuildSheet } from "./build-sheets-domain.ts"
+import type { BuildDrawingProjection } from "./build-sheets-continuation.ts"
 import { createHash } from "node:crypto"
 import { createGateDxf } from "./call-sketch-dxf.ts"
 import { projectBuildDrawing } from "./build-sheets-continuation.ts"
 
-function hashContent(content) {
+function hashContent(content: string) {
   return createHash("sha256").update(content).digest("hex")
 }
 
-function drawingSvg(drawing) {
+function drawingSvg(drawing: BuildDrawingProjection) {
   const margin = 18
   const viewWidth = 320
   const viewHeight = 260
@@ -40,12 +42,22 @@ function drawingSvg(drawing) {
 </svg>`
 }
 
-export function compileBuildPaperwork({ kind, sheet } = {}) {
+export function compileBuildPaperwork({ kind, sheet }: {
+  kind: "drawing" | "dxf"
+  sheet: LockedBuildSheet
+} = {} as { kind: "drawing" | "dxf"; sheet: LockedBuildSheet }) : Readonly<{
+  kind: "drawing" | "dxf"
+  sourceBuildSheetNumber: number
+  content: string
+  contentType: string
+  extension: "svg" | "dxf"
+  contentHash: string
+}> {
   const drawing = projectBuildDrawing(sheet)
   if (!drawing.fabricationReady && kind === "dxf") throw new Error("DXF stays blocked until every critical fact is shop-confirmed.")
-  let content
-  let contentType
-  let extension
+  let content: string
+  let contentType: string
+  let extension: "svg" | "dxf"
   if (kind === "drawing") {
     content = drawingSvg(drawing)
     contentType = "image/svg+xml; charset=utf-8"
@@ -56,8 +68,8 @@ export function compileBuildPaperwork({ kind, sheet } = {}) {
       height: drawing.height,
       stockSize: drawing.stockSize,
       railCount: drawing.railCount,
-      hingeSide: drawing.hingeSide,
-      latchSide: drawing.latchSide,
+      hingeSide: drawing.hingeSide as "left" | "right",
+      latchSide: drawing.latchSide as "left" | "right",
       title: `BUILD SHEET ${drawing.sourceBuildSheetNumber} - LOCKED GATE ELEVATION`,
     })
     contentType = "application/dxf; charset=utf-8"
@@ -75,7 +87,21 @@ export function compileBuildPaperwork({ kind, sheet } = {}) {
   })
 }
 
-export function paperworkIssueDecision(input = {}) {
+export function paperworkIssueDecision(input: {
+  kind: string
+  status: string
+  issueState: string
+  sourceBuildSheetNumber: number
+  currentBuildSheetNumber: number
+  fabricationReady: boolean
+} = {} as {
+  kind: string
+  status: string
+  issueState: string
+  sourceBuildSheetNumber: number
+  currentBuildSheetNumber: number
+  fabricationReady: boolean
+}) : { allowed: boolean; reason: string } {
   if (input.status !== "current") return { allowed: false, reason: "This paperwork is not current." }
   if (input.issueState !== "current") return { allowed: false, reason: "This paperwork is blocked." }
   if (Number(input.sourceBuildSheetNumber) !== Number(input.currentBuildSheetNumber)) {

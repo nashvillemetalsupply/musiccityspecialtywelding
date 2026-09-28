@@ -13,7 +13,7 @@ const CENTRAL_PARTS = new Intl.DateTimeFormat("en-US", {
 const VALID_DATE = /^\d{4}-\d{2}-\d{2}$/
 const VALID_TIME = /^\d{2}:\d{2}$/
 
-function centralKey(instant) {
+function centralKey(instant: Date) {
   const values = Object.fromEntries(
     CENTRAL_PARTS.formatToParts(instant)
       .filter((part) => part.type !== "literal")
@@ -27,7 +27,7 @@ function centralKey(instant) {
  * Returns null for malformed dates, spring-forward gaps, and fall-back times
  * that occur twice.
  */
-export function resolveCentralDateTime(date, time) {
+export function resolveCentralDateTime(date: string, time: string) : string | null {
   if (!VALID_DATE.test(date) || !VALID_TIME.test(time)) return null
   const [year, month, day] = date.split("-").map(Number)
   const [hour, minute] = time.split(":").map(Number)

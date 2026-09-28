@@ -1,9 +1,11 @@
-export const OPS_PULSE_ACTIVE_INTERVAL_MS = 10_000
-export const OPS_PULSE_IDLE_INTERVAL_MS = 5 * 60_000
-export const OPS_PULSE_REFRESH_MAX_INTERVAL_MS = 5 * 60_000
+import type { OpsPulse } from "./ops-pulse.ts"
+
+export const OPS_PULSE_ACTIVE_INTERVAL_MS: number = 10_000
+export const OPS_PULSE_IDLE_INTERVAL_MS: number = 5 * 60_000
+export const OPS_PULSE_REFRESH_MAX_INTERVAL_MS: number = 5 * 60_000
 const IDLE_ACTIVITY_WINDOW_MS = 5 * 60_000
 
-function pulseKey(pulse) {
+function pulseKey(pulse: Partial<OpsPulse> | null | undefined): string {
   return JSON.stringify([
     pulse?.eventId ?? null,
     pulse?.eventsSignature ?? null,
@@ -15,7 +17,7 @@ function pulseKey(pulse) {
     pulse?.callDraftsSignature ?? null,
     pulse?.unreadNotifications ?? null,
     pulse?.notificationsSignature ?? null,
-  ])
+  ])!
 }
 
 export function startOpsPulsePolling({
@@ -26,12 +28,20 @@ export function startOpsPulsePolling({
   timers = globalThis,
   now = Date.now,
   idleActivityWindowMs = IDLE_ACTIVITY_WINDOW_MS,
-} = {}) {
-  let lastPulseKey = null
+}: {
+  onChange?: () => void
+  fetchPulse?: (url: string, options: { cache: "no-store" }) => Promise<{ ok: boolean; json: () => Promise<unknown> }>
+  documentRef?: Document
+  windowRef?: Window
+  timers?: Pick<typeof globalThis, "setTimeout" | "clearTimeout">
+  now?: () => number
+  idleActivityWindowMs?: number
+} = {}) : { checkNow: () => void; stop: () => void } {
+  let lastPulseKey: string | null = null
   let pendingChange = false
   let lastActivityAt = now()
   let lastRefreshAt = now()
-  let timer = null
+  let timer: ReturnType<typeof setTimeout> | null = null
   let inFlight = false
   let checkPending = false
   let stopped = false
@@ -77,7 +87,7 @@ export function startOpsPulsePolling({
       const response = await fetchPulse("/api/ops/pulse", { cache: "no-store" })
       if (!response?.ok) return
       const pulse = await response.json()
-      const nextPulseKey = pulseKey(pulse)
+      const nextPulseKey = pulseKey(pulse as Partial<OpsPulse>)
       if (lastPulseKey !== null && nextPulseKey !== lastPulseKey) pendingChange = true
       lastPulseKey = nextPulseKey
     } catch {

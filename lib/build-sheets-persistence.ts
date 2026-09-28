@@ -1,10 +1,22 @@
+type SqlTag = (
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+) => PromiseLike<unknown>
+
+import type { BuildClaim, LockedBuildSheet } from "./build-sheets-domain.ts"
 export async function persistObservedBuildFacts({
   sql,
   leadId,
   callSid,
   sourceEventId,
   facts,
-}) {
+}: {
+  sql: SqlTag
+  leadId: number
+  callSid: string
+  sourceEventId: number
+  facts: Array<{ fact: Omit<BuildClaim, "id" | "sourceEventId">; itemKey: string }>
+}) : Promise<number[]> {
   const inserted = []
   for (const item of facts) {
     const decisionKey = `observed:${callSid}:${item.itemKey}`
@@ -91,7 +103,16 @@ export async function persistObservedBuildFacts({
   return inserted.map((item) => item.id)
 }
 
-export async function persistLockedBuildSheet({ sql, leadId, operatorId, lockKey, candidate }) {
+export async function persistLockedBuildSheet({ sql, leadId, operatorId, lockKey, candidate }: {
+  sql: SqlTag
+  leadId: number
+  operatorId: number
+  lockKey: string
+  candidate: LockedBuildSheet
+}) : Promise<{
+  inserted: boolean
+  sheet: { id: number; sequence: number; snapshot: LockedBuildSheet; locked_at: string }
+}> {
   const inserted = await sql`
     WITH lead_scope AS (
       SELECT l.id FROM leads l JOIN operators o ON o.id = ${operatorId}::bigint

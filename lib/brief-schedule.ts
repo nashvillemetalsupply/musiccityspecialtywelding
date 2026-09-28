@@ -1,4 +1,4 @@
-export function isCentralBriefHour(date = new Date()) {
+export function isCentralBriefHour(date: Date = new Date()) : boolean {
   const hour = Number(new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Chicago",
     hour: "2-digit",
@@ -7,6 +7,6 @@ export function isCentralBriefHour(date = new Date()) {
   return hour === 6
 }
 
-export function morningBriefDedupeKey(day) {
+export function morningBriefDedupeKey(day: string) : string {
   return `brief:${day}`
 }

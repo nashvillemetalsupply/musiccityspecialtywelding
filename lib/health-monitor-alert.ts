@@ -1,4 +1,18 @@
-export function buildHealthMonitorFailureAlert(runId, { isTest = false } = {}, now = new Date()) {
+export type HealthMonitorFailureAlert = {
+  priority: "interrupt"
+  stock: "red"
+  title: string
+  body: string
+  url: string
+  ownerOnly: true
+  smsOnly: true
+  quietHoursExempt: true
+  isTest: boolean
+  actionDetail: { source: "health-monitor"; runId: string; isTest: boolean }
+  dedupeKey: string
+}
+
+export function buildHealthMonitorFailureAlert(runId: string, { isTest = false }: { isTest?: boolean } = {}, now: Date = new Date()) : HealthMonitorFailureAlert | null {
   const stableRunId = String(runId ?? "").trim()
   if (!/^[a-zA-Z0-9-]{1,80}$/.test(stableRunId)) return null
   const timestamp = new Date(now)

@@ -8,7 +8,7 @@ export function gmailConfigured() {
   return Boolean(process.env.GMAIL_CLIENT_ID?.trim() && process.env.GMAIL_CLIENT_SECRET?.trim() && process.env.GMAIL_REFRESH_TOKEN?.trim())
 }
 
-function decode(data = "") { return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64") }
+function decode(data: string = "") { return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64") }
 export function gmailHeaders(message: GmailMessage) { return Object.fromEntries((message.payload.headers ?? []).map((h) => [h.name.toLowerCase(), h.value])) }
 export function gmailHeaderValues(message: GmailMessage, name: string) {
   const wanted = name.trim().toLowerCase()

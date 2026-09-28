@@ -1,4 +1,4 @@
-export const QUOTE_SERVICE_OPTIONS = Object.freeze([
+export const QUOTE_SERVICE_OPTIONS: readonly string[] = Object.freeze([
   "Mobile Welding (On-Site)",
   "Trailer / Truck Welding Repair",
   "Equipment & Structural Repair",
@@ -11,30 +11,37 @@ export const QUOTE_SERVICE_OPTIONS = Object.freeze([
   "Not Sure / Other",
 ])
 
-export const QUOTE_HONEYPOT_FIELD = "mcsw_9f3a2"
+export const QUOTE_HONEYPOT_FIELD: "mcsw_9f3a2" = "mcsw_9f3a2"
 
-export function isQuoteHoneypotFilled(formData) {
+export function isQuoteHoneypotFilled(formData: Pick<FormData, "get">) : boolean {
   const value = formData?.get(QUOTE_HONEYPOT_FIELD)
   return typeof value === "string" ? value.trim() !== "" : value != null
 }
 
-export function quoteSubmissionOutcome(data) {
+export function quoteSubmissionOutcome(data: unknown) : "rejected" | "suppressed" | "accepted" {
   if (data?.accepted !== true) return "rejected"
   return data.suppressed === true ? "suppressed" : "accepted"
 }
 
 const QUOTE_SERVICE_SET = new Set(QUOTE_SERVICE_OPTIONS)
 
-function text(value) {
+function text(value: unknown | string) {
   return typeof value === "string" ? value.trim() : ""
 }
 
-function validUsPhone(value) {
+function validUsPhone(value: string) {
   const digits = text(value).replace(/\D/g, "")
   return digits.length === 10 || (digits.length === 11 && digits.startsWith("1"))
 }
 
-export function validatePublicQuote(input) {
+export function validatePublicQuote(input: {
+  firstName?: unknown
+  lastName?: unknown
+  phone?: unknown
+  email?: unknown
+  service?: unknown
+  message?: unknown
+}) : string {
   const firstName = text(input?.firstName)
   const lastName = text(input?.lastName)
   const phone = text(input?.phone)
@@ -51,11 +58,11 @@ export function validatePublicQuote(input) {
   return ""
 }
 
-function ascii(bytes, start, length) {
+function ascii(bytes: Uint8Array<ArrayBufferLike>, start: 1 | 0 | 8 | 4, length: 3 | 4 | 6) {
   return String.fromCharCode(...bytes.slice(start, start + length))
 }
 
-export function detectRasterImageType(bytes) {
+export function detectRasterImageType(bytes: Uint8Array) : string | null {
   if (!(bytes instanceof Uint8Array)) return null
   if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg"
   if (bytes.length >= 8 && bytes[0] === 0x89 && ascii(bytes, 1, 3) === "PNG" && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a) return "image/png"
@@ -69,7 +76,7 @@ export function detectRasterImageType(bytes) {
   return null
 }
 
-export function imageTypeMatches(bytes, declaredType) {
+export function imageTypeMatches(bytes: Uint8Array, declaredType: string) : boolean {
   const normalized = text(declaredType).toLowerCase().split(";", 1)[0]
   return detectRasterImageType(bytes) === normalized
 }

@@ -30,7 +30,7 @@ export function normalizedE164(value) {
 // Empty until the owner buys the number and sets the variable. Every caller
 // treats empty as "this channel has no tracking number", so the whole feature
 // is inert rather than half-on.
-export function dniNumber(channel) {
+export function dniNumber(channel: string) {
   return normalizedE164(RAW[channel])
 }
 

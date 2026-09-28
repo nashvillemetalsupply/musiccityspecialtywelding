@@ -1,25 +1,36 @@
+export type CloseoutReview = {
+  completion: "complete" | "partial"
+  fit: "fit" | "adjusted" | "not-checked"
+  extraTrips: number
+  rework: "yes" | "no"
+  asBuiltDifferences: string
+  remainingWork: string
+  sourceWords: string
+  reviewed: boolean
+}
+
 const COMPLETION_VALUES = new Set(["complete", "partial"])
 const FIT_VALUES = new Set(["fit", "adjusted", "not-checked"])
 const REWORK_VALUES = new Set(["yes", "no"])
 
-function normalizedSentence(value) {
+function normalizedSentence(value: string) {
   return String(value ?? "").replace(/\s+/g, " ").trim()
 }
 
-function inferCompletion(lower) {
+function inferCompletion(lower: string) {
   if (/\b(still need|remaining|not (?:finished|complete)|partial|left to)\b/.test(lower)) return "partial"
   if (/\b(finished|complete|completed|done)\b/.test(lower)) return "complete"
   return "partial"
 }
 
-function inferFit(lower) {
+function inferFit(lower: string) {
   if (/\b(not checked|didn['’]t check|fit unknown)\b/.test(lower)) return "not-checked"
   if (/\b(adjusted|adjustment|tuned|shimm?ed)\b/.test(lower)) return "adjusted"
   if (/\bfit(?:s|ted)?\s+(?:good|well)|good fit\b/.test(lower)) return "fit"
   return "not-checked"
 }
 
-function inferExtraTrips(lower) {
+function inferExtraTrips(lower: string) {
   if (/\bno (?:extra|additional|return) trips?\b/.test(lower)) return 0
   const numeric = lower.match(/\b(\d+)\s+(?:extra|additional|return) trips?\b/)
   if (numeric) return Number(numeric[1])
@@ -28,23 +39,23 @@ function inferExtraTrips(lower) {
   return word ? words[word[1]] : 0
 }
 
-function inferRework(lower) {
+function inferRework(lower: string) {
   if (/\bno\b[^.!?]{0,40}\brework\b/.test(lower)) return "no"
   if (/\b(rework|reworked|redid|re-did|remade)\b/.test(lower)) return "yes"
   return "no"
 }
 
-function inferRemainingWork(source) {
+function inferRemainingWork(source: string) {
   const match = source.match(/\b(?:still need(?:s|ed)?(?: to)?|remaining(?: work)?(?: is|:)?|left to)\s+([^.!?]+)/i)
   return match ? normalizedSentence(match[1]) : ""
 }
 
-function inferAsBuiltDifferences(source) {
+function inferAsBuiltDifferences(source: string) {
   const match = source.match(/\b(?:reworked|adjusted|changed|moved|remade)\s+([^.!?]+)/i)
   return match ? normalizedSentence(match[0]) : ""
 }
 
-export function deriveCloseoutDraft(sourceWords) {
+export function deriveCloseoutDraft(sourceWords: string) : Readonly<CloseoutReview> {
   const source = normalizedSentence(sourceWords)
   const lower = source.toLowerCase()
   return Object.freeze({
@@ -59,7 +70,7 @@ export function deriveCloseoutDraft(sourceWords) {
   })
 }
 
-export function validateCloseoutReview(review) {
+export function validateCloseoutReview(review: CloseoutReview) : Readonly<CloseoutReview & { reviewed: true }> {
   if (review?.reviewed !== true) throw new Error("Review the closeout outcomes before filing completion.")
   if (!COMPLETION_VALUES.has(review.completion)) throw new TypeError("Choose whether the work is complete or partial.")
   if (!FIT_VALUES.has(review.fit)) throw new TypeError("Choose the final fit outcome.")

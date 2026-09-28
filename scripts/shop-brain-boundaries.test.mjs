@@ -153,7 +153,7 @@ test("marking mail Not a job also closes its unread alert retries", () => {
 
 test("work orders render old and new email bodies as readable text", () => {
   const workOrder = source("app/ops/leads/[id]/page.tsx")
-  assert.match(workOrder, /import \{ readableEmailText \} from "@\/lib\/gmail-plaintext\.mjs"/)
+  assert.match(workOrder, /import \{ readableEmailText \} from "@\/lib\/gmail-plaintext\.ts"/)
   assert.match(workOrder, /return readableEmailText\(text\) \|\|/)
 })
 

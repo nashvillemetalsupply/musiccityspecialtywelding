@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 
 import { captureAttribution } from "@/lib/attribution"
-import { dniDisplay, dniNumber, paidChannelForVisit } from "@/lib/dni.mjs"
+import { dniDisplay, dniNumber, paidChannelForVisit } from "@/lib/dni.ts"
 import { ADS_PHONE_CONVERSION_SEND_TO, queueMeasurementEvent } from "@/lib/measurement"
 
 // Dynamic number insertion. A visitor who arrived from an ad is shown that

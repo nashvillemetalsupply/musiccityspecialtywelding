@@ -1,4 +1,19 @@
-export const SHOP_TIME_ZONE = "America/Chicago"
+export type CalendarSourceJob = {
+  id: number
+  scheduledAt: string
+  completedAt: string | null
+  handedOffAt: string | null
+  routedToLeadId: number | null
+  isTest: boolean
+  status: string
+}
+
+export type CalendarDay<T> = {
+  dateKey: string
+  jobs: T[]
+}
+
+export const SHOP_TIME_ZONE: "America/Chicago" = "America/Chicago"
 
 const DATE_PARTS = new Intl.DateTimeFormat("en-US", {
   timeZone: SHOP_TIME_ZONE,
@@ -18,7 +33,7 @@ const MIDNIGHT_PARTS = new Intl.DateTimeFormat("en-US", {
   hourCycle: "h23",
 })
 
-function numericParts(formatter, date) {
+function numericParts(formatter: Intl.DateTimeFormat, date: Date): Record<string, number> {
   return Object.fromEntries(
     formatter.formatToParts(date)
       .filter((part) => part.type !== "literal")
@@ -26,19 +41,19 @@ function numericParts(formatter, date) {
   )
 }
 
-export function centralDateKey(value) {
+export function centralDateKey(value: Date | string | number) : string | null {
   const date = value instanceof Date ? value : new Date(value)
   if (!Number.isFinite(date.getTime())) return null
   const parts = numericParts(DATE_PARTS, date)
   return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`
 }
 
-export function calendarTimestampIso(value) {
+export function calendarTimestampIso(value: Date | string | number) : string | null {
   const date = value instanceof Date ? value : new Date(value)
   return Number.isFinite(date.getTime()) ? date.toISOString() : null
 }
 
-function addCalendarDays(dateKey, days) {
+function addCalendarDays(dateKey: string, days: number): string {
   const [year, month, day] = dateKey.split("-").map(Number)
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10)
 }
@@ -46,7 +61,7 @@ function addCalendarDays(dateKey, days) {
 // Convert a Central civil midnight into a real instant. The second pass is
 // important near an offset transition: it makes the helper independent of a
 // machine's own timezone and keeps a calendar day a calendar day across DST.
-function centralMidnight(dateKey) {
+function centralMidnight(dateKey: string): Date {
   const [year, month, day] = dateKey.split("-").map(Number)
   const wallClockUtc = Date.UTC(year, month - 1, day)
   let instant = wallClockUtc
@@ -65,12 +80,16 @@ function centralMidnight(dateKey) {
   return new Date(instant)
 }
 
-export function centralMonthRange(now = new Date()) {
+export function centralMonthRange(now: Date | string | number = new Date()) : {
+  dateKeys: string[]
+  startInclusive: string
+  endExclusive: string
+} {
   const date = now instanceof Date ? now : new Date(now)
   if (!Number.isFinite(date.getTime())) throw new TypeError("A valid current time is required.")
 
   const currentDateKey = centralDateKey(date)
-  const [year, month] = currentDateKey.split("-").map(Number)
+  const [year, month] = currentDateKey!.split("-").map(Number)
   const firstDateKey = `${year}-${String(month).padStart(2, "0")}-01`
   const endDate = new Date(Date.UTC(year, month, 1))
   const endDateKey = endDate.toISOString().slice(0, 10)
@@ -83,7 +102,7 @@ export function centralMonthRange(now = new Date()) {
   }
 }
 
-export function isActiveScheduledJob(job) {
+export function isActiveScheduledJob(job: CalendarSourceJob | null | undefined) : boolean {
   return Boolean(
     job
     && Number.isInteger(job.id)
@@ -99,14 +118,14 @@ export function isActiveScheduledJob(job) {
   )
 }
 
-export function buildMonthJobCalendar(jobs, now = new Date()) {
+export function buildMonthJobCalendar<T extends CalendarSourceJob>(jobs: T[], now: Date | string | number = new Date()) : CalendarDay<T>[] {
   const range = centralMonthRange(now)
-  const days = range.dateKeys.map((dateKey) => ({ dateKey, jobs: [] }))
+  const days: CalendarDay<T>[] = range.dateKeys.map((dateKey) => ({ dateKey, jobs: [] }))
   const dayByKey = new Map(days.map((day) => [day.dateKey, day]))
 
   for (const job of jobs) {
     if (!isActiveScheduledJob(job)) continue
-    const day = dayByKey.get(centralDateKey(job.scheduledAt))
+    const day = dayByKey.get(centralDateKey(job.scheduledAt)!)
     if (day) day.jobs.push(job)
   }
 
@@ -119,12 +138,12 @@ export function buildMonthJobCalendar(jobs, now = new Date()) {
   return days
 }
 
-export function selectedCalendarDay(days, selectedDateKey) {
+export function selectedCalendarDay<T>(days: CalendarDay<T>[], selectedDateKey: string) : CalendarDay<T> | null {
   if (!Array.isArray(days) || days.length === 0) return null
   return days.find((day) => day.dateKey === selectedDateKey) ?? days[0]
 }
 
-export function calendarNavigationIndex(index, key, length, columns = 7, leadingOffset = 0) {
+export function calendarNavigationIndex(index: number, key: string, length: number, columns: number = 7, leadingOffset: number = 0) : number | null {
   if (!Number.isInteger(index) || !Number.isInteger(length) || length < 1) return null
   if (!Number.isInteger(columns) || columns < 1 || !Number.isInteger(leadingOffset) || leadingOffset < 0 || leadingOffset >= columns) return null
   const current = Math.min(Math.max(index, 0), length - 1)

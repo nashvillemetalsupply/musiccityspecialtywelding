@@ -1,7 +1,7 @@
-export function createInProcessTtlCache(load, ttlMs, now = Date.now) {
-  let value
+export function createInProcessTtlCache<T>(load: () => Promise<T> | T, ttlMs: number, now: () => number = Date.now) : () => Promise<T> {
+  let value: T | undefined
   let expiresAt = Number.NEGATIVE_INFINITY
-  let pending
+  let pending: Promise<T> | undefined
 
   return async function getCachedValue() {
     const currentTime = now()

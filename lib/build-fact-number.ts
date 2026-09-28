@@ -1,6 +1,13 @@
+export interface BuildFactNumberOptions {
+  label: string
+  integer?: boolean
+  min?: number
+  max?: number
+}
+
 const NUMERIC_TEXT = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i
 
-export function parseBuildFactNumber(raw, { label, integer = false, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY }) {
+export function parseBuildFactNumber(raw: FormDataEntryValue | number | null, { label, integer = false, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY }: BuildFactNumberOptions) : number {
   let value
   if (typeof raw === "number") {
     value = raw

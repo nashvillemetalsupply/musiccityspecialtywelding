@@ -23,7 +23,7 @@ const HTML_ENTITIES = {
   trade: "™",
 }
 
-function decodeHtmlEntities(input) {
+function decodeHtmlEntities(input: string) {
   return input.replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]+);/gi, (match, entity) => {
     const normalized = String(entity).toLowerCase()
     if (normalized.startsWith("#x")) {
@@ -38,7 +38,7 @@ function decodeHtmlEntities(input) {
   })
 }
 
-export function readableEmailText(input = "") {
+export function readableEmailText(input: string = "") : string {
   let text = String(input).replace(/\r\n?/g, "\n")
   const looksLikeHtml = /<!doctype\s+html|<html\b|<body\b|<(?:a|br|div|p|table|tr|td|span|img)\b[^>]*>/i.test(text)
   if (looksLikeHtml) {
@@ -61,7 +61,7 @@ export function readableEmailText(input = "") {
     .trim()
 }
 
-export function stripQuotedReply(input = "") {
+export function stripQuotedReply(input: string = "") : string {
   let text = readableEmailText(input).replace(/\u00a0/g, " ")
   for (const marker of REPLY_TAILS) text = text.replace(marker, "")
   text = text

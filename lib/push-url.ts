@@ -1,7 +1,7 @@
 const PUSH_ORIGIN = "https://mcsw-push.invalid"
 const FALLBACK_PUSH_URL = "/board"
 
-export function isSafeRelativePushUrl(value) {
+export function isSafeRelativePushUrl(value: unknown) : value is string {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
     return false
   }
@@ -12,7 +12,7 @@ export function isSafeRelativePushUrl(value) {
   }
 }
 
-export function normalizePushUrl(value) {
+export function normalizePushUrl(value: unknown) : string {
   if (!isSafeRelativePushUrl(value)) return FALLBACK_PUSH_URL
   const requested = new URL(value, PUSH_ORIGIN)
   return `${requested.pathname}${requested.search}${requested.hash}`

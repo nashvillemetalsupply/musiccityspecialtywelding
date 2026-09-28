@@ -3,7 +3,7 @@ export const MINIMUM_WON_JOB_SAMPLES = 5
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
-export function median(values) {
+export function median(values: number[]): number | null {
   const sorted = values.map(Number).filter(Number.isFinite).sort((left, right) => left - right)
   if (sorted.length === 0) return null
 
@@ -13,7 +13,7 @@ export function median(values) {
     : (sorted[middle - 1] + sorted[middle]) / 2
 }
 
-export function defaultFollowUpAtFromDurations(daysToClose, now = new Date()) {
+export function defaultFollowUpAtFromDurations(daysToClose: number[], now: Date = new Date()): string | null {
   const samples = daysToClose.map(Number).filter(Number.isFinite)
   if (samples.length < MINIMUM_WON_JOB_SAMPLES) return null
 

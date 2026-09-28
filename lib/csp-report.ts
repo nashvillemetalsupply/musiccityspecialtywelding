@@ -1,4 +1,22 @@
-export const MAX_CSP_REPORT_BYTES = 16 * 1024
+export type NormalizedCspReport = {
+  effectiveDirective: string
+  violatedDirective: string
+  blocked: string
+  source?: string
+  route: string
+  statusCode?: number
+}
+
+export type TroubleReportInput = {
+  source: string
+  message: string
+  digest: string
+  route: string
+  reportedBy: number | null
+  isTest: boolean
+}
+
+export const MAX_CSP_REPORT_BYTES: number = 16 * 1024
 const MAX_REPORT_COUNT = 10
 const BODY_READ_TIMEOUT_MS = 1_000
 const REPORT_WORK_TIMEOUT_MS = 1_500
@@ -9,7 +27,7 @@ function emptyResponse() {
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
 }
 
-async function withTimeout(operation, timeoutMs, timeoutValue) {
+async function withTimeout<T>(operation: () => T | Promise<T>, timeoutMs: number, timeoutValue: T) {
   let timeoutId
   try {
     return await Promise.race([
@@ -24,11 +42,11 @@ async function withTimeout(operation, timeoutMs, timeoutValue) {
   }
 }
 
-function requestContentType(request) {
+function requestContentType(request: Request) {
   return (request.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase()
 }
 
-async function readJsonBody(request) {
+async function readJsonBody(request: Request) {
   const contentLength = request.headers.get("content-length")
   if (contentLength && /^\d+$/.test(contentLength) && Number(contentLength) > MAX_CSP_REPORT_BYTES) return null
 
@@ -76,7 +94,7 @@ async function readJsonBody(request) {
   }
 }
 
-function reportRecords(contentType, body) {
+function reportRecords(contentType: "application/csp-report" | "application/reports+json", body) {
   if (contentType === CONTENT_TYPE_LEGACY) {
     if (!body || typeof body !== "object" || Array.isArray(body)) return []
     const report = body["csp-report"]
@@ -90,7 +108,7 @@ function reportRecords(contentType, body) {
     .slice(0, MAX_REPORT_COUNT)
 }
 
-function safeLabel(value, maximumLength = 80) {
+function safeLabel(value, maximumLength: 2048 | 80 = 80) {
   if (typeof value !== "string") return ""
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maximumLength)
 }
@@ -164,7 +182,7 @@ function normalizeReport(report) {
   }
 }
 
-export async function parseCspReports(request) {
+export async function parseCspReports(request: Request) : Promise<NormalizedCspReport[]> {
   const contentType = requestContentType(request)
   if (contentType !== CONTENT_TYPE_LEGACY && contentType !== CONTENT_TYPE_REPORTING_API) return []
   const body = await readJsonBody(request)
@@ -172,7 +190,11 @@ export async function parseCspReports(request) {
   return reportRecords(contentType, body).map(normalizeReport)
 }
 
-export function createCspReportPost({ rateLimit, writeTroubleReport, isTestContext }) {
+export function createCspReportPost({ rateLimit, writeTroubleReport, isTestContext }: {
+  rateLimit: (request: Request) => boolean | Promise<boolean>
+  writeTroubleReport: (report: TroubleReportInput) => unknown | Promise<unknown>
+  isTestContext: () => boolean
+}) : (request: Request) => Promise<Response> {
   return async function POST(request) {
     try {
       const isRateLimited = await withTimeout(() => rateLimit(request), REPORT_WORK_TIMEOUT_MS, true)

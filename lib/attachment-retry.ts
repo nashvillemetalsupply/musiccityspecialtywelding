@@ -15,7 +15,7 @@ type AttachmentRow = {
 
 export type AttachmentSensitivity = "photo" | "drawing" | "owner_paperwork" | "unclassified"
 
-export function classifyAttachmentSensitivity(filename: string, contentType: string, context = ""): AttachmentSensitivity {
+export function classifyAttachmentSensitivity(filename: string, contentType: string, context: string | undefined = ""): AttachmentSensitivity {
   return classifyInboundAttachmentSensitivity(filename, contentType, context) as AttachmentSensitivity
 }
 

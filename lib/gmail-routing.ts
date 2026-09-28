@@ -1,4 +1,4 @@
-export const GMAIL_NOISE_DOMAINS = [
+export const GMAIL_NOISE_DOMAINS: string[] = [
   "linkedin.com",
   "tiktok.com",
   "alibaba.com",
@@ -9,12 +9,12 @@ export const GMAIL_NOISE_DOMAINS = [
   "musiccityspecialtywelding.com",
 ]
 
-function addressUsesDomain(address, domain) {
+function addressUsesDomain(address: string, domain: string) {
   const senderDomain = domainFromAddress(address)
   return senderDomain === domain || senderDomain.endsWith(`.${domain}`)
 }
 
-function isAutomatedOrBulkMail({ from, headers = {} }) {
+function isAutomatedOrBulkMail({ from, headers = {} }: { from: string; headers: Record<string, string>; }) {
   const normalizedHeaders = Object.fromEntries(
     Object.entries(headers || {}).map(([key, value]) => [String(key).toLowerCase(), String(value || "")])
   )
@@ -27,27 +27,34 @@ function isAutomatedOrBulkMail({ from, headers = {} }) {
     || /^(?:do-?not-?reply|no-?reply|mailer-daemon)$/.test(localPart)
 }
 
-function looksLikeColdSolicitation({ subject = "", body = "" }) {
+function looksLikeColdSolicitation({ subject = "", body = "" }: { subject: string; body: string; }) {
   const text = `${subject}\n${body}`
   return /\b(?:business funding|funding partnership|working capital|merchant cash advance|business credit card|prequalified for|book your 1:1 call with your google ads expert)\b/i.test(text)
 }
 
-export function shouldSkipGmailMessage({ sent, categorizedNoise, from, subject = "", body = "", headers = {} }) {
+export function shouldSkipGmailMessage({ sent, categorizedNoise, from, subject = "", body = "", headers = {} }: {
+  sent: boolean
+  categorizedNoise: boolean
+  from: string
+  subject?: string
+  body?: string
+  headers?: Record<string, string>
+}) : boolean {
   if (sent) return false
   if (categorizedNoise) return true
   if (GMAIL_NOISE_DOMAINS.some((domain) => addressUsesDomain(from, domain))) return true
   return isAutomatedOrBulkMail({ from, headers }) || looksLikeColdSolicitation({ subject, body })
 }
 
-function domainFromAddress(address) {
+function domainFromAddress(address: string) {
   return String(address || "").toLowerCase().split("@").at(-1) || ""
 }
 
-function isIntuitDomain(domain) {
+function isIntuitDomain(domain: string) {
   return domain === "intuit.com" || domain.endsWith(".intuit.com")
 }
 
-export function looksLikeIntuitPaymentEnvelope({ from, subject = "", body = "" }) {
+export function looksLikeIntuitPaymentEnvelope({ from, subject = "", body = "" }: { from: string; subject?: string; body?: string }) : boolean {
   const domain = domainFromAddress(from)
   return domain.includes("intuit") && /(?:payment received|money on the way)/i.test(`${subject}\n${body}`)
 }
@@ -57,7 +64,7 @@ export function looksLikeIntuitPaymentEnvelope({ from, subject = "", body = "" }
 // another's requirement: a sender-influenced SPF comment or quoted local part
 // carrying "dmarc=pass header.from=intuit.com" authenticated a message whose real
 // dmarc result was fail. Parse the header instead of pattern-matching over it.
-function stripComments(value) {
+function stripComments(value: string) {
   let out = ""
   let depth = 0
   let quoted = false
@@ -90,7 +97,7 @@ function stripComments(value) {
   return depth === 0 && !quoted ? out : null
 }
 
-function splitOnSemicolons(value) {
+function splitOnSemicolons(value: string) {
   const parts = []
   let current = ""
   let quoted = false
@@ -113,7 +120,7 @@ function splitOnSemicolons(value) {
 // Walks the clause left to right instead of scanning for pairs anywhere in it, so
 // "x/header.i=@intuit.com" cannot smuggle a property in. Returns null on a
 // duplicate key or on leftover text that is not a well-formed pair.
-function clauseProperties(clause) {
+function clauseProperties(clause: string) {
   const properties = new Map()
   let rest = clause
   while (rest.trim() !== "") {
@@ -130,7 +137,7 @@ function clauseProperties(clause) {
 }
 
 // Returns null for anything malformed or ambiguous so every caller fails closed.
-function parseAuthenticationResults(raw) {
+function parseAuthenticationResults(raw: string) {
   const stripped = stripComments(String(raw ?? ""))
   if (stripped === null) return null
   const segments = splitOnSemicolons(stripped)
@@ -167,7 +174,7 @@ function identityDomain(value) {
 
 // Gmail writes dkim=pass only for a signature it actually verified, so one passing
 // Intuit-signed clause is the guarantee we want even when other signatures fail.
-function methodDomainIsIntuit(methods, method, keys) {
+function methodDomainIsIntuit(methods, method: "dkim" | "dmarc", keys: string[]) {
   const clauses = methods.get(method) ?? []
   return clauses.some((clause) => {
     if (clause.result !== "pass") return false
@@ -195,7 +202,7 @@ const SHOP_MAIL_DOMAIN = "musiccityspecialtywelding.com"
 // the signed one, since headers collapse last-wins.
 // Splits a mailbox list on commas that are not inside a quoted display name, so
 // `"Welding, Sales" <sales@example.com>` stays one recipient.
-function splitMailboxList(value) {
+function splitMailboxList(value: string) {
   const parts = []
   let current = ""
   let quoted = false
@@ -210,7 +217,7 @@ function splitMailboxList(value) {
   return parts
 }
 
-function addressedToShop(recipients) {
+function addressedToShop(recipients: string | string[]) {
   const values = (Array.isArray(recipients) ? recipients : [recipients]).map((value) => String(value ?? "").trim())
   if (values.length === 0) return false
   // A present-but-empty To: is malformed, not absent; treat it as a refusal rather
@@ -226,7 +233,7 @@ function addressedToShop(recipients) {
 // `"MCS <sales@musiccityspecialtywelding.com>" <attacker@example.com>` is a message
 // Intuit signs to the attacker, and taking the first bracket reads it as the shop.
 // Stray brackets outside that shape are malformed and yield no address at all.
-function mailboxAddress(part) {
+function mailboxAddress(part: string) {
   const unquoted = part.replace(/"(?:[^"\\]|\\.)*"/g, " ")
   const angled = unquoted.match(/<([^<>]*)>\s*$/)
   if (angled) return angled[1].trim().toLowerCase()
@@ -258,7 +265,7 @@ function dkimTags(signature) {
 // sampled on 2026-08-22 -- the direct one and the SES-relayed one -- cover to: and
 // subject: and carry no l=, so requiring it rejects no real mail and removes an
 // assumption the gate was otherwise making silently.
-function intuitSignaturesAreFullyBound(signatures) {
+function intuitSignaturesAreFullyBound(signatures: string | string[]) {
   const parsed = (Array.isArray(signatures) ? signatures : [signatures])
     .map((value) => String(value ?? ""))
     .filter((value) => value.trim() !== "")
@@ -275,7 +282,17 @@ function intuitSignaturesAreFullyBound(signatures) {
   })
 }
 
-export function isAuthenticatedIntuitPayment({ from, labels = [], authenticationResults = "", subject = "", body = "", recipients = [], dkimSignatures = [] }) {
+export function isAuthenticatedIntuitPayment({ from, labels = [], authenticationResults = "", subject = "", body = "", recipients = [], dkimSignatures = [] }: {
+  from: string
+  labels?: string[]
+  authenticationResults?: string | string[]
+  subject?: string
+  body?: string
+  /** Every To: header value. All must be at the shop domain, or the receipt is refused. */
+  recipients?: string | string[]
+  /** Raw DKIM-Signature headers. Intuit's must cover to: and subject: and carry no l= tag. */
+  dkimSignatures?: string | string[]
+}) : boolean {
   const fromDomain = domainFromAddress(from)
   if (!isIntuitDomain(fromDomain)) return false
   if (labels.some((label) => label === "SPAM" || label === "TRASH")) return false
@@ -307,7 +324,12 @@ export function isAuthenticatedIntuitPayment({ from, labels = [], authentication
   return dkimPass && dmarcPass
 }
 
-export function paymentCompletesInvoice({ text = "", amountCents = null, invoiceTotalCents = null, priorPaidCents = 0 }) {
+export function paymentCompletesInvoice({ text = "", amountCents = null, invoiceTotalCents = null, priorPaidCents = 0 }: {
+  text?: string
+  amountCents?: number | null
+  invoiceTotalCents?: number | null
+  priorPaidCents?: number
+}) : boolean {
   if (/\b(?:paid in full|payment status\s*:\s*paid|invoice(?:\s*#?[a-z0-9-]+)?\s+(?:is|has been)\s+paid)\b/i.test(text)) return true
   if (/\b(?:balance due|remaining balance)\s*:?\s*\$?0(?:\.00)?\b/i.test(text)) return true
   const payment = Number(amountCents)
@@ -316,13 +338,18 @@ export function paymentCompletesInvoice({ text = "", amountCents = null, invoice
   return Number.isFinite(payment) && payment > 0 && Number.isFinite(total) && total > 0 && prior + payment >= total
 }
 
-function labeledCents(text, labels) {
+function labeledCents(text: string, labels: string[]) {
   const label = labels.join("|")
   const match = String(text).match(new RegExp(`(?:${label})\\s*:?\\s*\\$\\s*([\\d,]+(?:\\.\\d{2})?)`, "i"))
   return match ? Math.round(Number(match[1].replace(/,/g, "")) * 100) : null
 }
 
-export function extractQuickBooksPaymentFacts({ subject = "", body = "" }) {
+export function extractQuickBooksPaymentFacts({ subject = "", body = "" }: { subject?: string; body?: string }) : {
+  invoiceNumber: string | null
+  paymentAmountCents: number | null
+  invoiceTotalCents: number | null
+  balanceCents: number | null
+} {
   const text = `${subject}\n${body}`
   // QuickBooks subjects read "Invoice #1357-(customer@example.com)", and the hyphen
   // before the parenthetical was being captured as part of the number. Every one of
@@ -344,7 +371,7 @@ export function extractQuickBooksPaymentFacts({ subject = "", body = "" }) {
   return { invoiceNumber, paymentAmountCents, invoiceTotalCents, balanceCents }
 }
 
-export function sentMessageMayStartWork({ subject = "", body = "" }) {
+export function sentMessageMayStartWork({ subject = "", body = "" }: { subject?: string; body?: string }) : boolean {
   const text = `${subject}\n${body}`
   const work = /\b(?:weld(?:ing)?|fabricat(?:e|ion)|repair|trailer|railing|gate|bracket|equipment|rfq|request for quote|estimate)\b/i.test(text)
   const commercialReply = /^\s*re:/i.test(subject) && /\b(?:quote|rfq|weld|repair|fabricat)/i.test(subject)

@@ -1,3 +1,49 @@
+export type BuildClaim = {
+  id: number
+  sourceEventId: number
+  factKey: string
+  subject: string
+  property: string
+  value: number | string
+  unit: string
+  reference: string
+  original: string
+  speaker: string
+  certainty: "stated" | "interpreted" | "corrected"
+  critical: boolean
+  interpretationGroup?: string
+}
+
+export type BuildDecision = {
+  id?: number
+  claimId: number
+  state: "proposed" | "shop-confirmed" | "working-number" | "rejected" | "superseded"
+  proposerType?: "operator" | "system" | "customer"
+  decidedAt?: string
+}
+
+export type BuildConflict = {
+  key: string
+  kind: "unresolved-reference" | "different-values"
+  claimIds: number[]
+}
+
+export type LockedBuildSheet = Readonly<{
+  jobId: number
+  number: number
+  idempotencyKey: string
+  lockedAt: string
+  facts: ReadonlyArray<BuildClaim & { decisionState: "shop-confirmed" | "working-number" }>
+  fabrication: Readonly<{ ready: boolean; blockers: ReadonlyArray<string> }>
+}>
+
+export type PaperworkManifest = {
+  id: number
+  kind: string
+  sourceBuildSheetNumber: number
+  dependencies: string[]
+}
+
 const FACT_LABELS = Object.freeze({
   "opening.clear_width": "Clear opening",
   "gate_leaf.finished_width": "Finished width",
@@ -20,13 +66,13 @@ const REQUIRED_GATE_FACTS = Object.freeze([
   { factKey: "gate.finish", critical: false },
 ])
 
-function deepFreeze(value) {
+function deepFreeze(value: unknown | { jobId: number; number: number; idempotencyKey: string; lockedAt: string; facts: { decisionState: "proposed" | "shop-confirmed" | "working-number" | "rejected" | "superseded"; id: number; sourceEventId: number; factKey: string; subject: string; property: string; value: number | string; unit: string; reference: string; original: string; speaker: string; certainty: "stated" | "interpreted" | "corrected"; critical: boolean; interpretationGroup?: string; }[]; fabrication: { ready: boolean; blockers: string[]; }; }) {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value
   for (const nested of Object.values(value)) deepFreeze(nested)
   return Object.freeze(value)
 }
 
-function activeDecisionByClaim(decisions) {
+function activeDecisionByClaim(decisions: BuildDecision[]) {
   const active = new Map()
   for (const decision of [...decisions].sort((left, right) => {
     const time = String(left.decidedAt ?? "").localeCompare(String(right.decidedAt ?? ""))
@@ -35,7 +81,7 @@ function activeDecisionByClaim(decisions) {
   return active
 }
 
-function comparableValue(claim) {
+function comparableValue(claim: BuildClaim | (BuildClaim & { decisionState: "shop-confirmed" | "working-number"; }) | (BuildClaim & { decisionState: "shop-confirmed" | "working-number"; })) {
   if (typeof claim.value !== "number" || !Number.isFinite(claim.value)) return `text:${String(claim.value)}`
   const unit = String(claim.unit ?? "").trim().toLowerCase()
   if (["ft", "foot", "feet"].includes(unit)) return `in:${claim.value * 12}`
@@ -43,7 +89,7 @@ function comparableValue(claim) {
   return `${unit}:${claim.value}`
 }
 
-function factMeaning(claim) {
+function factMeaning(claim: BuildClaim & { decisionState: "shop-confirmed" | "working-number"; } | BuildClaim | (BuildClaim & { decisionState: "shop-confirmed" | "working-number"; })) {
   return [
     String(claim.subject ?? ""),
     String(claim.property ?? ""),
@@ -52,7 +98,7 @@ function factMeaning(claim) {
   ].join(":")
 }
 
-function shopMeasurement(claim) {
+function shopMeasurement(claim: BuildClaim) {
   if (typeof claim?.value !== "number") return String(claim?.value ?? "this number")
   const unit = String(claim.unit ?? "").toLowerCase()
   if (["in", "inch", "inches"].includes(unit)) return `${claim.value} inches`
@@ -60,7 +106,25 @@ function shopMeasurement(claim) {
   return `${claim.value}${unit ? ` ${unit}` : ""}`
 }
 
-export function deriveBuildDraft({ claims = [], decisions = [] } = {}) {
+export function deriveBuildDraft({ claims = [], decisions = [] }: {
+  claims?: BuildClaim[]
+  decisions?: BuildDecision[]
+} = {}) : {
+  claims: BuildClaim[]
+  decisions: BuildDecision[]
+  conflicts: BuildConflict[]
+  recommendedQuestion: null | { question: string; reason: string }
+  factRows: Array<(BuildClaim & {
+    label: string
+    state: "heard-on-call" | "confirmed" | "working-number"
+  }) | {
+    factKey: string
+    label: string
+    state: "still-need"
+    critical: boolean
+  }>
+  fabrication: { ready: boolean; blockers: string[] }
+} {
   const activeDecisions = activeDecisionByClaim(decisions)
   const visibleClaims = claims.filter((claim) => activeDecisions.get(Number(claim.id))?.state !== "rejected")
   const interpretationGroups = new Map()
@@ -153,7 +217,7 @@ export function deriveBuildDraft({ claims = [], decisions = [] } = {}) {
   }
 }
 
-function competingClaims(claims, target) {
+function competingClaims(claims: BuildClaim[], target: BuildClaim) {
   if (target.interpretationGroup) {
     return claims.filter((claim) => claim.interpretationGroup === target.interpretationGroup)
   }
@@ -162,7 +226,16 @@ function competingClaims(claims, target) {
   )
 }
 
-export function applyBuildDecision(state, command) {
+export function applyBuildDecision(state: { claims: BuildClaim[]; decisions: BuildDecision[] }, command: {
+    kind: "confirm" | "working" | "reject"
+    claimId: number
+    actorId: number
+    purpose?: string
+    decidedAt?: string
+  }) : {
+  newDecisions: Array<BuildDecision & { actorId: number; purpose: string; decidedAt: string }>
+  draft: ReturnType<typeof deriveBuildDraft>
+} {
   const claimId = Number(command?.claimId)
   const target = state?.claims?.find((claim) => Number(claim.id) === claimId)
   if (!target) throw new RangeError("The proposed fact is not part of this draft.")
@@ -187,7 +260,14 @@ export function applyBuildDecision(state, command) {
   return { newDecisions, draft: deriveBuildDraft({ claims: state.claims, decisions }) }
 }
 
-export function lockBuildSheet(input) {
+export function lockBuildSheet(input: {
+  jobId: number
+  sequence: number
+  idempotencyKey: string
+  lockedAt?: string
+  claims: BuildClaim[]
+  decisions: BuildDecision[]
+}) : LockedBuildSheet {
   const draft = deriveBuildDraft(input)
   if (draft.conflicts.length) throw new Error("Resolve every Doesn't match item before locking a Build Sheet.")
   const accepted = new Map(draft.decisions.map((decision) => [Number(decision.claimId), decision]))
@@ -213,11 +293,20 @@ export function lockBuildSheet(input) {
   })
 }
 
-function sameFactValue(left, right) {
+function sameFactValue(left: BuildClaim & { decisionState: "shop-confirmed" | "working-number"; }, right: BuildClaim & { decisionState: "shop-confirmed" | "working-number"; } | BuildClaim) {
   return factMeaning(left) === factMeaning(right)
 }
 
-export function classifyPaperwork({ manifests = [], sourceSheet, draft, releasedSheet = null } = {}) {
+export function classifyPaperwork({ manifests = [], sourceSheet, draft, releasedSheet = null }: {
+  manifests: PaperworkManifest[]
+  sourceSheet: Pick<LockedBuildSheet, "number" | "facts">
+  draft?: ReturnType<typeof deriveBuildDraft>
+  releasedSheet?: Pick<LockedBuildSheet, "number" | "facts"> | null
+} = {}) : Array<PaperworkManifest & {
+  validForSource: true
+  status: "current" | "hold" | "old-numbers" | "needs-update"
+  reason: string
+}> {
   const sourceFacts = new Map((sourceSheet?.facts ?? []).map((fact) => [fact.factKey, fact]))
   const releasedFacts = new Map((releasedSheet?.facts ?? []).map((fact) => [fact.factKey, fact]))
   return manifests.map((manifest) => {

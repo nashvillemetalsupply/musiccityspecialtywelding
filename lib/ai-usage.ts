@@ -1,6 +1,17 @@
-export const AI_MAX_RETRIES = 2
+export type AiUsageRun = {
+  job: "ai-usage"
+  ok: boolean
+  detail: { operation: string; provider: string; model: string; error?: string }
+  meta: { usage: unknown; isTest: boolean }
+}
 
-export async function retryAiRequest(run, shouldRetryResponse, maxRetries = AI_MAX_RETRIES, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))) {
+export type AiCallOptions = { operation: string; provider?: string; model: string; isTest?: boolean; fallbackUsage?: unknown }
+
+export type AiCallRecord = AiCallOptions & { ok: boolean; usage?: unknown; error?: string }
+
+export const AI_MAX_RETRIES: 2 = 2
+
+export async function retryAiRequest<T>(run: () => Promise<T>, shouldRetryResponse: (response: T) => boolean, maxRetries: number = AI_MAX_RETRIES, wait: (ms: number) => Promise<unknown> = (ms) => new Promise((resolve) => setTimeout(resolve, ms))) : Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     let response
     try {
@@ -16,7 +27,7 @@ export async function retryAiRequest(run, shouldRetryResponse, maxRetries = AI_M
   throw new Error("AI request retries ended without a response.")
 }
 
-export function buildAiUsageRun(input) {
+export function buildAiUsageRun(input: AiCallRecord) : AiUsageRun {
   const detail = {
     operation: input.operation,
     provider: input.provider || "gateway",
@@ -34,8 +45,8 @@ export function buildAiUsageRun(input) {
   }
 }
 
-export async function runLoggedAiCall(input, run, writeUsage, onLoggingError = () => {}) {
-  const save = async (row) => {
+export async function runLoggedAiCall<T>(input: AiCallOptions, run: () => Promise<T>, writeUsage: (run: AiUsageRun) => Promise<unknown>, onLoggingError: (error: unknown) => void = () => {}) : Promise<T> {
+  const save = async (row: AiCallRecord) => {
     try {
       await writeUsage(buildAiUsageRun(row))
     } catch (error) {
@@ -45,7 +56,7 @@ export async function runLoggedAiCall(input, run, writeUsage, onLoggingError = (
   try {
     const result = await run()
     const usage = result && typeof result === "object"
-      ? result.totalUsage ?? result.usage ?? input.fallbackUsage
+      ? (result as { totalUsage?: unknown; usage?: unknown }).totalUsage ?? (result as { totalUsage?: unknown; usage?: unknown }).usage ?? input.fallbackUsage
       : input.fallbackUsage
     await save({ ...input, ok: true, usage })
     return result

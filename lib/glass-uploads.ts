@@ -95,7 +95,7 @@ async function expireStaleGlassUploadIntentsForToken(tokenHash: string) {
   return Number(rows[0]?.expired ?? 0)
 }
 
-export async function expireStaleGlassUploadIntents(limit = 20) {
+export async function expireStaleGlassUploadIntents(limit: number = 20) {
   const sql = getSql()
   const boundedLimit = Math.min(Math.max(Math.floor(limit), 1), 50)
   const tokenRows = (await sql`

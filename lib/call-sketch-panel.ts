@@ -1,13 +1,38 @@
+export type PanelFactKey = "kind" | "width" | "height" | "stockSize" | "railCount" | "hingeSide" | "latchSide"
+
+export type PanelFactTone = "said" | "ambig" | "none"
+
+export type SketchGeometry = {
+  isGate: boolean
+  hasDrawing: boolean
+  outlineUncertain: boolean
+  x: number
+  y: number
+  w: number
+  h: number
+  stroke: number
+  rails: number[]
+  railsStated: boolean
+  hinge: { x: number; ys: number[]; r: number } | null
+  latch: { x: number; y: number; size: number } | null
+  widthDim: string
+  heightDim: string
+  widthText: { x: number; y: number }
+  heightText: { x: number; y: number }
+  stockText: { x: number; y: number }
+}
+
+import type { CallSketchSpec, SketchFact } from "./call-sketch-live.ts"
 import { formatShopInches } from "./call-sketch-dxf.ts"
 
 // The seven facts the board's sketch panel shows. `swing` and `material` are
 // real facts on the spec but the panel does not carry them, so the answered
 // count is out of seven and not out of nine.
-export const PANEL_FACT_KEYS = Object.freeze([
+export const PANEL_FACT_KEYS: readonly PanelFactKey[] = Object.freeze([
   "kind", "width", "height", "stockSize", "railCount", "hingeSide", "latchSide",
 ])
 
-export const PANEL_FACT_LABELS = Object.freeze({
+export const PANEL_FACT_LABELS: Readonly<Record<PanelFactKey, string>> = Object.freeze({
   kind: "Kind",
   width: "Width",
   height: "Height",
@@ -24,7 +49,7 @@ const PRICING_WORDS = Object.freeze({ kind: "kind", width: "width", height: "hei
 
 const MEASURED_KEYS = new Set(["width", "height", "stockSize"])
 
-function sentenceList(words) {
+function sentenceList(words: string[]) {
   if (words.length < 2) return words.join("")
   return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`
 }
@@ -32,22 +57,22 @@ function sentenceList(words) {
 // An uncertain fact is a question, not an answer. The mockup's width — heard
 // as an opening measurement — is the case this exists for: it must never
 // count toward the answered total.
-export function factIsAnswered(fact) {
+export function factIsAnswered(fact: SketchFact<unknown> | null | undefined) : boolean {
   return Boolean(fact) && fact.value != null && (fact.truth === "stated" || fact.truth === "confirmed")
 }
 
-export function answeredFactCount(spec) {
+export function answeredFactCount(spec: CallSketchSpec | null | undefined) : number {
   return PANEL_FACT_KEYS.filter((key) => factIsAnswered(spec?.[key])).length
 }
 
 // The three classes the sheet already styles. No CSS is added for this.
-export function factTone(fact) {
+export function factTone(fact: SketchFact<unknown> | null | undefined) : PanelFactTone {
   if (factIsAnswered(fact)) return "said"
   if (fact?.truth === "uncertain" && fact.value != null) return "ambig"
   return "none"
 }
 
-export function factText(key, fact) {
+export function factText(key: PanelFactKey, fact: SketchFact<unknown> | null | undefined) : string {
   if (!fact || fact.value == null) return "Not stated"
   // The mockup's deliberate rendering: a width that could be the opening or
   // the finished piece is shown as the ambiguity, not as a measurement. Two
@@ -69,17 +94,17 @@ export function factText(key, fact) {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-export function pricingGap(spec) {
+export function pricingGap(spec: CallSketchSpec | null | undefined) : string[] {
   return PRICING_KEYS.filter((key) => !factIsAnswered(spec?.[key])).map((key) => PRICING_WORDS[key])
 }
 
-export function pricingSentence(spec) {
+export function pricingSentence(spec: CallSketchSpec | null | undefined) : string {
   const missing = pricingGap(spec)
   if (!missing.length) return ""
   return `it needs ${sentenceList(missing)} before it can be priced`
 }
 
-export function sketchAriaLabel(spec) {
+export function sketchAriaLabel(spec: CallSketchSpec | null | undefined) : string {
   // Nothing described is not a gate. The label used to announce one over an
   // empty sheet on every signed-out render.
   if (!hasDrawing(spec)) return "Empty call sketch. Nothing has been described on this call yet."
@@ -95,7 +120,7 @@ export function sketchAriaLabel(spec) {
 // question mark on the paper; a hedged one is drawn as the approximation it
 // is. Throwing the hedge away entirely printed "?" over a gate the customer
 // had in fact measured — "about 26 inches wide" is not nothing.
-export function dimensionMark(fact) {
+export function dimensionMark(fact: SketchFact<number> | null | undefined) : string {
   if (!fact || fact.value == null) return "?"
   const text = formatShopInches(Number(fact.value))
   return fact.truth === "uncertain" ? `≈ ${text}` : text
@@ -118,12 +143,12 @@ const CENTRE_X = 124
 
 // A hedged measurement is still a measurement. The panel counts only answers,
 // but the paper draws everything the call gave it — marked as what it is.
-function heardValue(spec, key) {
+function heardValue(spec: CallSketchSpec | null | undefined, key: "kind" | "width" | "height" | "stockSize" | "railCount") {
   const fact = spec?.[key]
   return fact && fact.value != null ? fact.value : null
 }
 
-function isHedged(spec, key) {
+function isHedged(spec: CallSketchSpec | null | undefined, key: "width" | "height") {
   return spec?.[key]?.truth === "uncertain" && spec[key].value != null
 }
 
@@ -131,12 +156,12 @@ function isHedged(spec, key) {
 // a sheet; so is a width and a height with no noun attached to them. Neither
 // one being present means the call was about something else, and the tile
 // stays the blank grid it claims to be.
-export function hasDrawing(spec) {
+export function hasDrawing(spec: CallSketchSpec | null | undefined) : boolean {
   if (heardValue(spec, "kind") != null) return true
   return heardValue(spec, "width") != null && heardValue(spec, "height") != null
 }
 
-export function sketchGeometry(spec) {
+export function sketchGeometry(spec: CallSketchSpec | null | undefined) : SketchGeometry {
   const isGate = heardValue(spec, "kind") !== "frame"
   const width = Number(heardValue(spec, "width")) || null
   const height = Number(heardValue(spec, "height")) || null

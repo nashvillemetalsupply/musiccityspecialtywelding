@@ -1,3 +1,13 @@
+export type InboundCallReceiptHealth = {
+  source: "shop-brain-database"
+  providerVerified: false
+  recentNonTestCount: number | null
+  lastReceiptAt: string | null
+  silenceHours: number | null
+  silenceLimitHours: number
+  silent: boolean | null
+}
+
 const HOUR_MS = 60 * 60 * 1000
 
 // The phone is the channel: roughly twenty inbound calls a week, every one of
@@ -5,14 +15,19 @@ const HOUR_MS = 60 * 60 * 1000
 // that rate is about a one-in-three-hundred event, so it means a dead webhook
 // far more often than it means a quiet shop. Ninety-six hours was chosen when
 // this was only a warning; it is the red signal now, so it tightens.
-export const INBOUND_CALL_SILENCE_LIMIT_HOURS = 48
+export const INBOUND_CALL_SILENCE_LIMIT_HOURS: number = 48
 
 export function evaluateInboundCallReceiptHealth({
   connected,
   lastReceiptAt,
   recentNonTestCount,
   nowMs = Date.now(),
-}) {
+}: {
+  connected: boolean
+  lastReceiptAt: string | null
+  recentNonTestCount: number | null
+  nowMs?: number
+}) : InboundCallReceiptHealth {
   const count = Math.max(0, Math.floor(Number(recentNonTestCount) || 0))
   const lastReceiptMs = lastReceiptAt ? new Date(lastReceiptAt).getTime() : Number.NaN
   const validLastReceipt = Number.isFinite(lastReceiptMs)

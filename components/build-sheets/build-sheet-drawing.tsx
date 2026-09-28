@@ -1,4 +1,4 @@
-import type { BuildDrawingProjection } from "@/lib/build-sheets-continuation.mjs"
+import type { BuildDrawingProjection } from "@/lib/build-sheets-continuation.ts"
 
 function scaledGeometry(drawing: BuildDrawingProjection) {
   const width = 284

@@ -1,3 +1,34 @@
+export type SketchTruth = "unknown" | "uncertain" | "stated" | "confirmed"
+
+export type SketchFact<T> = {
+  value: T | null
+  truth: SketchTruth
+  evidence: string
+  track: string
+  sequenceId: number | null
+}
+
+export type CallSketchSpec = {
+  version: 1
+  kind: SketchFact<"gate" | "frame">
+  width: SketchFact<number>
+  height: SketchFact<number>
+  stockSize: SketchFact<number>
+  railCount: SketchFact<number>
+  hingeSide: SketchFact<"left" | "right">
+  latchSide: SketchFact<"left" | "right">
+  swing: SketchFact<string>
+  material: SketchFact<string>
+  nextQuestion: string
+  readyForReview: boolean
+}
+
+export type CallSketchUtterance = {
+  transcript: string
+  track?: string
+  sequenceId?: number | null
+}
+
 const NUMBER_WORDS = new Map([
   ["zero", 0], ["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5],
   ["six", 6], ["seven", 7], ["eight", 8], ["nine", 9], ["ten", 10],
@@ -13,7 +44,7 @@ function emptyFact() {
   return { ...UNKNOWN_FACT }
 }
 
-export function emptyCallSketchSpec() {
+export function emptyCallSketchSpec() : CallSketchSpec {
   return {
     version: 1,
     kind: emptyFact(),
@@ -30,7 +61,7 @@ export function emptyCallSketchSpec() {
   }
 }
 
-function parseNumericValue(raw) {
+function parseNumericValue(raw: string) {
   const compact = raw.trim()
   if (/^\d+\/\d+$/.test(compact)) {
     const [numerator, denominator] = compact.split("/").map(Number)
@@ -56,7 +87,7 @@ const FRACTION_WORDS = new Map([
   ["sixteenth", 16], ["sixteenths", 16],
 ])
 
-function parseWordValue(raw) {
+function parseWordValue(raw: string) {
   const tokens = raw.toLowerCase().replace(/-/g, " ").trim().split(/\s+/)
   let value = 0
   let sawNumber = false
@@ -92,7 +123,7 @@ function parseWordValue(raw) {
   return sawNumber ? value : null
 }
 
-function measurements(text) {
+function measurements(text: string) {
   const found = []
   const numeric = /(\d+(?:\.\d+|\s+\d+\/\d+)?|\d+\/\d+)\s*(feet|foot|ft\.?|inches|inch|in\.?|["'])/gi
   for (const match of text.matchAll(numeric)) {
@@ -119,18 +150,18 @@ function measurements(text) {
   return found.sort((left, right) => left.index - right.index)
 }
 
-function nearest(items, index, options = {}) {
+function nearest(items: { value: number; index: number; raw: string; }[], index: number, options: { after: number; } = {}) {
   const candidates = items.filter((item) => options.after == null || item.index >= options.after)
   if (!candidates.length) return null
   return candidates.reduce((best, item) => Math.abs(item.index - index) < Math.abs(best.index - index) ? item : best)
 }
 
-function measurementForKeyword(items, index) {
+function measurementForKeyword(items: { value: number; index: number; raw: string; }[], index: number) {
   const before = items.filter((item) => item.index <= index)
   return before.length ? before[before.length - 1] : nearest(items, index)
 }
 
-function countBefore(text, noun) {
+function countBefore(text: string, noun: "rails?") {
   const expression = new RegExp(`(\\d+|zero|one|two|three|four|five|six|seven|eight)\\s+(?:interior\\s+)?${noun}`, "i")
   const match = text.match(expression)
   if (!match) return null
@@ -142,11 +173,11 @@ function countBefore(text, noun) {
 // the sketch. See the kind assignment in updateFromUtterance.
 const FRAME_CUE = /\b(rectangular|rails?|pickets?|tu(?:be|bing)|stock|weld|build|building|built|make|made|fabricate|fabricating)\b/
 
-function truthRank(value) {
+function truthRank(value: "stated") {
   return value === "confirmed" ? 3 : value === "stated" ? 2 : value === "uncertain" ? 1 : 0
 }
 
-function assign(spec, key, value, truth, utterance) {
+function assign(spec: CallSketchSpec, key: "kind" | "width" | "height" | "stockSize" | "railCount" | "hingeSide" | "latchSide" | "swing" | "material", value: "gate" | "frame" | number | null | number | string | "gate" | "frame" | "left" | "right", truth: "stated" | "uncertain" | "confirmed", utterance: { transcript: string; track: string; sequenceId: null; }) {
   if (value == null || value === "") return
   const current = spec[key]
   if (truthRank(truth) < truthRank(current.truth)) return
@@ -159,7 +190,7 @@ function assign(spec, key, value, truth, utterance) {
   }
 }
 
-function updateFromUtterance(spec, utterance) {
+function updateFromUtterance(spec: CallSketchSpec, utterance: CallSketchUtterance) {
   const source = String(utterance.transcript ?? "").replace(/\s+/g, " ").trim()
   if (!source) return
   const text = source.toLowerCase().replace(/[–—]/g, "-")
@@ -237,7 +268,7 @@ function updateFromUtterance(spec, utterance) {
   if (material) assign(spec, "material", material[1].toLowerCase(), statedTruth, utterance)
 }
 
-function questionFor(spec) {
+function questionFor(spec: CallSketchSpec) {
   if (!spec.kind.value) return "What are we sketching—a gate or a simple rectangular frame?"
   if (!spec.height.value) return "How tall should it be?"
   if (spec.height.truth === "uncertain") return "Is that the finished height?"
@@ -252,7 +283,7 @@ function questionFor(spec) {
   return "The basic geometry is captured. Review every fact before exporting."
 }
 
-export function deriveCallSketch(utterances = []) {
+export function deriveCallSketch(utterances: CallSketchUtterance[] = []) : CallSketchSpec {
   const spec = emptyCallSketchSpec()
   for (const utterance of [...utterances].sort((left, right) => Number(left.sequenceId ?? 0) - Number(right.sequenceId ?? 0))) {
     updateFromUtterance(spec, utterance)
@@ -266,7 +297,17 @@ export function deriveCallSketch(utterances = []) {
   return spec
 }
 
-export function confirmedCallSketch(input, evidence = "Confirmed by shop owner") {
+export function confirmedCallSketch(input: {
+  kind?: "gate" | "frame"
+  width: number
+  height: number
+  stockSize: number
+  railCount?: number
+  hingeSide?: "left" | "right"
+  latchSide?: "left" | "right"
+  swing?: string
+  material?: string
+}, evidence: string = "Confirmed by shop owner") : CallSketchSpec {
   const spec = emptyCallSketchSpec()
   const utterance = { transcript: evidence, track: "owner", sequenceId: null }
   const kind = input.kind === "frame" ? "frame" : "gate"

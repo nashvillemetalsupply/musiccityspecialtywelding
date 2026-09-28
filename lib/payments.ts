@@ -1,6 +1,11 @@
 // Rollup math for money in hand. QuickBooks payments arrive with their own
 // running total (GREATEST semantics in the ingest); manual payments increment.
-export function paymentRollup({ currentPaidCents, amountCents, invoiceTotalCents, settles }) {
+export function paymentRollup({ currentPaidCents, amountCents, invoiceTotalCents, settles }: {
+  currentPaidCents: number | null | undefined
+  amountCents: number
+  invoiceTotalCents: number | null | undefined
+  settles: boolean
+}) : { paidTotalCents: number; fullyPaid: boolean } {
   const paidTotalCents = Math.max(0, Math.trunc(Number(currentPaidCents ?? 0))) + Math.trunc(Number(amountCents))
   const fullyPaid = settles === true ||
     (invoiceTotalCents !== null && invoiceTotalCents !== undefined &&

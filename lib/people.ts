@@ -267,7 +267,7 @@ export async function findRecentOpenLeadForPerson(personId: number, isTest = fal
   return resolution.leadId
 }
 
-export async function findOpenLeadResolutionForPerson(personId: number, isTest = false): Promise<{ leadId: number | null; ambiguous: boolean; needsJobMatch: boolean }> {
+export async function findOpenLeadResolutionForPerson(personId: number, isTest: boolean = false): Promise<{ leadId: number | null; ambiguous: boolean; needsJobMatch: boolean }> {
   const sql = getSql()
   const rows = (await sql`
     SELECT id, service FROM leads

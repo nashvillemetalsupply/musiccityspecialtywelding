@@ -1,4 +1,4 @@
-export function escapeEmailText(value) {
+export function escapeEmailText(value: unknown) : string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -7,7 +7,7 @@ export function escapeEmailText(value) {
     .replace(/'/g, "&#39;")
 }
 
-export function safeEmailHref(value) {
+export function safeEmailHref(value: unknown) : string {
   try {
     const parsed = new URL(String(value ?? "").trim())
     if (!["https:", "tel:", "mailto:"].includes(parsed.protocol)) return ""

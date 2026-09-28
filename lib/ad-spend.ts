@@ -12,14 +12,16 @@
 //            has never run a campaign. Account-level spend here would bill
 //            MCSW for Nashville Metal Art's storefront ads, so the pull must
 //            filter by campaign name prefix.
-export const AD_CHANNELS = ["google", "facebook"]
+export const AD_CHANNELS = ["google", "facebook"] as const
 export const AD_CHANNEL_LABELS = { google: "Google", facebook: "Facebook" }
+type AdChannel = (typeof AD_CHANNELS)[number]
+type ChannelSpend = { channel: AdChannel; spendCents: number | null; leads: number }
 
 const MAX_DOLLARS = 1_000_000
 
 // Blank means "leave what is already saved alone" -- not zero. An owner who
 // clears the box has not told the shop he spent nothing.
-export function parseSpendDollars(raw) {
+export function parseSpendDollars(raw: unknown): { ok: true; cents: number | null } | { ok: false; cents: null } {
   const text = String(raw ?? "").trim()
   if (!text) return { ok: true, cents: null }
   const cleaned = text.replace(/[$,\s]/g, "")
@@ -33,7 +35,7 @@ export function parseSpendDollars(raw) {
 // No spend recorded is not the same answer as no leads. Spend with zero leads
 // is a real number the owner needs to see, so it reports the whole spend as
 // the cost of nothing rather than dividing by zero.
-export function costPerLeadCents(spendCents, leads) {
+export function costPerLeadCents(spendCents: number | null | undefined, leads: number): number | null {
   if (spendCents === null || spendCents === undefined) return null
   if (!Number.isFinite(spendCents) || spendCents < 0) return null
   if (!Number.isFinite(leads) || leads <= 0) return spendCents > 0 ? spendCents : null
@@ -41,13 +43,13 @@ export function costPerLeadCents(spendCents, leads) {
 }
 
 // Whole dollars for a tile: $31, $1,234. Cents are noise at a glance.
-export function wholeDollars(cents) {
+export function wholeDollars(cents: number): string {
   return `$${Math.round(cents / 100).toLocaleString("en-US")}`
 }
 
 // Mirror pushes once a morning, so spend up to two days old is normal. Past
 // that the tile is showing a stale number and has to say how stale.
-export function spendDaysBehind(asOfIso, nowMs) {
+export function spendDaysBehind(asOfIso: string, nowMs: number): number {
   const hours = (nowMs - Date.parse(asOfIso)) / 3_600_000
   if (!Number.isFinite(hours) || hours <= 48) return 0
   return Math.floor(hours / 24)
@@ -59,7 +61,13 @@ const SHORT_DAY = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago"
 // all ad spend over every lead on the books this Central month, any source.
 // Per-channel figures only once the tracking numbers covered the whole month,
 // because before that every caller is unattributed and the split undercounts.
-export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, perChannelReady }, nowMs) {
+export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, perChannelReady }: {
+  monthLabel: string
+  totalLeads: number
+  channels: ChannelSpend[]
+  spendAsOf: string | null
+  perChannelReady: boolean
+}, nowMs: number): { big: string; beside: string | null; under: string; channelsLine: string | null } {
   const recorded = channels.filter((channel) => channel.spendCents !== null)
   const leads = `${totalLeads} ${totalLeads === 1 ? "lead" : "leads"} on the books`
   if (recorded.length === 0) {
@@ -91,17 +99,20 @@ export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, p
 // month is optional and YYYY-MM. Omitted means "the Central month in progress",
 // which is what a nightly push wants; naming it is how a backfill works without
 // the server's clock deciding. Returned as YYYY-MM-01 or null.
-export function parseAdSpendPayload(body) {
+export function parseAdSpendPayload(body: unknown):
+  | { ok: false; error: string }
+  | { ok: true; monthStart: string | null; updates: Array<{ channel: AdChannel; cents: number }> } {
   if (!body || typeof body !== "object") return { ok: false, error: "Body must be a JSON object." }
 
-  const rawMonth = typeof body.month === "string" ? body.month.trim() : ""
+  const rawMonthValue = (body as Record<string, unknown>).month
+  const rawMonth = typeof rawMonthValue === "string" ? rawMonthValue.trim() : ""
   if (rawMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(rawMonth)) {
     return { ok: false, error: "month must be YYYY-MM." }
   }
 
-  const updates = []
+  const updates: Array<{ channel: AdChannel; cents: number }> = []
   for (const channel of AD_CHANNELS) {
-    const parsed = parseSpendDollars(body[channel])
+    const parsed = parseSpendDollars((body as Record<string, unknown>)[channel])
     if (!parsed.ok) return { ok: false, error: `${channel} must be dollars, like 450 or 450.75.` }
     if (parsed.cents === null) continue
     updates.push({ channel, cents: parsed.cents })

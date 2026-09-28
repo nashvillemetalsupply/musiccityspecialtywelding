@@ -19,7 +19,7 @@ export async function listJobLineItems(leadId: number, role: OperatorRole, inclu
 export async function listJobLineItemsForLeads(
   leadIds: readonly number[],
   role: OperatorRole,
-  includeTests = false,
+  includeTests: boolean = false,
 ): Promise<Map<number, JobLineItem[]>> {
   const byLead = new Map<number, JobLineItem[]>()
   if (role !== "owner") return byLead

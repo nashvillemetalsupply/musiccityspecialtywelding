@@ -1,4 +1,9 @@
-export async function validateSessionTokenWithSql(sql, tokenHash) {
+export type SessionTokenSql = (
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+) => Promise<unknown>
+
+export async function validateSessionTokenWithSql(sql: SessionTokenSql, tokenHash: string) : Promise<Record<string, unknown> | null> {
   try {
     const rows = await sql`
       SELECT o.*, (t.last_used_at < now() - interval '1 hour') AS refresh_due

@@ -1,3 +1,6 @@
+export type ExtractedClaim = { predicate: string; value: unknown }
+
+import type { CallSketchSpec } from "./call-sketch-live.ts"
 // The other half of the shop's ears.
 //
 // Two things read every call transcript. `deriveCallSketch` is a pile of
@@ -43,7 +46,7 @@ const NUMERIC_KEYS = new Set(["width", "height", "stockSize", "railCount"])
 const SIDE_KEYS = new Set(["hingeSide", "latchSide"])
 
 // "26 inches", "2 inches", "47.5 inches", 48, "3", "6 feet", "1 1/2 inch".
-function toInches(raw) {
+function toInches(raw: unknown) {
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null
   const text = String(raw ?? "").toLowerCase().trim()
   if (!text) return null
@@ -59,14 +62,14 @@ function toInches(raw) {
   return value
 }
 
-function toSide(raw) {
+function toSide(raw: unknown) {
   const text = String(raw ?? "").toLowerCase()
   if (/\bleft\b/.test(text)) return "left"
   if (/\bright\b/.test(text)) return "right"
   return null
 }
 
-function toWords(raw) {
+function toWords(raw: unknown) {
   const text = String(raw ?? "").replace(/\s+/g, " ").trim()
   return text ? text.slice(0, 60) : null
 }
@@ -74,7 +77,7 @@ function toWords(raw) {
 // A claim reads as this call describing a gate when the extractor filed it
 // under one. `gate_` is tested first, so the "frame" inside `gate_frame_rails`
 // is part of the gate and not a rectangular frame of its own.
-function kindFromPredicates(predicates) {
+function kindFromPredicates(predicates: string[]) {
   if (predicates.some((predicate) => /^gate(_|$)/i.test(predicate))) return "gate"
   if (predicates.some((predicate) => /^(frame|panel)(_|$)/i.test(predicate))) return "frame"
   return null
@@ -85,7 +88,10 @@ function kindFromPredicates(predicates) {
  * sketch keys to values — no truth, no evidence; the caller decides how to
  * fold them in.
  */
-export function sketchValuesFromClaims(rows) {
+export function sketchValuesFromClaims(rows: ExtractedClaim[] | null | undefined) : {
+  values: Partial<Record<"kind" | "width" | "height" | "stockSize" | "railCount" | "hingeSide" | "latchSide" | "swing" | "material", string | number>>
+  evidence: Record<string, string>
+} {
   const claims = Array.isArray(rows) ? rows : []
   const chosen = {}
   const evidence = {}
@@ -121,7 +127,7 @@ export function sketchValuesFromClaims(rows) {
  * Folds a call's claims into a spec, without ever overruling what the call
  * itself stated. Returns a new spec; the input is untouched.
  */
-export function mergeClaimFacts(spec, rows) {
+export function mergeClaimFacts(spec: CallSketchSpec, rows: ExtractedClaim[] | null | undefined) : CallSketchSpec {
   const { values, evidence } = sketchValuesFromClaims(rows)
   // A measurement belongs to the thing it measures. One caller described
   // stainless tanks and the extractor filed

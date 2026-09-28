@@ -1,10 +1,24 @@
+export type OpsPulse = {
+  eventId: string | null
+  eventsSignature: string | null
+  callsUpdatedAt: string | null
+  callsSignature: string | null
+  callSketchesUpdatedAt: string | null
+  callSketchesSignature: string | null
+  callTranscriptSignature: string | null
+  callDraftsSignature: string | null
+  unreadNotifications: number
+  notificationsSignature: string | null
+}
+
+import type { OperatorRole } from "./operators"
 import {
   OWNER_ONLY_EVENT_KINDS,
   OWNER_ONLY_EVENT_NAMESPACE_PATTERN,
   OWNER_ONLY_EVENT_SENSITIVITIES,
 } from "./event-visibility.ts"
 
-function firstRow(rows) {
+function firstRow(rows: unknown) {
   return Array.isArray(rows) ? rows[0] ?? {} : {}
 }
 
@@ -14,7 +28,7 @@ function timestamp(value) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
-export async function readOpsPulse(sql, role, operatorId = null) {
+export async function readOpsPulse(sql: (strings: TemplateStringsArray, ...values: unknown[]) => Promise<unknown>, role: OperatorRole, operatorId: number | null = null) : Promise<OpsPulse> {
   const rows = await sql`
     WITH latest_visible_events AS (
       SELECT e.id, e.kind, e.body, e.crew_body, e.detail, e.occurred_at,
@@ -181,7 +195,10 @@ export async function readOpsPulse(sql, role, operatorId = null) {
   }
 }
 
-export function createOpsPulseGetHandler({ getOperator, getSql }) {
+export function createOpsPulseGetHandler({ getOperator, getSql }: {
+  getOperator: () => Promise<{ id?: number; role: string } | null>
+  getSql: () => (strings: TemplateStringsArray, ...values: unknown[]) => Promise<unknown>
+}) : () => Promise<Response> {
   return async function GET() {
     const operator = await getOperator()
     if (!operator || (operator.role !== "owner" && operator.role !== "crew")) {

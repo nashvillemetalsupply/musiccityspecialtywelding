@@ -6,7 +6,7 @@ export class EmailProviderError extends Error {
   }
 }
 
-export function isDefinitiveEmailProviderError(error) {
+export function isDefinitiveEmailProviderError(error: unknown) : boolean {
   return error instanceof EmailProviderError && error.definitive
 }
 
@@ -15,7 +15,10 @@ export function isDefinitiveEmailProviderError(error) {
  * request result to erase stronger provider truth. A signed terminal failure
  * still outranks request acceptance; an unsent request rejection does not.
  */
-export function strongestEmailReceiptStatus(receipts) {
+export function strongestEmailReceiptStatus(receipts: ReadonlyArray<{
+  kind?: string | null
+  providerType?: string | null
+}>) : "failed" | "delivered" | "accepted" | "unknown" | null {
   if (receipts.some((receipt) => receipt?.kind === "email.failed" && receipt.providerType)) return "failed"
   if (receipts.some((receipt) => receipt?.kind === "email.delivered")) return "delivered"
   if (receipts.some((receipt) => receipt?.kind === "email.accepted")) return "accepted"
@@ -29,7 +32,10 @@ export function strongestEmailReceiptStatus(receipts) {
  * lost. The caller owns the durable intent and receipt; this adapter owns only
  * the provider-response truth boundary.
  */
-export async function sendEmailWithProviderTruth(send) {
+export async function sendEmailWithProviderTruth(send: () => Promise<{
+  data?: { id?: string | null } | null
+  error?: { message?: string | null } | null
+}>) : Promise<{ id: string }> {
   let result
   try {
     result = await send()

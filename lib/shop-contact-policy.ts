@@ -1,4 +1,9 @@
-export function enforceShopPhoneFallbackPolicy({ isFallback, nodeEnv, vercelEnv, warn = console.warn }) {
+export function enforceShopPhoneFallbackPolicy({ isFallback, nodeEnv, vercelEnv, warn = console.warn }: {
+  isFallback: boolean
+  nodeEnv?: string
+  vercelEnv?: string
+  warn?: (message: string) => void
+}) : "configured" | "fallback" {
   if (!isFallback) return "configured"
 
   if (nodeEnv === "production" && vercelEnv === "production") {

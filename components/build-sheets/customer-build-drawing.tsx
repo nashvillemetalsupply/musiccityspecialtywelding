@@ -1,4 +1,4 @@
-import type { CustomerBuildDrawingProjection } from "@/lib/build-sheets-continuation.mjs"
+import type { CustomerBuildDrawingProjection } from "@/lib/build-sheets-continuation.ts"
 
 export function CustomerBuildDrawing({ drawing }: { drawing: CustomerBuildDrawingProjection }) {
   const scale = Math.min(244 / drawing.width, 144 / drawing.height)

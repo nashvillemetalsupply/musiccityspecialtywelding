@@ -1,4 +1,20 @@
-export function normalizeUsPhone(value) {
+export type GlassStageJob = {
+  completed_at?: string | null
+  work_started_at?: string | null
+  scheduled_at?: string | null
+  quoted_at?: string | null
+  estimate_value_cents?: number | null
+  invoice_number?: string | null
+  paid_at?: string | null
+}
+
+export type InboundAttachmentSensitivity = "photo" | "drawing" | "owner_paperwork" | "unclassified"
+
+export type TwilioConsentKeyword = "STOP" | "START" | "HELP"
+
+export type BoardSignalKind = "waiting" | "noreply" | "promise" | "followup" | "bounced"
+
+export function normalizeUsPhone(value: unknown) : string {
   const raw = String(value ?? "").trim()
   const digits = raw.replace(/\D/g, "")
   if (digits.length === 10) return `+1${digits}`
@@ -11,7 +27,7 @@ export function normalizeUsPhone(value) {
 // example Instagram's 32665). They are sender infrastructure -- Twilio, Meta,
 // banks -- never customer identities, and normalizeUsPhone would reject them.
 // Any short-code sender is system SMS, no matter what the body says.
-export function isUsNumericShortCode(value) {
+export function isUsNumericShortCode(value: unknown) : boolean {
   const raw = String(value ?? "").trim()
   if (!raw || /[a-z]/i.test(raw)) return false
   const digits = raw.replace(/\D/g, "")
@@ -25,7 +41,7 @@ export function isUsNumericShortCode(value) {
 const META_BRAND_PATTERN = /\b(?:instagram|meta)\b/i
 const META_CODE_PATTERN = /\b(?:verification code|security code|login code|code is|is your [a-z]+ code|confirm it.s you)\b/i
 
-export function isMetaVerificationSms(body) {
+export function isMetaVerificationSms(body: unknown) : boolean {
   const text = String(body ?? "").slice(0, 500)
   if (!text) return false
   return META_BRAND_PATTERN.test(text) && META_CODE_PATTERN.test(text)
@@ -34,7 +50,7 @@ export function isMetaVerificationSms(body) {
 // Test status is a partition boundary, so every independent marker is
 // authoritative. A false projection must never mask a true receipt/person
 // marker through first-non-null selection.
-export function isInternalTestContext(...markers) {
+export function isInternalTestContext(...markers: unknown[]) : boolean {
   return markers.some((marker) => {
     if (marker === true || marker === 1) return true
     if (typeof marker !== "string") return false
@@ -43,7 +59,7 @@ export function isInternalTestContext(...markers) {
   })
 }
 
-export function classifyInboundAttachmentSensitivity(filenameValue, contentTypeValue, contextValue = "") {
+export function classifyInboundAttachmentSensitivity(filenameValue: unknown, contentTypeValue: unknown, contextValue: unknown = "") : InboundAttachmentSensitivity {
   const filename = String(filenameValue ?? "")
   const contentType = String(contentTypeValue ?? "").toLowerCase().split(";", 1)[0].trim()
   const evidence = `${filename} ${String(contextValue ?? "")}`.toLowerCase()
@@ -60,28 +76,28 @@ export function classifyInboundAttachmentSensitivity(filenameValue, contentTypeV
 // deleted before the ingester fetches it. That 404 is a terminal tombstone, not
 // a retryable provider outage. Require the structured status so an unrelated
 // exception whose text happens to mention 404 cannot silently drop work.
-export function isGmailMessageGone(error) {
+export function isGmailMessageGone(error: unknown) : boolean {
   return Boolean(error && typeof error === "object" && Number(error.status) === 404)
 }
 
-export function isReservedCustomerPhone(value, reservedValues) {
+export function isReservedCustomerPhone(value: unknown, reservedValues: unknown[]) : boolean {
   const phone = normalizeUsPhone(value)
   if (!phone) return false
   return reservedValues.map(normalizeUsPhone).filter(Boolean).includes(phone)
 }
 
-export function selectBriefAudioPath(role, detail) {
+export function selectBriefAudioPath(role: "owner" | "crew", detail: Record<string, unknown> | null | undefined) : string | null {
   const value = role === "owner" ? detail?.audioPath : detail?.crewAudioPath
   return typeof value === "string" && value ? value : null
 }
 
-export function countsAsHumanResponse(kind, actorType) {
+export function countsAsHumanResponse(kind: string, actorType: string) : boolean {
   return ["call.answered", "call.out"].includes(kind) || (
     actorType === "operator" && ["sms.out", "email.out", "contact.logged", "contact.first-response"].includes(kind)
   )
 }
 
-export function glassStageIndex(job) {
+export function glassStageIndex(job: GlassStageJob) : number {
   if (job.completed_at) return 4
   if (job.work_started_at) return 3
   if (job.scheduled_at) return 2
@@ -89,16 +105,16 @@ export function glassStageIndex(job) {
   return 0
 }
 
-export function glassReviewEligible(job) {
+export function glassReviewEligible(job: GlassStageJob) : boolean {
   return Boolean(job.completed_at && job.paid_at)
 }
 
 // An intent should normally leave `pending` within seconds, before Blob issues
 // its short-lived upload token. Six hours leaves generous room for a stalled
 // browser without letting an abandoned reservation consume the day's quota.
-export const GLASS_UPLOAD_PENDING_EXPIRY_MS = 6 * 60 * 60 * 1000
+export const GLASS_UPLOAD_PENDING_EXPIRY_MS: number = 6 * 60 * 60 * 1000
 
-export function isGlassUploadPendingExpired(status, createdAt, now = Date.now()) {
+export function isGlassUploadPendingExpired(status: string, createdAt: string, now: number = Date.now()) : boolean {
   if (status !== "pending") return false
   const createdTime = new Date(createdAt).getTime()
   const nowTime = Number(now)
@@ -106,14 +122,14 @@ export function isGlassUploadPendingExpired(status, createdAt, now = Date.now())
     && createdTime <= nowTime - GLASS_UPLOAD_PENDING_EXPIRY_MS
 }
 
-export function glassExpiryAt(completedAt) {
+export function glassExpiryAt(completedAt: string | null | undefined) : string | null {
   if (!completedAt) return null
   const value = new Date(completedAt)
   if (Number.isNaN(value.getTime())) return null
   return new Date(value.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString()
 }
 
-export function safeGlassCaptionText(note, service) {
+export function safeGlassCaptionText(note: unknown, service: unknown) : string {
   const generic = `${service || "Job"} finished and checked by the crew.`.slice(0, 180)
   const clean = String(note ?? "").replace(/\s+/g, " ").trim().slice(0, 180)
   if (!clean) return generic
@@ -121,11 +137,11 @@ export function safeGlassCaptionText(note, service) {
   return sensitive.test(clean) ? generic : clean
 }
 
-export function canApplyDone(completedAt) {
+export function canApplyDone(completedAt: string | null | undefined) : boolean {
   return !completedAt
 }
 
-export function canUndoDone(occurredAt, now = Date.now()) {
+export function canUndoDone(occurredAt: string, now: number = Date.now()) : boolean {
   const time = new Date(occurredAt).getTime()
   return Number.isFinite(time) && now - time >= 0 && now - time <= 10_000
 }
@@ -136,7 +152,13 @@ export function handoffDisplayState({
   handoffActionEventId,
   undoStatus,
   undoActionEventId,
-}) {
+}: {
+  persistedHandedOff: boolean
+  handoffStatus: string
+  handoffActionEventId?: number | null
+  undoStatus: string
+  undoActionEventId?: number | null
+}) : boolean {
   const handoffSucceeded = handoffStatus === "handed-off"
   const undoSucceeded = undoStatus === "active"
   if (handoffSucceeded && undoSucceeded) {
@@ -151,7 +173,7 @@ export function handoffDisplayState({
   return Boolean(persistedHandedOff)
 }
 
-export function shouldEmitTwilioFailure(previousStatus, nextStatus, isTest, immutableEventInserted = true) {
+export function shouldEmitTwilioFailure(previousStatus: string, nextStatus: string, isTest: boolean, immutableEventInserted: boolean = true) : boolean {
   return !isTest && immutableEventInserted && previousStatus !== nextStatus && ["failed", "undelivered"].includes(nextStatus)
 }
 
@@ -159,7 +181,7 @@ export function shouldEmitTwilioFailure(previousStatus, nextStatus, isTest, immu
 // the direct work-order URL even when the title and body are long, so the copy
 // is truncated to make room for the whole URL instead of the URL being sliced
 // off the end. Fallback SMS (smsOnly false) keeps the old cap-only shape.
-export function formatSmsBody({ title, body = "", url = "", smsOnly = false }, maxLength = 500) {
+export function formatSmsBody({ title, body = "", url = "", smsOnly = false }: { title: string; body?: string; url?: string; smsOnly?: boolean }, maxLength: number = 500) : string {
   const copy = body ? `${title}: ${body}` : title
   if (!smsOnly || !url) return copy.slice(0, maxLength)
   const suffix = ` ${url}`
@@ -171,7 +193,7 @@ const TWILIO_CONSENT_KEYWORDS = ["STOP", "START", "HELP"]
 
 // Provider classification wins. Without it, only a standalone keyword may
 // change consent; conversational prose must never grant or revoke permission.
-export function classifyTwilioConsentKeyword(optOutType, body) {
+export function classifyTwilioConsentKeyword(optOutType: unknown, body: unknown) : TwilioConsentKeyword | null {
   const providerValue = String(optOutType ?? "").trim().toUpperCase()
   const providerKeyword = TWILIO_CONSENT_KEYWORDS.find((value) => value === providerValue)
   if (providerKeyword) return providerKeyword
@@ -179,17 +201,20 @@ export function classifyTwilioConsentKeyword(optOutType, body) {
   return TWILIO_CONSENT_KEYWORDS.find((value) => value === exactBody) ?? null
 }
 
-export function attachmentCanRetry(status, attempts, ageMs) {
+export function attachmentCanRetry(status: string, attempts: number, ageMs: number) : boolean {
   return ["pending", "failed"].includes(status) && Number(attempts) < 8 && Number(ageMs) >= 5 * 60 * 1000
 }
 
-export function safeActionMovement(startX, startY, currentX, currentY) {
+export function safeActionMovement(startX: number, startY: number, currentX: number, currentY: number) : boolean {
   const deltaX = Number(currentX) - Number(startX)
   const deltaY = Number(currentY) - Number(startY)
   return Math.abs(deltaY) >= 10 || Math.hypot(deltaX, deltaY) >= 14
 }
 
-export function swipeFinishDecision({ deltaX, deltaY, width, submitted = false }) {
+export function swipeFinishDecision({ deltaX, deltaY, width, submitted = false }: { deltaX: number; deltaY: number; width: number; submitted?: boolean }) : {
+  outcome: "cancel" | "reset" | "submit" | "submitted"
+  progress: number
+} {
   if (submitted) return { outcome: "submitted", progress: 1 }
   const safeWidth = Math.max(Number(width) || 0, 1)
   const x = Math.max(0, Number(deltaX) || 0)
@@ -216,7 +241,13 @@ const CUSTOMER_UPLOAD_MIMES = {
   igs: ["model/iges", "application/iges", "application/octet-stream"],
 }
 
-export function validateCustomerUploadMetadata(filenameValue, contentTypeValue, sizeValue) {
+export function validateCustomerUploadMetadata(filenameValue: unknown, contentTypeValue: unknown, sizeValue: unknown) : {
+  filename: string
+  safeName: string
+  extension: string
+  contentType: string
+  size: number
+} {
   const filename = String(filenameValue ?? "").replace(/[\r\n]/g, " ").trim().slice(0, 180)
   const extension = filename.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? ""
   const accepted = CUSTOMER_UPLOAD_MIMES[extension]
@@ -238,7 +269,7 @@ export function validateCustomerUploadMetadata(filenameValue, contentTypeValue, 
   return { filename, safeName, extension, contentType, size }
 }
 
-export function messagingConsentState(events) {
+export function messagingConsentState(events: Array<{ source?: unknown }> | null | undefined) : "granted" | "revoked" | "unknown" {
   let state = "unknown"
   for (const event of events ?? []) {
     const source = String(event?.source ?? "")
@@ -251,19 +282,19 @@ export function messagingConsentState(events) {
 
 // The web quote form's text-consent disclosure. Bumped whenever the disclosure
 // wording or the consent semantics change, so older consents can be traced.
-export const QUOTE_CONSENT_DISCLOSURE_VERSION = "2026-08-14"
+export const QUOTE_CONSENT_DISCLOSURE_VERSION: string = "2026-08-14"
 
 // Customer-facing warning returned when a prior STOP still governs a number.
 // It must stay phone-free: the shop number is already on the form and an
 // internal E.164 value must never leak into a client-facing response.
-export const TEXT_CONSENT_REVOKED_WARNING =
+export const TEXT_CONSENT_REVOKED_WARNING: string =
   "Text updates remain off for this number. Text START to the shop number to turn them back on."
 
 // Customer-facing warning returned when permission could not be verified (a
 // consent-store lookup failure). The lead still lands, but text updates stay
 // off until the customer opts in by text. Phone-free for the same reason as
 // TEXT_CONSENT_REVOKED_WARNING: no digits, no internal E.164.
-export const TEXT_CONSENT_UNVERIFIED_WARNING =
+export const TEXT_CONSENT_UNVERIFIED_WARNING: string =
   "Text updates were not enabled because permission could not be verified. Text START to the shop number to turn them on."
 
 // A web checkbox can never override a prior STOP. Only the customer texting
@@ -271,7 +302,7 @@ export const TEXT_CONSENT_UNVERIFIED_WARNING =
 // "granted" keep the normal atomic lead + consent behavior; anything else
 // (null, empty, invalid, or unavailable input) denies the grant without
 // manufacturing a conflict, because no real STOP exists to report.
-export function webTextConsentResolution(state) {
+export function webTextConsentResolution(state: unknown) : { grant: boolean; consentConflict: boolean } {
   if (state === "granted" || state === "unknown") return { grant: true, consentConflict: false }
   if (state === "revoked") return { grant: false, consentConflict: true }
   return { grant: false, consentConflict: false }
@@ -284,7 +315,7 @@ export function webTextConsentResolution(state) {
 // waiting', 'Customer email waiting', 'New files waiting', 'Missed call').
 // A row that counts the kind needs one product name, declared here once, so no
 // component ever paraphrases its own. Per-job reasons stay verbatim.
-export const BOARD_SIGNAL_LABELS = Object.freeze({
+export const BOARD_SIGNAL_LABELS: Readonly<Record<BoardSignalKind, string>> = Object.freeze({
   waiting:  "Customer waiting",
   noreply:  "Needs a call",
   promise:  "Promise overdue",

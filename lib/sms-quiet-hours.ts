@@ -9,7 +9,7 @@ const formatter = new Intl.DateTimeFormat("en-US", {
   hourCycle: "h23",
 })
 
-function centralParts(date) {
+function centralParts(date: Date) {
   if (!(date instanceof Date) || !Number.isFinite(date.getTime())) {
     throw new TypeError("A valid send time is required.")
   }
@@ -23,7 +23,7 @@ function centralParts(date) {
   }
 }
 
-function centralWallTimeToUtc({ year, month, day, hour, minute }) {
+function centralWallTimeToUtc({ year, month, day, hour, minute }: { year: number; month: number; day: number; hour: number; minute: number; }) {
   const desiredWallMinute = Date.UTC(year, month - 1, day, hour, minute)
   let candidate = desiredWallMinute
   for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -37,7 +37,7 @@ function centralWallTimeToUtc({ year, month, day, hour, minute }) {
 }
 
 /** Return the next 8 a.m. Central instant while quiet hours are active. */
-export function getDeferredSmsSendAt(now = new Date()) {
+export function getDeferredSmsSendAt(now: Date = new Date()) : Date | null {
   const local = centralParts(now)
   const minuteOfDay = local.hour * 60 + local.minute
   if (minuteOfDay >= 8 * 60 && minuteOfDay < 21 * 60) return null
@@ -54,6 +54,6 @@ export function getDeferredSmsSendAt(now = new Date()) {
   })
 }
 
-export function isCentralQuietHours(now = new Date()) {
+export function isCentralQuietHours(now: Date = new Date()) : boolean {
   return getDeferredSmsSendAt(now) !== null
 }

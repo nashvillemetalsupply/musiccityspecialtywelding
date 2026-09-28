@@ -89,7 +89,7 @@ async function finalTranscriptUtterances(callSid: string) {
     LIMIT 2000`) as TranscriptItem[]
 }
 
-async function rebuildObservedSketch(callSid: string, status?: string, eventSequenceId = 0, transcriptionSid = "") {
+async function rebuildObservedSketch(callSid: string, status?: string, eventSequenceId: number | 0 = 0, transcriptionSid: string = "") {
   const sql = getSql()
   const utterances = await sketchUtterances(callSid)
   const spec = deriveCallSketch(utterances.map((item) => ({

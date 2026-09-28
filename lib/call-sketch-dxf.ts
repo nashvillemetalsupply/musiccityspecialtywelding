@@ -1,6 +1,17 @@
+export type GateDxfInput = {
+  kind?: "gate" | "frame"
+  width: number
+  height: number
+  stockSize: number
+  railCount: number
+  hingeSide?: "left" | "right"
+  latchSide?: "left" | "right"
+  title?: string
+}
+
 const FRACTION_DENOMINATOR = 16
 
-function greatestCommonDivisor(left, right) {
+function greatestCommonDivisor(left: number, right: 16) {
   let a = Math.abs(left)
   let b = Math.abs(right)
   while (b) {
@@ -17,7 +28,7 @@ function greatestCommonDivisor(left, right) {
  *
  * @param {number} value
  */
-export function formatShopInches(value) {
+export function formatShopInches(value: number) : string {
   if (!Number.isFinite(value)) return "—"
   const negative = value < 0
   const totalSixteenths = Math.round(Math.abs(value) * FRACTION_DENOMINATOR)
@@ -32,22 +43,22 @@ export function formatShopInches(value) {
   return `${sign}${whole ? `${whole} ` : ""}${numerator}/${denominator}\"`
 }
 
-function assertPositiveMeasurement(name, value) {
+function assertPositiveMeasurement(name: "width" | "height" | "stockSize", value: number) {
   if (!Number.isFinite(value) || value <= 0) {
     throw new TypeError(`${name} must be a positive finite measurement.`)
   }
 }
 
-function number(value) {
+function number(value: number) {
   return Number(value.toFixed(4)).toString()
 }
 
-function addEntity(lines, kind, pairs) {
+function addEntity(lines: string[], kind: "LINE" | "CIRCLE" | "TEXT", pairs: (string | number)[][]) {
   lines.push("0", kind)
   for (const [code, value] of pairs) lines.push(String(code), String(value))
 }
 
-function addLine(lines, layer, x1, y1, x2, y2) {
+function addLine(lines: string[], layer: "DIMENSIONS", x1: 0 | number, y1: number | 0, x2: number | 0, y2: number | 0) {
   addEntity(lines, "LINE", [
     [8, layer],
     [10, number(x1)],
@@ -59,7 +70,7 @@ function addLine(lines, layer, x1, y1, x2, y2) {
   ])
 }
 
-function addCircle(lines, layer, x, y, radius) {
+function addCircle(lines: string[], layer: "HARDWARE", x: number, y: number, radius: number) {
   addEntity(lines, "CIRCLE", [
     [8, layer],
     [10, number(x)],
@@ -69,7 +80,7 @@ function addCircle(lines, layer, x, y, radius) {
   ])
 }
 
-function addText(lines, layer, x, y, height, value, rotation = 0) {
+function addText(lines: string[], layer: "DIMENSIONS" | "NOTES", x: number | 0, y: number, height: number, value: string, rotation: 90 = 0) {
   addEntity(lines, "TEXT", [
     [8, layer],
     [10, number(x)],
@@ -81,7 +92,7 @@ function addText(lines, layer, x, y, height, value, rotation = 0) {
   ])
 }
 
-function addRectangle(lines, layer, left, bottom, right, top) {
+function addRectangle(lines: string[], layer: "FRAME" | "RAILS" | "HARDWARE", left: 0 | number, bottom: 0 | number, right: number, top: number) {
   addLine(lines, layer, left, bottom, right, bottom)
   addLine(lines, layer, right, bottom, right, top)
   addLine(lines, layer, right, top, left, top)
@@ -105,7 +116,7 @@ function addRectangle(lines, layer, left, bottom, right, top) {
  *   title?: string,
  * }} input
  */
-export function createGateDxf(input) {
+export function createGateDxf(input: GateDxfInput) : string {
   const {
     kind = "gate",
     width,
