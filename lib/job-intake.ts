@@ -594,11 +594,13 @@ export async function undoSavedJobIntake(input: {
       ), receipt AS (
         INSERT INTO events (
           occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-          external_id, body, crew_body, detail
+          external_id, body, crew_body, detail, is_test
         )
         SELECT now(), 'job.intake-undone', 'operator', ${String(input.operatorId)}::text,
           t.id, t.person_id, '', 'New-job intake undone', 'New-job intake undone',
-          ${JSON.stringify({ source: "manual" })}::jsonb
+          ${JSON.stringify({ source: "manual" })}::jsonb,
+          mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+            ${JSON.stringify({ source: "manual" })}::jsonb, 'New-job intake undone'::text)
         FROM target t JOIN changed c ON c.id = t.id
         RETURNING id
       )
@@ -688,11 +690,13 @@ export async function undoSavedJobIntake(input: {
     ), receipt AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-        external_id, body, crew_body, detail
+        external_id, body, crew_body, detail, is_test
       )
       SELECT now(), 'job.intake-undone', 'operator', ${String(input.operatorId)}::text,
         t.id, t.person_id, '', 'Saved call intake undone', 'Saved call intake undone',
-        ${JSON.stringify({ source: "call", draftId: intakeRef })}::jsonb
+        ${JSON.stringify({ source: "call", draftId: intakeRef })}::jsonb,
+        mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+          ${JSON.stringify({ source: "call", draftId: intakeRef })}::jsonb, 'Saved call intake undone'::text)
       FROM target t
       JOIN lead_update l ON l.id = t.id
       JOIN call_update c ON c.twilio_sid = t.call_sid

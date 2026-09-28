@@ -5,6 +5,42 @@ import { formatSmsBody, isGmailMessageGone, isMetaVerificationSms, isUsNumericSh
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
+function sqlValueCount(valueList) {
+  const start = valueList.indexOf("(")
+  assert.ok(start >= 0, "VALUES has an opening parenthesis")
+  let depth = 1
+  let commas = 0
+  for (let index = start + 1; index < valueList.length; index += 1) {
+    const char = valueList[index]
+    if (char === "$" && valueList[index + 1] === "{") {
+      let braces = 1
+      index += 2
+      while (index < valueList.length && braces > 0) {
+        if (valueList[index] === "{") braces += 1
+        if (valueList[index] === "}") braces -= 1
+        index += 1
+      }
+      index -= 1
+      continue
+    }
+    if (char === "'") {
+      index += 1
+      while (index < valueList.length) {
+        if (valueList[index] === "'" && valueList[index + 1] === "'") index += 2
+        else if (valueList[index] === "'") break
+        else index += 1
+      }
+      continue
+    }
+    if (char === "(") depth += 1
+    else if (char === ")") {
+      depth -= 1
+      if (depth === 0) return commas + 1
+    } else if (char === "," && depth === 1) commas += 1
+  }
+  throw new Error("Unclosed VALUES list")
+}
+
 test("crew searches and receipts cross a role-aware server boundary", () => {
   const events = source("lib/events.ts")
   const eventAccess = source("lib/event-access.ts")
@@ -379,7 +415,7 @@ test("every real inbound SMS persists an owner-cell copy without test or routing
   const valueList = insert.slice(insert.indexOf("VALUES ("))
   assert.match(columnList, /sms_fallback,\s*sms_only/)
   const columnCount = (columnList.match(/,/g) ?? []).length + 1
-  const valueCount = valueList.split(/,\r?\n/).length
+  const valueCount = sqlValueCount(valueList)
   assert.equal(columnCount, valueCount,
     "INSERT INTO notifications must list a column for every supplied value")
   assert.match(migration, /sms_only BOOLEAN NOT NULL DEFAULT false/)
@@ -519,7 +555,7 @@ test("PAID receipts come only from verified payment ingestion", () => {
     ledger.indexOf("// Reversals append a compensating financial event."),
   )
   assert.ok(receiptLedger.length > 0)
-  assert.equal((receiptLedger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
+  assert.equal((receiptLedger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 4)
 })
 
 test("DONE and peel-back atomically preserve their Wire receipts", () => {

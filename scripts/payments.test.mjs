@@ -139,7 +139,7 @@ test("QuickBooks payment receipts preserve internal-test truth", () => {
   assert.ok(quickbooksLedger.length > 0)
   assert.match(LEDGER_SOURCE, /const body = `\$\{input\.isTest \? "\[INTERNAL TEST\] " : ""\}/)
   assert.match(quickbooksLedger, /WHERE id = \$\{input\.leadId\}::bigint AND is_test = \$\{input\.isTest\}::boolean/)
-  assert.equal((quickbooksLedger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 2)
+  assert.equal((quickbooksLedger.match(/'isTest', (?:c|t)\.is_test/g) ?? []).length, 4)
 })
 
 test("the job offers field collection without putting card data in Shop Brain", () => {

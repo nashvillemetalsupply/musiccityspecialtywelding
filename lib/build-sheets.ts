@@ -181,11 +181,13 @@ export async function decideBuildFact(input: {
     ), event_write AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, external_id,
-        body, crew_body, detail
+        body, crew_body, detail, is_test
       )
       SELECT ${decidedAt}::timestamptz, 'build.fact-decided'::text,
         'operator'::text, scope.operator_id::text, scope.lead_id,
-        ${externalId}::text, ${body}::text, NULL::text, ${detail}::jsonb
+        ${externalId}::text, ${body}::text, NULL::text, ${detail}::jsonb,
+        mcsw_is_test_row(scope.lead_id, NULL::bigint, NULL::bigint, NULL::text,
+          ${detail}::jsonb, ${body}::text)
       FROM lead_scope scope
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id, lead_id
@@ -297,12 +299,14 @@ export async function proposeBuildFactChange(input: {
     ), event_write AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, external_id,
-        body, crew_body, detail
+        body, crew_body, detail, is_test
       )
       SELECT now(), 'build.fact-proposed'::text, 'operator'::text,
         scope.operator_id::text, scope.lead_id, ${externalId}::text,
         ${`Proposed ${source.factKey}: ${value} ${source.unit}`.trim()}::text,
-        NULL::text, ${eventDetail}::jsonb
+        NULL::text, ${eventDetail}::jsonb,
+        mcsw_is_test_row(scope.lead_id, NULL::bigint, NULL::bigint, NULL::text,
+          ${eventDetail}::jsonb, ${`Proposed ${source.factKey}: ${value} ${source.unit}`.trim()}::text)
       FROM lead_scope scope JOIN source_scope source ON true
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id, lead_id
@@ -316,11 +320,13 @@ export async function proposeBuildFactChange(input: {
     ), claim_write AS (
       INSERT INTO claims (
         subject_type, subject_id, predicate, value, confidence,
-        source_event_id, extracted_by, item_key
+        source_event_id, extracted_by, item_key, is_test
       )
       SELECT 'lead'::text, scope.lead_id, 'build_fact'::text,
         ${JSON.stringify(fact)}::jsonb, 1::real, event.id,
-        'build-sheets'::text, ${itemKey}::text
+        'build-sheets'::text, ${itemKey}::text,
+        mcsw_is_test_row(scope.lead_id, NULL::bigint, event.id, NULL::text,
+          NULL::jsonb, ${JSON.stringify(fact)}::text)
       FROM lead_scope scope JOIN event_scope event ON event.lead_id = scope.lead_id
       ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
       RETURNING id, source_event_id
@@ -412,12 +418,14 @@ export async function addWorkingBuildFact(input: {
     ), event_write AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, external_id,
-        body, crew_body, detail
+        body, crew_body, detail, is_test
       )
       SELECT now(), 'build.working-number'::text, 'operator'::text,
         scope.operator_id::text, scope.lead_id, ${externalId}::text,
         ${`Shop estimate for ${input.factKey}: ${input.value} ${template.unit}`.trim()}::text,
-        NULL::text, ${detail}::jsonb
+        NULL::text, ${detail}::jsonb,
+        mcsw_is_test_row(scope.lead_id, NULL::bigint, NULL::bigint, NULL::text,
+          ${detail}::jsonb, ${`Shop estimate for ${input.factKey}: ${input.value} ${template.unit}`.trim()}::text)
       FROM lead_scope scope
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id, lead_id
@@ -432,11 +440,13 @@ export async function addWorkingBuildFact(input: {
     ), claim_write AS (
       INSERT INTO claims (
         subject_type, subject_id, predicate, value, confidence,
-        source_event_id, extracted_by, item_key
+        source_event_id, extracted_by, item_key, is_test
       )
       SELECT 'lead'::text, event.lead_id, 'build_fact'::text,
         ${JSON.stringify(fact)}::jsonb, 1::real, event.id,
-        'build-sheets'::text, ${itemKey}::text
+        'build-sheets'::text, ${itemKey}::text,
+        mcsw_is_test_row(event.lead_id, NULL::bigint, event.id, NULL::text,
+          NULL::jsonb, ${JSON.stringify(fact)}::text)
       FROM event_scope event
       ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
       RETURNING id, subject_id, source_event_id
@@ -736,12 +746,14 @@ export async function respondToCustomerBuildFact(input: {
           )
       ), event_write AS (
         INSERT INTO events (
-          kind, actor_type, lead_id, external_id, body, crew_body, detail
+          kind, actor_type, lead_id, external_id, body, crew_body, detail, is_test
         )
         SELECT 'build.customer-response'::text, 'customer'::text, scope.lead_id,
           ${externalId}::text, 'Customer confirmed a Build Sheet fact.'::text,
           'Customer confirmed a Build Sheet fact.'::text,
-          ${JSON.stringify({ buildSheetNumber: input.buildSheetNumber, claimId: input.claimId, response: "accepted", isTest: true })}::jsonb
+          ${JSON.stringify({ buildSheetNumber: input.buildSheetNumber, claimId: input.claimId, response: "accepted", isTest: true })}::jsonb,
+          mcsw_is_test_row(scope.lead_id, NULL::bigint, NULL::bigint, NULL::text,
+            ${JSON.stringify({ isTest: true })}::jsonb, 'Customer confirmed a Build Sheet fact.'::text)
         FROM scope
         ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
         RETURNING id, lead_id
@@ -827,12 +839,15 @@ export async function respondToCustomerBuildFact(input: {
         )
     ), event_write AS (
       INSERT INTO events (
-        kind, actor_type, lead_id, external_id, body, crew_body, detail
+        kind, actor_type, lead_id, external_id, body, crew_body, detail, is_test
       )
       SELECT 'build.customer-correction'::text, 'customer'::text, scope.lead_id,
         ${externalId}::text, ${`Customer proposed a correction to ${source.factKey}.`}::text,
         'Customer proposed a Build Sheet correction.'::text,
-        ${JSON.stringify({ buildSheetNumber: input.buildSheetNumber, claimId: input.claimId, factKey: source.factKey, value, unit: source.unit, isTest: true })}::jsonb
+        ${JSON.stringify({ buildSheetNumber: input.buildSheetNumber, claimId: input.claimId, factKey: source.factKey, value, unit: source.unit, isTest: true })}::jsonb,
+        mcsw_is_test_row(scope.lead_id, NULL::bigint, NULL::bigint, NULL::text,
+          ${JSON.stringify({ isTest: true })}::jsonb,
+          ${`Customer proposed a correction to ${source.factKey}.`}::text)
       FROM scope
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id, lead_id
@@ -846,10 +861,12 @@ export async function respondToCustomerBuildFact(input: {
     ), claim_write AS (
       INSERT INTO claims (
         subject_type, subject_id, predicate, value, confidence,
-        source_event_id, extracted_by, item_key
+        source_event_id, extracted_by, item_key, is_test
       )
       SELECT 'lead'::text, scope.lead_id, 'build_fact'::text, ${JSON.stringify(fact)}::jsonb,
-        1::real, event.id, 'customer-build-confirmation'::text, ${itemKey}::text
+        1::real, event.id, 'customer-build-confirmation'::text, ${itemKey}::text,
+        mcsw_is_test_row(scope.lead_id, NULL::bigint, event.id, NULL::text,
+          NULL::jsonb, ${JSON.stringify(fact)}::text)
       FROM scope JOIN event_scope event ON event.lead_id = scope.lead_id
       ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
       RETURNING id, source_event_id

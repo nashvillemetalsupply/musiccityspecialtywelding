@@ -1133,6 +1133,81 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS commitments_person_open_idx
     ON commitments(person_id, due_at) WHERE status = 'open'`,
   `CREATE INDEX IF NOT EXISTS calls_to_phone_idx ON calls(to_phone)`,
+  `ALTER TABLE events ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE claims ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE commitments ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE calls ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`,
+  `CREATE OR REPLACE FUNCTION mcsw_is_test_row(
+    p_lead_id BIGINT,
+    p_person_id BIGINT,
+    p_source_event_id BIGINT,
+    p_call_sid TEXT,
+    p_detail JSONB,
+    p_text TEXT
+  ) RETURNS BOOLEAN LANGUAGE SQL STABLE AS $$
+    SELECT COALESCE(lead.is_test, false)
+      OR COALESCE(person.is_test, false)
+      OR COALESCE(lead_person.is_test, false)
+      OR COALESCE(source_event_lead.is_test, false)
+      OR COALESCE(source_event_person.is_test, false)
+      OR COALESCE(source_event_lead_person.is_test, false)
+      OR lower(COALESCE(p_detail->>'isTest', 'false')) = 'true'
+      OR lower(COALESCE(source_event.detail->>'isTest', 'false')) = 'true'
+      OR EXISTS (
+        SELECT 1 FROM call_intake_drafts draft
+        WHERE draft.call_sid = p_call_sid AND draft.is_test = true
+      )
+      OR concat_ws(' ', p_text, p_detail::text,
+        lead.first_name, lead.last_name, lead.service, lead.message, lead.notes,
+        person.display_name, person.company, person.phones::text, person.emails::text,
+        lead_person.display_name, lead_person.company,
+        lead_person.phones::text, lead_person.emails::text,
+        source_event.body, source_event.crew_body, source_event.detail::text,
+        source_event_lead.first_name, source_event_lead.last_name,
+        source_event_lead.service, source_event_lead.message, source_event_lead.notes,
+        source_event_person.display_name, source_event_person.company,
+        source_event_person.phones::text, source_event_person.emails::text,
+        source_event_lead_person.display_name, source_event_lead_person.company,
+        source_event_lead_person.phones::text, source_event_lead_person.emails::text
+      ) ILIKE '%[INTERNAL TEST]%'
+    FROM (VALUES (1)) seed(n)
+    LEFT JOIN leads lead ON lead.id = p_lead_id
+    LEFT JOIN people person ON person.id = p_person_id
+    LEFT JOIN people lead_person ON lead_person.id = lead.person_id
+    LEFT JOIN events source_event ON source_event.id = p_source_event_id
+    LEFT JOIN leads source_event_lead ON source_event_lead.id = source_event.lead_id
+    LEFT JOIN people source_event_person ON source_event_person.id = source_event.person_id
+    LEFT JOIN people source_event_lead_person ON source_event_lead_person.id = source_event_lead.person_id
+  $$`,
+  `UPDATE events e SET is_test = true
+    WHERE e.is_test = false
+      AND mcsw_is_test_row(e.lead_id, e.person_id, NULL::bigint, NULL::text,
+        e.detail, concat_ws(' ', e.body, e.crew_body, e.detail::text)) = true`,
+  `UPDATE claims c SET is_test = true
+    WHERE c.is_test = false
+      AND mcsw_is_test_row(
+        CASE WHEN c.subject_type = 'lead' THEN c.subject_id END,
+        CASE WHEN c.subject_type = 'person' THEN c.subject_id END,
+        c.source_event_id, NULL::text, NULL::jsonb, c.value::text
+      ) = true`,
+  `UPDATE commitments c SET is_test = true
+    WHERE c.is_test = false
+      AND mcsw_is_test_row(c.lead_id, c.person_id, c.source_event_id, NULL::text,
+        NULL::jsonb, concat_ws(' ', c.summary, c.crew_summary)) = true`,
+  `UPDATE calls c SET is_test = true
+    WHERE c.is_test = false
+      AND mcsw_is_test_row(c.lead_id, c.person_id, NULL::bigint, c.twilio_sid,
+        c.detail, COALESCE(c.detail->>'callerName', '')) = true`,
+  `UPDATE messages m SET is_test = true
+    WHERE m.is_test = false
+      AND mcsw_is_test_row(m.lead_id, m.person_id, NULL::bigint, NULL::text,
+        NULL::jsonb, m.body) = true`,
+  `UPDATE notifications n SET is_test = true
+    WHERE n.is_test = false
+      AND mcsw_is_test_row(NULL::bigint, NULL::bigint, n.source_event_id, NULL::text,
+        NULL::jsonb, concat_ws(' ', n.title, n.body)) = true`,
 ]
 
 export const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$
@@ -1222,12 +1297,15 @@ await sql`
 await sql`
   INSERT INTO calls (
     twilio_sid, direction, from_phone, to_phone, status, transcript,
-    transcript_status, lead_id, detail
+    transcript_status, lead_id, detail, is_test
   )
   SELECT ${buildFixtureCallSid}::text, 'inbound'::text, '+16155550199'::text,
     '+16155550100'::text, 'completed'::text, ${buildFixtureTranscript}::text,
     'complete'::text, l.id,
-    ${JSON.stringify({ isTest: true, fixture: "build-sheets" })}::jsonb
+    ${JSON.stringify({ isTest: true, fixture: "build-sheets" })}::jsonb,
+    mcsw_is_test_row(l.id, l.person_id, NULL::bigint, ${buildFixtureCallSid}::text,
+      ${JSON.stringify({ isTest: true, fixture: "build-sheets" })}::jsonb,
+      ${buildFixtureTranscript}::text)
   FROM leads l
   WHERE l.public_id = ${buildFixturePublicId}::text AND l.is_test = true
   ON CONFLICT (twilio_sid) DO NOTHING`
@@ -1268,12 +1346,15 @@ await sql`
 await sql`
   INSERT INTO events (
     occurred_at, kind, actor_type, actor_id, lead_id, external_id,
-    body, crew_body, detail
+    body, crew_body, detail, is_test
   )
   SELECT now(), 'call.transcript'::text, 'customer'::text, ''::text,
     l.id, 'build-sheets-fixture-transcript'::text,
     ${buildFixtureTranscript}::text, NULL::text,
-    ${JSON.stringify({ callSid: buildFixtureCallSid, isTest: true, sensitivity: "owner" })}::jsonb
+    ${JSON.stringify({ callSid: buildFixtureCallSid, isTest: true, sensitivity: "owner" })}::jsonb,
+    mcsw_is_test_row(l.id, NULL::bigint, NULL::bigint, NULL::text,
+      ${JSON.stringify({ callSid: buildFixtureCallSid, isTest: true, sensitivity: "owner" })}::jsonb,
+      ${buildFixtureTranscript}::text)
   FROM leads l
   WHERE l.public_id = ${buildFixturePublicId}::text AND l.is_test = true
   ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING`
@@ -1307,12 +1388,14 @@ if (buildFixture) {
     await sql`
       INSERT INTO claims (
         subject_type, subject_id, predicate, value, confidence,
-        source_event_id, extracted_by, item_key
+        source_event_id, extracted_by, item_key, is_test
       )
       SELECT 'lead'::text, l.id, 'build_fact'::text,
         ${JSON.stringify(fact)}::jsonb,
         ${fact.certainty === "interpreted" ? 0.85 : 0.9}::real,
-        ${sourceEventId}::bigint, 'build-sheets-fixture'::text, ${itemKey}::text
+        ${sourceEventId}::bigint, 'build-sheets-fixture'::text, ${itemKey}::text,
+        mcsw_is_test_row(l.id, NULL::bigint, ${sourceEventId}::bigint, NULL::text,
+          NULL::jsonb, ${JSON.stringify(fact)}::text)
       FROM leads l
       WHERE l.id = ${leadId}::bigint AND l.is_test = true
       ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING`
@@ -1355,12 +1438,15 @@ if (buildFixture) {
   await sql`
     INSERT INTO events (
       occurred_at, kind, actor_type, actor_id, lead_id, external_id,
-      body, crew_body, detail
+      body, crew_body, detail, is_test
     )
     SELECT now(), 'build.fixture-confirmed'::text, 'system'::text, ''::text,
       l.id, 'build-sheets-fixture-confirmed'::text,
       'Known fixture facts confirmed for the owner kill test.'::text,
-      NULL::text, ${JSON.stringify({ isTest: true, sensitivity: "owner" })}::jsonb
+      NULL::text, ${JSON.stringify({ isTest: true, sensitivity: "owner" })}::jsonb,
+      mcsw_is_test_row(${leadId}::bigint, NULL::bigint, NULL::bigint, NULL::text,
+        ${JSON.stringify({ isTest: true, sensitivity: "owner" })}::jsonb,
+        'Known fixture facts confirmed for the owner kill test.'::text)
     FROM leads l
     WHERE l.id = ${leadId}::bigint AND l.is_test = true
     ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING`

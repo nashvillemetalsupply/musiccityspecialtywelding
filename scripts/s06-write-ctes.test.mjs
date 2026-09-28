@@ -88,6 +88,52 @@ test("supersedeClaim inserts the replacement and links the old row in one statem
   assert.match(calls[0].text, /\?\s*::text[\s\S]*?\?\s*::bigint[\s\S]*?\?\s*::jsonb[\s\S]*?\?\s*::real/)
 })
 
+test("recordEvent's SQL test double stores internal and normal events in separate partitions", async () => {
+  const leadFlags = new Map([[41, true], [42, false]])
+  const storedRows = []
+  const calls = []
+  const moduleFakes = new Map([[
+    "@/lib/db",
+    { getSql: () => async (strings, ...values) => {
+      const text = strings.join(" ? ")
+      calls.push({ text, values })
+      const leadId = values[4]
+      const detail = JSON.parse(values[9])
+      const textFields = [values[7], values[8], values[15]].filter(Boolean).join(" ")
+      const isTest = Boolean(leadFlags.get(leadId) || detail.isTest === true
+        || `${textFields} ${values[14] ?? ""}`.toLowerCase().includes("[internal test]"))
+      storedRows.push({ leadId, is_test: isTest })
+      return [{ id: storedRows.length }]
+    } },
+  ], ["@/lib/pagination", { clampPageToTotal: () => 1, normalizePage: () => 1 }], [
+    "@/lib/visibility",
+    {
+      OWNER_ONLY_EVENT_KINDS: [],
+      OWNER_ONLY_EVENT_NAMESPACE_PATTERN: "^$",
+      OWNER_ONLY_EVENT_SENSITIVITIES: [],
+      projectEventForRole: (event) => event,
+    },
+  ]])
+  const { recordEvent } = loadModule("lib/events.ts", moduleFakes)
+
+  await recordEvent({
+    kind: "form.quote", leadId: 41, externalId: "test-event", body: "Quote received",
+    detail: { isTest: true },
+  })
+  await recordEvent({
+    kind: "form.quote", leadId: 42, externalId: "normal-event", body: "Quote received",
+    detail: { isTest: false },
+  })
+
+  assert.equal(storedRows[0].is_test, true)
+  assert.equal(storedRows[1].is_test, false)
+  assert.equal(calls.length, 2)
+  for (const call of calls) {
+    assert.match(call.text, /detail, is_test/)
+    assert.match(call.text, /mcsw_is_test_row/)
+  }
+})
+
 test("createLead's lead and optional consent writes share a materialized SQL statement", async () => {
   const calls = []
   const moduleFakes = new Map([

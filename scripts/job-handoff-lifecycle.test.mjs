@@ -38,7 +38,7 @@ test("handoff and undo are authenticated, idempotent, locked, and atomically rec
   assert.match(actions, /SELECT id, person_id, is_test/)
   assert.match(actions, /SELECT l\.id, l\.person_id, l\.is_test, receipt\.id AS handoff_event_id/)
   assert.equal((actions.match(/CASE WHEN t\.is_test THEN '\[INTERNAL TEST\] '/g) ?? []).length, 4)
-  assert.equal((actions.match(/'isTest', t\.is_test/g) ?? []).length, 2)
+  assert.equal((actions.match(/'isTest', t\.is_test/g) ?? []).length, 4)
 
   assert.match(actions, /receipt\.actor_id = \$\{String\(operator\.id\)\}::text/)
   assert.match(actions, /receipt\.occurred_at >= now\(\) - interval '10 seconds'/)
