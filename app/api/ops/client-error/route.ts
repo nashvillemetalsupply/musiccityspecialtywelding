@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
-import { getSql } from "@/lib/db"
 import { OPS_SESSION_COOKIE, validateSessionToken } from "@/lib/ops-auth"
+import { isTestContext, writeTroubleReport } from "@/lib/trouble-reports"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -75,14 +75,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const sql = getSql()
-    await sql`
-      INSERT INTO trouble_reports (source, message, digest, route, reported_by, is_test)
-      VALUES (
-        'board-client-error'::text, ${message}::text, ${digest}::text,
-        ${route}::text, ${operator.id}::bigint,
-        ${process.env.VERCEL_ENV?.trim().toLowerCase() !== "production"}::boolean
-      )`
+    await writeTroubleReport({
+      source: "board-client-error",
+      message,
+      digest,
+      route,
+      reportedBy: operator.id,
+      isTest: isTestContext(),
+    })
     return new Response(null, { status: 202, headers: { "Cache-Control": "no-store" } })
   } catch (error) {
     console.error("Board client error report could not be saved:", error)
