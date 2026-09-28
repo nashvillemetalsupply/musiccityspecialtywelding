@@ -47,10 +47,12 @@ export async function POST(req: Request) {
   }
   const pendingSid = `pending:${randomUUID()}`
   const rows = (await sql`
-    INSERT INTO calls (twilio_sid, direction, from_phone, to_phone, status, lead_id, person_id, operator_id, detail, idempotency_key)
+    INSERT INTO calls (twilio_sid, direction, from_phone, to_phone, status, lead_id, person_id, operator_id, detail, idempotency_key, is_test)
     VALUES (${pendingSid}::text, 'out', ${process.env.TWILIO_PHONE_NUMBER!}::text, ${targetPhone}::text,
       'persisted', ${leadId}::bigint, ${targetPersonId}::bigint, ${operator.id}::bigint,
-      ${JSON.stringify({ operatorCell: operator.cell_phone })}::jsonb, ${`tracked-call:${operator.id}:${intentKey}`}::text)
+      ${JSON.stringify({ operatorCell: operator.cell_phone })}::jsonb, ${`tracked-call:${operator.id}:${intentKey}`}::text,
+      mcsw_is_test_row(${leadId}::bigint, ${targetPersonId}::bigint, NULL::bigint, ${pendingSid}::text,
+        ${JSON.stringify({ operatorCell: operator.cell_phone })}::jsonb, ${targetPhone}::text))
     ON CONFLICT (idempotency_key) WHERE idempotency_key <> '' DO NOTHING
     RETURNING id`) as { id: number }[]
   const prior = rows[0] ? [] : (await sql`

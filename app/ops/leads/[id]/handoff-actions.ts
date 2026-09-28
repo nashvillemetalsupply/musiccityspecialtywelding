@@ -59,7 +59,7 @@ export async function markJobHandedOff(
       ), immutable_receipt AS (
         INSERT INTO events (
           occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-          external_id, body, crew_body, detail
+          external_id, body, crew_body, detail, is_test
         )
         SELECT now(), 'job.handed-off'::text, 'operator'::text,
           ${String(operator.id)}::text, t.id, t.person_id,
@@ -71,7 +71,10 @@ export async function markJobHandedOff(
           ${JSON.stringify(detail)}::jsonb || jsonb_build_object(
             'legacyType', 'handoff_completed'::text,
             'isTest', t.is_test
-          )
+          ),
+          mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+            ${JSON.stringify(detail)}::jsonb || jsonb_build_object('isTest', t.is_test),
+            'Job closed after pickup or delivery. Removed from Active Jobs.'::text)
         FROM target t
         RETURNING id, occurred_at
       ), lead_update AS (
@@ -182,7 +185,7 @@ export async function undoJobHandedOff(
       ), immutable_receipt AS (
         INSERT INTO events (
           occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-          external_id, body, crew_body, detail
+          external_id, body, crew_body, detail, is_test
         )
         SELECT now(), 'job.handoff-undone'::text, 'operator'::text,
           ${String(operator.id)}::text, t.id, t.person_id,
@@ -194,7 +197,10 @@ export async function undoJobHandedOff(
           ${JSON.stringify(detail)}::jsonb || jsonb_build_object(
             'legacyType', 'handoff_undone'::text,
             'isTest', t.is_test
-          )
+          ),
+          mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+            ${JSON.stringify(detail)}::jsonb || jsonb_build_object('isTest', t.is_test),
+            'Job reopened and returned to Active Jobs.'::text)
         FROM target t
         RETURNING id
       ), lead_update AS (

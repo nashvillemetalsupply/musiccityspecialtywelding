@@ -78,7 +78,7 @@ export async function addCommitment(input: {
   const rows = (await sql`
     INSERT INTO commitments (
       lead_id, person_id, direction, operator_id, summary, crew_summary, due_at,
-      source_event_id, confidence, visible_on_glass, item_key
+      source_event_id, confidence, visible_on_glass, item_key, is_test
     ) VALUES (
       ${input.leadId ?? null}::bigint,
       ${input.personId ?? null}::bigint,
@@ -90,7 +90,10 @@ export async function addCommitment(input: {
       ${input.sourceEventId}::bigint,
       ${input.confidence}::real,
       ${input.visibleOnGlass ?? false}::boolean,
-      ${itemKey}::text
+      ${itemKey}::text,
+      mcsw_is_test_row(${input.leadId ?? null}::bigint, ${input.personId ?? null}::bigint,
+        ${input.sourceEventId}::bigint, NULL::text, NULL::jsonb,
+        concat_ws(' ', ${input.summary}::text, ${input.crewSummary ?? null}::text))
     ) ON CONFLICT DO NOTHING
     RETURNING id`) as { id: number }[]
   if (rows[0]) return Number(rows[0].id)

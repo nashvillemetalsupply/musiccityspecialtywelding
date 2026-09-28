@@ -14,7 +14,7 @@ const sql = neon(databaseUrl())
 const result = await sql`
   INSERT INTO events (
     occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-    external_id, body, detail, processed_at
+    external_id, body, detail, processed_at, is_test
   )
   SELECT
     le.created_at,
@@ -32,7 +32,10 @@ const result = await sql`
     'lead_event:' || le.id::text,
     COALESCE(le.detail->>'note', le.detail->>'message', le.detail->>'reason', ''),
     COALESCE(le.detail, '{}'::jsonb) || jsonb_build_object('legacyType', le.type),
-    le.created_at
+    le.created_at,
+    mcsw_is_test_row(le.lead_id, l.person_id, NULL::bigint, NULL::text,
+      COALESCE(le.detail, '{}'::jsonb) || jsonb_build_object('legacyType', le.type),
+      COALESCE(le.detail->>'note', le.detail->>'message', le.detail->>'reason', ''))
   FROM lead_events le
   JOIN leads l ON l.id = le.lead_id
   ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING

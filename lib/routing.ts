@@ -81,14 +81,16 @@ export async function reconcileRoutedLeadProjections(
     ), replacement_claims AS (
       INSERT INTO claims (
         subject_type, subject_id, predicate, value, confidence,
-        source_event_id, extracted_by, item_key
+        source_event_id, extracted_by, item_key, is_test
       )
       SELECT candidate.subject_type, candidate.target_id, candidate.predicate,
         candidate.value, candidate.confidence, candidate.source_event_id,
         candidate.extracted_by,
         CASE WHEN candidate.item_key = '' THEN 'routed:'::text
           ELSE candidate.item_key || ':routed:'::text END ||
-          candidate.target_id::text || ':'::text || candidate.id::text
+          candidate.target_id::text || ':'::text || candidate.id::text,
+        mcsw_is_test_row(candidate.target_id, NULL::bigint, candidate.source_event_id,
+          NULL::text, NULL::jsonb, candidate.value::text)
       FROM claim_candidates candidate
       RETURNING id, source_event_id, item_key
     ), moved_claims AS (

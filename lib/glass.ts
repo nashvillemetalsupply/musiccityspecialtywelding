@@ -110,11 +110,13 @@ export async function rotateGlassLink(leadId: number, operatorId: number) {
     ), held AS MATERIALIZED (
       SELECT pg_advisory_xact_lock(hashtext(token_hash)) FROM active
     ), receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test)
       SELECT 'glass.rotated'::text, 'operator'::text, ${String(operatorId)}::text,
         t.id, t.person_id, ${externalId}::text,
         'Customer Page link replaced'::text, 'Customer Page link replaced'::text,
-        ${JSON.stringify({ newTokenHash: hash })}::jsonb
+        ${JSON.stringify({ newTokenHash: hash })}::jsonb,
+        mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+          ${JSON.stringify({ newTokenHash: hash })}::jsonb, 'Customer Page link replaced'::text)
       FROM target t CROSS JOIN (SELECT count(*) FROM held) lock_guard
       RETURNING id
     ), revoked AS (
@@ -144,10 +146,12 @@ export async function revokeGlassLinks(leadId: number, operatorId: number) {
     ), held AS MATERIALIZED (
       SELECT pg_advisory_xact_lock(hashtext(token_hash)) FROM active
     ), receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, is_test)
       SELECT 'glass.revoked'::text, 'operator'::text, ${String(operatorId)}::text,
         l.id, l.person_id, ${externalId}::text,
-        'Customer Page closed'::text, 'Customer Page closed'::text
+        'Customer Page closed'::text, 'Customer Page closed'::text,
+        mcsw_is_test_row(l.id, l.person_id, NULL::bigint, NULL::text,
+          NULL::jsonb, 'Customer Page closed'::text)
       FROM leads l CROSS JOIN (SELECT count(*) FROM held) lock_guard
       WHERE l.id = ${leadId}::bigint AND EXISTS (SELECT 1 FROM active)
       RETURNING id

@@ -56,7 +56,7 @@ export async function recordEvent(input: RecordEventInput): Promise<number | nul
     ? ((await sql`
         INSERT INTO events (
           occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-          external_id, body, crew_body, detail
+          external_id, body, crew_body, detail, is_test
         ) VALUES (
           ${occurredAt}::timestamptz,
           ${input.kind}::text,
@@ -67,14 +67,17 @@ export async function recordEvent(input: RecordEventInput): Promise<number | nul
           ${externalId}::text,
           ${input.body ?? ""}::text,
           ${input.crewBody ?? null}::text,
-          ${detail}::jsonb
+          ${detail}::jsonb,
+          mcsw_is_test_row(${input.leadId ?? null}::bigint, ${input.personId ?? null}::bigint,
+            NULL::bigint, NULL::text, ${detail}::jsonb,
+            concat_ws(' ', ${input.body ?? ""}::text, ${input.crewBody ?? null}::text, ${detail}::text))
         )
         ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
         RETURNING id`) as { id: number }[])
     : ((await sql`
         INSERT INTO events (
           occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-          external_id, body, crew_body, detail
+          external_id, body, crew_body, detail, is_test
         ) VALUES (
           ${occurredAt}::timestamptz,
           ${input.kind}::text,
@@ -85,7 +88,10 @@ export async function recordEvent(input: RecordEventInput): Promise<number | nul
           ''::text,
           ${input.body ?? ""}::text,
           ${input.crewBody ?? null}::text,
-          ${detail}::jsonb
+          ${detail}::jsonb,
+          mcsw_is_test_row(${input.leadId ?? null}::bigint, ${input.personId ?? null}::bigint,
+            NULL::bigint, NULL::text, ${detail}::jsonb,
+            concat_ws(' ', ${input.body ?? ""}::text, ${input.crewBody ?? null}::text, ${detail}::text))
         ) RETURNING id`) as { id: number }[])
   return rows[0] ? Number(rows[0].id) : null
 }

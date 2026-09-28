@@ -91,7 +91,7 @@ export async function applyQuickBooksPayment(input: QuickBooksPaymentInput): Pro
     ), receipt_write AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-        external_id, body, crew_body, detail
+        external_id, body, crew_body, detail, is_test
       )
       SELECT ${input.occurredAt}::timestamptz, 'invoice.payment-received'::text,
         ${actorType}::text, ${actorId}::text, c.id, c.person_id,
@@ -106,7 +106,9 @@ export async function applyQuickBooksPayment(input: QuickBooksPaymentInput): Pro
           'fullyPaid', c.fully_paid,
           'provider', 'quickbooks'::text,
           'isTest', c.is_test
-        )
+        ),
+        mcsw_is_test_row(c.id, c.person_id, ${input.sourceEventId}::bigint, NULL::text,
+          jsonb_build_object('isTest', c.is_test), ${body}::text)
       FROM calculation c
       WHERE NOT EXISTS (SELECT 1 FROM existing_receipt)
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
@@ -141,7 +143,7 @@ export async function applyQuickBooksPayment(input: QuickBooksPaymentInput): Pro
     ), paid_write AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-        external_id, body, crew_body, detail
+        external_id, body, crew_body, detail, is_test
       )
       SELECT ${input.occurredAt}::timestamptz, 'invoice.paid'::text,
         ${actorType}::text, ${actorId}::text, t.id, t.person_id,
@@ -155,7 +157,9 @@ export async function applyQuickBooksPayment(input: QuickBooksPaymentInput): Pro
           'fullyPaid', true,
           'provider', 'quickbooks'::text,
           'isTest', t.is_test
-        )
+        ),
+        mcsw_is_test_row(t.id, t.person_id, ${input.sourceEventId}::bigint, NULL::text,
+          jsonb_build_object('isTest', t.is_test), ${body}::text)
       FROM target t CROSS JOIN receipt_scope r CROSS JOIN projection_write p
       WHERE r.fully_paid
         AND NOT EXISTS (SELECT 1 FROM existing_receipt e WHERE e.kind = 'invoice.paid')
@@ -248,7 +252,7 @@ export async function applyPaymentReversal(input: PaymentReversalInput): Promise
         )
     ), reversal_write AS (
       INSERT INTO events (
-        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail
+        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test
       )
       SELECT 'payment.reversed'::text, 'operator'::text, ${String(input.operatorId)}::text,
         c.id, c.person_id, ${idempotencyKey}::text,
@@ -261,7 +265,9 @@ export async function applyPaymentReversal(input: PaymentReversalInput): Promise
           'netPaidCents', c.net_paid_cents,
           'manual', true,
           'isTest', c.is_test
-        )
+        ),
+        mcsw_is_test_row(c.id, c.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', c.is_test), ${body}::text)
       FROM calculation c
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id, lead_id

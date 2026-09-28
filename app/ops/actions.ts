@@ -321,14 +321,18 @@ export async function updateLeadStatus(formData: FormData) {
     ), immutable_receipt AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-        external_id, body, crew_body, detail
+        external_id, body, crew_body, detail, is_test
       )
       SELECT now(), 'status.changed'::text, 'operator'::text,
         ${actorId(operator)}::text, u.id, u.person_id, ''::text,
         CASE WHEN u.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || ${reason}::text,
         NULL::text,
         ${JSON.stringify({ status, reason: reason || null, legacyType: "status_changed" })}::jsonb
-          || CASE WHEN u.is_test THEN '{"isTest":true}'::jsonb ELSE '{}'::jsonb END
+          || CASE WHEN u.is_test THEN '{"isTest":true}'::jsonb ELSE '{}'::jsonb END,
+        mcsw_is_test_row(u.id, u.person_id, NULL::bigint, NULL::text,
+          ${JSON.stringify({ status, reason: reason || null, legacyType: "status_changed" })}::jsonb
+            || CASE WHEN u.is_test THEN '{"isTest":true}'::jsonb ELSE '{}'::jsonb END,
+          ${reason}::text)
       FROM lead_update u
       RETURNING lead_id
     )
@@ -712,7 +716,7 @@ export async function recordPayment(formData: FormData) {
       FROM target t
     ), event_write AS (
       INSERT INTO events (
-        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail
+        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test
       )
       SELECT 'invoice.payment-received'::text,
         'operator'::text, ${String(operator.id)}::text, c.id, c.person_id,
@@ -729,7 +733,9 @@ export async function recordPayment(formData: FormData) {
           'fullyPaid', c.fully_paid,
           'manual', true,
           'isTest', c.is_test
-        )
+        ),
+        mcsw_is_test_row(c.id, c.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', c.is_test), ${baseBody}::text)
       FROM calculation c
       WHERE NOT EXISTS (SELECT 1 FROM existing_key)
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
@@ -865,14 +871,16 @@ export async function routeConversationToJob(formData: FormData) {
     ), replacement_claims AS (
       INSERT INTO claims (
         subject_type, subject_id, predicate, value, confidence,
-        source_event_id, extracted_by, item_key
+        source_event_id, extracted_by, item_key, is_test
       )
       SELECT candidate.subject_type, candidate.target_id, candidate.predicate,
         candidate.value, candidate.confidence, candidate.source_event_id,
         candidate.extracted_by,
         CASE WHEN candidate.item_key = '' THEN 'routed:'::text
           ELSE candidate.item_key || ':routed:'::text END ||
-          candidate.target_id::text || ':'::text || candidate.id::text
+          candidate.target_id::text || ':'::text || candidate.id::text,
+        mcsw_is_test_row(candidate.target_id, NULL::bigint, candidate.source_event_id,
+          NULL::text, NULL::jsonb, candidate.value::text)
       FROM claim_candidates candidate
       RETURNING id, source_event_id, item_key
     ), moved_claims AS (
@@ -891,22 +899,26 @@ export async function routeConversationToJob(formData: FormData) {
       FROM routed WHERE claim.identity_key = 'phone:'::text || routed.person_id::text
       RETURNING claim.identity_key
     ), source_receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test)
       SELECT 'conversation.routed'::text, 'operator'::text, ${actorId(operator)}::text,
         routed.source_id, routed.person_id, ${receiptKey}::text,
         ${`Conversation filed to Job #${targetLeadId}.`}::text,
         ${`Conversation filed to Job #${targetLeadId}.`}::text,
-        ${JSON.stringify({ targetLeadId, isTest: false })}::jsonb || jsonb_build_object('isTest', routed.is_test)
+        ${JSON.stringify({ targetLeadId, isTest: false })}::jsonb || jsonb_build_object('isTest', routed.is_test),
+        mcsw_is_test_row(routed.source_id, routed.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', routed.is_test), ${`Conversation filed to Job #${targetLeadId}.`}::text)
       FROM routed
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id
     ), target_receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test)
       SELECT 'conversation.received'::text, 'operator'::text, ${actorId(operator)}::text,
         routed.target_id, routed.person_id, ${receiptKey}::text,
         ${`Unmatched customer conversation filed here from Job #${sourceLeadId}.`}::text,
         ${`Customer conversation filed here from Job #${sourceLeadId}.`}::text,
-        ${JSON.stringify({ sourceLeadId, isTest: false })}::jsonb || jsonb_build_object('isTest', routed.is_test)
+        ${JSON.stringify({ sourceLeadId, isTest: false })}::jsonb || jsonb_build_object('isTest', routed.is_test),
+        mcsw_is_test_row(routed.target_id, routed.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', routed.is_test), ${`Unmatched customer conversation filed here from Job #${sourceLeadId}.`}::text)
       FROM routed
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id
@@ -990,13 +1002,17 @@ export async function resolveIdentityConflict(formData: FormData) {
           AND p.merged_into IS NULL AND p.is_test = c.is_test
         ))
     ), receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, external_id, body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, external_id, body, detail, is_test)
       SELECT 'identity.conflict.resolved'::text, 'operator'::text, ${actorId(operator)}::text,
         t.lead_id, ${`identity-resolved:${conflictId}`}::text,
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END ||
           ${personId === 0 ? "Customer identities kept separate" : "Customer identity selected"}::text,
         jsonb_build_object('conflictId', t.id, 'personId', ${personId}::bigint,
-          'resolution', ${resolution}::text, 'isTest', t.is_test)
+          'resolution', ${resolution}::text, 'isTest', t.is_test),
+        mcsw_is_test_row(t.lead_id, NULL::bigint, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', t.is_test),
+          CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END ||
+            ${personId === 0 ? "Customer identities kept separate" : "Customer identity selected"}::text)
       FROM target t
       ON CONFLICT DO NOTHING
       RETURNING lead_id
@@ -1136,14 +1152,17 @@ export async function captureLeadContact(formData: FormData) {
     )
     INSERT INTO events (
       occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-      external_id, body, crew_body, detail
+      external_id, body, crew_body, detail, is_test
     )
     SELECT now(), 'contact.captured'::text, 'operator'::text,
       ${String(operator.id)}::text, t.id, t.person_id,
       ''::text,
       CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Customer contact caught'::text,
       CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Customer contact caught'::text,
-      ${JSON.stringify({ ...detail, legacyType: "contact_captured", isTest: lead.is_test })}::jsonb
+      ${JSON.stringify({ ...detail, legacyType: "contact_captured", isTest: lead.is_test })}::jsonb,
+      mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+        ${JSON.stringify({ ...detail, legacyType: "contact_captured", isTest: lead.is_test })}::jsonb,
+        'Customer contact caught'::text)
     FROM target t`
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
@@ -1246,11 +1265,13 @@ export async function markLeadComplete(formData: FormData) {
     const externalId = `job-closeout-update:${leadId}:${closeoutKey}`
     const updates = (await sql`
       WITH event_write AS (
-        INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+        INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test)
         SELECT 'job.closeout-update'::text, 'operator'::text, ${String(operator.id)}::text,
           l.id, l.person_id, ${externalId}::text, ${note}::text,
           'Partial work update filed. Job remains open.'::text,
-          ${JSON.stringify({ closeout, noteSource, voiceIntentId: hasVoiceIntent ? voiceIntentId : null, ...(recoveredVoice[0] ? { voicePath: recoveredVoice[0].blob_path, voiceContentType: recoveredVoice[0].content_type, recoveredVoiceIntentId: voiceIntentId } : {}), sensitivity: "owner-only", isTest: true })}::jsonb
+          ${JSON.stringify({ closeout, noteSource, voiceIntentId: hasVoiceIntent ? voiceIntentId : null, ...(recoveredVoice[0] ? { voicePath: recoveredVoice[0].blob_path, voiceContentType: recoveredVoice[0].content_type, recoveredVoiceIntentId: voiceIntentId } : {}), sensitivity: "owner-only", isTest: true })}::jsonb,
+          mcsw_is_test_row(l.id, l.person_id, NULL::bigint, NULL::text,
+            ${JSON.stringify({ isTest: true })}::jsonb, ${note}::text)
         FROM leads l WHERE l.id = ${leadId}::bigint AND l.is_test = true AND l.completed_at IS NULL
           AND NOT EXISTS (
             SELECT 1 FROM events keyed
@@ -1329,13 +1350,15 @@ export async function markLeadComplete(formData: FormData) {
     ), immutable_receipt AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-        external_id, body, detail
+        external_id, body, detail, is_test
       )
       SELECT now(), 'job.completed'::text, 'operator'::text,
         ${String(operator.id)}::text, t.id, t.person_id,
         ''::text,
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || ${note}::text,
-        ${JSON.stringify({ ...completionDetail, legacyType: "completed" })}::jsonb
+        ${JSON.stringify({ ...completionDetail, legacyType: "completed" })}::jsonb,
+        mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+          ${JSON.stringify(completionDetail)}::jsonb, ${note}::text)
       FROM target t
       RETURNING id
     ), closeout_write AS (
@@ -1378,7 +1401,7 @@ export async function markLeadComplete(formData: FormData) {
     ), wire_receipts AS (
       INSERT INTO notifications (
         operator_id, priority, stock, title, body, url, source_event_id,
-        owner_only, dedupe_key
+        owner_only, dedupe_key, is_test
       )
       SELECT o.id, 'digest'::text, 'white'::text,
         ${`${operator.name || "The crew"} closed ${before[0].first_name}'s job`}::text,
@@ -1387,7 +1410,10 @@ export async function markLeadComplete(formData: FormData) {
           ELSE ${`${before[0].first_name}'s job marked finished.`}::text
         END,
         ${`/ops/leads/${leadId}#spike`}::text, r.id, false,
-        ('completion:' || r.id::text)
+        ('completion:' || r.id::text),
+        mcsw_is_test_row(NULL::bigint, NULL::bigint, r.id, NULL::text, NULL::jsonb,
+          concat_ws(' ', ${`${operator.name || "The crew"} closed ${before[0].first_name}'s job`}::text,
+            ${note || `${before[0].service} marked finished.`}::text))
       FROM immutable_receipt r CROSS JOIN operators o
       WHERE o.active = true AND ${!before[0].is_test}::boolean
       ON CONFLICT (operator_id, dedupe_key) WHERE dedupe_key <> '' DO NOTHING
@@ -1628,7 +1654,7 @@ export async function scheduleLeadRecord(
     ), new_receipt AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-        external_id, body, crew_body, detail
+        external_id, body, crew_body, detail, is_test
       )
       SELECT now(), 'lead.scheduled'::text, 'operator'::text, ${actorId(operator)}::text,
         t.id, t.person_id, ${externalId}::text,
@@ -1640,7 +1666,9 @@ export async function scheduleLeadRecord(
           'source', ${source}::text,
           'legacyType', 'scheduled'::text,
           'isTest', t.is_test
-        )
+        ),
+        mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', t.is_test), 'Appointment scheduled'::text)
       FROM target t
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING lead_id
@@ -1709,12 +1737,15 @@ export async function classifyLeadAttachment(formData: FormData) {
         AND status = 'stored' AND sensitivity <> 'photo'
       RETURNING person_id
     )
-    INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+    INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test)
     SELECT 'attachment.classified'::text, 'operator'::text, ${actorId(operator)}::text,
       ${leadId}::bigint, changed.person_id, ${receiptKey}::text,
       'Owner approved an inbound image as a job photo.'::text,
       'A customer photo is ready for the crew.'::text,
-      ${JSON.stringify({ pathname, sensitivity: "photo" })}::jsonb
+      ${JSON.stringify({ pathname, sensitivity: "photo" })}::jsonb,
+      mcsw_is_test_row(${leadId}::bigint, changed.person_id, NULL::bigint, NULL::text,
+        ${JSON.stringify({ pathname, sensitivity: "photo" })}::jsonb,
+        'Owner approved an inbound image as a job photo.'::text)
     FROM changed
     ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING`
   revalidatePath(`/ops/leads/${leadId}`)
@@ -1792,13 +1823,15 @@ export async function undoLeadComplete(formData: FormData) {
     ), immutable_receipt AS (
       INSERT INTO events (
         occurred_at, kind, actor_type, actor_id, lead_id, person_id,
-        external_id, body, detail
+        external_id, body, detail, is_test
       )
       SELECT now(), 'job.completion-undone'::text, 'operator'::text,
         ${String(operator.id)}::text, t.id, t.person_id,
         ''::text,
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Job finish undone'::text,
-        ${JSON.stringify({ ...undoDetail, legacyType: "completion_undone" })}::jsonb
+        ${JSON.stringify({ ...undoDetail, legacyType: "completion_undone" })}::jsonb,
+        mcsw_is_test_row(t.id, t.person_id, NULL::bigint, NULL::text,
+          ${JSON.stringify({ ...undoDetail, legacyType: "completion_undone" })}::jsonb, 'Job finish undone'::text)
       FROM target t
       RETURNING id
     ), lead_update AS (
@@ -1849,13 +1882,16 @@ export async function undoLeadComplete(formData: FormData) {
     ), undo_wire AS (
       INSERT INTO notifications (
         operator_id, priority, stock, title, body, url, source_event_id,
-        owner_only, dedupe_key
+        owner_only, dedupe_key, is_test
       )
       SELECT o.id, 'digest'::text, 'manila'::text,
         ${`${rows[0].first_name || "Job"} is active again`}::text,
         ${`${operator.name || "Crew"} undid the finish.`}::text,
         ${`/ops/leads/${leadId}`}::text, r.id, false,
-        ('completion-undo:' || r.id::text)
+        ('completion-undo:' || r.id::text),
+        mcsw_is_test_row(NULL::bigint, NULL::bigint, r.id, NULL::text, NULL::jsonb,
+          concat_ws(' ', ${`${rows[0].first_name || "Job"} is active again`}::text,
+            ${`${operator.name || "Crew"} undid the finish.`}::text))
       FROM immutable_receipt r CROSS JOIN operators o
       WHERE o.active = true AND ${!rows[0].is_test}::boolean
       ON CONFLICT (operator_id, dedupe_key) WHERE dedupe_key <> '' DO NOTHING

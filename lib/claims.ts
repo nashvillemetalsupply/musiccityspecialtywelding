@@ -29,7 +29,7 @@ export async function addClaim(input: {
   const rows = (await sql`
     INSERT INTO claims (
       subject_type, subject_id, predicate, value, confidence,
-      source_event_id, extracted_by, item_key
+      source_event_id, extracted_by, item_key, is_test
     ) VALUES (
       ${input.subjectType}::text,
       ${input.subjectId}::bigint,
@@ -38,7 +38,13 @@ export async function addClaim(input: {
       ${input.confidence}::real,
       ${input.sourceEventId}::bigint,
       ${input.extractedBy}::text,
-      ${itemKey}::text
+      ${itemKey}::text,
+      mcsw_is_test_row(
+        CASE WHEN ${input.subjectType}::text = 'lead' THEN ${input.subjectId}::bigint END,
+        CASE WHEN ${input.subjectType}::text = 'person' THEN ${input.subjectId}::bigint END,
+        ${input.sourceEventId}::bigint, NULL::text, NULL::jsonb,
+        ${JSON.stringify(input.value)}::text
+      )
     ) ON CONFLICT (source_event_id, item_key) WHERE item_key <> '' DO NOTHING
     RETURNING id`) as { id: number }[]
   if (rows[0]) return Number(rows[0].id)
@@ -61,10 +67,16 @@ export async function supersedeClaim(oldId: number, replacement: Parameters<type
         ${replacement.confidence}::real AS confidence,
         ${replacement.sourceEventId}::bigint AS source_event_id,
         ${replacement.extractedBy}::text AS extracted_by,
-        ${itemKey}::text AS item_key
+        ${itemKey}::text AS item_key,
+        mcsw_is_test_row(
+          CASE WHEN ${replacement.subjectType}::text = 'lead' THEN ${replacement.subjectId}::bigint END,
+          CASE WHEN ${replacement.subjectType}::text = 'person' THEN ${replacement.subjectId}::bigint END,
+          ${replacement.sourceEventId}::bigint, NULL::text, NULL::jsonb,
+          ${JSON.stringify(replacement.value)}::text
+        ) AS is_test
     ), claim_write AS (
-      INSERT INTO claims (subject_type, subject_id, predicate, value, confidence, source_event_id, extracted_by, item_key)
-      SELECT subject_type, subject_id, predicate, value, confidence, source_event_id, extracted_by, item_key
+      INSERT INTO claims (subject_type, subject_id, predicate, value, confidence, source_event_id, extracted_by, item_key, is_test)
+      SELECT subject_type, subject_id, predicate, value, confidence, source_event_id, extracted_by, item_key, is_test
       FROM claim_input
       ON CONFLICT (source_event_id, item_key) WHERE item_key <> ''
       DO UPDATE SET item_key = EXCLUDED.item_key

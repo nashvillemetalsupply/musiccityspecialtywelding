@@ -44,12 +44,15 @@ if (placeholderLeadIds.length) {
   // Preserve every original value. The marker prevents routing actions without
   // erasing historical intake data.
   await sql`
-    INSERT INTO events (kind, actor_type, lead_id, external_id, body, crew_body, detail)
+    INSERT INTO events (kind, actor_type, lead_id, external_id, body, crew_body, detail, is_test)
     SELECT 'system.data-correction'::text, 'system'::text, l.id,
       ('reserved-phone-marked:' || l.id::text)::text,
       'Shop routing number marked as a non-customer contact'::text,
       'Customer phone still needs to be caught'::text,
-      jsonb_build_object('reason', 'reserved shop/forwarding number', 'original_phone', l.phone)
+      jsonb_build_object('reason', 'reserved shop/forwarding number', 'original_phone', l.phone),
+      mcsw_is_test_row(l.id, l.person_id, NULL::bigint, NULL::text,
+        jsonb_build_object('reason', 'reserved shop/forwarding number', 'original_phone', l.phone),
+        'Shop routing number marked as a non-customer contact'::text)
     FROM leads l WHERE l.id = ANY(${placeholderLeadIds}::bigint[])
     ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING`
   await sql`
