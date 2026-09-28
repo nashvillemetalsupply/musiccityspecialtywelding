@@ -31,19 +31,6 @@ export const metadata: Metadata = {
     template: "%s | Music City Specialty Welding",
   },
   description: publicDefaultDescription,
-  robots: {
-    index: true,
-    follow: true,
-  },
-  icons: {
-    icon: [
-      {
-        url: "/images/optimized/mcs welding logo.png",
-        type: "image/png",
-      },
-    ],
-    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
-  },
 }
 
 const shopPhone = getShopPhone()

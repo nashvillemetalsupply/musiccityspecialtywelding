@@ -1,7 +1,8 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import test from "node:test"
 import ts from "typescript"
+import nextConfigModule from "../next.config.mjs"
 import { isQuoteHoneypotFilled, QUOTE_HONEYPOT_FIELD, quoteSubmissionOutcome } from "../lib/public-quote.mjs"
 
 const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8")
@@ -23,6 +24,17 @@ const contactComponent = readFileSync(new URL("../components/mainstreet-contact.
 const quoteRoute = readFileSync(new URL("../app/api/quote/route.ts", import.meta.url), "utf8")
 const navbarComponent = readFileSync(new URL("../components/navbar.tsx", import.meta.url), "utf8")
 const footerComponent = readFileSync(new URL("../components/footer.tsx", import.meta.url), "utf8")
+const notFoundPage = readFileSync(new URL("../app/not-found.tsx", import.meta.url), "utf8")
+const sitemapSource = readFileSync(new URL("../app/sitemap.ts", import.meta.url), "utf8")
+const sitemapTestModule = await import(`data:text/javascript;base64,${Buffer.from(
+  ts.transpileModule(
+    sitemapSource.replace(
+      'import { servicePages } from "@/lib/service-pages"',
+      'const servicePages = [{ slug: "mobile-welding" }]'
+    ),
+    { compilerOptions: { module: ts.ModuleKind.ES2022 } }
+  ).outputText
+).toString("base64")}`)
 
 test("home sign keeps its visual text and names the service and city accessibly", () => {
   assert.match(
@@ -111,4 +123,46 @@ test("quote honeypot ignores ordinary autofill and silently suppresses a filled 
   assert.match(contactComponent, /if \(outcome === "accepted"\) \{[\s\S]*?reportMetaLead\(\)/)
   assert.match(contactComponent, /if \(outcome === "rejected"\) throw/)
   assert.match(contactComponent, /name=\{QUOTE_HONEYPOT_FIELD\}[^\n]*autoComplete="off"/)
+})
+
+test("404 emits one robots directive from its route metadata", () => {
+  const rootMetadata = appLayout.match(/export const metadata: Metadata = \{[\s\S]*?\n\}/)?.[0] ?? ""
+  const routeMetadata = notFoundPage.match(/export const metadata: Metadata = \{[\s\S]*?\n\}/)?.[0] ?? ""
+  assert.equal((rootMetadata.match(/\brobots\s*:/g) ?? []).length, 0)
+  assert.equal((routeMetadata.match(/\brobots\s*:/g) ?? []).length, 1)
+  assert.match(routeMetadata, /robots:\s*\{\s*index: false, follow: false\s*\}/)
+})
+
+test("sitemap carries the source files' Git dates as lastmod values", () => {
+  const entries = sitemapTestModule.default()
+  assert.ok(entries.length > 0)
+  assert.ok(entries.every((entry) => entry.lastModified instanceof Date))
+  assert.deepEqual(entries.map((entry) => entry.lastModified.toISOString().slice(0, 10)), [
+    "2026-09-27",
+    "2026-09-27",
+    "2026-09-17",
+    "2026-08-29",
+    "2026-09-27",
+  ])
+})
+
+test("favicon comes from app/icon.svg and unreferenced PNGs stay archived", () => {
+  assert.equal(existsSync(new URL("../app/icon.svg", import.meta.url)), true)
+  assert.equal(existsSync(new URL("../public/icon.svg", import.meta.url)), false)
+  assert.equal(existsSync(new URL("../docs/archive/unused-public-assets/icon-light-32x32.png", import.meta.url)), true)
+  assert.equal(existsSync(new URL("../docs/archive/unused-public-assets/placeholder-logo.png", import.meta.url)), true)
+  assert.equal(existsSync(new URL("../public/icon-light-32x32.png", import.meta.url)), false)
+  assert.equal(existsSync(new URL("../public/placeholder-logo.png", import.meta.url)), false)
+  assert.doesNotMatch(appLayout, /mcs welding logo\.png/)
+})
+
+test("Access-Control-Allow-Origin only applies to API routes", async () => {
+  const configuredHeaders = await nextConfigModule.headers()
+  const originHeaders = configuredHeaders.flatMap(({ source, headers }) =>
+    headers
+      .filter(({ key }) => key.toLowerCase() === "access-control-allow-origin")
+      .map(({ value }) => ({ source, value }))
+  )
+
+  assert.ok(originHeaders.every(({ source }) => source.startsWith("/api/")))
 })
