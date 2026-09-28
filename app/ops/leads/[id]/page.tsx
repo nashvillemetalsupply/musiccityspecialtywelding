@@ -2,6 +2,7 @@ import Link from "next/link"
 import { cache } from "react"
 import { randomUUID } from "node:crypto"
 import { notFound } from "next/navigation"
+import { parsePositiveRouteId, requirePositiveRouteId, requireRouteValue } from "@/lib/route-ids.mjs"
 import "./job.css"
 import { dbConfigured, getSql } from "@/lib/db"
 import { LEAD_STATUSES } from "@/lib/leads"
@@ -73,8 +74,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!dbConfigured()) return { title: "Job · MCSW Jobs" }
   const operator = await getAuthenticatedOperator()
   if (!operator) return { title: "Sign in · MCSW Jobs" }
-  const leadId = Number((await params).id)
-  if (!Number.isInteger(leadId) || leadId <= 0) return { title: "Job not found · MCSW Jobs" }
+  const leadId = parsePositiveRouteId((await params).id)
+  if (leadId === null) return { title: "Job not found · MCSW Jobs" }
   const lead = await getCachedLead(leadId, operator.role)
   const name = lead ? `${lead.first_name} ${lead.last_name}`.trim() : "Job not found"
   return { title: `${name} · MCSW Jobs` }
@@ -211,9 +212,8 @@ type SearchParams = Promise<{ replyTo?: string; replyChannel?: string; activityP
 export default async function LeadDetailPage({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
   const { id } = await params
   const query = await searchParams
-  const leadId = Number(id)
+  const leadId = requirePositiveRouteId(id, notFound)
   const requestedActivityPage = normalizePage(query.activityPage)
-  if (!Number.isInteger(leadId) || leadId <= 0) notFound()
 
   if (!dbConfigured()) {
     return (
@@ -228,8 +228,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   if (!operator) return <OpsLoginForm linkError={false} />
 
   const includeTests = canAccessInternalTests(operator.role)
-  const lead = await getCachedLead(leadId, operator.role)
-  if (!lead) notFound()
+  const lead = requireRouteValue(await getCachedLead(leadId, operator.role), notFound)
   const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems, attachmentClassifications, routingChoices] = await Promise.all([
     listLeadMessages(leadId),
     listCommitments({ leadId, status: "open", includeTests }),

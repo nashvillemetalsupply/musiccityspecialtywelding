@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
 import { SafeActionButton } from "./safe-action-controls"
 
 export function TrackedCallButton({ leadId, phone, label = "Call from shop number", compact = false, directFallback = false, className = "" }: { leadId: number; phone: string; label?: string; compact?: boolean; directFallback?: boolean; className?: string }) {
@@ -18,10 +19,11 @@ export function TrackedCallButton({ leadId, phone, label = "Call from shop numbe
       setStatus("Could not confirm whether the call request reached the shop. Tap once to safely check; the same request will not ring twice.")
     }
   }
+  const directDialPhone = normalizeUsPhone(phone)
   return <span className={`ops-tracked-call${compact ? " is-compact" : ""}`}>
     <SafeActionButton className={className} onAction={call} busyLabel="Ringing…">{label}</SafeActionButton>
     {!compact && <small className="ops-tracked-call-help">Your phone rings first. Answer it, then we connect the customer. The call and notes stay with this job.</small>}
-    {(!compact || directFallback) && <details><summary>Call directly — not saved</summary><a href={`tel:${phone.replace(/[^\d+]/g, "")}`} title="Open the Phone app without saving this call">Open Phone app</a></details>}
+    {(!compact || directFallback) && directDialPhone && <details><summary>Call directly — not saved</summary><a href={`tel:${directDialPhone}`} title="Open the Phone app without saving this call">Open Phone app</a></details>}
     {status && <small aria-live="polite">{status}</small>}
   </span>
 }
