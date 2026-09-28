@@ -109,7 +109,7 @@ test("the success warning is exposed whenever the grant was suppressed", () => {
 
 test("the quote form surfaces any success warning, not only a conflict", () => {
   const contact = source("components/mainstreet-contact.tsx")
-  assert.match(contact, /if \(data\?\.warning\)/)
+  assert.match(contact, /if \(outcome === "accepted" && data\?\.warning\)/)
   assert.match(contact, /setWarning\(data\.warning\)/)
   assert.match(contact, /status === "success" && warning/)
   assert.match(contact, /ms-form-status is-warning/)

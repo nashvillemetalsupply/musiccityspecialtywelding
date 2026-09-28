@@ -53,15 +53,16 @@ test("email shell escapes plain fields and rejects executable CTA protocols", ()
 test("only accepted leads emit conversions and public text cannot mark itself internal", () => {
   const quote = source("app/api/quote/route.ts")
   const client = source("components/mainstreet-contact.tsx")
-  assert.match(quote, /honeypot[\s\S]{0,240}accepted: false/)
+  assert.match(quote, /if \(isQuoteHoneypotFilled\(formData\)\)[\s\S]{0,180}accepted: true, suppressed: true/)
   assert.match(quote, /isAuthorizedCron\(req\)\s*&&\s*projectDetails\.includes\("\[INTERNAL TEST\]"\)/)
   assert.match(quote, /accepted: true/)
-  assert.match(client, /data\?\.accepted !== true/)
+  assert.match(client, /const outcome = quoteSubmissionOutcome\(data\)/)
+  assert.match(client, /if \(outcome === "rejected"\) throw/)
   // The call shape moved to queueMeasurementEvent on 2026-09-04 so a missing
   // window.gtag can no longer drop the event; the ordering invariant is the
   // point and is unchanged.
   assert.ok(
-    client.indexOf("data?.accepted !== true") <
+    client.indexOf('if (outcome === "accepted")') <
       client.indexOf('queueMeasurementEvent("generate_lead"'),
   )
 })

@@ -9,7 +9,6 @@ import { enforceShopPhoneFallbackPolicy } from "../lib/shop-contact-policy.mjs"
 const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8")
 const serviceAreasPage = readFileSync(new URL("../app/service-areas/page.tsx", import.meta.url), "utf8")
 const servicePage = readFileSync(new URL("../app/services/[slug]/page.tsx", import.meta.url), "utf8")
-const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8")
 const appLayout = readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8")
 const servicePagesSource = readFileSync(new URL("../lib/service-pages.ts", import.meta.url), "utf8")
 const servicePagesTestModule = await import(`data:text/javascript;base64,${Buffer.from(
@@ -50,9 +49,8 @@ test("home sign keeps its visual text and names the service and city accessibly"
 
 test("service-area cities link to the mobile-welding section with the existing chip styling", () => {
   assert.match(serviceAreasPage, /const areas = \["Lebanon", "Nashville", "Franklin", "Murfreesboro", "Gallatin", "Hendersonville", "Clarksville", "Antioch"\]/)
-  assert.match(serviceAreasPage, /areas\.map\(\(area\) => <Link className="ms-display" href="\/services\/mobile-welding#service" key=\{area\}>\{area\}<\/Link>\)/)
+  assert.match(serviceAreasPage, /areas\.map\(\(area\) => <strong className="ms-display" key=\{area\}><Link href="\/services\/mobile-welding#service" style=\{\{ color: "inherit", textDecoration: "none" \}\}>\{area\}<\/Link><\/strong>\)/)
   assert.match(servicePage, /<section className="ms-subhero" id="service">/)
-  assert.match(globalCss, /\.ms-area-cities > div :is\(strong, a\) \{[^}]*text-decoration: none;/)
 })
 
 test("service pages offer the existing quote form below their content", () => {
