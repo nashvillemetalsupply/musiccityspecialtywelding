@@ -71,7 +71,7 @@ export default async function ServicePage({ params }: PageProps) {
           <span aria-current="page">{service.shortTitle}</span>
         </nav>
 
-        <section className="ms-subhero">
+        <section className="ms-subhero" id="service">
           <div className="ms-subhero-copy">
             <span className="ms-subhero-eyebrow">{service.eyebrow}</span>
             <h1 className="ms-display">{service.title}</h1>
