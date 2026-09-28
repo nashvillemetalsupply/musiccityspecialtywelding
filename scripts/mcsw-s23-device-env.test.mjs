@@ -4,7 +4,7 @@ import test from "node:test"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const CONTROL = read("styles/control.css")
-const GLOBALS = read("app/globals.css")
+const REDUCED_MOTION = read("styles/reduced-motion.css")
 const JOB_CSS = read("app/ops/leads/[id]/job.css")
 
 function mediaBlock(source, query) {
@@ -32,8 +32,10 @@ test("forced colors keep job actions, status chips, buttons and focus visible", 
 })
 
 test("reduced motion limits every app animation and transition", () => {
-  assert.match(read("app/layout.tsx"), /import "\.\/globals\.css"/)
-  assert.match(GLOBALS, /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\*,\s*\*::before,\s*\*::after\s*\{[^}]*transition-duration:[^}]*!important[^}]*animation-duration:[^}]*!important[^}]*animation-iteration-count:\s*1\s*!important/s)
+  const rootLayout = read("app/layout.tsx")
+  assert.match(rootLayout, /import "\.\/globals\.css"/)
+  assert.match(rootLayout, /import "\.\.\/styles\/reduced-motion\.css"/)
+  assert.match(REDUCED_MOTION, /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\*,\s*\*::before,\s*\*::after\s*\{[^}]*transition-duration:[^}]*!important[^}]*animation-duration:[^}]*!important[^}]*animation-iteration-count:\s*1\s*!important/s)
 })
 
 test("above-fold board logos reserve space before their files load", () => {

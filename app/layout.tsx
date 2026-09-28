@@ -5,6 +5,7 @@ import { PublicAnalytics } from "@/components/public-analytics"
 import { publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./globals.css"
+import "../styles/reduced-motion.css"
 
 const _barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
