@@ -35,6 +35,13 @@ export default async function InstallPage() {
         <li>Confirm <strong>MCSW Jobs</strong>.</li>
       </ol>
     </section>
+    <section className="card install-steps" aria-label="iPhone or iPad installation">
+      <h2 className="t-sub">iPhone or iPad</h2>
+      <ol>
+        <li>Tap <strong>Share</strong>.</li>
+        <li>Tap <strong>Add to Home Screen</strong>.</li>
+      </ol>
+    </section>
     <p className="install-note t-caption">This phone stays signed in for up to 90 days. Keep it locked.</p>
   </div>
 }

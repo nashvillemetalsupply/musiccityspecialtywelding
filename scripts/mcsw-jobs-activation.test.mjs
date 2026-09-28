@@ -567,9 +567,9 @@ test("the work order has one captured action spine and a visible owner payment s
 
   assert.match(workOrder, /className="job-action-spine"/)
   assert.match(workOrder, /label="Call"/)
-  assert.match(workOrder, /href="\?replyChannel=text#job-reply">Text/)
-  assert.match(workOrder, /href="#onsite-payment">Take payment/)
-  assert.match(workOrder, /lead\.handed_off_at \? "Job closed" : lead\.completed_at \? "Close job" : "Finish work"/)
+  assert.match(workOrder, /customerTextReady && <Link[^>]*href="\?replyChannel=text#job-reply">Text<\/Link>/)
+  assert.match(workOrder, /href=\{lead\.completed_at \? "#done-photo" : "#finish-photo"\}>Photo/)
+  assert.match(workOrder, /operator\.role === "owner" && <Link[^>]*job-action-price/)
   assert.match(workOrder, /<section className="card job-details" aria-labelledby="job-details-title">/)
   assert.match(workOrder, /<details className="job-ledger" aria-label="Customer and source" name="job-detail-group" open>/)
   assert.match(workOrder, /<details className="job-drawer" open>/)

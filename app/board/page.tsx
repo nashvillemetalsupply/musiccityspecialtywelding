@@ -20,6 +20,7 @@ import { BOARD_SIGNAL_KINDS, getBoardJobDetails, getMonthCostPerLead, getOpsStat
 import type { JobBoardStage } from "@/lib/ops-data"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.mjs"
 import { JobControl } from "./board"
+import { ThemeBoot } from "./theme-boot"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
 import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.mjs"
@@ -142,6 +143,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   const details = await getBoardJobDetails(page.items.map((item) => item.id), role, includeTests)
 
   return <>
+    <ThemeBoot />
     <OpsOfflineSupport sessionCacheId={sessionCacheId} />
     <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,

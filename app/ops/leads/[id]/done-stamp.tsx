@@ -43,6 +43,24 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   }, [undoUntil])
 
   useEffect(() => {
+    if (!completed) return
+    function openPhotoAddendum() {
+      if (window.location.hash === "#done-photo") setAddendumOpen(true)
+    }
+    openPhotoAddendum()
+    window.addEventListener("hashchange", openPhotoAddendum)
+    return () => window.removeEventListener("hashchange", openPhotoAddendum)
+  }, [completed])
+
+  useEffect(() => {
+    if (!completed || !addendumOpen || window.location.hash !== "#done-photo") return
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("done-photo")?.scrollIntoView({ block: "start" })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [completed, addendumOpen])
+
+  useEffect(() => {
     if (!completed || !submittedRef.current || cuePlayedRef.current) return
     cuePlayedRef.current = true
     navigator.vibrate?.([35, 20, 55])
