@@ -15,7 +15,7 @@ export const GLASS_MEDIA_URL_TTL_MS: number = 15 * 60 * 1000
 const MEDIA_URL_PURPOSE = "mcsw-media-url-v1"
 const GLASS_MEDIA_KINDS = new Set(["photo", "attachment"])
 
-function mediaUrlKey(secret: string) {
+function mediaUrlKey(secret: string | undefined) {
   const normalized = String(secret ?? "").trim()
   if (!normalized || Buffer.byteLength(normalized, "utf8") < 32) return null
   return Buffer.from(hkdfSync(
@@ -31,7 +31,7 @@ function mediaUrlPayload(linkId: string, kind: GlassMediaKind, mediaId: string, 
   return JSON.stringify([MEDIA_URL_PURPOSE, linkId, kind, mediaId, expiresAt])
 }
 
-export function createGlassMediaSignature(linkId: string, kind: GlassMediaKind, mediaId: string, expiresAt: number, secret: string = process.env.GLASS_TOKEN_SECRET) : string | null {
+export function createGlassMediaSignature(linkId: string, kind: GlassMediaKind, mediaId: string, expiresAt: number, secret: string | undefined = process.env.GLASS_TOKEN_SECRET) : string | null {
   const key = mediaUrlKey(secret)
   if (!key || !/^[a-f0-9]{64}$/i.test(linkId) || !GLASS_MEDIA_KINDS.has(kind)
     || !mediaId || !Number.isSafeInteger(expiresAt) || expiresAt <= 0) return null

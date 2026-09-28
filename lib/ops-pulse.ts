@@ -22,7 +22,7 @@ function firstRow(rows: unknown) {
   return Array.isArray(rows) ? rows[0] ?? {} : {}
 }
 
-function timestamp(value) {
+function timestamp(value: string | number | Date | null | undefined) {
   if (value == null || value === "") return null
   const date = value instanceof Date ? value : new Date(value)
   return Number.isNaN(date.getTime()) ? null : date.toISOString()

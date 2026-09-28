@@ -1,7 +1,7 @@
 export type SessionTokenSql = (
   strings: TemplateStringsArray,
   ...values: unknown[]
-) => Promise<unknown>
+) => PromiseLike<Array<Record<string, unknown>>>
 
 export async function validateSessionTokenWithSql(sql: SessionTokenSql, tokenHash: string) : Promise<Record<string, unknown> | null> {
   try {

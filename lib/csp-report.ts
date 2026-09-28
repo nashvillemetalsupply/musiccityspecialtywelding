@@ -22,6 +22,8 @@ const BODY_READ_TIMEOUT_MS = 1_000
 const REPORT_WORK_TIMEOUT_MS = 1_500
 const CONTENT_TYPE_LEGACY = "application/csp-report"
 const CONTENT_TYPE_REPORTING_API = "application/reports+json"
+type CspReportRecord = Record<string, unknown>
+type ReportingApiReport = CspReportRecord & { body: CspReportRecord; url?: unknown }
 
 function emptyResponse() {
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
@@ -94,26 +96,26 @@ async function readJsonBody(request: Request) {
   }
 }
 
-function reportRecords(contentType: "application/csp-report" | "application/reports+json", body) {
+function reportRecords(contentType: "application/csp-report" | "application/reports+json", body: unknown): CspReportRecord[] {
   if (contentType === CONTENT_TYPE_LEGACY) {
     if (!body || typeof body !== "object" || Array.isArray(body)) return []
-    const report = body["csp-report"]
-    return report && typeof report === "object" && !Array.isArray(report) ? [report] : []
+    const report = (body as CspReportRecord)["csp-report"]
+    return report && typeof report === "object" && !Array.isArray(report) ? [report as CspReportRecord] : []
   }
 
   if (contentType !== CONTENT_TYPE_REPORTING_API || !Array.isArray(body)) return []
-  return body
-    .filter((report) => report && typeof report === "object" && report.type === "csp-violation" && report.body && typeof report.body === "object")
+  return (body as unknown[])
+    .filter((report): report is ReportingApiReport => Boolean(report && typeof report === "object" && !Array.isArray(report) && (report as CspReportRecord).type === "csp-violation" && (report as CspReportRecord).body && typeof (report as CspReportRecord).body === "object"))
     .map((report) => ({ ...report.body, documentURL: report.body.documentURL || report.url }))
     .slice(0, MAX_REPORT_COUNT)
 }
 
-function safeLabel(value, maximumLength: 2048 | 80 = 80) {
+function safeLabel(value: unknown, maximumLength: 2048 | 80 = 80) {
   if (typeof value !== "string") return ""
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maximumLength)
 }
 
-function normalizedLocation(value) {
+function normalizedLocation(value: unknown) {
   const input = safeLabel(value, 2_048)
   if (!input) return ""
 
@@ -142,12 +144,12 @@ function normalizedLocation(value) {
   }
 }
 
-function directiveName(value) {
+function directiveName(value: unknown) {
   const label = safeLabel(value, 80).toLowerCase()
   return /^[a-z][a-z0-9-]*$/.test(label) ? label : "unknown"
 }
 
-function safeRoute(value) {
+function safeRoute(value: unknown) {
   const location = normalizedLocation(value)
   let pathname = ""
   try {
@@ -163,7 +165,7 @@ function safeRoute(value) {
   return `/${pathname.split("/").filter(Boolean)[0] || "unknown"}`
 }
 
-function normalizeReport(report) {
+function normalizeReport(report: CspReportRecord) {
   const effectiveDirective = directiveName(report["effective-directive"] || report.effectiveDirective)
   const violatedDirective = directiveName(report["violated-directive"] || report.violatedDirective || effectiveDirective)
   const blocked = normalizedLocation(report["blocked-uri"] || report.blockedURL || report.blockedUrl)

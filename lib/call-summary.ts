@@ -162,7 +162,7 @@ const OPEN_DRAFT = ["pending", "failed", "unknown"]
 // one push tells him what the call was and what happened. Calls the read
 // could not place stay in "calls to save" for a one-tap decision. Nothing
 // here can fail the read itself: the summary is already stored when it runs.
-async function settleCall(draft: DraftForSummary, summary: CallSummary, name: string, isTest: boolean, quiet: true = false) {
+async function settleCall(draft: DraftForSummary, summary: CallSummary, name: string, isTest: boolean, quiet: boolean = false) {
   const sql = getSql()
   let outcome: CallOutcome = "left"
   let leadId: number | null = null

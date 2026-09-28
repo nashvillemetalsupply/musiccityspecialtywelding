@@ -153,7 +153,7 @@ export async function runPhotoDraftWorkflow(input: PhotoDraftWorkflowInput, depe
   }
 }
 
-const ACCEPTED_PREDICATE = Object.freeze({
+const ACCEPTED_PREDICATE: Readonly<Record<string, string>> = Object.freeze({
   scope: "job_description",
   material: "material",
   dimension: "dimensions",
@@ -189,7 +189,7 @@ export async function applyPhotoDraftDecision(input: {
   const predicate = String(input.draft?.predicate ?? "")
   if (!predicate.startsWith("photo_draft_")) throw new Error("That photo detail draft is invalid.")
   const kind = predicate.slice("photo_draft_".length)
-  const value = input.draft?.value && typeof input.draft.value === "object" ? input.draft.value : {}
+  const value = (input.draft?.value && typeof input.draft.value === "object" ? input.draft.value : {}) as { kind?: unknown; text?: unknown; photoReference?: unknown }
   if (!Object.hasOwn(ACCEPTED_PREDICATE, kind) || value.kind !== kind || typeof value.text !== "string" || !value.text.trim()
     || typeof value.photoReference !== "string" || !value.photoReference.trim()) {
     throw new Error("That photo detail draft is invalid.")

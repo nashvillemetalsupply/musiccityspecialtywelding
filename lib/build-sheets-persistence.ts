@@ -75,7 +75,7 @@ export async function persistObservedBuildFacts({
         WHERE stored.decision_key = ${decisionKey}::text
       )
       SELECT claim.id FROM claim_scope claim
-      WHERE EXISTS (SELECT 1 FROM decision_receipt)`
+      WHERE EXISTS (SELECT 1 FROM decision_receipt)` as Array<{ id: number }>
     const claimId = Number(rows[0]?.id ?? 0)
     if (!claimId) throw new Error("The observed build fact could not be filed with its proposed receipt.")
     inserted.push({ id: claimId, fact: item.fact })
@@ -144,7 +144,7 @@ export async function persistLockedBuildSheet({ sql, leadId, operatorId, lockKey
       FROM allocated JOIN receipt ON receipt.lead_id = allocated.lead_id
       RETURNING id, lead_id, sequence, snapshot, locked_at
     )
-    SELECT id, sequence, snapshot, locked_at FROM sheet`
+    SELECT id, sequence, snapshot, locked_at FROM sheet` as Array<{ id: number; sequence: number; snapshot: LockedBuildSheet; locked_at: string }>
   const existing = inserted.length ? [] : await sql`
     SELECT s.id, s.sequence, s.snapshot, s.locked_at
     FROM build_lock_receipts receipt
@@ -154,7 +154,7 @@ export async function persistLockedBuildSheet({ sql, leadId, operatorId, lockKey
       AND o.role = 'owner' AND o.active = true
     WHERE receipt.lead_id = ${leadId}::bigint AND receipt.lock_key = ${lockKey}::text
       AND receipt.is_test = true AND l.is_test = true
-    LIMIT 1`
+    LIMIT 1` as Array<{ id: number; sequence: number; snapshot: LockedBuildSheet; locked_at: string }>
   const sheet = inserted[0] ?? existing[0]
   if (!sheet) throw new Error("The Build Sheet lock is still being filed. Tap once more.")
   return { sheet, inserted: inserted.length > 0 }

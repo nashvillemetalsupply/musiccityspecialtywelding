@@ -105,7 +105,7 @@ function safeScope(sheet: Readonly<{ jobId: number; number: number; idempotencyK
 }
 
 export function createCustomerBuildProjection({ sheet, customerConfirmations = [] }: {
-  sheet: LockedBuildSheet
+  sheet?: LockedBuildSheet
   customerConfirmations?: Array<{
     claimId: number
     state: "accepted" | "corrected"
@@ -164,7 +164,7 @@ export function createCustomerBuildProjection({ sheet, customerConfirmations = [
 }
 
 export function createCrewBuildProjection({ sheet, paperwork = [] }: {
-  sheet: LockedBuildSheet
+  sheet?: LockedBuildSheet
   paperwork?: Array<{
     id: number
     label: string
@@ -182,7 +182,7 @@ export function createCrewBuildProjection({ sheet, paperwork = [] }: {
   return Object.freeze({
     buildSheetNumber: Number(sheet?.number),
     lockedAt: String(sheet?.lockedAt ?? ""),
-    drawing: projectBuildDrawing(sheet),
+    drawing: projectBuildDrawing(sheet!),
     facts: createCustomerBuildProjection({ sheet }).facts.map(({ claimId, factKey, label, value, reference, state }) => ({
       claimId,
       factKey,
@@ -211,7 +211,7 @@ export function buildClarificationForSketch(spec: {
   const evidence = String(width?.evidence ?? "").toLowerCase()
   if (/\b(clear\s+opening|opening\s+(?:width|size)|finished\s+(?:gate|width))\b/.test(evidence)) return null
   return Object.freeze({
-    question: `Ask if ${Number(width.value)} inches is the opening or the finished gate.`,
+    question: `Ask if ${Number(width!.value)} inches is the opening or the finished gate.`,
     reason: "It changes hinge clearance, material, and fit.",
   })
 }

@@ -12,9 +12,9 @@
 //            has never run a campaign. Account-level spend here would bill
 //            MCSW for Nashville Metal Art's storefront ads, so the pull must
 //            filter by campaign name prefix.
-export const AD_CHANNELS = ["google", "facebook"] as const
+export type AdChannel = "google" | "facebook"
+export const AD_CHANNELS: AdChannel[] = ["google", "facebook"]
 export const AD_CHANNEL_LABELS = { google: "Google", facebook: "Facebook" }
-type AdChannel = (typeof AD_CHANNELS)[number]
 type ChannelSpend = { channel: AdChannel; spendCents: number | null; leads: number }
 
 const MAX_DOLLARS = 1_000_000
@@ -68,7 +68,7 @@ export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, p
   spendAsOf: string | null
   perChannelReady: boolean
 }, nowMs: number): { big: string; beside: string | null; under: string; channelsLine: string | null } {
-  const recorded = channels.filter((channel) => channel.spendCents !== null)
+  const recorded = channels.filter((channel): channel is ChannelSpend & { spendCents: number } => channel.spendCents !== null)
   const leads = `${totalLeads} ${totalLeads === 1 ? "lead" : "leads"} on the books`
   if (recorded.length === 0) {
     return { big: "—", beside: "per lead", under: `No ad spend received for ${monthLabel} yet · ${leads}`, channelsLine: null }
@@ -80,12 +80,12 @@ export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, p
   const spent = `${wholeDollars(spendCents)} in ads${asOf} ÷ ${leads} in ${monthLabel}`
   const channelsLine = perChannelReady
     ? recorded.map((channel) => channel.leads > 0
-      ? `${AD_CHANNEL_LABELS[channel.channel]} ${wholeDollars(costPerLeadCents(channel.spendCents, channel.leads))}/lead`
+      ? `${AD_CHANNEL_LABELS[channel.channel]} ${wholeDollars(costPerLeadCents(channel.spendCents, channel.leads) as number)}/lead`
       : `${AD_CHANNEL_LABELS[channel.channel]} ${wholeDollars(channel.spendCents)}, no leads`).join(" · ")
     : null
   if (totalLeads === 0) return { big: wholeDollars(spendCents), beside: null, under: `${spent}${stale}`, channelsLine }
   return {
-    big: wholeDollars(costPerLeadCents(spendCents, totalLeads)),
+    big: wholeDollars(costPerLeadCents(spendCents, totalLeads) as number),
     beside: "per lead",
     under: `${spent}, any source${stale}`,
     channelsLine,
@@ -100,8 +100,8 @@ export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, p
 // which is what a nightly push wants; naming it is how a backfill works without
 // the server's clock deciding. Returned as YYYY-MM-01 or null.
 export function parseAdSpendPayload(body: unknown):
-  | { ok: false; error: string }
-  | { ok: true; monthStart: string | null; updates: Array<{ channel: AdChannel; cents: number }> } {
+  | { ok: false; error: string; updates?: never; monthStart?: never }
+  | { ok: true; error?: never; monthStart: string | null; updates: Array<{ channel: AdChannel; cents: number }> } {
   if (!body || typeof body !== "object") return { ok: false, error: "Body must be a JSON object." }
 
   const rawMonthValue = (body as Record<string, unknown>).month

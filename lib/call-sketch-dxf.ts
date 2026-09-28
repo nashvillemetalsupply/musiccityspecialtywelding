@@ -58,7 +58,7 @@ function addEntity(lines: string[], kind: "LINE" | "CIRCLE" | "TEXT", pairs: (st
   for (const [code, value] of pairs) lines.push(String(code), String(value))
 }
 
-function addLine(lines: string[], layer: "DIMENSIONS", x1: 0 | number, y1: number | 0, x2: number | 0, y2: number | 0) {
+function addLine(lines: string[], layer: "DIMENSIONS" | "FRAME" | "RAILS" | "HARDWARE", x1: 0 | number, y1: number | 0, x2: number | 0, y2: number | 0) {
   addEntity(lines, "LINE", [
     [8, layer],
     [10, number(x1)],
@@ -80,7 +80,7 @@ function addCircle(lines: string[], layer: "HARDWARE", x: number, y: number, rad
   ])
 }
 
-function addText(lines: string[], layer: "DIMENSIONS" | "NOTES", x: number | 0, y: number, height: number, value: string, rotation: 90 = 0) {
+function addText(lines: string[], layer: "DIMENSIONS" | "NOTES", x: number | 0, y: number, height: number, value: string, rotation: number = 0) {
   addEntity(lines, "TEXT", [
     [8, layer],
     [10, number(x)],

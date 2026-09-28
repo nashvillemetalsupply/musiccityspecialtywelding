@@ -25,10 +25,12 @@ import type { CallSketchSpec } from "./call-sketch-live.ts"
 // for the regexes to catch outranks anything here.
 
 const INCHES_PER_FOOT = 12
+type SketchFieldKey = "kind" | "width" | "height" | "stockSize" | "railCount" | "hingeSide" | "latchSide" | "swing" | "material"
+type PredicatePattern = { key: SketchFieldKey; pattern: RegExp; opening?: boolean }
 
 // Order matters: the first pattern that matches a predicate owns it, so the
 // narrow readings are tested before the broad ones.
-const PREDICATE_PATTERNS = [
+const PREDICATE_PATTERNS: PredicatePattern[] = [
   // An opening is the hole in the fence, not the gate that hangs in it. The
   // extractor reports both; only the finished piece is the width.
   { key: "width", pattern: /opening/i, opening: true },
@@ -42,8 +44,8 @@ const PREDICATE_PATTERNS = [
   { key: "height", pattern: /height|tall|high/i },
 ]
 
-const NUMERIC_KEYS = new Set(["width", "height", "stockSize", "railCount"])
-const SIDE_KEYS = new Set(["hingeSide", "latchSide"])
+const NUMERIC_KEYS: ReadonlySet<SketchFieldKey> = new Set(["width", "height", "stockSize", "railCount"])
+const SIDE_KEYS: ReadonlySet<SketchFieldKey> = new Set(["hingeSide", "latchSide"])
 
 // "26 inches", "2 inches", "47.5 inches", 48, "3", "6 feet", "1 1/2 inch".
 function toInches(raw: unknown) {
@@ -53,7 +55,7 @@ function toInches(raw: unknown) {
   const mixed = text.match(/^(\d+)\s+(\d+)\/(\d+)/)
   const fraction = text.match(/^(\d+)\/(\d+)/)
   const plain = text.match(/-?\d+(?:\.\d+)?/)
-  let value = null
+  let value: number | null = null
   if (mixed) value = Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3])
   else if (fraction) value = Number(fraction[1]) / Number(fraction[2])
   else if (plain) value = Number(plain[0])
@@ -93,9 +95,9 @@ export function sketchValuesFromClaims(rows: ExtractedClaim[] | null | undefined
   evidence: Record<string, string>
 } {
   const claims = Array.isArray(rows) ? rows : []
-  const chosen = {}
-  const evidence = {}
-  const openingOnly = {}
+  const chosen: Partial<Record<SketchFieldKey, string | number>> = {}
+  const evidence: Record<string, string> = {}
+  const openingOnly: Partial<Record<SketchFieldKey, string | number>> = {}
   for (const row of claims) {
     const predicate = String(row?.predicate ?? "")
     if (!predicate) continue
@@ -107,7 +109,7 @@ export function sketchValuesFromClaims(rows: ExtractedClaim[] | null | undefined
     else if (SIDE_KEYS.has(key)) value = toSide(row.value)
     else value = toWords(row.value)
     if (value == null || value === "") continue
-    if (key === "railCount") value = Math.min(8, Math.max(0, Math.round(value)))
+    if (key === "railCount") value = Math.min(8, Math.max(0, Math.round(value as number)))
     // The opening is only the width when no finished width was ever given.
     if (match.opening) {
       if (openingOnly[key] == null) { openingOnly[key] = value; evidence[`opening:${key}`] = predicate }
@@ -115,7 +117,7 @@ export function sketchValuesFromClaims(rows: ExtractedClaim[] | null | undefined
     }
     if (chosen[key] == null) { chosen[key] = value; evidence[key] = predicate }
   }
-  for (const [key, value] of Object.entries(openingOnly)) {
+  for (const [key, value] of Object.entries(openingOnly) as Array<[SketchFieldKey, string | number]>) {
     if (chosen[key] == null) { chosen[key] = value; evidence[key] = evidence[`opening:${key}`] }
   }
   const kind = kindFromPredicates(claims.map((row) => String(row?.predicate ?? "")))
@@ -139,7 +141,7 @@ export function mergeClaimFacts(spec: CallSketchSpec, rows: ExtractedClaim[] | n
   if (!describesShape) return spec
   const merged = { ...spec }
   let changed = false
-  for (const [key, value] of Object.entries(values)) {
+  for (const [key, value] of Object.entries(values) as Array<[SketchFieldKey, string | number]>) {
     const current = merged[key]
     // Only an unknown slot. A stated or confirmed fact is the call's own word
     // and a second uncertain reading of it is noise; an existing uncertain one
@@ -151,7 +153,7 @@ export function mergeClaimFacts(spec: CallSketchSpec, rows: ExtractedClaim[] | n
       evidence: `heard on the call (${evidence[key]})`,
       track: "",
       sequenceId: null,
-    }
+    } as never
     changed = true
   }
   return changed ? merged : spec

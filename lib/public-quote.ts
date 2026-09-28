@@ -19,8 +19,8 @@ export function isQuoteHoneypotFilled(formData: Pick<FormData, "get">) : boolean
 }
 
 export function quoteSubmissionOutcome(data: unknown) : "rejected" | "suppressed" | "accepted" {
-  if (data?.accepted !== true) return "rejected"
-  return data.suppressed === true ? "suppressed" : "accepted"
+  if ((data as { accepted?: unknown } | null)?.accepted !== true) return "rejected"
+  return (data as { suppressed?: unknown }).suppressed === true ? "suppressed" : "accepted"
 }
 
 const QUOTE_SERVICE_SET = new Set(QUOTE_SERVICE_OPTIONS)

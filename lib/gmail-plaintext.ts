@@ -5,7 +5,7 @@ const REPLY_TAILS = [
   /\n_{5,}\s*\nFrom:\s*[^\n]+[\s\S]*$/i,
 ]
 
-const HTML_ENTITIES = {
+const HTML_ENTITIES: Readonly<Record<string, string>> = {
   amp: "&",
   apos: "'",
   gt: ">",

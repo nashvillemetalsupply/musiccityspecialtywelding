@@ -150,7 +150,7 @@ function measurements(text: string) {
   return found.sort((left, right) => left.index - right.index)
 }
 
-function nearest(items: { value: number; index: number; raw: string; }[], index: number, options: { after: number; } = {}) {
+function nearest(items: { value: number; index: number; raw: string; }[], index: number, options: { after?: number; } = {}) {
   const candidates = items.filter((item) => options.after == null || item.index >= options.after)
   if (!candidates.length) return null
   return candidates.reduce((best, item) => Math.abs(item.index - index) < Math.abs(best.index - index) ? item : best)
@@ -173,13 +173,14 @@ function countBefore(text: string, noun: "rails?") {
 // the sketch. See the kind assignment in updateFromUtterance.
 const FRAME_CUE = /\b(rectangular|rails?|pickets?|tu(?:be|bing)|stock|weld|build|building|built|make|made|fabricate|fabricating)\b/
 
-function truthRank(value: "stated") {
+function truthRank(value: SketchTruth) {
   return value === "confirmed" ? 3 : value === "stated" ? 2 : value === "uncertain" ? 1 : 0
 }
 
-function assign(spec: CallSketchSpec, key: "kind" | "width" | "height" | "stockSize" | "railCount" | "hingeSide" | "latchSide" | "swing" | "material", value: "gate" | "frame" | number | null | number | string | "gate" | "frame" | "left" | "right", truth: "stated" | "uncertain" | "confirmed", utterance: { transcript: string; track: string; sequenceId: null; }) {
+type SketchFactKey = "kind" | "width" | "height" | "stockSize" | "railCount" | "hingeSide" | "latchSide" | "swing" | "material"
+function assign(spec: CallSketchSpec, key: SketchFactKey, value: "gate" | "frame" | "left" | "right" | number | string | null | undefined, truth: SketchTruth, utterance: CallSketchUtterance) {
   if (value == null || value === "") return
-  const current = spec[key]
+  const current = spec[key] as SketchFact<unknown>
   if (truthRank(truth) < truthRank(current.truth)) return
   spec[key] = {
     value,
@@ -187,7 +188,7 @@ function assign(spec: CallSketchSpec, key: "kind" | "width" | "height" | "stockS
     evidence: utterance.transcript,
     track: utterance.track ?? "",
     sequenceId: Number.isFinite(Number(utterance.sequenceId)) ? Number(utterance.sequenceId) : null,
-  }
+  } as never
 }
 
 function updateFromUtterance(spec: CallSketchSpec, utterance: CallSketchUtterance) {
@@ -196,7 +197,7 @@ function updateFromUtterance(spec: CallSketchSpec, utterance: CallSketchUtteranc
   const text = source.toLowerCase().replace(/[–—]/g, "-")
   const values = measurements(text)
   const isQuestion = /\?\s*$/.test(source) || /^(is|are|do|does|did|should|would|will|can|could|what|which|how)\b/.test(text)
-  const statedTruth = isQuestion ? "uncertain" : "stated"
+  const statedTruth: SketchTruth = isQuestion ? "uncertain" : "stated"
 
   // "Frame" and "panel" are ordinary words on a trailer call. A four-minute
   // call about a ground-off axle said "on the outside of the frame", which
@@ -289,7 +290,7 @@ export function deriveCallSketch(utterances: CallSketchUtterance[] = []) : CallS
     updateFromUtterance(spec, utterance)
   }
   spec.nextQuestion = questionFor(spec)
-  const stated = (fact) => fact.value != null && truthRank(fact.truth) >= truthRank("stated")
+  const stated = (fact: SketchFact<unknown>) => fact.value != null && truthRank(fact.truth) >= truthRank("stated")
   spec.readyForReview = Boolean(
     stated(spec.kind) && stated(spec.width) && stated(spec.height) && stated(spec.stockSize) &&
       (spec.kind.value !== "gate" || (stated(spec.railCount) && stated(spec.hingeSide) && stated(spec.latchSide))),

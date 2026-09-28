@@ -44,8 +44,8 @@ export const PANEL_FACT_LABELS: Readonly<Record<PanelFactKey, string>> = Object.
 
 // What has to be on the sheet before a number can be put against it. The same
 // four gate `deriveCallSketch` requires of every kind before review.
-const PRICING_KEYS = Object.freeze(["kind", "width", "height", "stockSize"])
-const PRICING_WORDS = Object.freeze({ kind: "kind", width: "width", height: "height", stockSize: "stock" })
+const PRICING_KEYS: readonly ("kind" | "width" | "height" | "stockSize")[] = Object.freeze(["kind", "width", "height", "stockSize"])
+const PRICING_WORDS: Readonly<Record<"kind" | "width" | "height" | "stockSize", string>> = Object.freeze({ kind: "kind", width: "width", height: "height", stockSize: "stock" })
 
 const MEASURED_KEYS = new Set(["width", "height", "stockSize"])
 
@@ -58,7 +58,7 @@ function sentenceList(words: string[]) {
 // as an opening measurement — is the case this exists for: it must never
 // count toward the answered total.
 export function factIsAnswered(fact: SketchFact<unknown> | null | undefined) : boolean {
-  return Boolean(fact) && fact.value != null && (fact.truth === "stated" || fact.truth === "confirmed")
+  return Boolean(fact) && (fact as SketchFact<unknown>).value != null && ((fact as SketchFact<unknown>).truth === "stated" || (fact as SketchFact<unknown>).truth === "confirmed")
 }
 
 export function answeredFactCount(spec: CallSketchSpec | null | undefined) : number {
@@ -149,7 +149,8 @@ function heardValue(spec: CallSketchSpec | null | undefined, key: "kind" | "widt
 }
 
 function isHedged(spec: CallSketchSpec | null | undefined, key: "width" | "height") {
-  return spec?.[key]?.truth === "uncertain" && spec[key].value != null
+  const fact = spec?.[key]
+  return fact?.truth === "uncertain" && fact.value != null
 }
 
 // Is there anything on this call to draw? A kind by itself is enough to start
@@ -165,8 +166,8 @@ export function sketchGeometry(spec: CallSketchSpec | null | undefined) : Sketch
   const isGate = heardValue(spec, "kind") !== "frame"
   const width = Number(heardValue(spec, "width")) || null
   const height = Number(heardValue(spec, "height")) || null
-  let w = BOX.w
-  let h = BOX.h
+  let w: number = BOX.w
+  let h: number = BOX.h
   if (width && height) {
     const scale = Math.min(BOX.w / width, BOX.h / height)
     w = Math.max(24, Math.round(width * scale))
@@ -190,9 +191,9 @@ export function sketchGeometry(spec: CallSketchSpec | null | undefined) : Sketch
     Math.round(y + (h * (index + 1)) / (railCount + 1)))
   // Hardware is a fabrication detail, and a hedged one is a question, not a
   // hinge. Only an answered side puts iron on the paper.
-  const hingeSide = isGate && factIsAnswered(spec?.hingeSide) ? spec.hingeSide.value : null
-  const latchSide = isGate && factIsAnswered(spec?.latchSide) ? spec.latchSide.value : null
-  const outside = (side) => (side === "left" ? x - stroke * 0.9 : x + w + stroke * 0.9)
+  const hingeSide = isGate && factIsAnswered(spec?.hingeSide) ? spec!.hingeSide.value : null
+  const latchSide = isGate && factIsAnswered(spec?.latchSide) ? spec!.latchSide.value : null
+  const outside = (side: "left" | "right") => (side === "left" ? x - stroke * 0.9 : x + w + stroke * 0.9)
   return {
     isGate,
     hasDrawing: hasDrawing(spec),

@@ -34,7 +34,7 @@ function inferExtraTrips(lower: string) {
   if (/\bno (?:extra|additional|return) trips?\b/.test(lower)) return 0
   const numeric = lower.match(/\b(\d+)\s+(?:extra|additional|return) trips?\b/)
   if (numeric) return Number(numeric[1])
-  const words = { one: 1, two: 2, three: 3, four: 4, five: 5 }
+  const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 }
   const word = lower.match(/\b(one|two|three|four|five)\s+(?:extra|additional|return) trips?\b/)
   return word ? words[word[1]] : 0
 }

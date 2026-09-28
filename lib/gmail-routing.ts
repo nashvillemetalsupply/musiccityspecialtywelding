@@ -97,8 +97,8 @@ function stripComments(value: string) {
   return depth === 0 && !quoted ? out : null
 }
 
-function splitOnSemicolons(value: string) {
-  const parts = []
+function splitOnSemicolons(value: string): string[] {
+  const parts: string[] = []
   let current = ""
   let quoted = false
   for (let i = 0; i < value.length; i += 1) {
@@ -120,8 +120,8 @@ function splitOnSemicolons(value: string) {
 // Walks the clause left to right instead of scanning for pairs anywhere in it, so
 // "x/header.i=@intuit.com" cannot smuggle a property in. Returns null on a
 // duplicate key or on leftover text that is not a well-formed pair.
-function clauseProperties(clause: string) {
-  const properties = new Map()
+function clauseProperties(clause: string): Map<string, string> | null {
+  const properties = new Map<string, string>()
   let rest = clause
   while (rest.trim() !== "") {
     const pair = rest.match(/^\s*([a-z0-9._-]+)\s*=\s*("(?:[^"\\]|\\.)*"|[^\s;"]+)(?=\s|$)/i)
@@ -137,12 +137,14 @@ function clauseProperties(clause: string) {
 }
 
 // Returns null for anything malformed or ambiguous so every caller fails closed.
-function parseAuthenticationResults(raw: string) {
+type AuthClause = { result: string; properties: Map<string, string> }
+type ParsedAuthenticationResults = { authservId: string; methods: Map<string, AuthClause[]> }
+function parseAuthenticationResults(raw: string): ParsedAuthenticationResults | null {
   const stripped = stripComments(String(raw ?? ""))
   if (stripped === null) return null
   const segments = splitOnSemicolons(stripped)
   const authservId = (segments.shift() ?? "").trim().toLowerCase()
-  const methods = new Map()
+  const methods = new Map<string, AuthClause[]>()
   for (const segment of segments) {
     if (segment.trim() === "") continue
     // The result token must end at a delimiter, so "pass/garbage" and "pa\\ss" are
@@ -157,14 +159,14 @@ function parseAuthenticationResults(raw: string) {
     // single by definition, and a second copy of either is someone guessing.
     if (!methods.has(method)) methods.set(method, [])
     else if (method !== "dkim") return null
-    methods.get(method).push({ result: head[2].toLowerCase(), properties })
+    methods.get(method)!.push({ result: head[2].toLowerCase(), properties })
   }
   return { authservId, methods }
 }
 
 // "intuit.com@evil.example" is an evil.example identity, not an Intuit one, so the
 // domain is always whatever follows the last @ -- never a substring of the value.
-function identityDomain(value) {
+function identityDomain(value: unknown) {
   const raw = String(value ?? "").trim().toLowerCase().replace(/\.$/, "")
   if (!raw) return ""
   const at = raw.lastIndexOf("@")
@@ -174,7 +176,7 @@ function identityDomain(value) {
 
 // Gmail writes dkim=pass only for a signature it actually verified, so one passing
 // Intuit-signed clause is the guarantee we want even when other signatures fail.
-function methodDomainIsIntuit(methods, method: "dkim" | "dmarc", keys: string[]) {
+function methodDomainIsIntuit(methods: Map<string, AuthClause[]>, method: "dkim" | "dmarc", keys: string[]) {
   const clauses = methods.get(method) ?? []
   return clauses.some((clause) => {
     if (clause.result !== "pass") return false
@@ -245,8 +247,8 @@ function mailboxAddress(part: string) {
 // missed "l = 1024" and matching "d=" missed "d = n.intuit.com" -- the second
 // hiding a weak signature from the coverage rule entirely. Parse the tag list
 // properly and return null for anything malformed or repeated.
-function dkimTags(signature) {
-  const tags = new Map()
+function dkimTags(signature: string): Map<string, string> | null {
+  const tags = new Map<string, string>()
   for (const segment of String(signature).split(";")) {
     if (segment.trim() === "") continue
     const pair = segment.match(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*=\s*([\s\S]*)$/)
@@ -273,7 +275,7 @@ function intuitSignaturesAreFullyBound(signatures: string | string[]) {
   // A malformed signature is treated as nobody's rather than as Intuit's. If it is
   // Intuit's that is fatal anyway, because the message then has no parseable Intuit
   // signature left and the count check below refuses it.
-  const intuit = parsed.filter((tags) => tags !== null && isIntuitDomain(identityDomain(tags.get("d") ?? "")))
+  const intuit = parsed.filter((tags): tags is Map<string, string> => tags !== null && isIntuitDomain(identityDomain(tags.get("d") ?? "")))
   if (intuit.length === 0) return false
   return intuit.every((tags) => {
     if (tags.has("l")) return false

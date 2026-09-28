@@ -77,7 +77,7 @@ export function classifyInboundAttachmentSensitivity(filenameValue: unknown, con
 // a retryable provider outage. Require the structured status so an unrelated
 // exception whose text happens to mention 404 cannot silently drop work.
 export function isGmailMessageGone(error: unknown) : boolean {
-  return Boolean(error && typeof error === "object" && Number(error.status) === 404)
+  return Boolean(error && typeof error === "object" && Number((error as { status?: unknown }).status) === 404)
 }
 
 export function isReservedCustomerPhone(value: unknown, reservedValues: unknown[]) : boolean {
@@ -189,7 +189,7 @@ export function formatSmsBody({ title, body = "", url = "", smsOnly = false }: {
   return `${copy.slice(0, maxLength - suffix.length)}${suffix}`
 }
 
-const TWILIO_CONSENT_KEYWORDS = ["STOP", "START", "HELP"]
+const TWILIO_CONSENT_KEYWORDS: TwilioConsentKeyword[] = ["STOP", "START", "HELP"]
 
 // Provider classification wins. Without it, only a standalone keyword may
 // change consent; conversational prose must never grant or revoke permission.
@@ -225,7 +225,7 @@ export function swipeFinishDecision({ deltaX, deltaY, width, submitted = false }
   return { outcome: "reset", progress }
 }
 
-const CUSTOMER_UPLOAD_MIMES = {
+const CUSTOMER_UPLOAD_MIMES: Record<string, string[]> = {
   jpg: ["image/jpeg"],
   jpeg: ["image/jpeg"],
   png: ["image/png"],
@@ -270,7 +270,7 @@ export function validateCustomerUploadMetadata(filenameValue: unknown, contentTy
 }
 
 export function messagingConsentState(events: Array<{ source?: unknown }> | null | undefined) : "granted" | "revoked" | "unknown" {
-  let state = "unknown"
+  let state: "unknown" | "granted" | "revoked" = "unknown"
   for (const event of events ?? []) {
     const source = String(event?.source ?? "")
     if (source === "STOP") state = "revoked"

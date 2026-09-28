@@ -9,16 +9,17 @@
 // NEXT_PUBLIC_ because the number is printed on the page -- a number the shop
 // advertises is not a secret -- and because one variable read by both halves
 // cannot disagree with itself the way a public/private pair can.
-export const DNI_CHANNELS = ["google", "facebook"]
+type DniChannel = "google" | "facebook"
+export const DNI_CHANNELS: DniChannel[] = ["google", "facebook"]
 
 // Next inlines process.env.NEXT_PUBLIC_* only where it is written out as a
 // literal property access, so this map cannot be built from a loop.
-const RAW = {
+const RAW: Record<DniChannel, string | undefined> = {
   google: process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER_GOOGLE,
   facebook: process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER_FACEBOOK,
 }
 
-export function normalizedE164(value) {
+export function normalizedE164(value: string | null | undefined) {
   const raw = value?.trim() ?? ""
   const digits = raw.replace(/\D/g, "")
   if (digits.length === 10) return `+1${digits}`
@@ -30,11 +31,11 @@ export function normalizedE164(value) {
 // Empty until the owner buys the number and sets the variable. Every caller
 // treats empty as "this channel has no tracking number", so the whole feature
 // is inert rather than half-on.
-export function dniNumber(channel: string) {
+export function dniNumber(channel: DniChannel) {
   return normalizedE164(RAW[channel])
 }
 
-export function dniDisplay(channel) {
+export function dniDisplay(channel: DniChannel) {
   const e164 = dniNumber(channel)
   const digits = e164.replace(/\D/g, "")
   if (digits.length !== 11 || !digits.startsWith("1")) return ""
@@ -46,7 +47,7 @@ export function dniConfigured() {
 }
 
 // Which channel a call came in on, read from the number it was dialled to.
-export function channelForNumber(value) {
+export function channelForNumber(value: string | null | undefined) {
   const normalized = normalizedE164(value)
   if (!normalized) return null
   for (const channel of DNI_CHANNELS) {
@@ -59,7 +60,7 @@ export function channelForNumber(value) {
 // channel's number. Mirrors deriveLeadSource's markers: an iOS ad click often
 // carries gbraid or wbraid instead of gclid, and lead #161 was filed "direct"
 // for exactly that reason.
-export function paidChannelForVisit({ gclid = "", utmSource = "", landingPage = "" } = {}) {
+export function paidChannelForVisit({ gclid = "", utmSource = "", landingPage = "" }: { gclid?: string; utmSource?: string; landingPage?: string } = {}) {
   const landing = String(landingPage).toLowerCase()
   const source = String(utmSource).trim().toLowerCase()
   if (gclid || /[?&](gclid|gbraid|wbraid|gad_source)=/.test(landing) || source.startsWith("google")) return "google"

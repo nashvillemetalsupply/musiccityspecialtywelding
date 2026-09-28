@@ -12,7 +12,7 @@ function pruneExpired(nowMs: number) {
 
 export function scheduleAccountReadRepair({ key, after, write, now = Date.now, onError = (error) => console.error("Account key repair failed:", error) }: {
   key: string
-  after: (task: () => void | Promise<void>) => void
+  after: (task: () => void | Promise<unknown>) => void
   write: () => Promise<unknown> | unknown
   now?: () => number
   onError?: (error: unknown) => void
