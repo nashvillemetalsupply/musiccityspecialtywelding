@@ -15,9 +15,9 @@ test("relative board times share the server render clock", () => {
   assert.doesNotMatch(PREVIEW_SOURCE, /Date\.now\(\)/)
   assert.match(PAGE_SOURCE, /const now = new Date\(\)/)
   assert.match(PAGE_SOURCE, /const nowMs = now\.getTime\(\)/)
-  // Signed-out JobControl, authenticated JobControl, and RecentCalls all use
-  // the same render instant; none samples a later clock of its own.
-  assert.equal((PAGE_SOURCE.match(/nowMs=\{nowMs\}/g) ?? []).length, 3)
+  // The authenticated JobControl and RecentCalls use the same render instant;
+  // signed-out requests redirect before either component or its data renders.
+  assert.equal((PAGE_SOURCE.match(/nowMs=\{nowMs\}/g) ?? []).length, 2)
   for (const helper of ["sinceInWords", "callLine", "waitingAge"]) {
     assert.match(PREVIEW_SOURCE, new RegExp(`function ${helper}\\([^)]*nowMs: number`))
   }
@@ -224,7 +224,10 @@ test("the Today trail excludes every test identity and projects bodies for the o
 test("the Today trail is no longer rendered, and the board has no signed-out fixtures", () => {
   assert.doesNotMatch(PREVIEW_SOURCE, /shopEventLabel\(event\.kind\)/)
   assert.match(PREVIEW_SOURCE, /timeZone: "America\/Chicago"/)
-  assert.match(PAGE_SOURCE, /todayTrail: \[\]/)
+  const route = PAGE_SOURCE.slice(PAGE_SOURCE.indexOf("export default async function BoardPage"))
+  const signedOutRedirect = route.indexOf('if (!operator) redirect("/ops")')
+  const dataBatch = route.indexOf("const [page, promises")
+  assert.ok(signedOutRedirect >= 0 && dataBatch > signedOutRedirect, "signed-out requests redirect before loading board data")
   assert.doesNotMatch(PREVIEW_SOURCE, /Price worked out for Phil Lloyd|Ray Colter called|Denz automotive asked|Gerald Pace plate finished/)
 })
 
@@ -339,7 +342,10 @@ test("board job details are typed, wired, and remain data-only in W1", () => {
   assert.match(PREVIEW_SOURCE, /details: Map<number, BoardJobDetail>/)
   assert.doesNotMatch(PREVIEW_SOURCE, /board\.details/)
   assert.match(PAGE_SOURCE, /getBoardJobDetails\(page\.items\.map\(\(item\) => item\.id\), role, includeTests\)/)
-  assert.match(PAGE_SOURCE, /details: new Map\(\)/)
+  const route = PAGE_SOURCE.slice(PAGE_SOURCE.indexOf("export default async function BoardPage"))
+  const signedOutRedirect = route.indexOf('if (!operator) redirect("/ops")')
+  const dataBatch = route.indexOf("const [page, promises")
+  assert.ok(signedOutRedirect >= 0 && dataBatch > signedOutRedirect, "signed-out requests redirect before job details are loaded")
 })
 
 test("board job details compose five batched facts with server-side role projections", () => {

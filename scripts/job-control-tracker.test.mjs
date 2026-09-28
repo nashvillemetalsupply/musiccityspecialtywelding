@@ -143,7 +143,10 @@ test("call-sketch job actions only render when the call has a leadId", () => {
 
 test("tracker has an honest empty state and the protected regions remain", () => {
   assert.match(PREVIEW_SOURCE, /No jobs in this stage right now\./)
-  assert.match(PAGE_SOURCE, /const EMPTY_BOARD: BoardPaneData = \{/)
+  const route = PAGE_SOURCE.slice(PAGE_SOURCE.indexOf("export default async function BoardPage"))
+  const signedOutRedirect = route.indexOf('if (!operator) redirect("/ops")')
+  const dataBatch = route.indexOf("const [page, promises")
+  assert.ok(signedOutRedirect >= 0 && dataBatch > signedOutRedirect, "signed-out requests redirect before any board data is loaded")
   assert.doesNotMatch(PREVIEW_SOURCE, /export const EMPTY_BOARD/)
   assert.match(PREVIEW_SOURCE, /<h2 className="t-title">\{onTheLine \? "On the phone" : "Last call"\}<\/h2>/)
   // Both regions survive, now behind the fallback a call that described no
