@@ -95,16 +95,16 @@ export function sketchValuesFromClaims(rows: ExtractedClaim[] | null | undefined
   evidence: Record<string, string>
 } {
   const claims = Array.isArray(rows) ? rows : []
-  const chosen: Partial<Record<SketchFieldKey, string | number>> = {}
+  const chosen: Record<string, string | number> = {}
   const evidence: Record<string, string> = {}
-  const openingOnly: Partial<Record<SketchFieldKey, string | number>> = {}
+  const openingOnly: Record<string, string | number> = {}
   for (const row of claims) {
     const predicate = String(row?.predicate ?? "")
     if (!predicate) continue
     const match = PREDICATE_PATTERNS.find((candidate) => candidate.pattern.test(predicate))
     if (!match) continue
     const key = match.key
-    let value = null
+    let value: any = null
     if (NUMERIC_KEYS.has(key)) value = toInches(row.value)
     else if (SIDE_KEYS.has(key)) value = toSide(row.value)
     else value = toWords(row.value)
@@ -117,7 +117,7 @@ export function sketchValuesFromClaims(rows: ExtractedClaim[] | null | undefined
     }
     if (chosen[key] == null) { chosen[key] = value; evidence[key] = predicate }
   }
-  for (const [key, value] of Object.entries(openingOnly) as Array<[SketchFieldKey, string | number]>) {
+  for (const [key, value] of Object.entries(openingOnly)) {
     if (chosen[key] == null) { chosen[key] = value; evidence[key] = evidence[`opening:${key}`] }
   }
   const kind = kindFromPredicates(claims.map((row) => String(row?.predicate ?? "")))
@@ -139,9 +139,9 @@ export function mergeClaimFacts(spec: CallSketchSpec, rows: ExtractedClaim[] | n
   // call put them.
   const describesShape = values.kind != null || spec?.kind?.value != null
   if (!describesShape) return spec
-  const merged = { ...spec }
+  const merged: any = { ...spec }
   let changed = false
-  for (const [key, value] of Object.entries(values) as Array<[SketchFieldKey, string | number]>) {
+  for (const [key, value] of Object.entries(values)) {
     const current = merged[key]
     // Only an unknown slot. A stated or confirmed fact is the call's own word
     // and a second uncertain reading of it is noise; an existing uncertain one
@@ -153,7 +153,7 @@ export function mergeClaimFacts(spec: CallSketchSpec, rows: ExtractedClaim[] | n
       evidence: `heard on the call (${evidence[key]})`,
       track: "",
       sequenceId: null,
-    } as never
+    }
     changed = true
   }
   return changed ? merged : spec

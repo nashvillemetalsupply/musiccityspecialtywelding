@@ -23,7 +23,6 @@ const REPORT_WORK_TIMEOUT_MS = 1_500
 const CONTENT_TYPE_LEGACY = "application/csp-report"
 const CONTENT_TYPE_REPORTING_API = "application/reports+json"
 type CspReportRecord = Record<string, unknown>
-type ReportingApiReport = CspReportRecord & { body: CspReportRecord; url?: unknown }
 
 function emptyResponse() {
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
@@ -96,16 +95,16 @@ async function readJsonBody(request: Request) {
   }
 }
 
-function reportRecords(contentType: "application/csp-report" | "application/reports+json", body: unknown): CspReportRecord[] {
+function reportRecords(contentType: "application/csp-report" | "application/reports+json", body: any): CspReportRecord[] {
   if (contentType === CONTENT_TYPE_LEGACY) {
     if (!body || typeof body !== "object" || Array.isArray(body)) return []
-    const report = (body as CspReportRecord)["csp-report"]
-    return report && typeof report === "object" && !Array.isArray(report) ? [report as CspReportRecord] : []
+    const report = body["csp-report"]
+    return report && typeof report === "object" && !Array.isArray(report) ? [report] : []
   }
 
   if (contentType !== CONTENT_TYPE_REPORTING_API || !Array.isArray(body)) return []
-  return (body as unknown[])
-    .filter((report): report is ReportingApiReport => Boolean(report && typeof report === "object" && !Array.isArray(report) && (report as CspReportRecord).type === "csp-violation" && (report as CspReportRecord).body && typeof (report as CspReportRecord).body === "object"))
+  return body
+    .filter((report) => report && typeof report === "object" && report.type === "csp-violation" && report.body && typeof report.body === "object")
     .map((report) => ({ ...report.body, documentURL: report.body.documentURL || report.url }))
     .slice(0, MAX_REPORT_COUNT)
 }

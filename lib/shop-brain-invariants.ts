@@ -69,8 +69,8 @@ export function classifyInboundAttachmentSensitivity(filenameValue: unknown, con
 // deleted before the ingester fetches it. That 404 is a terminal tombstone, not
 // a retryable provider outage. Require the structured status so an unrelated
 // exception whose text happens to mention 404 cannot silently drop work.
-export function isGmailMessageGone(error: unknown) : boolean {
-  return Boolean(error && typeof error === "object" && Number((error as { status?: unknown }).status) === 404)
+export function isGmailMessageGone(error: any) : boolean {
+  return Boolean(error && typeof error === "object" && Number(error.status) === 404)
 }
 
 export function isReservedCustomerPhone(value: unknown, reservedValues: unknown[]) : boolean {
