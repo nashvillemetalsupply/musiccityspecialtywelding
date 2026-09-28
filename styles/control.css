@@ -240,11 +240,12 @@ sub,sup{font-size:var(--t-caption)}
 /* Windows High Contrast strips backgrounds. Every control that showed its
    state as a fill shows it as a border instead. */
 @media (forced-colors:active){
-  .chip,.tab,.btn,.skip,.find{border:1px solid ButtonText}
+  .chip,.job-status,.tab,.btn,.skip,.find{border:1px solid ButtonText}
   .tab[aria-pressed="true"],.tab[aria-current="page"]{border:2px solid Highlight}
   .btn--go{border:2px solid ButtonText}
   .chip i{background:CanvasText}
   .cust svg{stroke:CanvasText}
+  :focus-visible{outline-color:Highlight !important}
 }
 
 /* The reader asked the OS for more contrast: the quiet tier steps up one. */

@@ -558,12 +558,13 @@ export async function POST(req: Request) {
         })
       );
 
+      const dialablePhone = normalizeUsPhone(phone)
       const ownerHtml = brandedEmail({
         preheader: `${firstName} · ${serviceNeeded} · ${phone}`,
         headline: "New job in the door",
         bodyHtml: [
           `<strong>${escapeHtml(firstName)} ${escapeHtml(lastName)}</strong>`.trim(),
-          `Phone: <a href="tel:${escapeHtml(phone.replace(/[^\d+]/g, ""))}">${escapeHtml(phone)}</a>`,
+          `Phone: ${dialablePhone ? `<a href="tel:${dialablePhone}">${escapeHtml(phone)}</a>` : escapeHtml(phone)}`,
           email ? `Email: ${escapeHtml(email)}` : `Email: (not provided)`,
           `Job: <strong>${escapeHtml(serviceNeeded)}</strong>`,
           projectDetails ? `<br />“${escapeHtml(projectDetails)}”` : "",

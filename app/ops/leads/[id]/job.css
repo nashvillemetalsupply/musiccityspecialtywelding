@@ -558,6 +558,17 @@
   .job-page * { transition-duration: .001ms !important; }
 }
 
+@media (forced-colors: active) {
+  .job-action-spine {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  .job-action-spine .ops-tracked-call > button {
+    border: 1px solid ButtonText;
+  }
+}
+
 /* Profile polish: one clear workbench, then a compact detail ledger. */
 .job-page {
   width: min(100%, 78rem);

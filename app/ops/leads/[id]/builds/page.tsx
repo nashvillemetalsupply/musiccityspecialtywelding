@@ -1,6 +1,7 @@
 import { Check, CircleCheck, CirclePause, History, PencilLine, RefreshCcw, X } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { requirePositiveRouteId, requireRouteValue } from "@/lib/route-ids.mjs"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import { BuildSheetDrawing } from "@/components/build-sheets/build-sheet-drawing"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
@@ -68,10 +69,8 @@ export default async function BuildsPage({ params }: { params: Params }) {
   const operator = await getAuthenticatedOperator()
   if (!operator || operator.role !== "owner" || !buildSheetsEnabled()) notFound()
   const { id } = await params
-  const leadId = Number(id)
-  if (!Number.isInteger(leadId) || leadId <= 0) notFound()
-  const workspace = await getBuildsWorkspace(leadId)
-  if (!workspace) notFound()
+  const leadId = requirePositiveRouteId(id, notFound)
+  const workspace = requireRouteValue(await getBuildsWorkspace(leadId), notFound)
 
   const conflictClaims = new Set(workspace.draft.conflicts.flatMap((conflict) => conflict.claimIds))
   const acceptedCount = workspace.draft.factRows.filter((fact) => fact.state === "confirmed" || fact.state === "working-number").length
