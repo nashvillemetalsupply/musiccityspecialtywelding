@@ -7,7 +7,7 @@ import { recordEvent } from "@/lib/events";
 import { notifyAll } from "@/lib/notify";
 import { getShopPhone } from "@/lib/shop-contact";
 import { isAuthorizedCron } from "@/lib/ops-auth";
-import { imageTypeMatches, validatePublicQuote } from "@/lib/public-quote.mjs";
+import { imageTypeMatches, isQuoteHoneypotFilled, validatePublicQuote } from "@/lib/public-quote.mjs";
 import {
   attachLeadPhotos,
   createLead,
@@ -191,11 +191,10 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
 
-    // Honeypot field: hidden input named "company" on the form.
-    const honeypot = sanitize(formData.get("company"));
-    if (honeypot) {
+    // The opaque trap name does not overlap browser autofill field semantics.
+    if (isQuoteHoneypotFilled(formData)) {
       // Pretend success to bots; do not persist or send email.
-      return Response.json({ ok: true, accepted: false }, { status: 200 });
+      return Response.json({ ok: true, accepted: true, suppressed: true }, { status: 200 });
     }
 
     const firstName = sanitize(formData.get("firstName"), 81);

@@ -46,9 +46,11 @@ test("the inline tag script declares nothing at classic-script top level", () =>
 
 test("an accepted quote fires the Ads conversion", () => {
   const contact = source("components/mainstreet-contact.tsx")
-  const accepted = contact.indexOf("data?.accepted !== true")
-  assert.notEqual(accepted, -1, "The accepted-lead guard is gone.")
-  const fire = contact.indexOf("if (ADS_CONVERSION_SEND_TO)")
+  const outcome = contact.indexOf("const outcome = quoteSubmissionOutcome(data)")
+  assert.notEqual(outcome, -1, "The accepted-lead outcome check is gone.")
+  const accepted = contact.indexOf('if (outcome === "accepted")', outcome)
+  assert.ok(accepted > outcome, "The conversion must be gated on an accepted lead.")
+  const fire = contact.indexOf("if (ADS_CONVERSION_SEND_TO)", accepted)
   assert.ok(fire > accepted, "The conversion must fire after the lead is accepted, not before.")
   const call = contact.slice(fire, fire + 240)
   assert.ok(

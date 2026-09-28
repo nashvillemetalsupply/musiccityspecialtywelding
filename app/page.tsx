@@ -4,15 +4,14 @@ import { ArrowDownRight, ArrowUpRight, MapPin, Phone } from "lucide-react"
 import {
   Gusset,
   PlateStamp,
-  ShopCrest,
   TennesseeMap,
   Torch,
   WeldSeam,
 } from "@/components/weldment"
+import { Footer } from "@/components/footer"
 import { MainstreetContact } from "@/components/mainstreet-contact"
-import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
-import { PublicSkipLink } from "@/components/public-skip-link"
+import { Navbar } from "@/components/navbar"
 import { createPublicMetadata, publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./homepage-polish.css"
@@ -158,49 +157,12 @@ export default function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <PublicSkipLink label="Skip to the work" />
-
-      <header className="ms-nav" aria-label="Main navigation">
-        <Link className="ms-brand" href="#home">
-          <span className="ms-brand-badge">
-            <Image
-              src="/images/optimized/mcs_welding_logo.webp"
-              alt=""
-              width={240}
-              height={160}
-              loading="eager"
-              sizes="64px"
-              unoptimized
-            />
-          </span>
-          <span className="ms-brand-words">
-            <strong>Music City</strong>
-            <span>Specialty Welding</span>
-          </span>
-        </Link>
-
-        <nav className="ms-nav-links" aria-label="Desktop navigation">
-          <a href="#work">The work</a>
-          <a href="#services">What we weld</a>
-          <a href="#job-glass">Customer Page</a>
-          <a href="#contact">Show us the job</a>
-        </nav>
-
-        <a className="ms-nav-call" href={shopPhone.href}>
-          <Phone aria-hidden="true" />
-          <span>
-            <small>Open 24/7</small>
-            {shopPhone.display}
-          </span>
-        </a>
-
-        <MainstreetMenu phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
-      </header>
+      <Navbar home />
 
       <main id="main-content">
         <section className="ms-hero" id="home">
           <div className="ms-hero-copy sw-signwall">
-            <h1 className="sw-sign" aria-label="Music City Specialty Welding">
+            <h1 className="sw-sign" aria-label="Music City Specialty Welding — Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee">
               <span className="sw-line-sm">Music City</span>
               <span className="sw-line-lg">Specialty</span>
               <span className="sw-line-lg">
@@ -470,26 +432,7 @@ export default function Page() {
 
       <WeldSeam id="wm-bead-footer" />
 
-      <footer className="ms-footer">
-        <ShopCrest className="wm-art wm-crest" style={{ width: "7.5rem", top: "2.6rem", right: "6%", opacity: 0.35 }} />
-        <div className="ms-footer-mark">
-          <Image src="/images/optimized/mcs_welding_logo.webp" alt="Music City Specialty Welding" width={240} height={160} sizes="96px" unoptimized />
-          <p className="ms-display">Built here.<br />Fixed where it sits.</p>
-        </div>
-        <div className="ms-footer-contact">
-          <div className="ms-footer-call">
-            <strong>Open 24/7</strong>
-            <a href={shopPhone.href}>Call the shop · {shopPhone.display}</a>
-          </div>
-          <a href="mailto:Sales@musiccityspecialtywelding.com">Sales@musiccityspecialtywelding.com</a>
-          <span>533 W Baddour Pkwy<br />Lebanon, TN 37087</span>
-          <span>Music City Specialty Welding is operated by Neverlift Chassis Works, LLC.</span>
-        </div>
-        <div className="ms-footer-meta">
-          <span>© {new Date().getFullYear()} Music City Specialty Welding</span>
-          <div><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><a href="https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/" target="_blank" rel="noreferrer">Facebook</a></div>
-        </div>
-      </footer>
+      <Footer home />
 
       <MobileQuickActions phoneHref={shopPhone.href} />
     </div>

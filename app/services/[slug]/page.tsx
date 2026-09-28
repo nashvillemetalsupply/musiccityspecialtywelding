@@ -5,9 +5,10 @@ import { ArrowUpRight, Phone } from "lucide-react"
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { createPublicMetadata } from "@/lib/public-metadata"
-import { servicePageBySlug, servicePages } from "@/lib/service-pages"
+import { buildServiceStructuredData, servicePageBySlug, servicePages } from "@/lib/service-pages"
 import { getShopPhone } from "@/lib/shop-contact"
 
 type PageProps = { params: Promise<{ slug: string }> }
@@ -39,31 +40,15 @@ export default async function ServicePage({ params }: PageProps) {
   if (!service) notFound()
   const shopPhone = getShopPhone()
 
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    name: service.shortTitle,
-    description: service.metaDescription,
-    url: `https://musiccityspecialtywelding.com/services/${service.slug}`,
-    areaServed: "Middle Tennessee",
-    provider: { "@id": "https://musiccityspecialtywelding.com/#business" },
-  }
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://musiccityspecialtywelding.com/" },
-      { "@type": "ListItem", position: 2, name: "Services", item: "https://musiccityspecialtywelding.com/#services" },
-      { "@type": "ListItem", position: 3, name: service.shortTitle, item: `https://musiccityspecialtywelding.com/services/${service.slug}` },
-    ],
-  }
+  const structuredData = buildServiceStructuredData(service)
 
   return (
     <>
       <Navbar />
       <main id="main-content" className="ms-site ms-subpage" data-service={service.slug}>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData.service) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData.breadcrumbList) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData.faqPage) }} />
 
         <nav className="ms-breadcrumb" aria-label="Breadcrumb">
           <Link href="/">Home</Link><span aria-hidden="true">/</span>
@@ -71,14 +56,14 @@ export default async function ServicePage({ params }: PageProps) {
           <span aria-current="page">{service.shortTitle}</span>
         </nav>
 
-        <section className="ms-subhero">
+        <section className="ms-subhero" id="service">
           <div className="ms-subhero-copy">
             <span className="ms-subhero-eyebrow">{service.eyebrow}</span>
             <h1 className="ms-display">{service.title}</h1>
             <p>{service.intro}</p>
             <div className="ms-hero-actions">
               <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" />Call 24/7</a>
-              <Link className="ms-text-link" href="/#contact">Show us the job <ArrowUpRight aria-hidden="true" /></Link>
+              <Link className="ms-text-link" href="#contact">Show us the job <ArrowUpRight aria-hidden="true" /></Link>
             </div>
           </div>
           <figure className="ms-subhero-media">
@@ -129,12 +114,14 @@ export default async function ServicePage({ params }: PageProps) {
           <div>
             <p>Photos. Location. Timing. The honest version of what happened.</p>
             <a href={shopPhone.href}><small>Open 24/7</small>{shopPhone.display}</a>
-            <Link href="/#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
+            <Link href="#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
           </div>
         </section>
+
+        <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
       </main>
       <Footer />
-      <MobileQuickActions quoteHref="/#contact" phoneHref={shopPhone.href} />
+      <MobileQuickActions quoteHref="#contact" phoneHref={shopPhone.href} />
     </>
   )
 }

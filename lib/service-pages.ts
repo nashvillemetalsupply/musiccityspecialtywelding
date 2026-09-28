@@ -16,6 +16,40 @@ export type ServicePage = {
   faqs: { question: string; answer: string }[]
 }
 
+export function buildServiceStructuredData(service: Pick<ServicePage, "slug" | "shortTitle" | "metaDescription" | "faqs">) {
+  const serviceUrl = `https://musiccityspecialtywelding.com/services/${service.slug}`
+
+  return {
+    service: {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: service.shortTitle,
+      description: service.metaDescription,
+      url: serviceUrl,
+      areaServed: "Middle Tennessee",
+      provider: { "@id": "https://musiccityspecialtywelding.com/#business" },
+    },
+    breadcrumbList: {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://musiccityspecialtywelding.com/" },
+        { "@type": "ListItem", position: 2, name: "Services", item: "https://musiccityspecialtywelding.com/#services" },
+        { "@type": "ListItem", position: 3, name: service.shortTitle, item: serviceUrl },
+      ],
+    },
+    faqPage: {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: service.faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: { "@type": "Answer", text: faq.answer },
+      })),
+    },
+  }
+}
+
 export const servicePages: ServicePage[] = [
   {
     slug: "mobile-welding",

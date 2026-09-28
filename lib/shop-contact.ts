@@ -3,6 +3,7 @@ import {
   FALLBACK_SHOP_PHONE_E164,
   type ShopPhone,
 } from "@/lib/shop-phone-shared"
+import { enforceShopPhoneFallbackPolicy } from "@/lib/shop-contact-policy.mjs"
 import { twilioPublicNumberEnabled, twilioSmsConfigured, twilioVoiceConfigured } from "@/lib/twilio"
 
 function normalizedConfiguredPhone() {
@@ -25,6 +26,12 @@ function displayPhone(e164: string) {
 export function getShopPhone(): ShopPhone {
   const e164 = normalizedConfiguredPhone()
   const publicNumberEnabled = twilioPublicNumberEnabled() && twilioVoiceConfigured() && e164 !== FALLBACK_SHOP_PHONE_E164
+  const isFallback = !publicNumberEnabled
+  enforceShopPhoneFallbackPolicy({
+    isFallback,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  })
   return {
     e164,
     display: displayPhone(e164),
@@ -33,6 +40,6 @@ export function getShopPhone(): ShopPhone {
     publicNumberEnabled,
     voiceReady: publicNumberEnabled,
     textReady: publicNumberEnabled && twilioSmsConfigured(),
-    isFallback: !publicNumberEnabled,
+    isFallback,
   }
 }
