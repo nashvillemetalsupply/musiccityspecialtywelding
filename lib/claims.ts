@@ -48,12 +48,38 @@ export async function addClaim(input: {
 }
 
 export async function supersedeClaim(oldId: number, replacement: Parameters<typeof addClaim>[0]) {
-  const newId = await addClaim(replacement)
   const sql = getSql()
-  await sql`
-    UPDATE claims SET superseded_by = ${newId}::bigint
-    WHERE id = ${oldId}::bigint AND superseded_by IS NULL`
-  return newId
+  const itemKey = replacement.itemKey || createHash("sha256")
+    .update(`${replacement.predicate}:${JSON.stringify(replacement.value)}`)
+    .digest("hex")
+  const rows = (await sql`
+    WITH claim_input AS MATERIALIZED (
+      SELECT ${replacement.subjectType}::text AS subject_type,
+        ${replacement.subjectId}::bigint AS subject_id,
+        ${replacement.predicate}::text AS predicate,
+        ${JSON.stringify(replacement.value)}::jsonb AS value,
+        ${replacement.confidence}::real AS confidence,
+        ${replacement.sourceEventId}::bigint AS source_event_id,
+        ${replacement.extractedBy}::text AS extracted_by,
+        ${itemKey}::text AS item_key
+    ), claim_write AS (
+      INSERT INTO claims (subject_type, subject_id, predicate, value, confidence, source_event_id, extracted_by, item_key)
+      SELECT subject_type, subject_id, predicate, value, confidence, source_event_id, extracted_by, item_key
+      FROM claim_input
+      ON CONFLICT (source_event_id, item_key) WHERE item_key <> ''
+      DO UPDATE SET item_key = EXCLUDED.item_key
+      RETURNING id
+    ), supersede_write AS MATERIALIZED (
+      UPDATE claims old SET superseded_by = claim_write.id
+      FROM claim_write
+      WHERE old.id = ${oldId}::bigint AND old.id <> claim_write.id
+        AND old.superseded_by IS NULL
+      RETURNING old.id
+    )
+    SELECT claim_write.id FROM claim_write
+    CROSS JOIN (SELECT count(*) FROM supersede_write) linked LIMIT 1`) as { id: number }[]
+  if (!rows[0]) throw new Error("The replacement claim could not be saved.")
+  return Number(rows[0].id)
 }
 
 export async function supersedeClaimWithExisting(oldId: number, newId: number) {

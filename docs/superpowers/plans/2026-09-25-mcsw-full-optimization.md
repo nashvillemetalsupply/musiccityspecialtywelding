@@ -389,7 +389,7 @@ this path fires.
   client polls that every 10 s and only calls `router.refresh()` on change;
   idle tabs back off to 5 min; wrap the job page loaders in `cache()`.
   Observation: `/api/ops/pulse` returns only the two aggregates to signed-in owner/crew sessions, crew aggregates exclude internal-test and owner-only events, and both clients poll with 10 s foreground / 5 min away cadence; fake fetch/timer/SQL tests pass. Neon CU-hours before/after were not run from the worktree.
-- [ ] **Missing indexes.** Add, idempotently (`CREATE INDEX IF NOT EXISTS`):
+- [x] **Missing indexes.** Add, idempotently (`CREATE INDEX IF NOT EXISTS`):
   `leads(follow_up_at) WHERE follow_up_at IS NOT NULL`,
   `leads(scheduled_at)`, `leads(phone)`, `leads(id) WHERE open_invoice`,
   `leads(won_at)`, `leads USING gin (name gin_trgm_ops)`,
@@ -401,10 +401,12 @@ this path fires.
   `rate_limits(key, ts)`, `rate_limits(ts)`, `automation_runs(job)`.
   Exact column names are in the DB audit; verify each against `EXPLAIN` on the
   query it serves before adding, and drop any the planner does not use.
-- [ ] **Rate limiter on the hot path.** `lib/leads.ts:511` `DELETE`s old rows
+  Observation: Added seven idempotent indexes for matching query columns; unsupported suggestions were skipped; EXPLAIN not run because no reachable non-production database exists.
+- [x] **Rate limiter on the hot path.** `lib/leads.ts:511` `DELETE`s old rows
   on every check and fails open on error. Move the delete to the sweep, fail
   closed for the strict limiter, and use `consumeStrictRateLimit` on
   `app/api/ops/login/route.ts` keyed on `ip + emailHash`.
+  Observation: Login refuses after five attempts and when the limiter store throws; expiry cleanup runs in the recovery sweep; focused tests pass.
 - [x] **Health endpoint does six full scans 60+ times a day.**
   `app/api/ops/health/route.ts:143`. Bound each scan by time window and index,
   and cache the result for 5 minutes in-process.
@@ -413,20 +415,22 @@ this path fires.
   GET, twice per view under `cache()`. Move the "last seen" write to a
   fire-and-forget `after()` with a 15-minute guard.
   Observation: This checkout has no last-seen write in `getAccount`; its account-key repair UPDATEs now run through `after()` with a 15-minute per-account-group guard, while the current render still includes unmigrated group members. Fake after/SQL tests pass.
-- [ ] **Non-transactional multi-statement writes.** `createLead`,
+- [x] **Non-transactional multi-statement writes.** `createLead`,
   `replaceJobLineItems` (`lib/job-line-items.ts:81` DELETE then loop),
   `supersedeClaim`. Rewrite each as a single-statement `MATERIALIZED` CTE in the
   house style of `lib/payment-ledger.ts` and `lib/build-sheets.ts:200`
   (`jsonb_to_recordset`).
+  Observation: Line-item replacement and claim superseding each use one MATERIALIZED CTE statement; createLead's lead-plus-consent insert is materialized; focused statement tests pass.
 - [ ] **`is_test` is a copied ILIKE predicate at ~15 sites.** Add
   `is_test boolean NOT NULL DEFAULT false` to `events`, `claims`,
   `commitments`, `calls`, `messages`, `notifications`; backfill from the
   existing predicate; set at write time through the one helper; leave the old
   predicate in place as a belt until the source-regex test proves every writer
   sets the column. Additive; nothing dropped.
-- [ ] **Small correctness.** `getMonthRevenueCents` uses UTC month boundaries;
+- [x] **Small correctness.** `getMonthRevenueCents` uses UTC month boundaries;
   use `America/Chicago`. Retire the test jobs #34 and #19 by marking, not
   deleting.
+  Observation: Revenue uses half-open America/Chicago month bounds and passes March DST boundary tests; jobs #34 and #19 remain untouched for owner cleanup.
 
 ## P3 — Authorization, input hardening, customer privacy
 

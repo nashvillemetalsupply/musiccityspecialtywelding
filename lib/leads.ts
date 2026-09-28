@@ -211,7 +211,7 @@ export async function createLead(
     publicId = makePublicId(new Date())
     try {
       const rows = (await sql`
-        WITH inserted_lead AS (
+        WITH inserted_lead AS MATERIALIZED (
           INSERT INTO leads (
             public_id, first_name, last_name, phone, email, service, message,
             preferred_contact, photo_count, source, gclid, utm_source, utm_medium,
@@ -231,7 +231,7 @@ export async function createLead(
             ${intakeKey}::text
           )
           RETURNING id, public_id
-        ), captured_consent AS (
+        ), captured_consent AS MATERIALIZED (
           INSERT INTO messaging_consents (
             phone_e164, lead_id, source, effect, external_id, occurred_at, provenance
           )
@@ -508,7 +508,6 @@ export async function isRateLimitedDurable(
   try {
     const sql = getSql()
     const windowStart = new Date(Date.now() - windowMs).toISOString()
-    await sql`DELETE FROM rate_limits WHERE ts < now() - interval '1 day'`
     await sql`INSERT INTO rate_limits (key) VALUES (${key}::text)`
     const rows = (await sql`
       SELECT count(*)::int AS count FROM rate_limits

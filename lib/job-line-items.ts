@@ -78,17 +78,30 @@ export async function replaceJobLineItems(input: {
   isTest: boolean
 }): Promise<number> {
   const sql = getSql()
-  await sql`DELETE FROM job_line_items WHERE lead_id = ${input.leadId}::bigint`
-
-  let position = 0
-  for (const item of input.items) {
-    position += 1
-    await sql`
+  const incoming = JSON.stringify(input.items.map((item, index) => ({
+    position: index + 1,
+    label: item.label,
+    note: item.note,
+    amount_cents: item.amountCents,
+  })))
+  const rows = (await sql`
+    WITH deleted_items AS MATERIALIZED (
+      DELETE FROM job_line_items WHERE lead_id = ${input.leadId}::bigint
+      RETURNING id
+    ), incoming_items AS MATERIALIZED (
+      SELECT position, label, note, amount_cents
+      FROM jsonb_to_recordset(${incoming}::jsonb) AS item(
+        position int, label text, note text, amount_cents bigint
+      )
+    ), inserted_items AS MATERIALIZED (
       INSERT INTO job_line_items (lead_id, position, label, note, amount_cents, entered_by, is_test)
-      VALUES (
-        ${input.leadId}::bigint, ${position}::int, ${item.label}::text, ${item.note}::text,
-        ${item.amountCents}::bigint, ${input.operatorId}::bigint, ${input.isTest}::boolean
-      )`
-  }
-  return position
+      SELECT ${input.leadId}::bigint, item.position::int, item.label::text, item.note::text,
+        item.amount_cents::bigint, ${input.operatorId}::bigint, ${input.isTest}::boolean
+      FROM incoming_items item
+      CROSS JOIN (SELECT count(*) FROM deleted_items) cleared
+      ORDER BY item.position
+      RETURNING id
+    )
+    SELECT count(*)::int AS count FROM inserted_items`) as { count: number }[]
+  return Number(rows[0]?.count ?? 0)
 }

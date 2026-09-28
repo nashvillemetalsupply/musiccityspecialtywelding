@@ -1,0 +1,125 @@
+import assert from "node:assert/strict"
+import { createRequire } from "node:module"
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
+import test from "node:test"
+import { fileURLToPath } from "node:url"
+import vm from "node:vm"
+import ts from "typescript"
+
+const root = fileURLToPath(new URL("..", import.meta.url))
+const nativeRequire = createRequire(import.meta.url)
+
+function loadModule(relativePath, moduleFakes) {
+  const path = resolve(root, relativePath)
+  const output = ts.transpileModule(readFileSync(path, "utf8"), {
+    fileName: path,
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+  }).outputText
+  const context = vm.createContext({
+    console: { error() {}, warn() {}, log() {} },
+    process: { env: {} },
+    require: (specifier) => {
+      if (specifier === "node:crypto") return nativeRequire("node:crypto")
+      if (moduleFakes.has(specifier)) return moduleFakes.get(specifier)
+      throw new Error(`Unexpected import in ${relativePath}: ${specifier}`)
+    },
+  })
+  const loaded = { exports: {} }
+  const factory = vm.runInContext(`(function (exports, require, module) { ${output}\n})`, context, { filename: path })
+  factory(loaded.exports, context.require, loaded)
+  return loaded.exports
+}
+
+test("replaceJobLineItems deletes and inserts the replacement through one SQL statement", async () => {
+  const calls = []
+  const moduleFakes = new Map([[
+    "@/lib/db",
+    { getSql: () => async (strings, ...values) => {
+      calls.push({ text: strings.join(" ? "), values })
+      return [{ count: 2 }]
+    } },
+  ]])
+  const { replaceJobLineItems } = loadModule("lib/job-line-items.ts", moduleFakes)
+  const count = await replaceJobLineItems({
+    leadId: 41,
+    operatorId: 8,
+    isTest: true,
+    items: [
+      { label: "Steel", note: "14 ga", amountCents: 20_000 },
+      { label: "Install", note: "", amountCents: 5_000 },
+    ],
+  })
+
+  assert.equal(count, 2)
+  assert.equal(calls.length, 1)
+  assert.match(calls[0].text, /WITH deleted_items AS MATERIALIZED/)
+  assert.match(calls[0].text, /DELETE FROM job_line_items/)
+  assert.match(calls[0].text, /jsonb_to_recordset\(\s*\?\s*::jsonb\)/)
+  assert.match(calls[0].text, /INSERT INTO job_line_items/)
+  assert.match(calls[0].text, /\?\s*::bigint[\s\S]*?\?\s*::boolean/)
+})
+
+test("supersedeClaim inserts the replacement and links the old row in one statement", async () => {
+  const calls = []
+  const moduleFakes = new Map([[
+    "@/lib/db",
+    { getSql: () => async (strings, ...values) => {
+      calls.push({ text: strings.join(" ? "), values })
+      return [{ id: 92 }]
+    } },
+  ]])
+  const { supersedeClaim } = loadModule("lib/claims.ts", moduleFakes)
+  const id = await supersedeClaim(14, {
+    subjectType: "lead",
+    subjectId: 41,
+    predicate: "quoted_price_cents",
+    value: { cents: 25_000 },
+    confidence: 1,
+    sourceEventId: 77,
+    extractedBy: "operator-confirmed",
+  })
+
+  assert.equal(id, 92)
+  assert.equal(calls.length, 1)
+  assert.match(calls[0].text, /WITH claim_input AS MATERIALIZED/)
+  assert.match(calls[0].text, /INSERT INTO claims/)
+  assert.match(calls[0].text, /UPDATE claims old[\s\S]*?superseded_by = claim_write\.id/)
+  assert.match(calls[0].text, /\?\s*::text[\s\S]*?\?\s*::bigint[\s\S]*?\?\s*::jsonb[\s\S]*?\?\s*::real/)
+})
+
+test("createLead's lead and optional consent writes share a materialized SQL statement", async () => {
+  const calls = []
+  const moduleFakes = new Map([
+    ["@/lib/db", { getSql: () => async (strings, ...values) => {
+      const text = strings.join(" ? ")
+      calls.push({ text, values })
+      return text.includes("WITH inserted_lead")
+        ? [{ id: 12, public_id: "L-20260927-TEST" }]
+        : [{ person_id: null, is_test: false }]
+    } }],
+    ["@/lib/media-safety", { isSafeRasterImage: () => true }],
+    ["@/lib/events", { recordEvent: async () => null }],
+    ["@/lib/people", {
+      attachLeadToPerson: async () => {},
+      findOrCreatePerson: async () => null,
+      isReservedShopPhone: () => false,
+      normalizePhone: (value) => value,
+    }],
+  ])
+  const { createLead } = loadModule("lib/leads.ts", moduleFakes)
+  const lead = await createLead({
+    firstName: "Fixture", lastName: "Customer", phone: "+16155550100", email: "owner@example.test",
+    service: "gate", message: "test lead", preferredContact: "phone",
+    photoCount: 0, gclid: "", utmSource: "", utmMedium: "", utmCampaign: "", utmTerm: "",
+    utmContent: "", landingPage: "", referrer: "", ip: "", userAgent: "", isTest: false,
+  }, {
+    webTextConsent: { phoneE164: "+16155550100", provenance: { test: false } },
+  })
+
+  assert.equal(lead.id, 12)
+  assert.equal(calls.filter((call) => /INSERT INTO|UPDATE|DELETE FROM/i.test(call.text)).length, 1)
+  assert.match(calls[0].text, /WITH inserted_lead AS MATERIALIZED/)
+  assert.match(calls[0].text, /captured_consent AS MATERIALIZED \([\s\S]*?INSERT INTO messaging_consents/)
+  assert.match(calls[0].text, /INSERT INTO leads[\s\S]*?::boolean[\s\S]*?::jsonb/)
+})

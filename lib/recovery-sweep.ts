@@ -105,6 +105,12 @@ export async function runRecoverySweep({
   const detail: Record<string, unknown> = { trigger }
 
   try {
+    try {
+      await sql`DELETE FROM rate_limits WHERE ts < now() - interval '1 day'`
+    } catch (error) {
+      console.warn("Rate-limit cleanup failed during recovery sweep:", error)
+    }
+
     const due = (await sql`
       SELECT * FROM leads
       WHERE next_follow_up_at IS NOT NULL

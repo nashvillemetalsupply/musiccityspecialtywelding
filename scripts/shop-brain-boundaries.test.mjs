@@ -496,7 +496,7 @@ test("verified PAID rolls the monthly odometer and stays on the board until fini
   // C7 archived active-job-index; the board renders the same live-jobs query.
   const opsData = source("lib/ops-data.ts")
   const board = source("app/board/page.tsx")
-  assert.match(opsData, /WHERE status = 'won' AND won_at >= date_trunc\('month', now\(\)\)/)
+  assert.match(opsData, /const \{ startInclusive, endExclusive \} = centralMonthBounds\(now\)[\s\S]*?WHERE status = 'won' AND won_at >= \$\{startInclusive\}::timestamptz\s+AND won_at < \$\{endExclusive\}::timestamptz/)
   assert.match(opsData, /l\.status = 'won' AND l\.completed_at IS NULL/)
   assert.match(board, /listBoardJobs\(/)
 })
