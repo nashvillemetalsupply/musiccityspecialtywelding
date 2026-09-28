@@ -58,7 +58,7 @@ function sentenceList(words: string[]) {
 // as an opening measurement — is the case this exists for: it must never
 // count toward the answered total.
 export function factIsAnswered(fact: SketchFact<unknown> | null | undefined) : boolean {
-  return Boolean(fact) && (fact as SketchFact<unknown>).value != null && ((fact as SketchFact<unknown>).truth === "stated" || (fact as SketchFact<unknown>).truth === "confirmed")
+  return Boolean(fact) && fact!.value != null && (fact!.truth === "stated" || fact!.truth === "confirmed")
 }
 
 export function answeredFactCount(spec: CallSketchSpec | null | undefined) : number {
@@ -149,8 +149,7 @@ function heardValue(spec: CallSketchSpec | null | undefined, key: "kind" | "widt
 }
 
 function isHedged(spec: CallSketchSpec | null | undefined, key: "width" | "height") {
-  const fact = spec?.[key]
-  return fact?.truth === "uncertain" && fact.value != null
+  return spec?.[key]?.truth === "uncertain" && spec![key]!.value != null
 }
 
 // Is there anything on this call to draw? A kind by itself is enough to start

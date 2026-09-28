@@ -1,5 +1,5 @@
 export class EmailProviderError extends Error {
-  definitive: boolean
+  declare definitive: boolean
 
   constructor(message: string, definitive: boolean) {
     super(message)
