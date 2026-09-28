@@ -1,6 +1,10 @@
 import { createGlassUploadIntent, finalizeGlassUpload, GlassUploadIntentExpiredError } from "@/lib/glass-uploads"
+import { after } from "next/server"
+import { draftStoredGlassUpload, photoDraftsEnabled } from "@/lib/photo-drafts"
+import { schedulePhotoDraftAfterFinalize } from "@/lib/photo-draft-workflow.mjs"
 
 export const runtime = "nodejs"
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +25,18 @@ export async function POST(request: Request) {
     }
     if (action === "complete") {
       const upload = await finalizeGlassUpload({ uploadId: String(body.uploadId ?? ""), token })
+      if (photoDraftsEnabled()) {
+        try {
+          schedulePhotoDraftAfterFinalize(upload, {
+            enabled: true,
+            after,
+            run: draftStoredGlassUpload,
+            onError: (error) => console.error("Photo draft step failed after glass upload:", error),
+          })
+        } catch (error) {
+          console.error("Photo draft scheduling failed after glass upload:", error)
+        }
+      }
       return Response.json({ ok: true, upload: { id: upload.id, status: upload.status } }, { headers: { "Cache-Control": "no-store" } })
     }
     return Response.json({ error: "Unknown upload action." }, { status: 400 })
