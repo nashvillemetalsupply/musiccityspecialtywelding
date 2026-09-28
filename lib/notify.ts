@@ -259,7 +259,7 @@ export async function notify(input: {
     INSERT INTO notifications (
       operator_id, priority, stock, title, body, url, source_event_id, owner_only, dedupe_key,
       action_kind, action_detail, budget_exempt, delivery_status, quiet_hours_exempt, sms_fallback,
-      sms_only
+      sms_only, is_test
     ) VALUES (
       ${input.operatorId}::bigint,
       ${input.priority}::text,
@@ -276,7 +276,11 @@ export async function notify(input: {
       ${previewSmsFailureProbe ? "pending" : isTest || input.priority === "digest" ? "filed" : "pending"}::text,
       ${input.quietHoursExempt ?? false}::boolean,
       ${input.smsFallback ?? false}::boolean,
-      ${input.smsOnly ?? false}::boolean
+      ${input.smsOnly ?? false}::boolean,
+      mcsw_is_test_row(NULL::bigint, NULL::bigint, ${input.sourceEventId ?? null}::bigint,
+        NULL::text,
+        ${JSON.stringify({ ...(input.actionDetail ?? {}), ...(isTest ? { isTest: true } : {}) })}::jsonb,
+        concat_ws(' ', ${storedTitle}::text, ${markedBody}::text))
     ) ON CONFLICT (operator_id, dedupe_key) WHERE dedupe_key <> '' DO NOTHING
     RETURNING id`) as { id: number }[]
   if (!rows[0]) {

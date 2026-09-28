@@ -190,13 +190,15 @@ export async function sendSmsPersisted(input: {
     INSERT INTO messages (
       twilio_sid, direction, from_phone, to_phone, body, status,
       lead_id, person_id, operator_id, reschedule_id, idempotency_key,
-      send_after, quiet_hours_exempt
+      send_after, quiet_hours_exempt, is_test
     ) VALUES (
       ${pendingSid}::text, 'out', ${from}::text, ${to}::text,
       ${input.body}::text, ${initialStatus}::text, ${input.leadId ?? null}::bigint,
       ${input.personId ?? null}::bigint, ${input.operatorId ?? null}::bigint,
       ${input.rescheduleId ?? null}::bigint, ${idempotencyKey}::text,
-      ${sendAfter?.toISOString() ?? null}::timestamptz, ${quietHoursExempt}::boolean
+      ${sendAfter?.toISOString() ?? null}::timestamptz, ${quietHoursExempt}::boolean,
+      mcsw_is_test_row(${input.leadId ?? null}::bigint, ${input.personId ?? null}::bigint,
+        NULL::bigint, NULL::text, NULL::jsonb, ${input.body}::text)
     ) ON CONFLICT (idempotency_key) WHERE idempotency_key <> '' DO NOTHING
     RETURNING id, twilio_sid, status, send_after, quiet_hours_exempt`) as Array<{
       id: number; twilio_sid: string; status: string; send_after: string | null; quiet_hours_exempt: boolean

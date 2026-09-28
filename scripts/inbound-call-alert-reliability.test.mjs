@@ -299,6 +299,7 @@ test("a real inbound-call interrupt has a durable fallback when push is stale an
     const harness = createNotifyHarness({ sourceIsTest: false })
 
     const results = await harness.notifyAll(missedCallAlert)
+    const notificationInsert = harness.sqlCalls.find(({ text }) => text.includes("INSERT INTO notifications"))
 
     assert.equal(harness.pushCalls.length, 1, "the stale push channel should be attempted")
     assert.equal(harness.smsCalls.length, 0, "disabled/A2P-unavailable SMS is not an acceptable fallback")
@@ -306,6 +307,8 @@ test("a real inbound-call interrupt has a durable fallback when push is stale an
     assert.equal(harness.emailCalls[0].payload.to, owner.email)
     assert.match(harness.emailCalls[0].payload.text, /https:\/\/musiccityspecialtywelding\.com\/ops\/leads\/73/)
     assert.equal(results[0]?.sent, true, "provider acceptance must be reported honestly")
+    assert.match(notificationInsert.text, /sms_only, is_test/)
+    assert.match(notificationInsert.text, /mcsw_is_test_row/)
     const marker = harness.timeline.findIndex((item) => item.kind === "sql" && item.text.includes("provider_email_status = 'sending'"))
     const provider = harness.timeline.findIndex((item) => item.kind === "email")
     assert.ok(marker >= 0 && marker < provider, "the durable sending marker must precede the Resend handoff")
@@ -352,6 +355,8 @@ test("preview notify persists isTest and stops before any real alert provider", 
     const detail = JSON.parse(insert.values[10])
 
     assert.equal(results[0]?.reason, "internal-test")
+    assert.match(insert.text, /sms_only, is_test/)
+    assert.match(insert.text, /mcsw_is_test_row/)
     assert.equal(detail.isTest, true)
     assert.match(insert.values[3], /^\[INTERNAL TEST\]/)
     assert.match(insert.values[4], /^\[INTERNAL TEST\]/)

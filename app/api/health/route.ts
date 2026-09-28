@@ -72,11 +72,13 @@ async function canPersistLeadIntake() {
         VALUES ('health-plan-only', '[INTERNAL TEST] health plan', '', 'Health plan', true, 'health-plan-only')
         RETURNING id, person_id
       )
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test)
       SELECT 'form.quote'::text, 'system'::text, 'health-plan'::text,
         lead_write.id, lead_write.person_id, 'health-plan-only'::text,
         '[INTERNAL TEST] health plan'::text, '[INTERNAL TEST] health plan'::text,
-        '{"isTest":true}'::jsonb
+        '{"isTest":true}'::jsonb,
+        mcsw_is_test_row(lead_write.id, lead_write.person_id, NULL::bigint, NULL::text,
+          '{"isTest":true}'::jsonb, '[INTERNAL TEST] health plan'::text)
       FROM lead_write`
     return true
   } catch {

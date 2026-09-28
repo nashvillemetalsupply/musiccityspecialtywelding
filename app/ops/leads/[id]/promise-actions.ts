@@ -31,12 +31,14 @@ export async function confirmPromise(formData: FormData) {
       WHERE c.id = ${commitmentId}::bigint AND c.lead_id = ${leadId}::bigint AND c.status = 'open'
       FOR UPDATE OF c
     ), receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail, is_test)
       SELECT 'commitment.confirmed', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
         t.person_id,
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew inked a promise tag',
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew inked a promise tag',
-        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test) FROM target t
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test),
+        mcsw_is_test_row(${leadId}::bigint, t.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', t.is_test), 'Crew inked a promise tag'::text) FROM target t
       RETURNING id
     )
     UPDATE commitments c SET confidence = 1::real, confirmed_by = ${operator.id}::bigint,
@@ -68,12 +70,14 @@ export async function publishPromiseToGlass(formData: FormData) {
         AND c.status = 'open' AND c.direction = 'we_promised' AND c.due_at IS NOT NULL
       FOR UPDATE OF c
     ), receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail, is_test)
       SELECT 'commitment.glass-primary', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
         t.person_id,
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Owner selected the public delivery promise',
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Owner selected the public delivery promise',
-        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test) FROM target t
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test),
+        mcsw_is_test_row(${leadId}::bigint, t.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', t.is_test), 'Owner selected the public delivery promise'::text) FROM target t
       RETURNING id
     ), cleared AS (
       UPDATE commitments SET glass_primary = false, visible_on_glass = false
@@ -98,12 +102,14 @@ export async function rejectPromise(formData: FormData) {
       WHERE c.id = ${commitmentId}::bigint
         AND c.lead_id = ${leadId}::bigint AND c.status = 'open' FOR UPDATE OF c
     ), receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail, is_test)
       SELECT 'commitment.rejected', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
         t.person_id,
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew binned a false promise tag',
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Crew binned a false promise tag',
-        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test) FROM target t RETURNING id
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test),
+        mcsw_is_test_row(${leadId}::bigint, t.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', t.is_test), 'Crew binned a false promise tag'::text) FROM target t RETURNING id
     )
     UPDATE commitments c SET status = 'canceled', status_changed_at = now(),
       confirmed_by = ${operator.id}::bigint, status_source_event_id = r.id
@@ -122,12 +128,14 @@ export async function keepPromise(formData: FormData) {
       WHERE c.id = ${commitmentId}::bigint
         AND c.lead_id = ${leadId}::bigint AND c.status = 'open' FOR UPDATE OF c
     ), receipt AS (
-      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail)
+      INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, body, crew_body, detail, is_test)
       SELECT 'commitment.kept', 'operator', ${String(operator.id)}::text, ${leadId}::bigint,
         t.person_id,
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Promise kept',
         CASE WHEN t.is_test THEN '[INTERNAL TEST] '::text ELSE ''::text END || 'Promise kept',
-        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test)
+        jsonb_build_object('commitmentId', ${commitmentId}::bigint, 'isTest', t.is_test),
+        mcsw_is_test_row(${leadId}::bigint, t.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('isTest', t.is_test), 'Promise kept'::text)
       FROM target t RETURNING id
     )
     UPDATE commitments c SET status = 'kept', status_changed_at = now(),

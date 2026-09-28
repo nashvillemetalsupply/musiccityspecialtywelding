@@ -272,7 +272,7 @@ async function projectGlassUpload(uploadId: string) {
     ), message_write AS (
       INSERT INTO messages (
         twilio_sid, direction, from_phone, to_phone, body, crew_body, media,
-        status, lead_id, person_id
+        status, lead_id, person_id, is_test
       )
       SELECT
         'glass-upload:' || left(c.token_hash, 24) || ':' || c.batch_id,
@@ -287,25 +287,31 @@ async function projectGlassUpload(uploadId: string) {
           'source', 'customer-page',
           'uploadId', c.id
         )),
-        'received', c.lead_id, c.person_id
+        'received', c.lead_id, c.person_id,
+        mcsw_is_test_row(c.lead_id, c.person_id, NULL::bigint, NULL::text,
+          NULL::jsonb, 'Customer added photos or files.'::text)
       FROM claimed c
       ON CONFLICT (twilio_sid) DO UPDATE SET
         media = CASE WHEN EXISTS (
           SELECT 1 FROM jsonb_array_elements(COALESCE(messages.media, '[]'::jsonb)) item
           WHERE item->>'pathname' = EXCLUDED.media->0->>'pathname'
         ) THEN messages.media ELSE COALESCE(messages.media, '[]'::jsonb) || EXCLUDED.media END,
-        sent_at = GREATEST(messages.sent_at, now())
+        sent_at = GREATEST(messages.sent_at, now()),
+        is_test = messages.is_test OR EXCLUDED.is_test
       RETURNING id, twilio_sid
     ), event_insert AS (
       INSERT INTO events (
-        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail
+        kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test
       )
       SELECT
         'glass.uploaded', 'customer', COALESCE(c.person_id::text, ''), c.lead_id, c.person_id,
         'glass-upload:' || c.token_hash || ':' || c.batch_id,
         'Customer added photos or files on the Customer Page.',
         'Customer added photos or files on the Customer Page.',
-        jsonb_build_object('batchId', c.batch_id, 'messageSid', m.twilio_sid, 'tokenHash', c.token_hash)
+        jsonb_build_object('batchId', c.batch_id, 'messageSid', m.twilio_sid, 'tokenHash', c.token_hash),
+        mcsw_is_test_row(c.lead_id, c.person_id, NULL::bigint, NULL::text,
+          jsonb_build_object('batchId', c.batch_id, 'messageSid', m.twilio_sid, 'tokenHash', c.token_hash),
+          'Customer added photos or files on the Customer Page.'::text)
       FROM claimed c CROSS JOIN message_write m
       ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
       RETURNING id

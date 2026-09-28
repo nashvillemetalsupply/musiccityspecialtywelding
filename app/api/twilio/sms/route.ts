@@ -60,11 +60,13 @@ export async function POST(req: Request) {
   const inserted = (await sql`
     INSERT INTO messages (
       twilio_sid, direction, from_phone, to_phone, body, media, status,
-      lead_id, person_id
+      lead_id, person_id, is_test
     ) VALUES (
       ${sid}::text, 'in', ${from}::text, ${to}::text, ${body}::text,
       ${JSON.stringify(rawMedia)}::jsonb, 'received',
-      NULL::bigint, NULL::bigint
+      NULL::bigint, NULL::bigint,
+      mcsw_is_test_row(NULL::bigint, NULL::bigint, NULL::bigint, NULL::text,
+        NULL::jsonb, ${body}::text)
     ) ON CONFLICT (twilio_sid) DO NOTHING
     RETURNING id, lead_id, person_id`) as { id: number; lead_id: number | null; person_id: number | null }[]
   const existing = inserted[0] ? [] : (await sql`SELECT id, lead_id, person_id FROM messages WHERE twilio_sid = ${sid}::text LIMIT 1`) as { id: number; lead_id: number | null; person_id: number | null }[]
@@ -115,11 +117,19 @@ export async function POST(req: Request) {
   // projection monotonic and prevents a replay from replacing the original.
   await sql`
     UPDATE messages SET lead_id = COALESCE(lead_id, ${conversation.leadId ?? null}::bigint),
-      person_id = COALESCE(person_id, ${personId}::bigint)
+      person_id = COALESCE(person_id, ${personId}::bigint),
+      is_test = is_test OR mcsw_is_test_row(
+        COALESCE(lead_id, ${conversation.leadId ?? null}::bigint),
+        COALESCE(person_id, ${personId}::bigint), NULL::bigint, NULL::text,
+        NULL::jsonb, body
+      )
     WHERE id = ${messageId}::bigint AND twilio_sid = ${sid}::text`
   let projectedLeadId = await resolveProjectionLeadId(conversation.leadId)
   if (projectedLeadId && projectedLeadId !== conversation.leadId) {
-    await sql`UPDATE messages SET lead_id = ${projectedLeadId}::bigint WHERE id = ${messageId}::bigint`
+    await sql`UPDATE messages SET lead_id = ${projectedLeadId}::bigint,
+      is_test = is_test OR mcsw_is_test_row(${projectedLeadId}::bigint, ${personId}::bigint,
+        NULL::bigint, NULL::text, NULL::jsonb, body)
+      WHERE id = ${messageId}::bigint`
   }
 
   if (!systemSms) {

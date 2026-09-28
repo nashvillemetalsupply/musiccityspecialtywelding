@@ -31,8 +31,11 @@ export async function POST(req: Request) {
   try {
     const sql = getSql()
     await sql`
-      INSERT INTO calls (twilio_sid, direction, from_phone, to_phone, status, detail)
-      VALUES (${sid}::text, 'in', ${from}::text, ${to}::text, 'ringing', ${JSON.stringify({ callerName: callerName || null, privateCaller: !normalizePhone(from), isTest: isTestCall })}::jsonb)
+      INSERT INTO calls (twilio_sid, direction, from_phone, to_phone, status, detail, is_test)
+      VALUES (${sid}::text, 'in', ${from}::text, ${to}::text, 'ringing', ${JSON.stringify({ callerName: callerName || null, privateCaller: !normalizePhone(from), isTest: isTestCall })}::jsonb,
+        mcsw_is_test_row(NULL::bigint, NULL::bigint, NULL::bigint, ${sid}::text,
+          ${JSON.stringify({ callerName: callerName || null, privateCaller: !normalizePhone(from), isTest: isTestCall })}::jsonb,
+          ${callerName}::text))
       ON CONFLICT (twilio_sid) DO NOTHING`
   } catch (error) {
     console.error("Call receipt failed; asking Twilio to use the configured fallback:", error)
@@ -56,6 +59,17 @@ export async function POST(req: Request) {
         isTest: isTestCall,
       })
       const person = prepared.person
+      const preparedLeadId = prepared.kind === "existing" ? prepared.leadId : null
+      await getSql()`
+        UPDATE calls SET
+          lead_id = COALESCE(lead_id, ${preparedLeadId}::bigint),
+          person_id = COALESCE(person_id, ${person?.id ?? null}::bigint),
+          is_test = is_test OR mcsw_is_test_row(
+            COALESCE(lead_id, ${preparedLeadId}::bigint),
+            COALESCE(person_id, ${person?.id ?? null}::bigint),
+            NULL::bigint, ${sid}::text, detail, COALESCE(detail->>'callerName', '')
+          )
+        WHERE twilio_sid = ${sid}::text`
       const normalized = normalizePhone(from)
       const name = person?.display_name || callerName || (normalized ? `Caller ${normalized.slice(-4)}` : "Private caller")
       const leadId = prepared.kind === "existing" ? prepared.leadId : null
