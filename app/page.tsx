@@ -200,7 +200,7 @@ export default function Page() {
       <main id="main-content">
         <section className="ms-hero" id="home">
           <div className="ms-hero-copy sw-signwall">
-            <h1 className="sw-sign" aria-label="Music City Specialty Welding">
+            <h1 className="sw-sign" aria-label="Music City Specialty Welding — Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee">
               <span className="sw-line-sm">Music City</span>
               <span className="sw-line-lg">Specialty</span>
               <span className="sw-line-lg">
