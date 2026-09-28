@@ -44,7 +44,7 @@ async function loadPureTypescriptModule(path) {
 test("production uses Turbopack so same-stem TypeScript modules resolve correctly", () => {
   const packageJson = JSON.parse(source("package.json"))
 
-  assert.equal(packageJson.scripts.build, "next build")
+  assert.equal(packageJson.scripts.build, "next build && node scripts/bundle-budget.mjs")
 })
 
 test("the sitemap does not manufacture a fresh last-modified date on every build", () => {
