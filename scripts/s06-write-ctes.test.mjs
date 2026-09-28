@@ -98,6 +98,7 @@ test("createLead's lead and optional consent writes share a materialized SQL sta
         ? [{ id: 12, public_id: "L-20260927-TEST" }]
         : [{ person_id: null, is_test: false }]
     } }],
+    ["@/lib/follow-up-cadence.mjs", { getDefaultFollowUpAt: async () => null }],
     ["@/lib/media-safety", { isSafeRasterImage: () => true }],
     ["@/lib/events", { recordEvent: async () => null }],
     ["@/lib/people", {
@@ -119,7 +120,8 @@ test("createLead's lead and optional consent writes share a materialized SQL sta
 
   assert.equal(lead.id, 12)
   assert.equal(calls.filter((call) => /INSERT INTO|UPDATE|DELETE FROM/i.test(call.text)).length, 1)
-  assert.match(calls[0].text, /WITH inserted_lead AS MATERIALIZED/)
-  assert.match(calls[0].text, /captured_consent AS MATERIALIZED \([\s\S]*?INSERT INTO messaging_consents/)
-  assert.match(calls[0].text, /INSERT INTO leads[\s\S]*?::boolean[\s\S]*?::jsonb/)
+  const leadWrite = calls.find((call) => /WITH inserted_lead AS MATERIALIZED/.test(call.text))
+  assert.ok(leadWrite, "lead and consent writes remain in one materialized statement")
+  assert.match(leadWrite.text, /captured_consent AS MATERIALIZED \([\s\S]*?INSERT INTO messaging_consents/)
+  assert.match(leadWrite.text, /INSERT INTO leads[\s\S]*?::boolean[\s\S]*?::jsonb/)
 })

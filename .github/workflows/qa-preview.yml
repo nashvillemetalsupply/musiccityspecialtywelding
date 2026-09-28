@@ -1,0 +1,101 @@
+name: Preview QA
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-preview-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa-preview:
+    name: Deploy preview and run strict QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Require Vercel protection bypass
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          if [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            echo "::error::Set VERCEL_AUTOMATION_BYPASS_SECRET in the repository Actions secrets before running preview QA."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm install --global vercel@latest
+
+      - name: Pull Vercel Preview settings
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: vercel pull --yes --environment=preview --git-branch "$DEPLOY_BRANCH" --token="$VERCEL_TOKEN"
+
+      - name: Build Vercel Preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel build --target=preview --token="$VERCEL_TOKEN"
+
+      - id: deploy
+        name: Deploy Vercel Preview only
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          deployment_url="$(vercel deploy --prebuilt --target=preview --yes --token="$VERCEL_TOKEN" --meta githubDeployment=1 --meta githubCommitRef="$DEPLOY_BRANCH")"
+          case "$deployment_url" in
+            https://*) ;;
+            *) echo "::error::Vercel did not return a Preview URL."; exit 1 ;;
+          esac
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+          echo "MCSW_QA_BASE=$deployment_url" >> "$GITHUB_ENV"
+
+      - name: Verify protected Preview is reachable
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          MCSW_QA_BASE: ${{ steps.deploy.outputs.url }}
+        run: curl --fail --silent --show-error --location --output /dev/null -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "$MCSW_QA_BASE/board"
+
+      - name: Create one-use owner QA login
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MCSW_QA_BASE: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          login_url="$(node scripts/create-local-login.mjs)"
+          case "$login_url" in
+            http://localhost:3030/api/ops/verify\?token=*) ;;
+            *) echo "::error::The local login helper did not return its expected one-use login URL."; exit 1 ;;
+          esac
+          login_url="${login_url/http:\/\/localhost:3030/$MCSW_QA_BASE}"
+          if [[ "$login_url" != "$MCSW_QA_BASE/api/ops/verify?token="* ]]; then
+            echo "::error::Could not attach the one-use login URL to the Preview host."
+            exit 1
+          fi
+          echo "MCSW_QA_LOGIN_URL=$login_url" >> "$GITHUB_ENV"
+
+      - name: Run strict preview QA
+        env:
+          MCSW_QA_BASE: ${{ steps.deploy.outputs.url }}
+          MCSW_QA_STRICT: "1"
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: npm run test:qa

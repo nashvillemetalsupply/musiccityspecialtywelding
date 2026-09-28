@@ -2,6 +2,7 @@ import { getSql } from "@/lib/db"
 import { isSafeRasterImage } from "@/lib/media-safety"
 import { recordEvent } from "@/lib/events"
 import { attachLeadToPerson, findOrCreatePerson, isReservedShopPhone, normalizePhone } from "@/lib/people"
+import { getDefaultFollowUpAt } from "@/lib/follow-up-cadence.mjs"
 
 export const LEAD_STATUSES = [
   "new",
@@ -205,6 +206,8 @@ export async function createLead(
     }
   }
 
+  const defaultFollowUpAt = id === null ? await getDefaultFollowUpAt(sql) : null
+
   // The 4-char suffix can collide against the UNIQUE constraint; retry with a
   // fresh id instead of dropping the durable copy of a lead.
   for (let attempt = 0; attempt < 3 && id === null; attempt++) {
@@ -216,7 +219,8 @@ export async function createLead(
             public_id, first_name, last_name, phone, email, service, message,
             preferred_contact, photo_count, source, gclid, utm_source, utm_medium,
             utm_campaign, utm_term, utm_content, landing_page, referrer, ip,
-            user_agent, is_test, phone_is_placeholder, first_response_at, first_response_channel, status, intake_key
+            user_agent, is_test, phone_is_placeholder, first_response_at, first_response_channel, status, intake_key,
+            next_follow_up_at
           ) VALUES (
             ${publicId}::text, ${input.firstName}::text, ${input.lastName}::text, ${input.phone}::text,
             ${input.email}::text, ${input.service}::text, ${input.message}::text,
@@ -228,7 +232,8 @@ export async function createLead(
             ${options.firstResponseNow ? new Date().toISOString() : null}::timestamptz,
             ${options.firstResponseNow ? "phone" : ""}::text,
             ${options.firstResponseNow ? "contacted" : "new"}::text,
-            ${intakeKey}::text
+            ${intakeKey}::text,
+            ${defaultFollowUpAt}::timestamptz
           )
           RETURNING id, public_id
         ), captured_consent AS MATERIALIZED (
