@@ -1,0 +1,15 @@
+{
+  "id": "internal-test-email-table",
+  "kind": "email.in",
+  "occurredAt": "2026-09-27T10:00:00-05:00",
+  "body": "[INTERNAL TEST] From: Jamie Test <jamie@example.invalid>\nSubject: Stainless table measurements\nThe table should be 60 inches wide and 24 inches deep. I will send the revised sketch tomorrow morning. Please confirm it arrived before steel is ordered.",
+  "expected": {
+    "facts": [
+      { "predicate": "table_dimensions", "value": "60 x 24 inches" }
+    ],
+    "commitments": [
+      { "direction": "they_promised", "summaryIncludes": "revised sketch" }
+    ],
+    "mustNotAppearInCrewSafeBody": []
+  }
+}

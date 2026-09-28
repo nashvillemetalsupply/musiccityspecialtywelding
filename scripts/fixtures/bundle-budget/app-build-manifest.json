@@ -1,0 +1,6 @@
+{
+  "pages": {
+    "/page": ["static/chunks/oversize-client.js"],
+    "/board/page": []
+  }
+}
