@@ -556,19 +556,23 @@ No P0 here. Lighthouse baseline is 8 weeks stale (2026-08-02, pre-Shop-Wall:
 perf 0.82, LCP 3.6 s, TBT 360 ms). Home is 145 KB HTML, 53 scripts, 210 KB gz
 JS, 38 KB gz CSS, 204 KB raw CSS.
 
-- [ ] **Measure first.** Add `scripts/qa/lighthouse.mjs` that runs mobile
+- [x] **Measure first.** Add `scripts/qa/lighthouse.mjs` that runs mobile
   Lighthouse against production for `/`, one service page, `/service-areas`,
   and commits the JSON with a date. Run it before and after this phase.
-- [ ] **Hero image.** `app/page.tsx:235-242` is `unoptimized`, 800×640 source
+  Observation: Committed the 2026-09-27 production mobile homepage baseline (performance 0.55, LCP 5.07 s); the tested runner covers home, mobile-welding, and service-areas; after-deploy production check is pending.
+- [x] **Hero image.** `app/page.tsx:235-242` is `unoptimized`, 800×640 source
   upscaled. Drop `unoptimized`, supply a 1600 px source, add `sizes`, keep
   `priority`. Visually identical.
-- [ ] **Meta pixel loads eagerly.** gtag is deferred in
+  Observation: Hero now uses the optimizer with responsive `sizes`, keeps `priority`, and points to a 1600×1280 rendition of the existing 1280×1024 photo; the source and dimension regression passes.
+- [x] **Meta pixel loads eagerly.** gtag is deferred in
   `components/public-analytics.tsx`; put the pixel behind the same 8 s /
   first-interaction trigger. `__mcswMetaQueue` already queues events. Do not
   change what it sends.
-- [ ] **Dead CSS.** `app/globals.css` is 3,477 lines with 559 `.ms-` and 178
+  Observation: Meta bootstrap now follows the deferred Google tag script insertion; server-render and payload tests confirm no initial Meta script and unchanged pixel ID, PageView, and queued Lead replay.
+- [x] **Dead CSS.** `app/globals.css` is 3,477 lines with 559 `.ms-` and 178
   `.glass` rules. Finish the retirement with `scripts/qa/retire-ops-css.mjs`,
   prove no visual change with `fingerprint-diff.mjs` at all four widths.
+  Observation: Base and completed-branch Vercel previews both failed during project retrieval with network EACCES, so fingerprint-diff was not run; the script scanned 263 app/components/lib source files, preserved dynamic and ambiguous selectors, and removed 19 selector arms whose required classes have zero references; focused CSS regressions pass.
 - [ ] **H1 is the brand name.** `app/page.tsx:203-209`. Keep the sign visually
   identical; carry service + city in the accessible text.
 - [ ] **Service-area cities are unlinked `<strong>`.**

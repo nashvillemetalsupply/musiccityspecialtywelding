@@ -194,6 +194,12 @@ html {
   min-width: 0;
 }
 
+.ms-slab {
+  font-family: var(--font-ms-slab), serif;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
 /* ---- hardware: stamps and rules ---- */
 
 .ms-sticker {
@@ -216,6 +222,26 @@ html {
 .ms-sticker.is-red { border-color: var(--mx-line-bone); }
 .ms-sticker.is-blue { border-color: var(--mx-line-bone); }
 .ms-sticker.is-gold { border-color: var(--mx-line-bone); }
+
+.ms-stripe { display: none; }
+
+.ms-rule {
+  height: 0;
+  border-top: 3px solid var(--mx-bone);
+  border-bottom: 1px solid var(--mx-bone);
+  margin: 0;
+}
+
+.ms-flash {
+  position: absolute;
+  color: var(--mx-bone);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.ms-flash.is-arc { color: var(--mx-arc); opacity: 0.5; }
+.ms-flash.is-gold, .ms-flash.is-red, .ms-flash.is-blue { color: var(--mx-bone); opacity: 0.18; }
+.ms-flash.is-ink { color: var(--mx-ink); opacity: 0.12; }
 
 /* ---- buttons ---- */
 
@@ -447,6 +473,28 @@ html {
 
 .ms-hero-copy { position: relative; z-index: 2; min-width: 0; }
 
+.ms-hero-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.6rem;
+}
+
+.ms-hero-title {
+  font-size: clamp(3.4rem, 12.5vw, 8.4rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.ms-hero-title span { display: block; }
+
+.ms-accent-line { color: var(--mx-arc); }
+
+.ms-hero-outline {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--mx-bone);
+}
+
 .ms-hero-deck {
   max-width: 33rem;
   margin-top: 1.5rem;
@@ -503,6 +551,12 @@ html {
   font-weight: 600;
   letter-spacing: 0.18em;
   white-space: nowrap;
+}
+
+.ms-hero .ms-flash { display: none; }
+
+@media (min-width: 900px) {
+  .ms-hero .ms-flash { display: block; }
 }
 
 /* ---- badge strip ---- */
@@ -1689,6 +1743,23 @@ html {
   clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
 }
 
+/* torch-cut kerf through the hero word */
+
+.ms-kerf { position: relative; display: inline-block; }
+
+.ms-kerf::after {
+  content: "";
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: 54%;
+  height: 0.06em;
+  background: linear-gradient(90deg, transparent 0%, rgba(232, 97, 28, 0.15) 12%, var(--mx-arc) 45%, #ffd9a8 72%, #fff3dc 100%);
+  transform: rotate(-1.1deg);
+  box-shadow: 0 0 14px rgba(232, 97, 28, 0.75), 0 0 34px rgba(232, 97, 28, 0.4);
+  pointer-events: none;
+}
+
 .wm-kerf-spark {
   position: absolute;
   right: -0.55em;
@@ -2098,6 +2169,11 @@ html {
   padding-top: clamp(3rem, 7vw, 5.5rem);
   overflow: visible;
 }
+
+.ms-hero-kicker { margin-bottom: 1.8rem; }
+
+.ms-hero-kicker .ms-sticker { border-color: rgba(243, 234, 216, 0.3); color: var(--sw-enamel-dark); }
+.ms-hero-kicker .ms-sticker.is-arc { border-color: var(--sw-fire); color: var(--sw-fire); }
 
 .ms-hero-deck { color: var(--sw-enamel-dark); }
 

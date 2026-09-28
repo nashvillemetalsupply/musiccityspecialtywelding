@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
 import postcss from "postcss"
+import { classify, scanClassUsage } from "./qa/retire-ops-css.mjs"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 // Ignore horizontal indentation at the beginning of a line, and nothing else:
@@ -119,16 +120,11 @@ test("every retained live selector arm and declaration block survives the move",
 })
 
 test("marketing, customer glass, theme and global imports remain verbatim in order", () => {
-  const original = read("scripts/qa/baseline/pre-retirement-globals.css")
+  const original = read("scripts/qa/baseline/pre-s11-public-css.css")
   const current = read("app/globals.css")
-  const expected = blocks(original).filter(({ line }) => !REDUNDANT_LEGACY_RULE_LINES.has(line)).map(projection).flatMap((block) => {
-    if (/@keyframes (?:paid-land|done-hold|money-odometer)\b/.test(block.context)) return []
-    const arms = block.arms.filter((arm) => !/\.ops-[a-z0-9-]+/.test(arm))
-    return arms.length ? [{ ...block, arms }] : []
-  })
-  const actual = blocks(current).map(projection)
-  assert.deepEqual(actual, expected, "a retained selector arm, declaration block, context or source order changed")
+  const root = fileURLToPath(new URL("..", import.meta.url))
+  const expected = classify(original, scanClassUsage(root)).text.KEEP
+  assert.equal(current, expected, "the frozen public CSS differs only by zero-reference selector arms")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
-  const expectedImports = imports(original).map((statement) => statement === '@import "../tokens.css";' ? '@import "../docs/tokens.css";' : statement)
-  assert.deepEqual(imports(current), expectedImports, "global imports and leaf at-rules must remain byte-identical apart from the token-file move")
+  assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")
 })

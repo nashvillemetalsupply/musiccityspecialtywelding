@@ -187,10 +187,13 @@ test("the live tag probe binds the discovered GA4 ID to its exact config call", 
 
 test("Meta measurement shares verification suppression and queues an early Lead", () => {
   const analytics = source("components/public-analytics.tsx")
-  const metaStart = analytics.indexOf('<Script id="meta-pixel"')
-  const metaBody = analytics.slice(metaStart, analytics.indexOf("</Script>", metaStart))
+  const metaStart = analytics.indexOf("export function metaPixelBootstrapSource")
+  const metaBody = analytics.slice(metaStart, analytics.indexOf("function DeferredMetaPixel", metaStart))
+  assert.ok(metaStart >= 0, "The deferred bootstrap source must remain testable.")
+  assert.doesNotMatch(analytics, /<Script id="meta-pixel"/, "The initial HTML must not contain a Meta Script component.")
   assert.ok(metaBody.includes("internal-verify"), "Meta PageView must ignore internal verification.")
   assert.ok(metaBody.includes("e2e"), "Meta PageView must ignore end-to-end verification.")
+  assert.ok(metaBody.includes("fbq('track', 'PageView')"), "Meta PageView keeps its existing event name.")
   assert.doesNotMatch(
     analytics,
     /facebook\.com\/tr\?[^\n]*noscript/i,
@@ -199,6 +202,10 @@ test("Meta measurement shares verification suppression and queues an early Lead"
   assert.ok(
     metaBody.includes("__mcswMetaQueue") && metaBody.includes("fbq.apply"),
     "The Meta bootstrap must drain Leads queued before fbq becomes available.",
+  )
+  assert.ok(
+    analytics.includes('getElementById("deferred-google-tag")') && analytics.includes("new MutationObserver"),
+    "Meta loads only after the deferred Google tag trigger inserts its script.",
   )
 
   const measurement = source("lib/measurement.ts")
