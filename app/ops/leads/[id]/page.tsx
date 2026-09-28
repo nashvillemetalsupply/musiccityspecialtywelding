@@ -10,6 +10,7 @@ import { getLead } from "@/lib/ops-data"
 import { listLeadMessages } from "@/lib/messages"
 import { listCommitments } from "@/lib/commitments"
 import { listActiveClaims } from "@/lib/claims"
+import { listPhotoDraftEntries, photoDraftsEnabled } from "@/lib/photo-drafts"
 import { listJobLineItems } from "@/lib/job-line-items"
 import { formatLineItemsText, lineItemsTotalCents } from "@/lib/job-line-items.mjs"
 import { listLeadCalls } from "@/lib/calls"
@@ -40,6 +41,7 @@ import { SafeSubmitButton } from "../../safe-action-controls"
 import { recordVerbalTextConsent } from "./message-actions"
 import { confirmPromise, handlePromise, keepPromise, publishPromiseToGlass, rejectPromise } from "./promise-actions"
 import { acceptQuoteCapture, correctClaim, rejectQuoteCapture } from "./claim-actions"
+import { PhotoDrafts } from "./photo-drafts"
 import {
   acknowledgeDeliveryFailure,
   assignLeadOperator,
@@ -230,7 +232,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   const includeTests = canAccessInternalTests(operator.role)
   const lead = await getCachedLead(leadId, operator.role)
   if (!lead) notFound()
-  const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems, attachmentClassifications, routingChoices] = await Promise.all([
+  const showPhotoDrafts = operator.role === "owner" && photoDraftsEnabled()
+  const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems, attachmentClassifications, routingChoices, photoDraftEntries] = await Promise.all([
     listLeadMessages(leadId),
     listCommitments({ leadId, status: "open", includeTests }),
     listActiveClaims("lead", leadId),
@@ -249,6 +252,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             AND routed_to_lead_id IS NULL AND service <> 'Needs job match'
           ORDER BY updated_at DESC LIMIT 20`
       : Promise.resolve([]),
+    showPhotoDrafts ? listPhotoDraftEntries(leadId) : Promise.resolve([]),
   ])
   const attachmentSensitivity = new Map((attachmentClassifications as Array<{ blob_path: string; sensitivity: string }>).map((item) => [item.blob_path, item.sensitivity]))
   const fileChoices = routingChoices as Array<{ id: number; service: string; message: string }>
@@ -366,6 +370,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   // already printed at the top of this card.
   const visibleClaimKeys = new Set([claimDisplayKey("service", lead.service)])
   const memoryClaims = safeClaims
+    .filter((claim) => !claim.predicate.startsWith("photo_draft_"))
     .filter((claim) => !["quoted_price_cents", "build_fact"].includes(claim.predicate))
     .filter((claim) => {
       const key = claimDisplayKey(claim.predicate, claim.value)
@@ -533,6 +538,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           })}
         </div>}
       </section>
+
+      {showPhotoDrafts && <PhotoDrafts leadId={lead.id} entries={photoDraftEntries} />}
 
       {safePromises.length > 0 && <section className="card job-promises" aria-label="Job promises">
         <header><h2 className="t-sub">Promises</h2><span>{safePromises.length} open</span></header>

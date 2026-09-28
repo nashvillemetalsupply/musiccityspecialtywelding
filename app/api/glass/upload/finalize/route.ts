@@ -26,12 +26,16 @@ export async function POST(request: Request) {
     if (action === "complete") {
       const upload = await finalizeGlassUpload({ uploadId: String(body.uploadId ?? ""), token })
       if (photoDraftsEnabled()) {
-        schedulePhotoDraftAfterFinalize(upload, {
-          enabled: true,
-          after,
-          run: draftStoredGlassUpload,
-          onError: (error) => console.error("Photo draft step failed after glass upload:", error),
-        })
+        try {
+          schedulePhotoDraftAfterFinalize(upload, {
+            enabled: true,
+            after,
+            run: draftStoredGlassUpload,
+            onError: (error) => console.error("Photo draft step failed after glass upload:", error),
+          })
+        } catch (error) {
+          console.error("Photo draft scheduling failed after glass upload:", error)
+        }
       }
       return Response.json({ ok: true, upload: { id: upload.id, status: upload.status } }, { headers: { "Cache-Control": "no-store" } })
     }

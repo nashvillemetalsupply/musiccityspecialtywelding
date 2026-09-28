@@ -350,6 +350,28 @@
 .job-quote-capture article > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
 .job-quote-capture :is(form, button) { width: 100%; }
 
+.job-photo-drafts {
+  min-width: 0;
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s4);
+  border-bottom: 1px solid var(--border);
+}
+.job-photo-drafts > header { display: flex; align-items: start; justify-content: space-between; gap: var(--s2); }
+.job-photo-drafts > header p,
+.job-photo-drafts-empty,
+.job-photo-draft-group > p { margin: var(--s1) 0 0; color: var(--text-muted); font-size: var(--t-caption); }
+.job-photo-drafts-list,
+.job-photo-draft-group { min-width: 0; display: grid; gap: var(--s2); }
+.job-photo-draft { min-width: 0; display: grid; gap: var(--s2); padding: var(--s3); border: 1px solid var(--border-subtle); border-radius: var(--r-sm); }
+.job-photo-draft-copy { min-width: 0; display: grid; gap: var(--s1); }
+.job-photo-draft-copy h3 { margin: 0; color: var(--text-secondary); font-size: var(--t-caption); font-weight: var(--w-semi); }
+.job-photo-draft-copy p { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+.job-photo-draft-source { width: fit-content; min-height: 44px; }
+.job-photo-draft-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.job-photo-draft-actions :is(form, button) { width: 100%; min-width: 0; min-height: 44px; }
+.job-photo-draft-actions button { overflow-wrap: anywhere; }
+
 .job-form { display: grid; gap: var(--s2); padding-bottom: var(--s4); border-bottom: 1px solid var(--border-subtle); }
 .job-form:last-child { padding-bottom: 0; border-bottom: 0; }
 .job-form > label,
@@ -683,4 +705,14 @@
     flex-direction: column;
     gap: var(--s2);
   }
+}
+
+@media (max-width: 20rem) {
+  .job-photo-draft-actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (forced-colors: active) {
+  .job-photo-drafts,
+  .job-photo-draft { border: 1px solid CanvasText; background: Canvas; color: CanvasText; }
+  .job-photo-draft-actions :is(button, a) { border: 1px solid ButtonText; color: ButtonText; forced-color-adjust: auto; }
 }

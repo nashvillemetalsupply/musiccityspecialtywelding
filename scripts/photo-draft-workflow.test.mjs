@@ -34,7 +34,15 @@ function fakeDependencies(events, claims, options = {}) {
       }
     }),
     writeClaim: async (claim) => {
-      const row = { id: claims.length + 1, predicate: `photo_draft_${claim.kind}`, value: { ...claim }, superseded_by: null }
+      assert.equal(claim.isTest, true, "claim persistence inherits the test marker")
+      const row = {
+        id: claims.length + 1,
+        predicate: `photo_draft_${claim.kind}`,
+        value: { kind: claim.kind, text: claim.text, photoReference: "glass/test/photo.jpg" },
+        source_event_id: claim.sourceEventId,
+        is_test: claim.isTest,
+        superseded_by: null,
+      }
       claims.push(row)
       return row.id
     },
@@ -90,8 +98,8 @@ test("stored upload intent, test-aware draft claims, acceptance, rejection, and 
   assert.equal(events[0].isTest, true, "[INTERNAL TEST] lead context remains partitioned")
   assert.equal(claims.length, 2)
   assert.ok(claims.every((claim) => claim.predicate.startsWith("photo_draft_")))
-  assert.ok(claims.every((claim) => claim.value.sourceEventId === 300))
-  assert.ok(claims.every((claim) => claim.value.isTest === true))
+  assert.ok(claims.every((claim) => claim.source_event_id === 300))
+  assert.ok(claims.every((claim) => claim.is_test === true))
 
   const decisionEvents = []
   let nextClaimId = 10

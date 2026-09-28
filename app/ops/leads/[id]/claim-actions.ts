@@ -5,6 +5,7 @@ import { addClaim, supersedeClaimWithExisting } from "@/lib/claims"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
+import { decidePhotoDraft, photoDraftsEnabled } from "@/lib/photo-drafts"
 import { requireLeadMutationAccess } from "@/lib/operators"
 import { shopClaimLabel } from "@/lib/shop-language"
 import { claimVisibleToRole, redactCrewText } from "@/lib/visibility"
@@ -43,6 +44,30 @@ export async function rejectQuoteCapture(formData: FormData) {
   const eventId = await recordEvent({ kind: "quote.capture-rejected", actorType: "operator", actorId: operator.id, leadId, body: `${isTest ? "[INTERNAL TEST] " : ""}Captured quote was not a real quote`, detail: { claimId, isTest } })
   if (eventId) { const replacement = await addClaim({ subjectType: "lead", subjectId: leadId, predicate: "quote_capture_rejected", value: { claimId }, confidence: 1, sourceEventId: eventId, extractedBy: "operator-confirmed" }); await supersedeClaimWithExisting(claimId, replacement) }
   revalidatePath(`/ops/leads/${leadId}`); revalidatePath("/ops")
+}
+
+async function readPhotoDraftDecision(formData: FormData) {
+  const operator = await getAuthenticatedOperator()
+  if (!operator || operator.role !== "owner") throw new Error("Owner access required.")
+  if (!photoDraftsEnabled()) throw new Error("Photo drafts are not enabled.")
+  const leadId = Number(formData.get("leadId")); const claimId = Number(formData.get("claimId"))
+  if (!Number.isInteger(leadId) || !Number.isInteger(claimId)) throw new Error("Photo detail draft not found.")
+  const access = await requireLeadMutationAccess(operator, leadId)
+  return { operator, leadId, claimId, isTest: access.isTest }
+}
+
+export async function acceptPhotoDraft(formData: FormData) {
+  const { operator, leadId, claimId, isTest } = await readPhotoDraftDecision(formData)
+  await decidePhotoDraft({ leadId, claimId, operatorId: operator.id, isTest, decision: "accept" })
+  revalidatePath(`/ops/leads/${leadId}`)
+  revalidatePath("/ops")
+}
+
+export async function rejectPhotoDraft(formData: FormData) {
+  const { operator, leadId, claimId, isTest } = await readPhotoDraftDecision(formData)
+  await decidePhotoDraft({ leadId, claimId, operatorId: operator.id, isTest, decision: "reject" })
+  revalidatePath(`/ops/leads/${leadId}`)
+  revalidatePath("/ops")
 }
 
 export async function correctClaim(formData: FormData) {

@@ -137,7 +137,7 @@ export async function draftStoredGlassUpload(uploadId: string) {
       value: {
         kind: claim.kind,
         text: claim.text,
-        photoReference: claim.photo_reference,
+        photoReference: upload.pathname,
       },
       confidence: 0.5,
       sourceEventId: claim.sourceEventId,

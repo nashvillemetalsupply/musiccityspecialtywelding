@@ -67,7 +67,16 @@ export function applyPhotoDraftDecision(
       isTest: boolean
       operatorId: number
     }) => Promise<{ id: number; decision: string } | null>
-    addClaim: (input: Record<string, unknown>) => Promise<number>
+    addClaim: (input: {
+      subjectType: "lead"
+      subjectId: number
+      predicate: string
+      value: unknown
+      confidence: number
+      sourceEventId: number
+      extractedBy: string
+      itemKey: string
+    }) => Promise<number>
     supersedeClaim: (oldId: number, newId: number) => Promise<void>
   },
 ): Promise<{ eventId: number; replacementId: number; decision: "accept" | "reject" }>
