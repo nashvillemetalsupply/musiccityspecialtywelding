@@ -13,7 +13,7 @@ export type CalendarDay<T> = {
   jobs: T[]
 }
 
-export const SHOP_TIME_ZONE: "America/Chicago" = "America/Chicago"
+export const SHOP_TIME_ZONE = "America/Chicago" as const
 
 const DATE_PARTS = new Intl.DateTimeFormat("en-US", {
   timeZone: SHOP_TIME_ZONE,

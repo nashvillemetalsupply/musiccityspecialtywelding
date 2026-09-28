@@ -1,8 +1,8 @@
 import type { OpsPulse } from "./ops-pulse.ts"
 
-export const OPS_PULSE_ACTIVE_INTERVAL_MS: number = 10_000
-export const OPS_PULSE_IDLE_INTERVAL_MS: number = 5 * 60_000
-export const OPS_PULSE_REFRESH_MAX_INTERVAL_MS: number = 5 * 60_000
+export const OPS_PULSE_ACTIVE_INTERVAL_MS = 10_000
+export const OPS_PULSE_IDLE_INTERVAL_MS = 5 * 60_000
+export const OPS_PULSE_REFRESH_MAX_INTERVAL_MS = 5 * 60_000
 const IDLE_ACTIVITY_WINDOW_MS = 5 * 60_000
 
 function pulseKey(pulse: Partial<OpsPulse> | null | undefined): string {
