@@ -5,7 +5,7 @@ import { fileCallOntoOpenLead, saveInboundCallAsJob } from "@/lib/job-intake"
 import { findOpenLeadResolutionForPerson } from "@/lib/people"
 import { notifyAll } from "@/lib/notify"
 import { recordEvent } from "@/lib/events"
-import { applyOnlyValidatedSummary, readWithSchemaFallback } from "@/lib/call-summary-fallback.mjs"
+import { applyOnlyValidatedSummary, readWithSchemaFallback } from "@/lib/call-summary-fallback.ts"
 
 // One read of a finished call, written onto its intake draft. The live sketch
 // only understood gates and frames and identified a part on 4 of 56 calls in

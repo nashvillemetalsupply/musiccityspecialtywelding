@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
-import { createCspReportPost, MAX_CSP_REPORT_BYTES, parseCspReports } from "../lib/csp-report.mjs"
+import { createCspReportPost, MAX_CSP_REPORT_BYTES, parseCspReports } from "../lib/csp-report.ts"
 
 const root = new URL("../", import.meta.url)
 const source = (path) => readFileSync(fileURLToPath(new URL(path, root)), "utf8")

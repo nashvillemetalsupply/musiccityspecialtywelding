@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import vm from "node:vm"
 import test from "node:test"
-import { isSafeRelativePushUrl, normalizePushUrl } from "../lib/push-url.mjs"
+import { isSafeRelativePushUrl, normalizePushUrl } from "../lib/push-url.ts"
 
 const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const MANIFEST = source("../app/ops/manifest.webmanifest/route.ts")

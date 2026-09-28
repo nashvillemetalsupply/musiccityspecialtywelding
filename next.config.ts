@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-import { CSP_REPORTING_ENDPOINTS, CSP_REPORT_ONLY_POLICY } from "./lib/csp-policy.mjs"
+import { CSP_REPORTING_ENDPOINTS, CSP_REPORT_ONLY_POLICY } from "./lib/csp-policy.ts"
 
 const nextConfig = {
   env: {

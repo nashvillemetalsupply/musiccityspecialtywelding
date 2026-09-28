@@ -2,11 +2,11 @@ import { get, head } from "@vercel/blob"
 import { getSql } from "@/lib/db"
 import { extendGlassLinkExpiry, getGlassJob, getGlassJobByLinkId, hashGlassToken, type GlassJob } from "@/lib/glass"
 import { notifyAll } from "@/lib/notify"
-import { imageTypeMatches } from "@/lib/public-quote.mjs"
+import { imageTypeMatches } from "@/lib/public-quote.ts"
 import {
   GLASS_UPLOAD_PENDING_EXPIRY_MS,
   validateCustomerUploadMetadata,
-} from "@/lib/shop-brain-invariants.mjs"
+} from "@/lib/shop-brain-invariants.ts"
 
 export const GLASS_UPLOAD_MAX_FILES_PER_BATCH = 10
 export const GLASS_UPLOAD_MAX_FILE_BYTES = 20 * 1024 * 1024

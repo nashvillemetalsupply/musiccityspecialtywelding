@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
-import { normalizeUsPhone } from "../lib/shop-brain-invariants.mjs"
+import { normalizeUsPhone } from "../lib/shop-brain-invariants.ts"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 const read = (path) => readFileSync(join(root, path), "utf8").replace(/\r\n/g, "\n")

@@ -14,7 +14,7 @@ import { getSql } from "@/lib/db"
 import { operatorSignature } from "@/lib/operators"
 import { isDefinitiveTwilioError } from "@/lib/twilio"
 import { getMessagingConsentState, recordMessagingConsent } from "@/lib/messaging-consent"
-import { EmailProviderError, isDefinitiveEmailProviderError, sendEmailWithProviderTruth, strongestEmailReceiptStatus } from "@/lib/email-provider-truth.mjs"
+import { EmailProviderError, isDefinitiveEmailProviderError, sendEmailWithProviderTruth, strongestEmailReceiptStatus } from "@/lib/email-provider-truth.ts"
 
 export async function recordVerbalTextConsent(formData: FormData) {
   const operator = await getAuthenticatedOperator()

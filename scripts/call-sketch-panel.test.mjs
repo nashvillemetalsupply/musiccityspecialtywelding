@@ -1,11 +1,11 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { deriveCallSketch, emptyCallSketchSpec } from "../lib/call-sketch-live.mjs"
+import { deriveCallSketch, emptyCallSketchSpec } from "../lib/call-sketch-live.ts"
 import {
   PANEL_FACT_KEYS, answeredFactCount, dimensionMark, factText, factTone,
   hasDrawing, pricingSentence, sketchAriaLabel, sketchGeometry,
-} from "../lib/call-sketch-panel.mjs"
+} from "../lib/call-sketch-panel.ts"
 
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")

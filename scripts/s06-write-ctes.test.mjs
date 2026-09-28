@@ -144,7 +144,7 @@ test("createLead's lead and optional consent writes share a materialized SQL sta
         ? [{ id: 12, public_id: "L-20260927-TEST" }]
         : [{ person_id: null, is_test: false }]
     } }],
-    ["@/lib/follow-up-cadence.mjs", { getDefaultFollowUpAt: async () => null }],
+    ["@/lib/follow-up-cadence.ts", { getDefaultFollowUpAt: async () => null }],
     ["@/lib/media-safety", { isSafeRasterImage: () => true }],
     ["@/lib/events", { recordEvent: async () => null }],
     ["@/lib/people", {

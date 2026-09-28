@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import test from "node:test"
 
-import { channelForNumber, dniConfigured, dniNumber, normalizedE164, paidChannelForVisit } from "../lib/dni.mjs"
+import { channelForNumber, dniConfigured, dniNumber, normalizedE164, paidChannelForVisit } from "../lib/dni.ts"
 
 test("an unset tracking number leaves the whole feature inert", () => {
   // No NEXT_PUBLIC_TWILIO_PHONE_NUMBER_* in the test environment, which is the

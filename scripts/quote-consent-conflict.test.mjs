@@ -6,7 +6,7 @@ import {
   TEXT_CONSENT_REVOKED_WARNING,
   TEXT_CONSENT_UNVERIFIED_WARNING,
   webTextConsentResolution,
-} from "../lib/shop-brain-invariants.mjs"
+} from "../lib/shop-brain-invariants.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 

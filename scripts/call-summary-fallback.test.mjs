@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { applyOnlyValidatedSummary, readWithSchemaFallback } from "../lib/call-summary-fallback.mjs"
+import { applyOnlyValidatedSummary, readWithSchemaFallback } from "../lib/call-summary-fallback.ts"
 
 function parseSummary(value) {
   if (!value || typeof value !== "object" || typeof value.caller_name !== "string" || typeof value.need !== "string") {

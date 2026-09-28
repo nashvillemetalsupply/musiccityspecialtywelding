@@ -2,7 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
-import { paymentRollup } from "../lib/payments.mjs"
+import { paymentRollup } from "../lib/payments.ts"
 
 const BOARD_SOURCE = readFileSync("app/board/board.tsx", "utf8")
 const BOARD_PAGE_SOURCE = readFileSync("app/board/page.tsx", "utf8")

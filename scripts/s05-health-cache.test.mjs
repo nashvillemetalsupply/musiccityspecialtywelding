@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { createInProcessTtlCache } from "../lib/in-process-cache.mjs"
+import { createInProcessTtlCache } from "../lib/in-process-cache.ts"
 
 const HEALTH = readFileSync(new URL("../app/api/health/route.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 

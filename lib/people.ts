@@ -1,7 +1,7 @@
 import { getSql } from "@/lib/db"
 import { FALLBACK_SHOP_PHONE_E164 } from "@/lib/shop-phone-shared"
 import { deriveAccountKey, normalizeCompanyKey } from "@/lib/account-key"
-import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
+import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 

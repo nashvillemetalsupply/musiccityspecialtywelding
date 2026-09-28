@@ -5,7 +5,7 @@ import ts from "typescript"
 import {
   evaluateInboundCallReceiptHealth,
   INBOUND_CALL_SILENCE_LIMIT_HOURS,
-} from "../lib/call-health.mjs"
+} from "../lib/call-health.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
@@ -55,7 +55,7 @@ test("the sitemap does not manufacture a fresh last-modified date on every build
 })
 
 test("the legacy home URL permanently redirects to the canonical homepage", () => {
-  const nextConfig = source("next.config.mjs")
+  const nextConfig = source("next.config.ts")
 
   assert.match(nextConfig, /source: "\/home"[\s\S]*destination: "https:\/\/musiccityspecialtywelding\.com\/"[\s\S]*permanent: true/)
 })

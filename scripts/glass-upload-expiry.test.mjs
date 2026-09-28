@@ -4,7 +4,7 @@ import test from "node:test"
 import {
   GLASS_UPLOAD_PENDING_EXPIRY_MS,
   isGlassUploadPendingExpired,
-} from "../lib/shop-brain-invariants.mjs"
+} from "../lib/shop-brain-invariants.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 

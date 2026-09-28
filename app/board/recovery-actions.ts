@@ -5,7 +5,7 @@ import { headers } from "next/headers"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
-import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.mjs"
+import { requestOriginFromHeaders } from "@/lib/gmail-wake-policy.ts"
 
 export type RecoveryActionState = {
   status: "idle" | "ran" | "skipped" | "error"

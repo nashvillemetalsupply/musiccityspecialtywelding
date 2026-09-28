@@ -3,7 +3,7 @@ import {
   classifyTwilioConsentKeyword,
   normalizeUsPhone,
   type TwilioConsentKeyword,
-} from "@/lib/shop-brain-invariants.mjs"
+} from "@/lib/shop-brain-invariants.ts"
 
 export { classifyTwilioConsentKeyword }
 export type { TwilioConsentKeyword }

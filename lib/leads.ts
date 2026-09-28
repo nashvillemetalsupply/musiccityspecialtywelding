@@ -2,7 +2,7 @@ import { getSql } from "@/lib/db"
 import { isSafeRasterImage } from "@/lib/media-safety"
 import { recordEvent } from "@/lib/events"
 import { attachLeadToPerson, findOrCreatePerson, isReservedShopPhone, normalizePhone } from "@/lib/people"
-import { getDefaultFollowUpAt } from "@/lib/follow-up-cadence.mjs"
+import { getDefaultFollowUpAt } from "@/lib/follow-up-cadence.ts"
 
 export const LEAD_STATUSES = [
   "new",

@@ -1,8 +1,8 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { BOARD_SIGNAL_LABELS } from "../lib/shop-brain-invariants.mjs"
-import { signalCountsFromCandidates } from "../lib/ops-data-testkit.mjs"
+import { BOARD_SIGNAL_LABELS } from "../lib/shop-brain-invariants.ts"
+import { signalCountsFromCandidates } from "../lib/ops-data-testkit.ts"
 
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const COMMITMENTS_SOURCE = readFileSync(new URL("../lib/commitments.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")

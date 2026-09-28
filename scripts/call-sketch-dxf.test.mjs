@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { createGateDxf, formatShopInches } from "../lib/call-sketch-dxf.mjs"
+import { createGateDxf, formatShopInches } from "../lib/call-sketch-dxf.ts"
 
 test("shop inch labels preserve familiar fractions", () => {
   assert.equal(formatShopInches(47.5), '47 1/2"')

@@ -3,7 +3,7 @@
 import type { ButtonHTMLAttributes, PointerEvent as ReactPointerEvent, ReactNode } from "react"
 import { useRef, useState } from "react"
 import { useFormStatus } from "react-dom"
-import { safeActionMovement } from "@/lib/shop-brain-invariants.mjs"
+import { safeActionMovement } from "@/lib/shop-brain-invariants.ts"
 
 type Point = { x: number; y: number }
 

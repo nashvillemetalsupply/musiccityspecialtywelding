@@ -2,7 +2,7 @@ import {
   OWNER_ONLY_EVENT_KINDS,
   OWNER_ONLY_EVENT_NAMESPACE_PATTERN,
   OWNER_ONLY_EVENT_SENSITIVITIES,
-} from "./event-visibility.mjs"
+} from "./event-visibility.ts"
 
 function firstRow(rows) {
   return Array.isArray(rows) ? rows[0] ?? {} : {}

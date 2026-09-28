@@ -6,7 +6,7 @@ import {
   OWNER_ONLY_EVENT_KINDS,
   OWNER_ONLY_EVENT_NAMESPACE_PATTERN,
   OWNER_ONLY_EVENT_SENSITIVITIES,
-} from "@/lib/event-visibility.mjs"
+} from "@/lib/event-visibility.ts"
 
 export {
   OWNER_ONLY_EVENT_KINDS,

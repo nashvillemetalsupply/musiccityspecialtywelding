@@ -10,7 +10,7 @@ import {
   photoDraftOutputSchema,
   runPhotoDraftWorkflow,
   type PhotoDraftWorkflowInput,
-} from "@/lib/photo-draft-workflow.mjs"
+} from "@/lib/photo-draft-workflow.ts"
 
 const MAX_PHOTO_BYTES = 20 * 1024 * 1024
 const AI_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])

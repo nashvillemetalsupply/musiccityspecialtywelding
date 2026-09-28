@@ -1,4 +1,4 @@
-import { createCspReportPost } from "@/lib/csp-report.mjs"
+import { createCspReportPost } from "@/lib/csp-report.ts"
 import { consumeStrictRateLimit, rateLimitFingerprint } from "@/lib/rate-limit"
 import { isTestContext, writeTroubleReport } from "@/lib/trouble-reports"
 

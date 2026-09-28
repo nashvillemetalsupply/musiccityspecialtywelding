@@ -8,7 +8,7 @@ import { isReservedShopPhone, type PersonRow } from "@/lib/people"
 import { deriveAccountKey } from "@/lib/account-key"
 import { projectLeadForRole } from "@/lib/ops-data"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
-import { scheduleAccountReadRepair } from "@/lib/account-read-maintenance.mjs"
+import { scheduleAccountReadRepair } from "@/lib/account-read-maintenance.ts"
 
 export function accountKeyForPerson(person: Pick<PersonRow, "id" | "company" | "emails">) {
   return deriveAccountKey(person)

@@ -3,10 +3,10 @@ import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { QUOTE_SERVICE_OPTIONS } from "../lib/public-quote.mjs"
+import { QUOTE_SERVICE_OPTIONS } from "../lib/public-quote.ts"
 
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8")
-const PULSE_POLLING_SOURCE = readFileSync(new URL("../lib/ops-pulse-polling.mjs", import.meta.url), "utf8")
+const PULSE_POLLING_SOURCE = readFileSync(new URL("../lib/ops-pulse-polling.ts", import.meta.url), "utf8")
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8")
 const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.url), "utf8")
 const LINE_ITEMS_SOURCE = readFileSync(new URL("../lib/job-line-items.ts", import.meta.url), "utf8")

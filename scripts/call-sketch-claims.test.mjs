@@ -1,9 +1,9 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { deriveCallSketch, emptyCallSketchSpec } from "../lib/call-sketch-live.mjs"
-import { mergeClaimFacts, sketchValuesFromClaims } from "../lib/call-sketch-claims.mjs"
-import { answeredFactCount, factText, hasDrawing } from "../lib/call-sketch-panel.mjs"
+import { deriveCallSketch, emptyCallSketchSpec } from "../lib/call-sketch-live.ts"
+import { mergeClaimFacts, sketchValuesFromClaims } from "../lib/call-sketch-claims.ts"
+import { answeredFactCount, factText, hasDrawing } from "../lib/call-sketch-panel.ts"
 
 const STORE_SOURCE = readFileSync(new URL("../lib/call-sketch-store.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 

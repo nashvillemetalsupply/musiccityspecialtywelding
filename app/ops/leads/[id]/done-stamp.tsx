@@ -1,8 +1,8 @@
 "use client"
 
 import { useActionState, useEffect, useRef, useState } from "react"
-import { deriveCloseoutDraft, type CloseoutReview } from "@/lib/closeout-domain.mjs"
-import { swipeFinishDecision } from "@/lib/shop-brain-invariants.mjs"
+import { deriveCloseoutDraft, type CloseoutReview } from "@/lib/closeout-domain.ts"
+import { swipeFinishDecision } from "@/lib/shop-brain-invariants.ts"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import { VoiceCaptureButton } from "../../voice-capture-button"
 import { CloseoutPhotoInput } from "./closeout-photo-input"

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { AI_MAX_RETRIES, buildAiUsageRun, retryAiRequest, runLoggedAiCall } from "../lib/ai-usage.mjs"
+import { AI_MAX_RETRIES, buildAiUsageRun, retryAiRequest, runLoggedAiCall } from "../lib/ai-usage.ts"
 
 test("AI calls use two explicit retries and preserve token usage plus test status", () => {
   assert.equal(AI_MAX_RETRIES, 2)

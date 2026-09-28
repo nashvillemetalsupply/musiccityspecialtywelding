@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { confirmedCallSketch, deriveCallSketch } from "../lib/call-sketch-live.mjs"
+import { confirmedCallSketch, deriveCallSketch } from "../lib/call-sketch-live.ts"
 
 test("live call sketch preserves uncertainty until the finished gate width is stated", () => {
   const spec = deriveCallSketch([

@@ -5,7 +5,7 @@ import {
   createGlassMediaUrl,
   GLASS_MEDIA_URL_TTL_MS,
   verifyGlassMediaSignature,
-} from "../lib/glass-media.mjs"
+} from "../lib/glass-media.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 const secret = "[INTERNAL TEST] glass-media-key-with-more-than-32-bytes"
@@ -65,7 +65,7 @@ test("glass media routes reject expired or revoked links before serving private 
 })
 
 test("media URL keys use HKDF with a fixed purpose and compare signatures in constant time", () => {
-  const helper = source("lib/glass-media.mjs")
+  const helper = source("lib/glass-media.ts")
   assert.match(helper, /hkdfSync\(/)
   assert.match(helper, /MEDIA_URL_PURPOSE = "mcsw-media-url-v1"/)
   assert.match(helper, /timingSafeEqual\(/)

@@ -9,11 +9,11 @@ import {
   type BuildDecision,
   type LockedBuildSheet,
   type PaperworkManifest,
-} from "@/lib/build-sheets-domain.mjs"
-import { compileBuildPaperwork, paperworkIssueDecision } from "@/lib/build-paperwork.mjs"
-import { createCustomerBuildProjection } from "@/lib/build-sheets-continuation.mjs"
-import type { CallSketchSpec } from "@/lib/call-sketch-live.mjs"
-import { persistLockedBuildSheet, persistObservedBuildFacts } from "@/lib/build-sheets-persistence.mjs"
+} from "@/lib/build-sheets-domain.ts"
+import { compileBuildPaperwork, paperworkIssueDecision } from "@/lib/build-paperwork.ts"
+import { createCustomerBuildProjection } from "@/lib/build-sheets-continuation.ts"
+import type { CallSketchSpec } from "@/lib/call-sketch-live.ts"
+import { persistLockedBuildSheet, persistObservedBuildFacts } from "@/lib/build-sheets-persistence.ts"
 
 type StoredBuildClaimValue = Omit<BuildClaim, "id" | "sourceEventId">
 

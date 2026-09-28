@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { formatSmsBody, isGmailMessageGone, isMetaVerificationSms, isUsNumericShortCode } from "../lib/shop-brain-invariants.mjs"
+import { formatSmsBody, isGmailMessageGone, isMetaVerificationSms, isUsNumericShortCode } from "../lib/shop-brain-invariants.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
@@ -667,7 +667,7 @@ test("identity races, private attachments, and closed GLASS fail safely", () => 
 
 test("time, transcript, and activity windows preserve current truth", () => {
   const brief = source("app/api/ops/brief/route.ts")
-  const briefSchedule = source("lib/brief-schedule.mjs")
+  const briefSchedule = source("lib/brief-schedule.ts")
   const calls = source("lib/calls.ts")
   const messages = source("lib/messages.ts")
   const events = source("lib/events.ts")
@@ -752,7 +752,7 @@ test("bounded recovery has a daily catch-up, an honest lease, and safe opportuni
 
 test("opportunistic recovery wakes only the canonical production Gmail ingest", () => {
   const wake = source("lib/gmail-wake.ts")
-  const wakePolicy = source("lib/gmail-wake-policy.mjs")
+  const wakePolicy = source("lib/gmail-wake-policy.ts")
   const gmail = source("app/api/ingest/gmail/route.ts")
   const board = source("app/board/page.tsx")
   const action = source("app/board/recovery-actions.ts")
@@ -973,7 +973,7 @@ test("Ask Jobs answers save into a bounded role-scoped source list", () => {
 
 test("GLASS never labels an internal estimate as an approved quote", () => {
   const glass = source("app/j/[token]/page.tsx")
-  const invariants = source("lib/shop-brain-invariants.mjs")
+  const invariants = source("lib/shop-brain-invariants.ts")
   assert.match(glass, /job\.quoted_at && job\.estimate_value_cents/)
   assert.doesNotMatch(invariants, /estimate_value_cents/)
 })

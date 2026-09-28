@@ -1,5 +1,5 @@
 import { put } from "@vercel/blob"
-import { readableEmailText, stripQuotedReply } from "@/lib/gmail-plaintext.mjs"
+import { readableEmailText, stripQuotedReply } from "@/lib/gmail-plaintext.ts"
 
 type GmailPart = { mimeType?: string; filename?: string; body?: { data?: string; attachmentId?: string; size?: number }; parts?: GmailPart[]; headers?: Array<{ name: string; value: string }> }
 export type GmailMessage = { id: string; threadId: string; historyId: string; internalDate: string; labelIds?: string[]; payload: GmailPart; snippet?: string }

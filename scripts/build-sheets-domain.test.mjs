@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { applyBuildDecision, classifyPaperwork, deriveBuildDraft, lockBuildSheet } from "../lib/build-sheets-domain.mjs"
+import { applyBuildDecision, classifyPaperwork, deriveBuildDraft, lockBuildSheet } from "../lib/build-sheets-domain.ts"
 
 function measurementClaim(overrides = {}) {
   return {

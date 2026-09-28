@@ -31,10 +31,10 @@ function loadOpsData(revenueRows) {
     ["@/lib/events", { listBoardEventTrails: async () => [] }],
     ["@/lib/job-line-items", { listJobLineItemsForLeads: async () => new Map() }],
     ["@/lib/leads", { LEAD_STATUSES: [] }],
-    ["@/lib/ad-spend.mjs", { AD_CHANNELS: [] }],
-    ["@/lib/dni.mjs", { dniNumber: () => "" }],
+    ["@/lib/ad-spend.ts", { AD_CHANNELS: [] }],
+    ["@/lib/dni.ts", { dniNumber: () => "" }],
     ["@/lib/pagination", { clampPageToTotal: () => 1, normalizePage: () => 1 }],
-    ["@/lib/shop-brain-invariants.mjs", { BOARD_SIGNAL_LABELS: {} }],
+    ["@/lib/shop-brain-invariants.ts", { BOARD_SIGNAL_LABELS: {} }],
     ["@/lib/visibility", { projectClaimForRole: (row) => row, projectCommitmentForRole: (row) => row, redactCrewText: (value) => value }],
   ])
   const context = vm.createContext({ console, Intl, Date, process: { env: {} }, require: (specifier) => {

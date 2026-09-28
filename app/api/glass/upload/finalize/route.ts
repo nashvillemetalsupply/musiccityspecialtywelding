@@ -1,7 +1,7 @@
 import { createGlassUploadIntent, finalizeGlassUpload, GlassUploadIntentExpiredError } from "@/lib/glass-uploads"
 import { after } from "next/server"
 import { draftStoredGlassUpload, photoDraftsEnabled } from "@/lib/photo-drafts"
-import { schedulePhotoDraftAfterFinalize } from "@/lib/photo-draft-workflow.mjs"
+import { schedulePhotoDraftAfterFinalize } from "@/lib/photo-draft-workflow.ts"
 
 export const runtime = "nodejs"
 export const maxDuration = 60

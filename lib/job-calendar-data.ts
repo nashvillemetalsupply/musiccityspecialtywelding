@@ -5,7 +5,7 @@ import {
   buildMonthJobCalendar,
   calendarTimestampIso,
   centralMonthRange,
-} from "@/lib/job-calendar.mjs"
+} from "@/lib/job-calendar.ts"
 
 type CalendarQueryRow = {
   id: number

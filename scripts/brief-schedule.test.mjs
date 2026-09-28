@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { isCentralBriefHour, morningBriefDedupeKey } from "../lib/brief-schedule.mjs"
+import { isCentralBriefHour, morningBriefDedupeKey } from "../lib/brief-schedule.ts"
 
 test("paired UTC cron hours accept only the one that is 6 AM in Central time", () => {
   assert.equal(isCentralBriefHour(new Date("2026-07-01T11:30:00Z")), true)

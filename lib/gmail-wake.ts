@@ -1,7 +1,7 @@
 import "server-only"
 
 import { CANONICAL_ORIGIN } from "@/lib/ops-auth"
-import { evaluateGmailWakePolicy, GMAIL_WAKE_PRODUCTION_ORIGIN } from "@/lib/gmail-wake-policy.mjs"
+import { evaluateGmailWakePolicy, GMAIL_WAKE_PRODUCTION_ORIGIN } from "@/lib/gmail-wake-policy.ts"
 
 export type GmailWakeResult = {
   ok: boolean

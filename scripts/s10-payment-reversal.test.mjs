@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { runOwnerPaymentReversal, normalizePaymentReversalInput } from "../lib/payment-reversal.mjs"
-import { eventIsOwnerOnly } from "../lib/event-visibility.mjs"
+import { runOwnerPaymentReversal, normalizePaymentReversalInput } from "../lib/payment-reversal.ts"
+import { eventIsOwnerOnly } from "../lib/event-visibility.ts"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 

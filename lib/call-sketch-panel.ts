@@ -1,4 +1,4 @@
-import { formatShopInches } from "./call-sketch-dxf.mjs"
+import { formatShopInches } from "./call-sketch-dxf.ts"
 
 // The seven facts the board's sketch panel shows. `swing` and `material` are
 // real facts on the spec but the panel does not carry them, so the answered

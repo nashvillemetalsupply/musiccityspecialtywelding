@@ -7,7 +7,7 @@ import { recordEvent } from "@/lib/events";
 import { notifyAll } from "@/lib/notify";
 import { getShopPhone } from "@/lib/shop-contact";
 import { isAuthorizedCron } from "@/lib/ops-auth";
-import { imageTypeMatches, isQuoteHoneypotFilled, validatePublicQuote } from "@/lib/public-quote.mjs";
+import { imageTypeMatches, isQuoteHoneypotFilled, validatePublicQuote } from "@/lib/public-quote.ts";
 import {
   attachLeadPhotos,
   createLead,
@@ -24,7 +24,7 @@ import {
   TEXT_CONSENT_REVOKED_WARNING,
   TEXT_CONSENT_UNVERIFIED_WARNING,
   webTextConsentResolution,
-} from "@/lib/shop-brain-invariants.mjs";
+} from "@/lib/shop-brain-invariants.ts";
 
 export const runtime = "nodejs"; // important for email libs
 

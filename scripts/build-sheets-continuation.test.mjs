@@ -5,7 +5,7 @@ import {
   createCustomerBuildProjection,
   createCrewBuildProjection,
   projectBuildDrawing,
-} from "../lib/build-sheets-continuation.mjs"
+} from "../lib/build-sheets-continuation.ts"
 
 function lockedSheet(overrides = {}) {
   return {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import sharp from "sharp"
 import test from "node:test"
-import { stripImageMetadata } from "../lib/glass-media.mjs"
+import { stripImageMetadata } from "../lib/glass-media.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 

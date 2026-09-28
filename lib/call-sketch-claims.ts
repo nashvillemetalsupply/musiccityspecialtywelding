@@ -17,7 +17,7 @@
 // Everything this produces is `uncertain`, always, and that is not a hedge
 // about model quality. It is the product rule: speech recognition output is
 // never promoted to confirmed geometry, and DXF export stays locked until the
-// owner reviews the numbers himself. `assign` in call-sketch-live.mjs refuses
+// owner reviews the numbers himself. `assign` in call-sketch-live.ts refuses
 // to lower a fact's truth, so a measurement the customer stated plainly enough
 // for the regexes to catch outranks anything here.
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { deriveCloseoutDraft, validateCloseoutReview } from "../lib/closeout-domain.mjs"
+import { deriveCloseoutDraft, validateCloseoutReview } from "../lib/closeout-domain.ts"
 
 test("one-breath closeout becomes reviewable structured outcomes", () => {
   const draft = deriveCloseoutDraft("Gate fit good. Took one extra trip for the latch. Reworked the hinge and still need to paint it.")

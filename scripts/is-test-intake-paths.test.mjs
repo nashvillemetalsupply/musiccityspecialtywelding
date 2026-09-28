@@ -74,7 +74,7 @@ test("public lead intake receipts classify INTERNAL TEST and ordinary leads thro
   }
   const fakes = new Map([
     ["@/lib/db", { getSql: () => sql }],
-    ["@/lib/follow-up-cadence.mjs", { getDefaultFollowUpAt: async () => null }],
+    ["@/lib/follow-up-cadence.ts", { getDefaultFollowUpAt: async () => null }],
     ["@/lib/pagination", { clampPageToTotal: () => 1, normalizePage: () => 1 }],
     ["@/lib/visibility", {
       OWNER_ONLY_EVENT_KINDS: [], OWNER_ONLY_EVENT_NAMESPACE_PATTERN: "^$",
@@ -212,11 +212,11 @@ test("inbound Twilio messages acquire a test lead flag when conversation matchin
         twilioSmsWebhookConfigured: () => true, twilioWebhookBaseUrl: () => "https://example.test",
         twiml: () => ({ status: 200 }),
       }],
-      ["@/lib/shop-brain-invariants.mjs", { isMetaVerificationSms: () => false, isUsNumericShortCode: () => false }],
+      ["@/lib/shop-brain-invariants.ts", { isMetaVerificationSms: () => false, isUsNumericShortCode: () => false }],
       ["@/lib/extract", { processEvent: async () => ({}) }],
       ["@/lib/attachment-retry", { queueIngestAttachment: async () => 1, storeQueuedAttachment: async () => {} }],
       ["@/lib/messaging-consent", { classifyTwilioConsentKeyword: () => null, recordMessagingConsent: async () => {} }],
-      ["@/lib/sms-provider-truth.mjs", { resumeSmsProjection: () => ({ projected: false, leadId: null, personId: null, createdLead: false }) }],
+      ["@/lib/sms-provider-truth.ts", { resumeSmsProjection: () => ({ projected: false, leadId: null, personId: null, createdLead: false }) }],
       ["@/lib/recovery-sweep", { runRecoverySweep: async () => ({ ok: true, skipped: true }) }],
       ["@/lib/gmail-wake", { wakeGmailIngest: async () => ({ ok: true }) }],
       ["@/lib/routing", { reconcileRoutedLeadProjections: async () => null, resolveProjectionLeadId: async (id) => id }],
@@ -262,8 +262,8 @@ test("Customer Page upload message and event inherit the linked lead test partit
       ["@/lib/db", { getSql: () => sql }],
       ["@/lib/glass", { extendGlassLinkExpiry: async () => {}, getGlassJob: async () => null, getGlassJobByLinkId: async () => null, hashGlassToken: () => "token-hash" }],
       ["@/lib/notify", { notifyAll: async () => [] }],
-      ["@/lib/public-quote.mjs", { imageTypeMatches: () => true }],
-      ["@/lib/shop-brain-invariants.mjs", { GLASS_UPLOAD_PENDING_EXPIRY_MS: 120000, validateCustomerUploadMetadata: () => "" }],
+      ["@/lib/public-quote.ts", { imageTypeMatches: () => true }],
+      ["@/lib/shop-brain-invariants.ts", { GLASS_UPLOAD_PENDING_EXPIRY_MS: 120000, validateCustomerUploadMetadata: () => "" }],
     ])
     const { finalizeGlassUpload } = loadModule("lib/glass-uploads.ts", fakes)
 

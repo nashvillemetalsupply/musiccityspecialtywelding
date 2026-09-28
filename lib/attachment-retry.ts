@@ -4,7 +4,7 @@ import { recordEvent } from "@/lib/events"
 import { gmailAccessToken } from "@/lib/gmail"
 import { notifyAll } from "@/lib/notify"
 import { isSafeRasterImage } from "@/lib/media-safety"
-import { classifyInboundAttachmentSensitivity } from "@/lib/shop-brain-invariants.mjs"
+import { classifyInboundAttachmentSensitivity } from "@/lib/shop-brain-invariants.ts"
 
 type AttachmentRow = {
   id: number; provider: "gmail" | "twilio"; external_message_id: string; attachment_key: string

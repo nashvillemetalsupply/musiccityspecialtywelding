@@ -18,7 +18,7 @@ function loadTemplates() {
   const escapeEmailText = (value) => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   const fakes = new Map([
     ["@/lib/shop-contact", { getShopPhone: () => ({ display: "(615) 555-0101", href: "tel:+16155550101" }) }],
-    ["@/lib/email-safety.mjs", { escapeEmailText, safeEmailHref: (value) => value }],
+    ["@/lib/email-safety.ts", { escapeEmailText, safeEmailHref: (value) => value }],
   ])
   const context = vm.createContext({ console, process: { env: {} } })
   const factory = vm.runInContext(`(function (exports, require, module) { ${output}\n})`, context, { filename: path })

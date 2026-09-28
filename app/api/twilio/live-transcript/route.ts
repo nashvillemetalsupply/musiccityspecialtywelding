@@ -1,7 +1,7 @@
 import { recordLiveTranscriptionEvent } from "@/lib/call-sketch-store"
 import { processEvent } from "@/lib/extract"
 import { getSql } from "@/lib/db"
-import { processTranscriptEventIfUnclaimed } from "@/lib/transcript-extraction.mjs"
+import { processTranscriptEventIfUnclaimed } from "@/lib/transcript-extraction.ts"
 import { readTwilioForm } from "@/lib/twilio"
 import { after } from "next/server"
 

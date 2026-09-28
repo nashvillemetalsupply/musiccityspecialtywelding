@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto"
-import { createGateDxf } from "./call-sketch-dxf.mjs"
-import { projectBuildDrawing } from "./build-sheets-continuation.mjs"
+import { createGateDxf } from "./call-sketch-dxf.ts"
+import { projectBuildDrawing } from "./build-sheets-continuation.ts"
 
 function hashContent(content) {
   return createHash("sha256").update(content).digest("hex")

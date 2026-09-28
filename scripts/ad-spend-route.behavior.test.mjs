@@ -6,7 +6,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import vm from "node:vm"
 import ts from "typescript"
-import { parseAdSpendPayload } from "../lib/ad-spend.mjs"
+import { parseAdSpendPayload } from "../lib/ad-spend.ts"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 const nativeRequire = createRequire(import.meta.url)
@@ -32,7 +32,7 @@ function loadRoute() {
     ["node:crypto", nativeRequire("node:crypto")],
     ["next/cache", { revalidatePath: (pathName) => revalidated.push(pathName) }],
     ["@/lib/db", { getSql: () => sql }],
-    ["@/lib/ad-spend.mjs", { parseAdSpendPayload }],
+    ["@/lib/ad-spend.ts", { parseAdSpendPayload }],
   ])
   const context = vm.createContext({ console, process: { env: { AD_SPEND_INGEST_TOKEN: "synthetic-mirror-token" } }, Request, Response, URL, Buffer })
   const factory = vm.runInContext(`(function (exports, require, module) { ${output}\n})`, context, { filename: path })

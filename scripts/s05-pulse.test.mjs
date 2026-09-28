@@ -1,13 +1,13 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { createOpsPulseGetHandler, readOpsPulse } from "../lib/ops-pulse.mjs"
+import { createOpsPulseGetHandler, readOpsPulse } from "../lib/ops-pulse.ts"
 import {
   OPS_PULSE_ACTIVE_INTERVAL_MS,
   OPS_PULSE_IDLE_INTERVAL_MS,
   OPS_PULSE_REFRESH_MAX_INTERVAL_MS,
   startOpsPulsePolling,
-} from "../lib/ops-pulse-polling.mjs"
+} from "../lib/ops-pulse-polling.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 

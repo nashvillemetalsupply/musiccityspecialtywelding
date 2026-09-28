@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState, useEffect, useState } from "react"
-import { handoffDisplayState } from "@/lib/shop-brain-invariants.mjs"
+import { handoffDisplayState } from "@/lib/shop-brain-invariants.ts"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import {
   markJobHandedOff,

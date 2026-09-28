@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
+import { normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { SafeActionButton } from "./safe-action-controls"
 
 export function TrackedCallButton({ leadId, phone, label = "Call from shop number", compact = false, directFallback = false, className = "" }: { leadId: number; phone: string; label?: string; compact?: boolean; directFallback?: boolean; className?: string }) {
