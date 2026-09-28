@@ -623,7 +623,7 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                     </span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
-                      <Link className={`btn btn--sm ${isOpen && hasPrimary ? "btn--edge" : "btn--go"}`} href={`/ops/leads/${lead.id}#finish-photo`} onClick={() => tapped(TAPS.jobOpen)}>Open job</Link>
+                      <Link className={`btn btn--sm ${isOpen && hasPrimary ? "btn--edge" : "btn--go"}`} href={`/ops/leads/${lead.id}`} onClick={() => tapped(TAPS.jobOpen)}>Open job</Link>
                       <button className="icon" type="button"
                         aria-label={`${isOpen ? "Collapse" : "Expand"} ${customerName(lead)} job details`}
                         aria-expanded={isOpen} aria-controls={`job-detail-${lead.id}`}

@@ -216,7 +216,7 @@ test("lead snapshot stays truthful and contact actions stay consent-gated", () =
   assert.match(job, /const customerPhone = normalizePhone\(lead\.phone\)/)
   assert.match(job, /getMessagingConsentState\(customerPhone\)/)
   assert.match(job, /hasCustomerPhone && <TrackedCallButton/)
-  assert.match(job, /customerTextReady && <a[^>]*href=\{`sms:\$\{customerPhone\.replace/)
+  assert.match(job, /customerTextReady && <Link[^>]*href="\?replyChannel=text#job-reply">Text<\/Link>/)
 })
 
 test("shared pagination normalizes hostile inputs and makes empty data page one", async () => {

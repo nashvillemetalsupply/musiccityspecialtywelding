@@ -456,12 +456,6 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           {lead.person_id && Number(lead.person_job_count ?? 0) > 1 && <Link className="btn btn--sm btn--edge job-repeat" href={`/ops/accounts/${lead.person_id}`}>Repeat customer, {Number(lead.person_job_count) - 1} prior jobs</Link>}
           {lead.email && <Link className="btn btn--sm btn--edge job-email" href="?replyChannel=email#job-reply">Email</Link>}
         </div>
-        {!needsJobMatch && !routedToLeadId && <nav className="job-action-spine" aria-label="Job actions">
-          {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={customerPhone} label="Call" compact directFallback className="btn btn--sm btn--edge" />}
-          {customerTextReady && <a className="btn btn--sm btn--edge" href={`sms:${customerPhone.replace(/[^\d+]/g, "")}`}>Text</a>}
-          <Link className="btn btn--sm btn--go" href="#finish-photo">Photo</Link>
-          {operator.role === "owner" && <Link className="btn btn--sm btn--edge job-action-price" href="#lead-estimate">Price · {lead.estimate_value_cents === null ? "No price" : money(lead.estimate_value_cents)}</Link>}
-        </nav>}
       </div>
 
       {!needsJobMatch && !routedToLeadId && <details className="job-contact-edit" open={!hasCustomerPhone && !lead.email}>
@@ -505,6 +499,13 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       </section>)}
 
       </section>
+
+      {!needsJobMatch && !routedToLeadId && <nav className="job-action-spine" aria-label="Job actions">
+        {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={customerPhone} label="Call" compact directFallback className="btn btn--sm btn--edge" />}
+        {customerTextReady && <Link className="btn btn--sm btn--edge" href="?replyChannel=text#job-reply">Text</Link>}
+        <Link className="btn btn--sm btn--go" href={lead.completed_at ? "#done-photo" : "#finish-photo"}>Photo</Link>
+        {operator.role === "owner" && <Link className="btn btn--sm btn--edge job-action-price" href="#lead-estimate">Price · {lead.estimate_value_cents === null ? "No price" : money(lead.estimate_value_cents)}</Link>}
+      </nav>}
 
       <div className="job-flow">
       <section className="card job-summary" aria-label="Job summary">
