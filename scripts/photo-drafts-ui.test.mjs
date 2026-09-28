@@ -9,6 +9,8 @@ const component = read("../app/ops/leads/[id]/photo-drafts.tsx")
 const actions = read("../app/ops/leads/[id]/claim-actions.ts")
 const finalizeRoute = read("../app/api/glass/upload/finalize/route.ts")
 const draftService = read("../lib/photo-drafts.ts")
+const claimProjection = read("../lib/visibility.ts")
+const eventExtractor = read("../lib/extract.ts")
 const styles = read("../app/ops/leads/[id]/job.css")
 
 test("photo draft UI is gated to authenticated owners while the feature flag is enabled", () => {
@@ -18,6 +20,8 @@ test("photo draft UI is gated to authenticated owners while the feature flag is 
   assert.match(page, /!claim\.predicate\.startsWith\("photo_draft_"\)/)
   assert.match(actions, /operator\.role !== "owner"/)
   assert.match(actions, /if \(!photoDraftsEnabled\(\)\)/)
+  assert.match(claimProjection, /if \(normalized\.startsWith\("photo_draft_"\)\) return false/)
+  assert.match(eventExtractor, /left\(predicate, 12\) <> 'photo_draft_'::text/)
 })
 
 test("review controls preserve keyboard, screen-reader, private-source, and forced-colors access", () => {

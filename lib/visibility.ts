@@ -95,8 +95,12 @@ export function projectCommitmentForRole(commitment: CommitmentRow, role: Operat
 }
 
 export function claimVisibleToRole(predicate: string, role: OperatorRole) {
+  const normalized = predicate.toLowerCase()
+  // Photo suggestions have their own owner review block. They must never be
+  // mistaken for ordinary saved specs on the job page, board, or account.
+  if (normalized.startsWith("photo_draft_")) return false
   if (role === "owner") return true
-  return CREW_SAFE_CLAIM_PREDICATES.has(predicate.toLowerCase())
+  return CREW_SAFE_CLAIM_PREDICATES.has(normalized)
 }
 
 const OWNER_ONLY_VALUE_KEY = /(price|quote|invoice|pay|paid|amount|deposit|budget|rate|balance|total|revenue|cost|margin)/i

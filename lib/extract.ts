@@ -130,6 +130,7 @@ export async function processEvent(eventId: number) {
     SELECT id, predicate, value, confidence FROM claims
     WHERE subject_type = ${projectionLeadId ? "lead" : "person"}::text
       AND subject_id = ${projectionLeadId ?? event.person_id}::bigint
+      AND left(predicate, 12) <> 'photo_draft_'::text
       AND superseded_by IS NULL ORDER BY created_at DESC LIMIT 40`) as Record<string, unknown>[] : []
   let object: z.infer<typeof extractionSchema>
   if (event.extraction_result) {
