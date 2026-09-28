@@ -74,6 +74,7 @@ test("public lead intake receipts classify INTERNAL TEST and ordinary leads thro
   }
   const fakes = new Map([
     ["@/lib/db", { getSql: () => sql }],
+    ["@/lib/follow-up-cadence.mjs", { getDefaultFollowUpAt: async () => null }],
     ["@/lib/pagination", { clampPageToTotal: () => 1, normalizePage: () => 1 }],
     ["@/lib/visibility", {
       OWNER_ONLY_EVENT_KINDS: [], OWNER_ONLY_EVENT_NAMESPACE_PATTERN: "^$",
