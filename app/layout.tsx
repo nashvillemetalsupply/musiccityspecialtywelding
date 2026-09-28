@@ -62,8 +62,14 @@ const localBusinessSchema = {
   ],
   description:
     "Mobile and shop welding, equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee.",
+  priceRange: "Pricing is not listed",
   logo: "https://musiccityspecialtywelding.com/images/optimized/mcs_welding_logo.webp",
   image: "https://musiccityspecialtywelding.com/images/optimized/welder.webp",
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 36.21646,
+    longitude: -86.3035,
+  },
   address: {
     "@type": "PostalAddress",
     streetAddress: "533 W Baddour Pkwy",

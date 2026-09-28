@@ -7,7 +7,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { createPublicMetadata } from "@/lib/public-metadata"
-import { servicePageBySlug, servicePages } from "@/lib/service-pages"
+import { buildServiceStructuredData, servicePageBySlug, servicePages } from "@/lib/service-pages"
 import { getShopPhone } from "@/lib/shop-contact"
 
 type PageProps = { params: Promise<{ slug: string }> }
@@ -39,31 +39,15 @@ export default async function ServicePage({ params }: PageProps) {
   if (!service) notFound()
   const shopPhone = getShopPhone()
 
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    name: service.shortTitle,
-    description: service.metaDescription,
-    url: `https://musiccityspecialtywelding.com/services/${service.slug}`,
-    areaServed: "Middle Tennessee",
-    provider: { "@id": "https://musiccityspecialtywelding.com/#business" },
-  }
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://musiccityspecialtywelding.com/" },
-      { "@type": "ListItem", position: 2, name: "Services", item: "https://musiccityspecialtywelding.com/#services" },
-      { "@type": "ListItem", position: 3, name: service.shortTitle, item: `https://musiccityspecialtywelding.com/services/${service.slug}` },
-    ],
-  }
+  const structuredData = buildServiceStructuredData(service)
 
   return (
     <>
       <Navbar />
       <main id="main-content" className="ms-site ms-subpage" data-service={service.slug}>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData.service) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData.breadcrumbList) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData.faqPage) }} />
 
         <nav className="ms-breadcrumb" aria-label="Breadcrumb">
           <Link href="/">Home</Link><span aria-hidden="true">/</span>
