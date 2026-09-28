@@ -623,7 +623,7 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                     </span>
                     <span className="c-state"><span className={`chip ${CHIP_CLASS[chipTone(lead)]}`}><i></i>{lead.board_reason}</span></span>
                     <span className="doing c-do">
-                      <Link className={`btn btn--sm ${isOpen && hasPrimary ? "btn--edge" : "btn--go"}`} href={`/ops/leads/${lead.id}`} onClick={() => tapped(TAPS.jobOpen)}>Open job</Link>
+                      <Link className={`btn btn--sm ${isOpen && hasPrimary ? "btn--edge" : "btn--go"}`} href={`/ops/leads/${lead.id}#finish-photo`} onClick={() => tapped(TAPS.jobOpen)}>Open job</Link>
                       <button className="icon" type="button"
                         aria-label={`${isOpen ? "Collapse" : "Expand"} ${customerName(lead)} job details`}
                         aria-expanded={isOpen} aria-controls={`job-detail-${lead.id}`}
@@ -684,7 +684,9 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                         {chrome.owner && <div><dt>Price</dt><dd>
                           {moneyCell.confirmHref
                             ? <Link className="heard-quote" href={moneyCell.confirmHref} onClick={() => tapped(TAPS.heardPrice)}>{money(lead.heard_quote_cents)} heard on the call — tap to confirm</Link>
-                            : moneyCell.value === "—" ? "Not priced yet" : `${moneyCell.value} ${moneyCell.note}`}
+                            : moneyCell.note === "estimated" && lead.estimate_value_cents !== null
+                              ? <Link className="heard-quote" href={`/ops/leads/${lead.id}#lead-estimate`}>{moneyCell.value} {moneyCell.note}</Link>
+                              : moneyCell.value === "—" ? "Not priced yet" : `${moneyCell.value} ${moneyCell.note}`}
                         </dd></div>}
                         {promiseLine && <div className={promiseLine.late ? "late" : undefined}><dt>{promiseLine.label}</dt><dd>{promiseLine.text}</dd></div>}
                         <div><dt>Photos</dt><dd>{lead.photo_count > 0
