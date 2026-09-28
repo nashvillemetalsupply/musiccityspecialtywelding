@@ -128,6 +128,7 @@
     --status-idle-mark:var(--dark-idle-mark);
     --sketch-ground:var(--dark-sketch-ground); --sketch-grid:var(--dark-sketch-grid); --sketch-dim:var(--dark-sketch-dim);
     --draw-line:var(--dark-draw-line); --draw-thin:var(--dark-draw-thin); --draw-fill:var(--dark-draw-fill);
+    --w-reg:400; --w-med:480; --w-semi:620;
   }
 }
 :root[data-theme="dark"]{
@@ -143,6 +144,7 @@
   --status-idle-mark:var(--dark-idle-mark);
   --sketch-ground:var(--dark-sketch-ground); --sketch-grid:var(--dark-sketch-grid); --sketch-dim:var(--dark-sketch-dim);
   --draw-line:var(--dark-draw-line); --draw-thin:var(--dark-draw-thin); --draw-fill:var(--dark-draw-fill);
+  --w-reg:400; --w-med:480; --w-semi:620;
 }
 /* The shop floor runs dark in either system theme, so it takes the dark ladder
    unconditionally. This used to live in app/ops/ops-shell.css, which put a

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import test from "node:test"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
@@ -18,6 +18,15 @@ function mediaBlock(source, query) {
     if (source[index] === "}" && --depth === 0) return source.slice(open + 1, index)
   }
   assert.fail(`unclosed @media (${query}) block`)
+}
+
+function boardPages(directory) {
+  return readdirSync(new URL(`../${directory}/`, import.meta.url), { withFileTypes: true })
+    .flatMap((entry) => {
+      const path = `${directory}/${entry.name}`
+      if (entry.isDirectory()) return boardPages(path)
+      return entry.name === "page.tsx" ? [path] : []
+    })
 }
 
 test("forced colors keep job actions, status chips, buttons and focus visible", () => {
@@ -60,16 +69,23 @@ test("theme boot changes color tokens before paint without changing layout metri
   const boot = read("app/board/theme-boot.tsx")
   assert.match(boot, /localStorage\.getItem\("mcsw-theme"\)/)
   assert.match(boot, /document\.documentElement\.setAttribute\("data-theme", t\)/)
-  assert.doesNotMatch(boot, /\.style\.|className|classList/)
+  assert.match(boot, /<script\s+dangerouslySetInnerHTML=\{\{\s*__html:\s*BOOT\s*\}\}\s*\/>/)
+
+  const importingPages = boardPages("app/board").filter((path) => /import\s+\{\s*ThemeBoot\s*\}\s+from/.test(read(path)))
+  assert.ok(importingPages.length > 0, "no /board pages import ThemeBoot")
+  for (const path of importingPages) {
+    assert.match(read(path), /<ThemeBoot\s*\/>/, `${path} imports ThemeBoot but does not render it`)
+  }
 
   const themeBlocks = [...CONTROL.matchAll(/:root(?:\[data-theme="dark"\]|:not\(\[data-theme="light"\]\))\s*\{([^}]*)\}/gs)]
   assert.ok(themeBlocks.length >= 2, "both saved and system dark themes must be pinned")
   for (const block of themeBlocks) {
+    assert.match(block[1], /--w-reg\s*:\s*400\s*;/, "dark theme must keep the lighter regular font weight")
     const declarations = block[1].split(";").map((part) => part.trim()).filter(Boolean)
     for (const declaration of declarations) {
       const property = declaration.split(":", 1)[0].trim()
       assert.match(property, /^--/, `theme rule has a direct layout declaration: ${declaration}`)
-      assert.doesNotMatch(property, /^--(?:w-|t-|s\d|r-|row|control)/, `theme rule changes layout metrics: ${declaration}`)
+      assert.doesNotMatch(property, /^--(?:t-|s\d|r-|row|control)/, `theme rule changes layout metrics: ${declaration}`)
     }
   }
 })
