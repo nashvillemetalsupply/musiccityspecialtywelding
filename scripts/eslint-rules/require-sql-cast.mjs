@@ -1,6 +1,6 @@
 const SQL_CAST_START = /^::(?:[A-Za-z_]|")/
 
-export default {
+const requireSqlCast = {
   meta: {
     type: "problem",
     docs: {
@@ -28,3 +28,5 @@ export default {
     }
   },
 }
+
+export default requireSqlCast
