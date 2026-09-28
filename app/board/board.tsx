@@ -388,7 +388,7 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
     
       <header className="top">
         <Link className="logo-home" href="/board" aria-label="Job Control home">
-          <img className="logo" alt="" src="/images/optimized/mcs_welding_logo.webp" />
+          <img className="logo" alt="" src="/images/optimized/mcs_welding_logo.webp" width={72} height={48} />
         </Link>
         <span className="when">{chrome.date}</span>
         <form className="find" action="/board" method="get" role="search" onSubmit={() => tapped(TAPS.search)}>

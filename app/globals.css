@@ -1579,7 +1579,12 @@ html {
 /* ---- motion discipline ---- */
 
 @media (prefers-reduced-motion: reduce) {
-  .ms-site *, .ms-mobile-cta { transition-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    transition-duration: .001ms !important;
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }
 .is-bad { color: var(--ops-bad); }
 

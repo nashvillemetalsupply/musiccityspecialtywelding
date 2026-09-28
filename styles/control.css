@@ -128,7 +128,6 @@
     --status-idle-mark:var(--dark-idle-mark);
     --sketch-ground:var(--dark-sketch-ground); --sketch-grid:var(--dark-sketch-grid); --sketch-dim:var(--dark-sketch-dim);
     --draw-line:var(--dark-draw-line); --draw-thin:var(--dark-draw-thin); --draw-fill:var(--dark-draw-fill);
-    --w-reg:400; --w-med:480; --w-semi:620;
   }
 }
 :root[data-theme="dark"]{
@@ -144,7 +143,6 @@
   --status-idle-mark:var(--dark-idle-mark);
   --sketch-ground:var(--dark-sketch-ground); --sketch-grid:var(--dark-sketch-grid); --sketch-dim:var(--dark-sketch-dim);
   --draw-line:var(--dark-draw-line); --draw-thin:var(--dark-draw-thin); --draw-fill:var(--dark-draw-fill);
-  --w-reg:400; --w-med:480; --w-semi:620;
 }
 /* The shop floor runs dark in either system theme, so it takes the dark ladder
    unconditionally. This used to live in app/ops/ops-shell.css, which put a
@@ -240,11 +238,12 @@ sub,sup{font-size:var(--t-caption)}
 /* Windows High Contrast strips backgrounds. Every control that showed its
    state as a fill shows it as a border instead. */
 @media (forced-colors:active){
-  .chip,.tab,.btn,.skip,.find{border:1px solid ButtonText}
+  .chip,.job-status,.tab,.btn,.skip,.find{border:1px solid ButtonText}
   .tab[aria-pressed="true"],.tab[aria-current="page"]{border:2px solid Highlight}
   .btn--go{border:2px solid ButtonText}
   .chip i{background:CanvasText}
   .cust svg{stroke:CanvasText}
+  :focus-visible{outline-color:Highlight !important}
 }
 
 /* The reader asked the OS for more contrast: the quiet tier steps up one. */
