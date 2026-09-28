@@ -187,43 +187,76 @@ export async function measureRoute(distDir, route, manifests) {
   }
 }
 
-export async function checkBundleBudgets({ distDir = ".next", budgets, log = () => {} }) {
+function formatLargestChunks(files, limit = 5) {
+  const largest = [...files]
+    .sort((left, right) => right.bytes - left.bytes || left.asset.localeCompare(right.asset))
+    .slice(0, limit)
+  return largest.length
+    ? largest.map(({ asset, bytes }) => `${asset} (${bytes.toLocaleString("en-US")} bytes)`).join(", ")
+    : "none"
+}
+
+export async function checkBundleBudgets({
+  distDir = ".next",
+  budgets,
+  log = () => {},
+  measureOnly = false,
+}) {
   const manifests = await loadManifests(distDir)
   const results = []
+  const routeBudgets = budgets?.manifestUnit?.routes
+  if (!routeBudgets || typeof routeBudgets !== "object" || Array.isArray(routeBudgets) || Object.keys(routeBudgets).length === 0) {
+    throw new Error("No manifest-unit route budgets configured")
+  }
 
-  for (const [route, config] of Object.entries(budgets.routes ?? {})) {
+  for (const [route, config] of Object.entries(routeBudgets)) {
+    if (config?.thresholdBytes != null && (!Number.isSafeInteger(config.thresholdBytes) || config.thresholdBytes < 0)) {
+      throw new Error(`Invalid manifest-unit threshold for ${route}`)
+    }
     const result = await measureRoute(distDir, route, manifests)
     results.push(result)
     if (!result.measured) {
-      log(`${route}: size unavailable (no route entry in build manifests); not budgeted`)
+      log(`${route}: size unavailable (no route entry in build manifests); not enforced`)
       continue
     }
 
     const size = result.bytes.toLocaleString("en-US")
-    if (config.thresholdBytes == null) {
-      log(`${route}: ${size} bytes; no baseline threshold, not enforced`)
+    const largest = formatLargestChunks(result.files)
+    if (measureOnly) {
+      log(`${route}: total ${size} bytes (measure-only); largest chunks: ${largest}`)
+    } else if (config.thresholdBytes == null) {
+      log(`${route}: total ${size} bytes; no manifest-unit threshold, not enforced`)
     } else if (result.bytes > config.thresholdBytes) {
-      log(`${route}: ${size} bytes exceeds ${config.thresholdBytes.toLocaleString("en-US")} byte budget`)
+      log(`${route}: total ${size} bytes exceeds threshold ${config.thresholdBytes.toLocaleString("en-US")} bytes; largest chunks: ${largest}`)
     } else {
-      log(`${route}: ${size} / ${config.thresholdBytes.toLocaleString("en-US")} bytes`)
+      log(`${route}: total ${size} / threshold ${config.thresholdBytes.toLocaleString("en-US")} bytes`)
     }
   }
 
-  const failures = results.filter((result) => {
-    const threshold = budgets.routes?.[result.route]?.thresholdBytes
-    return result.measured && threshold != null && result.bytes > threshold
+  const failures = measureOnly ? [] : results.flatMap((result) => {
+    const thresholdBytes = routeBudgets[result.route]?.thresholdBytes
+    return result.measured && thresholdBytes != null && result.bytes > thresholdBytes
+      ? [{ ...result, thresholdBytes }]
+      : []
   })
   return { results, failures }
 }
 
 async function main() {
   const budgets = JSON.parse(await readFile(budgetPath, "utf8"))
+  const distDir = process.env.NEXT_DIST_DIR || ".next"
+  const measureOnly = process.argv.includes("--measure-only")
+  if (measureOnly) {
+    const buildId = (await readFile(path.join(distDir, "BUILD_ID"), "utf8")).trim()
+    console.log(`Build ID: ${buildId}`)
+  }
   const { failures } = await checkBundleBudgets({
-    distDir: process.env.NEXT_DIST_DIR || ".next",
+    distDir,
     budgets,
     log: console.log,
+    measureOnly,
   })
-  if (failures.length) process.exitCode = 1
+  if (!measureOnly && failures.length) process.exitCode = 1
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
