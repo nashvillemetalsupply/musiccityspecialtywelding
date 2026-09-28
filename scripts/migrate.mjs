@@ -64,8 +64,6 @@ const statements = [
     email_delivered_at TIMESTAMPTZ
   )`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_follow_up_at TIMESTAMPTZ`,
-  `CREATE INDEX IF NOT EXISTS leads_next_follow_up_idx
-    ON leads(next_follow_up_at) WHERE next_follow_up_at IS NOT NULL`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS follow_up_notified_at TIMESTAMPTZ`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS photos JSONB NOT NULL DEFAULT '[]'::jsonb`,
   `CREATE TABLE IF NOT EXISTS lead_photo_intents (
@@ -130,7 +128,6 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS leads_status_idx ON leads(status)`,
   `CREATE INDEX IF NOT EXISTS leads_created_idx ON leads(created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS leads_delivery_idx ON leads(email_delivery_status)`,
-  `CREATE INDEX IF NOT EXISTS leads_won_at_idx ON leads(won_at)`,
   `CREATE TABLE IF NOT EXISTS lead_events (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     lead_id BIGINT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
@@ -145,7 +142,6 @@ const statements = [
     ts TIMESTAMPTZ NOT NULL DEFAULT now()
   )`,
   `CREATE INDEX IF NOT EXISTS rate_limits_key_ts_idx ON rate_limits(key, ts)`,
-  `CREATE INDEX IF NOT EXISTS rate_limits_ts_idx ON rate_limits(ts)`,
   `CREATE TABLE IF NOT EXISTS ops_tokens (
     token_hash TEXT PRIMARY KEY,
     purpose TEXT NOT NULL,
@@ -257,7 +253,6 @@ const statements = [
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS glass_caption_draft TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS glass_caption_approved_at TIMESTAMPTZ`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`,
-  `CREATE INDEX IF NOT EXISTS leads_scheduled_at_idx ON leads(scheduled_at)`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS work_started_at TIMESTAMPTZ`,
   `ALTER TABLE leads ADD COLUMN IF NOT EXISTS handed_off_at TIMESTAMPTZ`,
   `CREATE INDEX IF NOT EXISTS leads_active_board_idx
@@ -340,7 +335,6 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS events_lead_idx ON events(lead_id, occurred_at)`,
   `CREATE INDEX IF NOT EXISTS events_person_idx ON events(person_id, occurred_at)`,
   `CREATE INDEX IF NOT EXISTS events_kind_idx ON events(kind, occurred_at DESC)`,
-  `CREATE INDEX IF NOT EXISTS events_occurred_at_idx ON events(occurred_at)`,
   `ALTER TABLE events ADD COLUMN IF NOT EXISTS brief_audio_status TEXT NOT NULL DEFAULT 'none'`,
   `ALTER TABLE events ADD COLUMN IF NOT EXISTS brief_audio_attempts INT NOT NULL DEFAULT 0`,
   `ALTER TABLE events ADD COLUMN IF NOT EXISTS brief_audio_updated_at TIMESTAMPTZ`,
@@ -427,8 +421,6 @@ const statements = [
     visible_on_glass BOOLEAN NOT NULL DEFAULT false
   )`,
   `CREATE INDEX IF NOT EXISTS commitments_open_idx ON commitments(status, due_at) WHERE status = 'open'`,
-  `CREATE INDEX IF NOT EXISTS commitments_person_open_idx
-    ON commitments(person_id, due_at) WHERE status = 'open'`,
   `CREATE INDEX IF NOT EXISTS commitments_lead_idx ON commitments(lead_id, created_at DESC)`,
   `ALTER TABLE commitments ADD COLUMN IF NOT EXISTS crew_summary TEXT`,
   `ALTER TABLE commitments ADD COLUMN IF NOT EXISTS item_key TEXT NOT NULL DEFAULT ''`,
@@ -485,7 +477,6 @@ const statements = [
     detail JSONB
   )`,
   `CREATE INDEX IF NOT EXISTS calls_lead_idx ON calls(lead_id, started_at DESC)`,
-  `CREATE INDEX IF NOT EXISTS calls_to_phone_idx ON calls(to_phone)`,
   `ALTER TABLE calls ADD COLUMN IF NOT EXISTS crew_transcript TEXT`,
   `ALTER TABLE calls ADD COLUMN IF NOT EXISTS operator_id BIGINT REFERENCES operators(id)`,
   `ALTER TABLE calls ADD COLUMN IF NOT EXISTS idempotency_key TEXT NOT NULL DEFAULT ''`,
@@ -1133,6 +1124,15 @@ const statements = [
   `ALTER TABLE messages ADD COLUMN IF NOT EXISTS send_after TIMESTAMPTZ`,
   `ALTER TABLE messages ADD COLUMN IF NOT EXISTS quiet_hours_exempt BOOLEAN NOT NULL DEFAULT false`,
   `CREATE INDEX IF NOT EXISTS messages_deferred_sms_due_idx ON messages(send_after, id) WHERE direction = 'out' AND status = 'queued' AND send_after IS NOT NULL`,
+  `CREATE INDEX IF NOT EXISTS leads_next_follow_up_idx
+    ON leads(next_follow_up_at) WHERE next_follow_up_at IS NOT NULL`,
+  `CREATE INDEX IF NOT EXISTS leads_won_at_idx ON leads(won_at)`,
+  `CREATE INDEX IF NOT EXISTS rate_limits_ts_idx ON rate_limits(ts)`,
+  `CREATE INDEX IF NOT EXISTS leads_scheduled_at_idx ON leads(scheduled_at)`,
+  `CREATE INDEX IF NOT EXISTS events_occurred_at_idx ON events(occurred_at)`,
+  `CREATE INDEX IF NOT EXISTS commitments_person_open_idx
+    ON commitments(person_id, due_at) WHERE status = 'open'`,
+  `CREATE INDEX IF NOT EXISTS calls_to_phone_idx ON calls(to_phone)`,
 ]
 
 export const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no_delete() RETURNS trigger AS $$

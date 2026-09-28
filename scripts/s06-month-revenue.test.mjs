@@ -54,18 +54,18 @@ test("monthly revenue uses Central month boundaries at 23:59 and 00:00 through D
     { wonAt: "2026-05-01T04:59:00.000Z", cents: 300 }, // April 30, 23:59 CDT
     { wonAt: "2026-05-01T05:00:00.000Z", cents: 400 }, // May 1, 00:00 CDT
   ]
-  const module = loadOpsData(revenueRows)
+  const opsDataModule = loadOpsData(revenueRows)
 
-  const marchRevenue = await module.getMonthRevenueCents(new Date("2026-04-01T04:59:00.000Z"))
-  const aprilRevenue = await module.getMonthRevenueCents(new Date("2026-04-01T05:00:00.000Z"))
+  const marchRevenue = await opsDataModule.getMonthRevenueCents(new Date("2026-04-01T04:59:00.000Z"))
+  const aprilRevenue = await opsDataModule.getMonthRevenueCents(new Date("2026-04-01T05:00:00.000Z"))
 
   assert.equal(marchRevenue, 100)
   assert.equal(aprilRevenue, 500)
-  assert.deepEqual(module.queries.map(({ start, end }) => [start, end]), [
+  assert.deepEqual(opsDataModule.queries.map(({ start, end }) => [start, end]), [
     ["2026-03-01T06:00:00.000Z", "2026-04-01T05:00:00.000Z"],
     ["2026-04-01T05:00:00.000Z", "2026-05-01T05:00:00.000Z"],
   ])
-  for (const query of module.queries) {
+  for (const query of opsDataModule.queries) {
     assert.match(query.text, /won_at >= \?\s*::timestamptz/)
     assert.match(query.text, /won_at < \?\s*::timestamptz/)
   }
