@@ -94,7 +94,10 @@ test("no fixture survives on the wired panel", () => {
   ]) {
     assert.ok(!PREVIEW_SOURCE.includes(fixture), `${fixture} is still hand-typed on the panel`)
   }
-  assert.match(PAGE_SOURCE, /callSketch: null/, "signed out, the panel has no sketch rather than a fake one")
+  const route = PAGE_SOURCE.slice(PAGE_SOURCE.indexOf("export default async function BoardPage"))
+  const signedOutRedirect = route.indexOf('if (!operator) redirect("/ops")')
+  const dataBatch = route.indexOf("const [page, promises")
+  assert.ok(signedOutRedirect >= 0 && dataBatch > signedOutRedirect, "signed-out requests redirect before the call sketch or other board data is loaded")
 })
 
 test("the board's sketch is a real call, and never a test one", () => {

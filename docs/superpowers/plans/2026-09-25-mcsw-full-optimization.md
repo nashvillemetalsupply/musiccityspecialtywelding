@@ -597,18 +597,21 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
 
 ## P6 — CRM client, PWA, owner loop
 
-- [ ] **Manifest scope is wrong.** `app/ops/manifest.webmanifest/route.ts`
+- [x] **Manifest scope is wrong.** `app/ops/manifest.webmanifest/route.ts`
   sets `scope: "/ops/"` while `/ops` redirects to `/board`, and
   `public/ops-sw.js:164-185` `notificationclick` only matches `startsWith("/ops")`.
   Set scope `/`, `start_url` `/board`, dark `background_color`, 192/512
   maskable PNGs; have push payloads carry `url: /ops/leads/<id>` and the
   service worker open it.
-- [ ] **No offline.** The service worker has no fetch handler. Add
+  - Observation: the installed app starts at `/board`; push URLs are relative and same-origin, with 192/512 maskable icons.
+- [x] **No offline.** The service worker has no fetch handler. Add
   stale-while-revalidate for `/board*`, `/ops/leads/*` and `_next/static`,
   versioned by commit SHA, with an offline banner component. Writes are never
   queued offline (Call precedes Text; a failed write must be visible).
-- [ ] **Signed-out `/board` shows the empty board.** Show the login screen.
+  - Observation: root worker caches session-keyed GET navigations and SHA-versioned static assets; logout or a session change purges private pages, and writes stay network-only.
+- [x] **Signed-out `/board` shows the empty board.** Show the login screen.
   Push toggle vanishes on error (`push-toggle.tsx:255-257`); show the error.
+  - Observation: signed-out board requests redirect to the existing `/ops` login, and push errors render as alerts.
   `glass-actions.ts` and `calendar-actions.ts` never `revalidatePath`; add it.
 - [ ] **Client bundle.** 15 KB base64 logo inline in `board.tsx:422` (serve
   the file); theme boot duplicated (`board.tsx:383-414` vs `theme-boot.tsx`,

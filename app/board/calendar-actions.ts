@@ -1,6 +1,7 @@
 "use server"
 
 import { randomUUID } from "node:crypto"
+import { revalidatePath } from "next/cache"
 import { createManualLeadRecord, scheduleLeadRecord } from "@/app/ops/actions"
 import { resolveCentralDateTime } from "@/lib/central-date-time.mjs"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
@@ -66,6 +67,8 @@ export async function createCalendarJobAction(
   } catch (error) {
     return actionError(error, intakeKey)
   }
+  revalidatePath("/board")
+  revalidatePath(`/ops/leads/${created.leadId}`)
 
   try {
     const schedule = new FormData()
@@ -73,6 +76,8 @@ export async function createCalendarJobAction(
     schedule.set("scheduledAt", `${scheduledDate}T${scheduledTime}`)
     schedule.set("scheduleKey", intakeKey)
     const scheduled = await scheduleLeadRecord(schedule, { source: "board_calendar_quick_add" })
+    revalidatePath("/board")
+    revalidatePath(`/ops/leads/${created.leadId}`)
     return {
       status: "saved",
       leadId: created.leadId,

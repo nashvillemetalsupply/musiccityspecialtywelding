@@ -122,15 +122,10 @@ test("QA step 7: the pager appears only for overflow and keeps page one canonica
 test("QA step 8: signed-out structure is zeroed and crew money is nulled server-side", () => {
   // Visual signed-out inspection remains human-only. The crew half is also a
   // standing production deferral until a crew operator exists.
-  const emptyBoard = BOARD_PAGE_SOURCE.slice(
-    BOARD_PAGE_SOURCE.indexOf("const EMPTY_BOARD"),
-    BOARD_PAGE_SOURCE.indexOf("export default async function BoardPage"),
-  )
-  assert.match(emptyBoard, /items: \[\]/)
-  assert.match(emptyBoard, /resultTotal: 0/)
-  assert.match(emptyBoard, /hasNext: false/)
-  assert.match(BOARD_PAGE_SOURCE, /if \(!operator\) return <JobControl\s+board=\{\{ \.\.\.EMPTY_BOARD, stage, signal, stages: \[\.\.\.JOB_BOARD_STAGES\] \}\}/)
-  assert.match(BOARD_PAGE_SOURCE, /calendar=\{<JobCalendar days=\{emptyMonthJobCalendar\(now\)\} todayDateKey=\{centralDateKey\(now\) \?\? ""\} \/>\}/)
+  const route = BOARD_PAGE_SOURCE.slice(BOARD_PAGE_SOURCE.indexOf("export default async function BoardPage"))
+  const signedOutRedirect = route.indexOf('if (!operator) redirect("/ops")')
+  const dataBatch = route.indexOf("const [page, promises")
+  assert.ok(signedOutRedirect >= 0 && dataBatch > signedOutRedirect, "signed-out requests redirect before loading board data")
 
   const projection = OPS_DATA_SOURCE.slice(
     OPS_DATA_SOURCE.indexOf("export function projectLeadForRole"),

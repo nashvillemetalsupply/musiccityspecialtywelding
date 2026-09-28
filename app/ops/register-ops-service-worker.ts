@@ -1,11 +1,11 @@
 export async function registerOpsServiceWorker() {
   if (!("serviceWorker" in navigator)) return null
 
-  const expectedScope = new URL("/ops/", window.location.origin).href
+  const expectedScope = new URL("/", window.location.origin).href
   const registrations = await navigator.serviceWorker.getRegistrations()
 
-  // Older builds registered this worker at the site root. Remove that legacy
-  // registration so public and Customer Pages cannot be controlled by Jobs.
+  // The app shell now covers /board as well as /ops/leads. Retire this same
+  // worker's old nested registration so every controlled route shares a scope.
   await Promise.all(registrations.map(async (registration) => {
     const scriptUrl = registration.active?.scriptURL
       || registration.waiting?.scriptURL
@@ -17,5 +17,6 @@ export async function registerOpsServiceWorker() {
     }
   }))
 
-  return navigator.serviceWorker.register("/ops-sw.js", { scope: "/ops/" })
+  const buildSha = process.env.OPS_SW_BUILD_SHA?.trim() || "dev"
+  return navigator.serviceWorker.register(`/ops-sw.js?build=${encodeURIComponent(buildSha)}`, { scope: "/" })
 }

@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { createOrReuseQuoteGlassLink, hashGlassToken, revokeGlassLinks, rotateGlassLink } from "@/lib/glass"
 import { recordEvent } from "@/lib/events"
@@ -22,11 +23,13 @@ export async function hangGlassClipboard(state: GlassActionState, formData: Form
     const access = await requireLeadMutationAccess(operator, leadId)
     if (intent === "revoke") {
       const revoked = await revokeGlassLinks(leadId, operator.id)
+      revalidatePath(`/ops/leads/${leadId}`)
       return { url: "", error: "", message: revoked ? "Customer Page closed. The old link no longer works." : "No active Customer Page was found.", smsReady, needsReplacement: false }
     }
     const token = intent === "rotate" ? await rotateGlassLink(leadId, operator.id) : await createOrReuseQuoteGlassLink(leadId, operator.id)
     const url = glassUrl(token)
     if (intent !== "rotate") await recordEvent({ kind: "glass.created", actorType: "operator", actorId: operator.id, leadId, externalId: `glass-created:${hashGlassToken(token)}`, body: `${access.isTest ? "[INTERNAL TEST] " : ""}Customer Page created`, detail: { isTest: access.isTest } })
+    revalidatePath(`/ops/leads/${leadId}`)
     return { url, error: "", message: intent === "rotate" ? "New link created. The old link no longer works." : "", smsReady, needsReplacement: false }
   } catch (error) {
     return {
@@ -50,6 +53,7 @@ export async function sendGlassClipboard(_state: GlassSendState, formData: FormD
   try {
     await requireLeadMutationAccess(operator, leadId)
     const result = await deliverGlassClipboard({ token, leadId, operatorId: operator.id })
+    revalidatePath(`/ops/leads/${leadId}`)
     if (result.deferred) return { message: "Customer Page text saved and queued for 8:00 a.m. Central. It has not sent yet.", error: "" }
     return { message: result.alreadySent ? "Already sent from the shop number." : "Sent from the shop number.", error: "" }
   } catch (error) {

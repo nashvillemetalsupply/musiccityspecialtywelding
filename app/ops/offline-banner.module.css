@@ -1,0 +1,15 @@
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--dark-border-strong, #51483d);
+  background: var(--dark-stop-sur, #3d2118);
+  color: var(--dark-stop-ink, #fff4ea);
+  font: 600 0.9rem/1.35 var(--font, sans-serif);
+  text-align: center;
+}
+
+.banner[hidden] {
+  display: none;
+}
