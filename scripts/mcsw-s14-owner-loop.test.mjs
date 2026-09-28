@@ -6,6 +6,7 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 const BOARD = source("app/board/board.tsx")
 const JOB = source("app/ops/leads/[id]/page.tsx")
 const JOB_CSS = source("app/ops/leads/[id]/job.css")
+const OPS_SHELL_CSS = source("app/ops/ops-shell.css")
 const TRACKED_CALL = source("app/ops/tracked-call-button.tsx")
 const PHOTO_INPUT = source("app/ops/leads/[id]/closeout-photo-input.tsx")
 const DONE_STAMP = source("app/ops/leads/[id]/done-stamp.tsx")
@@ -28,20 +29,30 @@ test("the sticky strip orders Call, Text, Photo, then the owner quote amount", (
   assert.doesNotMatch(strip, /sms:/)
   assert.match(strip, /operator\.role === "owner"[\s\S]*?job-action-price[\s\S]*?money\(lead\.estimate_value_cents\)/)
   assert.match(TRACKED_CALL, /href=\{`tel:\$\{phone\.replace/)
-  assert.match(JOB_CSS, /\.job-action-spine\s*\{[^}]*position:\s*sticky;\s*top:\s*0/)
+  const stripRule = JOB_CSS.match(/\.job-action-spine\s*\{([^}]*)\}/)?.[1] ?? ""
+  const opsTopRule = OPS_SHELL_CSS.match(/\.ops-top\s*\{([^}]*)\}/)?.[1] ?? ""
+  const stripZIndex = Number(stripRule.match(/z-index:\s*(\d+)/)?.[1])
+  const opsTopZIndex = Number(opsTopRule.match(/z-index:\s*(\d+)/)?.[1])
+  assert.match(stripRule, /position:\s*sticky/)
+  assert.match(stripRule, /bottom:\s*var\(--safe-area-bottom\)/)
+  assert.doesNotMatch(stripRule, /top:\s*0/)
+  assert.ok(Number.isFinite(stripZIndex) && Number.isFinite(opsTopZIndex) && stripZIndex < opsTopZIndex, "the strip stays below the sticky ops header")
 })
 
-test("the action strip is a direct job-page child outside the contact card", () => {
+test("the action strip is the last direct job-page child outside the contact card", () => {
   const root = JOB.indexOf('<div className="job-page">')
-  const lead = JOB.indexOf('<section className="card job-lead"', root)
   const strip = JOB.indexOf('<nav className="job-action-spine"', root)
-  const flow = JOB.indexOf('<div className="job-flow">', strip)
-  const leadEnd = JOB.lastIndexOf('</section>', strip)
-  const contact = JOB.indexOf('<div className="job-contact">', lead)
-  assert.ok(root >= 0 && lead >= root && contact > lead)
-  assert.ok(leadEnd > contact && leadEnd < strip && strip < flow, "the strip follows the lead card as a job-page sibling")
-  assert.match(JOB.slice(leadEnd, flow), /<\/section>\s*\{!needsJobMatch && !routedToLeadId && <nav className="job-action-spine"/)
-  assert.doesNotMatch(JOB.slice(contact, leadEnd), /job-action-spine/, "the strip is not inside the contact card")
+  const stripEnd = JOB.indexOf("</nav>", strip)
+  const rootEnd = JOB.lastIndexOf("</div>")
+  const contact = JOB.indexOf('<div className="job-contact">', root)
+  const recentActivity = JOB.indexOf('<section className="card job-events"', root)
+  const navCondition = "{!needsJobMatch && !routedToLeadId && "
+  const navConditionStart = JOB.lastIndexOf(navCondition, strip)
+  assert.ok(root >= 0 && contact > root && recentActivity > contact && strip > recentActivity)
+  assert.ok(stripEnd > strip && rootEnd > stripEnd, "the strip follows the job content")
+  assert.match(JOB.slice(stripEnd + "</nav>".length, rootEnd), /^\s*}\s*$/, "no sibling follows the strip before the job-page closes")
+  assert.equal(strip - navConditionStart, navCondition.length, "existing visibility conditions stay on the direct child")
+  assert.doesNotMatch(JOB.slice(contact, strip), /job-action-spine/, "the strip is outside the contact card")
 })
 
 test("the board row opens the job page with its action strip in one tap", () => {

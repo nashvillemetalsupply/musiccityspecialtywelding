@@ -500,13 +500,6 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
       </section>
 
-      {!needsJobMatch && !routedToLeadId && <nav className="job-action-spine" aria-label="Job actions">
-        {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={customerPhone} label="Call" compact directFallback className="btn btn--sm btn--edge" />}
-        {customerTextReady && <Link className="btn btn--sm btn--edge" href="?replyChannel=text#job-reply">Text</Link>}
-        <Link className="btn btn--sm btn--go" href={lead.completed_at ? "#done-photo" : "#finish-photo"}>Photo</Link>
-        {operator.role === "owner" && <Link className="btn btn--sm btn--edge job-action-price" href="#lead-estimate">Price · {lead.estimate_value_cents === null ? "No price" : money(lead.estimate_value_cents)}</Link>}
-      </nav>}
-
       <div className="job-flow">
       <section className="card job-summary" aria-label="Job summary">
         <header><h2 className="t-sub">Job Summary</h2></header>
@@ -1048,6 +1041,12 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           </nav>}
         </details>
       </section>
+      {!needsJobMatch && !routedToLeadId && <nav className="job-action-spine" aria-label="Job actions">
+        {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={customerPhone} label="Call" compact directFallback className="btn btn--sm btn--edge" />}
+        {customerTextReady && <Link className="btn btn--sm btn--edge" href="?replyChannel=text#job-reply">Text</Link>}
+        <Link className="btn btn--sm btn--go" href={lead.completed_at ? "#done-photo" : "#finish-photo"}>Photo</Link>
+        {operator.role === "owner" && <Link className="btn btn--sm btn--edge job-action-price" href="#lead-estimate">Price · {lead.estimate_value_cents === null ? "No price" : money(lead.estimate_value_cents)}</Link>}
+      </nav>}
     </div>
   )
 }

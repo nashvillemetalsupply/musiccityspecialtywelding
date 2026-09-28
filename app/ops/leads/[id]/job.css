@@ -145,7 +145,7 @@
 .job-contact > div > strong { font-family: var(--font-display); font-size: var(--t-title); font-variant-numeric: tabular-nums; }
 .job-repeat { width: fit-content; margin-top: var(--s2); }
 .job-email { width: fit-content; margin-top: var(--s2); }
-.job-action-spine { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s1); padding: var(--s2); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-raised); }
+.job-action-spine { position: sticky; bottom: var(--safe-area-bottom); z-index: 10; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s1); padding: var(--s2); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-raised); }
 .job-action-spine > :is(a, .ops-tracked-call) { width: 100%; min-width: 0; }
 .job-action-spine > .job-action-price { grid-column: 1 / -1; text-align: left; }
 /* No nowrap: at 14px "Text the customer" is wider than a quarter of a phone,
