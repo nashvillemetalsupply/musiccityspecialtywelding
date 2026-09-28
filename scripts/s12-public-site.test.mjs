@@ -39,6 +39,14 @@ test("service-area cities link to the mobile-welding section with the existing c
   assert.match(globalCss, /\.ms-area-cities > div :is\(strong, a\) \{[^}]*text-decoration: none;/)
 })
 
+test("service pages offer the existing quote form below their content", () => {
+  assert.match(servicePage, /import \{ MainstreetContact \} from "@\/components\/mainstreet-contact"/)
+  assert.match(servicePage, /<MainstreetContact phoneHref=\{shopPhone\.href\} phoneDisplay=\{shopPhone\.display\} \/>/)
+  assert.match(servicePage, /href="#contact"/)
+  assert.match(servicePage, /<MobileQuickActions quoteHref="#contact" phoneHref=\{shopPhone\.href\} \/>/)
+  assert.doesNotMatch(servicePage, /href="\/#contact"|quoteHref="\/#contact"/)
+})
+
 test("service JSON-LD has FAQ and breadcrumb schema with absolute URLs", () => {
   const service = servicePagesTestModule.servicePages[0]
   const structuredData = servicePagesTestModule.buildServiceStructuredData(service)

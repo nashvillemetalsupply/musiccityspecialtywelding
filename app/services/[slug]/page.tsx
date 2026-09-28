@@ -5,6 +5,7 @@ import { ArrowUpRight, Phone } from "lucide-react"
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { createPublicMetadata } from "@/lib/public-metadata"
 import { buildServiceStructuredData, servicePageBySlug, servicePages } from "@/lib/service-pages"
@@ -62,7 +63,7 @@ export default async function ServicePage({ params }: PageProps) {
             <p>{service.intro}</p>
             <div className="ms-hero-actions">
               <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" />Call 24/7</a>
-              <Link className="ms-text-link" href="/#contact">Show us the job <ArrowUpRight aria-hidden="true" /></Link>
+              <Link className="ms-text-link" href="#contact">Show us the job <ArrowUpRight aria-hidden="true" /></Link>
             </div>
           </div>
           <figure className="ms-subhero-media">
@@ -113,12 +114,14 @@ export default async function ServicePage({ params }: PageProps) {
           <div>
             <p>Photos. Location. Timing. The honest version of what happened.</p>
             <a href={shopPhone.href}><small>Open 24/7</small>{shopPhone.display}</a>
-            <Link href="/#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
+            <Link href="#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
           </div>
         </section>
+
+        <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
       </main>
       <Footer />
-      <MobileQuickActions quoteHref="/#contact" phoneHref={shopPhone.href} />
+      <MobileQuickActions quoteHref="#contact" phoneHref={shopPhone.href} />
     </>
   )
 }
