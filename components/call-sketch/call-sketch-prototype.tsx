@@ -12,7 +12,7 @@ import {
   RotateCcw,
 } from "lucide-react"
 import { FormEvent, useEffect, useMemo, useState } from "react"
-import { createGateDxf, formatShopInches } from "@/lib/call-sketch-dxf.mjs"
+import { createGateDxf, formatShopInches } from "@/lib/call-sketch-dxf.ts"
 import styles from "./call-sketch-prototype.module.css"
 
 type Stage = "live" | "review" | "saved"

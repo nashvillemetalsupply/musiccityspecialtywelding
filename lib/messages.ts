@@ -5,9 +5,9 @@ import { notify, notifyAll } from "@/lib/notify"
 import { isDefinitiveTwilioError, sendSms, twilioCallbackUrl, twilioSmsConfigured } from "@/lib/twilio"
 import { customerSmsAllowed } from "@/lib/messaging-consent"
 import { FALLBACK_SHOP_PHONE_E164 } from "@/lib/shop-phone-shared"
-import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
-import { getDeferredSmsSendAt, isCentralQuietHours } from "@/lib/sms-quiet-hours.mjs"
-import { sendIfClaimed } from "@/lib/deferred-sms.mjs"
+import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
+import { getDeferredSmsSendAt, isCentralQuietHours } from "@/lib/sms-quiet-hours.ts"
+import { sendIfClaimed } from "@/lib/deferred-sms.ts"
 
 export type MessageRow = {
   id: number

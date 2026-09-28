@@ -3,7 +3,7 @@ import {
   FALLBACK_SHOP_PHONE_E164,
   type ShopPhone,
 } from "@/lib/shop-phone-shared"
-import { enforceShopPhoneFallbackPolicy } from "@/lib/shop-contact-policy.mjs"
+import { enforceShopPhoneFallbackPolicy } from "@/lib/shop-contact-policy.ts"
 import { twilioPublicNumberEnabled, twilioSmsConfigured, twilioVoiceConfigured } from "@/lib/twilio"
 
 function normalizedConfiguredPhone() {

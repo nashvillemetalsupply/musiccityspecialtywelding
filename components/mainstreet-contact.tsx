@@ -6,7 +6,7 @@ import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
 import { captureAttribution } from "@/lib/attribution"
 import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID, queueMeasurementEvent, reportMetaLead } from "@/lib/measurement"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
-import { QUOTE_HONEYPOT_FIELD, QUOTE_SERVICE_OPTIONS, quoteSubmissionOutcome } from "@/lib/public-quote.mjs"
+import { QUOTE_HONEYPOT_FIELD, QUOTE_SERVICE_OPTIONS, quoteSubmissionOutcome } from "@/lib/public-quote.ts"
 
 declare global {
   interface Window {

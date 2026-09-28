@@ -5,7 +5,7 @@ import { fileCallOntoOpenLead, saveInboundCallAsJob } from "@/lib/job-intake"
 import { findOpenLeadResolutionForPerson } from "@/lib/people"
 import { notifyAll } from "@/lib/notify"
 import { recordEvent } from "@/lib/events"
-import { applyOnlyValidatedSummary, readWithSchemaFallback } from "@/lib/call-summary-fallback.mjs"
+import { applyOnlyValidatedSummary, readWithSchemaFallback } from "@/lib/call-summary-fallback.ts"
 
 // One read of a finished call, written onto its intake draft. The live sketch
 // only understood gates and frames and identified a part on 4 of 56 calls in
@@ -162,7 +162,7 @@ const OPEN_DRAFT = ["pending", "failed", "unknown"]
 // one push tells him what the call was and what happened. Calls the read
 // could not place stay in "calls to save" for a one-tap decision. Nothing
 // here can fail the read itself: the summary is already stored when it runs.
-async function settleCall(draft: DraftForSummary, summary: CallSummary, name: string, isTest: boolean, quiet = false) {
+async function settleCall(draft: DraftForSummary, summary: CallSummary, name: string, isTest: boolean, quiet: boolean = false) {
   const sql = getSql()
   let outcome: CallOutcome = "left"
   let leadId: number | null = null

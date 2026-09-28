@@ -1,6 +1,6 @@
 import webpush from "web-push"
 import { getSql } from "@/lib/db"
-import { normalizePushUrl } from "@/lib/push-url.mjs"
+import { normalizePushUrl } from "@/lib/push-url.ts"
 
 export function pushConfigured() {
   return Boolean(

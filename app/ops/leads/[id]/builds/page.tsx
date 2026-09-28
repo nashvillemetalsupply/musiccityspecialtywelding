@@ -1,12 +1,12 @@
 import { Check, CircleCheck, CirclePause, History, PencilLine, RefreshCcw, X } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { requirePositiveRouteId, requireRouteValue } from "@/lib/route-ids.mjs"
+import { requirePositiveRouteId, requireRouteValue } from "@/lib/route-ids.ts"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import { BuildSheetDrawing } from "@/components/build-sheets/build-sheet-drawing"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { getBuildsWorkspace } from "@/lib/build-sheets"
-import { projectBuildDrawing, type BuildDrawingProjection } from "@/lib/build-sheets-continuation.mjs"
+import { projectBuildDrawing, type BuildDrawingProjection } from "@/lib/build-sheets-continuation.ts"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import {
   addWorkingBuildFactAction,

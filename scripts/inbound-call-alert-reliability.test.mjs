@@ -76,10 +76,10 @@ async function loadStandaloneTs(relativePath) {
     },
   }).outputText
   const loadedModule = { exports: {} }
-  const aiUsage = await import("../lib/ai-usage.mjs")
+  const aiUsage = await import("../lib/ai-usage.ts")
   const localRequire = (specifier) => {
     if (specifier === "@/lib/db") return { getSql: () => async () => [] }
-    if (specifier === "@/lib/ai-usage.mjs") return aiUsage
+    if (specifier === "@/lib/ai-usage.ts") return aiUsage
     return nativeRequire(specifier)
   }
   Function("exports", "require", "module", "__filename", "__dirname", output)(

@@ -8,7 +8,7 @@ import {
   centralDateKey,
   centralMonthRange,
   selectedCalendarDay,
-} from "../lib/job-calendar.mjs"
+} from "../lib/job-calendar.ts"
 
 function job(id, scheduledAt, overrides = {}) {
   return {

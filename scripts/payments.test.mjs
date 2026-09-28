@@ -1,7 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
-import { paymentRollup } from "../lib/payments.mjs"
+import { paymentRollup } from "../lib/payments.ts"
 
 const ACTIONS_SOURCE = readFileSync("app/ops/actions.ts", "utf8").replace(/\r\n/g, "\n")
 const LEDGER_SOURCE = readFileSync("lib/payment-ledger.ts", "utf8").replace(/\r\n/g, "\n")

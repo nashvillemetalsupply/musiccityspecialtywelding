@@ -5,7 +5,7 @@ import test from "node:test"
 const actions = readFileSync(new URL("../app/ops/leads/[id]/builds/actions.ts", import.meta.url), "utf8")
 let parseBuildFactNumber
 try {
-  ({ parseBuildFactNumber } = await import("../lib/build-fact-number.mjs"))
+  ({ parseBuildFactNumber } = await import("../lib/build-fact-number.ts"))
 } catch {
   parseBuildFactNumber = null
 }

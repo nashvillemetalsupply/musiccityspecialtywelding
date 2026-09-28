@@ -2,7 +2,7 @@ import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 
 import { cookies } from "next/headers"
 import { getSql } from "@/lib/db"
 import type { Operator } from "@/lib/operators"
-import { validateSessionTokenWithSql, type SessionTokenSql } from "@/lib/ops-session-validation.mjs"
+import { validateSessionTokenWithSql, type SessionTokenSql } from "@/lib/ops-session-validation.ts"
 
 export const OPS_SESSION_COOKIE = "mcw_ops_session"
 export const OPS_SESSION_MAX_AGE_SECONDS = 90 * 24 * 60 * 60

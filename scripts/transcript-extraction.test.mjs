@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { processTranscriptEventIfUnclaimed } from "../lib/transcript-extraction.mjs"
+import { processTranscriptEventIfUnclaimed } from "../lib/transcript-extraction.ts"
 
 test("the second transcript route skips a source event that already produced a claim", async () => {
   const processed = []

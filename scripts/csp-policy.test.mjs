@@ -1,10 +1,10 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import nextConfig from "../next.config.mjs"
+import nextConfig from "../next.config.ts"
 import {
   CSP_REPORT_ONLY_POLICY,
   CSP_REPORTING_ENDPOINTS,
-} from "../lib/csp-policy.mjs"
+} from "../lib/csp-policy.ts"
 
 const EXPECTED_DIRECTIVES = [
   "base-uri",

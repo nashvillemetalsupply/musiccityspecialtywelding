@@ -17,7 +17,7 @@
 
 import { existsSync, readFileSync } from "node:fs"
 import { neon } from "@neondatabase/serverless"
-import { deriveCallSketch } from "../lib/call-sketch-live.mjs"
+import { deriveCallSketch } from "../lib/call-sketch-live.ts"
 
 function envValue(name) {
   if (process.env[name]?.trim()) return process.env[name].trim()

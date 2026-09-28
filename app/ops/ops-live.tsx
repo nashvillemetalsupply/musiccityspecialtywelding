@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { startOpsPulsePolling } from "@/lib/ops-pulse-polling.mjs"
+import { startOpsPulsePolling } from "@/lib/ops-pulse-polling.ts"
 
 function editing() {
   const node = document.activeElement

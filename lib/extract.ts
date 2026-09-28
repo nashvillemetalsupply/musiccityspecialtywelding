@@ -9,7 +9,7 @@ import { getEvent, markEventProcessed, recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 import { findOrCreatePerson, refreshPersonAccountKey } from "@/lib/people"
 import { reconcileRoutedLeadProjections, resolveProjectionLeadId } from "@/lib/routing"
-import { isInternalTestContext } from "@/lib/shop-brain-invariants.mjs"
+import { isInternalTestContext } from "@/lib/shop-brain-invariants.ts"
 import { redactCrewText } from "@/lib/visibility"
 
 const extractionSchema = z.object({

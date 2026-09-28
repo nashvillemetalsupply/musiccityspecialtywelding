@@ -2,9 +2,9 @@ import { getSql } from "@/lib/db"
 import type { CallSummary } from "@/lib/call-summary"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
-import { buildClarificationForSketch } from "@/lib/build-sheets-continuation.mjs"
-import { confirmedCallSketch, deriveCallSketch, emptyCallSketchSpec, type CallSketchSpec } from "@/lib/call-sketch-live.mjs"
-import { mergeClaimFacts } from "@/lib/call-sketch-claims.mjs"
+import { buildClarificationForSketch } from "@/lib/build-sheets-continuation.ts"
+import { confirmedCallSketch, deriveCallSketch, emptyCallSketchSpec, type CallSketchSpec } from "@/lib/call-sketch-live.ts"
+import { mergeClaimFacts } from "@/lib/call-sketch-claims.ts"
 import { recordEvent } from "@/lib/events"
 import type { OperatorRole } from "@/lib/operators"
 import { shopClaimText } from "@/lib/shop-language"
@@ -89,7 +89,7 @@ async function finalTranscriptUtterances(callSid: string) {
     LIMIT 2000`) as TranscriptItem[]
 }
 
-async function rebuildObservedSketch(callSid: string, status?: string, eventSequenceId = 0, transcriptionSid = "") {
+async function rebuildObservedSketch(callSid: string, status?: string, eventSequenceId: number | 0 = 0, transcriptionSid: string = "") {
   const sql = getSql()
   const utterances = await sketchUtterances(callSid)
   const spec = deriveCallSketch(utterances.map((item) => ({

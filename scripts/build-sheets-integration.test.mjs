@@ -42,7 +42,7 @@ test("Call Sketch ingestion has an explicit test-only job bridge and converges o
   const [intake, store, persistence] = await Promise.all([
     read("lib/job-intake.ts"),
     read("lib/build-sheets.ts"),
-    read("lib/build-sheets-persistence.mjs"),
+    read("lib/build-sheets-persistence.ts"),
   ])
 
   assert.match(intake, /INSERT INTO build_sketch_job_links/)
@@ -64,7 +64,7 @@ test("Call Sketch ingestion has an explicit test-only job bridge and converges o
 test("lock retries return one immutable Build Sheet and allocate the next number without a gap", async () => {
   const [store, persistence, migration] = await Promise.all([
     read("lib/build-sheets.ts"),
-    read("lib/build-sheets-persistence.mjs"),
+    read("lib/build-sheets-persistence.ts"),
     read("scripts/migrate.mjs"),
   ])
 

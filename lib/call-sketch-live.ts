@@ -1,0 +1,345 @@
+export type SketchTruth = "unknown" | "uncertain" | "stated" | "confirmed"
+
+export type SketchFact<T> = {
+  value: T | null
+  truth: SketchTruth
+  evidence: string
+  track: string
+  sequenceId: number | null
+}
+
+export type CallSketchSpec = {
+  version: 1
+  kind: SketchFact<"gate" | "frame">
+  width: SketchFact<number>
+  height: SketchFact<number>
+  stockSize: SketchFact<number>
+  railCount: SketchFact<number>
+  hingeSide: SketchFact<"left" | "right">
+  latchSide: SketchFact<"left" | "right">
+  swing: SketchFact<string>
+  material: SketchFact<string>
+  nextQuestion: string
+  readyForReview: boolean
+}
+
+export type CallSketchUtterance = {
+  transcript: string
+  track?: string
+  sequenceId?: number | null
+}
+
+const NUMBER_WORDS = new Map([
+  ["zero", 0], ["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5],
+  ["six", 6], ["seven", 7], ["eight", 8], ["nine", 9], ["ten", 10],
+  ["eleven", 11], ["twelve", 12], ["thirteen", 13], ["fourteen", 14], ["fifteen", 15],
+  ["sixteen", 16], ["seventeen", 17], ["eighteen", 18], ["nineteen", 19], ["twenty", 20],
+  ["thirty", 30], ["forty", 40], ["fifty", 50], ["sixty", 60], ["seventy", 70],
+  ["eighty", 80], ["ninety", 90],
+])
+
+const UNKNOWN_FACT = Object.freeze({ value: null, truth: "unknown", evidence: "", track: "", sequenceId: null })
+
+function emptyFact() {
+  return { ...UNKNOWN_FACT }
+}
+
+export function emptyCallSketchSpec() : CallSketchSpec {
+  return {
+    version: 1,
+    kind: emptyFact(),
+    width: emptyFact(),
+    height: emptyFact(),
+    stockSize: emptyFact(),
+    railCount: emptyFact(),
+    hingeSide: emptyFact(),
+    latchSide: emptyFact(),
+    swing: emptyFact(),
+    material: emptyFact(),
+    nextQuestion: "What are we sketching—a gate or a simple rectangular frame?",
+    readyForReview: false,
+  }
+}
+
+function parseNumericValue(raw: string) {
+  const compact = raw.trim()
+  if (/^\d+\/\d+$/.test(compact)) {
+    const [numerator, denominator] = compact.split("/").map(Number)
+    return denominator ? numerator / denominator : null
+  }
+  const mixed = compact.match(/^(\d+)\s+(\d+)\/(\d+)$/)
+  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3])
+  const value = Number(compact)
+  return Number.isFinite(value) ? value : null
+}
+
+// "Three quarters" is three of them, not three and a quarter. A customer
+// describing stock said "thirty four and three quarters inches wide" and the
+// only reason it did not come out as 37 1/4" is that "quarters" was not a word
+// the parser knew, so it dropped the line entirely. Both halves of that are
+// fixed here: the plurals are words now, and a count in front of a fraction
+// multiplies it.
+const FRACTION_WORDS = new Map([
+  ["half", 2], ["halves", 2],
+  ["third", 3], ["thirds", 3],
+  ["quarter", 4], ["quarters", 4],
+  ["eighth", 8], ["eighths", 8],
+  ["sixteenth", 16], ["sixteenths", 16],
+])
+
+function parseWordValue(raw: string) {
+  const tokens = raw.toLowerCase().replace(/-/g, " ").trim().split(/\s+/)
+  let value = 0
+  let sawNumber = false
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]
+    if (token === "and") continue
+    // "a half", "a quarter" — the article is the count.
+    const nextDenominator = FRACTION_WORDS.get(tokens[index + 1])
+    if (token === "a" && nextDenominator) {
+      value += 1 / nextDenominator
+      sawNumber = true
+      index += 1
+      continue
+    }
+    const number = NUMBER_WORDS.get(token)
+    if (number !== undefined && nextDenominator) {
+      value += number / nextDenominator
+      sawNumber = true
+      index += 1
+      continue
+    }
+    // A bare "half" or "quarter" with nothing counting it is one of them.
+    const denominator = FRACTION_WORDS.get(token)
+    if (denominator) {
+      value += 1 / denominator
+      sawNumber = true
+      continue
+    }
+    if (number === undefined) return null
+    value += number
+    sawNumber = true
+  }
+  return sawNumber ? value : null
+}
+
+function measurements(text: string) {
+  const found = []
+  const numeric = /(\d+(?:\.\d+|\s+\d+\/\d+)?|\d+\/\d+)\s*(feet|foot|ft\.?|inches|inch|in\.?|["'])/gi
+  for (const match of text.matchAll(numeric)) {
+    const value = parseNumericValue(match[1])
+    if (value == null) continue
+    const unit = match[2].toLowerCase()
+    found.push({ value: /feet|foot|ft|^'$/.test(unit) ? value * 12 : value, index: match.index ?? 0, raw: match[0] })
+  }
+  const wordPattern = "(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|and|a|halves|half|thirds|third|quarters|quarter|eighths|eighth|sixteenths|sixteenth)"
+  // Two guards, both paid for by a real transcript. The window was six words,
+  // and "forty seven and one and a half inches" is seven — so the match could
+  // not start at "forty", started at "seven" instead, and a 48 1/2" gate was
+  // recorded as 8 1/2". A truncated number is worse than no number: nothing
+  // downstream can tell it is wrong. The window now covers what a person
+  // actually says out loud, and the lookbehind stops a match beginning in the
+  // middle of a longer spoken number.
+  const written = new RegExp(`(?<![\\w-])(${wordPattern}(?:[\\s-]+${wordPattern}){0,9})[\\s-]+(feet|foot|ft\\.?|inches|inch|in\\.?)\\b`, "gi")
+  for (const match of text.matchAll(written)) {
+    const value = parseWordValue(match[1])
+    if (value == null) continue
+    const unit = match[2].toLowerCase()
+    found.push({ value: /feet|foot|ft/.test(unit) ? value * 12 : value, index: match.index ?? 0, raw: match[0] })
+  }
+  return found.sort((left, right) => left.index - right.index)
+}
+
+function nearest(items: { value: number; index: number; raw: string; }[], index: number, options: { after?: number; } = {}) {
+  const candidates = items.filter((item) => options.after == null || item.index >= options.after)
+  if (!candidates.length) return null
+  return candidates.reduce((best, item) => Math.abs(item.index - index) < Math.abs(best.index - index) ? item : best)
+}
+
+function measurementForKeyword(items: { value: number; index: number; raw: string; }[], index: number) {
+  const before = items.filter((item) => item.index <= index)
+  return before.length ? before[before.length - 1] : nearest(items, index)
+}
+
+function countBefore(text: string, noun: "rails?") {
+  const expression = new RegExp(`(\\d+|zero|one|two|three|four|five|six|seven|eight)\\s+(?:interior\\s+)?${noun}`, "i")
+  const match = text.match(expression)
+  if (!match) return null
+  const numeric = Number(match[1])
+  return Number.isFinite(numeric) ? numeric : NUMBER_WORDS.get(match[1].toLowerCase()) ?? null
+}
+
+// What has to be said alongside "frame" or "panel" before either word claims
+// the sketch. See the kind assignment in updateFromUtterance.
+const FRAME_CUE = /\b(rectangular|rails?|pickets?|tu(?:be|bing)|stock|weld|build|building|built|make|made|fabricate|fabricating)\b/
+
+function truthRank(value: SketchTruth) {
+  return value === "confirmed" ? 3 : value === "stated" ? 2 : value === "uncertain" ? 1 : 0
+}
+
+type SketchFactKey = "kind" | "width" | "height" | "stockSize" | "railCount" | "hingeSide" | "latchSide" | "swing" | "material"
+function assign(spec: CallSketchSpec, key: SketchFactKey, value: "gate" | "frame" | "left" | "right" | number | string | null | undefined, truth: SketchTruth, utterance: CallSketchUtterance) {
+  if (value == null || value === "") return
+  const current = spec[key] as SketchFact<unknown>
+  if (truthRank(truth) < truthRank(current.truth)) return
+  spec[key] = {
+    value,
+    truth,
+    evidence: utterance.transcript,
+    track: utterance.track ?? "",
+    sequenceId: Number.isFinite(Number(utterance.sequenceId)) ? Number(utterance.sequenceId) : null,
+  } as never
+}
+
+function updateFromUtterance(spec: CallSketchSpec, utterance: CallSketchUtterance) {
+  const source = String(utterance.transcript ?? "").replace(/\s+/g, " ").trim()
+  if (!source) return
+  const text = source.toLowerCase().replace(/[–—]/g, "-")
+  const values = measurements(text)
+  const isQuestion = /\?\s*$/.test(source) || /^(is|are|do|does|did|should|would|will|can|could|what|which|how)\b/.test(text)
+  const statedTruth: SketchTruth = isQuestion ? "uncertain" : "stated"
+
+  // "Frame" and "panel" are ordinary words on a trailer call. A four-minute
+  // call about a ground-off axle said "on the outside of the frame", which
+  // claimed a rectangular-frame sketch, put a drawing nobody had asked for on
+  // the board, and — because one fact counted as answered — hid the seven the
+  // extractor had actually understood. "Gate" is this shop's product and
+  // stands on its own; the two generic words now need corroboration in the
+  // same utterance: a measurement, or a word about building one.
+  // "A kind of gate", "some kind of gate" — the speaker reaching for a word,
+  // not naming the job. A real call recorded the shop saying "That's a very
+  // kind of gate" and the sheet took it as the customer specifying one.
+  const namesGate = /\bgate\b/.test(text) && !/\bkind of\s+gate\b/.test(text)
+  if (!(isQuestion && namesGate && /\b(frame|panel)\b/.test(text))) {
+    if (namesGate) assign(spec, "kind", "gate", statedTruth, utterance)
+    else if (/\b(frame|panel)\b/.test(text) && (values.length > 0 || FRAME_CUE.test(text))) {
+      assign(spec, "kind", "frame", statedTruth, utterance)
+    }
+  }
+
+  const pair = text.match(/(\d+(?:\.\d+|\s+\d+\/\d+)?)\s*(?:inches?|in|["'])?\s+(?:wide\s+)?(?:by|x)\s+(\d+(?:\.\d+|\s+\d+\/\d+)?)\s*(?:inches?|in|["'])?/i)
+  if (pair && /\b(gate|frame|panel)\b/.test(text)) {
+    const pairTruth = isQuestion || /\b(about|roughly|approximately)\b/.test(text) ? "uncertain" : "stated"
+    assign(spec, "width", parseNumericValue(pair[1]), pairTruth, utterance)
+    assign(spec, "height", parseNumericValue(pair[2]), pairTruth, utterance)
+  }
+
+  const actualGateIndex = Math.max(text.indexOf("actual gate"), text.indexOf("gate itself"))
+  if (actualGateIndex >= 0) {
+    const actual = nearest(values, actualGateIndex, { after: actualGateIndex })
+    assign(spec, "width", actual?.value, statedTruth, utterance)
+  } else {
+    const widthKeyword = /\b(width|wide|opening)\b/.exec(text)
+    if (widthKeyword) {
+      const width = measurementForKeyword(values, widthKeyword.index)
+      const uncertain = isQuestion || /\b(about|roughly|approximately|opening)\b/.test(text)
+      assign(spec, "width", width?.value, uncertain ? "uncertain" : "stated", utterance)
+    }
+  }
+
+  const heightKeyword = /\b(height|tall|high)\b/.exec(text)
+  if (heightKeyword) {
+    const height = measurementForKeyword(values, heightKeyword.index)
+    const uncertain = isQuestion || /\b(about|roughly|approximately)\b/.test(text)
+    assign(spec, "height", height?.value, uncertain ? "uncertain" : "stated", utterance)
+  }
+
+  const stockKeyword = /\b(square\s+tu(?:be|bing)|tu(?:be|bing)|stock)\b/.exec(text)
+  if (stockKeyword) assign(spec, "stockSize", measurementForKeyword(values, stockKeyword.index)?.value, statedTruth, utterance)
+
+  const railCount = countBefore(text, "rails?")
+  if (railCount != null) assign(spec, "railCount", Math.min(Math.max(Math.round(railCount), 0), 8), statedTruth, utterance)
+
+  const hingeAfter = text.match(/\bhinge(?:s|d)?(?:\s+(?:it|the\s+gate))?\s+(?:be\s+)?(?:on\s+)?(?:the\s+)?(left|right)\b/i)
+  const hingeBefore = text.match(/\b(left|right)(?:\s+side)?\s+hinge(?:s)?\b/i)
+  const hinge = hingeAfter ?? hingeBefore
+  if (hinge) assign(spec, "hingeSide", hinge[1].toLowerCase(), statedTruth, utterance)
+  const latchAfter = text.match(/\blatch(?:es)?(?:\s+(?:it|the\s+gate))?\s+(?:be\s+)?(?:on\s+)?(?:the\s+)?(left|right)\b/i)
+  const latchBefore = text.match(/\b(left|right)(?:\s+side)?\s+latch\b/i)
+  const latch = latchAfter ?? latchBefore
+  if (latch) assign(spec, "latchSide", latch[1].toLowerCase(), statedTruth, utterance)
+
+  const swing = text.match(/\bswings?\s+(?:it\s+)?((?:toward|towards|into|away\s+from|inward|outward|in|out)\b[^,.!?]*)/i)
+  if (swing) assign(spec, "swing", swing[1].replace(/^towards\b/, "toward").trim(), statedTruth, utterance)
+
+  // A caller describing tanks said "It's stainless" and "a 10 gauge stainless"
+  // four times in one call and the sheet recorded no material at all, because
+  // it only knew the full phrase. Longest alternative still wins.
+  const material = text.match(/\b(stainless steel|mild steel|carbon steel|stainless|galvanized|aluminum|steel)\b/i)
+  if (material) assign(spec, "material", material[1].toLowerCase(), statedTruth, utterance)
+}
+
+function questionFor(spec: CallSketchSpec) {
+  if (!spec.kind.value) return "What are we sketching—a gate or a simple rectangular frame?"
+  if (!spec.height.value) return "How tall should it be?"
+  if (spec.height.truth === "uncertain") return "Is that the finished height?"
+  if (!spec.width.value) return "What is the finished width?"
+  if (spec.width.truth === "uncertain") return "Is that the opening width or the finished piece itself?"
+  if (!spec.stockSize.value) return "What stock size and material should it use?"
+  if (spec.stockSize.truth === "uncertain") return "Can you confirm that stock size?"
+  if (spec.kind.value === "gate" && spec.railCount.value == null) return "How should the inside be divided—rails, pickets, or open?"
+  if (spec.kind.value === "gate" && !spec.hingeSide.value) return "Which side should carry the hinges?"
+  if (spec.kind.value === "gate" && !spec.latchSide.value) return "Which side should carry the latch?"
+  if (spec.kind.value === "gate" && !spec.swing.value) return "Which way should it swing?"
+  return "The basic geometry is captured. Review every fact before exporting."
+}
+
+export function deriveCallSketch(utterances: CallSketchUtterance[] = []) : CallSketchSpec {
+  const spec = emptyCallSketchSpec()
+  for (const utterance of [...utterances].sort((left, right) => Number(left.sequenceId ?? 0) - Number(right.sequenceId ?? 0))) {
+    updateFromUtterance(spec, utterance)
+  }
+  spec.nextQuestion = questionFor(spec)
+  const stated = (fact: SketchFact<unknown>) => fact.value != null && truthRank(fact.truth) >= truthRank("stated")
+  spec.readyForReview = Boolean(
+    stated(spec.kind) && stated(spec.width) && stated(spec.height) && stated(spec.stockSize) &&
+      (spec.kind.value !== "gate" || (stated(spec.railCount) && stated(spec.hingeSide) && stated(spec.latchSide))),
+  )
+  return spec
+}
+
+export function confirmedCallSketch(input: {
+  kind?: "gate" | "frame"
+  width: number
+  height: number
+  stockSize: number
+  railCount?: number
+  hingeSide?: "left" | "right"
+  latchSide?: "left" | "right"
+  swing?: string
+  material?: string
+}, evidence: string = "Confirmed by shop owner") : CallSketchSpec {
+  const spec = emptyCallSketchSpec()
+  const utterance = { transcript: evidence, track: "owner", sequenceId: null }
+  const kind = input.kind === "frame" ? "frame" : "gate"
+  const width = Number(input.width)
+  const height = Number(input.height)
+  const stockSize = Number(input.stockSize)
+  const railCount = Number(input.railCount ?? 0)
+  if (![width, height, stockSize].every((value) => Number.isFinite(value) && value > 0)) {
+    throw new TypeError("Width, height, and stock size must be positive numbers.")
+  }
+  if (width > 1_200 || height > 1_200 || stockSize > 24) {
+    throw new RangeError("Width, height, and stock size exceed the Call Sketch limits.")
+  }
+  if (!Number.isInteger(railCount) || railCount < 0 || railCount > 8) {
+    throw new RangeError("Interior rails must be a whole number from 0 through 8.")
+  }
+  if (stockSize * 2 >= Math.min(width, height)) {
+    throw new RangeError("Stock size must leave a positive opening inside the frame.")
+  }
+  assign(spec, "kind", kind, "confirmed", utterance)
+  assign(spec, "width", width, "confirmed", utterance)
+  assign(spec, "height", height, "confirmed", utterance)
+  assign(spec, "stockSize", stockSize, "confirmed", utterance)
+  assign(spec, "railCount", railCount, "confirmed", utterance)
+  if (kind === "gate") {
+    assign(spec, "hingeSide", input.hingeSide === "right" ? "right" : "left", "confirmed", utterance)
+    assign(spec, "latchSide", input.latchSide === "left" ? "left" : "right", "confirmed", utterance)
+    if (input.swing) assign(spec, "swing", String(input.swing).trim().slice(0, 120), "confirmed", utterance)
+  }
+  if (input.material) assign(spec, "material", String(input.material).trim().slice(0, 80), "confirmed", utterance)
+  spec.nextQuestion = "Owner-confirmed concept sketch. Verify against the job before fabrication."
+  spec.readyForReview = true
+  return spec
+}

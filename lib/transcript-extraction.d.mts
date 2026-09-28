@@ -1,1 +1,0 @@
-export function processTranscriptEventIfUnclaimed(eventId: number, hasSourceClaim: (sourceEventId: number) => Promise<boolean>, processEvent: (sourceEventId: number) => Promise<unknown>): Promise<{ processed: boolean; reason?: string }>

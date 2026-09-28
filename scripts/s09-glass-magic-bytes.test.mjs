@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { imageTypeMatches } from "../lib/public-quote.mjs"
+import { imageTypeMatches } from "../lib/public-quote.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 

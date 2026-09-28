@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
 import { createManualLeadRecord, scheduleLeadRecord } from "@/app/ops/actions"
-import { resolveCentralDateTime } from "@/lib/central-date-time.mjs"
+import { resolveCentralDateTime } from "@/lib/central-date-time.ts"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { canAccessInternalTests } from "@/lib/operators"
 

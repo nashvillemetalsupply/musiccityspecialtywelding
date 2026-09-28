@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { calendarQuickAddIntakeKey } from "../lib/calendar-quick-add.mjs"
-import { resolveCentralDateTime } from "../lib/central-date-time.mjs"
+import { calendarQuickAddIntakeKey } from "../lib/calendar-quick-add.ts"
+import { resolveCentralDateTime } from "../lib/central-date-time.ts"
 
 const action = readFileSync(new URL("../app/board/calendar-actions.ts", import.meta.url), "utf8")
 const calendar = readFileSync(new URL("../app/board/job-calendar.tsx", import.meta.url), "utf8")

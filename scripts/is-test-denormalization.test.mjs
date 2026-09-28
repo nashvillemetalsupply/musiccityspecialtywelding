@@ -90,7 +90,7 @@ test("read marker classifiers and positional backfills use the same test-row inp
   assert.match(helper, /draft\.call_sid = p_call_sid AND draft\.is_test = true/)
 
   const readSources = [
-    "../lib/events.ts", "../lib/event-access.ts", "../lib/ops-data.ts", "../lib/ops-pulse.mjs",
+    "../lib/events.ts", "../lib/event-access.ts", "../lib/ops-data.ts", "../lib/ops-pulse.ts",
     "../lib/commitments.ts", "../lib/delivery-errors.ts", "../app/api/health/route.ts",
     "../app/api/ops/attachment/route.ts", "../app/api/ops/brief/route.ts",
   ]
@@ -108,12 +108,12 @@ test("read marker classifiers and positional backfills use the same test-row inp
 
 test("existing read predicates and the shared backfill classifier keep every intake partition aligned", () => {
   const readPredicates = {
-    events: ["../lib/events.ts", "../lib/event-access.ts", "../lib/ops-data.ts", "../lib/ops-pulse.mjs", "../app/api/ops/attachment/route.ts"],
+    events: ["../lib/events.ts", "../lib/event-access.ts", "../lib/ops-data.ts", "../lib/ops-pulse.ts", "../app/api/ops/attachment/route.ts"],
     claims: ["../lib/ops-data.ts"],
     commitments: ["../lib/commitments.ts", "../lib/ops-data.ts", "../app/api/ops/brief/route.ts"],
-    calls: ["../app/api/health/route.ts", "../lib/ops-pulse.mjs", "../lib/delivery-errors.ts"],
+    calls: ["../app/api/health/route.ts", "../lib/ops-pulse.ts", "../lib/delivery-errors.ts"],
     messages: ["../app/api/ops/attachment/route.ts"],
-    notifications: ["../lib/ops-pulse.mjs"],
+    notifications: ["../lib/ops-pulse.ts"],
   }
   for (const [table, paths] of Object.entries(readPredicates)) {
     assert.ok(paths.length > 0, `${table} has at least one existing belt predicate`)
@@ -168,7 +168,7 @@ test("each backfill covers the fields its current read predicates classify", () 
     events: [
       ["../lib/events.ts", /e\.body, e\.crew_body, e\.detail::text/],
       ["../lib/event-access.ts", /e\.body, e\.crew_body, e\.detail::text/],
-      ["../lib/ops-pulse.mjs", /e\.body, e\.crew_body, e\.detail::text/],
+      ["../lib/ops-pulse.ts", /e\.body, e\.crew_body, e\.detail::text/],
       ["../lib/ops-data.ts", /e\.body, e\.crew_body, e\.detail::text/],
     ],
     claims: [["../lib/ops-data.ts", /c\.value::text/]],
@@ -178,11 +178,11 @@ test("each backfill covers the fields its current read predicates classify", () 
     ],
     calls: [
       ["../app/api/health/route.ts", /lower\(COALESCE\(c\.detail->>'isTest', 'false'\)\) <> 'true'[\s\S]*?c\.detail->>'callerName'.*?NOT ILIKE/],
-      ["../lib/ops-pulse.mjs", /COALESCE\(d\.is_test, false\) = false[\s\S]*?c\.detail->>'callerName'.*?NOT ILIKE/],
+      ["../lib/ops-pulse.ts", /COALESCE\(d\.is_test, false\) = false[\s\S]*?c\.detail->>'callerName'.*?NOT ILIKE/],
       ["../lib/delivery-errors.ts", /c\.detail->>'isTest'[\s\S]*?c\.detail->>'callerName'.*?LIKE/],
     ],
     messages: [["../app/api/ops/attachment/route.ts", /COALESCE\(m\.body, ''\) ILIKE/]],
-    notifications: [["../lib/ops-pulse.mjs", /n\.title, n\.body, e\.body, e\.crew_body, e\.detail::text/]],
+    notifications: [["../lib/ops-pulse.ts", /n\.title, n\.body, e\.body, e\.crew_body, e\.detail::text/]],
   }
   const backfillArguments = {
     events: /mcsw_is_test_row\(e\.lead_id, e\.person_id, NULL::bigint, NULL::text,\s*e\.detail, concat_ws\(' ', e\.body, e\.crew_body, e\.detail::text\)\)/,

@@ -23,7 +23,7 @@ import {
   classifyTwilioConsentKeyword,
   swipeFinishDecision,
   validateCustomerUploadMetadata,
-} from "../lib/shop-brain-invariants.mjs"
+} from "../lib/shop-brain-invariants.ts"
 
 test("any independent INTERNAL TEST marker keeps the context out of production", () => {
   assert.equal(isInternalTestContext(false, true), true)

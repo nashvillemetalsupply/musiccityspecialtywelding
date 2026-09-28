@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { sendIfClaimed } from "../lib/deferred-sms.mjs"
-import { getDeferredSmsSendAt, isCentralQuietHours } from "../lib/sms-quiet-hours.mjs"
+import { sendIfClaimed } from "../lib/deferred-sms.ts"
+import { getDeferredSmsSendAt, isCentralQuietHours } from "../lib/sms-quiet-hours.ts"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 

@@ -2,8 +2,8 @@
 
 import { Check, Download, PencilLine, Radio, TriangleAlert } from "lucide-react"
 import { FormEvent, useEffect, useMemo, useState } from "react"
-import { formatShopInches } from "@/lib/call-sketch-dxf.mjs"
-import type { CallSketchSpec, SketchFact } from "@/lib/call-sketch-live.mjs"
+import { formatShopInches } from "@/lib/call-sketch-dxf.ts"
+import type { CallSketchSpec, SketchFact } from "@/lib/call-sketch-live.ts"
 import { GateDrawing, type GateSpec } from "./call-sketch-prototype"
 import styles from "./live-call-sketch.module.css"
 

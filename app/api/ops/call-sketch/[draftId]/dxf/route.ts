@@ -1,5 +1,5 @@
 import { getConfirmedCallSketchForDraft } from "@/lib/call-sketch-store"
-import { createGateDxf } from "@/lib/call-sketch-dxf.mjs"
+import { createGateDxf } from "@/lib/call-sketch-dxf.ts"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 
 export const runtime = "nodejs"

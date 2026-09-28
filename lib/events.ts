@@ -291,7 +291,7 @@ export async function listTodayEvents(role: OperatorRole = "crew", limit = 4): P
   return collapseTodayCalls(projected).slice(0, bounded)
 }
 
-export async function listLeadEventPage(leadId: number, page = 1, limit = 25, role: OperatorRole = "owner"): Promise<{ items: EventRow[]; total: number; page: number; pageSize: number }> {
+export async function listLeadEventPage(leadId: number, page: number = 1, limit: number = 25, role: OperatorRole = "owner"): Promise<{ items: EventRow[]; total: number; page: number; pageSize: number }> {
   const sql = getSql()
   const pageSize = Math.min(Math.max(limit, 1), 25)
   const safePage = normalizePage(page)

@@ -7,7 +7,7 @@ import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 import { isAuthorizedCron } from "@/lib/ops-auth"
 import { redactCrewText } from "@/lib/visibility"
-import { isCentralBriefHour, morningBriefDedupeKey } from "@/lib/brief-schedule.mjs"
+import { isCentralBriefHour, morningBriefDedupeKey } from "@/lib/brief-schedule.ts"
 
 export const maxDuration = 60
 

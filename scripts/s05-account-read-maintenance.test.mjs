@@ -4,7 +4,7 @@ import test from "node:test"
 import {
   ACCOUNT_READ_REPAIR_GUARD_MS,
   scheduleAccountReadRepair,
-} from "../lib/account-read-maintenance.mjs"
+} from "../lib/account-read-maintenance.ts"
 
 const ACCOUNTS = readFileSync(new URL("../lib/accounts.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 

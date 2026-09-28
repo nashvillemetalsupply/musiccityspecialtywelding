@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto"
 import { revalidatePath } from "next/cache"
 import { getSql } from "@/lib/db"
-import { parseAdSpendPayload } from "@/lib/ad-spend.mjs"
+import { parseAdSpendPayload } from "@/lib/ad-spend.ts"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

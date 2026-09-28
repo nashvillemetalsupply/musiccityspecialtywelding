@@ -10,7 +10,7 @@ import { getSql } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { notify } from "@/lib/notify"
 import { operatorSignature } from "@/lib/operators"
-import { EmailProviderError, isDefinitiveEmailProviderError, sendEmailWithProviderTruth, strongestEmailReceiptStatus } from "@/lib/email-provider-truth.mjs"
+import { EmailProviderError, isDefinitiveEmailProviderError, sendEmailWithProviderTruth, strongestEmailReceiptStatus } from "@/lib/email-provider-truth.ts"
 
 export async function sendUsualPaperwork(formData: FormData) {
   const operator = await getAuthenticatedOperator()

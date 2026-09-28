@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert"
 import test from "node:test"
 
-import { costPerLeadCents, costPerLeadTile, parseAdSpendPayload, parseSpendDollars, spendDaysBehind } from "../lib/ad-spend.mjs"
+import { costPerLeadCents, costPerLeadTile, parseAdSpendPayload, parseSpendDollars, spendDaysBehind } from "../lib/ad-spend.ts"
 
 const NOW = Date.parse("2026-09-18T15:00:00Z")
 const SEPTEMBER = {

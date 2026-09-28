@@ -3,7 +3,7 @@ import test from "node:test"
 
 let validateSessionTokenWithSql
 try {
-  ({ validateSessionTokenWithSql } = await import("../lib/ops-session-validation.mjs"))
+  ({ validateSessionTokenWithSql } = await import("../lib/ops-session-validation.ts"))
 } catch {
   validateSessionTokenWithSql = null
 }

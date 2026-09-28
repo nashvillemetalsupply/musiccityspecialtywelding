@@ -2,7 +2,7 @@ import { getSql } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import type { EventRow } from "@/lib/events"
 import { projectEventForRole } from "@/lib/visibility"
-import { selectBriefAudioPath } from "@/lib/shop-brain-invariants.mjs"
+import { selectBriefAudioPath } from "@/lib/shop-brain-invariants.ts"
 
 export async function GET() {
   const operator = await getAuthenticatedOperator()

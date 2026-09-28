@@ -1,7 +1,7 @@
 import { getSql } from "@/lib/db"
 import { FALLBACK_SHOP_PHONE_E164 } from "@/lib/shop-phone-shared"
 import { deriveAccountKey, normalizeCompanyKey } from "@/lib/account-key"
-import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.mjs"
+import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { recordEvent } from "@/lib/events"
 import { notifyAll } from "@/lib/notify"
 
@@ -267,7 +267,7 @@ export async function findRecentOpenLeadForPerson(personId: number, isTest = fal
   return resolution.leadId
 }
 
-export async function findOpenLeadResolutionForPerson(personId: number, isTest = false): Promise<{ leadId: number | null; ambiguous: boolean; needsJobMatch: boolean }> {
+export async function findOpenLeadResolutionForPerson(personId: number, isTest: boolean = false): Promise<{ leadId: number | null; ambiguous: boolean; needsJobMatch: boolean }> {
   const sql = getSql()
   const rows = (await sql`
     SELECT id, service FROM leads

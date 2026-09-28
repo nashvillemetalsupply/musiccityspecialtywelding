@@ -6,7 +6,7 @@ import {
   photoDraftFlagEnabled,
   runPhotoDraftWorkflow,
   schedulePhotoDraftAfterFinalize,
-} from "../lib/photo-draft-workflow.mjs"
+} from "../lib/photo-draft-workflow.ts"
 
 const input = {
   uploadId: "glass-upload-12345678",

@@ -61,7 +61,7 @@ export function normalizeOwnerAnalyticsRange(value: string | number | null | und
     : 30
 }
 
-function finiteNumber(value: unknown, fallback = 0) {
+function finiteNumber(value: unknown, fallback: number = 0) {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : fallback
 }

@@ -2,9 +2,9 @@ import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import test from "node:test"
 import ts from "typescript"
-import nextConfigModule from "../next.config.mjs"
-import { isQuoteHoneypotFilled, QUOTE_HONEYPOT_FIELD, quoteSubmissionOutcome } from "../lib/public-quote.mjs"
-import { enforceShopPhoneFallbackPolicy } from "../lib/shop-contact-policy.mjs"
+import nextConfigModule from "../next.config.ts"
+import { isQuoteHoneypotFilled, QUOTE_HONEYPOT_FIELD, quoteSubmissionOutcome } from "../lib/public-quote.ts"
+import { enforceShopPhoneFallbackPolicy } from "../lib/shop-contact-policy.ts"
 
 const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8")
 const serviceAreasPage = readFileSync(new URL("../app/service-areas/page.tsx", import.meta.url), "utf8")

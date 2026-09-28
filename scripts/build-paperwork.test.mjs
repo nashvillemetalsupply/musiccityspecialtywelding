@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { compileBuildPaperwork, paperworkIssueDecision } from "../lib/build-paperwork.mjs"
+import { compileBuildPaperwork, paperworkIssueDecision } from "../lib/build-paperwork.ts"
 
 const sheet = {
   jobId: 34,

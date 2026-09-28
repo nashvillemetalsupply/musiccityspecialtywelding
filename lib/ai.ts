@@ -1,5 +1,5 @@
 import { getSql } from "@/lib/db"
-import { AI_MAX_RETRIES, buildAiUsageRun, retryAiRequest, runLoggedAiCall, type AiCallOptions, type AiCallRecord, type AiUsageRun } from "@/lib/ai-usage.mjs"
+import { AI_MAX_RETRIES, buildAiUsageRun, retryAiRequest, runLoggedAiCall, type AiCallOptions, type AiCallRecord, type AiUsageRun } from "@/lib/ai-usage.ts"
 
 export { AI_MAX_RETRIES }
 

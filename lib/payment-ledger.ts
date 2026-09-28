@@ -1,5 +1,5 @@
 import { getSql } from "@/lib/db"
-import { normalizePaymentReversalInput } from "@/lib/payment-reversal.mjs"
+import { normalizePaymentReversalInput } from "@/lib/payment-reversal.ts"
 
 export type QuickBooksPaymentInput = {
   leadId: number

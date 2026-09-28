@@ -8,7 +8,7 @@ import { getOwnerEmail, isAuthorizedCron } from "@/lib/ops-auth"
 import { aiConfigured } from "@/lib/ai"
 import { listRecentDeliveryErrors } from "@/lib/delivery-errors"
 import { gmailConfigured } from "@/lib/gmail"
-import { buildHealthMonitorFailureAlert } from "@/lib/health-monitor-alert.mjs"
+import { buildHealthMonitorFailureAlert } from "@/lib/health-monitor-alert.ts"
 import { notifyAll } from "@/lib/notify"
 import type { RecentDeliveryError } from "@/lib/delivery-errors.mjs"
 import {
@@ -26,9 +26,9 @@ import {
 } from "@/lib/twilio"
 import { callTranscriptionConfigured, deepgramCallbackSecretConfigured } from "@/lib/call-transcription"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
-import { automationRunIsStale, gmailFreshnessWindowMs } from "@/lib/automation-health.mjs"
-import { evaluateInboundCallReceiptHealth, INBOUND_CALL_SILENCE_LIMIT_HOURS } from "@/lib/call-health.mjs"
-import { createInProcessTtlCache } from "@/lib/in-process-cache.mjs"
+import { automationRunIsStale, gmailFreshnessWindowMs } from "@/lib/automation-health.ts"
+import { evaluateInboundCallReceiptHealth, INBOUND_CALL_SILENCE_LIMIT_HOURS } from "@/lib/call-health.ts"
+import { createInProcessTtlCache } from "@/lib/in-process-cache.ts"
 
 export const dynamic = "force-dynamic"
 

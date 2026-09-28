@@ -7,7 +7,7 @@ import {
   FOLLOW_UP_DAY_BOUNDS,
   getDefaultFollowUpAt,
   median,
-} from "../lib/follow-up-cadence.mjs"
+} from "../lib/follow-up-cadence.ts"
 
 const repo = path.join(import.meta.dirname, "..")
 const fixedNow = new Date("2026-09-27T12:00:00.000Z")

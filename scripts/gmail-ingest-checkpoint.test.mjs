@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { GMAIL_MESSAGE_CAP, canAdvanceGmailCheckpoint, pendingGmailMessageIds, settleGmailRun, shouldNotifyGmailDeadLetter, splitGmailMessageBatch } from "../lib/gmail-ingest-checkpoint.mjs"
+import { GMAIL_MESSAGE_CAP, canAdvanceGmailCheckpoint, pendingGmailMessageIds, settleGmailRun, shouldNotifyGmailDeadLetter, splitGmailMessageBatch } from "../lib/gmail-ingest-checkpoint.ts"
 
 test("Gmail processes no more than fifty listed messages in one run", () => {
   const ids = Array.from({ length: 73 }, (_, index) => `message-${index}`)

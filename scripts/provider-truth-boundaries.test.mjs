@@ -8,8 +8,8 @@ import {
   EmailProviderError,
   sendEmailWithProviderTruth,
   strongestEmailReceiptStatus,
-} from "../lib/email-provider-truth.mjs"
-import { resumeSmsProjection } from "../lib/sms-provider-truth.mjs"
+} from "../lib/email-provider-truth.ts"
+import { resumeSmsProjection } from "../lib/sms-provider-truth.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 

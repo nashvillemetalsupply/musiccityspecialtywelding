@@ -1,7 +1,7 @@
 import { getShopPhone } from "@/lib/shop-contact"
-import { escapeEmailText, safeEmailHref } from "@/lib/email-safety.mjs"
+import { escapeEmailText, safeEmailHref } from "@/lib/email-safety.ts"
 
-export { escapeEmailText as escapeHtml } from "@/lib/email-safety.mjs"
+export { escapeEmailText as escapeHtml } from "@/lib/email-safety.ts"
 
 /* Branded email shell — same shop-wall identity as the site and the CRM.
    Table-based, inline-styled, no external assets; every send keeps a plain-

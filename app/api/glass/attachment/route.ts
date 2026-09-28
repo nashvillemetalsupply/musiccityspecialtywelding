@@ -1,7 +1,7 @@
 import { get } from "@vercel/blob"
 import { extendGlassLinkExpiry, getGlassJobByLinkId } from "@/lib/glass"
 import { getStoredGlassUploadByLinkId } from "@/lib/glass-uploads"
-import { stripImageMetadata, verifyGlassMediaSignature } from "@/lib/glass-media.mjs"
+import { stripImageMetadata, verifyGlassMediaSignature } from "@/lib/glass-media.ts"
 import { isSafeRasterImage } from "@/lib/media-safety"
 
 export const runtime = "nodejs"

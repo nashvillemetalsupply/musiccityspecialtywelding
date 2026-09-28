@@ -1,11 +1,11 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { automationRunIsStale, gmailFreshnessWindowMs } from "../lib/automation-health.mjs"
+import { automationRunIsStale, gmailFreshnessWindowMs } from "../lib/automation-health.ts"
 import {
   evaluateGmailWakePolicy,
   GMAIL_WAKE_PRODUCTION_ORIGIN,
   requestOriginFromHeaders,
-} from "../lib/gmail-wake-policy.mjs"
+} from "../lib/gmail-wake-policy.ts"
 
 const MINUTE_MS = 60 * 1000
 const PRODUCTION_WAKE_ENVIRONMENT = {

@@ -6,8 +6,8 @@ import {
   detectRasterImageType,
   imageTypeMatches,
   validatePublicQuote,
-} from "../lib/public-quote.mjs"
-import { escapeEmailText, safeEmailHref } from "../lib/email-safety.mjs"
+} from "../lib/public-quote.ts"
+import { escapeEmailText, safeEmailHref } from "../lib/email-safety.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 

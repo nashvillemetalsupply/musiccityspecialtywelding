@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
-import { parseBuildFactNumber } from "@/lib/build-fact-number.mjs"
+import { parseBuildFactNumber } from "@/lib/build-fact-number.ts"
 import {
   addWorkingBuildFact,
   decideBuildFact,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { extractQuickBooksPaymentFacts, isAuthenticatedIntuitPayment, paymentCompletesInvoice, sentMessageMayStartWork, shouldSkipGmailMessage } from "../lib/gmail-routing.mjs"
-import { readableEmailText, stripQuotedReply } from "../lib/gmail-plaintext.mjs"
+import { extractQuickBooksPaymentFacts, isAuthenticatedIntuitPayment, paymentCompletesInvoice, sentMessageMayStartWork, shouldSkipGmailMessage } from "../lib/gmail-routing.ts"
+import { readableEmailText, stripQuotedReply } from "../lib/gmail-plaintext.ts"
 
 // Intuit addresses these to the shop, and its DKIM signature covers To:.
 const SHOP = ["sales@musiccityspecialtywelding.com"]

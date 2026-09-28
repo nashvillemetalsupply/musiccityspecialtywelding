@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { normalizeRecentDeliveryErrors } from "../lib/delivery-errors.mjs"
-import { buildHealthMonitorFailureAlert } from "../lib/health-monitor-alert.mjs"
+import { buildHealthMonitorFailureAlert } from "../lib/health-monitor-alert.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 const now = Date.parse("2026-09-27T18:00:00Z")

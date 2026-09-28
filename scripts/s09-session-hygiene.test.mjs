@@ -6,7 +6,7 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 
 test("sessions fail closed and slide a 14-day idle expiry", () => {
   const auth = source("lib/ops-auth.ts")
-  const validation = source("lib/ops-session-validation.mjs")
+  const validation = source("lib/ops-session-validation.ts")
   const migration = source("scripts/migrate.mjs")
 
   assert.match(auth, /SESSION_IDLE_TTL_MS = 14 \* 24 \* 60 \* 60 \* 1000/)
