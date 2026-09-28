@@ -1,11 +1,14 @@
 import assert from "node:assert/strict"
-import { readFile } from "node:fs/promises"
+import { readFile, stat } from "node:fs/promises"
 import path from "node:path"
 import test from "node:test"
 import { checkBundleBudgets } from "./bundle-budget.mjs"
 
 const fixtureDir = path.join(import.meta.dirname, "fixtures", "bundle-budget")
 const budgetPath = new URL("./bundle-budget.json", import.meta.url)
+const fixtureBytes = async (...names) => (await Promise.all(names.map((name) =>
+  stat(path.join(fixtureDir, "static", "chunks", name))
+))).reduce((total, entry) => total + entry.size, 0)
 
 test("bundle budget fails on manifest-unit limits and names the largest chunks", async () => {
   const lines = []
@@ -18,12 +21,13 @@ test("bundle budget fails on manifest-unit limits and names the largest chunks",
     log: (line) => lines.push(line),
   })
 
-  assert.equal(result.results[0].bytes, 17)
+  const expectedBytes = await fixtureBytes("oversize-client.js", "runtime.js")
+  const oversizeBytes = (await stat(path.join(fixtureDir, "static", "chunks", "oversize-client.js"))).size
+  const runtimeBytes = (await stat(path.join(fixtureDir, "static", "chunks", "runtime.js"))).size
+  assert.equal(result.results[0].bytes, expectedBytes)
   assert.equal(result.failures.length, 1)
   assert.equal(result.failures[0].thresholdBytes, 10)
-  assert.match(lines[0], /\/: total 17 bytes exceeds threshold 10 bytes/)
-  assert.match(lines[0], /oversize-client\.js \(12 bytes\)/)
-  assert.match(lines[0], /runtime\.js \(5 bytes\)/)
+  assert.equal(lines[0], `/: total ${expectedBytes} bytes exceeds threshold 10 bytes; largest chunks: static/chunks/oversize-client.js (${oversizeBytes} bytes), static/chunks/runtime.js (${runtimeBytes} bytes)`)
 })
 
 test("bundle budget reads App Router client-reference manifests", async () => {
@@ -32,7 +36,7 @@ test("bundle budget reads App Router client-reference manifests", async () => {
     budgets: { manifestUnit: { routes: { "/modern": { baselineBytes: 8, thresholdBytes: 8 } } } },
   })
 
-  assert.equal(result.results[0].bytes, 9)
+  assert.equal(result.results[0].bytes, await fixtureBytes("runtime.js", "layout.js", "page.js"))
   assert.equal(result.failures.length, 1)
 })
 
