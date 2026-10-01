@@ -36,8 +36,13 @@ function loadPublicAnalyticsForServerRender() {
       esModuleInterop: true,
     },
   })
-  const measurement = readFileSync(join(root, "lib", "measurement.ts"), "utf8")
-  const pixelId = /export const META_PIXEL_ID\s*=\s*["']([^"']+)["']/.exec(measurement)?.[1]
+  const measurementSource = readFileSync(join(root, "lib", "measurement.ts"), "utf8")
+  const measurementModule = new Module(join(root, "lib", "measurement.ts"))
+  measurementModule._compile(ts.transpileModule(measurementSource, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText, measurementModule.id)
+  const measurement = measurementModule.exports
+  const pixelId = measurement.META_PIXEL_ID
   assert.ok(pixelId, "the existing Meta pixel ID must be present")
 
   const originalLoad = Module._load
@@ -52,7 +57,7 @@ function loadPublicAnalyticsForServerRender() {
     if (request === "@/components/attribution-tracker") return { AttributionTracker: () => null }
     if (request === "@/components/deferred-google-tag") return { DeferredGoogleTag: () => null }
     if (request === "@/components/phone-click-tracker") return { PhoneClickTracker: () => null }
-    if (request === "@/lib/measurement") return { META_PIXEL_ID: pixelId }
+    if (request === "@/lib/measurement") return measurement
     return originalLoad.call(this, request, parent, isMain)
   }
 

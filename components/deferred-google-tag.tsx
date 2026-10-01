@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { isProductionHost } from "@/lib/measurement"
 
 type DeferredGoogleTagProps = {
   containerId: string
@@ -8,6 +9,7 @@ type DeferredGoogleTagProps = {
 
 export function DeferredGoogleTag({ containerId }: DeferredGoogleTagProps) {
   useEffect(() => {
+    if (!isProductionHost(window.location.hostname)) return
     const params = new URLSearchParams(window.location.search)
     if (params.get("utm_source") === "internal-verify" || params.get("utm_medium") === "e2e") return
 

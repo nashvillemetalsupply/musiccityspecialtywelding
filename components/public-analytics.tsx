@@ -6,7 +6,7 @@ import { useEffect } from "react"
 import { AttributionTracker } from "@/components/attribution-tracker"
 import { DeferredGoogleTag } from "@/components/deferred-google-tag"
 import { PhoneClickTracker } from "@/components/phone-click-tracker"
-import { META_PIXEL_ID } from "@/lib/measurement"
+import { isProductionHost, META_PIXEL_ID } from "@/lib/measurement"
 
 function isPrivateSurface(pathname: string) {
   return ["/ops", "/board", "/j", "/design-preview"].some(
@@ -17,6 +17,7 @@ function isPrivateSurface(pathname: string) {
 export function metaPixelBootstrapSource(pixelId: string) {
   return `
         (function(){
+          if (!(${isProductionHost.toString()})(window.location.hostname)) return;
           var params = new URLSearchParams(window.location.search);
           if (params.get('utm_source') === 'internal-verify' || params.get('utm_medium') === 'e2e') return;
           !function(f,b,e,v,n,t,s)
@@ -38,6 +39,7 @@ export function metaPixelBootstrapSource(pixelId: string) {
 
 function DeferredMetaPixel() {
   useEffect(() => {
+    if (!isProductionHost(window.location.hostname)) return
     const params = new URLSearchParams(window.location.search)
     if (params.get("utm_source") === "internal-verify" || params.get("utm_medium") === "e2e") return
 
@@ -78,6 +80,7 @@ export function PublicAnalytics({ measurementId }: { measurementId?: string }) {
     <Script id="google-tag" strategy="afterInteractive">
       {`
         (function(){
+          if (!(${isProductionHost.toString()})(window.location.hostname)) return;
           var params = new URLSearchParams(window.location.search);
           if (params.get('utm_source') === 'internal-verify' || params.get('utm_medium') === 'e2e') return;
           window.dataLayer = window.dataLayer || [];
