@@ -26,6 +26,12 @@ type MeasurementWindow = Window & {
   __mcswMetaQueue?: Array<["track", "Lead"]>
 }
 
+// Exact allowlist: preview and local traffic must never reach ad measurement.
+// Keep this function self-contained; inline tag bootstraps serialize it too.
+export function isProductionHost(hostname: string) {
+  return hostname === "musiccityspecialtywelding.com" || hostname === "www.musiccityspecialtywelding.com"
+}
+
 // A conversion the browser drops is gone: there is no retry and nothing
 // server-side records the miss. Gating these events on `window.gtag` dropped
 // every one of them from 2026-08-24 -- GA4 kept firing enhanced-measurement
@@ -35,9 +41,12 @@ type MeasurementWindow = Window & {
 // shim is what was missing.
 //
 // gtag.js replays whatever is already in dataLayer when it loads, so pushing
-// unconditionally is strictly safer than skipping: at worst the event waits.
+// for production visitors is safer than skipping: at worst the event waits.
 export function queueMeasurementEvent(name: string, params: Record<string, unknown>) {
   if (typeof window === "undefined") return
+  if (!isProductionHost(window.location.hostname)) return
+  const query = new URLSearchParams(window.location.search)
+  if (query.get("utm_source") === "internal-verify" || query.get("utm_medium") === "e2e") return
   const target = window as MeasurementWindow
   target.dataLayer = target.dataLayer || []
   if (typeof target.gtag !== "function") {
@@ -55,6 +64,7 @@ export function queueMeasurementEvent(name: string, params: Record<string, unkno
 // first paint the same way queueMeasurementEvent's gtag shim is above.
 export function reportMetaLead() {
   if (typeof window === "undefined") return
+  if (!isProductionHost(window.location.hostname)) return
   const params = new URLSearchParams(window.location.search)
   if (params.get("utm_source") === "internal-verify" || params.get("utm_medium") === "e2e") return
   const target = window as MeasurementWindow

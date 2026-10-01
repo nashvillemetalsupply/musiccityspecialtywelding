@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
+import { createRequire } from "node:module"
 import test from "node:test"
+import vm from "node:vm"
+import ts from "typescript"
 import { findBoundGa4MeasurementIds } from "./verify-ads-tag.mjs"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
@@ -8,6 +11,188 @@ const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "u
 const AW_CONTAINER = "AW-17817632790"
 const SEND_TO = "AW-17817632790/CZF4CMyQhPEbEJaAjrBC"
 const PHONE_SEND_TO = "AW-17817632790/0aSACPS5ue4cEJaAjrBC"
+
+const require = createRequire(import.meta.url)
+const productionHosts = ["musiccityspecialtywelding.com", "www.musiccityspecialtywelding.com"]
+const nonProductionHosts = [
+  "localhost", "127.0.0.1", "mcsw-preview.vercel.app", "vercel.app",
+  "musiccityspecialtywelding.com.vercel.app", "preview.musiccityspecialtywelding.com",
+  "musiccityspecialtywelding.com.evil.example", "wwwmusiccityspecialtywelding.com", "",
+]
+
+function browserHarness(hostname, search = "") {
+  const inserted = []
+  const effects = []
+  const triggers = []
+  const window = {
+    location: { hostname, search },
+    addEventListener: (event, callback) => triggers.push({ event, callback }),
+    removeEventListener() {},
+    setTimeout: (callback) => { triggers.push({ event: "timeout", callback }); return 1 },
+    clearTimeout() {},
+  }
+  const document = {
+    createElement: () => ({}),
+    getElementById: (id) => inserted.find((script) => script.id === id),
+    getElementsByTagName: () => [{ parentNode: { insertBefore: (script) => inserted.push(script) } }],
+    head: { appendChild: (script) => inserted.push(script) },
+  }
+  const context = vm.createContext({
+    window, document, URLSearchParams, process: { env: {} },
+    MutationObserver: class {
+      observe() { triggers.push({ event: "observe" }) }
+      disconnect() {}
+    },
+  })
+  // Browser globals alias window properties (notably the Meta shim's fbq).
+  Object.defineProperty(context, "fbq", { get: () => window.fbq })
+  function load(path, mocks = {}) {
+    const exports = {}
+    const compiled = ts.transpileModule(source(path), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+    }).outputText
+    const run = vm.runInContext(`(function(exports, require) { ${compiled}\n })`, context)
+    run(exports, (name) => {
+      if (name === "react") return { useEffect: (effect) => effects.push(effect) }
+      if (name === "@/lib/measurement") return measurement
+      if (name in mocks) return mocks[name]
+      return require(name)
+    })
+    return exports
+  }
+  const measurement = load("lib/measurement.ts")
+  const analytics = load("components/public-analytics.tsx", {
+    "next/script": { __esModule: true, default: () => null },
+    "next/navigation": { usePathname: () => "/" },
+    "@/components/attribution-tracker": { AttributionTracker: () => null },
+    "@/components/deferred-google-tag": { DeferredGoogleTag: () => null },
+    "@/components/phone-click-tracker": { PhoneClickTracker: () => null },
+  })
+  const google = load("components/deferred-google-tag.tsx")
+  const publicElements = analytics.PublicAnalytics({ measurementId: "G-TEST123" }).props.children
+  return {
+    window, inserted, triggers, measurement,
+    runBootstrap: (provider) => vm.runInContext(provider === "meta"
+      ? analytics.metaPixelBootstrapSource(measurement.META_PIXEL_ID)
+      : publicElements[0].props.children, context),
+    runDeferred: () => {
+      google.DeferredGoogleTag({ containerId: "GT-TWZ9WFGX" })
+      publicElements[2].type()
+      effects.forEach((effect) => effect())
+    },
+  }
+}
+
+test("ad measurement rejects local, preview, and lookalike hosts before any provider or queue side effect", () => {
+  for (const hostname of nonProductionHosts) {
+    const browser = browserHarness(hostname)
+    assert.equal(browser.measurement.isProductionHost(hostname), false, hostname)
+    const existingGoogleQueue = ["pending google"]
+    const existingMetaQueue = [["track", "Lead"]]
+    browser.window.dataLayer = existingGoogleQueue
+    browser.window.__mcswMetaQueue = existingMetaQueue
+    const providerCalls = []
+    browser.window.gtag = (...args) => providerCalls.push(args)
+    browser.window.fbq = (...args) => providerCalls.push(args)
+    browser.measurement.queueMeasurementEvent("conversion", { send_to: SEND_TO })
+    browser.measurement.queueMeasurementEvent("generate_lead", {})
+    browser.measurement.queueMeasurementEvent("conversion", { send_to: PHONE_SEND_TO })
+    browser.measurement.reportMetaLead()
+    browser.runBootstrap("meta")
+    browser.runBootstrap("google")
+    browser.runDeferred()
+    assert.deepEqual(providerCalls, [], hostname)
+    assert.deepEqual(browser.inserted, [], hostname)
+    assert.deepEqual(browser.triggers, [], hostname)
+    assert.strictEqual(browser.window.dataLayer, existingGoogleQueue, hostname)
+    assert.strictEqual(browser.window.__mcswMetaQueue, existingMetaQueue, hostname)
+    assert.equal(existingMetaQueue.length, 1, hostname)
+
+    const withoutProviders = browserHarness(hostname)
+    withoutProviders.measurement.queueMeasurementEvent("conversion", { send_to: SEND_TO })
+    withoutProviders.measurement.reportMetaLead()
+    withoutProviders.runBootstrap("meta")
+    withoutProviders.runBootstrap("google")
+    for (const key of ["dataLayer", "gtag", "fbq", "__mcswMetaQueue"]) {
+      assert.equal(withoutProviders.window[key], undefined, `${hostname}: ${key}`)
+    }
+    assert.deepEqual(withoutProviders.inserted, [], hostname)
+  }
+})
+
+test("both production hosts retain early Lead queues, provider calls, bootstrap replay and deferred loading", () => {
+  for (const hostname of productionHosts) {
+    const browser = browserHarness(hostname)
+    assert.equal(browser.measurement.isProductionHost(hostname), true)
+    browser.measurement.queueMeasurementEvent("generate_lead", { send_to: "G-TEST123" })
+    browser.measurement.queueMeasurementEvent("conversion", { send_to: SEND_TO })
+    browser.measurement.queueMeasurementEvent("conversion", { send_to: PHONE_SEND_TO })
+    assert.deepEqual(Array.from(browser.window.dataLayer, (args) => Array.from(args)), [
+      ["event", "generate_lead", { send_to: "G-TEST123" }],
+      ["event", "conversion", { send_to: SEND_TO }],
+      ["event", "conversion", { send_to: PHONE_SEND_TO }],
+    ])
+    browser.measurement.reportMetaLead()
+    assert.equal(browser.window.__mcswMetaQueue.length, 1)
+    browser.runBootstrap("meta")
+    assert.equal(browser.window.__mcswMetaQueue.length, 0)
+    assert.deepEqual(Array.from(browser.window.fbq.queue, (args) => Array.from(args)), [
+      ["init", "1584753153193012"], ["track", "PageView"], ["track", "Lead"],
+    ])
+    browser.runBootstrap("google")
+    assert.ok(browser.window.dataLayer.some((args) => args[0] === "config" && args[1] === AW_CONTAINER))
+    browser.runDeferred()
+    browser.triggers.find(({ event }) => event === "pointerdown").callback()
+    assert.ok(browser.inserted.some((script) => script.id === "deferred-google-tag"))
+    // The Meta effect also loads when Google's trigger already inserted the tag.
+    browser.runDeferred()
+    assert.ok(browser.inserted.some((script) => script.id === "meta-pixel"))
+
+    const providerCalls = []
+    browser.window.gtag = (...args) => providerCalls.push(args)
+    browser.window.fbq = (...args) => providerCalls.push(args)
+    browser.measurement.queueMeasurementEvent("conversion", { send_to: SEND_TO })
+    browser.measurement.reportMetaLead()
+    assert.deepEqual(providerCalls, [["event", "conversion", { send_to: SEND_TO }], ["track", "Lead"]])
+  }
+})
+
+test("production internal-verification UTMs suppress both providers, bootstraps, deferred loaders and early queues", () => {
+  for (const hostname of productionHosts) {
+    for (const search of ["?utm_source=internal-verify", "?utm_medium=e2e"]) {
+      const browser = browserHarness(hostname, search)
+      const providerCalls = []
+      browser.window.gtag = (...args) => providerCalls.push(args)
+      browser.window.fbq = (...args) => providerCalls.push(args)
+      browser.measurement.queueMeasurementEvent("conversion", { send_to: SEND_TO })
+      browser.measurement.reportMetaLead()
+      browser.runBootstrap("meta")
+      browser.runBootstrap("google")
+      browser.runDeferred()
+      assert.deepEqual(providerCalls, [])
+      assert.deepEqual(browser.inserted, [])
+      assert.deepEqual(browser.triggers, [])
+      assert.equal(browser.window.dataLayer, undefined)
+      assert.equal(browser.window.__mcswMetaQueue, undefined)
+    }
+  }
+  const ordinary = browserHarness(productionHosts[0], "?utm_source=google&utm_medium=cpc")
+  ordinary.measurement.reportMetaLead()
+  ordinary.runBootstrap("google")
+  assert.equal(ordinary.window.__mcswMetaQueue.length, 1)
+  assert.ok(ordinary.window.dataLayer.length > 0)
+})
+
+test("measurement Lead entry points are safe without a browser", () => {
+  const compiled = ts.transpileModule(source("lib/measurement.ts"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText
+  const exports = {}
+  const context = vm.createContext({ exports, process: { env: {} }, URLSearchParams })
+  vm.runInContext(compiled, context)
+  assert.doesNotThrow(() => exports.queueMeasurementEvent("conversion", { send_to: SEND_TO }))
+  assert.doesNotThrow(() => exports.reportMetaLead())
+})
 
 test("the shipped conversion label is the one the Ads conversion action listens on", () => {
   const measurement = source("lib/measurement.ts")
