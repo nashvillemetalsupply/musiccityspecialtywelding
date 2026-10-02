@@ -1,0 +1,52 @@
+MCSW mobile-menu Escape review
+Reviewed: 2026-10-02
+Evidence: docs/polish/evidence/interactions.json and interactions-menu-escape-failure.png
+
+Classification
+- components/mainstreet-menu.tsx:14-22 is a native HTML disclosure: <details>, a <summary> trigger, and ordinary navigation links.
+- It is not a modal or dialog. It has no dialog/aria-modal role, backdrop, inert background, focus containment, or scroll lock. The live check also showed that page scrolling remains available.
+- The deployed behavior is keyboard operable: focus reaches the summary, its focus ring is visible, Enter toggles it, Tab can leave it, and the links activate by keyboard. It is not a keyboard trap.
+
+WCAG/APG conclusion
+- Record the failed Escape check as a keyboard-usability and expected-navigation-pattern gap, not as a standalone WCAG failure.
+- The WAI-ARIA APG general Disclosure Pattern requires Enter and Space to toggle; it does not require Escape: https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+- The APG Disclosure Navigation example adds Escape-close plus focus return. That example ties Escape to WCAG 1.4.13 when content is exposed by hover or focus: https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/
+- MCSW's panel opens only after summary activation, not on hover or focus, so that 1.4.13 rationale does not apply to the observed implementation.
+- Modal-dialog Escape requirements do not apply because this is not a dialog: https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+
+Minimal proposed fix (do not apply while source work is paused)
+Exact source file: components/mainstreet-menu.tsx only. No CSS change is needed.
+
+1. Change the React import to:
+   import { useRef, type KeyboardEvent } from "react"
+
+2. Add a ref for the summary trigger:
+   const summaryRef = useRef<HTMLElement>(null)
+
+3. Keep closeMenu() unchanged for its existing React click-handler use, and add a separate zero-argument helper:
+   function closeMenuAndRestoreFocus() {
+     closeMenu()
+     summaryRef.current?.focus()
+   }
+
+4. Add a key handler on the details element:
+   function handleKeyDown(event: KeyboardEvent<HTMLDetailsElement>) {
+     if (event.key !== "Escape" || !menuRef.current?.open) return
+     event.preventDefault()
+     closeMenuAndRestoreFocus()
+   }
+
+5. Wire only these two JSX changes:
+   <details className="ms-menu" ref={menuRef} onKeyDown={handleKeyDown}>
+   <summary ref={summaryRef} aria-label="Open navigation">...</summary>
+
+Behavior after the proposed change
+- Escape closes an open disclosure when keyboard focus is on its summary or one of its links.
+- Escape returns focus to the summary trigger, preserving a visible and predictable focus position.
+- Existing link clicks still call closeMenu() without focus restoration, so hash navigation and the phone link keep their current behavior.
+- Enter/Space native disclosure behavior, link-close behavior, scrolling, layout, and styling remain unchanged.
+
+Suggested verification after source work resumes
+- At 390 px: focus summary by Tab, open with Enter, move focus to a menu link, press Escape, assert details.open is false and document.activeElement is the summary.
+- Repeat Escape while focus remains on the summary.
+- Recheck link click closes and navigates to the correct hash; recheck page scrolling; assert no console errors.

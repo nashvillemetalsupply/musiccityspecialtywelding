@@ -1,0 +1,6 @@
+node.exe : 402 Insufficient Balance (request_id: c6651339-ed0a-4d85-9642-0c8e52ade89a)
+At C:\Users\Owner\AppData\Roaming\npm\pi.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/@earendil-works/pi-coding-ag ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (402 Insufficien...2-0c8e52ade89a):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError

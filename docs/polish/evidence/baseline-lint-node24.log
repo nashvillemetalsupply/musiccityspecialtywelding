@@ -1,0 +1,33 @@
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\app\api\ops\closeout-upload\route.ts
+  3:10  warning  'closeoutPhotoPath' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\app\ops\offline-support.tsx
+  22:55  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\lib\ad-spend.ts
+  102:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\lib\ai-usage.ts
+  57:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\lib\call-sketch-claims.ts
+  107:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\lib\csp-report.ts
+  98:98  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\lib\photo-draft-workflow.ts
+  192:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\lib\shop-brain-invariants.ts
+  72:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\scripts\digest-route.behavior.test.mjs
+  46:34  warning  'values' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Owner\Desktop\Shepherd\Music City Speciality Welding\scripts\qa-preview-workflow.test.mjs
+  31:11  warning  'first' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 11 problems (7 errors, 4 warnings)

@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-10-02T16:38:14.196Z",
+  "base": "https://musiccityspecialtywelding.com",
+  "routeCount": 10,
+  "viewportRuns": 22,
+  "counts": {
+    "routeStatusFailures": 0,
+    "axeViolations": 10,
+    "horizontalOverflowRuns": 0,
+    "missingAltOccurrences": 0,
+    "pageErrors": 0,
+    "linkProblems": 0,
+    "linkNetworkErrors": 0
+  },
+  "routeStatusFailures": [],
+  "axeViolations": [
+    {
+      "route": "/service-areas",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/privacy",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/terms",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/services/trailer-welding-repair",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/services/equipment-repair",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/services/architectural-welding",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/services/custom-fabrication",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/services/custom-metal-products",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    },
+    {
+      "route": "/__mcsw_public_audit_missing_2026_10_02__",
+      "viewport": "mobile-390",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodes": 1
+    }
+  ],
+  "overflow": [],
+  "missingAlt": [],
+  "pageErrors": [],
+  "linkProblems": [],
+  "linkNetworkErrors": [],
+  "missingRoute": [
+    {
+      "viewport": "mobile-390",
+      "status": 404,
+      "robots": [
+        "noindex",
+        "noindex, nofollow"
+      ],
+      "title": "Page Not Found | Music City Specialty Welding",
+      "axeViolations": 1
+    },
+    {
+      "viewport": "desktop-1440",
+      "status": 404,
+      "robots": [
+        "noindex",
+        "noindex, nofollow"
+      ],
+      "title": "Page Not Found | Music City Specialty Welding",
+      "axeViolations": 0
+    }
+  ]
+}

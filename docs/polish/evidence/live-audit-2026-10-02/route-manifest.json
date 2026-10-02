@@ -1,0 +1,850 @@
+{
+  "sitemap": {
+    "url": "https://musiccityspecialtywelding.com/sitemap.xml",
+    "status": 200,
+    "error": null,
+    "routes": [
+      "https://musiccityspecialtywelding.com/",
+      "https://musiccityspecialtywelding.com/service-areas",
+      "https://musiccityspecialtywelding.com/privacy",
+      "https://musiccityspecialtywelding.com/terms",
+      "https://musiccityspecialtywelding.com/services/mobile-welding",
+      "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+      "https://musiccityspecialtywelding.com/services/equipment-repair",
+      "https://musiccityspecialtywelding.com/services/architectural-welding",
+      "https://musiccityspecialtywelding.com/services/custom-fabrication",
+      "https://musiccityspecialtywelding.com/services/custom-metal-products"
+    ]
+  },
+  "routes": [
+    "https://musiccityspecialtywelding.com/",
+    "https://musiccityspecialtywelding.com/service-areas",
+    "https://musiccityspecialtywelding.com/privacy",
+    "https://musiccityspecialtywelding.com/terms",
+    "https://musiccityspecialtywelding.com/services/mobile-welding",
+    "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+    "https://musiccityspecialtywelding.com/services/equipment-repair",
+    "https://musiccityspecialtywelding.com/services/architectural-welding",
+    "https://musiccityspecialtywelding.com/services/custom-fabrication",
+    "https://musiccityspecialtywelding.com/services/custom-metal-products"
+  ],
+  "linkSources": {
+    "https://musiccityspecialtywelding.com/": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Skip to the work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Quote"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Send the address"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Send the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Quote"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Quote"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Quote"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Home"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Services"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "See how it works"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Home"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Services"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "See how it works"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Home"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Services"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "See how it works"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Home"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Services"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "See how it works"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Home"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Services"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "See how it works"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Music CitySpecialty Welding"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "The work"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "What we weld"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Customer Page"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Home"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Services"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "See how it works"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/services/mobile-welding": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Mobile welding details"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Lebanon"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Nashville"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Franklin"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Murfreesboro"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Gallatin"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Hendersonville"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Clarksville"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Antioch"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Send the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Quote"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/services/trailer-welding-repair": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Trailer welding & repair details"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Send the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Quote"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/services/equipment-repair": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Equipment repair details"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Send the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Quote"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/services/architectural-welding": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Architectural metal details"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Send the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Quote"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/services/custom-fabrication": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Specialty fabrication details"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Send the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Quote"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/services/custom-metal-products": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Custom metalwork details"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Show us the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Send the job"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Quote"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/privacy": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "privacy policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Privacy Policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "privacy policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "privacy policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "privacy policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "privacy policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "privacy policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Privacy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "privacy policy"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Privacy"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/terms": [
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/privacy",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/terms",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "terms"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Terms"
+      }
+    ],
+    "https://musiccityspecialtywelding.com/service-areas": [
+      {
+        "source": "https://musiccityspecialtywelding.com/service-areas",
+        "text": "Skip to main content"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/mobile-welding",
+        "text": "Check the service area"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/trailer-welding-repair",
+        "text": "Check the service area"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/equipment-repair",
+        "text": "Check the service area"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/architectural-welding",
+        "text": "Check the service area"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-fabrication",
+        "text": "Check the service area"
+      },
+      {
+        "source": "https://musiccityspecialtywelding.com/services/custom-metal-products",
+        "text": "Check the service area"
+      }
+    ]
+  },
+  "errors": []
+}

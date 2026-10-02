@@ -1,0 +1,82 @@
+﻿MCSW validation gate review
+Date: 2026-10-02
+Branch: polish/astra-2026-10
+
+Verdict
+The lint failure is a genuine checked-source baseline, not a Node/runtime or cached-dependency mismatch. The supplied Node 24 binary reports v24.21.0. Installed eslint 10.11.0, eslint-config-next 16.3.6, and TypeScript 5.9.3 match package.json/package-lock.json. Running Node 24 directly against node_modules/eslint/bin/eslint.js reproduces the documented result exactly: 7 errors, 4 warnings, exit 1.
+
+The seven errors are explicit any annotations added in TypeScript-migration commit 7caf0ad, and @typescript-eslint/no-explicit-any is inherited from eslint-config-next/typescript. No runtime/tooling selection can make this baseline green. Do not weaken lint, add exclusions, change dependencies, or change environment configuration.
+
+Gate consequence
+Under the owner's rule that any red build/lint/test result stops the fix, live customer-bug source changes are blocked. Six non-CSP errors have small behavior-preserving type remedies, but baseline cleanup is not itself a live customer bug and needs explicit scope. The seventh error is in lib/csp-report.ts, while the owner has said not to touch CSP report-only work during its seven-clean-day observation period. Therefore a clean lint exit is impossible inside the current scope. The owner must explicitly authorize the type-only prerequisite, including the csp-report parser line, before application fixes can resume.
+
+Exact minimal behavior-preserving replacements
+
+1. lib/ad-spend.ts:102
+- Change "parseAdSpendPayload(body: any)" to "parseAdSpendPayload(body: unknown)".
+- Immediately after the existing non-null/object guard, add:
+  "const payload = body as Record<string, unknown>"
+- Change both "body.month" reads to "payload.month", and "body[channel]" to "payload[channel]".
+This preserves all current runtime checks and accepts the route's unknown JSON body.
+
+2. lib/ai-usage.ts:57
+- Replace "const result: any = await run()" with:
+  "const result = await run() as T & { totalUsage?: unknown; usage?: unknown }"
+This changes only the compile-time view used to read provider usage metadata.
+
+3. lib/call-sketch-claims.ts:107
+- Replace "let value: any = null" with:
+  "let value: string | number | null = null"
+The three conversion helpers already return only this union.
+
+4. lib/call-sketch-claims.ts:142
+- Extend the import to include SketchFact:
+  "import type { CallSketchSpec, SketchFact } from './call-sketch-live.ts'"
+- Replace "const merged: any = { ...spec }" with:
+  "const merged = { ...spec }"
+  "const mutableFields = merged as unknown as Record<SketchFieldKey, SketchFact<string | number>>"
+- Type the values iteration:
+  "for (const [key, value] of Object.entries(values) as Array<[SketchFieldKey, string | number]>) {"
+- In that loop only, replace "merged[key]" reads/writes with "mutableFields[key]".
+The returned object and assignment behavior stay unchanged; the alias describes only the nine mutable sketch-fact keys.
+
+5. lib/photo-draft-workflow.ts:192
+- Replace the explicit-any declaration with:
+  "const value = (input.draft?.value && typeof input.draft.value === 'object' ? input.draft.value : {}) as { kind?: unknown; text?: unknown; photoReference?: unknown }"
+The following guard still performs runtime validation and narrows text/photoReference to strings.
+
+6. lib/shop-brain-invariants.ts:72-73
+- Change the parameter from "error: any" to "error: unknown".
+- Change "Number(error.status)" to:
+  "Number((error as { status?: unknown }).status)"
+The existing non-null/object guard remains and runtime behavior is unchanged.
+
+7. lib/csp-report.ts:98 (PROTECTED-SCOPE AMBIGUITY; DO NOT APPLY WITHOUT OWNER APPROVAL)
+- Change the parameter from "body: any" to "body: unknown".
+- In the legacy branch, read through a type-only cast:
+  "const report = (body as CspReportRecord)['csp-report']"
+  and cast the already object-checked result in the return:
+  "return report && typeof report === 'object' && !Array.isArray(report) ? [report as CspReportRecord] : []"
+- In the Reporting API branch, change "return body" to:
+  "return (body as CspReportRecord[])"
+- Replace the map expression with:
+  ".map((report) => {"
+  "  const reportBody = report.body as CspReportRecord"
+  "  return { ...reportBody, documentURL: reportBody.documentURL || report.url }"
+  "})"
+These are compile-time casts around the existing checks; request parsing, filtering, normalized output, headers, enforcement, and report-only behavior do not change. Even so, the file is part of the protected CSP observation scope, so this proposal requires an explicit exception.
+
+Warnings
+The four warnings do not cause lint to fail because the script does not set --max-warnings=0. They are outside the seven-error prerequisite and need not be changed to restore exit 0:
+- app/api/ops/closeout-upload/route.ts:3 unused import
+- app/ops/offline-support.tsx:22 internal navigation rule
+- scripts/digest-route.behavior.test.mjs:46 unused parameter
+- scripts/qa-preview-workflow.test.mjs:31 unused local
+
+Required validation after authorization and implementation
+Run with the supplied Node 24 binary:
+1. eslint . (must exit 0)
+2. tsc --noEmit
+3. npm test (expect the established 861 pass / 1 skip or better, with no failures)
+4. npm run build
+Any red result stops the customer-bug fix.

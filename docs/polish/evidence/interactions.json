@@ -1,0 +1,58 @@
+{
+  "verifiedAt": "2026-10-02T16:33:57.480Z",
+  "target": "https://musiccityspecialtywelding.com/?utm_source=internal-verify&utm_medium=e2e",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "menu": {
+    "openedByKeyboard": true,
+    "navLinkClosePass": true,
+    "afterNav": {
+      "open": false,
+      "hash": "#services",
+      "y": 3760,
+      "targetTop": 79.640625
+    },
+    "openedForEscape": true,
+    "escapeClosePass": false,
+    "beforeEscapeY": 3760,
+    "afterEscapeY": 3760,
+    "scrollUsableAfterClose": true,
+    "scrollBeforeWheel": 3760,
+    "scrollAfterWheel": 4060
+  },
+  "focus": {
+    "menuFocusedByKeyboard": true,
+    "tabsUsed": 3,
+    "outlineStyle": "solid",
+    "outlineWidth": "3px",
+    "outlineColor": "rgb(232, 97, 28)",
+    "outlineOffset": "3px",
+    "visible": true
+  },
+  "faq": {
+    "opened": true,
+    "answerVisibleOpen": true,
+    "closed": true,
+    "answerHiddenClosed": true,
+    "pass": true
+  },
+  "form": {
+    "activeId": "quote-name",
+    "validationMessage": "Please fill out this field.",
+    "customStatusText": "",
+    "customStatusVisible": false,
+    "quotePostCount": 0,
+    "pass": true
+  },
+  "pageErrors": [],
+  "screenshots": [
+    "interactions-menu-escape-failure.png"
+  ],
+  "failures": [
+    "Mobile navigation stays open after Escape."
+  ],
+  "pass": false,
+  "completedAt": "2026-10-02T16:34:01.803Z"
+}

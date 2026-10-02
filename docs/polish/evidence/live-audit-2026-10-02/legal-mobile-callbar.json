@@ -1,0 +1,142 @@
+[
+  {
+    "route": "/privacy",
+    "status": 200,
+    "fixedBottom": [
+      {
+        "tag": "div",
+        "className": "ms-mobile-cta is-visible",
+        "text": "Open 24/7Call nowQuote",
+        "color": "lab(1.57416 0.0650436 1.14267)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "opacity": "1",
+        "zIndex": "140",
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "children": [
+          {
+            "tag": "a",
+            "className": "",
+            "text": "Open 24/7Call now",
+            "color": "rgb(27, 15, 2)",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundImage": "none",
+            "opacity": "1",
+            "box": {
+              "x": 0,
+              "y": 786.015625,
+              "width": 263.25,
+              "height": 57.984375
+            }
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "Quote",
+            "color": "lab(1.57416 0.0650436 1.14267)",
+            "backgroundColor": "rgb(36, 29, 18)",
+            "backgroundImage": "none",
+            "opacity": "1",
+            "box": {
+              "x": 263.25,
+              "y": 786.015625,
+              "width": 126.734375,
+              "height": 57.984375
+            }
+          }
+        ]
+      }
+    ],
+    "axeViolations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".ms-mobile-cta > a[href$=\"/#contact\"]"
+            ],
+            "html": "<a href=\"/#contact\">Quote</a>",
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #070603, background color: #241d12, font size: 13.8pt (18.4px), font weight: bold). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "route": "/terms",
+    "status": 200,
+    "fixedBottom": [
+      {
+        "tag": "div",
+        "className": "ms-mobile-cta is-visible",
+        "text": "Open 24/7Call nowQuote",
+        "color": "lab(1.57416 0.0650436 1.14267)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "backgroundImage": "none",
+        "opacity": "1",
+        "zIndex": "140",
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "children": [
+          {
+            "tag": "a",
+            "className": "",
+            "text": "Open 24/7Call now",
+            "color": "rgb(27, 15, 2)",
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "backgroundImage": "none",
+            "opacity": "1",
+            "box": {
+              "x": 0,
+              "y": 786.015625,
+              "width": 263.25,
+              "height": 57.984375
+            }
+          },
+          {
+            "tag": "a",
+            "className": "",
+            "text": "Quote",
+            "color": "lab(1.57416 0.0650436 1.14267)",
+            "backgroundColor": "rgb(36, 29, 18)",
+            "backgroundImage": "none",
+            "opacity": "1",
+            "box": {
+              "x": 263.25,
+              "y": 786.015625,
+              "width": 126.734375,
+              "height": 57.984375
+            }
+          }
+        ]
+      }
+    ],
+    "axeViolations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".ms-mobile-cta > a[href$=\"/#contact\"]"
+            ],
+            "html": "<a href=\"/#contact\">Quote</a>",
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.21 (foreground color: #070603, background color: #241d12, font size: 13.8pt (18.4px), font weight: bold). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ]
+  }
+]

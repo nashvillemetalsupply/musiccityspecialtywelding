@@ -1,0 +1,55 @@
+{
+  "verifiedAt": "2026-10-02T16:26:50.631Z",
+  "target": "https://musiccityspecialtywelding.com",
+  "viewport": {
+    "width": 390,
+    "height": 844,
+    "screenshot": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "request": {
+    "method": "POST",
+    "path": "/api/quote",
+    "count": 1,
+    "authAttached": true,
+    "credentialSource": ".env.local",
+    "internalMarker": true,
+    "textConsent": false,
+    "phone": "(615) 555-0199",
+    "email": "mcsw-e2e-20261002@example.com",
+    "attribution": "utm_source=internal-verify&utm_medium=e2e"
+  },
+  "response": {
+    "status": 200,
+    "contentType": "application/json",
+    "body": {
+      "ok": true,
+      "accepted": true
+    }
+  },
+  "ui": {
+    "message": "Got it. We’ll review the job and call you back. If it cannot wait, call now. We’re open 24/7.",
+    "className": "ms-form-status is-success",
+    "formCleared": true
+  },
+  "measurement": {
+    "requestCount": 0,
+    "requests": []
+  },
+  "browser": {
+    "pageErrorCount": 0,
+    "pageErrors": []
+  },
+  "assertions": {
+    "exactlyOneQuotePost": true,
+    "authenticatedRoute": true,
+    "acceptedResponse": true,
+    "honestSuccessUi": true,
+    "formClearedAfterAcceptance": true,
+    "noTextConsent": true,
+    "noMeasurementRequests": true,
+    "screenshotWidth390": true
+  }
+}

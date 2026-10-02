@@ -1,0 +1,67 @@
+﻿Mobile call-bar review
+Date: 2026-10-02
+Status: proposal only; no source change applied because the lint prerequisite is still red.
+
+Affected live URLs
+- https://musiccityspecialtywelding.com/privacy
+- https://musiccityspecialtywelding.com/terms
+
+Visual evidence
+- docs/polish/evidence/live-audit-2026-10-02/screenshots/mobile-390/privacy/00-top.png
+- docs/polish/evidence/live-audit-2026-10-02/screenshots/mobile-390/terms/00-top.png
+- docs/polish/evidence/live-audit-2026-10-02/legal-mobile-callbar.json
+
+Observed result at 390 px
+- Call now has a transparent background, so legal-page text remains visible underneath.
+- Quote has near-black text on #241d12.
+- Captured computed styles show backgroundImage "none" for Call now and axe reports a serious Quote contrast failure at 1.21:1 on both routes.
+
+Root cause
+The active shared-bar overrides in app/globals.css:2561-2562 use --sw-neon, --sw-fire, and --sw-chalk. Those variables are declared only on .ms-site at app/globals.css:1794-1810.
+
+The home page wraps MobileQuickActions inside its .ms-site root, so the variables resolve and the bar is orange/bone. Privacy and Terms put .ms-site only on the main element, then render MobileQuickActions as a later sibling at app/privacy/page.tsx:238 and app/terms/page.tsx:183. The bar cannot inherit the scoped variables.
+
+A custom property that is missing when var() is resolved invalidates the whole declaration at computed-value time. Therefore:
+- the later first-child gradient invalidates instead of falling back to the earlier orange background;
+- the later Quote color invalidates and inherits the page's near-black body color.
+
+Exact one-file fix
+File: app/globals.css
+Replace the two rules at lines 2561-2562 with:
+
+.ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon, #ffb46b), var(--sw-fire, #ff8a2a) 60%); color: #1b0f02; }
+.ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk, #f3ead8); border-left-color: #000; }
+
+Why this is the minimal shared fix
+- It changes one file and only the shared mobile CTA declarations.
+- On the home page, inherited --sw-* values still win, so its current appearance is unchanged.
+- Outside .ms-site, the fallbacks equal the current Shop Wall token values declared in the same stylesheet.
+- No markup, copy, navigation, visibility logic, breakpoints, tracking, headers, CSP, or environment behavior changes.
+- Fixing the shared component's declarations covers Privacy, Terms, the not-found route, and any future placement outside .ms-site.
+
+Validation after the lint prerequisite is authorized and green
+- Re-capture the two listed URLs at 390 px.
+- Assert Call now has a non-transparent gradient and Quote computes to #f3ead8 on #241d12.
+- Run axe on both routes; the .ms-mobile-cta Quote contrast violation must be absent.
+- Confirm the home bar is visually unchanged.
+- Run lint, typecheck, the established test suite, and build; any red result stops the fix.
+
+Browser-only validation
+The proposal was injected into live rendered pages at 390 x 844 without changing repository source.
+
+Representative routes:
+- Privacy, HTTP 200: proposed gradient resolves to rgb(255,180,107) -> rgb(255,138,42); Quote resolves to rgb(243,234,216) on rgb(36,29,18); axe CTA violations: 0.
+- Mobile Welding service, HTTP 200: same corrected values; axe CTA violations: 0.
+- Missing-page route, HTTP 404: same corrected values; axe CTA violations: 0.
+- Home, HTTP 200: baseline and proposed computed CTA styles are exactly unchanged; axe CTA violations: 0.
+
+The audit summary identifies the same shared failure on every non-home surface that renders MobileQuickActions outside .ms-site: service areas, six service pages, Privacy, Terms, and 404 (10 surfaces). The representative service, legal, and 404 checks exercise each distinct page family.
+
+Proposed screenshots:
+- docs/polish/evidence/live-audit-2026-10-02/P01-privacy-callbar-proposed.png
+- docs/polish/evidence/live-audit-2026-10-02/P01-service-mobile-welding-callbar-proposed.png
+- docs/polish/evidence/live-audit-2026-10-02/P01-404-callbar-proposed.png
+- docs/polish/evidence/live-audit-2026-10-02/P01-home-callbar-proposed.png
+
+Reviewable patch (not applied):
+- docs/polish/evidence/P01-callbar-proposed.patch

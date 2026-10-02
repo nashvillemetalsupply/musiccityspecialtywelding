@@ -1,0 +1,10 @@
+
+> my-v0-project@0.1.0 test
+> node --experimental-strip-types --test "scripts/**/*.test.mjs"
+
+npm : node: bad option: --experimental-strip-types
+At line:2 char:1
++ npm test *> docs/polish/evidence/baseline-tests.log
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node: bad optio...tal-strip-types:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError

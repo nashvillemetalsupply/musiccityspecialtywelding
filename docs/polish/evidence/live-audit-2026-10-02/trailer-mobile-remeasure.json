@@ -1,0 +1,53 @@
+[
+  {
+    "run": 1,
+    "status": 200,
+    "wallMs": 5436,
+    "lcp": {
+      "value": 1404,
+      "element": "P",
+      "url": null,
+      "size": 69452
+    },
+    "responseStart": 369.9000000022352,
+    "responseEnd": 392.6000000014901,
+    "domContentLoaded": 1203.300000000745,
+    "loadEvent": 1393,
+    "duration": 1393,
+    "transferSize": 10794
+  },
+  {
+    "run": 2,
+    "status": 200,
+    "wallMs": 4922,
+    "lcp": {
+      "value": 900,
+      "element": "P",
+      "url": null,
+      "size": 69452
+    },
+    "responseStart": 120.39999999850988,
+    "responseEnd": 127.89999999850988,
+    "domContentLoaded": 698.5999999977648,
+    "loadEvent": 898.5999999977648,
+    "duration": 898.5999999977648,
+    "transferSize": 10794
+  },
+  {
+    "run": 3,
+    "status": 200,
+    "wallMs": 4857,
+    "lcp": {
+      "value": 932,
+      "element": "P",
+      "url": null,
+      "size": 69452
+    },
+    "responseStart": 94.89999999850988,
+    "responseEnd": 119.19999999925494,
+    "domContentLoaded": 265,
+    "loadEvent": 836.2999999970198,
+    "duration": 836.2999999970198,
+    "transferSize": 10794
+  }
+]
