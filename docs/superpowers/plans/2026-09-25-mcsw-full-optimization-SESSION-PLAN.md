@@ -69,6 +69,8 @@ Plan: `2026-09-25-mcsw-full-optimization.md` (same folder). Generated 2026-09-25
 | S23 | Carryover walks from the folded plans: device/env walks (tel keypad, forced colors, reduced motion, `/board/nope` + missing job id, cold-reload layout jump); crew-role production route walk (gated on the first real crew operator) | Opus 5.5 | medium | S | S14 | done (landed aee980a, factory-mcsw-s23-r2; crew-role production walk blocked on first real crew operator; device walks replaced by tests) |
 | S22 | Exit verification: QA Procedure 1–15, tick every checkbox, Lighthouse after, Neon CU-hours read, close plan | Opus 5.5 | medium | S | all | open |
 
+> **2026-10-02 public-site polish:** The bounded live audit and local G01/P01/P02/P03 fixes are complete; see the [canonical audit](../../polish/2026-10-astra-audit.md) and [final handoff](../../polish/2026-10-astra-HANDOFF.md). This additive closeout does not change S16 (partial), S21 (blocked), or S22 (open).
+
 Sonnet-safe rows if the Opus bucket binds: S03, S06, S08, S11, S12, S14, S17, S18.
 
 ## Recommended order

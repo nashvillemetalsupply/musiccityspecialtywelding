@@ -1,4 +1,10 @@
-﻿P02 read-only source proposal — service-area city tile hit targets
+STATUS UPDATE — 2026-10-02
+P02 was applied and committed in d990d2c. All 57 browser assertions passed.
+Canonical final status: ../2026-10-astra-audit.md
+The original proposal below is preserved as historical evidence.
+
+---
+P02 read-only source proposal — service-area city tile hit targets
 Date: 2026-10-02
 Status: PROPOSAL ONLY. No application source edited.
 

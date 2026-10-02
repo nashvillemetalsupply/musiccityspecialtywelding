@@ -1,3 +1,9 @@
+STATUS UPDATE — 2026-10-02
+P03 was applied and committed in f7a1877. All full checks and all 13 browser assertions passed.
+Canonical final status: ../2026-10-astra-audit.md
+The original review below is preserved as historical evidence.
+
+---
 MCSW mobile-menu Escape review
 Reviewed: 2026-10-02
 Evidence: docs/polish/evidence/interactions.json and interactions-menu-escape-failure.png

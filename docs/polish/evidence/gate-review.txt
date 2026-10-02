@@ -1,4 +1,10 @@
-﻿MCSW validation gate review
+STATUS UPDATE — 2026-10-02
+G01 was authorized and committed in a5d04e8. Runtime AST equivalence passed.
+Canonical final status: ../2026-10-astra-audit.md
+The original gate review below is preserved as historical evidence.
+
+---
+MCSW validation gate review
 Date: 2026-10-02
 Branch: polish/astra-2026-10
 

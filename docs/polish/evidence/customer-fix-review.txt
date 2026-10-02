@@ -1,0 +1,48 @@
+MCSW customer-fix code review
+Date: 2026-10-02
+Fixed point: a5d04e8e9ecc7865f17a404c24ba8745e54d943e
+Reviewed state: committed P01 at 693a0cb, committed P02 at d990d2c, and committed P03 at f7a1877
+P01/P02 reviewed files:
+- app/globals.css
+- app/service-areas/page.tsx
+- scripts/css-move-verbatim.test.mjs
+- scripts/s12-public-site.test.mjs
+
+P01/P02 verdict: PASS — no actionable findings.
+
+Scope and behavior reviewed
+- P01 changes only the two shared mobile-CTA declarations by adding literal fallbacks equal to the existing token values. Business copy, URLs, prices, tracking, visibility logic, CSP behavior/configuration, DNS, and environment handling are unchanged.
+- P01 local production-build evidence passes all 90 browser assertions across 11 mobile and 11 desktop routes. Every mobile Quote control measures 13.95:1 contrast, Call retains its opaque gradient, CTA axe violations are zero, and desktop horizontal overflow is zero. Evidence: verify-local-P01.json and verify-local-P01.png.
+- P02 removes only the noninteractive strong wrapper, moves ms-display onto each existing Next Link, and retargets the three route-scoped tile selectors to the direct anchor. The eight city strings, order, /services/mobile-welding#service destination, surrounding business copy, and all other routes are unchanged.
+- The P02 anchor owns the existing tile dimensions, padding, border, color, background, shadow, rotation, and responsive min-height. The existing .ms-site :focus-visible rule applies to the full anchor.
+- The targeted S12 assertion continues to pin the exact city list, full-tile Link structure, unchanged destination, and destination section ID.
+
+Frozen-CSS guard review
+- The allowlist contains exactly five full-rule replacements: two P01 CTA rules and three P02 service-area tile rules.
+- Each pre-change rule must occur exactly once in the frozen baseline before replacement.
+- The complete current public stylesheet must equal the classified frozen baseline after only those exact replacements.
+- Global imports and leaf at-rules remain byte-identical.
+- This preserves coverage for every unapproved public-CSS change; it is not a wildcard, selector-only exemption, or disabled check.
+
+Verification boundary
+- P01 is committed and fully green at 693a0cb.
+- P02 is committed at d990d2c. Full tests, lint, production build, and bundle budget pass in P02-checks.json; all 57 local browser assertions pass in verify-local-P02.json.
+
+P03 review
+Baseline: d990d2c3b7123588f92327bff6bc25a121ac2d82
+Reviewed state: committed as f7a1877
+Reviewed file: components/mainstreet-menu.tsx
+Diff size: 15 insertions, 3 deletions
+
+P03 verdict: PASS — no actionable findings.
+
+Behavior reviewed
+- The key handler is attached only to the menu `<details>`, so it receives keyboard events only while focus is on the summary or a descendant menu link.
+- It returns without side effects unless `event.key === "Escape"` and the disclosure is open.
+- For handled Escape, it prevents the unused native action, closes the disclosure through the existing `closeMenu()` helper, and returns focus to the summary trigger.
+- Existing link clicks still use `closeMenu` directly. Link order, link text, all four hash destinations, the phone `href`, and native link activation are unchanged.
+- Enter and Space are not intercepted, so native `<summary>` keyboard toggling remains unchanged.
+- No CSS, layout, scrolling, dialog behavior, business copy, tracking, price, CSP, environment, or DNS behavior is changed.
+
+Verification boundary
+- P03 is committed at f7a1877. Full tests, lint, production build, and bundle budget pass in P03-checks.json. All 13 focused browser assertions pass in verify-local-P03.json, including Escape close/focus restoration from a link and from the summary, unchanged Enter/Space behavior, unchanged link click/href behavior, zero page errors, and zero attempted mutating requests.

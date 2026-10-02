@@ -1,4 +1,10 @@
-﻿Mobile call-bar review
+STATUS UPDATE — 2026-10-02
+P01 was applied and committed in 693a0cb. All 90 browser assertions passed.
+Canonical final status: ../2026-10-astra-audit.md
+The original proposal below is preserved as historical evidence.
+
+---
+Mobile call-bar review
 Date: 2026-10-02
 Status: proposal only; no source change applied because the lint prerequisite is still red.
 

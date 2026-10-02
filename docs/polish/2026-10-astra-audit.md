@@ -5,15 +5,15 @@ Branch: `polish/astra-2026-10`. Starting commit: `2d348c7`.
 
 ## Status
 
-Live audit completed: 22 natural viewport runs and 22 supplemental full-content accessibility runs. No application source fixes have been applied. The required lint gate fails on seven existing type annotations, including one in the protected CSP reporting module. The owner was asked for a narrowly scoped type-only prerequisite exception; no approval has been received. The red-check rule remains in force.
+The authorized October local polish scope is complete. The live audit and evidence are committed as `5d116c0`; the type-only G01 prerequisite is committed as `a5d04e8`; and the three bounded customer fixes are committed as P01 `693a0cb`, P02 `d990d2c`, and P03 `f7a1877`. The final full Node 24 run for each of G01, P01, P02, and P03 passed with 861 tests passed and 1 skipped, zero ESLint errors and four existing warnings, and a passing production build and bundle budget. Local built-site verification passed 90 P01, 57 P02, and 13 P03 browser assertions. No push, deploy, or merge was performed, so the live site remains unchanged. This completion applies only to the authorized October audit and three-fix scope; it does not close the broader S22 exit-verification row.
 
 ## Ranked findings
 
 | Rank / ID | Customer impact | Finding and live URL | Evidence | Status |
 | --- | --- | --- | --- | --- |
-| 1 / P01 | Major: hard-to-read fixed conversion control | The mobile bottom bar loses its orange Call background and its light Quote text outside the homepage. Quote is near-black on dark brown, at 1.21:1 contrast rather than 4.5:1. Confirmed on `/service-areas`, `/privacy`, `/terms`, all six service pages, and the 404 page. | `evidence/live-audit-2026-10-02/legal-mobile-callbar.json`; `evidence/live-audit-2026-10-02/live-audit.json`; mobile Privacy and Terms `00-top.png` captures. | **Not fixed in source.** Exact two-declaration CSS proposal prepared in `evidence/P01-callbar-proposed.patch`. Blocked by the existing lint gate and pending prerequisite exception. |
-| 2 / P02 | Minor: city tiles have small clickable text | On https://musiccityspecialtywelding.com/service-areas, eight city tiles look like roughly 44 px targets, but their actual anchors are only 15–16 px tall. The padded tile area is not part of the link. This falls below the repo's preferred 44 px target; no standalone WCAG target-spacing failure is asserted. | `evidence/live-audit-2026-10-02/live-audit.json`, the mobile service-area `layout.smallTargets`; `screenshots/mobile-390/service-areas/00-top.png` and section captures. | **Not fixed.** The lint gate is red. A narrow anchor-fill CSS correction would be the next candidate after P01; no city copy or page should be rewritten. |
-| 3 / P03 | Minor keyboard usability | The navigation disclosure at https://musiccityspecialtywelding.com/ stays open after Escape. It remains operable by Enter/Space and its links, is not a keyboard trap, and is not a modal. This is a navigation convention gap, not a demonstrated standalone WCAG failure. | `evidence/interactions.json`; `evidence/interactions-menu-escape-failure.png`; `evidence/menu-review.txt`. | **Not fixed.** Lower priority than P01; source work is stopped by the lint gate. One-component proposal is recorded. |
+| 1 / P01 | Major: hard-to-read fixed conversion control | The mobile bottom bar loses its orange Call background and its light Quote text outside the homepage. Quote is near-black on dark brown, at 1.21:1 contrast rather than 4.5:1. Confirmed on `/service-areas`, `/privacy`, `/terms`, all six service pages, and the 404 page. | `evidence/live-audit-2026-10-02/legal-mobile-callbar.json`; `evidence/live-audit-2026-10-02/live-audit.json`; `evidence/verify-local-P01.json`; `evidence/verify-local-P01.png`. | **Fixed in source and verified locally.** Commit `693a0cb`; 13.95:1 local contrast and 90/90 browser assertions. Not deployed. |
+| 2 / P02 | Minor: city tiles have small clickable text | On https://musiccityspecialtywelding.com/service-areas, eight city tiles look like roughly 44 px targets, but their actual anchors are only 15–16 px tall. The padded tile area is not part of the link. This falls below the repo's preferred 44 px target; no standalone WCAG target-spacing failure is asserted. | `evidence/live-audit-2026-10-02/live-audit.json`; `evidence/verify-local-P02.json`; `evidence/verify-local-P02.png`; `evidence/verify-local-P02-desktop.png`. | **Fixed in source and verified locally.** Commit `d990d2c`; every city anchor is at least 44 × 44 px and 57/57 browser assertions pass. Not deployed. |
+| 3 / P03 | Minor keyboard usability | The navigation disclosure at https://musiccityspecialtywelding.com/ stays open after Escape. It remains operable by Enter/Space and its links, is not a keyboard trap, and is not a modal. This is a navigation convention gap, not a demonstrated standalone WCAG failure. | `evidence/interactions.json`; `evidence/interactions-menu-escape-failure.png`; `evidence/verify-local-P03.json`; `evidence/verify-local-P03.png`. | **Fixed in source and verified locally.** Commit `f7a1877`; Escape close/focus restoration and all 13 browser assertions pass. Not deployed. |
 
 ### P01: affected URLs and narrow correction
 
@@ -28,9 +28,19 @@ Live audit completed: 22 natural viewport runs and 22 supplemental full-content 
 - https://musiccityspecialtywelding.com/services/custom-metal-products
 - https://musiccityspecialtywelding.com/__mcsw_public_audit_missing_2026_10_02__
 
-Live screenshots established the failure before source inspection. The shared `.ms-mobile-cta` CSS references `--sw-neon`, `--sw-fire`, and `--sw-chalk`, which exist only beneath `.ms-site`. Outside that ancestor, the declarations become invalid. The proposed fix adds fallbacks equal to the existing token values in two rules in `app/globals.css`. It changes no copy, service content, prices, tracking, visibility logic, or header.
+Live screenshots established the failure before source inspection. The shared `.ms-mobile-cta` CSS referenced `--sw-neon`, `--sw-fire`, and `--sw-chalk`, which exist only beneath `.ms-site`. Outside that ancestor, the declarations became invalid. Commit `693a0cb` adds fallbacks equal to the existing token values in two rules in `app/globals.css`. It changes no copy, service content, prices, tracking, visibility logic, or header.
 
-See `evidence/callbar-review.txt`. Browser-only checks on Privacy, a service page, and the 404 page resolved the Call gradient and Quote foreground, with zero CTA axe violations. The homepage computed CTA styles remained exactly unchanged. Proposed-state captures are `evidence/live-audit-2026-10-02/P01-*-callbar-proposed.png`; `git apply --check` passed for the unapplied patch. Browser-injected proposed CSS is review instrumentation only; it does not mean the source or live site has been fixed.
+See `evidence/callbar-review.txt`. Browser-injected checks first confirmed the correction on Privacy, a service page, and the 404 page while leaving homepage CTA styles unchanged. The committed source was then tested through a local production build across 11 mobile and 11 desktop routes. All 90 assertions passed: the Quote control measured 13.95:1 contrast on every mobile route, Call retained its opaque gradient, the CTA had zero axe violations, and desktop routes had no horizontal overflow. Evidence: `evidence/verify-local-P01.json` and `evidence/verify-local-P01.png`. These local results verify the committed source; the live site has not been deployed from this branch.
+
+### P02: complete city-tile targets
+
+Commit `d990d2c` removes the noninteractive `<strong>` wrapper and makes each unchanged Next Link own the existing tile class and presentation. The eight city names, their order, the `/services/mobile-welding#service` destination, business copy, and other routes are unchanged. At both tested widths every anchor is at least 44 × 44 px; padded-edge hit testing, full-tile focus, Enter activation, desktop presentation, and overflow checks pass. Evidence: `evidence/verify-local-P02.json`, `evidence/verify-local-P02.png`, and `evidence/verify-local-P02-desktop.png`.
+
+The first P02 browser run is retained in `evidence/verify-local-P02-initial.json`. Its eight failures came from expecting authored `inline-flex` to remain `inline-flex` in computed style. Because each anchor is itself a flex item, CSS blockification correctly reports computed `display: flex`; every recorded size, padding, border, background, shadow, color, decoration, and rotation already matched. The verifier was narrowed to the standards-correct computed value, then all 57 assertions passed. No application change was made to satisfy that false failure.
+
+### P03: Escape closes the menu
+
+Commit `f7a1877` adds an Escape handler only to the existing native `<details>` menu. It acts only when the menu is open and focus is on its summary or a descendant link, closes the disclosure, and restores focus to the summary. Existing link clicks still close without focus restoration; link text and destinations are unchanged; native Enter and Space behavior remains intact. All 13 focused assertions passed, including Escape from a link and from the summary, link click/href behavior, required-form and FAQ checks, zero page errors, and zero attempted mutating requests. Evidence: `evidence/verify-local-P03.json` and `evidence/verify-local-P03.png`.
 
 ## Coverage and evidence
 
@@ -82,19 +92,46 @@ Approved business facts were checked against `BRAND-BRIEF.md`: phone, address, 2
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Production build and bundle budget | PASS | `evidence/baseline-build.log`; home 530,423 / 648,316 bytes, board 671,894 / 817,538 bytes |
-| Repository tests using Node 24.21.0 | PASS: 861 passed, 1 skipped, 0 failed | `evidence/baseline-tests-node24.log` |
-| New audit runner scripts | PASS: no new lint errors | `evidence/audit-scripts-lint.log` (exit 0) |
-| ESLint using Node 24.21.0 | FAIL: 7 existing errors, 4 warnings | `evidence/baseline-lint-node24.log` |
+| Historical baseline - production build and bundle budget | PASS | `evidence/baseline-build.log`; home 530,423 / 648,316 bytes, board 671,894 / 817,538 bytes |
+| Historical baseline - repository tests using Node 24.21.0 | PASS: 861 passed, 1 skipped, 0 failed | `evidence/baseline-tests-node24.log` |
+| Historical baseline - ESLint using Node 24.21.0 | **HISTORICAL FAIL: 7 errors, 4 warnings** | `evidence/baseline-lint-node24.log` |
+| G01 - type-only prerequisite | PASS: 861 passed, 1 skipped; lint 0 errors/4 existing warnings; build and budget pass; six runtime ASTs equivalent | `evidence/G01-checks.json`; `evidence/G01-runtime-equivalence.json`; commit `a5d04e8` |
+| P01 initial run | **HISTORICAL FAIL:** frozen public-CSS snapshot expected the exact pre-change rules | `evidence/P01-initial-checks.json`; `evidence/P01-initial-frozen-css-test.log` |
+| P01 final repository gate | PASS: 861 passed, 1 skipped; lint 0 errors/4 existing warnings; build and budget pass | `evidence/P01-checks.json`; commit `693a0cb` |
+| P01 local built-site verification | PASS: 90/90 assertions across 11 mobile and 11 desktop routes | `evidence/verify-local-P01.json`; `evidence/verify-local-P01.png` |
+| P02 initial browser verifier | **HISTORICAL FALSE FAIL:** 8 presentation assertions expected authored `inline-flex` instead of blockified computed `flex` | `evidence/verify-local-P02-initial.json` |
+| P02 final repository gate | PASS: 861 passed, 1 skipped; lint 0 errors/4 existing warnings; build and budget pass | `evidence/P02-checks.json`; commit `d990d2c` |
+| P02 local built-site verification | PASS: 57/57 assertions; all eight city anchors at least 44 × 44 px | `evidence/verify-local-P02.json`; `evidence/verify-local-P02.png`; `evidence/verify-local-P02-desktop.png` |
+| P03 final repository gate | PASS: 861 passed, 1 skipped; lint 0 errors/4 existing warnings; build and budget pass | `evidence/P03-checks.json`; commit `f7a1877` |
+| P03 focused browser verification | PASS: 13/13 assertions | `evidence/verify-local-P03.json`; `evidence/verify-local-P03.png` |
 
-The shell's default Node 20 cannot run the pinned strip-types test command; the installed cached Node 24 executable was invoked directly without changing PATH or any environment variable. The initial tooling failure is retained in `evidence/baseline-tests.log`. Build passed through the package build command; the Node 24 tests and lint ran the package scripts' underlying commands directly.
+The historical baseline ESLint failure is retained because it originally stopped source work. The owner then authorized the narrow type-only prerequisite. G01 removed those seven checked-source `no-explicit-any` errors without disabling or weakening a rule, changing a dependency, or changing runtime behavior. Its six modules are `lib/ad-spend.ts`, `lib/ai-usage.ts`, `lib/call-sketch-claims.ts`, `lib/csp-report.ts`, `lib/photo-draft-workflow.ts`, and `lib/shop-brain-invariants.ts`. The protected CSP edit was type-only; CSP headers, enforcement, report-only behavior, and configuration were not changed.
 
-The seven lint failures are checked-source `no-explicit-any` errors in `lib/ad-spend.ts`, `lib/ai-usage.ts`, `lib/call-sketch-claims.ts` (two), `lib/csp-report.ts`, `lib/photo-draft-workflow.ts`, and `lib/shop-brain-invariants.ts`. Installed tool versions match the lockfile. The exact type-only prerequisite proposal and protected-CSP exception are in `evidence/gate-review.txt`. No rule was disabled or weakened, and no dependency was changed.
+The shell's default Node 20 cannot run the pinned strip-types test command; the installed cached Node 24 executable was invoked directly without changing PATH or any environment variable. The initial tooling failure remains in `evidence/baseline-tests.log`.
+
+The first P01 validation run also remains recorded. It stopped on `scripts/css-move-verbatim.test.mjs`, whose frozen public-CSS snapshot required the exact pre-change CTA rules. Review confirmed that P01 and P02 intentionally change only five complete rules. The test now applies an explicit full-rule allowlist: each original rule must occur exactly once, each is replaced only by its approved form, the rest of public CSS remains equal to the frozen baseline, and imports and leaf at-rules remain byte-identical. The complete P01 and P02 suites then passed. This resolves the expected snapshot conflict while preserving the freeze guard for every unapproved CSS change.
 
 ## Changes and stop reason
 
-Application fixes applied: **0**. Application fix commits: **none**. Source work is stopped by the required red-check gate, not by the ten-fix cap or a claim that P01 is cosmetic. Evidence and reviewable proposals are preserved for resumption after the prerequisite decision.
+The bounded commit sequence is:
 
-Evidence review: an independent Codex review checked the main finding, browser-only correction, form result, metrics, limits, and unapplied status against artifacts. The final tap-target row is supported by the saved live element geometry and screenshot.
+- `5d116c0` — audit and before-state evidence.
+- `a5d04e8` — G01 type-only lint prerequisite.
+- `693a0cb` — P01 mobile call-bar color fallbacks.
+- `d990d2c` — P02 complete city-tile links.
+- `f7a1877` — P03 menu Escape close and focus restoration.
 
-No push, deploy, merge, environment change, DNS change, CSP change, tracking change, price change, or owner-held city-page edit was performed. The pre-existing untracked weekly optimization handoff was left alone.
+The authorized work stops after three customer-facing fixes and one type-only prerequisite. All are committed and locally verified. The remaining observations are cosmetic, protected, externally blocked, or part of a broader plan; the audit found no additional material customer-facing defect that justified another source change.
+
+| Left unchanged | Reason |
+| --- | --- |
+| Duplicate noindex tags on the 404 | The page already has the correct 404 response, title, and noindex behavior. The duplicate is harmless markup and does not justify a cosmetic source change. |
+| `Access-Control-Allow-Origin: *` on public HTML and sitemap responses | This is a prior S12 carryover on public data. Left unchanged because the audit demonstrated no customer impact and the remaining work is low priority. |
+| Google/Meta analytics resources and report-only CSP messages | Tracking was explicitly protected. CSP report-only configuration remains untouched pending its separate clean-seven-day evidence requirement; no enforcement or allowlist change was authorized. |
+| S21 per-city pages | Still blocked on owner-supplied real job content for each city. No city pages or city copy were invented. |
+| S21 call-in-progress chips | Still blocked until the S05 closing note demonstrates Neon compute below 50 CU-hours/month. No SSE chip work was attempted. |
+| S22 exit verification | Remains open. This October audit does not substitute for S22's fresh preview/production QA Procedure 1–15, Lighthouse rerun, Neon CU-hours read, closing note, and plan closure. |
+
+An independent Codex review found no actionable issue in the P01/P02 or P03 implementation scope. It confirmed the exact frozen-CSS allowlist, unchanged business copy and URLs, and the bounded Escape behavior. Evidence: `evidence/customer-fix-review.txt`.
+
+No push, deploy, merge, environment change, DNS change, CSP behavior or configuration change, tracking change, price change, or owner-held city-page edit was performed. The live site remains unchanged. The pre-existing untracked weekly optimization handoff was left alone.
