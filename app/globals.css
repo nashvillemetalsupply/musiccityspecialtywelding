@@ -2558,8 +2558,8 @@ html {
 /* --------------------------------------------------------------- mobile cta */
 
 .ms-mobile-cta { border-top: 3px solid #000; }
-.ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon), var(--sw-fire) 60%); color: #1b0f02; }
-.ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk); border-left-color: #000; }
+.ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon, #ffb46b), var(--sw-fire, #ff8a2a) 60%); color: #1b0f02; }
+.ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk, #f3ead8); border-left-color: #000; }
 
 /* --------------------------------------------------------------- subpages */
 

@@ -1,0 +1,21 @@
+{
+  "phase": "P01",
+  "startedAt": "2026-10-02T21:34:12.292Z",
+  "completedAt": "2026-10-02T21:35:39.086Z",
+  "node": "v24.21.0",
+  "passed": false,
+  "results": [
+    {
+      "name": "tests",
+      "exitCode": 1,
+      "durationMs": 34641,
+      "log": "docs/polish/evidence/P01-tests.log"
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "durationMs": 86791,
+      "log": "docs/polish/evidence/P01-lint.log"
+    }
+  ]
+}

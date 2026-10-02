@@ -1,0 +1,1387 @@
+{
+  "phase": "P01",
+  "target": "http://127.0.0.1:3041",
+  "startedAt": "2026-10-02T23:36:19.759Z",
+  "requestPolicy": "GET and HEAD only; every other method aborted by Playwright routing",
+  "assertions": [
+    {
+      "name": "P01 / returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 / quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 / Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 / Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 / Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 / Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 / quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /service-areas returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /service-areas quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /service-areas Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /service-areas Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /service-areas Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /service-areas Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /service-areas quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /privacy returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /privacy quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /privacy Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /privacy Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /privacy Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /privacy Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /privacy quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /terms returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /terms quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /terms Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /terms Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /terms Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /terms Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /terms quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /services/mobile-welding returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /services/mobile-welding quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/mobile-welding Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /services/mobile-welding Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /services/mobile-welding Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/mobile-welding Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /services/mobile-welding quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /services/equipment-repair returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /services/equipment-repair quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/equipment-repair Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /services/equipment-repair Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /services/equipment-repair Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/equipment-repair Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /services/equipment-repair quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /services/architectural-welding returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /services/architectural-welding quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/architectural-welding Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /services/architectural-welding Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /services/architectural-welding Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/architectural-welding Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /services/architectural-welding quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /services/custom-fabrication returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /services/custom-fabrication quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/custom-fabrication Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /services/custom-fabrication Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /services/custom-fabrication Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/custom-fabrication Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /services/custom-fabrication quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /services/custom-metal-products returns expected HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P01 /services/custom-metal-products quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/custom-metal-products Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /services/custom-metal-products Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /services/custom-metal-products Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /services/custom-metal-products Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /services/custom-metal-products quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 /__local-verification-404__ returns expected HTTP 404",
+      "passed": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "P01 /__local-verification-404__ quick actions are actually visible",
+      "passed": true,
+      "detail": {
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /__local-verification-404__ Quote background resolves to an opaque dark color",
+      "passed": true,
+      "detail": {
+        "backgroundColor": "rgb(36, 29, 18)",
+        "luminance": 0.012974701741346966
+      }
+    },
+    {
+      "name": "P01 /__local-verification-404__ Quote text resolves to a light color",
+      "passed": true,
+      "detail": {
+        "color": "rgb(243, 234, 216)",
+        "luminance": 0.8285819156294206
+      }
+    },
+    {
+      "name": "P01 /__local-verification-404__ Quote text contrast is at least 4.5:1",
+      "passed": true,
+      "detail": {
+        "quoteContrast": 13.951346990700788,
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        }
+      }
+    },
+    {
+      "name": "P01 /__local-verification-404__ Call background resolves to a nontransparent gradient",
+      "passed": true,
+      "detail": {
+        "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(27, 15, 2)"
+      }
+    },
+    {
+      "name": "P01 /__local-verification-404__ quick actions have no axe violations",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 / has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /service-areas has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /privacy has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /terms has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /services/mobile-welding has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /services/trailer-welding-repair has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /services/equipment-repair has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /services/architectural-welding has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /services/custom-fabrication has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /services/custom-metal-products has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 /__local-verification-404__ has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P01 has no page errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P01 attempted no mutating requests",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "failures": [],
+  "blockedRequests": [],
+  "pageErrors": [],
+  "results": {
+    "routeCount": 11,
+    "nonHomeRouteCount": 10,
+    "screenshotRoute": "/privacy",
+    "mobile": [
+      {
+        "path": "/",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/service-areas",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/privacy",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/terms",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/services/mobile-welding",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/services/trailer-welding-repair",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/services/equipment-repair",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/services/architectural-welding",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/services/custom-fabrication",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/services/custom-metal-products",
+        "status": 200,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      },
+      {
+        "path": "/__local-verification-404__",
+        "status": 404,
+        "className": "ms-mobile-cta is-visible",
+        "ariaHidden": "false",
+        "inert": false,
+        "box": {
+          "x": 0,
+          "y": 783.015625,
+          "width": 390,
+          "height": 60.984375,
+          "bottom": 844
+        },
+        "call": {
+          "backgroundImage": "linear-gradient(rgb(255, 180, 107), rgb(255, 138, 42) 60%)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(27, 15, 2)"
+        },
+        "quote": {
+          "backgroundImage": "none",
+          "backgroundColor": "rgb(36, 29, 18)",
+          "color": "rgb(243, 234, 216)"
+        },
+        "quoteBackgroundLuminance": 0.012974701741346966,
+        "quoteTextLuminance": 0.8285819156294206,
+        "quoteContrast": 13.951346990700788,
+        "callGradientOpaque": true,
+        "axeViolations": []
+      }
+    ],
+    "desktop": [
+      {
+        "path": "/",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/service-areas",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/privacy",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/terms",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/services/mobile-welding",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/services/trailer-welding-repair",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/services/equipment-repair",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/services/architectural-welding",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/services/custom-fabrication",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/services/custom-metal-products",
+        "status": 200,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      },
+      {
+        "path": "/__local-verification-404__",
+        "status": 404,
+        "innerWidth": 1440,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "overflowPixels": 0
+      }
+    ]
+  },
+  "screenshot": "verify-local-P01.png",
+  "completedAt": "2026-10-02T23:37:08.587Z",
+  "pass": true,
+  "screenshotSaved": true
+}

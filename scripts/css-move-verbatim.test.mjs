@@ -119,12 +119,35 @@ test("every retained live selector arm and declaration block survives the move",
   assert.deepEqual(actual, expected, "a live selector arm, declaration block, context or source order changed")
 })
 
-test("marketing, customer glass, theme and global imports remain verbatim in order", () => {
+// P01 adds literal fallbacks to two CTA custom properties so subpages retain
+// readable colors when those properties are outside their defining scope. Keep
+// this allowlist at full-rule granularity: every other public CSS byte remains
+// frozen, and each pre-change rule must appear exactly once in the baseline.
+const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
+  [
+    ".ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon), var(--sw-fire) 60%); color: #1b0f02; }",
+    ".ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon, #ffb46b), var(--sw-fire, #ff8a2a) 60%); color: #1b0f02; }",
+  ],
+  [
+    ".ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk); border-left-color: #000; }",
+    ".ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk, #f3ead8); border-left-color: #000; }",
+  ],
+]
+
+function applyApprovedPublicCssReplacements(css) {
+  for (const [before, after] of APPROVED_PUBLIC_CSS_REPLACEMENTS) {
+    assert.equal(css.split(before).length - 1, 1, `approved public CSS source rule must occur once: ${before}`)
+    css = css.replace(before, after)
+  }
+  return css
+}
+
+test("public CSS remains frozen except approved P01 mobile CTA fallbacks", () => {
   const original = read("scripts/qa/baseline/pre-s11-public-css.css")
   const current = read("app/globals.css")
   const root = fileURLToPath(new URL("..", import.meta.url))
-  const expected = classify(original, scanClassUsage(root)).text.KEEP
-  assert.equal(current, expected, "the frozen public CSS differs only by zero-reference selector arms")
+  const expected = applyApprovedPublicCssReplacements(classify(original, scanClassUsage(root)).text.KEEP)
+  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01 fallbacks")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
   assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")
 })
