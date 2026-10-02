@@ -47,9 +47,9 @@ test("home sign keeps its visual text and names the service and city accessibly"
   assert.match(homePage, /<span className="sw-line-lg">\s*Weld<i className="sw-buzz"/)
 })
 
-test("service-area cities link to the mobile-welding section with the existing chip styling", () => {
+test("service-area city links own the full visual tile and keep their destination", () => {
   assert.match(serviceAreasPage, /const areas = \["Lebanon", "Nashville", "Franklin", "Murfreesboro", "Gallatin", "Hendersonville", "Clarksville", "Antioch"\]/)
-  assert.match(serviceAreasPage, /areas\.map\(\(area\) => <strong className="ms-display" key=\{area\}><Link href="\/services\/mobile-welding#service" style=\{\{ color: "inherit", textDecoration: "none" \}\}>\{area\}<\/Link><\/strong>\)/)
+  assert.match(serviceAreasPage, /areas\.map\(\(area\) => \(\s*<Link className="ms-display" href="\/services\/mobile-welding#service" key=\{area\}>\s*\{area\}\s*<\/Link>\s*\)\)/)
   assert.match(servicePage, /<section className="ms-subhero" id="service">/)
 })
 

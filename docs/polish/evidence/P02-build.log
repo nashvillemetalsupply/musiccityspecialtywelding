@@ -1,0 +1,121 @@
+Node v24.21.0
+Command: node node_modules/next/dist/bin/next build
+
+▲ Next.js 16.3.6 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 129ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.3s
+  Running TypeScript ...
+  Finished TypeScript in 8.6s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/48) ...
+  Generating static pages using 7 workers (12/48) 
+  Generating static pages using 7 workers (24/48) 
+  Generating static pages using 7 workers (36/48) 
+✓ Generating static pages using 7 workers (48/48) in 2.0s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/glass/attachment
+├ ƒ /api/glass/photo
+├ ƒ /api/glass/upload
+├ ƒ /api/glass/upload/finalize
+├ ƒ /api/glass/view
+├ ƒ /api/health
+├ ƒ /api/ingest/gmail
+├ ƒ /api/ops/ad-spend
+├ ƒ /api/ops/ask
+├ ƒ /api/ops/attachment
+├ ƒ /api/ops/brief
+├ ƒ /api/ops/brief/audio
+├ ƒ /api/ops/brief/latest
+├ ƒ /api/ops/build-paperwork/[id]
+├ ƒ /api/ops/cache-session
+├ ƒ /api/ops/call
+├ ƒ /api/ops/call-sketch/[draftId]
+├ ƒ /api/ops/call-sketch/[draftId]/dxf
+├ ƒ /api/ops/call/[id]
+├ ƒ /api/ops/client-error
+├ ƒ /api/ops/closeout-upload
+├ ƒ /api/ops/csp-report
+├ ƒ /api/ops/digest
+├ ƒ /api/ops/export
+├ ƒ /api/ops/handset-slips
+├ ƒ /api/ops/login
+├ ƒ /api/ops/logout
+├ ƒ /api/ops/photo
+├ ƒ /api/ops/promises/draft
+├ ƒ /api/ops/pulse
+├ ƒ /api/ops/push
+├ ƒ /api/ops/receipts
+├ ƒ /api/ops/reminders
+├ ƒ /api/ops/shop/document
+├ ƒ /api/ops/sms-login/request
+├ ƒ /api/ops/sms-login/verify
+├ ƒ /api/ops/transcribe
+├ ƒ /api/ops/usage
+├ ƒ /api/ops/verify
+├ ƒ /api/ops/voice
+├ ƒ /api/ops/voice-note
+├ ƒ /api/ops/voice/preview
+├ ƒ /api/ops/wire/action
+├ ƒ /api/ops/wire/read
+├ ƒ /api/quote
+├ ƒ /api/resend/webhook
+├ ƒ /api/twilio/fallback
+├ ƒ /api/twilio/live-transcript
+├ ƒ /api/twilio/notification-status
+├ ƒ /api/twilio/outbound-connect
+├ ƒ /api/twilio/outbound-status
+├ ƒ /api/twilio/outbound-whisper
+├ ƒ /api/twilio/recording
+├ ƒ /api/twilio/sms
+├ ƒ /api/twilio/sms-status
+├ ƒ /api/twilio/transcript
+├ ƒ /api/twilio/voice
+├ ƒ /api/twilio/voice-status
+├ ○ /apple-icon
+├ ƒ /board
+├ ƒ /board/[...unknown]
+├ ƒ /board/calls
+├ ƒ /board/customers
+├ ƒ /board/updates
+├ ƒ /health
+├ ○ /icon.svg
+├ ƒ /j/[token]
+├ ƒ /j/[token]/build
+├ ƒ /j/[token]/correct
+├ ƒ /j/[token]/review
+├ ƒ /ops
+├ ƒ /ops/accounts/[id]
+├ ƒ /ops/analytics
+├ ƒ /ops/call-sketch
+├ ƒ /ops/install
+├ ƒ /ops/intake/[draftId]
+├ ƒ /ops/intake/new
+├ ƒ /ops/leads/[id]
+├ ƒ /ops/leads/[id]/builds
+├ ƒ /ops/manifest.webmanifest
+├ ƒ /ops/shop
+├ ○ /privacy
+├ ○ /robots.txt
+├ ○ /service-areas
+├   /services/[slug]
+│ ├ ● /services/mobile-welding
+│ ├ ● /services/trailer-welding-repair
+│ ├ ● /services/equipment-repair
+│ └ ● [+3 more paths]
+├ ○ /sitemap.xml
+└ ○ /terms
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+
+Runner exit code: 0

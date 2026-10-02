@@ -119,10 +119,11 @@ test("every retained live selector arm and declaration block survives the move",
   assert.deepEqual(actual, expected, "a live selector arm, declaration block, context or source order changed")
 })
 
-// P01 adds literal fallbacks to two CTA custom properties so subpages retain
-// readable colors when those properties are outside their defining scope. Keep
-// this allowlist at full-rule granularity: every other public CSS byte remains
-// frozen, and each pre-change rule must appear exactly once in the baseline.
+// P01 adds literal fallbacks to three CTA custom properties so subpages retain
+// readable colors when those properties are outside their defining scope.
+// P02 moves each service-area tile style onto its link so the visible tile is
+// the target. Keep this allowlist at full-rule granularity: every other public
+// CSS byte remains frozen, and each old rule must appear once in the baseline.
 const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
   [
     ".ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon), var(--sw-fire) 60%); color: #1b0f02; }",
@@ -131,6 +132,18 @@ const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
   [
     ".ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk); border-left-color: #000; }",
     ".ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk, #f3ead8); border-left-color: #000; }",
+  ],
+  [
+    ".ms-area-cities > div strong { display: inline-flex; min-height: 3.2rem; align-items: center; padding: .5rem 1rem; border: 2px solid #252620; color: #252620; background: #e8ddc4; box-shadow: .18rem .22rem 0 rgba(0,0,0,.38); font-size: clamp(1.15rem,2.6vw,1.75rem); transform: rotate(-.35deg); }",
+    ".ms-area-cities > div > a { display: inline-flex; min-height: 3.2rem; align-items: center; padding: .5rem 1rem; border: 2px solid #252620; color: #252620; background: #e8ddc4; box-shadow: .18rem .22rem 0 rgba(0,0,0,.38); font-size: clamp(1.15rem,2.6vw,1.75rem); text-decoration: none; transform: rotate(-.35deg); }",
+  ],
+  [
+    ".ms-area-cities > div strong:nth-child(2n) { transform: rotate(.35deg); background: #d8d1bf; }",
+    ".ms-area-cities > div > a:nth-child(2n) { transform: rotate(.35deg); background: #d8d1bf; }",
+  ],
+  [
+    "  .ms-area-cities > div strong { min-height: 2.8rem; font-size: 1.05rem; }",
+    "  .ms-area-cities > div > a { min-height: 2.8rem; font-size: 1.05rem; }",
   ],
 ]
 
@@ -142,12 +155,12 @@ function applyApprovedPublicCssReplacements(css) {
   return css
 }
 
-test("public CSS remains frozen except approved P01 mobile CTA fallbacks", () => {
+test("public CSS remains frozen except approved P01/P02 public polish", () => {
   const original = read("scripts/qa/baseline/pre-s11-public-css.css")
   const current = read("app/globals.css")
   const root = fileURLToPath(new URL("..", import.meta.url))
   const expected = applyApprovedPublicCssReplacements(classify(original, scanClassUsage(root)).text.KEEP)
-  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01 fallbacks")
+  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01/P02 changes")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
   assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")
 })

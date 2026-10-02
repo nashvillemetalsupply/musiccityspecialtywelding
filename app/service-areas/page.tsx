@@ -33,7 +33,13 @@ export default function ServiceAreasPage() {
 
         <section className="ms-area-cities" aria-label="Primary service areas">
           <p><MapPin aria-hidden="true" />Based at 533 W Baddour Pkwy, Lebanon, Tennessee.</p>
-          <div>{areas.map((area) => <strong className="ms-display" key={area}><Link href="/services/mobile-welding#service" style={{ color: "inherit", textDecoration: "none" }}>{area}</Link></strong>)}</div>
+          <div>
+            {areas.map((area) => (
+              <Link className="ms-display" href="/services/mobile-welding#service" key={area}>
+                {area}
+              </Link>
+            ))}
+          </div>
           <span>Outside this list? Larger and specialized work can travel farther. Call with the exact address and scope.</span>
         </section>
 

@@ -1,4 +1,4 @@
-﻿import { writeFile } from "node:fs/promises"
+import { writeFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { chromium } from "playwright"
 import AxeBuilder from "@axe-core/playwright"
@@ -328,7 +328,8 @@ try {
     for (const target of desktop.targets) {
       check(target.anchor.width >= 44 && target.anchor.height >= 44, `P02 desktop ${target.text} anchor geometry remains at least 44x44`, target.anchor)
       check(target.href === "/services/mobile-welding#service", `P02 desktop ${target.text} keeps the existing destination`, { href: target.href })
-      check(target.style.display === "inline-flex" && target.style.textDecorationLine === "none" && target.style.backgroundColor !== "rgba(0, 0, 0, 0)" && target.style.boxShadow !== "none", `P02 desktop ${target.text} retains tile presentation`, target.style)
+      // Authored inline-flex blockifies to computed flex because the anchor is itself a flex item.
+      check(target.style.display === "flex" && target.style.textDecorationLine === "none" && target.style.backgroundColor !== "rgba(0, 0, 0, 0)" && target.style.boxShadow !== "none", `P02 desktop ${target.text} retains tile presentation`, target.style)
     }
     const desktopMaxWidth = Math.max(desktopOverflow.documentScrollWidth, desktopOverflow.bodyScrollWidth)
     check(desktopMaxWidth <= desktopOverflow.clientWidth + 1, "P02 service-areas has no horizontal overflow at 1440", desktopOverflow)
@@ -427,8 +428,3 @@ try {
 
 console.log(JSON.stringify({ phase, pass: evidence.pass, assertionCount: evidence.assertions.length, failures: evidence.failures, json: jsonPath, screenshot: screenshotSaved ? screenshotPath : null }))
 if (!evidence.pass) process.exitCode = 1
-
-
-
-
-

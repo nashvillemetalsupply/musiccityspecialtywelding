@@ -1,0 +1,71 @@
+﻿P02 read-only source proposal — service-area city tile hit targets
+Date: 2026-10-02
+Status: PROPOSAL ONLY. No application source edited.
+
+Verified current live geometry at 390 x 844
+- First visual tile (strong): 94.397 x 45.371 px.
+- Nested Lebanon anchor: 58.216 x 15.464 px.
+- The wrapper owns min-height: 44.8px, padding: 8px 16px, border, background, shadow, and rotation.
+- The anchor owns only the text rectangle.
+
+Minimal correction
+Make each Next Link the tile element. Move the existing ms-display class from the removed strong wrapper onto the link, and retarget the three route-scoped CSS selectors from strong to the direct anchor. Add text-decoration: none to replace the removed inline style. The link then owns the same visible 94 x 45 px box and focus/click target.
+
+Exact proposed patch
+
+diff --git a/app/service-areas/page.tsx b/app/service-areas/page.tsx
+--- a/app/service-areas/page.tsx
++++ b/app/service-areas/page.tsx
+@@
+-          <div>{areas.map((area) => <strong className="ms-display" key={area}><Link href="/services/mobile-welding#service" style={{ color: "inherit", textDecoration: "none" }}>{area}</Link></strong>)}</div>
++          <div>
++            {areas.map((area) => (
++              <Link className="ms-display" href="/services/mobile-welding#service" key={area}>
++                {area}
++              </Link>
++            ))}
++          </div>
+
+diff --git a/app/globals.css b/app/globals.css
+--- a/app/globals.css
++++ b/app/globals.css
+@@
+-.ms-area-cities > div strong { display: inline-flex; min-height: 3.2rem; align-items: center; padding: .5rem 1rem; border: 2px solid #252620; color: #252620; background: #e8ddc4; box-shadow: .18rem .22rem 0 rgba(0,0,0,.38); font-size: clamp(1.15rem,2.6vw,1.75rem); transform: rotate(-.35deg); }
+-.ms-area-cities > div strong:nth-child(2n) { transform: rotate(.35deg); background: #d8d1bf; }
++.ms-area-cities > div > a { display: inline-flex; min-height: 3.2rem; align-items: center; padding: .5rem 1rem; border: 2px solid #252620; color: #252620; background: #e8ddc4; box-shadow: .18rem .22rem 0 rgba(0,0,0,.38); font-size: clamp(1.15rem,2.6vw,1.75rem); text-decoration: none; transform: rotate(-.35deg); }
++.ms-area-cities > div > a:nth-child(2n) { transform: rotate(.35deg); background: #d8d1bf; }
+@@
+-  .ms-area-cities > div strong { min-height: 2.8rem; font-size: 1.05rem; }
++  .ms-area-cities > div > a { min-height: 2.8rem; font-size: 1.05rem; }
+
+Scope proof
+- Only app/service-areas/page.tsx and the route-scoped .ms-area-cities rules in app/globals.css.
+- No city-page route, city copy, URL, tracking, form, price, schema, or business fact changes.
+- Home uses .ms-city-list span at app/globals.css:902-917; this patch does not match it.
+- The older .ms-area-cities ul/li rules at app/globals.css:1553-1569 are not involved and should not be cleaned up in P02.
+- ms-display already supplies the same display font, 900 weight, uppercase treatment, and line height after it moves to the link.
+- The direct-anchor selector keeps alternating rotation/background tied to the same child order.
+
+Acceptance check after implementation
+1. At 390 px, all eight .ms-area-cities > div > a rectangles are at least 44 x 44 px; the whole visible tile activates the existing /services/mobile-welding#service link.
+2. At 1440 px, tile dimensions, wrapping, rotation, colors, shadow, type, and city order visually match the before capture.
+3. Keyboard focus surrounds the full tile, and Enter activates the unchanged destination.
+4. No change on the homepage .ms-city-list or any other route.
+5. Run the repository-required checks and a targeted Playwright geometry assertion; do not add a source-mirroring regression test for this reversible two-file presentation fix.
+
+Documents to update only after all October polish fixes and verification are complete
+1. docs/polish/2026-10-astra-audit.md
+   - Preserve all live-before evidence.
+   - Update the Status block, P01/P02/P03 row statuses, validation gate, and Changes/stop reason with actual applied fixes, final checks, and any live/deploy limitation.
+2. docs/polish/2026-10-astra-HANDOFF.md (new closeout)
+   - Record final branch/commit/deploy state, exact bounded fixes, verification results, rollback evidence, and pointers to the audit/evidence.
+   - Explicitly say no city pages or city copy were created.
+3. docs/superpowers/plans/2026-09-25-mcsw-full-optimization-SESSION-PLAN.md
+   - Add one dated additive note near the session table pointing to the completed October polish audit/handoff.
+   - Do not change S16 (partial), S21 (blocked), or S22 (open); the October public polish does not close those broader plan rows.
+
+Historical documents that should remain historical
+- docs/superpowers/plans/2026-09-04-final-polish.md
+- docs/superpowers/plans/2026-09-04-final-polish-SESSION-PLAN.md
+- docs/superpowers/plans/2026-09-05-final-polish-HANDOFF.md
+- docs/weekly-optimization/2026-09-21-meta-ads-image-swap-HANDOFF.md

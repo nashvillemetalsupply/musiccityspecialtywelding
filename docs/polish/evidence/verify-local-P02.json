@@ -1,0 +1,1325 @@
+{
+  "phase": "P02",
+  "target": "http://127.0.0.1:3041",
+  "startedAt": "2026-10-02T23:45:26.438Z",
+  "requestPolicy": "GET and HEAD only; every other method aborted by Playwright routing",
+  "assertions": [
+    {
+      "name": "P02 service-areas returns HTTP 200 at 390",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P02 finds all eight direct city anchors at 390",
+      "passed": true,
+      "detail": {
+        "count": 8
+      }
+    },
+    {
+      "name": "P02 mobile Lebanon anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 15.864054679870605,
+        "y": 639.3379516601562,
+        "width": 94.39689636230469,
+        "height": 45.3709716796875,
+        "right": 110.2609510421753,
+        "bottom": 684.7089233398438
+      }
+    },
+    {
+      "name": "P02 mobile Lebanon keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Lebanon padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 0,
+        "text": "Lebanon",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 15.864054679870605,
+          "y": 639.3379516601562,
+          "width": 94.39689636230469,
+          "height": 45.3709716796875,
+          "right": 110.2609510421753,
+          "bottom": 684.7089233398438
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(232, 221, 196)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 mobile Nashville anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 117.9891586303711,
+        "y": 639.3040771484375,
+        "width": 105.49044036865234,
+        "height": 45.438720703125,
+        "right": 223.47959899902344,
+        "bottom": 684.7427978515625
+      }
+    },
+    {
+      "name": "P02 mobile Nashville keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Nashville padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 1,
+        "text": "Nashville",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 117.9891586303711,
+          "y": 639.3040771484375,
+          "width": 105.49044036865234,
+          "height": 45.438720703125,
+          "right": 223.47959899902344,
+          "bottom": 684.7427978515625
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(216, 209, 191)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 mobile Franklin anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 231.20785522460938,
+        "y": 639.3230590820312,
+        "width": 99.27178955078125,
+        "height": 45.4007568359375,
+        "right": 330.4796447753906,
+        "bottom": 684.7238159179688
+      }
+    },
+    {
+      "name": "P02 mobile Franklin keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Franklin padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 2,
+        "text": "Franklin",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 231.20785522460938,
+          "y": 639.3230590820312,
+          "width": 99.27178955078125,
+          "height": 45.4007568359375,
+          "right": 330.4796447753906,
+          "bottom": 684.7238159179688
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(232, 221, 196)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 mobile Murfreesboro anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 15.864422798156738,
+        "y": 692.0142822265625,
+        "width": 133.86489868164062,
+        "height": 45.612060546875,
+        "right": 149.72932147979736,
+        "bottom": 737.6263427734375
+      }
+    },
+    {
+      "name": "P02 mobile Murfreesboro keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Murfreesboro padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 3,
+        "text": "Murfreesboro",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 15.864422798156738,
+          "y": 692.0142822265625,
+          "width": 133.86489868164062,
+          "height": 45.612060546875,
+          "right": 149.72932147979736,
+          "bottom": 737.6263427734375
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(216, 209, 191)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 mobile Gallatin anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 157.4578399658203,
+        "y": 692.1243286132812,
+        "width": 97.83432006835938,
+        "height": 45.3919677734375,
+        "right": 255.2921600341797,
+        "bottom": 737.5162963867188
+      }
+    },
+    {
+      "name": "P02 mobile Gallatin keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Gallatin padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 4,
+        "text": "Gallatin",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 157.4578399658203,
+          "y": 692.1243286132812,
+          "width": 97.83432006835938,
+          "height": 45.3919677734375,
+          "right": 255.2921600341797,
+          "bottom": 737.5162963867188
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(232, 221, 196)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 mobile Hendersonville anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 15.864533424377441,
+        "y": 744.7750244140625,
+        "width": 145.69281005859375,
+        "height": 45.684326171875,
+        "right": 161.5573434829712,
+        "bottom": 790.4593505859375
+      }
+    },
+    {
+      "name": "P02 mobile Hendersonville keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Hendersonville padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 5,
+        "text": "Hendersonville",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 15.864533424377441,
+          "y": 744.7750244140625,
+          "width": 145.69281005859375,
+          "height": 45.684326171875,
+          "right": 161.5573434829712,
+          "bottom": 790.4593505859375
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(216, 209, 191)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 mobile Clarksville anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 169.2861785888672,
+        "y": 744.8515014648438,
+        "width": 120.64640808105469,
+        "height": 45.5313720703125,
+        "right": 289.9325866699219,
+        "bottom": 790.3828735351562
+      }
+    },
+    {
+      "name": "P02 mobile Clarksville keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Clarksville padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 6,
+        "text": "Clarksville",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 169.2861785888672,
+          "y": 744.8515014648438,
+          "width": 120.64640808105469,
+          "height": 45.5313720703125,
+          "right": 289.9325866699219,
+          "bottom": 790.3828735351562
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(232, 221, 196)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 mobile Antioch anchor target is at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 15.864026069641113,
+        "y": 797.7379150390625,
+        "width": 91.33444213867188,
+        "height": 45.352294921875,
+        "right": 107.19846820831299,
+        "bottom": 843.0902099609375
+      }
+    },
+    {
+      "name": "P02 mobile Antioch keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 mobile Antioch padded edges are part of the anchor hit area",
+      "passed": true,
+      "detail": {
+        "index": 7,
+        "text": "Antioch",
+        "href": "/services/mobile-welding#service",
+        "anchor": {
+          "x": 15.864026069641113,
+          "y": 797.7379150390625,
+          "width": 91.33444213867188,
+          "height": 45.352294921875,
+          "right": 107.19846820831299,
+          "bottom": 843.0902099609375
+        },
+        "style": {
+          "display": "flex",
+          "minHeight": "44.8px",
+          "padding": "8px 16px",
+          "borderWidth": "2px",
+          "backgroundColor": "rgb(216, 209, 191)",
+          "color": "rgb(37, 38, 32)",
+          "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+          "fontSize": "16.8px",
+          "textDecorationLine": "none",
+          "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+        },
+        "paddedEdgeHitsAnchor": true,
+        "edgeHitResults": [
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "name": "P02 keyboard focus visibly surrounds the full first city tile",
+      "passed": true,
+      "detail": {
+        "active": true,
+        "box": {
+          "x": 15.864054679870605,
+          "y": 639.3379516601562,
+          "width": 94.39689636230469,
+          "height": 45.3709716796875
+        },
+        "outlineStyle": "solid",
+        "outlineWidth": "3px",
+        "outlineOffset": "0px",
+        "outlineColor": "oklab(0.520011 0.23561 0.109888 / 0.5)"
+      }
+    },
+    {
+      "name": "P02 Enter activates the unchanged city destination",
+      "passed": true,
+      "detail": {
+        "pathname": "/services/mobile-welding",
+        "hash": "#service",
+        "href": "http://127.0.0.1:3041/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 service-areas returns HTTP 200 at 1440",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P02 finds all eight direct city anchors at 1440",
+      "passed": true,
+      "detail": {
+        "count": 8
+      }
+    },
+    {
+      "name": "P02 desktop Lebanon anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 43.84489822387695,
+        "y": 589.875732421875,
+        "width": 133.23208618164062,
+        "height": 51.99853515625,
+        "right": 177.07698440551758,
+        "bottom": 641.874267578125
+      }
+    },
+    {
+      "name": "P02 desktop Lebanon keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Lebanon retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(232, 221, 196)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 desktop Nashville anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 187.15757751464844,
+        "y": 589.8192138671875,
+        "width": 151.7317352294922,
+        "height": 52.111572265625,
+        "right": 338.8893127441406,
+        "bottom": 641.9307861328125
+      }
+    },
+    {
+      "name": "P02 desktop Nashville keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Nashville retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(216, 209, 191)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 desktop Franklin anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 348.969970703125,
+        "y": 589.8508911132812,
+        "width": 141.37255859375,
+        "height": 52.0482177734375,
+        "right": 490.342529296875,
+        "bottom": 641.8991088867188
+      }
+    },
+    {
+      "name": "P02 desktop Franklin keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Franklin retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(232, 221, 196)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 desktop Murfreesboro anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 500.42364501953125,
+        "y": 589.6746826171875,
+        "width": 199.0589599609375,
+        "height": 52.400634765625,
+        "right": 699.4826049804688,
+        "bottom": 642.0753173828125
+      }
+    },
+    {
+      "name": "P02 desktop Murfreesboro keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Murfreesboro retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(216, 209, 191)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 desktop Gallatin anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 709.563720703125,
+        "y": 589.8582153320312,
+        "width": 138.96630859375,
+        "height": 52.0335693359375,
+        "right": 848.530029296875,
+        "bottom": 641.8917846679688
+      }
+    },
+    {
+      "name": "P02 desktop Gallatin keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Gallatin retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(232, 221, 196)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 desktop Hendersonville anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 858.611328125,
+        "y": 589.6143798828125,
+        "width": 218.79296875,
+        "height": 52.521240234375,
+        "right": 1077.404296875,
+        "bottom": 642.1356201171875
+      }
+    },
+    {
+      "name": "P02 desktop Hendersonville keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Hendersonville retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(216, 209, 191)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 desktop Clarksville anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 1087.4859619140625,
+        "y": 589.7420043945312,
+        "width": 177.012451171875,
+        "height": 52.2659912109375,
+        "right": 1264.4984130859375,
+        "bottom": 642.0079956054688
+      }
+    },
+    {
+      "name": "P02 desktop Clarksville keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Clarksville retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(232, 221, 196)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 desktop Antioch anchor geometry remains at least 44x44",
+      "passed": true,
+      "detail": {
+        "x": 43.8448486328125,
+        "y": 651.469482421875,
+        "width": 128.122802734375,
+        "height": 51.96728515625,
+        "right": 171.9676513671875,
+        "bottom": 703.436767578125
+      }
+    },
+    {
+      "name": "P02 desktop Antioch keeps the existing destination",
+      "passed": true,
+      "detail": {
+        "href": "/services/mobile-welding#service"
+      }
+    },
+    {
+      "name": "P02 desktop Antioch retains tile presentation",
+      "passed": true,
+      "detail": {
+        "display": "flex",
+        "minHeight": "51.2px",
+        "padding": "8px 16px",
+        "borderWidth": "2px",
+        "backgroundColor": "rgb(216, 209, 191)",
+        "color": "rgb(37, 38, 32)",
+        "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+        "fontSize": "28px",
+        "textDecorationLine": "none",
+        "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+      }
+    },
+    {
+      "name": "P02 service-areas has no horizontal overflow at 1440",
+      "passed": true,
+      "detail": {
+        "clientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    },
+    {
+      "name": "P02 has no page errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P02 attempted no mutating requests",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "failures": [],
+  "blockedRequests": [],
+  "pageErrors": [],
+  "results": {
+    "mobile": {
+      "status": 200,
+      "count": 8,
+      "targets": [
+        {
+          "index": 0,
+          "text": "Lebanon",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 15.864054679870605,
+            "y": 639.3379516601562,
+            "width": 94.39689636230469,
+            "height": 45.3709716796875,
+            "right": 110.2609510421753,
+            "bottom": 684.7089233398438
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 1,
+          "text": "Nashville",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 117.9891586303711,
+            "y": 639.3040771484375,
+            "width": 105.49044036865234,
+            "height": 45.438720703125,
+            "right": 223.47959899902344,
+            "bottom": 684.7427978515625
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 2,
+          "text": "Franklin",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 231.20785522460938,
+            "y": 639.3230590820312,
+            "width": 99.27178955078125,
+            "height": 45.4007568359375,
+            "right": 330.4796447753906,
+            "bottom": 684.7238159179688
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 3,
+          "text": "Murfreesboro",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 15.864422798156738,
+            "y": 692.0142822265625,
+            "width": 133.86489868164062,
+            "height": 45.612060546875,
+            "right": 149.72932147979736,
+            "bottom": 737.6263427734375
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 4,
+          "text": "Gallatin",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 157.4578399658203,
+            "y": 692.1243286132812,
+            "width": 97.83432006835938,
+            "height": 45.3919677734375,
+            "right": 255.2921600341797,
+            "bottom": 737.5162963867188
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 5,
+          "text": "Hendersonville",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 15.864533424377441,
+            "y": 744.7750244140625,
+            "width": 145.69281005859375,
+            "height": 45.684326171875,
+            "right": 161.5573434829712,
+            "bottom": 790.4593505859375
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 6,
+          "text": "Clarksville",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 169.2861785888672,
+            "y": 744.8515014648438,
+            "width": 120.64640808105469,
+            "height": 45.5313720703125,
+            "right": 289.9325866699219,
+            "bottom": 790.3828735351562
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "index": 7,
+          "text": "Antioch",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 15.864026069641113,
+            "y": 797.7379150390625,
+            "width": 91.33444213867188,
+            "height": 45.352294921875,
+            "right": 107.19846820831299,
+            "bottom": 843.0902099609375
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "44.8px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "16.8px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": true,
+          "edgeHitResults": [
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "keyboard": {
+        "tabsUsed": 6,
+        "focusedByKeyboard": true,
+        "focusState": {
+          "active": true,
+          "box": {
+            "x": 15.864054679870605,
+            "y": 639.3379516601562,
+            "width": 94.39689636230469,
+            "height": 45.3709716796875
+          },
+          "outlineStyle": "solid",
+          "outlineWidth": "3px",
+          "outlineOffset": "0px",
+          "outlineColor": "oklab(0.520011 0.23561 0.109888 / 0.5)"
+        },
+        "enterDestination": {
+          "pathname": "/services/mobile-welding",
+          "hash": "#service",
+          "href": "http://127.0.0.1:3041/services/mobile-welding#service"
+        }
+      }
+    },
+    "desktop": {
+      "status": 200,
+      "count": 8,
+      "targets": [
+        {
+          "index": 0,
+          "text": "Lebanon",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 43.84489822387695,
+            "y": 589.875732421875,
+            "width": 133.23208618164062,
+            "height": 51.99853515625,
+            "right": 177.07698440551758,
+            "bottom": 641.874267578125
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        },
+        {
+          "index": 1,
+          "text": "Nashville",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 187.15757751464844,
+            "y": 589.8192138671875,
+            "width": 151.7317352294922,
+            "height": 52.111572265625,
+            "right": 338.8893127441406,
+            "bottom": 641.9307861328125
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        },
+        {
+          "index": 2,
+          "text": "Franklin",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 348.969970703125,
+            "y": 589.8508911132812,
+            "width": 141.37255859375,
+            "height": 52.0482177734375,
+            "right": 490.342529296875,
+            "bottom": 641.8991088867188
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        },
+        {
+          "index": 3,
+          "text": "Murfreesboro",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 500.42364501953125,
+            "y": 589.6746826171875,
+            "width": 199.0589599609375,
+            "height": 52.400634765625,
+            "right": 699.4826049804688,
+            "bottom": 642.0753173828125
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        },
+        {
+          "index": 4,
+          "text": "Gallatin",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 709.563720703125,
+            "y": 589.8582153320312,
+            "width": 138.96630859375,
+            "height": 52.0335693359375,
+            "right": 848.530029296875,
+            "bottom": 641.8917846679688
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        },
+        {
+          "index": 5,
+          "text": "Hendersonville",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 858.611328125,
+            "y": 589.6143798828125,
+            "width": 218.79296875,
+            "height": 52.521240234375,
+            "right": 1077.404296875,
+            "bottom": 642.1356201171875
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        },
+        {
+          "index": 6,
+          "text": "Clarksville",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 1087.4859619140625,
+            "y": 589.7420043945312,
+            "width": 177.012451171875,
+            "height": 52.2659912109375,
+            "right": 1264.4984130859375,
+            "bottom": 642.0079956054688
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(232, 221, 196)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, -0.00610861, 0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        },
+        {
+          "index": 7,
+          "text": "Antioch",
+          "href": "/services/mobile-welding#service",
+          "anchor": {
+            "x": 43.8448486328125,
+            "y": 651.469482421875,
+            "width": 128.122802734375,
+            "height": 51.96728515625,
+            "right": 171.9676513671875,
+            "bottom": 703.436767578125
+          },
+          "style": {
+            "display": "flex",
+            "minHeight": "51.2px",
+            "padding": "8px 16px",
+            "borderWidth": "2px",
+            "backgroundColor": "rgb(216, 209, 191)",
+            "color": "rgb(37, 38, 32)",
+            "boxShadow": "rgba(0, 0, 0, 0.38) 2.88px 3.52px 0px 0px",
+            "fontSize": "28px",
+            "textDecorationLine": "none",
+            "transform": "matrix(0.999981, 0.00610861, -0.00610861, 0.999981, 0, 0)"
+          },
+          "paddedEdgeHitsAnchor": null,
+          "edgeHitResults": []
+        }
+      ],
+      "overflow": {
+        "clientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440
+      }
+    }
+  },
+  "screenshot": "verify-local-P02.png",
+  "screenshots": [
+    "verify-local-P02.png",
+    "verify-local-P02-desktop.png"
+  ],
+  "completedAt": "2026-10-02T23:45:30.512Z",
+  "pass": true,
+  "screenshotSaved": true
+}
