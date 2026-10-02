@@ -54,7 +54,7 @@ export async function runLoggedAiCall<T>(input: AiCallOptions, run: () => Promis
     }
   }
   try {
-    const result: any = await run()
+    const result = await run() as T & { totalUsage?: unknown; usage?: unknown }
     const usage = result && typeof result === "object"
       ? result.totalUsage ?? result.usage ?? input.fallbackUsage
       : input.fallbackUsage

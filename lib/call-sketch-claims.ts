@@ -1,6 +1,6 @@
 export type ExtractedClaim = { predicate: string; value: unknown }
 
-import type { CallSketchSpec } from "./call-sketch-live.ts"
+import type { CallSketchSpec, SketchFact } from "./call-sketch-live.ts"
 // The other half of the shop's ears.
 //
 // Two things read every call transcript. `deriveCallSketch` is a pile of
@@ -104,7 +104,7 @@ export function sketchValuesFromClaims(rows: ExtractedClaim[] | null | undefined
     const match = PREDICATE_PATTERNS.find((candidate) => candidate.pattern.test(predicate))
     if (!match) continue
     const key = match.key
-    let value: any = null
+    let value: string | number | null = null
     if (NUMERIC_KEYS.has(key)) value = toInches(row.value)
     else if (SIDE_KEYS.has(key)) value = toSide(row.value)
     else value = toWords(row.value)
@@ -139,15 +139,15 @@ export function mergeClaimFacts(spec: CallSketchSpec, rows: ExtractedClaim[] | n
   // call put them.
   const describesShape = values.kind != null || spec?.kind?.value != null
   if (!describesShape) return spec
-  const merged: any = { ...spec }
+  const merged = { ...spec }
   let changed = false
-  for (const [key, value] of Object.entries(values)) {
-    const current = merged[key]
+  for (const [key, value] of Object.entries(values) as Array<[SketchFieldKey, string | number]>) {
+    const current = (merged as unknown as Record<SketchFieldKey, SketchFact<string | number>>)[key]
     // Only an unknown slot. A stated or confirmed fact is the call's own word
     // and a second uncertain reading of it is noise; an existing uncertain one
     // already came from the transcript, which is closer to the customer.
     if (!current || current.truth !== "unknown" || current.value != null) continue
-    merged[key] = {
+    (merged as unknown as Record<SketchFieldKey, SketchFact<string | number>>)[key] = {
       value,
       truth: "uncertain",
       evidence: `heard on the call (${evidence[key]})`,

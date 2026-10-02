@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-10-02T21:26:08.727Z",
+  "baseCommit": "5d116c0",
+  "workspaceHead": "5d116c02d722131e76b92b46c943b0241d149881",
+  "node": "v24.21.0",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "removeComments": true
+  },
+  "normalization": "Source positions and ParenthesizedExpression wrappers ignored; identifier and literal text retained.",
+  "allEquivalent": true,
+  "files": [
+    {
+      "file": "lib/ad-spend.ts",
+      "equivalent": true,
+      "normalizedAstBeforeSha256": "7bafc4c74220ba375aa089a2259e65ed9f0b85f73227aa3b7969bbc6933a4fb7",
+      "normalizedAstAfterSha256": "7bafc4c74220ba375aa089a2259e65ed9f0b85f73227aa3b7969bbc6933a4fb7",
+      "emittedTextIdentical": true
+    },
+    {
+      "file": "lib/ai-usage.ts",
+      "equivalent": true,
+      "normalizedAstBeforeSha256": "f72ce9acbf9272ae49aae8c9cd3069db4577ed259a6aaf5699c55b1ff10dffc8",
+      "normalizedAstAfterSha256": "f72ce9acbf9272ae49aae8c9cd3069db4577ed259a6aaf5699c55b1ff10dffc8",
+      "emittedTextIdentical": true
+    },
+    {
+      "file": "lib/call-sketch-claims.ts",
+      "equivalent": true,
+      "normalizedAstBeforeSha256": "3705ccdc2471eaa36f0e9cc5b783cc4436617077a21ba538a1b317c4ccabf1c0",
+      "normalizedAstAfterSha256": "3705ccdc2471eaa36f0e9cc5b783cc4436617077a21ba538a1b317c4ccabf1c0",
+      "emittedTextIdentical": true
+    },
+    {
+      "file": "lib/csp-report.ts",
+      "equivalent": true,
+      "normalizedAstBeforeSha256": "f90e9ba42b0fb7f21337def0c04d51089b8588875f745113e221524c3dd40cfa",
+      "normalizedAstAfterSha256": "f90e9ba42b0fb7f21337def0c04d51089b8588875f745113e221524c3dd40cfa",
+      "emittedTextIdentical": true
+    },
+    {
+      "file": "lib/photo-draft-workflow.ts",
+      "equivalent": true,
+      "normalizedAstBeforeSha256": "33ec925bbb6ced39c0724c2a2aac41fa2220aebec1d04b2d0bc3931805b5a8ee",
+      "normalizedAstAfterSha256": "33ec925bbb6ced39c0724c2a2aac41fa2220aebec1d04b2d0bc3931805b5a8ee",
+      "emittedTextIdentical": false
+    },
+    {
+      "file": "lib/shop-brain-invariants.ts",
+      "equivalent": true,
+      "normalizedAstBeforeSha256": "24be4d6a6c92abddb28b91ff38e53d794887b609ff4b7a138334076ed2252d49",
+      "normalizedAstAfterSha256": "24be4d6a6c92abddb28b91ff38e53d794887b609ff4b7a138334076ed2252d49",
+      "emittedTextIdentical": true
+    }
+  ]
+}

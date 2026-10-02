@@ -95,17 +95,17 @@ async function readJsonBody(request: Request) {
   }
 }
 
-function reportRecords(contentType: "application/csp-report" | "application/reports+json", body: any): CspReportRecord[] {
+function reportRecords(contentType: "application/csp-report" | "application/reports+json", body: unknown): CspReportRecord[] {
   if (contentType === CONTENT_TYPE_LEGACY) {
     if (!body || typeof body !== "object" || Array.isArray(body)) return []
-    const report = body["csp-report"]
-    return report && typeof report === "object" && !Array.isArray(report) ? [report] : []
+    const report = (body as CspReportRecord)["csp-report"]
+    return report && typeof report === "object" && !Array.isArray(report) ? [report as CspReportRecord] : []
   }
 
   if (contentType !== CONTENT_TYPE_REPORTING_API || !Array.isArray(body)) return []
-  return body
+  return (body as CspReportRecord[])
     .filter((report) => report && typeof report === "object" && report.type === "csp-violation" && report.body && typeof report.body === "object")
-    .map((report) => ({ ...report.body, documentURL: report.body.documentURL || report.url }))
+    .map((report) => ({ ...(report.body as CspReportRecord), documentURL: (report.body as CspReportRecord).documentURL || report.url }))
     .slice(0, MAX_REPORT_COUNT)
 }
 

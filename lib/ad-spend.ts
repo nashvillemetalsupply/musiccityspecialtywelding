@@ -99,19 +99,19 @@ export function costPerLeadTile({ monthLabel, totalLeads, channels, spendAsOf, p
 // month is optional and YYYY-MM. Omitted means "the Central month in progress",
 // which is what a nightly push wants; naming it is how a backfill works without
 // the server's clock deciding. Returned as YYYY-MM-01 or null.
-export function parseAdSpendPayload(body: any):
+export function parseAdSpendPayload(body: unknown):
   | { ok: false; error: string; updates?: never; monthStart?: never }
   | { ok: true; error?: never; monthStart: string | null; updates: Array<{ channel: AdChannel; cents: number }> } {
   if (!body || typeof body !== "object") return { ok: false, error: "Body must be a JSON object." }
 
-  const rawMonth = typeof body.month === "string" ? body.month.trim() : ""
+  const rawMonth = typeof (body as Record<string, unknown>).month === "string" ? (body as Record<string, string>).month.trim() : ""
   if (rawMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(rawMonth)) {
     return { ok: false, error: "month must be YYYY-MM." }
   }
 
   const updates: Array<{ channel: AdChannel; cents: number }> = []
   for (const channel of AD_CHANNELS) {
-    const parsed = parseSpendDollars(body[channel])
+    const parsed = parseSpendDollars((body as Record<string, unknown>)[channel])
     if (!parsed.ok) return { ok: false, error: `${channel} must be dollars, like 450 or 450.75.` }
     if (parsed.cents === null) continue
     updates.push({ channel, cents: parsed.cents })
