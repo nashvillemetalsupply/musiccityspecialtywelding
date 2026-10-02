@@ -1,0 +1,7 @@
+Node v24.21.0
+Command: node scripts/bundle-budget.mjs
+
+/: total 530,681 / threshold 648,316 bytes
+/board: total 672,023 / threshold 817,538 bytes
+
+Runner exit code: 0

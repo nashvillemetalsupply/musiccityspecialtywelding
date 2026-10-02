@@ -359,6 +359,14 @@ try {
     }, undefined, { timeout: 2_000 })
     const closedWithEscape = !(await details.evaluate(element => element.open))
     const focusReturned = await summary.evaluate(element => document.activeElement === element)
+    await page.keyboard.press("Space")
+    await page.waitForFunction(() => document.querySelector(".ms-menu")?.open === true, undefined, { timeout: 2_000 })
+    const openedWithSpace = await details.evaluate(element => element.open)
+    const focusStayedOnSummary = await summary.evaluate(element => document.activeElement === element)
+    await page.keyboard.press("Escape")
+    await page.waitForFunction(() => document.querySelector(".ms-menu")?.open === false, undefined, { timeout: 2_000 })
+    const closedWithEscapeFromSummary = !(await details.evaluate(element => element.open))
+    const focusReturnedFromSummaryEscape = await summary.evaluate(element => document.activeElement === element)
     await page.screenshot({ path: screenshotPath })
     screenshotSaved = true
 
@@ -395,7 +403,7 @@ try {
 
     evidence.results = {
       status,
-      disclosure: { hydrationReady, openedWithEnter, tabReachedLink, closedWithEscape, focusReturned },
+      disclosure: { hydrationReady, openedWithEnter, tabReachedLink, closedWithEscape, focusReturned, openedWithSpace, focusStayedOnSummary, closedWithEscapeFromSummary, focusReturnedFromSummaryEscape },
       navLink: { hrefBefore, hrefAfter, hashAfter, linkClosedMenu },
       emptyForm: { ...emptyForm, postCountBefore, postCountAfter },
       faq: { faqOpened, answerVisible, faqClosed, answerHidden },
@@ -406,6 +414,8 @@ try {
     check(tabReachedLink, "P03 Tab moves from summary to the first navigation link")
     check(closedWithEscape, "P03 Escape closes the open menu")
     check(focusReturned, "P03 Escape returns focus to the summary")
+    check(openedWithSpace && focusStayedOnSummary, "P03 Space opens the native details menu while summary focus remains", evidence.results.disclosure)
+    check(closedWithEscapeFromSummary && focusReturnedFromSummaryEscape, "P03 Escape from the focused summary closes the menu and restores summary focus", evidence.results.disclosure)
     check(hrefBefore === "#services" && hrefAfter === "#services" && hashAfter === "#services" && linkClosedMenu, "P03 nav-link href and click-close behavior remain unchanged", evidence.results.navLink)
     check(postCountAfter === postCountBefore && emptyForm.activeId === "quote-name" && Boolean(emptyForm.validationMessage), "P03 empty form stays local, makes no POST, and focuses the first required field", evidence.results.emptyForm)
     check(faqOpened && answerVisible && faqClosed && answerHidden, "P03 FAQ disclosure still opens and closes", evidence.results.faq)

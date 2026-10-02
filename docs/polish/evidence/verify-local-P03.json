@@ -1,0 +1,144 @@
+{
+  "phase": "P03",
+  "target": "http://127.0.0.1:3041",
+  "startedAt": "2026-10-02T23:50:18.905Z",
+  "requestPolicy": "GET and HEAD only; every other method aborted by Playwright routing",
+  "assertions": [
+    {
+      "name": "P03 home returns HTTP 200",
+      "passed": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "P03 client hydration is attached before keyboard interaction",
+      "passed": true
+    },
+    {
+      "name": "P03 Enter opens the native details menu",
+      "passed": true
+    },
+    {
+      "name": "P03 Tab moves from summary to the first navigation link",
+      "passed": true
+    },
+    {
+      "name": "P03 Escape closes the open menu",
+      "passed": true
+    },
+    {
+      "name": "P03 Escape returns focus to the summary",
+      "passed": true
+    },
+    {
+      "name": "P03 Space opens the native details menu while summary focus remains",
+      "passed": true,
+      "detail": {
+        "hydrationReady": true,
+        "openedWithEnter": true,
+        "tabReachedLink": true,
+        "closedWithEscape": true,
+        "focusReturned": true,
+        "openedWithSpace": true,
+        "focusStayedOnSummary": true,
+        "closedWithEscapeFromSummary": true,
+        "focusReturnedFromSummaryEscape": true
+      }
+    },
+    {
+      "name": "P03 Escape from the focused summary closes the menu and restores summary focus",
+      "passed": true,
+      "detail": {
+        "hydrationReady": true,
+        "openedWithEnter": true,
+        "tabReachedLink": true,
+        "closedWithEscape": true,
+        "focusReturned": true,
+        "openedWithSpace": true,
+        "focusStayedOnSummary": true,
+        "closedWithEscapeFromSummary": true,
+        "focusReturnedFromSummaryEscape": true
+      }
+    },
+    {
+      "name": "P03 nav-link href and click-close behavior remain unchanged",
+      "passed": true,
+      "detail": {
+        "hrefBefore": "#services",
+        "hrefAfter": "#services",
+        "hashAfter": "#services",
+        "linkClosedMenu": true
+      }
+    },
+    {
+      "name": "P03 empty form stays local, makes no POST, and focuses the first required field",
+      "passed": true,
+      "detail": {
+        "activeId": "quote-name",
+        "validationMessage": "Please fill out this field.",
+        "postCountBefore": 0,
+        "postCountAfter": 0
+      }
+    },
+    {
+      "name": "P03 FAQ disclosure still opens and closes",
+      "passed": true,
+      "detail": {
+        "faqOpened": true,
+        "answerVisible": true,
+        "faqClosed": true,
+        "answerHidden": true
+      }
+    },
+    {
+      "name": "P03 has no page errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "P03 attempted no mutating requests",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "failures": [],
+  "blockedRequests": [],
+  "pageErrors": [],
+  "results": {
+    "status": 200,
+    "disclosure": {
+      "hydrationReady": true,
+      "openedWithEnter": true,
+      "tabReachedLink": true,
+      "closedWithEscape": true,
+      "focusReturned": true,
+      "openedWithSpace": true,
+      "focusStayedOnSummary": true,
+      "closedWithEscapeFromSummary": true,
+      "focusReturnedFromSummaryEscape": true
+    },
+    "navLink": {
+      "hrefBefore": "#services",
+      "hrefAfter": "#services",
+      "hashAfter": "#services",
+      "linkClosedMenu": true
+    },
+    "emptyForm": {
+      "activeId": "quote-name",
+      "validationMessage": "Please fill out this field.",
+      "postCountBefore": 0,
+      "postCountAfter": 0
+    },
+    "faq": {
+      "faqOpened": true,
+      "answerVisible": true,
+      "faqClosed": true,
+      "answerHidden": true
+    }
+  },
+  "screenshot": "verify-local-P03.png",
+  "completedAt": "2026-10-02T23:50:24.516Z",
+  "pass": true,
+  "screenshotSaved": true
+}

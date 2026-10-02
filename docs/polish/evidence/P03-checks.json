@@ -1,0 +1,33 @@
+{
+  "phase": "P03",
+  "startedAt": "2026-10-02T23:48:44.203Z",
+  "completedAt": "2026-10-02T23:49:59.341Z",
+  "node": "v24.21.0",
+  "passed": true,
+  "results": [
+    {
+      "name": "tests",
+      "exitCode": 0,
+      "durationMs": 21395,
+      "log": "docs/polish/evidence/P03-tests.log"
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "durationMs": 49292,
+      "log": "docs/polish/evidence/P03-lint.log"
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "durationMs": 25094,
+      "log": "docs/polish/evidence/P03-build.log"
+    },
+    {
+      "name": "bundle-budget",
+      "exitCode": 0,
+      "durationMs": 749,
+      "log": "docs/polish/evidence/P03-bundle-budget.log"
+    }
+  ]
+}
