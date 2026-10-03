@@ -49,10 +49,28 @@ RESEND_WEBHOOK_SECRET
 GLASS_TOKEN_SECRET (32+ random bytes; signs resumable Customer Page links)
 OPS_PUNCH_SECRET (32+ random bytes; signs crew quick-login cards)
 CRON_SECRET (32+ random bytes; authorizes scheduled recovery routes)
+LEADS_FEED_SECRET (32+ random bytes; authorizes Mirror's read-only lead feed)
 QUOTE_FROM_EMAIL
 ```
 
 Upgrade the Vercel project to Pro before commercial cutover.
+
+### Mirror lead feed
+
+The owner sets `LEADS_FEED_SECRET`; it is server-only. Mirror calls
+`GET /api/admin/leads?days=14` with `Authorization: Bearer <LEADS_FEED_SECRET>`.
+An unset secret returns 503; missing or incorrect bearer authorization returns
+401. The route uses the existing Neon connection and needs no operator session:
+there is no middleware/proxy session gate, and `/ops` layout authorization does
+not apply to `/api/admin/leads`.
+
+`days` defaults to 14 and is clamped to 1–90 calendar days ending today in
+America/Chicago, oldest first, including empty days. Each day's `total` includes
+all leads and `test` counts the subset whose stored `is_test` is true. The feed
+returns each lead's unchanged `public_id` as `lead_id`, stored `source` and
+`is_test`, creation time, and Mirror-compatible SHA-256 email/name hashes. It
+never returns raw contact details or messages. All responses use
+`Cache-Control: private, no-store`.
 
 ## Twilio owner steps
 
