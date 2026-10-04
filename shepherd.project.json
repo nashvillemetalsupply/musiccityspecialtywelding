@@ -7,10 +7,33 @@
       "class": "repo",
       "unlocks": "Shepherd worktrees and task execution",
       "provides": [],
-      "verify": [{ "kind": "path", "path": ".git" }],
+      "verify": [
+        {
+          "kind": "path",
+          "path": ".git"
+        }
+      ],
       "provisionedBy": "owner",
       "onMissing": "stop",
-      "blocks": ["Shepherd task creation"]
+      "blocks": [
+        "Shepherd task creation"
+      ]
     }
-  ]
+  ],
+  "push": true,
+  "autoLand": {
+    "enabled": true,
+    "maxRounds": 2,
+    "hold": [
+      "vercel --prod",
+      "vercel deploy",
+      "herald",
+      "$199",
+      "price revert",
+      "ads_update_entity",
+      "ads_create"
+    ],
+    "blockedPattern": "^\\s*(\\*\\*)?(FACTORY-)?BLOCKED-\\S+",
+    "restoreBeforeExit": []
+  }
 }
