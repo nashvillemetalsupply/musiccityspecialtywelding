@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
+import { normalizeDueAt } from "@/lib/extraction-schema.ts"
 import { notify } from "@/lib/notify"
 import type { OperatorRole } from "@/lib/operators"
 import { projectCommitmentForRole } from "@/lib/visibility"
@@ -39,6 +40,10 @@ export async function addCommitment(input: {
   itemKey?: string
 }) {
   const sql = getSql()
+  // The one writer of commitments.due_at. A value Postgres would refuse as
+  // timestamptz (the model once sent hour 26) becomes an undated promise
+  // instead of a thrown INSERT that loses the whole extraction.
+  input = { ...input, dueAt: normalizeDueAt(input.dueAt) }
   const itemKey = input.itemKey || `${input.direction}:${input.summary.trim().toLowerCase()}:${input.dueAt ?? ""}`
   // Two dedupe keys, because one message is not the unit of a promise.
   //

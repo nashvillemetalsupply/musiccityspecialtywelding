@@ -8,6 +8,7 @@ const OPS_DATA_SOURCE = readFileSync(new URL("../lib/ops-data.ts", import.meta.u
 const COMMITMENTS_SOURCE = readFileSync(new URL("../lib/commitments.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const EVENTS_SOURCE = readFileSync(new URL("../lib/events.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const EXTRACT_SOURCE = readFileSync(new URL("../lib/extract.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+const EXTRACTION_SCHEMA_SOURCE = readFileSync(new URL("../lib/extraction-schema.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PAGE_SOURCE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const PREVIEW_SOURCE = readFileSync(new URL("../app/board/board.tsx", import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
@@ -285,7 +286,7 @@ test("a restated promise is not a second promise", () => {
   )
   assert.match(EXTRACT_SOURCE, /A promise already in open_commitments is on the books/)
   // The prompt may only name states `marks_existing_as` can actually carry.
-  const marksExisting = EXTRACT_SOURCE.match(/marks_existing_as: z\.enum\(\[([^\]]*)\]\)/)?.[1] ?? ""
+  const marksExisting = EXTRACTION_SCHEMA_SOURCE.match(/marks_existing_as: z\.enum\(\[([^\]]*)\]\)/)?.[1] ?? ""
   assert.ok(marksExisting.includes("kept") && marksExisting.includes("superseded"))
   assert.doesNotMatch(EXTRACT_SOURCE, /matches_existing_commitment_id when this event kept, broke, or canceled it/)
 })

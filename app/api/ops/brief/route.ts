@@ -155,9 +155,11 @@ export async function GET(req: Request) {
   let briefModel = "deterministic"
   if (aiConfigured()) {
     try {
-      const result = await runAiCall({ operation: "morning-brief-copy", model: AI_MODELS.reasoning }, () => generateText({ model: AI_MODELS.reasoning, system: "Write a plainspoken morning shop brief in at most 200 words. Put urgent promises and uncalled customers first. Then stale quotes and invoices. Credit crew by first name only for completed work. Never invent. No greeting fluff, no management jargon, no markdown.", prompt: JSON.stringify(facts), maxRetries: AI_MAX_RETRIES }))
+      // Same model setting as extraction (AI_EXTRACTION_MODEL). The reasoning
+      // default is refused on the gateway's free tier, so every brief fell back.
+      const result = await runAiCall({ operation: "morning-brief-copy", model: AI_MODELS.extraction }, () => generateText({ model: AI_MODELS.extraction, system: "Write a plainspoken morning shop brief in at most 200 words. Put urgent promises and uncalled customers first. Then stale quotes and invoices. Credit crew by first name only for completed work. Never invent. No greeting fluff, no management jargon, no markdown.", prompt: JSON.stringify(facts), maxRetries: AI_MAX_RETRIES }))
       text = result.text.trim().split(/\s+/).slice(0, 200).join(" ")
-      briefModel = AI_MODELS.reasoning
+      briefModel = AI_MODELS.extraction
     } catch (error) {
       console.error("Morning brief AI prose failed; using deterministic copy:", error)
     }

@@ -1,45 +1,17 @@
 import { createHash } from "node:crypto"
 import { generateText, Output } from "ai"
-import { z } from "zod"
 import { getSql } from "@/lib/db"
 import { AI_MAX_RETRIES, AI_MODELS, aiConfigured, runAiCall } from "@/lib/ai"
 import { addClaim } from "@/lib/claims"
 import { addCommitment, setCommitmentStatus } from "@/lib/commitments"
 import { getEvent, markEventProcessed, recordEvent } from "@/lib/events"
+import { extractionSchema, sanitizeExtraction, type Extraction } from "@/lib/extraction-schema.ts"
 import { notifyAll } from "@/lib/notify"
 import { findOrCreatePerson, refreshPersonAccountKey } from "@/lib/people"
 import { reconcileRoutedLeadProjections, resolveProjectionLeadId } from "@/lib/routing"
 import { isInternalTestContext } from "@/lib/shop-brain-invariants.ts"
 import { redactCrewText } from "@/lib/visibility"
 
-const extractionSchema = z.object({
-  crew_safe_body: z.string().max(30000),
-  commitments: z.array(z.object({
-    direction: z.enum(["we_promised", "they_promised"]),
-    summary: z.string().max(300),
-    due_at_iso: z.string().nullable(),
-    confidence: z.number().min(0).max(1),
-    crew_safe_summary: z.string().max(300),
-    matches_existing_commitment_id: z.number().int().positive().nullable(),
-    marks_existing_as: z.enum(["kept", "superseded"]).nullable(),
-  })).max(8),
-  facts: z.array(z.object({ predicate: z.string().max(80), value: z.unknown(), confidence: z.number().min(0).max(1), supersedes_claim_id: z.number().int().positive().nullable() })).max(12),
-  auto_reply_type: z.enum(["none", "temporary_ooo", "contact_departed"]),
-  customer_update: z.object({
-    display_name: z.string().max(120).nullable(),
-    company: z.string().max(160).nullable(),
-    service: z.string().max(180).nullable(),
-    confidence: z.number().min(0).max(1),
-  }).nullable(),
-  glass_caption_draft: z.string().max(180).nullable(),
-  contact_churn: z.object({
-    left_name: z.string(),
-    successors: z.array(z.object({ name: z.string(), email: z.string().optional(), phone: z.string().optional() })),
-    evidence: z.string().max(500),
-    confidence: z.number().min(0).max(1),
-  }).nullable(),
-  urgency: z.enum(["interrupt", "normal"]).nullable(),
-})
 
 // Every caller that schedules extraction and the retry sweep share this list.
 // Adding a new text-bearing receipt in one place must not create an after()-only
@@ -132,9 +104,11 @@ export async function processEvent(eventId: number) {
       AND subject_id = ${projectionLeadId ?? event.person_id}::bigint
       AND left(predicate, 12) <> 'photo_draft_'::text
       AND superseded_by IS NULL ORDER BY created_at DESC LIMIT 40`) as Record<string, unknown>[] : []
-  let object: z.infer<typeof extractionSchema>
+  let object: Extraction
   if (event.extraction_result) {
-    object = extractionSchema.parse(event.extraction_result)
+    // A result stored before the sanitizer existed can still carry a bad due
+    // date (event 2164), so the stored path is sanitized too.
+    object = sanitizeExtraction(extractionSchema.parse(event.extraction_result))
   } else {
     const result = await runAiCall({ operation: "event-extraction", model: AI_MODELS.extraction, isTest }, () => generateText({
       model: AI_MODELS.extraction,
@@ -158,7 +132,7 @@ export async function processEvent(eventId: number) {
       maxRetries: AI_MAX_RETRIES,
     }))
     if (!result.output) throw new Error("Extraction returned no object.")
-    object = result.output
+    object = sanitizeExtraction(result.output)
     await sql`UPDATE events SET extraction_result = ${JSON.stringify(object)}::jsonb WHERE id = ${event.id}::bigint AND extraction_result IS NULL`
   }
   // Generation can take seconds. The owner may file a holding conversation
