@@ -32,9 +32,11 @@ test("both coalesced-interrupt pushes point at the board's Updates surface", () 
   const retry = NOTIFY.slice(NOTIFY.indexOf("export async function retryPendingInterrupts"))
   assert.match(initial, /const summaryUrl = "\/board\/updates"/)
   assert.match(retry, /const summaryUrl = "\/board\/updates#wire"/)
+  // Both hand summaryUrl to the shared coalesced deliverer, which pushes it.
   for (const sender of [initial, retry]) {
-    assert.match(sender, /sendPushToOperator\([^,]+, \{[^}]*url: summaryUrl[\s,]*\}\)/)
+    assert.match(sender, /deliverCoalescedSummary\(\{[\s\S]{0,300}?url: summaryUrl,/)
   }
+  assert.match(NOTIFY, /async function deliverCoalescedSummary[\s\S]*?sendPushToOperator\(recipient\.id, \{[^}]*url: input\.url[\s,]*\}\)/)
   assert.equal(NOTIFY.match(/\/board\/updates/g)?.length, 2)
 })
 
