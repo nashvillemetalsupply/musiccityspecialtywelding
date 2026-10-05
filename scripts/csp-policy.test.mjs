@@ -53,3 +53,66 @@ test("all routes retain existing headers and add the exact report-only security 
     assert.equal(rule.headers.some(({ key }) => key.toLowerCase() === "content-security-policy"), false)
   }
 })
+
+function parsePolicy(policy) {
+  return new Map(
+    policy.split(";").map((part) => {
+      const [name, ...values] = part.trim().split(/\s+/)
+      return [name, values]
+    }),
+  )
+}
+
+// Host-source matching per CSP3 for https host sources without paths or ports:
+// "https://host" matches exactly; "https://*.host" matches any subdomain of host
+// but not host itself.
+function sourceAllows(source, url) {
+  const target = new URL(url)
+  const match = /^https:\/\/(\*\.)?([a-z0-9.-]+)$/i.exec(source)
+  if (!match || target.protocol !== "https:") return false
+  const [, wildcard, host] = match
+  const targetHost = target.hostname.toLowerCase()
+  const sourceHost = host.toLowerCase()
+  return wildcard ? targetHost.endsWith(`.${sourceHost}`) : targetHost === sourceHost
+}
+
+function directiveAllows(directives, name, url) {
+  const values = directives.get(name) ?? directives.get("default-src") ?? []
+  return values.some((source) => sourceAllows(source, url))
+}
+
+// Violations observed on musiccityspecialtywelding.com on 2026-10-05.
+const OBSERVED_VIOLATIONS = [
+  ["script-src", "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/123456789/"],
+  ["connect-src", "https://analytics.google.com/g/collect"],
+  ["connect-src", "https://ad.doubleclick.net/ccm/s/collect"],
+  ["connect-src", "https://m6-211026f8a25b42c08fc190458268b30e.ecs.us-east-2.on.aws/events"],
+]
+
+test("every production-observed CSP violation is allowed by its directive", () => {
+  const directives = parsePolicy(CSP_REPORT_ONLY_POLICY)
+  for (const [name, url] of OBSERVED_VIOLATIONS) {
+    assert.ok(directives.has(name), `${name} is declared`)
+    assert.equal(directiveAllows(directives, name, url), true, `${name} allows ${url}`)
+  }
+})
+
+test("host matcher is not vacuous", () => {
+  const directives = parsePolicy(CSP_REPORT_ONLY_POLICY)
+  assert.equal(directiveAllows(directives, "connect-src", "https://evil.example.com/collect"), false)
+  assert.equal(directiveAllows(directives, "script-src", "https://ad.doubleclick.net/x.js"), false)
+  assert.equal(directiveAllows(directives, "connect-src", "http://analytics.google.com/g/collect"), false)
+  assert.equal(sourceAllows("https://*.google.com", "https://google.com/"), false)
+  assert.equal(sourceAllows("https://*.google.com", "https://www.google.com/"), true)
+})
+
+test("policy never allows unsafe-eval or a bare wildcard", () => {
+  const directives = parsePolicy(CSP_REPORT_ONLY_POLICY)
+  for (const [name, values] of directives) {
+    assert.equal(values.includes("'unsafe-eval'"), false, `${name} has no 'unsafe-eval'`)
+    for (const value of values) {
+      assert.notEqual(value, "*", `${name} has no bare *`)
+      assert.equal(/^(?:https?:\/\/)?\*(?:$|[:/])/.test(value), false, `${name} has no bare host wildcard: ${value}`)
+    }
+  }
+})
