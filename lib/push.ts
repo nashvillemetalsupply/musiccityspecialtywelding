@@ -40,8 +40,10 @@ export async function removeSubscription(endpoint: string) {
 }
 
 // Second alert channel alongside email. Never throws; prunes dead endpoints.
+// `failed` counts real push failures. A missing or expired (404/410)
+// subscription is not a failure: it means this member has no push channel.
 async function sendPush(payload: { title: string; body: string; url: string }, operatorId?: number | null) {
-  if (!pushConfigured()) return { sent: 0 }
+  if (!pushConfigured()) return { sent: 0, failed: 0 }
   try {
     configureWebPush()
     const sql = getSql()
@@ -54,6 +56,7 @@ async function sendPush(payload: { title: string; body: string; url: string }, o
       auth: string
     }[]
     let sent = 0
+    let failed = 0
     for (const sub of subs) {
       try {
         await webpush.sendNotification(
@@ -67,14 +70,15 @@ async function sendPush(payload: { title: string; body: string; url: string }, o
         if (statusCode === 404 || statusCode === 410) {
           await removeSubscription(sub.endpoint).catch(() => undefined)
         } else {
+          failed += 1
           console.error("Push send error:", error)
         }
       }
     }
-    return { sent }
+    return { sent, failed }
   } catch (error) {
     console.error("Push fan-out error:", error)
-    return { sent: 0 }
+    return { sent: 0, failed: 1 }
   }
 }
 

@@ -239,7 +239,7 @@ test("durable interrupt intents retry through the same quiet-hour and budget gat
   assert.match(notify, /timezone\('America\/Chicago', sent_at\)/)
   assert.match(notify, /Daily interrupt budget was already full/)
   assert.match(notify, /More happened\. Check Updates\./)
-  assert.match(notify, /The coalesced alert could not reach a registered push channel/)
+  assert.match(notify, /The coalesced alert could not reach a registered push, email, or SMS channel/)
   assert.match(notify, /Alert delivery failed/)
   assert.match(recovery, /retryPendingInterrupts\(\)/)
   assert.doesNotMatch(notify, /sendSms\([\s\S]{0,180}\.then\(\(\) => true\)\.catch\(\(\) => false\)/)

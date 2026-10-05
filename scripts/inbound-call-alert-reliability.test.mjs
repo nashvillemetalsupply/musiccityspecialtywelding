@@ -829,3 +829,331 @@ test("retry revalidates internal-test and owner-role gates before any provider",
     }
   })
 })
+
+// --- Members without a cell (MCSW-ALERT-NOCELL) ------------------------------
+// Operator 82 is an active owner with an email and no cell. That is a normal
+// member, so the alert goes by email and nothing writes `delivery_error`, which
+// is the one column /api/health reads for recentErrorsHealthy.
+
+const emailEnv = { RESEND_API_KEY: "test-resend-key", QUOTE_FROM_EMAIL: "Shop Brain <alerts@example.test>" }
+const noCellOwner = { ...owner, id: 82, email: "tyler@example.test", cell_phone: "" }
+const unreachableOwner = { ...owner, id: 83, email: "", cell_phone: null }
+const leadAlert = {
+  ...missedCallAlert,
+  title: "New lead",
+  body: "A new quote request came in.",
+  smsFallback: true,
+}
+
+// Every value written into `delivery_error = <param>`. Literal sweeps inside
+// retryPendingInterrupts are not parameters and are not this alert's writes.
+function deliveryErrorWrites(sqlCalls) {
+  const writes = []
+  for (const { text, values } of sqlCalls) {
+    const segments = text.split("?")
+    segments.slice(0, -1).forEach((segment, index) => {
+      if (/delivery_error = $/.test(segment)) writes.push(values[index])
+    })
+  }
+  return writes
+}
+
+function nonEmptyDeliveryErrors(sqlCalls) {
+  return deliveryErrorWrites(sqlCalls).filter((value) => typeof value === "string" && value.trim() !== "")
+}
+
+function noCellRetry(operator, overrides = {}) {
+  return {
+    retryCandidate: {
+      id: 901,
+      operator_id: operator.id,
+      title: leadAlert.title,
+      body: leadAlert.body,
+      url: leadAlert.url,
+      budget_exempt: true,
+      quiet_hours_exempt: true,
+      sms_fallback: true,
+      sms_only: false,
+      provider_email_id: null,
+      provider_email_status: null,
+      ...overrides,
+    },
+    retryContext: {
+      operator_id: operator.id,
+      email: operator.email,
+      recipient_role: "owner",
+      owner_only: false,
+      source_kind: "lead.new",
+      is_test: false,
+    },
+  }
+}
+
+test("a member with no cell but an email gets the alert by email and no delivery error", async () => {
+  await withEnv(emailEnv, async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      sourceKind: "lead.new",
+      smsConfigured: true,
+      smsSucceeds: true,
+      operator: noCellOwner,
+    })
+    const result = await harness.notifyAll(leadAlert)
+
+    assert.equal(result[0]?.sent, true)
+    assert.equal(harness.smsCalls.length, 0, "no cell means the SMS leg is skipped, not attempted")
+    assert.equal(harness.emailCalls.length, 1)
+    assert.equal(harness.emailCalls[0].payload.to, noCellOwner.email)
+    assert.equal(harness.emailCalls[0].options.idempotencyKey, "notification-alert:901")
+    assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+    assert.ok(!harness.sqlCalls.some(({ values }) => values.some((value) => String(value).includes("cell_phone"))))
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("ELSE 'accepted' END") && text.includes("sent_at = now()")))
+  })
+})
+
+test("a retried alert for a member with no cell also goes by email with no delivery error", async () => {
+  await withEnv(emailEnv, async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      smsConfigured: true,
+      smsSucceeds: true,
+      operator: noCellOwner,
+      ...noCellRetry(noCellOwner),
+    })
+    const result = await harness.retryPendingInterrupts()
+
+    assert.equal(result.sent, 1)
+    assert.equal(harness.smsCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 1)
+    assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+  })
+})
+
+test("a member with no cell, no email, and no push is filed with an info line, not an error", async () => {
+  await withEnv(emailEnv, async () => {
+    const infos = []
+    const realInfo = console.info
+    console.info = (...args) => { infos.push(args.join(" ")) }
+    try {
+      for (const alert of [leadAlert, { ...leadAlert, smsFallback: false }]) {
+        const harness = createNotifyHarness({
+          sourceIsTest: false,
+          sourceKind: "lead.new",
+          smsConfigured: true,
+          smsSucceeds: true,
+          operator: unreachableOwner,
+        })
+        const result = await harness.notifyAll(alert)
+
+        assert.equal(result[0]?.sent, false)
+        assert.equal(result[0]?.reason, "unreachable")
+        assert.equal(harness.emailCalls.length, 0)
+        assert.equal(harness.smsCalls.length, 0)
+        assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+        assert.ok(harness.sqlCalls.some(({ text }) => text.includes("ELSE 'filed' END")))
+        assert.ok(!harness.sqlCalls.some(({ text }) => text.includes("delivery_status = 'retry'")),
+          "an unreachable member must not park in retry")
+      }
+    } finally {
+      console.info = realInfo
+    }
+    assert.equal(infos.length, 2)
+    assert.match(infos[0], /operator 83 has no cell, email, or push subscription/)
+  })
+})
+
+test("a retried alert for an unreachable member is filed, not retried or killed", async () => {
+  await withEnv(emailEnv, async () => {
+    const realInfo = console.info
+    console.info = () => {}
+    try {
+      const harness = createNotifyHarness({
+        sourceIsTest: false,
+        smsConfigured: true,
+        smsSucceeds: true,
+        operator: unreachableOwner,
+        ...noCellRetry(unreachableOwner),
+      })
+      const result = await harness.retryPendingInterrupts()
+
+      assert.equal(result.sent, 0)
+      assert.equal(result.dead, 0)
+      assert.equal(harness.emailCalls.length, 0)
+      assert.equal(harness.smsCalls.length, 0)
+      assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+      assert.ok(harness.sqlCalls.some(({ text }) => text.includes("ELSE 'filed' END")))
+    } finally {
+      console.info = realInfo
+    }
+  })
+})
+
+test("a real Twilio rejection for a member with a cell is still a delivery error", async () => {
+  await withEnv(emailEnv, async () => withFastSmsRetry(async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      sourceKind: "lead.new",
+      smsConfigured: true,
+      smsSucceeds: false,
+    })
+    const result = await harness.notifyAll(leadAlert)
+
+    assert.equal(result[0]?.sent, false)
+    assert.notEqual(result[0]?.reason, "unreachable")
+    assert.equal(harness.smsCalls.length, 2)
+    assert.equal(harness.emailCalls.length, 0)
+    const errors = nonEmptyDeliveryErrors(harness.sqlCalls)
+    assert.equal(errors.length, 1)
+    assert.match(errors[0], /SMS provider rejected the alert|30003/)
+    assert.ok(harness.sqlCalls.some(({ text }) => text.includes("delivery_status = 'retry'")))
+  }))
+})
+
+test("a no-cell member whose email is rejected by the provider is still a delivery error", async () => {
+  await withEnv(emailEnv, async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      sourceKind: "lead.new",
+      emailMode: "rejected",
+      smsConfigured: true,
+      operator: noCellOwner,
+    })
+    const result = await harness.notifyAll(leadAlert)
+
+    assert.equal(result[0]?.sent, false)
+    assert.equal(harness.emailCalls.length, 1)
+    assert.equal(harness.smsCalls.length, 0)
+    const errors = nonEmptyDeliveryErrors(harness.sqlCalls)
+    assert.equal(errors.length, 1)
+    assert.match(errors[0], /provider rejected/)
+  })
+})
+
+test("a push-less coalesced summary falls back to email for a non-call alert", async () => {
+  await withEnv(emailEnv, async () => {
+    for (const operator of [owner, noCellOwner]) {
+      const harness = createNotifyHarness({
+        sourceIsTest: false,
+        sourceKind: "lead.new",
+        budgetReserved: false,
+        smsConfigured: true,
+        smsSucceeds: true,
+        operator,
+      })
+      const result = await harness.notifyAll({ ...leadAlert, capExempt: false })
+
+      assert.equal(result[0]?.reason, "daily-cap")
+      assert.equal(harness.pushCalls.length, 1)
+      assert.equal(harness.emailCalls.length, 1, "email is the first fallback after push")
+      assert.equal(harness.emailCalls[0].payload.subject, "MCSW: More happened. Check Updates.")
+      assert.equal(harness.smsCalls.length, 0)
+      assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+      assert.ok(harness.sqlCalls.some(({ text }) => text.includes("sent_at = now()") && text.includes("ELSE 'accepted' END")))
+    }
+  })
+})
+
+test("a push-less coalesced summary uses SMS when email cannot carry it", async () => {
+  await withEnv({ RESEND_API_KEY: undefined, QUOTE_FROM_EMAIL: undefined }, async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      sourceKind: "lead.new",
+      budgetReserved: false,
+      smsConfigured: true,
+      smsSucceeds: true,
+    })
+    const result = await harness.notifyAll({ ...leadAlert, capExempt: false })
+
+    assert.equal(result[0]?.reason, "daily-cap")
+    assert.equal(harness.smsCalls.length, 1)
+    assert.equal(harness.smsCalls[0].to, owner.cell_phone)
+    assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+  })
+})
+
+test("a retried coalesced summary for a push-less member falls back to email", async () => {
+  await withEnv(emailEnv, async () => {
+    const harness = createNotifyHarness({
+      sourceIsTest: false,
+      smsConfigured: true,
+      smsSucceeds: true,
+      operator: noCellOwner,
+      ...noCellRetry(noCellOwner, { budget_exempt: false }),
+    })
+    await harness.retryPendingInterrupts()
+
+    assert.equal(harness.pushCalls.length, 1)
+    assert.equal(harness.emailCalls.length, 1)
+    assert.equal(harness.emailCalls[0].payload.subject, "MCSW: More happened. Check Updates.")
+    assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+  })
+})
+
+test("a coalesced summary for an unreachable member is filed with no error", async () => {
+  await withEnv(emailEnv, async () => {
+    const realInfo = console.info
+    console.info = () => {}
+    try {
+      const harness = createNotifyHarness({
+        sourceIsTest: false,
+        sourceKind: "lead.new",
+        budgetReserved: false,
+        smsConfigured: true,
+        smsSucceeds: true,
+        operator: unreachableOwner,
+      })
+      const result = await harness.notifyAll({ ...leadAlert, capExempt: false })
+
+      assert.equal(result[0]?.reason, "daily-cap")
+      assert.equal(harness.emailCalls.length, 0)
+      assert.equal(harness.smsCalls.length, 0)
+      assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [])
+      assert.ok(harness.sqlCalls.some(({ text }) => text.includes("coalesced = false") && text.includes("ELSE 'filed' END")))
+    } finally {
+      console.info = realInfo
+    }
+  })
+})
+
+test("health stays healthy when the only alerts are for members without a cell", async () => {
+  // recentErrorsHealthy is "no non-test notification wrote a non-empty
+  // delivery_error in 24h"; the dead and unknown counters read delivery_status.
+  const deliveryErrorsSource = readFileSync(resolve(root, "lib/delivery-errors.ts"), "utf8")
+  assert.match(deliveryErrorsSource, /WHERE n\.delivery_error <> ''/)
+  const healthSource = readFileSync(resolve(root, "app/api/health/route.ts"), "utf8")
+  assert.match(healthSource, /recentDeliveryErrorsHealthy = database\.recentDeliveryErrors\.length === 0/)
+
+  await withEnv(emailEnv, async () => {
+    const realInfo = console.info
+    console.info = () => {}
+    try {
+      const runs = [
+        [noCellOwner, { ...leadAlert }],
+        [noCellOwner, { ...leadAlert, smsFallback: false }],
+        [noCellOwner, { ...leadAlert, smsOnly: true }],
+        [noCellOwner, { ...leadAlert, capExempt: false }],
+        [unreachableOwner, { ...leadAlert }],
+        [unreachableOwner, { ...leadAlert, capExempt: false }],
+      ]
+      for (const [operator, alert] of runs) {
+        const harness = createNotifyHarness({
+          sourceIsTest: false,
+          sourceKind: "lead.new",
+          budgetReserved: alert.capExempt !== false,
+          smsConfigured: true,
+          smsSucceeds: true,
+          operator,
+        })
+        await harness.notifyAll(alert)
+        const label = `${operator.id} ${JSON.stringify(alert)}`
+        assert.deepEqual(nonEmptyDeliveryErrors(harness.sqlCalls), [], label)
+        for (const status of ["retry", "unknown"]) {
+          assert.ok(!harness.sqlCalls.some(({ text }) => text.includes(`delivery_status = '${status}'`)), `${label} wrote ${status}`)
+        }
+        assert.ok(!harness.sqlCalls.some(({ text }) => /delivery_status = 'dead'(?! THEN)/.test(text)), `${label} wrote dead`)
+      }
+    } finally {
+      console.info = realInfo
+    }
+  })
+})
