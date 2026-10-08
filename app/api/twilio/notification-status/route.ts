@@ -1,3 +1,4 @@
+import { permanentTwilioRecipientError } from "@/lib/alert-failure-classifier.mjs"
 import { getSql } from "@/lib/db"
 import { readTwilioForm, twilioSmsWebhookConfigured, twiml } from "@/lib/twilio"
 
@@ -29,7 +30,10 @@ export async function POST(req: Request) {
   const errorCode = (params.get("ErrorCode")?.trim() ?? "").replace(/[^\w.-]/g, "").slice(0, 20)
   const errorMessage = (params.get("ErrorMessage")?.trim() ?? "").replace(/\s+/g, " ").slice(0, 120)
   const detail = [errorCode && `error ${errorCode}`, errorMessage].filter(Boolean).join(": ")
-  const failureText = `Twilio reported that the operator alert was not delivered${detail ? ` (${detail})` : ""}.`
+  // An opted-out, landline, or invalid cell is the recipient, not the network:
+  // say what the owner must do instead of a raw Twilio code.
+  const permanent = permanentTwilioRecipientError(errorCode)
+  const failureText = permanent?.message ?? `Twilio reported that the operator alert was not delivered${detail ? ` (${detail})` : ""}.`
 
   const sql = getSql()
   await sql`

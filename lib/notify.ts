@@ -7,6 +7,7 @@ import { isDefinitiveEmailProviderError, sendEmailWithProviderTruth } from "@/li
 import { formatSmsBody, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
 import { redactCrewText } from "@/lib/visibility"
+import { permanentTwilioRecipientError, twilioErrorCodeFrom } from "@/lib/alert-failure-classifier.mjs"
 
 export type NotificationPriority = "interrupt" | "digest"
 export type NotificationStock = "white" | "green" | "manila" | "red" | "people"
@@ -44,7 +45,7 @@ type SmsAttempt =
 async function sendSmsWithInlineRetry(
   input: Parameters<typeof sendSms>[0],
   onAttempt: (attempt: SmsAttempt) => Promise<void>,
-) {
+): Promise<{ sent: boolean; unknown: boolean; error: string; permanent?: true }> {
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
       const receipt = await sendSms(input)
@@ -57,14 +58,21 @@ async function sendSmsWithInlineRetry(
       })
       return { sent: true, unknown: false, error: "" }
     } catch (error) {
-      const definitive = isDefinitiveTwilioError(error)
-      const message = `Twilio send failed: ${error instanceof Error ? error.message : String(error)}`
+      const providerPayload = error instanceof TwilioProviderError ? error.providerPayload : null
+      // An opted-out (21610), landline (21614) or invalid (21211 class) number
+      // fails the same way on every attempt. Record the owner's fix instead of
+      // the raw provider text and stop: no inline retry, no scheduled retry.
+      const permanent = permanentTwilioRecipientError(twilioErrorCodeFrom(providerPayload)
+        || twilioErrorCodeFrom(error instanceof Error ? error.message : ""))
+      const definitive = Boolean(permanent) || isDefinitiveTwilioError(error)
+      const message = permanent?.message ?? `Twilio send failed: ${error instanceof Error ? error.message : String(error)}`
       await onAttempt({
         attempt,
         outcome: definitive ? "failed" : "unknown",
         error: message,
-        providerPayload: error instanceof TwilioProviderError ? error.providerPayload : null,
+        providerPayload,
       })
+      if (permanent) return { sent: false, unknown: false, error: permanent.message, permanent: true }
       if (!definitive) return { sent: false, unknown: true, error: message }
       if (attempt === 2) return { sent: false, unknown: false, error: message }
       await new Promise<void>((resolve) => setTimeout(resolve, SMS_INLINE_RETRY_DELAY_MS))
@@ -186,7 +194,7 @@ type CoalescedDelivery =
   | { outcome: "unreachable" }
   | { outcome: "email-unknown"; error: string }
   | { outcome: "sms-unknown"; error: string }
-  | { outcome: "failed"; error: string }
+  | { outcome: "failed"; error: string; permanent?: boolean }
 
 // The once-a-day "More happened" summary used to go out by push alone (plus
 // email for call alerts), so a member with no push subscription failed it on
@@ -225,6 +233,7 @@ async function deliverCoalescedSummary(input: {
     WHERE id = ${notificationId}::bigint`
   const hasCell = operatorHasCell(recipient)
   let smsError = ""
+  let smsPermanent = false
   if (hasCell) {
     if (!twilioSmsConfigured()) {
       smsError = "SMS channel not configured: TWILIO_SMS_ENABLED, messaging service, or webhook base URL is missing."
@@ -237,12 +246,13 @@ async function deliverCoalescedSummary(input: {
       if (sms.sent) return { outcome: "delivered" }
       if (sms.unknown) return { outcome: "sms-unknown", error: sms.error }
       smsError = sms.error
+      smsPermanent = sms.permanent === true
     }
   }
   if (!smsError && email.state !== "failed" && recipientUnreachable({ hasCell, email: recipient.email, pushFailed: push.failed })) {
     return { outcome: "unreachable" }
   }
-  return { outcome: "failed", error: smsError || email.error || input.fallbackError }
+  return { outcome: "failed", error: smsError || email.error || input.fallbackError, permanent: smsPermanent }
 }
 
 function centralMinuteOfDay() {
@@ -555,6 +565,7 @@ export async function notify(input: {
   // the real reason was destroyed twice over. Owner-cell alerts were failing on
   // attempt one 100% of the time and no row could say why.
   let smsFailure = ""
+  let smsPermanent = false
   // No cell on file skips the SMS leg; it is not a failure. Email below
   // carries the alert for that member instead.
   if (wantsSms && recipientHasCell) {
@@ -570,6 +581,7 @@ export async function notify(input: {
       sent = sms.sent
       smsDeliveryUnknown = sms.unknown
       smsFailure = sms.error
+      smsPermanent = sms.permanent === true
     }
   }
   if ((input.smsOnly || !recipientHasCell) && !isTest && !smsDeliveryUnknown && !emailDeliveryUnknown
@@ -627,6 +639,16 @@ export async function notify(input: {
       WHERE id = ${id}::bigint`
     logUnreachable(id, input.operatorId)
     return { id, sent: false, reason: "unreachable" as const }
+  } else if (smsPermanent) {
+    // A permanent recipient error (opted out, landline, invalid number) goes
+    // straight to dead: retrying it five times only repeats the refusal.
+    await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
+      delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'dead' END,
+      delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
+      delivery_error = ${smsFailure.slice(0, 500)}::text,
+      stock = 'red',
+      title = CASE WHEN title LIKE 'Alert delivery failed - %' THEN title ELSE left('Alert delivery failed - ' || title, 120) END
+      WHERE id = ${id}::bigint`
   } else {
     await sql`UPDATE notifications SET interrupt_reserved_at = NULL, delivery_status = 'retry',
       delivery_last_attempt_at = now(),
@@ -836,12 +858,13 @@ export async function retryPendingInterrupts(limit = 10) {
             WHERE id = ${row.id}::bigint`
           logUnreachable(row.id, row.operator_id)
         } else {
+          const summaryPermanent = summary.outcome === "failed" && summary.permanent === true
           const summaryFailed = (await sql`UPDATE notifications SET coalesced = false, interrupt_reserved_at = NULL,
             delivery_last_attempt_at = now(),
-            delivery_status = CASE WHEN delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
-            delivery_next_attempt_at = CASE WHEN delivery_attempts >= 5 THEN NULL ELSE now() + interval '30 minutes' END,
+            delivery_status = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
+            delivery_next_attempt_at = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5 THEN NULL ELSE now() + interval '30 minutes' END,
             delivery_error = ${summary.error.slice(0, 500)}::text,
-            stock = CASE WHEN delivery_attempts >= 5 THEN 'red' ELSE stock END
+            stock = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5 THEN 'red' ELSE stock END
             WHERE id = ${row.id}::bigint RETURNING delivery_status`) as { delivery_status: string }[]
           if (summaryFailed[0]?.delivery_status === "dead") dead += 1
         }
@@ -908,6 +931,7 @@ export async function retryPendingInterrupts(limit = 10) {
     let smsDeliveryUnknown = false
     let smsFailure = ""
     let smsRetryNow = false
+    let smsPermanent = false
     const wantsSms = !emailDeliveryUnknown && !delivered && (row.sms_only || row.sms_fallback)
     // No cell on file skips the SMS leg; email below carries the alert instead.
     if (wantsSms && recipientHasCell) {
@@ -924,6 +948,7 @@ export async function retryPendingInterrupts(limit = 10) {
         smsDeliveryUnknown = sms.unknown
         smsFailure = sms.error
         smsRetryNow = Boolean(smsFailure && !sms.unknown)
+        smsPermanent = sms.permanent === true
       }
     }
     if (emailReplacesSms && !allowPreviewSmsProbe && !delivered && !smsDeliveryUnknown
@@ -987,13 +1012,13 @@ export async function retryPendingInterrupts(limit = 10) {
     } else {
       const failed = (await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
         delivery_last_attempt_at = now(),
-        delivery_status = CASE WHEN delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
-        delivery_next_attempt_at = CASE WHEN delivery_attempts >= 5 THEN NULL
+        delivery_status = CASE WHEN ${smsPermanent}::boolean OR delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
+        delivery_next_attempt_at = CASE WHEN ${smsPermanent}::boolean OR delivery_attempts >= 5 THEN NULL
           WHEN ${smsRetryNow}::boolean THEN now()
           ELSE now() + (LEAST(240, 10 * power(2, delivery_attempts - 1))::int || ' minutes')::interval END,
         delivery_error = ${(smsFailure || emailFailure || "No configured alert channel accepted this retry.").slice(0, 500)}::text,
-        stock = CASE WHEN delivery_attempts >= 5 THEN 'red' ELSE stock END,
-        title = CASE WHEN delivery_attempts >= 5 THEN left('Alert delivery failed - ' || title, 120) ELSE title END
+        stock = CASE WHEN ${smsPermanent}::boolean OR delivery_attempts >= 5 THEN 'red' ELSE stock END,
+        title = CASE WHEN ${smsPermanent}::boolean OR delivery_attempts >= 5 THEN left('Alert delivery failed - ' || title, 120) ELSE title END
         WHERE id = ${row.id}::bigint RETURNING delivery_status`) as { delivery_status: string }[]
       if (failed[0]?.delivery_status === "dead") dead += 1
     }

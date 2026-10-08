@@ -5,6 +5,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import vm from "node:vm"
 import ts from "typescript"
+import * as alertFailureClassifier from "../lib/alert-failure-classifier.mjs"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 const resendRoutePath = resolve(root, "app/api/resend/webhook/route.ts")
@@ -314,6 +315,8 @@ function createTwilioHarness({
     env: {},
     fakes: new Map([
       ["@/lib/db", { getSql: () => sql }],
+      // The real classifier, not a fake: the callback's permanent-error text is under test.
+      ["@/lib/alert-failure-classifier.mjs", alertFailureClassifier],
       ["@/lib/twilio", {
         readTwilioForm: async () => ({
           valid,
@@ -370,6 +373,21 @@ test("an undelivered Twilio callback keeps ErrorCode in delivery_error", async (
   assert.equal(response.status, 200)
   const update = harness.sqlCalls.find(({ text }) => text.startsWith("UPDATE notifications SET"))
   assert.ok(update.values.includes("Twilio reported that the operator alert was not delivered (error 30007: Carrier violation)."))
+})
+
+test("an opted-out Twilio callback (21610) tells the owner to text START, not the number", async () => {
+  const harness = createTwilioHarness({
+    providerEmailStatus: "email.bounced",
+    extraParams: { ErrorCode: "21610", ErrorMessage: "Attempt to send to unsubscribed recipient" },
+  })
+  const response = await harness.POST(new Request("https://example.test/api/twilio/notification-status?notification=901", { method: "POST" }))
+
+  assert.equal(response.status, 200)
+  assert.equal(harness.notification.delivery_status, "dead")
+  const update = harness.sqlCalls.find(({ text }) => text.startsWith("UPDATE notifications SET"))
+  const text = update.values.find((value) => typeof value === "string" && value.includes("21610"))
+  assert.match(text, /texts START/)
+  assert.doesNotMatch(text, /\+?\d{10,}/)
 })
 
 test("an undelivered Twilio callback without ErrorCode keeps the original text", async () => {

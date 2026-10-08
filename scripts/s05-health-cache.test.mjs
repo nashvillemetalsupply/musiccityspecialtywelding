@@ -43,7 +43,9 @@ test("health aggregates use bounded time windows and row limits, preserving the 
     "call_sketch_error_count",
     "recent_client_errors",
     "recent_test_client_errors",
-    "notification_delivery_dead",
+    // notification_delivery_dead left this query in O17: the dead count now
+    // comes from listDeadNotificationRows + summarizeDeadNotifications, which
+    // keep the same 1-year window and 10000-row cap.
     "notification_delivery_unknown",
     "message_delivery_unknown",
     "call_delivery_unknown",
