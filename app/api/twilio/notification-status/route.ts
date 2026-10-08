@@ -26,6 +26,11 @@ export async function POST(req: Request) {
   const status = params.get("MessageStatus")?.trim().toLowerCase() ?? ""
   if (!notificationId || !sid || !KNOWN_STATUSES.has(status)) return twiml("")
 
+  const errorCode = (params.get("ErrorCode")?.trim() ?? "").replace(/[^\w.-]/g, "").slice(0, 20)
+  const errorMessage = (params.get("ErrorMessage")?.trim() ?? "").replace(/\s+/g, " ").slice(0, 120)
+  const detail = [errorCode && `error ${errorCode}`, errorMessage].filter(Boolean).join(": ")
+  const failureText = `Twilio reported that the operator alert was not delivered${detail ? ` (${detail})` : ""}.`
+
   const sql = getSql()
   await sql`
     UPDATE notifications SET
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
       delivery_error = CASE
         WHEN delivery_status IN ('delivered','dead') THEN delivery_error
         WHEN ${status}::text IN ('failed','undelivered','canceled')
-          THEN 'Twilio reported that the operator alert was not delivered.'
+          THEN ${failureText}::text
         ELSE ''
       END,
       stock = CASE

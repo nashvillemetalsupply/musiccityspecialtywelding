@@ -9,6 +9,8 @@ export async function POST(req: Request) {
   if (!valid) return twiml("", 403)
   const sid = params.get("MessageSid")?.trim() ?? ""
   const status = params.get("MessageStatus")?.trim().slice(0, 40) ?? ""
+  const errorCode = (params.get("ErrorCode")?.trim() ?? "").replace(/[^\w.-]/g, "").slice(0, 20)
+  const errorMessage = (params.get("ErrorMessage")?.trim() ?? "").replace(/\s+/g, " ").slice(0, 120)
   if (sid && status) {
     const sql = getSql()
     const intentValue = new URL(req.url).searchParams.get("intent")?.trim() ?? ""
@@ -78,7 +80,13 @@ export async function POST(req: Request) {
         externalId: `${sid}:${effectiveStatus}`,
         body: "Customer text was not delivered",
         crewBody: "Customer text was not delivered",
-        detail: { sid, status: effectiveStatus, callbackStatus: status },
+        detail: {
+          sid,
+          status: effectiveStatus,
+          callbackStatus: status,
+          ...(errorCode ? { errorCode } : {}),
+          ...(errorMessage ? { errorMessage } : {}),
+        },
       })
       if (!eventId) {
         const existing = (await sql`SELECT id FROM events WHERE kind = 'sms.failed' AND external_id = ${`${sid}:${effectiveStatus}`}::text LIMIT 1`) as { id: number }[]
