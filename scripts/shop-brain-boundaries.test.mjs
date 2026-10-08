@@ -243,7 +243,7 @@ test("durable interrupt intents retry through the same quiet-hour and budget gat
   assert.match(notify, /Alert delivery failed/)
   assert.match(recovery, /retryPendingInterrupts\(\)/)
   assert.doesNotMatch(notify, /sendSms\([\s\S]{0,180}\.then\(\(\) => true\)\.catch\(\(\) => false\)/)
-  assert.match(notify, /const definitive = isDefinitiveTwilioError\(error\)/)
+  assert.match(notify, /const definitive = Boolean\(permanent\) \|\| isDefinitiveTwilioError\(error\)/)
   assert.match(notify, /if \(!definitive\) return \{ sent: false, unknown: true, error: message \}/)
   assert.match(notify, /delivery_status = 'unknown'[\s\S]{0,260}automatic repeat is quarantined/)
   const initialClaim = notify.indexOf("delivery_status = 'sending', delivery_attempts = delivery_attempts + 1")
