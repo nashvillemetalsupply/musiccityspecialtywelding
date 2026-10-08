@@ -25,6 +25,7 @@ export type HealthMonitorAlertSummary = { count: number; lastAt: string | null; 
 
 export type DeadNotificationSummary = {
   counted: number
+  raw: number
   coveredBySibling: number
   healthMonitorAlert: HealthMonitorAlertSummary
   permanentSmsRecipients: PermanentSmsRecipient[]
