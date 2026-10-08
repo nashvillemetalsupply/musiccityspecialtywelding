@@ -146,6 +146,14 @@ test("sitemap carries the source files' Git dates as lastmod values", () => {
   ])
 })
 
+test("app/favicon.ico exists so /favicon.ico returns 200 for crawlers that skip the link tag", () => {
+  const ico = readFileSync(new URL("../app/favicon.ico", import.meta.url))
+  assert.equal(ico.readUInt16LE(0), 0)
+  assert.equal(ico.readUInt16LE(2), 1)
+  assert.ok(ico.readUInt16LE(4) >= 1)
+  assert.ok(ico.length > 22)
+})
+
 test("favicon comes from app/icon.svg and unreferenced PNGs stay archived", () => {
   assert.equal(existsSync(new URL("../app/icon.svg", import.meta.url)), true)
   assert.equal(existsSync(new URL("../public/icon.svg", import.meta.url)), false)
