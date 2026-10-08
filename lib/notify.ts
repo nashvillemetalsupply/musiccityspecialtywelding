@@ -180,8 +180,10 @@ function operatorHasCell(operator: Pick<Operator, "cell_phone"> | null | undefin
 // No cell, no deliverable email, and no push subscription that failed: there is
 // no channel to try, so the alert is filed in Updates without an error row.
 // A push subscription that exists but errored is a real failure and stays one.
-function recipientUnreachable(input: { hasCell: boolean; email: string; pushFailed: number | undefined }) {
-  return !input.hasCell && !operatorHasEmail({ email: input.email }) && !((input.pushFailed ?? 0) > 0)
+// A cell only counts as a channel when this alert class actually sends SMS
+// (smsOnly, or smsFallback true); otherwise it is not a channel for this alert.
+function recipientUnreachable(input: { hasCell: boolean; smsEligible: boolean; email: string; pushFailed: number | undefined }) {
+  return !(input.hasCell && input.smsEligible) && !operatorHasEmail({ email: input.email }) && !((input.pushFailed ?? 0) > 0)
 }
 
 function logUnreachable(notificationId: number, operatorId: number) {
@@ -249,7 +251,7 @@ async function deliverCoalescedSummary(input: {
       smsPermanent = sms.permanent === true
     }
   }
-  if (!smsError && email.state !== "failed" && recipientUnreachable({ hasCell, email: recipient.email, pushFailed: push.failed })) {
+  if (!smsError && email.state !== "failed" && recipientUnreachable({ hasCell, smsEligible: true, email: recipient.email, pushFailed: push.failed })) {
     return { outcome: "unreachable" }
   }
   return { outcome: "failed", error: smsError || email.error || input.fallbackError, permanent: smsPermanent }
@@ -631,7 +633,7 @@ export async function notify(input: {
       delivery_last_attempt_at = now(),
       delivery_error = CASE WHEN delivery_status = 'dead' THEN delivery_error ELSE '' END
       WHERE id = ${id}::bigint`
-  } else if (!smsFailure && recipientUnreachable({ hasCell: recipientHasCell, email: recipient.email, pushFailed: push.failed })) {
+  } else if (!smsFailure && recipientUnreachable({ hasCell: recipientHasCell, smsEligible: Boolean(input.smsOnly || input.smsFallback), email: recipient.email, pushFailed: push.failed })) {
     await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
       delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'filed' END,
       delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
@@ -864,7 +866,10 @@ export async function retryPendingInterrupts(limit = 10) {
             delivery_status = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5 THEN 'dead' ELSE 'retry' END,
             delivery_next_attempt_at = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5 THEN NULL ELSE now() + interval '30 minutes' END,
             delivery_error = ${summary.error.slice(0, 500)}::text,
-            stock = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5 THEN 'red' ELSE stock END
+            stock = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5 THEN 'red' ELSE stock END,
+            title = CASE WHEN ${summaryPermanent}::boolean OR delivery_attempts >= 5
+              THEN (CASE WHEN title LIKE 'Alert delivery failed - %' THEN title ELSE left('Alert delivery failed - ' || title, 120) END)
+              ELSE title END
             WHERE id = ${row.id}::bigint RETURNING delivery_status`) as { delivery_status: string }[]
           if (summaryFailed[0]?.delivery_status === "dead") dead += 1
         }
@@ -1002,7 +1007,7 @@ export async function retryPendingInterrupts(limit = 10) {
         delivery_error = CASE WHEN delivery_status = 'dead' THEN delivery_error ELSE '' END
         WHERE id = ${row.id}::bigint`
     } else if (!smsFailure && !emailLegFailed
-      && recipientUnreachable({ hasCell: recipientHasCell, email: context.email, pushFailed: push.failed })) {
+      && recipientUnreachable({ hasCell: recipientHasCell, smsEligible: Boolean(row.sms_only || row.sms_fallback), email: context.email, pushFailed: push.failed })) {
       await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
         delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'filed' END,
         delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,

@@ -173,3 +173,36 @@ test("permanent Twilio recipient errors stop inline and scheduled retries and re
   assert.match(statusRoute, /permanentTwilioRecipientError\(errorCode\)/)
   assert.match(statusRoute, /permanent\?\.message \?\? `Twilio reported that the operator alert was not delivered/)
 })
+
+test("Q1: recipientUnreachable is class-aware - a cell only counts when the class sends SMS", () => {
+  const notify = source("lib/notify.ts")
+  assert.match(notify, /function recipientUnreachable\(input: \{ hasCell: boolean; smsEligible: boolean;/)
+  assert.match(notify, /return !\(input\.hasCell && input\.smsEligible\) && !operatorHasEmail/)
+  assert.match(notify, /recipientUnreachable\(\{ hasCell: recipientHasCell, smsEligible: Boolean\(input\.smsOnly \|\| input\.smsFallback\)/)
+  assert.match(notify, /recipientUnreachable\(\{ hasCell: recipientHasCell, smsEligible: Boolean\(row\.sms_only \|\| row\.sms_fallback\)/)
+  assert.match(notify, /recipientUnreachable\(\{ hasCell, smsEligible: true,/)
+  assert.equal((notify.match(/recipientUnreachable\(\{/g) ?? []).length, 3, "every caller passes smsEligible")
+})
+
+test("Q4: a dead coalesced summary gets the Alert delivery failed prefix, once", () => {
+  const notify = source("lib/notify.ts")
+  const summaryFail = notify.slice(notify.indexOf("const summaryFailed = "), notify.indexOf("if (summaryFailed[0]"))
+  assert.match(summaryFail, /title = CASE WHEN \$\{summaryPermanent\}::boolean OR delivery_attempts >= 5\s+THEN \(CASE WHEN title LIKE 'Alert delivery failed - %' THEN title ELSE left\('Alert delivery failed - ' \|\| title, 120\) END\)\s+ELSE title END/)
+})
+
+test("Q5: notificationDeadRaw is a raw diagnostic and never feeds ok or durableFailures.healthy", () => {
+  const summary = summarizeDeadNotifications([
+    deadRow({ id: 1, sibling_delivered: true }),
+    deadRow({ id: 2, source: "health-monitor" }),
+    deadRow({ id: 3 }),
+  ])
+  assert.equal(summary.raw, 3)
+  assert.equal(summary.counted, 1)
+  assert.equal(summarizeDeadNotifications([]).raw, 0)
+  const health = source("app/api/health/route.ts")
+  assert.match(health, /result\.notificationDeliveryDeadRaw = deadSummary\.raw/)
+  assert.match(health, /notificationDeadRaw: database\.notificationDeliveryDeadRaw/)
+  const healthyBlock = health.slice(health.indexOf("const durableFailuresHealthy"), health.indexOf("const durableFailuresHealthy") + 900)
+  assert.doesNotMatch(health.slice(health.indexOf("const durableFailuresHealthy"), health.indexOf("durableFailures: {")), /DeadRaw/)
+  assert.doesNotMatch(healthyBlock, /DeadRaw/)
+})
