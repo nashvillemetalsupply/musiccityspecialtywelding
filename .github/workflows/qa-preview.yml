@@ -73,7 +73,8 @@ jobs:
         env:
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           MCSW_QA_BASE: ${{ steps.deploy.outputs.url }}
-        run: curl --fail --silent --show-error --location --output /dev/null -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "$MCSW_QA_BASE/board"
+        run: |
+          curl --fail --silent --show-error --location --output /dev/null -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" "$MCSW_QA_BASE/board"
 
       - name: Create one-use owner QA login
         env:
