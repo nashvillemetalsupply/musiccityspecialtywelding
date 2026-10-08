@@ -279,6 +279,7 @@ function createTwilioHarness({
   valid = true,
   providerEmailId = "email-alert-901",
   providerEmailStatus = "email.accepted",
+  extraParams = {},
 } = {}) {
   const notification = {
     id: 901,
@@ -316,7 +317,7 @@ function createTwilioHarness({
       ["@/lib/twilio", {
         readTwilioForm: async () => ({
           valid,
-          params: new URLSearchParams({ MessageSid: "SM-old-alert", MessageStatus: "undelivered" }),
+          params: new URLSearchParams({ MessageSid: "SM-old-alert", MessageStatus: "undelivered", ...extraParams }),
         }),
         twilioSmsWebhookConfigured: () => true,
         twiml: (body, status = 200) => new Response(body, { status }),
@@ -357,6 +358,25 @@ test("a replacement SMS receipt can settle an alert after email failure", async 
   assert.equal(response.status, 200)
   assert.equal(harness.notification.provider_status, "undelivered")
   assert.equal(harness.notification.delivery_status, "dead")
+})
+
+test("an undelivered Twilio callback keeps ErrorCode in delivery_error", async () => {
+  const harness = createTwilioHarness({
+    providerEmailStatus: "email.bounced",
+    extraParams: { ErrorCode: "30007", ErrorMessage: "Carrier violation" },
+  })
+  const response = await harness.POST(new Request("https://example.test/api/twilio/notification-status?notification=901", { method: "POST" }))
+
+  assert.equal(response.status, 200)
+  const update = harness.sqlCalls.find(({ text }) => text.startsWith("UPDATE notifications SET"))
+  assert.ok(update.values.includes("Twilio reported that the operator alert was not delivered (error 30007: Carrier violation)."))
+})
+
+test("an undelivered Twilio callback without ErrorCode keeps the original text", async () => {
+  const harness = createTwilioHarness({ providerEmailStatus: "email.bounced" })
+  await harness.POST(new Request("https://example.test/api/twilio/notification-status?notification=901", { method: "POST" }))
+  const update = harness.sqlCalls.find(({ text }) => text.startsWith("UPDATE notifications SET"))
+  assert.ok(update.values.includes("Twilio reported that the operator alert was not delivered."))
 })
 
 test("an invalid Twilio signature performs no database work", async () => {
