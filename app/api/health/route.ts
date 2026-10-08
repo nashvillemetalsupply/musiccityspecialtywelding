@@ -122,6 +122,7 @@ type DatabaseHealth = {
   recentClientErrors: number | null
   recentTestClientErrors: number | null
   notificationDeliveryDead: number | null
+  notificationDeliveryDeadRaw: number | null
   notificationDeliveryUnknown: number | null
   messageDeliveryUnknown: number | null
   callDeliveryUnknown: number | null
@@ -160,6 +161,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     recentClientErrors: null,
     recentTestClientErrors: null,
     notificationDeliveryDead: null,
+    notificationDeliveryDeadRaw: null,
     notificationDeliveryUnknown: null,
     messageDeliveryUnknown: null,
     callDeliveryUnknown: null,
@@ -348,6 +350,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.recentTestClientErrors = counts.recent_test_client_errors
     const deadSummary = summarizeDeadNotifications(await listDeadNotificationRows())
     result.notificationDeliveryDead = deadSummary.counted
+    result.notificationDeliveryDeadRaw = deadSummary.raw
     result.notificationDeadCoveredBySibling = deadSummary.coveredBySibling
     result.optedOutOperatorIds = deadSummary.optedOutOperatorIds
     result.permanentSmsRecipients = deadSummary.permanentSmsRecipients
@@ -639,6 +642,7 @@ export async function GET(req: Request) {
           healthy: durableFailuresHealthy,
           degraded: !durableFailuresHealthy,
           notificationDead: database.notificationDeliveryDead,
+          notificationDeadRaw: database.notificationDeliveryDeadRaw,
           notificationUnknown: database.notificationDeliveryUnknown,
           messageUnknown: database.messageDeliveryUnknown,
           callUnknown: database.callDeliveryUnknown,
