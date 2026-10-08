@@ -6,7 +6,14 @@ import {
 import { dbConfigured, getSql } from "@/lib/db"
 import { getOwnerEmail, isAuthorizedCron } from "@/lib/ops-auth"
 import { aiConfigured } from "@/lib/ai"
-import { listRecentDeliveryErrors } from "@/lib/delivery-errors"
+import { listDeadNotificationRows, listHealthDeliveryErrors } from "@/lib/delivery-errors"
+import {
+  splitHealthDeliveryErrors,
+  summarizeDeadNotifications,
+  type DiagnosticDeliveryError,
+  type HealthMonitorAlertSummary,
+  type PermanentSmsRecipient,
+} from "@/lib/alert-failure-classifier.mjs"
 import { gmailConfigured } from "@/lib/gmail"
 import { buildHealthMonitorFailureAlert } from "@/lib/health-monitor-alert.ts"
 import { notifyAll } from "@/lib/notify"
@@ -92,6 +99,11 @@ type DatabaseHealth = {
   leadCount: number | null
   failedDeliveries: number | null
   recentDeliveryErrors: RecentDeliveryError[]
+  diagnosticDeliveryErrors: DiagnosticDeliveryError[]
+  notificationDeadCoveredBySibling: number | null
+  optedOutOperatorIds: number[]
+  permanentSmsRecipients: PermanentSmsRecipient[]
+  healthMonitorAlert: HealthMonitorAlertSummary
   lastDigestAt: string | null
   lastDigestOk: boolean | null
   lastReminderAt: string | null
@@ -125,6 +137,11 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     leadCount: null,
     failedDeliveries: null,
     recentDeliveryErrors: [],
+    diagnosticDeliveryErrors: [],
+    notificationDeadCoveredBySibling: null,
+    optedOutOperatorIds: [],
+    permanentSmsRecipients: [],
+    healthMonitorAlert: { count: 0, lastAt: null, lastError: "" },
     lastDigestAt: null,
     lastDigestOk: null,
     lastReminderAt: null,
@@ -257,18 +274,6 @@ async function checkDatabase(): Promise<DatabaseHealth> {
           LEFT JOIN events e ON e.id = n.source_event_id
           LEFT JOIN leads l ON l.id = e.lead_id
           LEFT JOIN people p ON p.id = e.person_id
-          WHERE n.delivery_status = 'dead' AND n.read_at IS NULL
-            AND n.created_at >= now() - interval '1 year'
-            AND COALESCE(l.is_test, false) = false
-            AND COALESCE(p.is_test, false) = false
-            AND lower(COALESCE(e.detail->>'isTest', 'false')) <> 'true'
-          ORDER BY n.created_at DESC LIMIT 10000
-        ) recent_dead_notifications) AS notification_delivery_dead,
-        (SELECT count(*)::int FROM (
-          SELECT n.id FROM notifications n
-          LEFT JOIN events e ON e.id = n.source_event_id
-          LEFT JOIN leads l ON l.id = e.lead_id
-          LEFT JOIN people p ON p.id = e.person_id
           WHERE n.delivery_status = 'unknown' AND n.read_at IS NULL
             AND n.created_at >= now() - interval '1 year'
             AND COALESCE(l.is_test, false) = false
@@ -311,7 +316,6 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       call_sketch_error_count: number
       recent_client_errors: number
       recent_test_client_errors: number
-      notification_delivery_dead: number
       notification_delivery_unknown: number
       message_delivery_unknown: number
       call_delivery_unknown: number
@@ -326,7 +330,13 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       : null
     result.recentInboundCallCount = counts.recent_inbound_call_count
     result.failedDeliveries = counts.failed_deliveries
-    result.recentDeliveryErrors = await listRecentDeliveryErrors()
+    // A copy that failed only because its owner had no channel (or an
+    // opted-out cell) while another owner's copy of the same alert was
+    // delivered, and the health monitor's own failure alert, are diagnostics:
+    // they stay visible here but no longer hold ok false.
+    const healthErrors = splitHealthDeliveryErrors(await listHealthDeliveryErrors())
+    result.recentDeliveryErrors = healthErrors.blocking
+    result.diagnosticDeliveryErrors = healthErrors.diagnostic
     result.callTranscriptBacklog = counts.call_transcript_backlog
     result.callTranscriptExhausted = counts.call_transcript_exhausted
     result.voiceTranscriptBacklog = counts.voice_transcript_backlog
@@ -336,7 +346,12 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.callSketchErrorCount = counts.call_sketch_error_count
     result.recentClientErrors = counts.recent_client_errors
     result.recentTestClientErrors = counts.recent_test_client_errors
-    result.notificationDeliveryDead = counts.notification_delivery_dead
+    const deadSummary = summarizeDeadNotifications(await listDeadNotificationRows())
+    result.notificationDeliveryDead = deadSummary.counted
+    result.notificationDeadCoveredBySibling = deadSummary.coveredBySibling
+    result.optedOutOperatorIds = deadSummary.optedOutOperatorIds
+    result.permanentSmsRecipients = deadSummary.permanentSmsRecipients
+    result.healthMonitorAlert = deadSummary.healthMonitorAlert
     result.notificationDeliveryUnknown = counts.notification_delivery_unknown
     result.messageDeliveryUnknown = counts.message_delivery_unknown
     result.callDeliveryUnknown = counts.call_delivery_unknown
@@ -550,6 +565,8 @@ export async function GET(req: Request) {
         failedCount: database.failedDeliveries,
         recentErrors: database.recentDeliveryErrors,
         recentErrorsHealthy: recentDeliveryErrorsHealthy,
+        // Visible, never gating: see splitHealthDeliveryErrors.
+        diagnosticErrors: database.diagnosticDeliveryErrors,
       },
       operations: {
         authConfigured: opsAuthConfigured,
@@ -625,6 +642,11 @@ export async function GET(req: Request) {
           notificationUnknown: database.notificationDeliveryUnknown,
           messageUnknown: database.messageDeliveryUnknown,
           callUnknown: database.callDeliveryUnknown,
+          // Diagnostics only. Operator ids, never phone numbers.
+          notificationDeadCoveredBySibling: database.notificationDeadCoveredBySibling,
+          optedOutOperatorIds: database.optedOutOperatorIds,
+          permanentSmsRecipients: database.permanentSmsRecipients,
+          healthMonitorAlert: database.healthMonitorAlert,
         },
         gmailConfigured: gmailConfigured(),
         aiGatewayConfigured: aiConfigured(),
