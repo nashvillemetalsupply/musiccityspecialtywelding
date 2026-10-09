@@ -2,7 +2,9 @@ import type { RecentDeliveryError } from "./delivery-errors.mjs"
 
 export type PermanentTwilioReason = "opted-out" | "not-mobile" | "invalid-number"
 export type PermanentTwilioRecipientError = { code: string; reason: PermanentTwilioReason; message: string }
-export type AlertFailureReason = "covered-by-sibling" | "undelivered" | "health-monitor-alert"
+export type AlertFailureReason = "covered-by-sibling" | "undelivered" | "health-monitor-alert" | "budget-filed"
+
+export const INTERRUPT_BUDGET_FILED_ERROR: string
 
 export type AlertFailureRow = {
   operator_id?: number | string | null
