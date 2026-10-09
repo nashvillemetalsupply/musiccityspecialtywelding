@@ -29,6 +29,18 @@ import { reconcileRoutedLeadProjections } from "@/lib/routing"
 import { attachCloseoutPhotoToLead, getCloseoutPhotoUpload, isCloseoutUploadId } from "@/lib/closeout-photo-uploads"
 import { applyPaymentReversal } from "@/lib/payment-ledger"
 import { normalizePaymentReversalInput, runOwnerPaymentReversal } from "@/lib/payment-reversal.ts"
+import { scheduleQuoteFollowUp } from "@/lib/quote-follow-up.ts"
+
+// Operator-facing reminder only; the customer is never contacted. The status or
+// clear that triggered it has already been saved, so a failure here is logged
+// rather than shown to the operator as if their change had failed.
+async function scheduleQuoteFollowUpForLead(leadId: number) {
+  try {
+    await scheduleQuoteFollowUp(getSql(), recordLeadEvent, leadId)
+  } catch (error) {
+    console.warn("Quote follow-up scheduling failed:", error)
+  }
+}
 
 async function sendCustomerEmail(options: {
   leadId: number
@@ -338,6 +350,7 @@ export async function updateLeadStatus(formData: FormData) {
     )
     SELECT lead_id AS id FROM immutable_receipt`) as { id: number }[]
   if (!changed[0]) throw new Error("Finished jobs are locked. Use Undo finish before changing their status.")
+  if (status === "quoted") await scheduleQuoteFollowUpForLead(leadId)
   if (status === "spam") {
     await sql`
       UPDATE notifications n SET
@@ -399,6 +412,7 @@ export async function saveEstimate(formData: FormData) {
       updated_at = now()
     WHERE id = ${leadId}::bigint`
   await recordLeadEvent(leadId, "estimate_saved", actorId(operator), { cents })
+  if (cents !== null) await scheduleQuoteFollowUpForLead(leadId)
 
   const quoteRecipients = (emailIt || sendGlass) && cents !== null ? (await sql`
     SELECT first_name, email, phone, service, is_test, person_id FROM leads WHERE id = ${leadId}::bigint`) as {
@@ -1197,6 +1211,9 @@ export async function setFollowUp(formData: FormData) {
   await recordLeadEvent(leadId, clear ? "follow_up_cleared" : "follow_up_set", actorId(operator), {
     at: followUp,
   })
+  // Clearing a reminder on a lead still sitting at Quoted queues the next
+  // cadence step (+5d, then +10d after the quote). A manual date never does.
+  if (clear) await scheduleQuoteFollowUpForLead(leadId)
   revalidatePath("/ops")
   revalidatePath(`/ops/leads/${leadId}`)
 }
