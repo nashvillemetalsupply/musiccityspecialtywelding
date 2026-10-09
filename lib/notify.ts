@@ -182,12 +182,14 @@ function operatorHasCell(operator: Pick<Operator, "cell_phone"> | null | undefin
 // A push subscription that exists but errored is a real failure and stays one.
 // A cell only counts as a channel when this alert class actually sends SMS
 // (smsOnly, or smsFallback true); otherwise it is not a channel for this alert.
-function recipientUnreachable(input: { hasCell: boolean; smsEligible: boolean; email: string; pushFailed: number | undefined }) {
-  return !(input.hasCell && input.smsEligible) && !operatorHasEmail({ email: input.email }) && !((input.pushFailed ?? 0) > 0)
+// Email, like a cell, only counts when this alert class actually sends to it.
+// Counting an unused email kept push-less owners' non-call alerts retrying to dead.
+function recipientUnreachable(input: { hasCell: boolean; smsEligible: boolean; email: string; emailEligible: boolean; pushFailed: number | undefined }) {
+  return !(input.hasCell && input.smsEligible) && !(input.emailEligible && operatorHasEmail({ email: input.email })) && !((input.pushFailed ?? 0) > 0)
 }
 
 function logUnreachable(notificationId: number, operatorId: number) {
-  console.info(`Alert ${notificationId} filed without delivery: operator ${operatorId} has no cell, email, or push subscription.`)
+  console.info(`Alert ${notificationId} filed without delivery: operator ${operatorId} has no cell, email, or push subscription this alert class uses.`)
 }
 
 type CoalescedDelivery =
@@ -251,7 +253,7 @@ async function deliverCoalescedSummary(input: {
       smsPermanent = sms.permanent === true
     }
   }
-  if (!smsError && email.state !== "failed" && recipientUnreachable({ hasCell, smsEligible: true, email: recipient.email, pushFailed: push.failed })) {
+  if (!smsError && email.state !== "failed" && recipientUnreachable({ hasCell, smsEligible: true, email: recipient.email, emailEligible: true, pushFailed: push.failed })) {
     return { outcome: "unreachable" }
   }
   return { outcome: "failed", error: smsError || email.error || input.fallbackError, permanent: smsPermanent }
@@ -633,7 +635,7 @@ export async function notify(input: {
       delivery_last_attempt_at = now(),
       delivery_error = CASE WHEN delivery_status = 'dead' THEN delivery_error ELSE '' END
       WHERE id = ${id}::bigint`
-  } else if (!smsFailure && recipientUnreachable({ hasCell: recipientHasCell, smsEligible: Boolean(input.smsOnly || input.smsFallback), email: recipient.email, pushFailed: push.failed })) {
+  } else if (!smsFailure && recipientUnreachable({ hasCell: recipientHasCell, smsEligible: Boolean(input.smsOnly || input.smsFallback), email: recipient.email, emailEligible: emailAttempted || Boolean(input.smsOnly) || !recipientHasCell, pushFailed: push.failed })) {
     await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
       delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'filed' END,
       delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
@@ -1007,7 +1009,7 @@ export async function retryPendingInterrupts(limit = 10) {
         delivery_error = CASE WHEN delivery_status = 'dead' THEN delivery_error ELSE '' END
         WHERE id = ${row.id}::bigint`
     } else if (!smsFailure && !emailLegFailed
-      && recipientUnreachable({ hasCell: recipientHasCell, smsEligible: Boolean(row.sms_only || row.sms_fallback), email: context.email, pushFailed: push.failed })) {
+      && recipientUnreachable({ hasCell: recipientHasCell, smsEligible: Boolean(row.sms_only || row.sms_fallback), email: context.email, emailEligible: emailAttempted || emailReplacesSms, pushFailed: push.failed })) {
       await sql`UPDATE notifications SET interrupt_reserved_at = NULL,
         delivery_status = CASE WHEN delivery_status IN ('delivered','dead') THEN delivery_status ELSE 'filed' END,
         delivery_last_attempt_at = now(), delivery_next_attempt_at = NULL,
