@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
+  INTERRUPT_BUDGET_FILED_ERROR,
   classifyAlertFailure,
   permanentTwilioRecipientError,
   splitHealthDeliveryErrors,
@@ -130,6 +131,32 @@ test("recent delivery errors split into health-blocking and diagnostic-only", ()
   assert.deepEqual(split.blocking, [{ at: "2026-10-08T15:00:00.000Z", title: "Missed call", error: NO_CHANNEL }])
   assert.deepEqual(split.diagnostic.map((item) => item.reason), ["health-monitor-alert", "covered-by-sibling"])
   assert.equal(split.diagnostic.some((item) => /INTERNAL TEST/.test(item.title)), false)
+})
+
+test("a budget-filed row is diagnostic, a mixed set stays blocked by the genuine row, and coalesced failure text is unchanged", () => {
+  const filed = (extra) => ({ occurred_at: "2026-10-08T16:00:00Z", title: "Missed call", error: INTERRUPT_BUDGET_FILED_ERROR, is_test: false, source: "", provider_error_code: "", sibling_delivered: false, operator_id: 1, ...extra })
+  assert.deepEqual(
+    { blocking: classifyAlertFailure(filed()).blocking, reason: classifyAlertFailure(filed()).reason },
+    { blocking: false, reason: "budget-filed" },
+  )
+  assert.equal(classifyAlertFailure(filed({ error: "Daily interrupt budget was already full" })).reason, "budget-filed")
+  assert.equal(classifyAlertFailure(filed({ error: "Daily interrupt budget was already full. Extra" })).blocking, true)
+
+  const alone = splitHealthDeliveryErrors([filed()], now)
+  assert.deepEqual(alone.blocking, [])
+  assert.deepEqual(alone.diagnostic.map((item) => item.reason), ["budget-filed"])
+
+  const genuine = filed({ occurred_at: "2026-10-08T15:00:00Z", error: NO_CHANNEL })
+  const mixed = splitHealthDeliveryErrors([filed(), genuine], now)
+  assert.deepEqual(mixed.blocking, [{ at: "2026-10-08T15:00:00.000Z", title: "Missed call", error: NO_CHANNEL }])
+  assert.deepEqual(mixed.diagnostic.map((item) => item.reason), ["budget-filed"])
+
+  const coalesced = "The coalesced alert could not reach a registered push, email, or SMS channel."
+  assert.equal(classifyAlertFailure(filed({ error: coalesced })).blocking, true)
+  assert.equal(classifyAlertFailure(filed({ error: coalesced })).reason, "undelivered")
+  assert.equal(classifyAlertFailure(filed({ error: coalesced, sibling_delivered: true })).reason, "covered-by-sibling")
+
+  assert.ok(source("lib/notify.ts").includes(INTERRUPT_BUDGET_FILED_ERROR), "notify.ts writes the text the classifier matches")
 })
 
 test("health wires the classifier into ok, durableFailures and recentErrors", () => {
