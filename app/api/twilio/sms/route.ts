@@ -4,7 +4,8 @@ import { recordEvent } from "@/lib/events"
 import { resolvePhoneConversation } from "@/lib/ingest"
 import { notifyAll, notifyOwnerCellSms } from "@/lib/notify"
 import { findPersonByPhone, findRecentOpenLeadForPerson, isReservedShopPhone } from "@/lib/people"
-import { isConfiguredTwilioNumber, readTwilioForm, twilioSmsWebhookConfigured, twilioWebhookBaseUrl, twiml } from "@/lib/twilio"
+import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioSmsWebhookConfigured, twilioWebhookBaseUrl, twiml } from "@/lib/twilio"
+import { handleOperatorText } from "@/lib/sms-operator-in"
 import { isMetaVerificationSms, isUsNumericShortCode } from "@/lib/shop-brain-invariants.ts"
 import { processEvent } from "@/lib/extract"
 import { queueIngestAttachment, storeQueuedAttachment } from "@/lib/attachment-retry"
@@ -73,6 +74,17 @@ export async function POST(req: Request) {
   const receipt = inserted[0] ?? existing[0]
   const messageId = Number(receipt?.id)
   if (!messageId) return twiml("")
+
+  // A shop operator texting "booked #12", "paid Smith $450", "quoted #12" or
+  // "lost #12 reason" is recording work, not a customer writing in. The raw
+  // message is already stored above; nothing here files a lead, and the reply
+  // goes back to the sender as the TwiML answer to this webhook. Anyone who is
+  // not an active operator, and any text that is not a command, falls straight
+  // through to the customer flow below untouched.
+  if (!systemSms && !consentKeyword) {
+    const command = await handleOperatorText({ sid, from, body, messageId })
+    if (command) return twiml(command.reply ? `<Message>${escapeXml(command.reply)}</Message>` : "")
+  }
 
   // A completed event is the strongest projection receipt. A linked messages
   // row covers the narrower crash window after conversation resolution but

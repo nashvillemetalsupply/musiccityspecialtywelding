@@ -2,6 +2,7 @@ import { dbConfigured, getSql } from "@/lib/db"
 import type { LeadRow } from "@/lib/leads"
 import { isAuthorizedCron } from "@/lib/ops-auth"
 import { notifyAll } from "@/lib/notify"
+import { OPERATOR_TEXT_GRAMMAR } from "@/lib/sms-operator-commands"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -65,7 +66,7 @@ export async function GET(req: Request) {
         priority: "digest",
         stock: failed.length ? "red" : "manila",
         title: "Today’s shop list is ready",
-        body: `${followUpsDue.length} due · ${unanswered.length} waiting · ${openQuotes.length} stale quotes · ${unpaidInvoices.length} unpaid`,
+        body: `${followUpsDue.length} due · ${unanswered.length} waiting · ${openQuotes.length} stale quotes · ${unpaidInvoices.length} unpaid` + OPERATOR_TEXT_GRAMMAR,
         url: "/ops",
         ownerOnly: true,
         dedupeKey: `daily-digest:${centralDay}`,
