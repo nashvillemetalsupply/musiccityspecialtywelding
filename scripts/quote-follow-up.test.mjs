@@ -171,7 +171,7 @@ test("every path that makes a lead quoted, and the clear path, schedules the cad
     return text.slice(start, end < 0 ? undefined : end)
   }
 
-  assert.match(body(actions, "updateLeadStatus"), /if \(status === "quoted"\) await scheduleQuoteFollowUpForLead\(leadId\)/)
+  assert.match(body(source("lib/job-commands.ts"), "applyLeadStatus"), /if \(status === "quoted"\) await scheduleQuoteFollowUpForLead\(leadId\)/)
   assert.match(body(actions, "saveEstimate"), /if \(cents !== null\) await scheduleQuoteFollowUpForLead\(leadId\)/)
   assert.match(body(actions, "setFollowUp"), /if \(clear\) await scheduleQuoteFollowUpForLead\(leadId\)/)
   assert.match(body(claims, "acceptQuoteCapture"), /scheduleQuoteFollowUp\(sql, recordLeadEvent, leadId\)/)

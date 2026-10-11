@@ -5,6 +5,17 @@ import { formatSmsBody, isGmailMessageGone, isMetaVerificationSms, isUsNumericSh
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
+// The FormData wrappers stay in app/ops/actions.ts; the bodies they share with
+// the text-in path live in lib/job-commands.ts. Pins read both.
+const withSharedCommands = () => source("app/ops/actions.ts") + "\n" + source("lib/job-commands.ts")
+const sharedBody = (name) => {
+  const text = source("lib/job-commands.ts")
+  const start = text.indexOf(`export async function ${name}`)
+  assert.ok(start >= 0, `${name} exists in lib/job-commands.ts`)
+  const next = text.indexOf("\nexport async function ", start + 1)
+  return text.slice(start, next < 0 ? undefined : next)
+}
+
 function sqlValueCount(valueList) {
   const start = valueList.indexOf("(")
   assert.ok(start >= 0, "VALUES has an opening parenthesis")
@@ -143,8 +154,7 @@ test("the sole notification gate suppresses every INTERNAL TEST source", () => {
 })
 
 test("marking mail Not a job also closes its unread alert retries", () => {
-  const actions = source("app/ops/actions.ts")
-  const updateStatus = actions.slice(actions.indexOf("export async function updateLeadStatus"), actions.indexOf("export async function markFirstResponse"))
+  const updateStatus = sharedBody("applyLeadStatus")
   assert.match(updateStatus, /if \(status === "spam"\)/)
   assert.match(updateStatus, /UPDATE notifications n SET[\s\S]*read_at = COALESCE\(n\.read_at, now\(\)\)/)
   assert.match(updateStatus, /delivery_status IN \('pending','sending','retry'\)[\s\S]*THEN 'filed'/)
@@ -210,7 +220,7 @@ test("crew cannot mutate any internal-test work order by guessing an id", () => 
   assert.match(leads, /SELECT person_id, is_test FROM leads/)
   assert.match(leads, /`\[INTERNAL TEST\] \$\{rawBody\}`/)
   assert.match(leads, /isTest: true/)
-  const completion = actions.slice(actions.indexOf("export async function markLeadComplete"), actions.indexOf("export async function addLeadCompletionNote"))
+  const completion = sharedBody("completeLeadRecord")
   assert.match(completion, /before\[0\]\.is_test && !canAccessInternalTests\(operator\.role\)/)
   assert.match(completion, /\$\{canAccessInternalTests\(operator\.role\)\}::boolean OR is_test = false/)
   assert.match(completion, /CASE WHEN t\.is_test THEN '\[INTERNAL TEST\] '/)
@@ -330,7 +340,7 @@ test("attachment pointers persist before provider bytes are copied", () => {
 test("deterministic private Blob writes can resume after response loss", () => {
   const transcribe = source("app/api/ops/transcribe/route.ts")
   const brief = source("app/api/ops/brief/route.ts")
-  const actions = source("app/ops/actions.ts")
+  const actions = withSharedCommands()
   const closeoutUpload = source("app/api/ops/closeout-upload/route.ts")
   const closeoutPhotos = source("lib/closeout-photo-uploads.ts")
   const closeoutPhotoInput = source("app/ops/leads/[id]/closeout-photo-input.tsx")
@@ -559,7 +569,7 @@ test("PAID receipts come only from verified payment ingestion", () => {
 })
 
 test("DONE and peel-back atomically preserve their Wire receipts", () => {
-  const actions = source("app/ops/actions.ts")
+  const actions = withSharedCommands()
   assert.match(actions, /wire_receipts AS \([\s\S]{0,900}INSERT INTO notifications/)
   const undo = actions.slice(actions.indexOf("export async function undoLeadComplete"))
   assert.match(undo, /immutable_receipt AS \([\s\S]*undo_wire AS \(/)
@@ -1009,7 +1019,7 @@ test("DONE voice addenda remain playable from their receipt", () => {
   const voice = source("app/api/ops/voice-note/route.ts")
   const capture = source("app/ops/voice-capture-button.tsx")
   const done = source("app/ops/leads/[id]/done-stamp.tsx")
-  const actions = source("app/ops/actions.ts")
+  const actions = withSharedCommands()
   assert.match(voice, /ARRAY\['job\.completed','note\.voice'\]/)
   assert.match(voice, /detail->>'voicePath'/)
   assert.match(capture, /onTranscript: \(transcript: string, intentId\?: string\)/)

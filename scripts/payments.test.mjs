@@ -9,11 +9,23 @@ const GMAIL_SOURCE = readFileSync("app/api/ingest/gmail/route.ts", "utf8").repla
 const WIRE_SOURCE = readFileSync("app/api/ops/wire/action/route.ts", "utf8").replace(/\r\n/g, "\n")
 const PAYMENT_FORM_SOURCE = readFileSync("app/ops/leads/[id]/payment-form.tsx", "utf8").replace(/\r\n/g, "\n")
 
-function exportedFunction(source, name) {
+// The FormData wrappers stay in app/ops/actions.ts; the shared bodies they call
+// live in lib/job-commands.ts so the SMS path runs the same code. A pinned
+// function is the wrapper followed by its shared body.
+const JOB_COMMANDS_SOURCE = readFileSync("lib/job-commands.ts", "utf8").replace(/\r\n/g, "\n")
+const SHARED_BODY = { recordPayment: "recordPaymentRecord", updateLeadStatus: "applyLeadStatus", markLeadComplete: "completeLeadRecord" }
+
+function sliceFunction(source, name) {
   const start = source.indexOf(`export async function ${name}`)
   assert.ok(start >= 0, `${name} exists`)
   const next = source.indexOf("\nexport async function ", start + 1)
   return source.slice(start, next < 0 ? undefined : next)
+}
+
+function exportedFunction(source, name) {
+  const wrapper = sliceFunction(source, name)
+  const shared = SHARED_BODY[name]
+  return shared && source.includes(`await ${shared}(`) ? `${wrapper}\n${sliceFunction(JOB_COMMANDS_SOURCE, shared)}` : wrapper
 }
 
 test("partial payment accrues and does not settle", () => {

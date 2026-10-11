@@ -23,7 +23,7 @@ test("finished jobs leave Active Jobs only through the additive handoff state", 
 
 test("handoff and undo are authenticated, idempotent, locked, and atomically receipted", () => {
   const actions = source("app/ops/leads/[id]/handoff-actions.ts")
-  const completion = source("app/ops/actions.ts")
+  const completion = `${source("app/ops/actions.ts")}\n${source("lib/job-commands.ts")}`
 
   assert.match(actions, /^"use server"/)
   assert.equal((actions.match(/getAuthenticatedOperator\(\)/g) ?? []).length, 2)
