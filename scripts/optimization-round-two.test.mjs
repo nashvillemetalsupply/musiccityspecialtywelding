@@ -4,11 +4,19 @@ import { readFileSync } from "node:fs"
 
 const source = (path) => readFileSync(path, "utf8").replace(/\r\n/g, "\n")
 
+// The FormData wrappers stay in app/ops/actions.ts; the bodies they share with
+// the text-in path live in lib/job-commands.ts. Pins read both.
+const withSharedCommands = () => source("app/ops/actions.ts") + "\n" + source("lib/job-commands.ts")
+const sharedBody = (name) => {
+  const text = source("lib/job-commands.ts")
+  const start = text.indexOf(`export async function ${name}`)
+  assert.ok(start >= 0, `${name} exists in lib/job-commands.ts`)
+  const next = text.indexOf("\nexport async function ", start + 1)
+  return text.slice(start, next < 0 ? undefined : next)
+}
+
 test("finished work cannot drift through the generic status editor", () => {
-  const actions = source("app/ops/actions.ts")
-  const start = actions.indexOf("export async function updateLeadStatus")
-  const end = actions.indexOf("export async function markFirstResponse", start)
-  const status = actions.slice(start, end)
+  const status = sharedBody("applyLeadStatus")
   assert.match(status, /WITH lead_update AS \([\s\S]*INSERT INTO events/)
   assert.match(status, /completed_at IS NULL AND handed_off_at IS NULL/)
   assert.match(status, /THEN COALESCE\(lost_at, now\(\)\) ELSE NULL END/)
@@ -18,7 +26,7 @@ test("finished work cannot drift through the generic status editor", () => {
 })
 
 test("concurrent manual payments verify the winning receipt and expose retryable UI", () => {
-  const actions = source("app/ops/actions.ts")
+  const actions = withSharedCommands()
   const payment = source("app/ops/leads/[id]/payment-form.tsx")
   assert.match(actions, /SELECT lead_id FROM events[\s\S]*external_id = \$\{externalId\}::text/)
   assert.match(actions, /Number\(winner\[0\]\?\.lead_id\) !== leadId/)

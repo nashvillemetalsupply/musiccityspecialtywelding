@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache"
 import { addClaim, supersedeClaimWithExisting } from "@/lib/claims"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
+import { recordLeadEvent } from "@/lib/leads"
+import { scheduleQuoteFollowUp } from "@/lib/quote-follow-up.ts"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { decidePhotoDraft, photoDraftsEnabled } from "@/lib/photo-drafts"
 import { requireLeadMutationAccess } from "@/lib/operators"
@@ -29,6 +31,8 @@ export async function acceptQuoteCapture(formData: FormData) {
   const eventId = await recordEvent({ kind: "quote.confirmed", actorType: "operator", actorId: operator.id, leadId, body: `${isTest ? "[INTERNAL TEST] " : ""}Quote confirmed at $${(cents / 100).toLocaleString("en-US")}`, detail: { claimId, cents, isTest } })
   await sql`UPDATE leads SET estimate_value_cents = ${cents}::bigint, quoted_at = COALESCE(quoted_at, now()), status = CASE WHEN status IN ('new','contacted','qualified') THEN 'quoted' ELSE status END, updated_at = now() WHERE id = ${leadId}::bigint`
   if (eventId) { const replacement = await addClaim({ subjectType: "lead", subjectId: leadId, predicate: "quoted_price_cents", value: cents, confidence: 1, sourceEventId: eventId, extractedBy: "operator-confirmed" }); await supersedeClaimWithExisting(claimId, replacement) }
+  // Operator-facing quote reminder only; logged, not thrown, because the quote is already saved.
+  try { await scheduleQuoteFollowUp(sql, recordLeadEvent, leadId) } catch (error) { console.warn("Quote follow-up scheduling failed:", error) }
   revalidatePath(`/ops/leads/${leadId}`); revalidatePath("/ops")
 }
 

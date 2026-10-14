@@ -63,11 +63,11 @@ test("paperwork issue path recomputes staleness before filing an issue receipt",
 })
 
 test("closeout filing stores reviewed outcomes without payment coupling", async () => {
-  const [actions, component] = await Promise.all([
-    read("app/ops/actions.ts"),
+  const [commands, component] = await Promise.all([
+    read("lib/job-commands.ts"),
     read("app/ops/leads/[id]/done-stamp.tsx"),
   ])
-  const completion = actions.slice(actions.indexOf("export async function markLeadComplete"), actions.indexOf("export async function addLeadCompletionNote"))
+  const completion = commands.slice(commands.indexOf("export async function completeLeadRecord"))
   assert.match(completion, /validateCloseoutReview/)
   assert.match(completion, /INSERT INTO job_closeouts/)
   assert.match(completion, /INSERT INTO job_closeout_updates/)

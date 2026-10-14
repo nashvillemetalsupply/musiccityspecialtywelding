@@ -59,6 +59,7 @@ test("digest excludes internal test leads and sends the expected owner summary",
   const route = loadRoute(new Map([
     ["@/lib/db", { dbConfigured: () => true, getSql: () => sql }],
     ["@/lib/ops-auth", { isAuthorizedCron: () => true }],
+    ["@/lib/sms-operator-commands", { OPERATOR_TEXT_GRAMMAR: "\nText to update a job: booked #12 · paid #12 $450 · quoted #12 · lost #12 reason" }],
     ["@/lib/notify", { notifyAll: async (input) => { sent.push(input); return [{ id: 91 }] } }],
   ]))
 
@@ -76,7 +77,7 @@ test("digest excludes internal test leads and sends the expected owner summary",
   assert.equal(sent[0].priority, "digest")
   assert.equal(sent[0].ownerOnly, true)
   assert.match(sent[0].title, /^Today.*shop list is ready$/)
-  assert.equal(sent[0].body, "1 due \u00b7 1 waiting \u00b7 1 stale quotes \u00b7 1 unpaid")
+  assert.equal(sent[0].body, "1 due \u00b7 1 waiting \u00b7 1 stale quotes \u00b7 1 unpaid\nText to update a job: booked #12 \u00b7 paid #12 $450 \u00b7 quoted #12 \u00b7 lost #12 reason")
 
   const leadReads = queries.filter((query) => query.startsWith("SELECT * FROM leads") || query.includes("SELECT count(*)::int AS count FROM leads"))
   assert.equal(leadReads.length, 6)

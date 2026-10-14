@@ -217,6 +217,7 @@ test("inbound Twilio messages acquire a test lead flag when conversation matchin
       ["@/lib/attachment-retry", { queueIngestAttachment: async () => 1, storeQueuedAttachment: async () => {} }],
       ["@/lib/messaging-consent", { classifyTwilioConsentKeyword: () => null, recordMessagingConsent: async () => {} }],
       ["@/lib/sms-provider-truth.ts", { resumeSmsProjection: () => ({ projected: false, leadId: null, personId: null, createdLead: false }) }],
+      ["@/lib/sms-operator-in", { handleOperatorText: async () => null }],
       ["@/lib/recovery-sweep", { runRecoverySweep: async () => ({ ok: true, skipped: true }) }],
       ["@/lib/gmail-wake", { wakeGmailIngest: async () => ({ ok: true }) }],
       ["@/lib/routing", { reconcileRoutedLeadProjections: async () => null, resolveProjectionLeadId: async (id) => id }],

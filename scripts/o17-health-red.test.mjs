@@ -204,11 +204,16 @@ test("permanent Twilio recipient errors stop inline and scheduled retries and re
 test("Q1: recipientUnreachable is class-aware - a cell only counts when the class sends SMS", () => {
   const notify = source("lib/notify.ts")
   assert.match(notify, /function recipientUnreachable\(input: \{ hasCell: boolean; smsEligible: boolean;/)
-  assert.match(notify, /return !\(input\.hasCell && input\.smsEligible\) && !operatorHasEmail/)
+  assert.match(notify, /return !\(input\.hasCell && input\.smsEligible\) && !\(input\.emailEligible && operatorHasEmail\(\{ email: input\.email \}\)\)/)
   assert.match(notify, /recipientUnreachable\(\{ hasCell: recipientHasCell, smsEligible: Boolean\(input\.smsOnly \|\| input\.smsFallback\)/)
   assert.match(notify, /recipientUnreachable\(\{ hasCell: recipientHasCell, smsEligible: Boolean\(row\.sms_only \|\| row\.sms_fallback\)/)
   assert.match(notify, /recipientUnreachable\(\{ hasCell, smsEligible: true,/)
   assert.equal((notify.match(/recipientUnreachable\(\{/g) ?? []).length, 3, "every caller passes smsEligible")
+  // Email is class-aware too: an email this class never sends to is not a channel.
+  assert.match(notify, /email: recipient\.email, emailEligible: true,/)
+  assert.match(notify, /email: recipient\.email, emailEligible: emailAttempted \|\| Boolean\(input\.smsOnly\) \|\| !recipientHasCell,/)
+  assert.match(notify, /email: context\.email, emailEligible: emailAttempted \|\| emailReplacesSms,/)
+  assert.equal((notify.match(/, emailEligible: /g) ?? []).length, 3, "every caller passes emailEligible")
 })
 
 test("Q4: a dead coalesced summary gets the Alert delivery failed prefix, once", () => {
