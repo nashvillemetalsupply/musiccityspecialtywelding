@@ -39,7 +39,7 @@ export function Navbar({ home = false }: { home?: boolean }) {
 
         <a className="ms-nav-call" href={shopPhone.href}>
           <Phone aria-hidden="true" />
-          <span><small>Open 24/7</small>{shopPhone.display}</span>
+          <span>{shopPhone.display}</span>
         </a>
 
         <MainstreetMenu homeHref={home ? "" : "/"} phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />

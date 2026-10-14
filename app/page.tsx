@@ -91,9 +91,9 @@ const adVerifiedCapabilities = [
 
 const faqs = [
   {
-    question: "Are you really open 24/7?",
+    question: "How do I reach you?",
     answer:
-      "Yes. The shop takes calls 24 hours a day, seven days a week. Call first so we can understand the job, location, access, and timing before we make the plan.",
+      "Call first so we can understand the job, location, access, and timing before we make the plan.",
   },
   {
     question: "Do you come to the job site?",
@@ -173,7 +173,7 @@ export default function Page() {
               Metal problem? <em>We get it.</em>
             </p>
             <p className="ms-hero-deck">
-              Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee&mdash;24 hours a day.
+              Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee.
             </p>
             <div className="ms-hero-actions">
               <a className="sw-plank" href={shopPhone.href}>
@@ -264,7 +264,7 @@ export default function Page() {
             </p>
             <a
               className="sw-tin"
-              href="https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/"
+              href="https://www.facebook.com/profile.php?id=939156675945316"
               target="_blank"
               rel="noreferrer"
             >

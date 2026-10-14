@@ -4,7 +4,7 @@ export const publicSiteName = "Music City Specialty Welding"
 export const publicSiteUrl = "https://musiccityspecialtywelding.com"
 export const publicDefaultTitle = "Mobile Welding & Fabrication | Nashville & Lebanon, TN"
 export const publicDefaultDescription =
-  "Open 24/7 for mobile and shop welding, trailer and equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee."
+  "Mobile and shop welding, trailer and equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee."
 
 type PublicSocialImage = {
   url: string

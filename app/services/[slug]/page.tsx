@@ -62,7 +62,7 @@ export default async function ServicePage({ params }: PageProps) {
             <h1 className="ms-display">{service.title}</h1>
             <p>{service.intro}</p>
             <div className="ms-hero-actions">
-              <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" />Call 24/7</a>
+              <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" />Call</a>
               <Link className="ms-text-link" href="#contact">Show us the job <ArrowUpRight aria-hidden="true" /></Link>
             </div>
           </div>
@@ -120,7 +120,7 @@ export default async function ServicePage({ params }: PageProps) {
           <h2 className="ms-display">Tell us what the metal is doing.</h2>
           <div>
             <p>Photos. Location. Timing. The honest version of what happened.</p>
-            <a href={shopPhone.href}><small>Open 24/7</small>{shopPhone.display}</a>
+            <a href={shopPhone.href}>{shopPhone.display}</a>
             <Link href="#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
           </div>
         </section>

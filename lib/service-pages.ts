@@ -145,6 +145,53 @@ export const servicePages: ServicePage[] = [
     ],
   },
   {
+    slug: "gate-repair",
+    title: "Gate Welding & Repair in Middle Tennessee",
+    shortTitle: "Gate Repair",
+    seoTitle: "Gate Repair & Welding Nashville",
+    metaDescription:
+      "Welding repair for sagging, cracked, or broken steel and iron gates: frames, hinges, latches, posts, and brackets. Shop work in Lebanon, on-site repair across Middle Tennessee. Send photos for a quote.",
+    eyebrow: "Fix the gate, not just the weld",
+    intro:
+      "Swing gates, slide gates, and farm gates fail at the hinge, the latch, the post, or the frame corner. We look at why it failed before we weld it, so the repair holds. The work is the metal: frames, hinges, latches, posts, brackets, and the welds that carry the load.",
+    image: "/images/owner-work/IMG_20260225_135845.webp",
+    imageAlt: "On-site welding repair by Music City Specialty Welding",
+    commonJobs: [
+      "Cracked or sagging gate frames and corners",
+      "Broken hinges, hinge pins, latches, and strike plates",
+      "Bent or rusted gate posts and mounting brackets",
+      "Swing, slide, driveway, and farm gate steel",
+    ],
+    goodFit: [
+      "The gate is steel or iron and the damage can be photographed clearly",
+      "The gate can be taken off or safely supported for hot work",
+      "The problem is the metal: a crack, a bend, a broken part, or a failed weld",
+      "The owner can say how the gate swings or slides and what it hit or what wore out",
+    ],
+    details: [
+      "Send one photo of the whole gate plus close-ups of the hinge, latch, and damaged area.",
+      "Include the gate type, approximate size, location, and whether it can be unhung.",
+      "Mention prior repairs, how long it has sagged, and any sign the post has moved.",
+    ],
+    faqs: [
+      {
+        question: "Do you repair gate motors or openers?",
+        answer:
+          "No. We repair the metal: the frame, hinges, latches, posts, and brackets. Motor, operator, and electrical work are outside what we do, so call the installer for those.",
+      },
+      {
+        question: "Can you repair a gate where it hangs?",
+        answer:
+          "Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop.",
+      },
+      {
+        question: "What photos help with a gate quote?",
+        answer:
+          "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose.",
+      },
+    ],
+  },
+  {
     slug: "equipment-repair",
     title: "Welding Repair for Equipment & Machinery",
     shortTitle: "Equipment Repair",

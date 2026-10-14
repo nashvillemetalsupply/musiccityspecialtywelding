@@ -45,7 +45,7 @@ export function MobileQuickActions({ quoteHref = "#contact", phoneHref = FALLBAC
     >
       <a href={phoneHref}>
         <Phone aria-hidden="true" />
-        <span><small>Open 24/7</small>Call now</span>
+        <span>Call now</span>
       </a>
       <a href={quoteHref}>Quote</a>
     </div>

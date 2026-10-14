@@ -178,7 +178,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
       setFormData(emptyForm)
       intakeKeyRef.current = ""
       setStatus("success")
-      setMessage("Got it. We’ll review the job and call you back. If it cannot wait, call now. We’re open 24/7.")
+      setMessage("Got it. We’ll review the job and call you back. If it cannot wait, call now.")
     } catch (error) {
       setStatus("error")
       setMessage(error instanceof Error ? error.message : "The request did not go through. Call the shop instead.")
@@ -194,7 +194,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
         <p>Three things get this moving: your name, your number, and what the metal needs.</p>
         <a className="ms-contact-call" href={phoneHref}>
           <Phone aria-hidden="true" />
-          <span><small>Open 24/7</small><strong>{phoneDisplay}</strong></span>
+          <span><strong>{phoneDisplay}</strong></span>
           <ArrowUpRight aria-hidden="true" />
         </a>
       </div>

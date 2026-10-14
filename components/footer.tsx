@@ -14,8 +14,8 @@ export function Footer({ home = false }: { home?: boolean }) {
       </div>
       <div className="ms-footer-contact">
         <div className="ms-footer-call">
-          <strong>Open 24/7</strong>
-          <a href={shopPhone.href}>Call the shop · {shopPhone.display}</a>
+          <strong>Call the shop</strong>
+          <a href={shopPhone.href}>{shopPhone.display}</a>
         </div>
         <a href="mailto:sales@musiccityspecialtywelding.com">sales@musiccityspecialtywelding.com</a>
         <span>533 W Baddour Pkwy<br />Lebanon, TN 37087</span>
@@ -23,7 +23,7 @@ export function Footer({ home = false }: { home?: boolean }) {
       </div>
       <div className="ms-footer-meta">
         <span>© {new Date().getFullYear()} Music City Specialty Welding</span>
-        <div><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><a href="https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/" target="_blank" rel="noreferrer">Facebook</a></div>
+        <div><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><a href="https://www.facebook.com/profile.php?id=939156675945316" target="_blank" rel="noreferrer">Facebook</a></div>
       </div>
     </footer>
   )

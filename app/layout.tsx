@@ -46,7 +46,7 @@ const localBusinessSchema = {
   telephone: shopPhone.e164,
   email: "sales@musiccityspecialtywelding.com",
   sameAs: [
-    "https://www.facebook.com/people/Music-City-Specialty-Welding/61585337136685/",
+    "https://www.facebook.com/profile.php?id=939156675945316",
   ],
   description:
     "Mobile and shop welding, equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee.",
@@ -66,20 +66,6 @@ const localBusinessSchema = {
     postalCode: "37087",
     addressCountry: "US",
   },
-  openingHoursSpecification: [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ].map((dayOfWeek) => ({
-    "@type": "OpeningHoursSpecification",
-    dayOfWeek,
-    opens: "00:00",
-    closes: "23:59",
-  })),
   areaServed: [
     "Lebanon, Tennessee",
     "Nashville, Tennessee",
