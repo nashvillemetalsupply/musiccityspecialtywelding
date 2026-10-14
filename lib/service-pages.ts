@@ -154,8 +154,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Fix the gate, not just the weld",
     intro:
       "Swing gates, slide gates, and farm gates fail at the hinge, the latch, the post, or the frame corner. We look at why it failed before we weld it, so the repair holds. The work is the metal: frames, hinges, latches, posts, brackets, and the welds that carry the load.",
-    image: "/images/owner-work/IMG_20260225_135845.webp",
-    imageAlt: "On-site welding repair by Music City Specialty Welding",
+    image: "/images/owner-work/IMG_20250527_141244.webp",
+    imageAlt: "Large custom steel gate fitted at a Middle Tennessee job site",
     commonJobs: [
       "Cracked or sagging gate frames and corners",
       "Broken hinges, hinge pins, latches, and strike plates",

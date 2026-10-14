@@ -177,7 +177,7 @@ export default function Page() {
             </p>
             <div className="ms-hero-actions">
               <a className="sw-plank" href={shopPhone.href}>
-                <small>call the shop — day or night</small>
+                <small>call the shop</small>
                 <strong>{shopPhone.display}</strong>
               </a>
               <a className="ms-text-link" href="#contact">
@@ -189,7 +189,7 @@ export default function Page() {
           <div className="ms-hero-media" aria-label="Music City Specialty Welding at work">
             <div className="sw-tin" aria-hidden="true">
               <small>Lebanon · Tennessee</small>
-              <strong>Open 24 Hours</strong>
+              <strong>Welding Shop</strong>
             </div>
             <figure className="ms-hero-image ms-hero-image-main wm-frame">
               <span className="sw-tape-tl" aria-hidden="true" />
@@ -208,7 +208,7 @@ export default function Page() {
 
         <div className="ms-badge-strip" aria-label="Shop facts">
           <span className="ms-sticker is-gold">Shop + road rig</span>
-          <span className="ms-sticker is-red">Call anytime</span>
+          <span className="ms-sticker is-red">Call the shop</span>
           <span className="ms-sticker">Steel · Aluminum · Stainless</span>
           <span className="ms-sticker is-blue">Middle Tennessee</span>
           <a className="ms-sticker is-arc" href={shopPhone.href}>{shopPhone.display}</a>

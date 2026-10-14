@@ -46,7 +46,7 @@ export function brandedEmail(options: {
             <td style="background:${COAL};border:3px solid #000;border-radius:10px;padding:26px 28px 22px;text-align:left;">
               <div style="font-family:Courier New,monospace;font-size:11px;letter-spacing:4px;color:${NEON};text-transform:uppercase;">Music City</div>
               <div style="font-family:Arial Black,Arial,sans-serif;font-size:30px;line-height:1;color:${NEON};text-transform:uppercase;letter-spacing:1px;">Specialty Welding</div>
-              <div style="font-family:Courier New,monospace;font-size:11px;letter-spacing:3px;color:#d4cab8;text-transform:uppercase;margin-top:8px;">Lebanon, TN &nbsp;·&nbsp; Open 24 hours &nbsp;·&nbsp; ${shopPhone.display}</div>
+              <div style="font-family:Courier New,monospace;font-size:11px;letter-spacing:3px;color:#d4cab8;text-transform:uppercase;margin-top:8px;">Lebanon, TN &nbsp;·&nbsp; ${shopPhone.display}</div>
             </td>
           </tr>
           <tr><td style="height:12px;font-size:0;">&nbsp;</td></tr>

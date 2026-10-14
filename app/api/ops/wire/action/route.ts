@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       LIMIT 1`) as { id: number }[]
     if (!targets[0]) throw new Error("That successor is not attached to this account yet.")
     personId = Number(targets[0].id)
-    await sendSmsPersisted({ to: phone, body: `Hey ${name}, ${operator.name || "Philip"} at Music City Specialty Welding here. I understand you’re the new contact. Holler anytime you need the usual welding help.`, leadId, personId, operatorId: operator.id, idempotencyKey: `wire:${notificationId}:contact-intro` })
+    await sendSmsPersisted({ to: phone, body: `Hey ${name}, ${operator.name || "Philip"} at Music City Specialty Welding here. I understand you’re the new contact. Holler when you need the usual welding help.`, leadId, personId, operatorId: operator.id, idempotencyKey: `wire:${notificationId}:contact-intro` })
   } else if (slip.action_kind === "contact-intro-email") {
     const anchorId = Number(slip.action_detail.personId)
     const targetId = Number(slip.action_detail.targetPersonId)
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     if (!targets[0]) throw new Error("That successor is not attached to this account yet.")
     const intent = `wire:${notificationId}:contact-intro-email`
     const signature = operatorSignature(operator)
-    const text = `Hi ${name},\n\n${signature} at Music City Specialty Welding here. I understand you’re the new contact. Holler anytime you need the usual welding help.\n\n-${signature}`
+    const text = `Hi ${name},\n\n${signature} at Music City Specialty Welding here. I understand you’re the new contact. Holler when you need the usual welding help.\n\n-${signature}`
     let emailEventId = await recordEvent({ kind: "email.out", actorType: "operator", actorId: operator.id, leadId, personId: targetId, externalId: intent, body: text, detail: { to: email, subject: "Music City Specialty Welding — new contact" } })
     if (!emailEventId) {
       const prior = (await sql`SELECT id FROM events WHERE kind = 'email.out' AND external_id = ${intent}::text LIMIT 1`) as { id: number }[]

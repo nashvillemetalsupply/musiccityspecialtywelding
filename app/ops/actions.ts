@@ -96,7 +96,7 @@ async function sendCustomerEmail(options: {
         preheader: options.subject,
         headline: options.headline,
         bodyHtml: options.bodyHtml,
-        ctaLabel: "Call the shop, open 24 hours",
+        ctaLabel: "Call the shop",
         ctaUrl: getShopPhone().href,
       }),
     }, { idempotencyKey: intent })
@@ -371,7 +371,7 @@ export async function saveEstimate(formData: FormData) {
           ``,
           `That's for the scope as we understand it today. If anything about the job changes, the number can too, and we'll tell you before we touch anything.`,
           ``,
-          `Ready to get it on the schedule, or got questions? Call us any time, day or night: ${getShopPhone().display}.`,
+          `Ready to get it on the schedule, or got questions? Call ${getShopPhone().display}.`,
           glassUrl ? `Track this job: ${glassUrl}` : ``,
           ``,
           `Music City Specialty Welding · Lebanon, TN`,
@@ -380,7 +380,7 @@ export async function saveEstimate(formData: FormData) {
         bodyHtml: [
           `Here's your estimate for the <strong>${escapeHtml(lead.service)}</strong> work: <strong style="font-size:22px;">${amount}</strong>.`,
           `That's for the scope as we understand it today. If the job changes, the number can too, and we'll tell you before we touch anything.`,
-          `Ready to put it on the schedule, or got questions? Call <strong>${escapeHtml(getShopPhone().display)}</strong> any time. We're open 24 hours.`,
+          `Ready to put it on the schedule, or got questions? Call <strong>${escapeHtml(getShopPhone().display)}</strong>.`,
           glassUrl ? `Your Customer Page: <a href="${escapeHtml(glassUrl)}">view job status</a>.` : "",
         ].join("<br /><br />"),
       })
@@ -466,7 +466,7 @@ export async function saveOutcome(formData: FormData) {
           ``,
           `Your ${lead.service} work is wrapped up. Thanks for trusting a local shop with it.`,
           ``,
-          `Keep our number: ${getShopPhone().display}. Metal breaks at the worst times, and we answer 24 hours a day.`,
+          `Keep our number: ${getShopPhone().display}.`,
           ``,
           `If anything about the work ever isn't right, call us first. We stand behind what we weld.`,
           ``,
@@ -475,7 +475,7 @@ export async function saveOutcome(formData: FormData) {
         headline: `Job's done, ${lead.first_name}.`,
         bodyHtml: [
           `Your <strong>${escapeHtml(lead.service)}</strong> work is wrapped. Thanks for trusting a local shop with it.`,
-          `Keep our number. Metal breaks at the worst times, and we answer 24 hours a day.`,
+          `Keep our number: <strong>${escapeHtml(getShopPhone().display)}</strong>.`,
           `If anything about the work ever isn't right, call us first. <strong>We stand behind what we weld.</strong>`,
         ].join("<br /><br />"),
       })
