@@ -101,9 +101,9 @@ export const servicePages: ServicePage[] = [
     slug: "trailer-welding-repair",
     title: "Trailer Welding & Frame Repair in Middle Tennessee",
     shortTitle: "Trailer Welding & Repair",
-    seoTitle: "Trailer Welding Repair Nashville & Middle Tennessee",
+    seoTitle: "Trailer Repair & Frame Welding Nashville",
     metaDescription:
-      "Trailer welding and frame repair for utility, work, equipment, and specialty trailers across Nashville, Lebanon, and Middle Tennessee.",
+      "Trailer repair and frame welding for utility, work, equipment, and specialty trailers. Shop work in Lebanon. Road rig for the rest of Middle Tennessee. Send photos for a quote.",
     eyebrow: "Repair the failure, not just the crack",
     intro:
       "Trailer damage can involve the frame, tongue, crossmembers, ramps, fenders, brackets, hangers, or the structure around the running gear. We inspect the damaged area and the surrounding load path before confirming what can be repaired and whether the work belongs on-site or in the shop.",

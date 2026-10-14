@@ -109,6 +109,13 @@ export default async function ServicePage({ params }: PageProps) {
           </div>
         </section>
 
+        <nav className="ms-breadcrumb" aria-label="Other services">
+          <span>Other work</span>
+          {servicePages.filter((other) => other.slug !== service.slug).map((other) => (
+            <Link key={other.slug} href={`/services/${other.slug}`}>{other.shortTitle}</Link>
+          ))}
+        </nav>
+
         <section className="ms-subclose">
           <h2 className="ms-display">Tell us what the metal is doing.</h2>
           <div>
