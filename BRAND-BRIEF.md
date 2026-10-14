@@ -97,7 +97,7 @@ Read-only campaign evidence captured August 2, 2026 from `MCW General Fab-Ad`:
 This brand must never resemble a Geocities page, an orange-and-black contractor template, a generic centered hero followed by three equal cards, a luxury architecture studio, or a fake-rugged theme pack. No orphaned headline words, overflowing type, awkward two-word wrap leftovers, low-contrast text, generic typography, faux-metal backgrounds, cluttered badge walls, or motion that blocks reading. The page must feel designed by people who understand both the shop and the job—not assembled from “welding website” search results.
 
 ## Conversion Priorities
-1. **Call — primary CTA:** `tel:6157033296`. Use a dominant above-fold call action, make the availability explicit, and use a sticky thumb-zone call bar on mobile.
+1. **Call — primary CTA:** `tel:6157033296`. Use a dominant above-fold call action (no availability claim; see Operating hours), and use a sticky thumb-zone call bar on mobile.
 2. **Quote form — secondary:** keep it easy to reach, visually subordinate to calling, and reduce visible friction to the minimum viable fields: name, phone, and what the job is. Photo upload may remain optional because project images improve qualification.
 3. **Email — tertiary:** `Sales@musiccityspecialtywelding.com`, visible in contact details but never competing with the call action.
 4. **Visit the shop — last:** 533 W Baddour Pkwy, Lebanon, TN 37087, presented as location information rather than a primary CTA.
