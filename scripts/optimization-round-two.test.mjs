@@ -203,7 +203,7 @@ test("local service titles and repeated SVG definitions are unique", () => {
   const servicePage = source("app/services/[slug]/page.tsx")
   const home = source("app/page.tsx")
   const weldment = source("components/weldment.tsx")
-  for (const title of ["Mobile Welder Nashville", "Trailer Welding Repair Nashville", "Custom Metal Fabrication Nashville"]) {
+  for (const title of ["Mobile Welder Nashville", "Trailer Repair & Frame Welding Nashville", "Custom Metal Fabrication Nashville"]) {
     assert.match(services, new RegExp(title))
   }
   assert.match(servicePage, /title: service\.seoTitle/)
