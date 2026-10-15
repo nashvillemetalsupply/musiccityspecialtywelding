@@ -40,7 +40,7 @@ const sitemapTestModule = await import(`data:text/javascript;base64,${Buffer.fro
 test("home sign keeps its visual text and names the service and city accessibly", () => {
   assert.match(
     homePage,
-    /<h1 className="sw-sign" aria-label="Music City Specialty Welding — Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee">/
+    /<h1 className="sw-sign" aria-label="Music City Specialty Welding, Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee">/
   )
   assert.match(homePage, /<span className="sw-line-sm">Music City<\/span>/)
   assert.match(homePage, /<span className="sw-line-lg">Specialty<\/span>/)

@@ -54,7 +54,7 @@ const services = [
     title: "Architectural metal",
     mobileTitleLines: ["Architectural", "metal"],
     line: "Built to look right. Built to stay put.",
-    detail: "Railings, stairs, supports, and architectural steel built to code with clean welds and a precise fit in the real space.",
+    detail: "Railings, stairs, supports, and architectural steel with clean welds and a precise fit in the real space.",
     href: "/services/architectural-welding",
     image: "/images/optimized/Service 02.webp",
     alt: "Finished black steel railing on a Tennessee property",
@@ -162,7 +162,7 @@ export default function Page() {
       <main id="main-content">
         <section className="ms-hero" id="home">
           <div className="ms-hero-copy sw-signwall">
-            <h1 className="sw-sign" aria-label="Music City Specialty Welding — Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee">
+            <h1 className="sw-sign" aria-label="Music City Specialty Welding, Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee">
               <span className="sw-line-sm">Music City</span>
               <span className="sw-line-lg">Specialty</span>
               <span className="sw-line-lg">
@@ -394,7 +394,7 @@ export default function Page() {
           <PlateStamp id="PLT-04" name="Territory" className="is-ink" />
           <div className="ms-territory-map" aria-hidden="true">
             <TennesseeMap className="wm-tn" />
-            <span className="wm-tn-star-label">★ Lebanon — the shop</span>
+            <span className="wm-tn-star-label">★ Lebanon, the shop</span>
             <strong><span>Middle</span><span>Tennessee</span></strong>
             <small>Shop work in Lebanon<br />Road rig everywhere else</small>
           </div>
