@@ -7,6 +7,8 @@
 // on https://www.facebook.com and img-src on https://connect.facebook.net.
 // wasm-eval, eval, apis.google.com and toolytics reports are extension noise and
 // are deliberately NOT allowlisted; never add 'unsafe-eval'.
+// 2026-10-15 (O18 re-read): img-src also needs https://ad.doubleclick.net for the
+// Google Ads ccm/s/collect beacon (2 reports, routes / and /services/:slug).
 // See docs/testing/2026-10-08-csp-o18-triage.md.
 export const CSP_DIRECTIVES = Object.freeze({
   "default-src": ["'self'"],
@@ -38,6 +40,7 @@ export const CSP_DIRECTIVES = Object.freeze({
     "https://www.googleadservices.com",
     "https://googleads.g.doubleclick.net",
     "https://*.g.doubleclick.net",
+    "https://ad.doubleclick.net",
   ],
   "font-src": ["'self'"],
   "connect-src": [

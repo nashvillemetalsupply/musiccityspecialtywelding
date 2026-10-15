@@ -125,6 +125,7 @@ test("Meta pixel sources from the O18 triage stay allowlisted", () => {
   assert.equal(directiveAllows(directives, "form-action", "https://www.facebook.com/tr/"), true)
   assert.equal(directiveAllows(directives, "frame-src", "https://www.facebook.com/"), true)
   assert.equal(directiveAllows(directives, "img-src", "https://connect.facebook.net//log/error"), true)
+  assert.equal(directiveAllows(directives, "img-src", "https://ad.doubleclick.net/ccm/s/collect"), true)
 })
 
 test("policy contains no unsafe-eval anywhere in the raw string", () => {
