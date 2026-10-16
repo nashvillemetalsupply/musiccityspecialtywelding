@@ -45,6 +45,13 @@ export async function GET(req: Request) {
       WHERE next_follow_up_at IS NOT NULL AND next_follow_up_at <= now()
         AND completed_at IS NULL AND status NOT IN ('lost', 'spam') AND is_test = false
       ORDER BY next_follow_up_at ASC LIMIT 50`) as LeadRow[]
+    // W90 port (FABLE-BATCH-23 Q11): a call auto-marks a lead contacted, so contacted is not an outcome.
+    // Contacted a week ago with no quote, win, loss or follow-up date set is a lead nobody closed out.
+    const noOutcome = (await sql`
+      SELECT * FROM leads
+      WHERE status = 'contacted' AND first_response_at < now() - interval '7 days'
+        AND next_follow_up_at IS NULL AND completed_at IS NULL AND is_test = false
+      ORDER BY first_response_at ASC LIMIT 50`) as LeadRow[]
     const [ociReady] = (await sql`
       SELECT count(*)::int AS count FROM leads
       WHERE status = 'won' AND gclid <> '' AND won_at > now() - interval '7 days'
@@ -56,6 +63,7 @@ export async function GET(req: Request) {
       staleQuotes: openQuotes.length,
       followUpsDue: followUpsDue.length,
       unpaidInvoices: unpaidInvoices.length,
+      noOutcome: noOutcome.length,
       adWinsReady: Number(ociReady?.count ?? 0),
     }
 
@@ -66,7 +74,7 @@ export async function GET(req: Request) {
         priority: "digest",
         stock: failed.length ? "red" : "manila",
         title: "Today’s shop list is ready",
-        body: `${followUpsDue.length} due · ${unanswered.length} waiting · ${openQuotes.length} stale quotes · ${unpaidInvoices.length} unpaid` + OPERATOR_TEXT_GRAMMAR,
+        body: `${followUpsDue.length} due · ${unanswered.length} waiting · ${openQuotes.length} stale quotes · ${unpaidInvoices.length} unpaid · ${noOutcome.length} no outcome 7d+` + OPERATOR_TEXT_GRAMMAR,
         url: "/ops",
         ownerOnly: true,
         dedupeKey: `daily-digest:${centralDay}`,
