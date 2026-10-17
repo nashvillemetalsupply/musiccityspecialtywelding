@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
   ambiguousReply,
+  businessReply,
   nameReadings,
   OPERATOR_COMMAND_EVENT_KIND,
   OPERATOR_TEXT_GRAMMAR,
@@ -124,4 +125,46 @@ test("event kind is journaled but never extracted", () => {
 test("digest carries the one-line grammar", () => {
   assert.match(read("app/api/ops/digest/route.ts"), /OPERATOR_TEXT_GRAMMAR/)
   assert.match(OPERATOR_TEXT_GRAMMAR, /booked #12.*paid #12 \$450.*quoted #12.*lost #12 reason/)
+})
+
+test("S81: booked <business> <n> and paid <business> $amt parse with a business ref", () => {
+  assert.deepEqual(parseOperatorCommand("booked ld2r 2"), { ok: true, verb: "booked", ref: { kind: "business", business: "ld2r", count: 2 }, amountCents: null, reason: "" })
+  assert.deepEqual(parseOperatorCommand("Booked Grease 3"), { ok: true, verb: "booked", ref: { kind: "business", business: "grease-patrol", count: 3 }, amountCents: null, reason: "" })
+  assert.deepEqual(parseOperatorCommand("paid railing $1,250.50"), { ok: true, verb: "paid", ref: { kind: "business", business: "railing", count: null }, amountCents: 125050, reason: "" })
+  assert.deepEqual(parseOperatorCommand("paid $300 builderbox"), { ok: true, verb: "paid", ref: { kind: "business", business: "builderbox", count: null }, amountCents: 30000, reason: "" })
+})
+
+test("S81: malformed business commands answer with usage, welding keeps the job number", () => {
+  for (const body of ["booked ld2r", "booked ld2r 0", "booked ld2r two", "booked ld2r 2 3", "paid ld2r", "paid ld2r $0", "paid ld2r extra $5", "booked welding 2", "paid welding $5"]) {
+    assert.equal(parseOperatorCommand(body)?.ok, false, body)
+  }
+  assert.match(parseOperatorCommand("booked welding 2").reply, /job number/)
+})
+
+test("S81: existing grammar is untouched; quoted and lost take no business", () => {
+  assert.equal(parseOperatorCommand("booked #12").ref.kind, "id")
+  assert.equal(parseOperatorCommand("booked Smith").ref.kind, "name")
+  assert.equal(parseOperatorCommand("quoted ld2r").ref.kind, "name")
+  assert.equal(parseOperatorCommand("lost ld2r too slow").ref.kind, "name")
+})
+
+test("S81: replies carry no test, pilot or trial wording and the digest line names the grammar", () => {
+  const copy = [businessReply("booked", "ld2r", { count: 2 }), businessReply("paid", "ld2r", { amountCents: 45000 }), OPERATOR_TEXT_GRAMMAR,
+    parseOperatorCommand("booked ld2r").reply, parseOperatorCommand("paid ld2r").reply, parseOperatorCommand("booked welding 1").reply]
+  for (const line of copy) assert.doesNotMatch(line, /(test|pilot|trial|experiment)/i)
+  assert.equal(businessReply("booked", "ld2r", { count: 2 }), "Recorded ld2r: 2 booked.")
+  assert.equal(businessReply("paid", "ld2r", { amountCents: 45000 }), "Recorded ld2r: paid $450.")
+  assert.ok(OPERATOR_TEXT_GRAMMAR.includes("booked ld2r 2") && OPERATOR_TEXT_GRAMMAR.includes("paid ld2r $450"))
+})
+
+test("S81: business branch runs only after the operator allowlist and replies to the sender only", () => {
+  const handler = read("lib/sms-operator-in.ts")
+  assert.ok(handler.indexOf('parsed.ref.kind === "business"') > handler.indexOf("if (!operator) return null"))
+  assert.ok(handler.indexOf('parsed.ref.kind === "business"') > handler.indexOf("priorReply(input.sid)"))
+  assert.ok(handler.includes("return finish(businessReply("))
+  assert.ok(handler.includes("business: tag?.business, count: tag?.count"))
+  for (const sink of ["sendSms", "notifyAll", "notifyOwnerCellSms", "fetch(", "twilio"]) assert.ok(!handler.includes(sink), sink)
+  // the only route out is the TwiML answer to the sender's own webhook
+  const route = read("app/api/twilio/sms/route.ts")
+  assert.ok(route.includes("if (command) return twiml(command.reply"))
 })

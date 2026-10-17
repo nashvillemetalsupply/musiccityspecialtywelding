@@ -12,8 +12,20 @@ export const OPERATOR_COMMAND_EVENT_KIND = "sms.operator.in"
 // ask for a retry, not file a payment.
 export const OPERATOR_PAYMENT_MAX_CENTS = 100_000_000
 
+// Non-CRM service businesses an operator can report on by text (S81). Welding
+// is the CRM itself and keeps the per-job commands.
+export const BUSINESS_ALIASES: Record<string, string> = {
+  "grease-patrol": "grease-patrol",
+  grease: "grease-patrol",
+  ld2r: "ld2r",
+  railing: "railing",
+  ridgeline: "railing",
+  builderbox: "builderbox",
+}
+
 export type OperatorCommandRef =
   | { kind: "id"; id: number }
+  | { kind: "business"; business: string; count: number | null }
   | { kind: "name"; words: string[] }
 
 export type ParsedOperatorCommand =
@@ -32,7 +44,7 @@ export const OPERATOR_COMMAND_HELP =
 
 // One line appended to the morning shop list so operators know what to text.
 export const OPERATOR_TEXT_GRAMMAR =
-  "\nText to update a job: booked #12 \u00b7 paid #12 $450 \u00b7 quoted #12 \u00b7 lost #12 reason"
+  "\nText to update a job: booked #12 \u00b7 paid #12 $450 \u00b7 quoted #12 \u00b7 lost #12 reason \u00b7 other businesses: booked ld2r 2 \u00b7 paid ld2r $450"
 
 const VERB_PATTERN = /^[\s"'“”]*(booked|paid|quoted|lost)\b[\s:,.\-–—]*(.*)$/is
 const AMOUNT_PATTERN = /^\$(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?$/
@@ -85,6 +97,22 @@ export function parseOperatorCommand(body: string): ParsedOperatorCommand | null
     if (!tokens.length) return { ok: false, verb, reply: usage(verb) }
   }
 
+  const businessKey = tokens[0].toLowerCase().replace(/[.,;:!]+$/, "")
+  if (verb === "booked" || verb === "paid") {
+    if (businessKey === "welding") return { ok: false, verb, reply: "Welding jobs use the job number. Text: " + (verb === "booked" ? "booked #12" : "paid #12 $450") }
+    const business = BUSINESS_ALIASES[businessKey]
+    if (business) {
+      if (verb === "paid") {
+        if (tokens.length !== 1) return { ok: false, verb, reply: "Text: paid ld2r $450" }
+        return { ok: true, verb, ref: { kind: "business", business, count: null }, amountCents, reason: "" }
+      }
+      const countMatch = tokens.length === 2 ? /^[0-9]{1,2}$/.exec(tokens[1]) : null
+      const count = countMatch ? Number(countMatch[0]) : 0
+      if (count < 1) return { ok: false, verb, reply: "Text how many jobs were booked. Text: booked ld2r 2" }
+      return { ok: true, verb, ref: { kind: "business", business, count }, amountCents: null, reason: "" }
+    }
+  }
+
   const idMatch = /^#(\d{1,12})$/.exec(tokens[0])
   if (idMatch) {
     const id = Number(idMatch[1])
@@ -98,6 +126,12 @@ export function parseOperatorCommand(body: string): ParsedOperatorCommand | null
   if (!words.length) return { ok: false, verb, reply: usage(verb) }
   if (verb === "lost" && words.length < 2) return { ok: false, verb, reply: usage(verb) }
   return { ok: true, verb, ref: { kind: "name", words }, amountCents, reason: "" }
+}
+
+export function businessReply(verb: OperatorCommandVerb, business: string, extra: { count?: number | null; amountCents?: number | null }) {
+  return verb === "booked"
+    ? `Recorded ${business}: ${extra.count} booked.`
+    : `Recorded ${business}: paid ${formatDollars(extra.amountCents ?? 0)}.`
 }
 
 export function normalizeNameKey(value: string): string {

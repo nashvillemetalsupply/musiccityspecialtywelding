@@ -5,6 +5,7 @@ import { canAccessInternalTests, getOperatorByPhone, requireLeadMutationAccess, 
 import { normalizePhone } from "@/lib/people"
 import {
   ambiguousReply,
+  businessReply,
   candidateName,
   nameReadings,
   noMatchReply,
@@ -86,6 +87,8 @@ async function journal(input: {
   outcome: "done" | "refused" | "unmatched" | "not-understood"
   reply: string
   amountCents?: number | null
+  business?: string | null
+  count?: number | null
 }) {
   await recordEvent({
     kind: OPERATOR_COMMAND_EVENT_KIND,
@@ -100,6 +103,8 @@ async function journal(input: {
       verb: input.verb,
       outcome: input.outcome,
       amountCents: input.amountCents ?? null,
+      // S81: business tag for non-CRM businesses; absent means welding.
+      ...(input.business ? { business: input.business, count: input.count ?? null } : {}),
       reply: input.reply,
     },
   })
@@ -130,14 +135,22 @@ export async function handleOperatorText(input: {
     leadId: number | null,
     verb: OperatorCommandVerb | null,
     amountCents?: number | null,
+    tag?: { business: string; count: number | null },
   ) => {
-    await journal({ operator, sid: input.sid, body: input.body, messageId: input.messageId, verb, leadId, outcome, reply, amountCents })
+    await journal({ operator, sid: input.sid, body: input.body, messageId: input.messageId, verb, leadId, outcome, reply, amountCents, business: tag?.business, count: tag?.count })
     return { reply }
   }
 
   if (!parsed.ok) return finish(parsed.reply, "not-understood", null, parsed.verb)
   if (parsed.verb === "lost" && operator.role !== "owner") {
     return finish("Only the owner can mark a job lost.", "refused", null, "lost")
+  }
+
+  // Another business: no job to find. The tag rides the journal event, which
+  // the Mirror reader selects; nothing in the CRM changes.
+  if (parsed.ref.kind === "business") {
+    const { business, count } = parsed.ref
+    return finish(businessReply(parsed.verb, business, { count, amountCents: parsed.amountCents }), "done", null, parsed.verb, parsed.amountCents, { business, count })
   }
 
   let lead: CommandLead | null = null
