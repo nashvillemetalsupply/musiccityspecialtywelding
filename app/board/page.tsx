@@ -29,6 +29,8 @@ import { centralDateKey } from "@/lib/job-calendar.ts"
 import { listMonthJobCalendar } from "@/lib/job-calendar-data"
 import { JobCalendar } from "./job-calendar"
 import { OpsOfflineSupport } from "@/app/ops/offline-support"
+import { S81_BUSINESS_KEYS } from "@/lib/sms-operator-commands"
+import { BusinessSwitcher, BusinessWorkspace } from "./business-workspace"
 import "./board.css"
 
 export const metadata: Metadata = {
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic"
 
-type SearchParams = Promise<{ q?: string; stage?: string; signal?: string; tests?: string; p?: string }>
+type SearchParams = Promise<{ q?: string; stage?: string; signal?: string; tests?: string; p?: string; business?: string; saved?: string }>
 
 // The two faces, self-hosted. next/font instances only exist in server modules,
 // so the board's client shell is handed the variable class names instead.
@@ -80,6 +82,11 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // use the same sign-in door as the rest of the operations app.
   const operator = dbConfigured() ? await getAuthenticatedOperator() : null
   if (!operator) redirect("/ops")
+  const business = S81_BUSINESS_KEYS.includes(params.business ?? "") ? params.business : undefined
+  if (business) return <>
+    <BusinessSwitcher active={business} />
+    <BusinessWorkspace business={business} operator={operator} saved={params.saved === "1"} />
+  </>
   const sessionCacheId = await getOpsCacheSessionId()
   // Internal test rows are owner-only. The flag is decided here, on the server,
   // from the role the session resolved to -- a crew member or a signed-out
@@ -145,6 +152,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   return <>
     <ThemeBoot />
     <OpsOfflineSupport sessionCacheId={sessionCacheId} />
+    <BusinessSwitcher />
     <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,

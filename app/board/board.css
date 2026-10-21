@@ -2,6 +2,28 @@
 
 .empty-state{max-width:56ch;margin:var(--s8) auto;padding:0 var(--s4);display:grid;gap:var(--s4)}
 
+.business-switcher{display:flex;gap:8px;overflow-x:auto;padding:12px max(16px,calc((100vw - 1200px)/2));background:var(--dark-surface-sunken);border-bottom:1px solid var(--dark-border);scrollbar-width:thin}
+.business-switcher a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;white-space:nowrap;color:var(--dark-text-secondary);text-decoration:none;border:1px solid var(--dark-border);font:var(--w-semi) var(--t-label)/1.2 var(--font-sans,Arial,sans-serif)}
+.business-switcher a:hover,.business-switcher a:focus-visible{color:var(--dark-text-primary);border-color:var(--dark-border-strong)}
+.business-switcher a.active{color:var(--dark-text-primary);border-color:var(--dark-action);background:var(--dark-surface-raised)}
+.business-workspace{max-width:900px;margin:0 auto;padding:32px 20px 64px;color:var(--dark-text-primary);font-family:var(--font-sans,Arial,sans-serif)}
+.business-workspace header{margin-bottom:28px}
+.business-workspace h1{font-size:var(--t-display);line-height:1.05;margin:6px 0 10px}
+.business-workspace h2{font-size:var(--t-title);line-height:1.2;margin:0 0 18px}
+.business-workspace p{color:var(--dark-text-secondary)}
+.business-kicker{font-size:var(--t-label);font-weight:var(--w-semi);letter-spacing:.06em;text-transform:uppercase;margin:0}
+.business-entry-panel,.business-entry-list{padding:22px;margin:0 0 20px;border:1px solid var(--dark-border);background:var(--dark-surface)}
+.business-entry-panel form{display:grid;grid-template-columns:minmax(130px,.6fr) minmax(180px,1.4fr) auto;align-items:end;gap:14px}
+.business-entry-panel label{display:grid;gap:8px;font-size:var(--t-label);font-weight:var(--w-med)}
+.business-entry-panel select,.business-entry-panel input{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--dark-border-strong);background:var(--dark-surface-sunken);color:var(--dark-text-primary);font:inherit}
+.business-entry-panel button{min-height:46px;padding:0 18px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif);cursor:pointer}
+.business-entry-panel button:focus-visible,.business-entry-panel input:focus-visible,.business-entry-panel select:focus-visible{outline:3px solid var(--dark-focus);outline-offset:2px}
+.business-entry-list ol{list-style:none;padding:0;margin:0}
+.business-entry-list li{display:flex;justify-content:space-between;padding:14px 0;border-top:1px solid var(--dark-border)}
+.business-entry-list li span{display:grid;gap:5px}
+.business-entry-list small{color:var(--dark-text-secondary)}
+@media(max-width:700px){.business-entry-panel form{grid-template-columns:1fr}.business-workspace{padding:24px 16px 48px}.business-entry-panel,.business-entry-list{padding:18px}}
+
 /* ===========================================================================
    MCS Welding · Job Control — final
 

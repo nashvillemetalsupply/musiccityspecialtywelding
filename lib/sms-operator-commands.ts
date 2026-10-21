@@ -23,6 +23,10 @@ export const BUSINESS_ALIASES: Record<string, string> = {
   builderbox: "builderbox",
 }
 
+// Tabs and server-side validation derive from the same S81 roster the SMS
+// grammar accepts, so the UI cannot drift into a second business list.
+export const S81_BUSINESS_KEYS = [...new Set(Object.values(BUSINESS_ALIASES))]
+
 export type OperatorCommandRef =
   | { kind: "id"; id: number }
   | { kind: "business"; business: string; count: number | null }
