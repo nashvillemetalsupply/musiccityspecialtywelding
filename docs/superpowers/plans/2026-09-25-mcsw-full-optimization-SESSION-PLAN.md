@@ -783,4 +783,4 @@ deleted. Everything still open was folded into a row above.
 | `docs/superpowers/plans/2026-08-21-cohesion-round*` | Done | — |
 | `docs/superpowers/plans/2026-09-04-final-polish*`, `2026-09-05-final-polish-HANDOFF.md` | Done. The device/env walks and the bypass secret carry over; components/ui and dead deps were already in S08 | S20, S23 |
 | `Shepherd/Philosophy/issues/mcsw-ops-redesign-plan.md` + `-SESSION-PLAN.md` | Obsolete. The redesign was parked 2026-08-17 (`design.md`) and design.md was retired as an authority (418219b) | — |
-| `docs/weekly-optimization/*-HANDOFF.md` | Complete, and a separate lane (weekly ad work) | — |
+| `docs/weekly-optimization/*-HANDOFF.md` | Complete, and a separate lane (weekly ad work). 2026-10-21 (F21, X10): `2026-09-21-meta-ads-image-swap-HANDOFF.md` committed; its one open line (recheck the two pending-review ads, staircase `120253473984430653` and Little Brick Church `120253473987790653`) CLOSED: both read effective_status ACTIVE in account 191496172280537 on 2026-10-21, no rejection. No plan row owed | — |
