@@ -74,13 +74,38 @@ test("digest excludes internal test leads and sends the expected owner summary",
   assert.equal(body.unpaidInvoices, 1)
   assert.equal(body.adWinsReady, 1)
   assert.equal(body.noOutcome, 1)
+  assert.equal(body.unquoted, 1)
   assert.equal(sent.length, 1)
   assert.equal(sent[0].priority, "digest")
   assert.equal(sent[0].ownerOnly, true)
   assert.match(sent[0].title, /^Today.*shop list is ready$/)
-  assert.equal(sent[0].body, "1 due \u00b7 1 waiting \u00b7 1 stale quotes \u00b7 1 unpaid \u00b7 1 no outcome 7d+\nText to update a job: booked #12 \u00b7 paid #12 $450 \u00b7 quoted #12 \u00b7 lost #12 reason")
+  assert.equal(sent[0].body, "1 due \u00b7 1 waiting \u00b7 1 stale quotes \u00b7 1 need a quote \u00b7 1 unpaid \u00b7 1 no outcome 7d+\nText to update a job: booked #12 \u00b7 paid #12 $450 \u00b7 quoted #12 \u00b7 lost #12 reason")
 
   const leadReads = queries.filter((query) => query.startsWith("SELECT * FROM leads") || query.includes("SELECT count(*)::int AS count FROM leads"))
-  assert.equal(leadReads.length, 7)
+  assert.equal(leadReads.length, 8)
   assert.ok(leadReads.every((query) => query.includes("is_test = false")), "every digest count and row query must exclude test leads")
+})
+
+test("digest unquoted count uses the Chicago-day cutoff and drops out at zero", async () => {
+  const queries = []
+  const sent = []
+  const sql = async (strings) => {
+    const text = normalizedSql(strings)
+    queries.push(text)
+    if (text.includes("SELECT count(*)::int AS count FROM leads")) return [{ count: 0 }]
+    return []
+  }
+  const route = loadRoute(new Map([
+    ["@/lib/db", { dbConfigured: () => true, getSql: () => sql }],
+    ["@/lib/ops-auth", { isAuthorizedCron: () => true }],
+    ["@/lib/sms-operator-commands", { OPERATOR_TEXT_GRAMMAR: "" }],
+    ["@/lib/notify", { notifyAll: async (input) => { sent.push(input); return [{ id: 1 }] } }],
+  ]))
+  const body = await (await route.GET(new Request("https://example.test/api/ops/digest"))).json()
+  assert.equal(body.unquoted, 0)
+  assert.equal(sent.length, 0)
+  const q = queries.find((query) => query.includes("quoted_at IS NULL"))
+  assert.ok(q, "unquoted query ran")
+  assert.ok(q.includes("created_at < date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago'"))
+  assert.doesNotMatch(q, /20 hours/)
 })

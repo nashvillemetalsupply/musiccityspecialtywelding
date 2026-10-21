@@ -52,6 +52,14 @@ export async function GET(req: Request) {
       WHERE status = 'contacted' AND first_response_at < now() - interval '7 days'
         AND next_follow_up_at IS NULL AND completed_at IS NULL AND is_test = false
       ORDER BY first_response_at ASC LIMIT 50`) as LeadRow[]
+    // Never quoted, created before today (Chicago), still open: the next-morning list.
+    const unquoted = (await sql`
+      SELECT * FROM leads
+      WHERE status IN ('new', 'contacted', 'qualified') AND quoted_at IS NULL
+        AND is_test = false AND routed_to_lead_id IS NULL AND completed_at IS NULL
+        AND created_at < date_trunc('day', now() AT TIME ZONE 'America/Chicago') AT TIME ZONE 'America/Chicago'
+        AND created_at > now() - interval '14 days'
+      ORDER BY created_at ASC LIMIT 50`) as LeadRow[]
     const [ociReady] = (await sql`
       SELECT count(*)::int AS count FROM leads
       WHERE status = 'won' AND gclid <> '' AND won_at > now() - interval '7 days'
@@ -64,6 +72,7 @@ export async function GET(req: Request) {
       followUpsDue: followUpsDue.length,
       unpaidInvoices: unpaidInvoices.length,
       noOutcome: noOutcome.length,
+      unquoted: unquoted.length,
       adWinsReady: Number(ociReady?.count ?? 0),
     }
 
@@ -74,7 +83,7 @@ export async function GET(req: Request) {
         priority: "digest",
         stock: failed.length ? "red" : "manila",
         title: "Today’s shop list is ready",
-        body: `${followUpsDue.length} due · ${unanswered.length} waiting · ${openQuotes.length} stale quotes · ${unpaidInvoices.length} unpaid · ${noOutcome.length} no outcome 7d+` + OPERATOR_TEXT_GRAMMAR,
+        body: `${followUpsDue.length} due · ${unanswered.length} waiting · ${openQuotes.length} stale quotes · ${unquoted.length} need a quote · ${unpaidInvoices.length} unpaid · ${noOutcome.length} no outcome 7d+` + OPERATOR_TEXT_GRAMMAR,
         url: "/ops",
         ownerOnly: true,
         dedupeKey: `daily-digest:${centralDay}`,

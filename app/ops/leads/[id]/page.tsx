@@ -253,6 +253,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       : Promise.resolve([]),
     showPhotoDrafts ? listPhotoDraftEntries(leadId) : Promise.resolve([]),
   ])
+  // Suggested price from the system-side quote draft; shown to the owner only, never auto-saved.
+  const quoteDraft = operator.role === "owner" && lead.estimate_value_cents === null
+    ? ((await getSql()`SELECT detail FROM events WHERE lead_id = ${leadId}::bigint AND kind = 'lead.quote.draft.prepared' ORDER BY id DESC LIMIT 1`) as Array<{ detail: { suggested_cents?: number | null; n?: number } | null }>)[0]?.detail ?? null
+    : null
+  const draftCents = typeof quoteDraft?.suggested_cents === "number" ? quoteDraft.suggested_cents : null
   const attachmentSensitivity = new Map((attachmentClassifications as Array<{ blob_path: string; sensitivity: string }>).map((item) => [item.blob_path, item.sensitivity]))
   const fileChoices = routingChoices as Array<{ id: number; service: string; message: string }>
   const routedToLeadId = Number(lead.routed_to_lead_id) || null
@@ -755,9 +760,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                   type="text"
                   inputMode="decimal"
                   autoComplete="off"
-                  defaultValue={centsToDollars(lead.estimate_value_cents)}
+                  defaultValue={centsToDollars(lead.estimate_value_cents ?? draftCents)}
                   placeholder="e.g. 1200"
                 /></td></tr>
+                {draftCents !== null && <tr><td colSpan={2}><small className="t-caption">Draft ready: ~{money(draftCents)} from {quoteDraft?.n} similar jobs</small></td></tr>}
                 {lead.email && (
                   <tr><td colSpan={2}><label className="job-check">
                     <input type="checkbox" name="emailEstimate" />

@@ -17,6 +17,8 @@ import {
   reserveLeadPhotoIntents,
 } from "@/lib/leads";
 import { processEvent } from "@/lib/extract";
+import { recordLeadEvent } from "@/lib/leads";
+import { prepareQuoteDraft } from "@/lib/follow-up-cadence.ts";
 import { getMessagingConsentState } from "@/lib/messaging-consent";
 import {
   normalizeUsPhone,
@@ -441,6 +443,11 @@ export async function POST(req: Request) {
         { ok: false, accepted: false, error: `We couldn't safely save your request. Please call ${shopPhone.display} or try again.` },
         { status: 503, headers: { "Retry-After": "15" } }
       );
+    }
+
+    if (leadId !== null && !isTest) {
+      const draftLeadId = leadId;
+      after(() => prepareQuoteDraft(getSql(), recordLeadEvent, draftLeadId).catch((error) => console.warn("Quote draft failed:", error)));
     }
 
     // The browser owns the only recoverable bytes until every submitted photo

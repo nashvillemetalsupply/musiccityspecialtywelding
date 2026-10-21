@@ -4,7 +4,7 @@ import { recordEvent } from "@/lib/events"
 import { resolvePhoneConversation } from "@/lib/ingest"
 import { notifyAll, notifyOwnerCellSms } from "@/lib/notify"
 import { findPersonByPhone, findRecentOpenLeadForPerson, isReservedShopPhone } from "@/lib/people"
-import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioSmsWebhookConfigured, twilioWebhookBaseUrl, twiml } from "@/lib/twilio"
+import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioSmsConfigured, twilioSmsWebhookConfigured, twilioWebhookBaseUrl, twiml } from "@/lib/twilio"
 import { handleOperatorText } from "@/lib/sms-operator-in"
 import { isMetaVerificationSms, isUsNumericShortCode } from "@/lib/shop-brain-invariants.ts"
 import { processEvent } from "@/lib/extract"
@@ -13,6 +13,9 @@ import { classifyTwilioConsentKeyword, recordMessagingConsent } from "@/lib/mess
 import { resumeSmsProjection } from "@/lib/sms-provider-truth.ts"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
+import { sendSmsPersisted } from "@/lib/messages"
+import { recordLeadEvent } from "@/lib/leads"
+import { prepareQuoteDraft } from "@/lib/follow-up-cadence.ts"
 import { reconcileRoutedLeadProjections, resolveProjectionLeadId } from "@/lib/routing"
 
 export const runtime = "nodejs"
@@ -247,6 +250,22 @@ export async function POST(req: Request) {
       quietHoursExempt: true,
       dedupeKey: `owner-sms-copy:${sid}`,
     })
+  }
+  // Internal quote draft for a brand-new text lead (operator-only suggestion).
+  if (eventId && wasNewLead && projectedLeadId && !consentKeyword && !systemSms && !conversation.person?.is_test) {
+    const draftLeadId = projectedLeadId
+    after(() => prepareQuoteDraft(sql, recordLeadEvent, draftLeadId).catch((error) => console.warn("Quote draft failed:", error)))
+  }
+  // Customer-facing ack: ships OFF. Setting MCSW_TEXT_IN_ACK=1 turns it on.
+  // sendSmsPersisted enforces consent (this text grants it), STOP, quiet hours and idempotency.
+  if (process.env.MCSW_TEXT_IN_ACK === "1" && eventId && wasNewLead && projectedLeadId && !consentKeyword && !systemSms && !conversation.person?.is_test && !isReservedShopPhone(from) && twilioSmsConfigured()) {
+    await sendSmsPersisted({
+      to: from,
+      body: "Got your text. Send a photo and the size if you can and we'll get you a price. — Music City Specialty Welding",
+      leadId: projectedLeadId,
+      personId,
+      idempotencyKey: `text-in:${sid}:ack`,
+    }).catch(() => undefined)
   }
   if (eventId && !consentKeyword && !systemSms) after(async () => {
     for (const attachmentId of attachmentIds) await storeQueuedAttachment(attachmentId)

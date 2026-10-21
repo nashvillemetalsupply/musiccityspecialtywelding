@@ -209,7 +209,7 @@ test("inbound Twilio messages acquire a test lead flag when conversation matchin
       ["@/lib/twilio", {
         isConfiguredTwilioNumber: () => true,
         readTwilioForm: async () => ({ params, valid: true }),
-        twilioSmsWebhookConfigured: () => true, twilioWebhookBaseUrl: () => "https://example.test",
+        twilioSmsConfigured: () => true, twilioSmsWebhookConfigured: () => true, twilioWebhookBaseUrl: () => "https://example.test",
         twiml: () => ({ status: 200 }),
       }],
       ["@/lib/shop-brain-invariants.ts", { isMetaVerificationSms: () => false, isUsNumericShortCode: () => false }],
@@ -221,6 +221,9 @@ test("inbound Twilio messages acquire a test lead flag when conversation matchin
       ["@/lib/recovery-sweep", { runRecoverySweep: async () => ({ ok: true, skipped: true }) }],
       ["@/lib/gmail-wake", { wakeGmailIngest: async () => ({ ok: true }) }],
       ["@/lib/routing", { reconcileRoutedLeadProjections: async () => null, resolveProjectionLeadId: async (id) => id }],
+      ["@/lib/messages", { sendSmsPersisted: async () => ({}) }],
+      ["@/lib/leads", { recordLeadEvent: async () => 1 }],
+      ["@/lib/follow-up-cadence.ts", { prepareQuoteDraft: async () => null }],
     ])
     const { POST } = loadModule("app/api/twilio/sms/route.ts", fakes)
     const response = await POST({ url: "https://example.test/api/twilio/sms" })

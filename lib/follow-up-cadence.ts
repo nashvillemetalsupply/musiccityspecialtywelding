@@ -53,3 +53,58 @@ export async function getDefaultFollowUpAt(sql: WonJobSql, now: Date = new Date(
     now,
   )
 }
+
+export const QUOTE_DRAFT_EVENT = "quote_draft_prepared"
+// recordLeadEvent files unmapped legacy types as `lead.<type with dots>`.
+export const QUOTE_DRAFT_EVENT_KIND = "lead.quote.draft.prepared"
+const QUOTE_DRAFT_COMPS = 10
+
+type RecordLeadEvent = (
+  leadId: number,
+  type: string,
+  actor: string,
+  detail: Record<string, unknown> | null,
+) => PromiseLike<unknown>
+
+// Internal only: files one suggested price (median of recent won jobs with the
+// same service) for the operator to review. It never sets status, quoted_at or
+// the estimate, and never contacts the customer; quoting stays one operator tap.
+export async function prepareQuoteDraft(
+  sql: WonJobSql,
+  recordLeadEvent: RecordLeadEvent,
+  leadId: number,
+): Promise<{ suggested_cents: number | null; n: number } | null> {
+  const leads = (await sql`
+    SELECT service, message, is_test, quoted_at, photo_count
+    FROM leads WHERE id = ${leadId}::bigint LIMIT 1`) as {
+    service: string; message: string; is_test: boolean; quoted_at: string | Date | null; photo_count: number | string | null
+  }[]
+  const lead = leads[0]
+  if (!lead || lead.is_test || lead.quoted_at) return null
+
+  const prior = (await sql`
+    SELECT 1 AS found FROM events
+    WHERE lead_id = ${leadId}::bigint AND kind = ${QUOTE_DRAFT_EVENT_KIND}::text LIMIT 1`) as unknown[]
+  if (prior[0]) return null
+
+  const comps = (await sql`
+    SELECT estimate_value_cents FROM leads
+    WHERE status = 'won' AND won_at IS NOT NULL AND is_test = false
+      AND estimate_value_cents IS NOT NULL AND service = ${lead.service}::text
+      AND id <> ${leadId}::bigint
+      AND concat_ws(
+        ' ', first_name, last_name, phone, email, service, message, source,
+        notes, landing_page, referrer, user_agent
+      ) NOT ILIKE '%[INTERNAL TEST]%'
+    ORDER BY won_at DESC LIMIT ${QUOTE_DRAFT_COMPS}::int`) as { estimate_value_cents: number | string }[]
+  const n = comps.length
+  const mid = n >= MINIMUM_WON_JOB_SAMPLES ? median(comps.map((row) => Number(row.estimate_value_cents))) : null
+  const draft = { suggested_cents: mid === null ? null : Math.round(mid), n }
+
+  await recordLeadEvent(leadId, QUOTE_DRAFT_EVENT, "system", {
+    ...draft,
+    scope: `${lead.service}: ${lead.message ?? ""}`.slice(0, 300),
+    photos: Number(lead.photo_count ?? 0),
+  })
+  return draft
+}
