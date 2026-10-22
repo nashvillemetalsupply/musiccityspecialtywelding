@@ -564,6 +564,7 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   Lighthouse against production for `/`, one service page, `/service-areas`,
   and commits the JSON with a date. Run it before and after this phase.
   Observation: Committed the 2026-09-27 production mobile homepage baseline (performance 0.55, LCP 5.07 s); the tested runner covers home, mobile-welding, and service-areas; after-deploy production check is pending.
+  Observation: (2026-10-22, S11b) after-deploy production check done on main e92c05e: mobile Lighthouse 12.8.2 of `/`, median of 3 on an idle host, performance 0.99 and LCP 2,098 ms (runs 1,906 / 2,098 / 2,356 ms), against the 2026-09-27 baseline 0.55 / 5,070 ms. Dated JSON: `scripts/qa/baseline/lighthouse-2026-10-22-after-run1.json` to `-run3.json`.
 - [x] **Hero image.** `app/page.tsx:235-242` is `unoptimized`, 800×640 source
   upscaled. Drop `unoptimized`, supply a 1600 px source, add `sizes`, keep
   `priority`. Visually identical.
