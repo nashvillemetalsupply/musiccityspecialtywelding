@@ -228,27 +228,27 @@ export default function Page() {
 
           <div className="ms-work-grid">
             <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.webp" alt="Mobile trailer undergoing repairs and custom modifications" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.webp" alt="Mobile trailer undergoing repairs and custom modifications" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Mobile trailer repairs and customizations.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/stainless-worktable.webp" alt="Finished custom stainless steel worktable and sink installed in a Middle Tennessee workspace" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/stainless-worktable.webp" alt="Finished custom stainless steel worktable and sink installed in a Middle Tennessee workspace" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Stainless worktable and sink, fitted to the room.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/steel-frame-onsite.webp" alt="Steel canopy frame being fitted and welded on-site" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/steel-frame-onsite.webp" alt="Steel canopy frame being fitted and welded on-site" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel frame, fitted and welded on-site.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/staircase-onsite.webp" alt="On-site aluminum staircase TIG welding repair" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/staircase-onsite.webp" alt="On-site aluminum staircase TIG welding repair" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>On-site aluminum TIG welding repair.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20250527_141244.webp" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/IMG_20250527_141244.webp" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel gate, hung level where it sits.</strong></figcaption>
             </figure>
             <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/little-brick-church.webp" alt="Custom-made metal signage installed on a brick church" fill sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+              <Image src="/images/owner-work/little-brick-church.webp" alt="Custom-made metal signage installed on a brick church" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Custom-made signage, built to fit.</strong></figcaption>
             </figure>
           </div>
@@ -304,7 +304,7 @@ export default function Page() {
                   </Link>
                 </div>
                 <figure className="ms-service-image">
-                  <Image src={service.image} alt={service.alt} fill sizes="(max-width: 859px) calc(100vw - 2rem), 26rem" />
+                  <Image src={service.image} alt={service.alt} fill quality={60} sizes="(max-width: 859px) calc(100vw - 2rem), 26rem" />
                 </figure>
               </article>
             ))}
