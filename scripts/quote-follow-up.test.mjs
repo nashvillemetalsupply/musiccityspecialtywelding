@@ -156,8 +156,8 @@ test("the write re-checks every guard and every interpolation is cast", async ()
   const count = shop.state.calls.find((call) => /count\(\*\)/.test(call.text)).text
   assert.match(count, /lead_id = \?::bigint AND kind = \?::text/)
 
-  const module = source("lib/quote-follow-up.ts")
-  const interpolations = module.match(/\$\{[^}]+\}(::\w+)?/g) ?? []
+  const code = source("lib/quote-follow-up.ts")
+  const interpolations = code.match(/\$\{[^}]+\}(::\w+)?/g) ?? []
   for (const value of interpolations) assert.match(value, /::\w+$/, `uncast interpolation ${value}`)
 })
 
@@ -178,8 +178,8 @@ test("every path that makes a lead quoted, and the clear path, schedules the cad
 })
 
 test("the cadence never contacts the customer and adds no cron", () => {
-  const module = source("lib/quote-follow-up.ts")
-  assert.doesNotMatch(module, /\bimport\b/)
-  assert.doesNotMatch(module, /sendCustomerEmail|sendSms|twilio|resend|gmail|notifyAll|fetch\(/i)
+  const code = source("lib/quote-follow-up.ts")
+  assert.doesNotMatch(code, /\bimport\b/)
+  assert.doesNotMatch(code, /sendCustomerEmail|sendSms|twilio|resend|gmail|notifyAll|fetch\(/i)
   assert.doesNotMatch(source("vercel.json"), /quote-follow-up|follow-up-cadence/)
 })
