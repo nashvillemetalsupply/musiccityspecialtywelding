@@ -245,6 +245,7 @@ unless the step says production. Never on a worktree dev server.
   preview, click through `/`, `/board`, a job page, a glass link.
   - Observation: lint is clean and Preview is READY; `/` returns 200, `/board` returns 200, and `/ops/leads/34` returns 200 for `[INTERNAL TEST] Gate Build`; the valid glass link remains blocked because Preview `GLASS_TOKEN_SECRET` is 11 bytes and does not reconstruct the active test token.
   - Owner item: set Preview `GLASS_TOKEN_SECRET` to the production value (32+ bytes), redeploy the preview, then open the glass link and tick this item.
+  - Observation: (2026-10-22, S22b) S00 landed 792836e and next 16.3.6 cleared both RCE advisories at the time; the S22 exit run (2026-10-21) found new high advisories on 16.3.6 itself (row S00b). Stays unticked: the glass-link click above is still the owner item.
 - [x] **Fix the sharp pin.** Both `overrides` blocks pin `sharp` to 0.35.3,
   which is inside GHSA-rgj7-g3m4-5g8c (`<0.35.4`). Remove the pin or raise to
   ≥0.35.4. Remove the `nanoid`, `undici` and `postcss` overrides too; re-add
@@ -380,7 +381,7 @@ this path fires.
   retention). Change `app/api/ops/export/route.ts` to `WHERE is_test = false`
   for every format, and make it stream, not `LIMIT`.
   Observation: Added the weekly custom-format backup and retained 90-day artifacts; both CSV exports stream and exclude test rows. Microsecond boundary tests confirm full-precision cursors neither skip leads nor duplicate conversions.
-- [ ] **The board is the compute bill.** `app/board/board.tsx:373`
+- [x] **The board is the compute bill.** `app/board/board.tsx:373`
   `router.refresh()` every 60 s (8 s when active), 11 loaders plus
   `getBoardJobDetails` plus an `after()` sweep per refresh; `/ops`
   (`ops-live.tsx:22`) every 30 s; `generateMetadata` on the job page duplicates
@@ -389,6 +390,7 @@ this path fires.
   client polls that every 10 s and only calls `router.refresh()` on change;
   idle tabs back off to 5 min; wrap the job page loaders in `cache()`.
   Observation: `/api/ops/pulse` returns only the two aggregates to signed-in owner/crew sessions, crew aggregates exclude internal-test and owner-only events, and both clients poll with 10 s foreground / 5 min away cadence; fake fetch/timer/SQL tests pass. Neon CU-hours before/after were not run from the worktree.
+  - Observation: S05 landed 9d5cbfe: pulse endpoint plus board/ops cadence. Signed-out /api/ops/pulse answers 401 (S22 Q6); the signed-in cadence walk was not run.
 - [x] **Missing indexes.** Add, idempotently (`CREATE INDEX IF NOT EXISTS`):
   `leads(follow_up_at) WHERE follow_up_at IS NOT NULL`,
   `leads(scheduled_at)`, `leads(phone)`, `leads(id) WHERE open_invoice`,
@@ -421,12 +423,13 @@ this path fires.
   house style of `lib/payment-ledger.ts` and `lib/build-sheets.ts:200`
   (`jsonb_to_recordset`).
   Observation: Line-item replacement and claim superseding each use one MATERIALIZED CTE statement; createLead's lead-plus-consent insert is materialized; focused statement tests pass.
-- [ ] **`is_test` is a copied ILIKE predicate at ~15 sites.** Add
+- [x] **`is_test` is a copied ILIKE predicate at ~15 sites.** Add
   `is_test boolean NOT NULL DEFAULT false` to `events`, `claims`,
   `commitments`, `calls`, `messages`, `notifications`; backfill from the
   existing predicate; set at write time through the one helper; leave the old
   predicate in place as a belt until the source-regex test proves every writer
   sets the column. Additive; nothing dropped.
+  - Observation: S15 landed 686213a: is_test column across six tables. Production backfill read 2026-10-08: events 56/1942, claims 18/1630, commitments 0/255, calls 1/176, messages 1/65, notifications 0/2412, leads 10/168 true/total; no unflagged child of a test lead or event.
 - [x] **Small correctness.** `getMonthRevenueCents` uses UTC month boundaries;
   use `America/Chicago`. Retire the test jobs #34 and #19 by marking, not
   deleting.
@@ -491,6 +494,7 @@ this path fires.
   first with a report endpoint that writes a trouble row, run it for one week
   after P5 (which changes the script set), then enforce. Do this last in the
   plan.
+  - Observation: Open: S16 partial. Report-only CSP, report endpoint and HSTS landed aabf6d2; the enforce flip after 7 clean production days has not happened, so this box stays unticked.
 
 ## P4 — Engineering health
 
@@ -573,31 +577,39 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   `.glass` rules. Finish the retirement with `scripts/qa/retire-ops-css.mjs`,
   prove no visual change with `fingerprint-diff.mjs` at all four widths.
   Observation: Base and completed-branch Vercel previews both failed during project retrieval with network EACCES, so fingerprint-diff was not run; the script scanned 263 app/components/lib source files, preserved dynamic and ambiguous selectors, and removed 19 selector arms whose required classes have zero references; focused CSS regressions pass.
-- [ ] **H1 is the brand name.** `app/page.tsx:203-209`. Keep the sign visually
+- [x] **H1 is the brand name.** `app/page.tsx:203-209`. Keep the sign visually
   identical; carry service + city in the accessible text.
-- [ ] **Service-area cities are unlinked `<strong>`.**
+  - Observation: S12 landed 7d95b1f: accessible H1; A9 de22959 found a single h1 on every sitemap page.
+- [x] **Service-area cities are unlinked `<strong>`.**
   `app/service-areas/page.tsx:176`. Link each to the matching service page
   anchor (per-city pages are P7, owner-gated on content).
-- [ ] **Structured data.** Add `FAQPage` to service pages from
+  - Observation: S12 landed 7d95b1f: service-area cities are links.
+- [x] **Structured data.** Add `FAQPage` to service pages from
   `lib/service-pages.ts` `faqs`; fix breadcrumb item 2 to an absolute URL
   (`app/services/[slug]/page.tsx:51-59`); add `geo` and `priceRange` to
   `LocalBusiness`. `sameAs` for GBP waits on the owner.
-- [ ] **Honeypot punishes autofill.** `app/api/quote/route.ts:203-207` and
+  - Observation: S12 landed 7d95b1f. 2026-10-08 Google Rich Results Test on live URLs: / 2 valid items, /services/mobile-welding 3 valid items, 0 invalid. FAQPage parses but is not a reported rich result type.
+- [x] **Honeypot punishes autofill.** `app/api/quote/route.ts:203-207` and
   `components/mainstreet-contact.tsx:152,266`: field named `company` gets
   autofilled and the user sees an error. Rename to something no browser fills,
   and on the client treat a honeypot hit as success (silent drop server-side).
-- [ ] **Quote form only on the home page.** Import `MainstreetContact` into
+  - Observation: S12 landed 7d95b1f: opaque honeypot name mcsw_9f3a2 suppresses silently; S22 Q13 markup PASS (autoComplete=off, tabindex=-1, aria-hidden). On-device autofill not run.
+- [x] **Quote form only on the home page.** Import `MainstreetContact` into
   service pages below the fold.
-- [ ] **Home duplicates header and footer inline** (`app/page.tsx:163-198,
+  - Observation: S12 landed 7d95b1f: quote form on service pages; S22 Q13 saw it on home and service forms.
+- [x] **Home duplicates header and footer inline** (`app/page.tsx:163-198,
   473-492`); footer `Sales@` capitalised. Use the shared components; fix the
   case.
-- [ ] **Small correctness.** Favicon path contains a space, stray PNGs, move
+  - Observation: S12 landed 7d95b1f: home uses the shared header/footer shell.
+- [x] **Small correctness.** Favicon path contains a space, stray PNGs, move
   `icon.svg` to `app/`; 404 page emits `robots` twice; sitemap has no
   `lastmod` (use the file's git date); `Access-Control-Allow-Origin: *` is set
   on HTML responses, scope it to the API routes that need it.
-- [ ] **Twilio fallback number silently swaps NAP.** `lib/shop-contact.ts`
+  - Observation: S12 landed 7d95b1f: app/icon.svg, stray PNGs archived, 404 single robots, sitemap lastmod, ACAO API-only; /favicon.ico 404 fixed in de22959, live 200 the same day.
+- [x] **Twilio fallback number silently swaps NAP.** `lib/shop-contact.ts`
   falls back to `(615) 810-4910`. Make the fallback throw in production and
   log in preview so a misconfigured env can never publish the wrong number.
+  - Observation: S12 landed 7d95b1f: the NAP fallback throws only in production; the live site was already on the configured number.
 
 ## P6 — CRM client, PWA, owner loop
 
@@ -617,54 +629,65 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   Push toggle vanishes on error (`push-toggle.tsx:255-257`); show the error.
   - Observation: signed-out board requests redirect to the existing `/ops` login, and push errors render as alerts.
   `glass-actions.ts` and `calendar-actions.ts` never `revalidatePath`; add it.
-- [ ] **Client bundle.** 15 KB base64 logo inline in `board.tsx:422` (serve
+- [x] **Client bundle.** 15 KB base64 logo inline in `board.tsx:422` (serve
   the file); theme boot duplicated (`board.tsx:383-414` vs `theme-boot.tsx`,
   keep one); `/ops` redirect hops; install page is Chrome-only (add the iOS
   Share → Add to Home Screen path); duplicate social link.
-- [ ] **Owner loop.** Today a lead takes 2–4 taps. Sticky action strip on the
+  - Observation: S14 landed a53bc61: base64 logo, theme boot dedupe, /ops hops, iOS install path (app/ops/install/page.tsx), duplicate social link. Preview and on-device checks were replaced by tests.
+- [x] **Owner loop.** Today a lead takes 2–4 taps. Sticky action strip on the
   job page (Call, Text, Photo, Quote amount inline in the board detail), photo
   as first tap target, voice capture on the row. Present the layout to the
   owner as a screenshot before building; design rules apply.
+  - Observation: S14 landed a53bc61: sticky action strip and owner loop. Voice capture on the row was skipped (the recorder is MediaRecorder).
 
 ## P7 — Innovation that earns its place
 
 Each item below is gated: it ships only if its guard is met. Items that did not
 earn a place are listed at the end so nobody re-proposes them.
 
-- [ ] **Bundle-size budget.** `scripts/bundle-budget.mjs` reads
+- [x] **Bundle-size budget.** `scripts/bundle-budget.mjs` reads
   `.next/build-manifest.json` on the preview build and fails CI when `/` or
   `/board` first-load JS exceeds a threshold set 10% above today's number.
   Catches the "use client value-imports a server lib" class before Vercel does.
   Guard: runs in CI from P4.
-- [ ] **SQL cast guard.** A 30-line `sql` wrapper (or eslint rule) that rejects
+  - Observation: S17 landed 69cd272 (thresholds fixed 0ad9953): post-build budget on manifest bytes. S22 Q1 production build: / 535,518 of 648,316 B, /board 676,861 of 817,538 B.
+- [x] **SQL cast guard.** A 30-line `sql` wrapper (or eslint rule) that rejects
   an interpolation without a `::cast` at development time, enforcing the
   invariant where it happens instead of in a regex test. Guard: zero false
   positives across the existing tree.
-- [ ] **Evals harness for extraction.** `scripts/ai-evals.test.mjs` with a
+  - Observation: S17 landed 69cd272: AST SQL cast rule (scripts/require-sql-cast.test.mjs), 0 findings across the tree.
+- [x] **Evals harness for extraction.** `scripts/ai-evals.test.mjs` with a
   fixture set of real-shaped `[INTERNAL TEST]` calls and emails, scoring the
   claims schema output. Runs on demand, not in CI. Guard: model swaps become a
   measured decision.
-- [ ] **Strip-types instead of `.d.mts` twins.** After Node 24 locally
+  - Observation: S17 landed 69cd272: scripts/ai-evals.test.mjs skips unless MCSW_RUN_AI_EVALS=1; not run against a model (no model key; AI-eval limb waived 2026-10-21).
+- [x] **Strip-types instead of `.d.mts` twins.** After Node 24 locally
   (P0): rename `lib/*.mjs` to `.ts`, delete the 25 `.d.mts`, run tests with
   `node --experimental-strip-types --test`. Removes the "declaration lied"
   class. Guard: typecheck and full suite green; 80 import specifiers updated.
-- [ ] **Photo to quote draft.** From a glass upload, draft `claims` (scope,
+  - Observation: S18: npm test runs `node --experimental-strip-types --test`; typecheck and suite green at 855 passed, 3 skipped. Four .mjs/.d.mts pairs remain in lib (alert-failure-classifier, delivery-errors, job-line-items, voice-of-character).
+- [x] **Photo to quote draft.** From a glass upload, draft `claims` (scope,
   material, dimensions, no price) for the owner to accept. Uses the existing
   claims schema and `superseded_by`. Guard: owner sign-off on the flow before
   code; never auto-prices; never auto-sends.
-- [ ] **Follow-up cadence from won jobs.** Learn the median days-to-close from
+  - Observation: S19 landed c4c9ef3 behind flag MCSW_PHOTO_DRAFTS, OFF; the owner turns it on after deploy.
+- [x] **Follow-up cadence from won jobs.** Learn the median days-to-close from
   `won_at` and set `follow_up_at` defaults from it instead of a constant.
   Guard: owner can override per lead; no per-worker stats.
-- [ ] **Preview-based QA gate.** A workflow that deploys a preview, runs
+  - Observation: S20 landed e33537e: cadence = median won-job days, at least 5 samples, clamped 1-30, else NULL.
+- [x] **Preview-based QA gate.** A workflow that deploys a preview, runs
   `create-local-login.mjs`, then `MCSW_QA_STRICT=1 npm run test:qa`. The
   harness exists; it needs a runner. Guard: Vercel Hobby preview and Actions
   minutes allow it; measure the first month.
+  - Observation: S20 landed e33537e: .github/workflows/qa-preview.yml. The first run and the Actions-minutes measurement wait on owner secrets (VERCEL_AUTOMATION_BYPASS_SECRET, VERCEL_TOKEN, ORG, PROJECT, DATABASE_URL).
 - [ ] **Per-city pages `/service-areas/[city]`.** Eight cities. **Blocked on
   the owner** supplying real jobs per city; no invented content. Build the
   route and template only when content exists.
+  - Observation: Open: S21 blocked on the owner supplying real jobs per city.
 - [ ] **Call-in-progress chips.** SSE from the live-transcript route to the
   board row so the owner sees the call being read as it happens. Guard: ships
   only after P2's pulse endpoint proves the compute budget has room.
+  - Observation: Open: S21 blocked; gated on the S05 pulse compute proof.
 
 **Did not earn a place (do not re-propose):** `vercel.ts` (four crons do not
 need it); `HowTo` schema; `@vercel/speed-insights` on Hobby; Vercel Queues for
