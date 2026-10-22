@@ -12,7 +12,7 @@ const BOARD = read("../app/board/board.tsx")
 // breaking; every other Blob failure still answers 404.
 test("a suspended or 403 Blob store answers 200 with the Nov 12 sentence", () => {
   assert.match(PHOTO, /Photos are unavailable until Nov 12 \(storage suspended\)/)
-  assert.match(PHOTO, /error instanceof BlobStoreSuspendedError || .*suspended.*403/)
+  assert.match(PHOTO, /error instanceof BlobStoreSuspendedError \|\| .*suspended.*403/)
   assert.match(PHOTO, /new Response\(PHOTOS_SUSPENDED_SVG, \{ status: 200, headers: \{ "Content-Type": "image\/svg\+xml"/)
   assert.match(PHOTO, /Content-Security-Policy/)
   assert.match(PHOTO, /return new Response\("Not found\.", \{ status: 404 \}\)\s*\}\s*\}\s*$/)
