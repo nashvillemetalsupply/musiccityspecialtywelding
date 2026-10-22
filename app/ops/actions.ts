@@ -286,6 +286,17 @@ export async function updateLeadStatus(formData: FormData) {
   await applyLeadStatus(operator, { leadId, status, reason })
 }
 
+// Board form variant: a locked (finished) job shows its sentence inline
+// instead of throwing to the crew's error page.
+export async function updateLeadStatusState(_previous: OpsActionState, formData: FormData): Promise<OpsActionState> {
+  try {
+    await updateLeadStatus(formData)
+    return { status: "success", message: "" }
+  } catch (error) {
+    return recoverableActionError(error, "The status was not changed. Try again.")
+  }
+}
+
 export async function markFirstResponse(formData: FormData) {
   const operator = await requireOperator()
   const leadId = await requireMutableLeadId(operator, formData.get("leadId"))

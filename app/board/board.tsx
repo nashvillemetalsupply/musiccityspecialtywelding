@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useActionState, useEffect, useState } from "react"
 import Link from "next/link"
 import { SkipLink } from "./skip-link"
 import { useRouter } from "next/navigation"
 import { costPerLeadTile } from "@/lib/ad-spend.ts"
 import { startOpsPulsePolling } from "@/lib/ops-pulse-polling.ts"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
-import { updateLeadStatus } from "@/app/ops/actions"
+import { updateLeadStatusState, type OpsActionState } from "@/app/ops/actions"
 import { emptyCallSketchSpec } from "@/lib/call-sketch-live.ts"
 import {
   PANEL_FACT_KEYS, PANEL_FACT_LABELS, answeredFactCount, dimensionMark,
@@ -752,12 +752,7 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
                           target. Same owner-only action the job page uses, so
                           the immutable receipt and the notification
                           suppression come with it. */}
-                      {chrome.owner && <form className="not-a-job" action={updateLeadStatus}>
-                        <input type="hidden" name="leadId" value={lead.id} />
-                        <input type="hidden" name="status" value="spam" />
-                        <input type="hidden" name="reason" value="Marked Not a job from the board." />
-                        <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a job</SafeSubmitButton>
-                      </form>}
+                      {chrome.owner && <NotAJobForm leadId={lead.id} />}
                     </div>
                   </div>}
                 </article>
@@ -914,4 +909,17 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
       </main>
     </div>
   )
+}
+
+const NOT_A_JOB_INITIAL: OpsActionState = { status: "idle", message: "" }
+
+function NotAJobForm({ leadId }: { leadId: number }) {
+  const [state, action] = useActionState(updateLeadStatusState, NOT_A_JOB_INITIAL)
+  return <form className="not-a-job" action={action}>
+    <input type="hidden" name="leadId" value={leadId} />
+    <input type="hidden" name="status" value="spam" />
+    <input type="hidden" name="reason" value="Marked Not a job from the board." />
+    <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a job</SafeSubmitButton>
+    {state.status === "error" && <small role="alert">{state.message}</small>}
+  </form>
 }

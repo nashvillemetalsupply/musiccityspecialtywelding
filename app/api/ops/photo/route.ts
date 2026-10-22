@@ -1,11 +1,14 @@
 import { cookies } from "next/headers"
-import { get } from "@vercel/blob"
+import { BlobStoreSuspendedError, get } from "@vercel/blob"
 import { OPS_SESSION_COOKIE, validateSessionToken } from "@/lib/ops-auth"
 import { getSql } from "@/lib/db"
 import { isSafeRasterImage } from "@/lib/media-safety"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+
+const PHOTOS_SUSPENDED_MESSAGE = "Photos are unavailable until Nov 12 (storage suspended)"
+const PHOTOS_SUSPENDED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" role="img" aria-label="${PHOTOS_SUSPENDED_MESSAGE}"><rect width="480" height="120" fill="#222"/><text x="240" y="65" fill="#eee" font-family="sans-serif" font-size="18" text-anchor="middle">${PHOTOS_SUSPENDED_MESSAGE}</text></svg>`
 
 // Streams a private lead photo to a signed-in operator.
 export async function GET(req: Request) {
@@ -54,6 +57,10 @@ export async function GET(req: Request) {
     })
   } catch (error) {
     console.error("Photo fetch error:", error)
+    // Blob store suspended (Hobby quota): show the reason where the photo would be.
+    if (error instanceof BlobStoreSuspendedError || /suspended|403/i.test(error instanceof Error ? error.message : "")) {
+      return new Response(PHOTOS_SUSPENDED_SVG, { status: 200, headers: { "Content-Type": "image/svg+xml", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'" } })
+    }
     return new Response("Not found.", { status: 404 })
   }
 }
