@@ -21,7 +21,6 @@ export function Navbar({ home = false }: { home?: boolean }) {
               height={160}
               loading={home ? "eager" : undefined}
               sizes="64px"
-              unoptimized
             />
           </span>
           <span className="ms-brand-words">
