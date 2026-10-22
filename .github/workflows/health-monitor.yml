@@ -58,11 +58,14 @@ jobs:
             shopBrain: {
               ready: .shopBrain.ready,
               gateSatisfied: .shopBrain.gateSatisfied,
+              warnings: .shopBrain.warnings,
               uploadRecoveryBacklog: .shopBrain.uploadRecoveryBacklog,
               quotePhotoBacklog: .shopBrain.quotePhotoBacklog,
+              quotePhotoAbandoned: .shopBrain.quotePhotoAbandoned,
               callTranscriptBacklog: .shopBrain.callTranscriptBacklog,
               callTranscriptExhausted: .shopBrain.callTranscriptExhausted,
               voiceTranscriptBacklog: .shopBrain.voiceTranscriptBacklog,
+              voiceTranscriptExhausted: .shopBrain.voiceTranscriptExhausted,
               inboundCallReceipts: .shopBrain.inboundCallReceipts,
               durableFailures: .shopBrain.durableFailures
             }

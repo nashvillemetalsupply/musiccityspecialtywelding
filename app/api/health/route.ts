@@ -46,6 +46,7 @@ export const dynamic = "force-dynamic"
 // monitor now reports it as a warning. Call silence is the red signal instead:
 // see INBOUND_CALL_SILENCE_LIMIT_HOURS.
 const WEB_QUOTE_SILENCE_LIMIT_HOURS = 240
+const WARNING_BLOCKS_AFTER_MS = 48 * 60 * 60 * 1000
 
 async function hasWorkingResendCredential(apiKey: string) {
   try {
@@ -115,8 +116,10 @@ type DatabaseHealth = {
   callTranscriptBacklog: number | null
   callTranscriptExhausted: number | null
   voiceTranscriptBacklog: number | null
+  voiceTranscriptExhausted: number | null
   uploadRecoveryBacklog: number | null
   quotePhotoBacklog: number | null
+  quotePhotoAbandoned: number | null
   consentRecordCount: number | null
   callSketchErrorCount: number | null
   recentClientErrors: number | null
@@ -154,8 +157,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     callTranscriptBacklog: null,
     callTranscriptExhausted: null,
     voiceTranscriptBacklog: null,
+    voiceTranscriptExhausted: null,
     uploadRecoveryBacklog: null,
     quotePhotoBacklog: null,
+    quotePhotoAbandoned: null,
     consentRecordCount: null,
     callSketchErrorCount: null,
     recentClientErrors: null,
@@ -231,10 +236,19 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         (SELECT count(*)::int FROM (
           SELECT id FROM voice_transcription_intents
           WHERE status IN ('persisted','queued','failed','submitting')
+            AND blob_path <> '' AND attempts < 8
             AND updated_at >= now() - interval '1 year'
             AND updated_at < now() - interval '20 minutes'
           ORDER BY updated_at ASC LIMIT 10000
         ) recent_voice_transcripts) AS voice_transcript_backlog,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM voice_transcription_intents
+          WHERE status IN ('persisted','queued','failed','submitting')
+            AND (blob_path = '' OR attempts >= 8)
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '20 minutes'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) recent_voice_exhausted) AS voice_transcript_exhausted,
         (SELECT count(*)::int FROM (
           SELECT id FROM glass_uploads
           WHERE status IN ('uploading','uploaded','projecting','unknown')
@@ -245,10 +259,18 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         (SELECT count(*)::int FROM (
           SELECT id FROM lead_photo_intents
           WHERE status <> 'attached'
+            AND (status = 'stored' OR updated_at >= now() - interval '48 hours')
             AND updated_at >= now() - interval '1 year'
             AND updated_at < now() - interval '20 minutes'
           ORDER BY updated_at ASC LIMIT 10000
         ) recent_quote_photos) AS quote_photo_backlog,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM lead_photo_intents
+          WHERE status IN ('pending','failed')
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '48 hours'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) recent_abandoned_photos) AS quote_photo_abandoned,
         (SELECT count(*)::int FROM (
           SELECT id FROM messaging_consents
           WHERE created_at >= now() - interval '1 year'
@@ -312,8 +334,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       call_transcript_backlog: number
       call_transcript_exhausted: number
       voice_transcript_backlog: number
+      voice_transcript_exhausted: number
       upload_recovery_backlog: number
       quote_photo_backlog: number
+      quote_photo_abandoned: number
       consent_record_count: number
       call_sketch_error_count: number
       recent_client_errors: number
@@ -342,8 +366,10 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.callTranscriptBacklog = counts.call_transcript_backlog
     result.callTranscriptExhausted = counts.call_transcript_exhausted
     result.voiceTranscriptBacklog = counts.voice_transcript_backlog
+    result.voiceTranscriptExhausted = counts.voice_transcript_exhausted
     result.uploadRecoveryBacklog = counts.upload_recovery_backlog
     result.quotePhotoBacklog = counts.quote_photo_backlog
+    result.quotePhotoAbandoned = counts.quote_photo_abandoned
     result.consentRecordCount = counts.consent_record_count
     result.callSketchErrorCount = counts.call_sketch_error_count
     result.recentClientErrors = counts.recent_client_errors
@@ -489,6 +515,17 @@ export async function GET(req: Request) {
   // window must follow the real cadence instead of declaring a healthy hourly
   // run stale after 20 minutes.
   const gmailStale = automationRunIsStale(database.lastGmailAt, gmailFreshnessWindowMs())
+  // GitHub throttles the schedule to a run every few hours, so a missed window
+  // is a warning; only a sync dead for 48 hours holds readiness false.
+  const gmailDead = automationRunIsStale(database.lastGmailAt, WARNING_BLOCKS_AFTER_MS)
+  // Diagnostics that no longer hold readiness: abandoned customer photo
+  // attempts (pending/failed past 48h; stored photos keep blocking until
+  // attached) and voice notes no retry can finish. Visible, never deleted.
+  const warnings = [
+    gmailConfigured() && gmailStale ? { kind: "gmail-stale", lastAt: database.lastGmailAt } : null,
+    (database.quotePhotoAbandoned ?? 0) > 0 ? { kind: "quote-photos-abandoned", count: database.quotePhotoAbandoned } : null,
+    (database.voiceTranscriptExhausted ?? 0) > 0 ? { kind: "voice-transcripts-exhausted", count: database.voiceTranscriptExhausted } : null,
+  ].filter((warning) => warning !== null)
   const morningBriefStale = database.lastBriefAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastBriefAt).getTime() > 26 * 60 * 60 * 1000
   const reminderHealthy = !reminderStale && (database.lastReminderOk === true || database.lastReminderAt === null)
   const digestHealthy = !digestStale && (database.lastDigestOk === true || database.lastDigestAt === null)
@@ -524,7 +561,7 @@ export async function GET(req: Request) {
     digestHealthy &&
     database.lastGmailOk === true &&
     briefHealthy &&
-    !gmailStale &&
+    !gmailDead &&
     !morningBriefStale &&
     (database.callTranscriptBacklog ?? 0) === 0 &&
     (database.voiceTranscriptBacklog ?? 0) === 0 &&
@@ -594,6 +631,7 @@ export async function GET(req: Request) {
         required: shopBrainRequired,
         ready: shopBrainReady,
         gateSatisfied: shopBrainGateSatisfied,
+        warnings,
         twilioSmsConfigured: smsConfigured,
         twilioVerifyConfigured: verifyConfigured,
         phoneLoginConfigured: twilioPhoneLoginConfigured(),
@@ -630,6 +668,7 @@ export async function GET(req: Request) {
         blobConfigured,
         uploadRecoveryBacklog: database.uploadRecoveryBacklog,
         quotePhotoBacklog: database.quotePhotoBacklog,
+        quotePhotoAbandoned: database.quotePhotoAbandoned,
         deepgramConfigured: Boolean(process.env.DEEPGRAM_API_KEY?.trim()),
         deepgramCallbackSecretConfigured: deepgramCallbackSecretConfigured(),
         callTranscriptionConfigured: callTranscriptionConfigured(),
@@ -637,6 +676,7 @@ export async function GET(req: Request) {
         callTranscriptBacklog: database.callTranscriptBacklog,
         callTranscriptExhausted: database.callTranscriptExhausted,
         voiceTranscriptBacklog: database.voiceTranscriptBacklog,
+        voiceTranscriptExhausted: database.voiceTranscriptExhausted,
         inboundCallReceipts,
         durableFailures: {
           healthy: durableFailuresHealthy,
