@@ -67,7 +67,7 @@ function CallDraftRow({ draft, now }: { draft: CallIntakeDraft; now: Date }) {
     <div className="calls-copy">
       <span className={`chip ${missed ? "chip--warn" : ringing ? "chip--info" : "chip--good"}`}>
         <i />
-        {missed ? "Missed call" : ringing ? "On the phone now" : "Call ready"}
+        {missed ? "Missed call" : ringing ? (draft.sketch_status === "listening" ? "On the phone now · being read" : "On the phone now") : "Call ready"}
       </span>
       <span className="t-caption">{day ? `${day} · ${formatTime(draft.created_at)}` : formatTime(draft.created_at)}</span>
       <strong className="calls-who t-data">{draft.caller_name || formatPhone(draft.phone)}</strong>

@@ -17,6 +17,8 @@ export type BoardCall = {
   phone: string
   need: string
   callStatus: string
+  // "listening" while the live transcript is still arriving (S21 chip).
+  sketchStatus: string
   createdAt: string
   // Written after the call by summarizeCallDraft; null until then.
   summary: CallSummary | null
@@ -44,7 +46,13 @@ const initialState: QuickSaveState = { status: "idle" }
 function CallRow({ call, owner, nowMs }: { call: BoardCall; owner: boolean; nowMs: number }) {
   const [state, save, pending] = useActionState(quickSaveCallAction, initialState)
   const who = call.name.trim() || formatPhone(call.phone)
-  const kind = MISSED.includes(call.callStatus) ? "Missed" : call.callStatus === "ringing" ? "On the line" : "Finished"
+  // The chip rides the board's existing reads (load, visible-tab pulse); no
+  // timer of its own. Gated on "ringing" too: call end rewrites calls.status,
+  // so a sketch left at "listening" cannot leave a stale chip.
+  const ringing = call.callStatus === "ringing"
+  const kind = MISSED.includes(call.callStatus) ? "Missed"
+    : ringing && call.sketchStatus === "listening" ? "On the line · being read"
+    : ringing ? "On the line" : "Finished"
   const summary = call.summary
   const notJob = summary?.is_job === "no"
   // The summary's sentence leads; the draft's own need is the fallback, and a

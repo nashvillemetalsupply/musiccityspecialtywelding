@@ -688,7 +688,7 @@ earn a place are listed at the end so nobody re-proposes them.
 - [ ] **Call-in-progress chips.** SSE from the live-transcript route to the
   board row so the owner sees the call being read as it happens. Guard: ships
   only after P2's pulse endpoint proves the compute budget has room.
-  - Observation: Open: S21 blocked; gated on the S05 pulse compute proof.
+  - Observation: S05 compute proof read 10-22 (~41.6 CU-hrs projected, under 50); Fable 10-22 replaced SSE with writer-side state read on the board's existing loads. Built on s21-call-chips-2026-10-22: "being read" chip from call_sketches.status, gated on calls.status = ringing.
 
 **Did not earn a place (do not re-propose):** `vercel.ts` (four crons do not
 need it); `HowTo` schema; `@vercel/speed-insights` on Hobby; Vercel Queues for

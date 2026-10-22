@@ -144,6 +144,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
       phone: draft.phone,
       need: draft.need,
       callStatus: draft.call_status,
+      sketchStatus: draft.sketch_status,
       createdAt: draft.created_at,
       summary: draft.summary ?? null,
     }))} />

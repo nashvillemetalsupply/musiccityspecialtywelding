@@ -35,6 +35,9 @@ export type CallIntakeDraft = {
   summary: CallSummary | null
   summary_status: string
   call_status: string
+  // call_sketches.status, written by the live-transcript callback on every
+  // event. "listening" while the call is being read; "" when no sketch exists.
+  sketch_status: string
   duration_sec: number
   transcript_status: string
   transcript: string
@@ -196,10 +199,11 @@ export async function prepareInboundCallIntake(input: {
 export async function getCallIntakeDraft(publicId: string): Promise<CallIntakeDraft | null> {
   const sql = getSql()
   const rows = (await sql`
-    SELECT d.*, c.status AS call_status, COALESCE(c.duration_sec, 0)::int AS duration_sec,
-      c.transcript_status, c.transcript
+    SELECT d.*, c.status AS call_status, COALESCE(s.status, '') AS sketch_status,
+      COALESCE(c.duration_sec, 0)::int AS duration_sec, c.transcript_status, c.transcript
     FROM call_intake_drafts d
     JOIN calls c ON c.twilio_sid = d.call_sid
+    LEFT JOIN call_sketches s ON s.call_sid = d.call_sid
     WHERE d.public_id = ${publicId.slice(0, 80)}::text
     LIMIT 1`) as CallIntakeDraft[]
   return rows[0] ?? null
@@ -221,10 +225,11 @@ export async function listPendingCallIntakes(options: { page?: number; pageSize?
   const page = Math.min(requestedPage, Math.max(1, Math.ceil(total / pageSize)))
   const offset = (page - 1) * pageSize
   const rows = (await sql`
-    SELECT d.*, c.status AS call_status, COALESCE(c.duration_sec, 0)::int AS duration_sec,
-      c.transcript_status, ''::text AS transcript
+    SELECT d.*, c.status AS call_status, COALESCE(s.status, '') AS sketch_status,
+      COALESCE(c.duration_sec, 0)::int AS duration_sec, c.transcript_status, ''::text AS transcript
     FROM call_intake_drafts d
     JOIN calls c ON c.twilio_sid = d.call_sid
+    LEFT JOIN call_sketches s ON s.call_sid = d.call_sid
     WHERE d.status = ANY(ARRAY['pending','failed','unknown','saving']::text[])
       AND d.is_test = false
     ORDER BY d.created_at DESC
