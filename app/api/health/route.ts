@@ -120,6 +120,7 @@ type DatabaseHealth = {
   uploadRecoveryBacklog: number | null
   quotePhotoBacklog: number | null
   quotePhotoAbandoned: number | null
+  quotePhotoStored: number | null
   consentRecordCount: number | null
   callSketchErrorCount: number | null
   recentClientErrors: number | null
@@ -161,6 +162,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     uploadRecoveryBacklog: null,
     quotePhotoBacklog: null,
     quotePhotoAbandoned: null,
+    quotePhotoStored: null,
     consentRecordCount: null,
     callSketchErrorCount: null,
     recentClientErrors: null,
@@ -266,6 +268,13 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         ) recent_quote_photos) AS quote_photo_backlog,
         (SELECT count(*)::int FROM (
           SELECT id FROM lead_photo_intents
+          WHERE status = 'stored'
+            AND updated_at >= now() - interval '1 year'
+            AND updated_at < now() - interval '20 minutes'
+          ORDER BY updated_at ASC LIMIT 10000
+        ) stored_quote_photos) AS quote_photo_stored,
+        (SELECT count(*)::int FROM (
+          SELECT id FROM lead_photo_intents
           WHERE status IN ('pending','failed')
             AND updated_at >= now() - interval '1 year'
             AND updated_at < now() - interval '48 hours'
@@ -338,6 +347,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
       upload_recovery_backlog: number
       quote_photo_backlog: number
       quote_photo_abandoned: number
+      quote_photo_stored: number
       consent_record_count: number
       call_sketch_error_count: number
       recent_client_errors: number
@@ -370,6 +380,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
     result.uploadRecoveryBacklog = counts.upload_recovery_backlog
     result.quotePhotoBacklog = counts.quote_photo_backlog
     result.quotePhotoAbandoned = counts.quote_photo_abandoned
+    result.quotePhotoStored = counts.quote_photo_stored
     result.consentRecordCount = counts.consent_record_count
     result.callSketchErrorCount = counts.call_sketch_error_count
     result.recentClientErrors = counts.recent_client_errors
@@ -669,6 +680,7 @@ export async function GET(req: Request) {
         uploadRecoveryBacklog: database.uploadRecoveryBacklog,
         quotePhotoBacklog: database.quotePhotoBacklog,
         quotePhotoAbandoned: database.quotePhotoAbandoned,
+        quotePhotoStored: database.quotePhotoStored,
         deepgramConfigured: Boolean(process.env.DEEPGRAM_API_KEY?.trim()),
         deepgramCallbackSecretConfigured: deepgramCallbackSecretConfigured(),
         callTranscriptionConfigured: callTranscriptionConfigured(),

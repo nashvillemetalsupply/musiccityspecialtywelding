@@ -62,6 +62,7 @@ jobs:
               uploadRecoveryBacklog: .shopBrain.uploadRecoveryBacklog,
               quotePhotoBacklog: .shopBrain.quotePhotoBacklog,
               quotePhotoAbandoned: .shopBrain.quotePhotoAbandoned,
+              quotePhotoStored: .shopBrain.quotePhotoStored,
               callTranscriptBacklog: .shopBrain.callTranscriptBacklog,
               callTranscriptExhausted: .shopBrain.callTranscriptExhausted,
               voiceTranscriptBacklog: .shopBrain.voiceTranscriptBacklog,

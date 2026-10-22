@@ -11,6 +11,10 @@ test("abandoned quote photos age out of readiness at 48h; stored photos keep blo
   assert.match(HEALTH, /status <> 'attached'\n\s+AND \(status = 'stored' OR updated_at >= now\(\) - interval '48 hours'\)[\s\S]*?\) AS quote_photo_backlog,/)
   assert.match(HEALTH, /status IN \('pending','failed'\)\n\s+AND updated_at >= now\(\) - interval '1 year'\n\s+AND updated_at < now\(\) - interval '48 hours'[\s\S]*?\) AS quote_photo_abandoned,/)
   assert.match(HEALTH, /\(database\.quotePhotoBacklog \?\? 0\) === 0 &&/)
+  // Stored-but-unattached rows never age out; the split says whether a red
+  // backlog needs the re-attach sweep or just waits out 48h.
+  assert.match(HEALTH, /WHERE status = 'stored'[\s\S]*?\) AS quote_photo_stored,/)
+  assert.match(HEALTH, /quotePhotoStored: database\.quotePhotoStored,/)
 })
 
 test("only voice notes a retry can finish hold readiness", () => {
