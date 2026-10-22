@@ -1,7 +1,7 @@
 import { getSql } from "@/lib/db"
-import { recordEvent } from "@/lib/events"
 import { applyLeadStatus, completeLeadRecord, recordPaymentRecord } from "@/lib/job-commands"
 import { canAccessInternalTests, getOperatorByPhone, requireLeadMutationAccess, type Operator } from "@/lib/operators"
+import { journalOperatorCommand } from "@/lib/operator-command-journal"
 import { normalizePhone } from "@/lib/people"
 import {
   ambiguousReply,
@@ -77,39 +77,6 @@ async function priorReply(sid: string): Promise<string | null> {
   return typeof rows[0].detail?.reply === "string" ? rows[0].detail.reply : ""
 }
 
-async function journal(input: {
-  operator: Operator
-  sid: string
-  body: string
-  messageId: number
-  verb: OperatorCommandVerb | null
-  leadId: number | null
-  outcome: "done" | "refused" | "unmatched" | "not-understood"
-  reply: string
-  amountCents?: number | null
-  business?: string | null
-  count?: number | null
-}) {
-  await recordEvent({
-    kind: OPERATOR_COMMAND_EVENT_KIND,
-    actorType: "operator",
-    actorId: input.operator.id,
-    leadId: input.leadId,
-    externalId: input.sid,
-    body: input.body,
-    detail: {
-      messageId: input.messageId,
-      operatorId: input.operator.id,
-      verb: input.verb,
-      outcome: input.outcome,
-      amountCents: input.amountCents ?? null,
-      // S81: business tag for non-CRM businesses; absent means welding.
-      ...(input.business ? { business: input.business, count: input.count ?? null } : {}),
-      reply: input.reply,
-    },
-  })
-}
-
 // Returns null when the text is not for this path (not a command, or not from
 // an active operator), so the normal inbound flow runs untouched. Otherwise
 // returns the plain-language reply that goes back to the sender only.
@@ -137,7 +104,7 @@ export async function handleOperatorText(input: {
     amountCents?: number | null,
     tag?: { business: string; count: number | null },
   ) => {
-    await journal({ operator, sid: input.sid, body: input.body, messageId: input.messageId, verb, leadId, outcome, reply, amountCents, business: tag?.business, count: tag?.count })
+    await journalOperatorCommand({ operator, sid: input.sid, body: input.body, messageId: input.messageId, verb, leadId, outcome, reply, amountCents, business: tag?.business, count: tag?.count })
     return { reply }
   }
 
