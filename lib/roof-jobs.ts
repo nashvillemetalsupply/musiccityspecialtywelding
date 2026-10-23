@@ -53,7 +53,7 @@ export function parseAmountCents(value: string): number | null {
   const trimmed = String(value ?? "").trim().replace(/^\$/, "")
   if (!trimmed) return null
   const cents = parseDollarsToken(`$${trimmed}`)
-  if (cents === null) throw new Error("Enter the amount in dollars, like 450 or 450.25.")
+  if (cents === null || cents <= 0) throw new Error("Enter the amount in dollars, like 450 or 450.25.")
   if (cents > OPERATOR_PAYMENT_MAX_CENTS) throw new Error("That amount looks too big. Check it and try again.")
   return cents
 }
@@ -134,25 +134,30 @@ export async function listRoofJobs(input: { business: string; operator: Recorder
     LIMIT ${limit}::int` as RoofJob[]
 }
 
-export async function markRoofJobPaid(input: { operator: Recorder; id: number; amount: string; sql?: Sql }) {
+export async function markRoofJobPaid(input: { operator: Recorder; business: string; id: number; amount: string; sql?: Sql }) {
   requireRecorder(input.operator)
+  requireBusiness(input.business)
   if (!Number.isSafeInteger(input.id) || input.id <= 0) throw new Error("Job not found.")
   const amountCents = parseAmountCents(input.amount)
   const owner = input.operator.role === "owner"
   const sql = sqlOrDefault(input.sql)
   const rows = await sql`
     SELECT status, amount_cents FROM roof_jobs
-    WHERE id = ${input.id}::bigint
+    WHERE id = ${input.id}::bigint AND business = ${input.business}::text
       AND (${owner}::boolean OR (created_by = ${input.operator.id}::bigint AND is_test = false))
     LIMIT 1` as Pick<RoofJob, "status" | "amount_cents">[]
   if (!rows[0]) throw new Error("Job not found.")
   if (rows[0].status === "paid") return { alreadyPaid: true }
   if (amountCents === null && rows[0].amount_cents === null) throw new Error("Enter the amount to mark this job paid.")
+  // The booked amount stands; mark-paid only fills a missing one.
+  if (amountCents !== null && rows[0].amount_cents !== null && Number(rows[0].amount_cents) !== amountCents) {
+    throw new Error("This job already has an amount. Ask the owner to fix it.")
+  }
   await sql`
     UPDATE roof_jobs
     SET status = 'paid', paid_at = now(), updated_at = now(),
-      amount_cents = COALESCE(${amountCents}::bigint, amount_cents)
-    WHERE id = ${input.id}::bigint AND status = 'booked'
+      amount_cents = COALESCE(amount_cents, ${amountCents}::bigint)
+    WHERE id = ${input.id}::bigint AND business = ${input.business}::text AND status = 'booked'
       AND (${owner}::boolean OR (created_by = ${input.operator.id}::bigint AND is_test = false))`
   return { alreadyPaid: false }
 }

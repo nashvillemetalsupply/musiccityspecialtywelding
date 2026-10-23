@@ -44,6 +44,7 @@ export async function markRoofJobPaidAction(formData: FormData) {
   const business = businessFrom(formData)
   await markRoofJobPaid({
     operator,
+    business,
     id: Number(formData.get("jobId")),
     amount: String(formData.get("amount") ?? ""),
   })
