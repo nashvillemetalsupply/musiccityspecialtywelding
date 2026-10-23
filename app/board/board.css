@@ -22,7 +22,18 @@
 .business-entry-list li{display:flex;justify-content:space-between;padding:14px 0;border-top:1px solid var(--dark-border)}
 .business-entry-list li span{display:grid;gap:5px}
 .business-entry-list small{color:var(--dark-text-secondary)}
-@media(max-width:700px){.business-entry-panel form{grid-template-columns:1fr}.business-workspace{padding:24px 16px 48px}.business-entry-panel,.business-entry-list{padding:18px}}
+.business-entry-panel form.roof-job-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.roof-job-note,.roof-job-test{grid-column:1/-1}
+.business-entry-panel .roof-job-test{display:flex;align-items:center;gap:10px}
+.business-entry-panel .roof-job-test input{width:22px;min-height:22px}
+.business-ops-link{display:inline-flex;align-items:center;min-height:46px;padding:0 18px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);text-decoration:none;font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif)}
+.business-ops-link:focus-visible{outline:3px solid var(--dark-focus);outline-offset:2px}
+.business-entry-list li{gap:14px;align-items:center}
+.roof-job-pay{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.roof-job-pay input{width:110px;min-height:44px;padding:8px 10px;border:1px solid var(--dark-border-strong);background:var(--dark-surface-sunken);color:var(--dark-text-primary);font:inherit}
+.roof-job-pay button{min-height:44px;padding:0 14px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif);cursor:pointer}
+.roof-job-pay button:focus-visible,.roof-job-pay input:focus-visible{outline:3px solid var(--dark-focus);outline-offset:2px}
+@media(max-width:700px){.business-entry-panel form,.business-entry-panel form.roof-job-form{grid-template-columns:1fr}.business-entry-list li{flex-direction:column;align-items:stretch}.business-workspace{padding:24px 16px 48px}.business-entry-panel,.business-entry-list{padding:18px}}
 
 /* ===========================================================================
    MCS Welding · Job Control — final

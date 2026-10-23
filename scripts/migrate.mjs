@@ -1219,6 +1219,30 @@ export const eventsImmutabilityStatement = `CREATE OR REPLACE FUNCTION events_no
   CREATE TRIGGER lead_events_frozen BEFORE INSERT OR UPDATE OR DELETE ON lead_events
     FOR EACH ROW EXECUTE FUNCTION events_no_delete();`
 
+// O1 (Fable ruling 2026-10-23): per-job rows for the non-welding, non-grease
+// roof businesses. Grease jobs live in the Grease app and never land here; the
+// leads table stays welding-only. The business list mirrors S81_BUSINESS_KEYS
+// minus grease-patrol (this script runs without TypeScript, so it is spelled out).
+export const roofJobsStatement = `CREATE TABLE IF NOT EXISTS roof_jobs (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    business TEXT NOT NULL CHECK (business IN ('ld2r','railing','builderbox')),
+    customer_name TEXT CHECK (customer_name IS NULL OR char_length(customer_name) <= 120),
+    phone TEXT CHECK (phone IS NULL OR char_length(phone) <= 40),
+    job_date DATE,
+    amount_cents BIGINT CHECK (amount_cents IS NULL OR amount_cents >= 0),
+    status TEXT NOT NULL DEFAULT 'booked' CHECK (status IN ('booked','paid')),
+    note TEXT NOT NULL DEFAULT '' CHECK (char_length(note) <= 500),
+    created_by BIGINT NOT NULL REFERENCES operators(id),
+    external_id TEXT NOT NULL UNIQUE,
+    is_test BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    paid_at TIMESTAMPTZ,
+    CHECK ((status = 'paid') = (paid_at IS NOT NULL)),
+    CHECK (status <> 'paid' OR amount_cents IS NOT NULL)
+  );
+  CREATE INDEX IF NOT EXISTS roof_jobs_business_created_idx ON roof_jobs (business, created_at DESC, id DESC);`
+
 async function runLegacyProceduralTail(sql) {
 
 const ownerEmail = (
@@ -1549,6 +1573,7 @@ export async function runMigrations({
       query,
     })),
     { name: "events-lead-events-immutable", query: eventsImmutabilityStatement },
+    { name: "roof-jobs-o1-2026-10-23", query: roofJobsStatement },
   ]
 
   await runWithMigrationLock({

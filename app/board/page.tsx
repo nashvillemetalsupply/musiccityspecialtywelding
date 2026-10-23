@@ -85,7 +85,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   const business = S81_BUSINESS_KEYS.includes(params.business ?? "") ? params.business : undefined
   if (business) return <>
     <BusinessSwitcher active={business} />
-    <BusinessWorkspace business={business} operator={operator} saved={params.saved === "1"} />
+    <BusinessWorkspace business={business} operator={operator} saved={params.saved} />
   </>
   const sessionCacheId = await getOpsCacheSessionId()
   // Internal test rows are owner-only. The flag is decided here, on the server,

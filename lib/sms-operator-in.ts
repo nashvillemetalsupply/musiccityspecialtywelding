@@ -3,6 +3,7 @@ import { applyLeadStatus, completeLeadRecord, recordPaymentRecord } from "@/lib/
 import { canAccessInternalTests, getOperatorByPhone, requireLeadMutationAccess, type Operator } from "@/lib/operators"
 import { journalOperatorCommand } from "@/lib/operator-command-journal"
 import { normalizePhone } from "@/lib/people"
+import { isRoofJobBusiness, recordSmsCountRoofJobs, roofJobRowsForSmsCount } from "@/lib/roof-jobs"
 import {
   ambiguousReply,
   businessReply,
@@ -113,10 +114,20 @@ export async function handleOperatorText(input: {
     return finish("Only the owner can mark a job lost.", "refused", null, "lost")
   }
 
-  // Another business: no job to find. The tag rides the journal event, which
-  // the Mirror reader selects; nothing in the CRM changes.
+  // Another business: no welding job to find. The tag rides the journal event
+  // as the audit line. LD2R/Railing/BuilderBox counts also become roof_jobs
+  // rows (O1); Grease Patrol stays audit-only, its jobs live in the Grease app.
   if (parsed.ref.kind === "business") {
     const { business, count } = parsed.ref
+    if (isRoofJobBusiness(business)) {
+      try {
+        const rows = roofJobRowsForSmsCount({ business, verb: parsed.verb as "booked" | "paid", count, amountCents: parsed.amountCents, sid: input.sid })
+        await recordSmsCountRoofJobs({ operator, business, rows })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown error"
+        return finish(`Couldn't record ${business}: ${message}`.slice(0, 300), "refused", null, parsed.verb, parsed.amountCents, { business, count })
+      }
+    }
     return finish(businessReply(parsed.verb, business, { count, amountCents: parsed.amountCents }), "done", null, parsed.verb, parsed.amountCents, { business, count })
   }
 
