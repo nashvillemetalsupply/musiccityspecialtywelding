@@ -9,6 +9,12 @@
 // are deliberately NOT allowlisted; never add 'unsafe-eval'.
 // 2026-10-15 (O18 re-read): img-src also needs https://ad.doubleclick.net for the
 // Google Ads ccm/s/collect beacon (2 reports, routes / and /services/:slug).
+// 2026-10-23 (O18 re-read, window from 2026-10-16 03:46Z): img-src also needs
+// https://www.google.co.in for the Google Ads 1p-user-list remarketing pixel
+// (Google serves it from the visitor's country domain), and connect-src needs the
+// Meta pixel's second gateway (bded8a3c6ae-1-1053047382554.us-central1.run.app,
+// from connect.facebook.net/signals/config). Two img-src reports with blocked
+// "unknown" carry no host and stay unallowlisted.
 // See docs/testing/2026-10-08-csp-o18-triage.md.
 export const CSP_DIRECTIVES = Object.freeze({
   "default-src": ["'self'"],
@@ -41,6 +47,7 @@ export const CSP_DIRECTIVES = Object.freeze({
     "https://googleads.g.doubleclick.net",
     "https://*.g.doubleclick.net",
     "https://ad.doubleclick.net",
+    "https://www.google.co.in",
   ],
   "font-src": ["'self'"],
   "connect-src": [
@@ -48,6 +55,7 @@ export const CSP_DIRECTIVES = Object.freeze({
     "https://www.facebook.com",
     "https://connect.facebook.net",
     "https://m6-211026f8a25b42c08fc190458268b30e.ecs.us-east-2.on.aws",
+    "https://bded8a3c6ae-1-1053047382554.us-central1.run.app",
     "https://www.google-analytics.com",
     "https://region1.google-analytics.com",
     "https://*.google-analytics.com",
