@@ -175,7 +175,8 @@ export async function leadBadgeCounts({ sql, now = new Date() }: { sql?: Sql; no
     const byBusiness = new Map<string, Map<string, number>>()
     for (const row of roof) {
       const channels = byBusiness.get(row.business) ?? new Map<string, number>()
-      channels.set(row.source, (channels.get(row.source) ?? 0) + Number(row.count))
+      const channel = row.source === "phone" ? "call" : row.source
+      channels.set(channel, (channels.get(channel) ?? 0) + Number(row.count))
       byBusiness.set(row.business, channels)
     }
     for (const [business, channels] of byBusiness) {
@@ -240,5 +241,25 @@ export async function closeRoofLeadsForPhone({ business, phone, operator, sql }:
       WHERE business = ${business}::text AND phone_hash = ${phoneHash}::text AND contacted_at IS NULL`
   } catch (error) {
     console.error("Lead conversion skipped:", error instanceof Error ? error.message : "unknown error")
+  }
+}
+
+// O19: a call to a roof business's own Twilio number is that business's lead,
+// keyed by CallSid so a Twilio retry never doubles it. Never throws.
+export async function recordRoofCall({ business, callSid, phone, sql, now = new Date() }: {
+  business: string
+  callSid: string
+  phone: string
+  sql?: Sql
+  now?: Date
+}) {
+  if (!ROOF_LEAD_BUSINESSES.includes(business) || !callSid) return
+  try {
+    await sqlOrDefault(sql)`
+      INSERT INTO roof_leads (business, lead_id, received_at, source, phone_hash)
+      VALUES (${business}::text, ${callSid}::text, ${now.toISOString()}::timestamptz, 'phone', ${hashPhone(phone)}::text)
+      ON CONFLICT (business, lead_id) DO NOTHING`
+  } catch (error) {
+    console.error("Roof call lead skipped:", error instanceof Error ? error.message : "unknown error")
   }
 }

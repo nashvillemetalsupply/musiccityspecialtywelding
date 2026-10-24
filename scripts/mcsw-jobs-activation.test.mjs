@@ -350,7 +350,7 @@ test("Twilio webhooks survive an outbound pause and reconcile provider-first cal
   assert.match(status, /kind = 'sms\.delivery-unknown'/)
   assert.match(status, /read_at = COALESCE\(read_at, now\(\)\)/)
   assert.match(voice, /if \(!isConfiguredTwilioNumber\(to\)\) return twiml\("", 403\)/)
-  assert.match(fallback, /isConfiguredTwilioNumber\(params\.get\("To"\) \?\? ""\)/)
+  assert.match(fallback, /const to = params\.get\("To"\) \?\? ""[\s\S]{0,40}!isConfiguredTwilioNumber\(to\) && !roofCallLine\(to\)\) return twiml\("", 403\)/)
   assert.doesNotMatch(recording, /recording_sid IS DISTINCT FROM/)
   assert.match(recording, /WHEN recording_sid = \$\{recordingSid\}::text THEN transcript_status/)
   assert.match(callTranscription, /AND transcript_status = 'submitting'/)

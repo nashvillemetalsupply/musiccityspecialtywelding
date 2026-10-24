@@ -24,6 +24,20 @@ function trackingNumbers() {
   ].filter(Boolean)
 }
 
+// O19 (FABLE-BATCH-45): each roof business has its own Twilio number. A call
+// to one is that business's lead, never a welding call. Unset = no line.
+const ROOF_CALL_LINES = [
+  { business: "ld2r", env: "TWILIO_PHONE_NUMBER_LD2R", greeting: "Little Debbie 2 Rescue." },
+  { business: "grease-patrol", env: "TWILIO_PHONE_NUMBER_GREASE", greeting: "Music City Grease Patrol." },
+  { business: "railing", env: "TWILIO_PHONE_NUMBER_RAILING", greeting: "Nashville Ornamental." },
+] as const
+
+export function roofCallLine(value: string) {
+  const normalized = normalizedE164(value)
+  if (!normalized) return null
+  return ROOF_CALL_LINES.find((line) => normalizedE164(process.env[line.env]) === normalized) ?? null
+}
+
 function accountCredentialsConfigured() {
   return Boolean(
     /^AC[0-9a-f]{32}$/i.test(process.env.TWILIO_ACCOUNT_SID?.trim() ?? "") &&

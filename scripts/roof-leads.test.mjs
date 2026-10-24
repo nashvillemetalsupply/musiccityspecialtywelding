@@ -10,11 +10,15 @@ import {
   leadBadgeCounts,
   markRoofLeadContacted,
   parseFeedLeads,
+  recordRoofCall,
   ROOF_LEAD_BUSINESSES,
   syncLeadFeeds,
 } from "../lib/roof-leads.ts"
+import ts from "typescript"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+// lib/twilio.ts has syntax strip-types refuses; the provider suites load it the same way.
+const { roofCallLine } = await import(`data:text/javascript,${encodeURIComponent(ts.transpileModule(read("lib/twilio.ts"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText)}`)
 const crew = { id: 71, role: "crew" }
 const HASH = `sha256:${"a".repeat(64)}`
 
@@ -149,4 +153,40 @@ test("lead badges: a welding query failure does not blank the site badges", asyn
   }
   const badges = await leadBadgeCounts({ sql, now: new Date("2020-01-01T00:00:00Z") })
   assert.deepEqual(badges, { railing: { count: 2, title: "2 forms" } })
+})
+
+test("roof call lines: each business number maps to its own greeting; unset or welding numbers are not roof lines", () => {
+  process.env.TWILIO_PHONE_NUMBER_GREASE = "(615) 555-0101"
+  delete process.env.TWILIO_PHONE_NUMBER_LD2R
+  try {
+    assert.equal(roofCallLine("+16155550101")?.business, "grease-patrol")
+    assert.equal(roofCallLine("+16155550101")?.greeting, "Music City Grease Patrol.")
+    assert.equal(roofCallLine("+16157033296"), null)
+    assert.equal(roofCallLine(""), null)
+  } finally {
+    delete process.env.TWILIO_PHONE_NUMBER_GREASE
+  }
+})
+
+test("roof call lines: a call becomes one phone lead keyed by CallSid, badged as a call, and a DB failure never throws", async () => {
+  const { sql, calls } = fakeSql()
+  await recordRoofCall({ business: "ld2r", callSid: "CA1", phone: "+1 (615) 555-0123", sql, now: new Date("2026-10-24T15:00:00Z") })
+  assert.equal(calls.length, 1)
+  assert.match(calls[0].text, /INSERT INTO roof_leads .*'phone'.*ON CONFLICT \(business, lead_id\) DO NOTHING/s)
+  assert.deepEqual(calls[0].values.slice(0, 3), ["ld2r", "CA1", "2026-10-24T15:00:00.000Z"])
+  assert.equal(calls[0].values[3], hashPhone("6155550123"))
+  await recordRoofCall({ business: "welding", callSid: "CA2", phone: "", sql })
+  assert.equal(calls.length, 1)
+  await recordRoofCall({ business: "ld2r", callSid: "CA3", phone: "", sql: async () => { throw new Error("db down") } })
+  const badges = await leadBadgeCounts({ sql: async (strings) => strings.join("?").includes("FROM leads") ? [] : [{ business: "ld2r", source: "phone", count: 2 }] })
+  assert.deepEqual(badges.ld2r, { count: 2, title: "2 calls" })
+})
+
+test("roof call lines: the voice route answers a roof number before welding intake and never records it", () => {
+  const route = read("app/api/twilio/voice/route.ts")
+  const branch = route.slice(route.indexOf("const roofLine = roofCallLine(to)"), route.indexOf("if (!isConfiguredTwilioNumber(to))"))
+  assert.ok(branch.length > 0 && route.indexOf("const roofLine") < route.indexOf("INSERT INTO calls"))
+  assert.match(branch, /recordRoofCall/)
+  assert.doesNotMatch(branch, /record=|notifyAll|prepareInboundCallIntake|twilioLiveTranscriptionStart/)
+  assert.match(read("app/api/twilio/fallback/route.ts"), /roofCallLine\(to\)/)
 })

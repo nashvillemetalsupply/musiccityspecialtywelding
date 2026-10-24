@@ -149,8 +149,9 @@ test("inbound Twilio call receipts inherit the linked lead test partition", asyn
       }],
       ["@/lib/notify", { notifyAll: async () => [] }],
       ["@/lib/people", { normalizePhone: (value) => value }],
+      ["@/lib/roof-leads", { recordRoofCall: async () => {} }],
       ["@/lib/twilio", {
-        escapeXml: (value) => value, isConfiguredTwilioNumber: () => true,
+        escapeXml: (value) => value, isConfiguredTwilioNumber: () => true, roofCallLine: () => null,
         readTwilioForm: async () => ({ params, valid: true }),
         twilioCallbackUrl: (path) => `https://example.test${path}`,
         twilioInboundDialTarget: (phone) => phone,

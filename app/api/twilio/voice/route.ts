@@ -8,7 +8,8 @@ import {
 } from "@/lib/job-intake"
 import { notifyAll } from "@/lib/notify"
 import { normalizePhone } from "@/lib/people"
-import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, twilioCallbackUrl, twilioInboundDialTarget, twilioLiveTranscriptionStart, twilioVoiceConfigured, twiml } from "@/lib/twilio"
+import { recordRoofCall } from "@/lib/roof-leads"
+import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, roofCallLine, twilioCallbackUrl, twilioInboundDialTarget, twilioLiveTranscriptionStart, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 
 export const runtime = "nodejs"
 
@@ -20,11 +21,18 @@ export async function POST(req: Request) {
   const from = params.get("From") ?? "anonymous"
   const to = params.get("To") ?? ""
   if (!sid) return twiml("", 400)
-  if (!isConfiguredTwilioNumber(to)) return twiml("", 403)
 
   const callerName = params.get("CallerName") || ""
   const isTestCall = callerName.includes("[INTERNAL TEST]")
   const ownerCell = process.env.OWNER_CELL_PHONE!.trim()
+  // A roof business's own number: its greeting, its /board badge, straight to
+  // the owner. No recording, no welding intake, no welding push.
+  const roofLine = roofCallLine(to)
+  if (roofLine) {
+    if (!isTestCall) after(() => recordRoofCall({ business: roofLine.business, callSid: sid, phone: from }))
+    return twiml(`<Say voice="man">${escapeXml(roofLine.greeting)}</Say><Dial answerOnBridge="true">${escapeXml(ownerCell)}</Dial>`)
+  }
+  if (!isConfiguredTwilioNumber(to)) return twiml("", 403)
   // The raw provider receipt must land before the call forwards. On a database
   // failure Twilio receives 503 and invokes the number-level fallback URL,
   // which rings the owner without falsely claiming the CRM captured the call.
