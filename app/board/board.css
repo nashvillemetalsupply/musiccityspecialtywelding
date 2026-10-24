@@ -2,12 +2,13 @@
 
 .empty-state{max-width:56ch;margin:var(--s8) auto;padding:0 var(--s4);display:grid;gap:var(--s4)}
 
-.business-switcher{display:flex;gap:8px;overflow-x:auto;padding:12px max(16px,calc((100vw - 1200px)/2));background:var(--dark-surface-sunken);border-bottom:1px solid var(--dark-border);scrollbar-width:thin}
-.business-switcher a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;white-space:nowrap;color:var(--dark-text-secondary);text-decoration:none;border:1px solid var(--dark-border);font:var(--w-semi) var(--t-label)/1.2 var(--font-sans,Arial,sans-serif)}
-.business-switcher a:hover,.business-switcher a:focus-visible{color:var(--dark-text-primary);border-color:var(--dark-border-strong)}
-.business-switcher a.active{color:var(--dark-text-primary);border-color:var(--dark-action);background:var(--dark-surface-raised)}
+/* Tab strip sits flush with the app header: left edge on the logo, underline for the active tab. */
+.business-switcher{display:flex;gap:4px;overflow-x:auto;padding:0 8px;background:var(--dark-surface-sunken);border-bottom:1px solid var(--dark-border);scrollbar-width:thin}
+.business-switcher a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;margin-bottom:-1px;white-space:nowrap;color:var(--dark-text-secondary);text-decoration:none;border-bottom:2px solid transparent;font:var(--w-semi) var(--t-label)/1.2 var(--font-sans,Arial,sans-serif)}
+.business-switcher a:hover,.business-switcher a:focus-visible{color:var(--dark-text-primary);border-bottom-color:var(--dark-border-strong)}
+.business-switcher a.active{color:var(--dark-text-primary);border-bottom-color:var(--dark-action)}
 /* Lead badges (Fable 2026-10-24): count only, action colour, no motion. */
-.business-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;margin-left:8px;padding:0 6px;border-radius:2px;background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif);font-variant-numeric:tabular-nums}
+.business-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:2px;background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) 12px/1 var(--font-sans,Arial,sans-serif);font-variant-numeric:tabular-nums}
 .business-workspace{max-width:900px;margin:0 auto;padding:32px 20px 64px;color:var(--dark-text-primary);font-family:var(--font-sans,Arial,sans-serif)}
 .business-workspace header{margin-bottom:28px}
 .business-workspace h1{font-size:var(--t-display);line-height:1.05;margin:6px 0 10px}
