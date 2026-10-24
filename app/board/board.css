@@ -7,7 +7,7 @@
 .business-switcher a:hover,.business-switcher a:focus-visible{color:var(--dark-text-primary);border-color:var(--dark-border-strong)}
 .business-switcher a.active{color:var(--dark-text-primary);border-color:var(--dark-action);background:var(--dark-surface-raised)}
 /* Lead badges (Fable 2026-10-24): count only, action colour, no motion. */
-.business-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;margin-left:8px;padding:0 6px;border-radius:11px;background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif);font-variant-numeric:tabular-nums}
+.business-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;margin-left:8px;padding:0 6px;border-radius:2px;background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif);font-variant-numeric:tabular-nums}
 .business-workspace{max-width:900px;margin:0 auto;padding:32px 20px 64px;color:var(--dark-text-primary);font-family:var(--font-sans,Arial,sans-serif)}
 .business-workspace header{margin-bottom:28px}
 .business-workspace h1{font-size:var(--t-display);line-height:1.05;margin:6px 0 10px}

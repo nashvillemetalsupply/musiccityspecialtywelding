@@ -148,7 +148,7 @@ function badgeTitle(counts: Map<string, number>) {
 }
 
 // Key "" is the welding board (MCSW Jobs). Zero-count businesses are absent.
-// Any failure (table not migrated yet, DB hiccup) returns what it has so far:
+// Welding and site badges fail separately (table not migrated yet, DB hiccup):
 // a badge is never worth a broken board.
 export async function leadBadgeCounts({ sql, now = new Date() }: { sql?: Sql; now?: Date } = {}): Promise<LeadBadges> {
   const badges: LeadBadges = {}
@@ -165,7 +165,10 @@ export async function leadBadgeCounts({ sql, now = new Date() }: { sql?: Sql; no
     }
     const total = [...channels.values()].reduce((sum, n) => sum + n, 0)
     if (total > 0) badges[""] = { count: total, title: badgeTitle(channels) }
-
+  } catch (error) {
+    console.error("Welding lead badge skipped:", error instanceof Error ? error.message : "unknown error")
+  }
+  try {
     const roof = await sqlOrDefault(sql)`
       SELECT business, source, count(*)::int AS count FROM roof_leads
       WHERE contacted_at IS NULL GROUP BY business, source` as { business: string; source: string; count: number }[]

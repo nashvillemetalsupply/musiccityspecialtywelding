@@ -141,3 +141,12 @@ test("lead badges: migration registered after roof_jobs, hashes only", () => {
   assert.match(statement, /UNIQUE \(business, lead_id\)/)
   assert.doesNotMatch(statement, /customer_name|email TEXT|phone TEXT/)
 })
+
+test("lead badges: a welding query failure does not blank the site badges", async () => {
+  const sql = async (strings) => {
+    if (strings.join("?").includes("FROM leads")) throw new Error("welding down")
+    return [{ business: "railing", source: "form", count: 2 }]
+  }
+  const badges = await leadBadgeCounts({ sql, now: new Date("2020-01-01T00:00:00Z") })
+  assert.deepEqual(badges, { railing: { count: 2, title: "2 forms" } })
+})
