@@ -1247,6 +1247,24 @@ export const roofJobsStatement = `CREATE TABLE IF NOT EXISTS roof_jobs (
   );
   CREATE INDEX IF NOT EXISTS roof_jobs_business_created_idx ON roof_jobs (business, created_at DESC, id DESC);`
 
+// Lead badges (Fable ruling 2026-10-24): form leads read from the LD2R, Grease
+// Patrol and Railing site feeds, one row per site lead. Hashes only, never a
+// name or phone. contacted_at NULL is what the /board tab badge counts.
+export const roofLeadsStatement = `CREATE TABLE IF NOT EXISTS roof_leads (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    business TEXT NOT NULL CHECK (business IN ('ld2r','grease-patrol','railing')),
+    lead_id TEXT NOT NULL CHECK (char_length(lead_id) <= 120),
+    received_at TIMESTAMPTZ NOT NULL,
+    source TEXT NOT NULL DEFAULT 'form' CHECK (source IN ('form','email','phone')),
+    attribution TEXT CHECK (attribution IS NULL OR char_length(attribution) <= 60),
+    phone_hash TEXT,
+    contacted_at TIMESTAMPTZ,
+    contacted_by BIGINT REFERENCES operators(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (business, lead_id)
+  );
+  CREATE INDEX IF NOT EXISTS roof_leads_open_idx ON roof_leads (business, received_at DESC) WHERE contacted_at IS NULL;`
+
 async function runLegacyProceduralTail(sql) {
 
 const ownerEmail = (
@@ -1578,6 +1596,7 @@ export async function runMigrations({
     })),
     { name: "events-lead-events-immutable", query: eventsImmutabilityStatement },
     { name: "roof-jobs-o1-2026-10-23", query: roofJobsStatement },
+    { name: "roof-leads-badges-2026-10-24", query: roofLeadsStatement },
   ]
 
   await runWithMigrationLock({

@@ -4,7 +4,10 @@ import type { Operator } from "@/lib/operators"
 import { listBusinessEntries } from "@/lib/business-entries"
 import { GREASE_BUSINESS_KEY, listRoofJobs } from "@/lib/roof-jobs"
 import { S81_BUSINESS_KEYS } from "@/lib/sms-operator-commands"
-import { addRoofJobAction, markRoofJobPaidAction } from "./business-actions"
+import { listOpenRoofLeads, ROOF_LEAD_BUSINESSES } from "@/lib/roof-leads"
+import type { LeadBadge, LeadBadges } from "@/lib/roof-leads"
+import { addRoofJobAction, markRoofJobPaidAction, markRoofLeadContactedAction } from "./business-actions"
+import { LeadBadgeRefresh } from "./lead-badge-refresh"
 
 // Grease Patrol runs its own job board in the Grease app (O1, 2026-10-23).
 export const GREASE_PATROL_OPS_URL = "https://musiccitygreasepatrol.com/ops"
@@ -19,14 +22,48 @@ export function businessName(key: string) {
   return labels[key] ?? key
 }
 
-export function BusinessSwitcher({ active }: { active?: string }) {
+// Lead badges (Fable ruling 2026-10-24): the count of unactioned leads, in the
+// action colour, nothing at zero. The title names the channels.
+function LeadCount({ badge }: { badge?: LeadBadge }) {
+  if (!badge || badge.count <= 0) return null
+  return <span className="business-badge" title={badge.title}
+    aria-label={badge.today ? `${badge.count} today` : `${badge.count} new ${badge.count === 1 ? "lead" : "leads"}`}>
+    {badge.today ? `${badge.count} today` : badge.count}
+  </span>
+}
+
+export function BusinessSwitcher({ active, badges = {} }: { active?: string; badges?: LeadBadges }) {
   return <nav className="business-switcher" aria-label="Business">
-    <Link className={!active ? "active" : ""} aria-current={!active ? "page" : undefined} href="/board">MCSW Jobs</Link>
+    <Link className={!active ? "active" : ""} aria-current={!active ? "page" : undefined} href="/board">MCSW Jobs<LeadCount badge={badges[""]} /></Link>
     {S81_BUSINESS_KEYS.map((key) => <Link key={key} className={active === key ? "active" : ""}
       aria-current={active === key ? "page" : undefined} href={`/board?business=${encodeURIComponent(key)}`}>
-      {businessName(key)}
+      {businessName(key)}<LeadCount badge={badges[key]} />
     </Link>)}
   </nav>
+}
+
+// Site form leads behind a tab. The feed carries no name or phone, so the
+// details are in that site's own lead email; "Contacted" clears the row.
+async function OpenLeads({ business, saved }: { business: string; saved?: string }) {
+  if (!ROOF_LEAD_BUSINESSES.includes(business)) return null
+  const leads = await listOpenRoofLeads({ business })
+  return <section className="business-entry-list" aria-labelledby="business-leads-heading">
+    <h2 id="business-leads-heading">New leads</h2>
+    {saved === "contacted" && <p role="status">Lead marked contacted.</p>}
+    {leads.length === 0 ? <p>No new {businessName(business)} leads.</p> : <ol>
+      {leads.map((lead) => <li key={lead.id}>
+        <span>
+          <strong>{lead.source === "form" ? "Website form" : lead.source}{lead.attribution ? ` · ${lead.attribution}` : ""}</strong>
+          <small>Came in {when(lead.received_at)}. Name and phone are in the site's lead email.</small>
+        </span>
+        <form action={markRoofLeadContactedAction} className="roof-job-pay">
+          <input type="hidden" name="business" value={business} />
+          <input type="hidden" name="leadId" value={lead.id} />
+          <button type="submit">Contacted</button>
+        </form>
+      </li>)}
+    </ol>}
+  </section>
 }
 
 function formatDollars(cents: unknown) {
@@ -45,13 +82,15 @@ function Header({ business, operator, line }: { business: string; operator: Oper
   </header>
 }
 
-async function GreaseWorkspace({ operator }: { operator: Operator }) {
+async function GreaseWorkspace({ operator, saved }: { operator: Operator; saved?: string }) {
   const entries = await listBusinessEntries({ business: GREASE_BUSINESS_KEY, operator })
   return <main className="business-workspace">
+    <LeadBadgeRefresh />
     <Header business={GREASE_BUSINESS_KEY} operator={operator} line="Grease Patrol jobs are booked and paid on the Grease Patrol ops board." />
     <section className="business-entry-panel">
       <a className="business-ops-link" href={GREASE_PATROL_OPS_URL} target="_blank" rel="noopener noreferrer">Grease Patrol ops</a>
     </section>
+    <OpenLeads business={GREASE_BUSINESS_KEY} saved={saved} />
     <section className="business-entry-list" aria-labelledby="business-entry-list-heading">
       <h2 id="business-entry-list-heading">Text log</h2>
       {entries.length === 0 ? <p>No Grease Patrol texts yet.</p> : <ol>
@@ -72,12 +111,15 @@ export async function BusinessWorkspace({ business, operator, saved }: {
   operator: Operator
   saved?: string
 }) {
-  if (business === GREASE_BUSINESS_KEY) return <GreaseWorkspace operator={operator} />
+  if (business === GREASE_BUSINESS_KEY) return <GreaseWorkspace operator={operator} saved={saved} />
   const jobs = await listRoofJobs({ business, operator })
   const requestId = randomUUID()
   const name = businessName(business)
   return <main className="business-workspace">
+    <LeadBadgeRefresh />
     <Header business={business} operator={operator} line="One row per job. Add it when it is booked, mark it paid when the money is in." />
+
+    <OpenLeads business={business} saved={saved} />
 
     <section className="business-entry-panel" aria-labelledby="business-entry-heading">
       <h2 id="business-entry-heading">Add a job</h2>

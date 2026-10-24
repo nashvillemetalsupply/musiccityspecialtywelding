@@ -31,6 +31,7 @@ import { JobCalendar } from "./job-calendar"
 import { OpsOfflineSupport } from "@/app/ops/offline-support"
 import { S81_BUSINESS_KEYS } from "@/lib/sms-operator-commands"
 import { BusinessSwitcher, BusinessWorkspace } from "./business-workspace"
+import { leadBadgeCounts, syncLeadFeeds } from "@/lib/roof-leads"
 import "./board.css"
 
 export const metadata: Metadata = {
@@ -83,8 +84,12 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   const operator = dbConfigured() ? await getAuthenticatedOperator() : null
   if (!operator) redirect("/ops")
   const business = S81_BUSINESS_KEYS.includes(params.business ?? "") ? params.business : undefined
+  // Lead badges: counts come from the DB now; the site feeds are read after the
+  // response (throttled to 5 min) so a slow site never slows the board.
+  const badges = await leadBadgeCounts()
+  after(() => syncLeadFeeds())
   if (business) return <>
-    <BusinessSwitcher active={business} />
+    <BusinessSwitcher active={business} badges={badges} />
     <BusinessWorkspace business={business} operator={operator} saved={params.saved} />
   </>
   const sessionCacheId = await getOpsCacheSessionId()
@@ -153,7 +158,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   return <>
     <ThemeBoot />
     <OpsOfflineSupport sessionCacheId={sessionCacheId} />
-    <BusinessSwitcher />
+    <BusinessSwitcher badges={badges} />
     <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
