@@ -168,7 +168,8 @@ test("a failed named step rolls back and releases the lock so a safe rerun can f
 })
 
 test("the migration entry point routes the existing SQL list and procedural tail through the Pool lock", () => {
-  assert.match(migrationSource, /import \{ Pool \} from "@neondatabase\/serverless"/)
+  assert.match(migrationSource, /import \{ neonConfig, Pool \} from "@neondatabase\/serverless"/)
+  assert.match(migrationSource, /neonConfig\.webSocketConstructor = WebSocket/)
   assert.match(migrationSource, /import \{ runWithMigrationLock \} from "\.\/migration-runner\.mjs"/)
   assert.match(migrationSource, /name: `legacy-sql-\$\{String\(index \+ 1\)\.padStart\(4, "0"\)\}`/)
   assert.match(migrationSource, /\{ name: "events-lead-events-immutable", query: eventsImmutabilityStatement \}/)

@@ -3,8 +3,12 @@
 import { readFileSync, existsSync } from "node:fs"
 import { createHash } from "node:crypto"
 import { pathToFileURL } from "node:url"
-import { Pool } from "@neondatabase/serverless"
+import { neonConfig, Pool } from "@neondatabase/serverless"
+// ws is Neon's Node WebSocket transport; Node 20 has no global WebSocket without --experimental-websocket.
+import WebSocket from "ws"
 import { runWithMigrationLock } from "./migration-runner.mjs"
+
+neonConfig.webSocketConstructor = WebSocket
 
 function resolveDatabaseUrl() {
   if (process.env.DATABASE_URL_UNPOOLED?.trim()) return process.env.DATABASE_URL_UNPOOLED.trim()
