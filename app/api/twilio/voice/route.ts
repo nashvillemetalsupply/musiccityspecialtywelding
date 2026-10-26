@@ -9,7 +9,7 @@ import {
 import { notifyAll } from "@/lib/notify"
 import { normalizePhone } from "@/lib/people"
 import { recordRoofCall } from "@/lib/roof-leads"
-import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, roofCallLine, twilioCallbackUrl, twilioInboundDialTarget, twilioLiveTranscriptionStart, twilioVoiceConfigured, twiml } from "@/lib/twilio"
+import { escapeXml, isConfiguredTwilioNumber, readTwilioForm, roofCallLine, twilioCallbackUrl, twilioInboundDialTarget, twilioLiveTranscriptionStart, twilioRoofDialTarget, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 
 export const runtime = "nodejs"
 
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   const roofLine = roofCallLine(to)
   if (roofLine) {
     if (!isTestCall) after(() => recordRoofCall({ business: roofLine.business, callSid: sid, phone: from }))
-    return twiml(`<Say voice="man">${escapeXml(roofLine.greeting)}</Say><Dial answerOnBridge="true">${escapeXml(ownerCell)}</Dial>`)
+    return twiml(`<Say voice="man">${escapeXml(roofLine.greeting)}</Say><Dial answerOnBridge="true">${twilioRoofDialTarget(ownerCell, roofLine.business)}</Dial>`)
   }
   if (!isConfiguredTwilioNumber(to)) return twiml("", 403)
   // The raw provider receipt must land before the call forwards. On a database

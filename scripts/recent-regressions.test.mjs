@@ -569,3 +569,9 @@ test("health checks every DNI tracking number's voice webhook, not only the main
   const voiceReady = section(health, "const providerVoiceReady", ")\n")
   assert.match(voiceReady, /twilioProvider\.trackingNumbersReady/, "An unwired tracking number must fail voice readiness")
 })
+
+test("health checks each roof business line's voice webhook alongside the DNI numbers", () => {
+  const inspect = section(source("lib/twilio.ts"), "async function inspectTwilioProviderReadiness", "let providerReadinessCache")
+  assert.match(inspect, /ROOF_CALL_LINES\.map\(\(line\) => normalizedE164\(process\.env\[line\.env\]\)\)/)
+  assert.match(inspect, /\[\.\.\.tracking, \.\.\.roofNumbers\]\.map/)
+})

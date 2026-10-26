@@ -18,7 +18,7 @@ import ts from "typescript"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 // lib/twilio.ts has syntax strip-types refuses; the provider suites load it the same way.
-const { roofCallLine } = await import(`data:text/javascript,${encodeURIComponent(ts.transpileModule(read("lib/twilio.ts"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText)}`)
+const { roofCallLine, roofLineByBusiness, twilioRoofDialTarget } = await import(`data:text/javascript,${encodeURIComponent(ts.transpileModule(read("lib/twilio.ts"), { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText)}`)
 const crew = { id: 71, role: "crew" }
 const HASH = `sha256:${"a".repeat(64)}`
 
@@ -189,4 +189,17 @@ test("roof call lines: the voice route answers a roof number before welding inta
   assert.match(branch, /recordRoofCall/)
   assert.doesNotMatch(branch, /record=|notifyAll|prepareInboundCallIntake|twilioLiveTranscriptionStart/)
   assert.match(read("app/api/twilio/fallback/route.ts"), /roofCallLine\(to\)/)
+})
+
+test("roof call lines: the owner hears which business was called on answer, and the cue never drops his leg", () => {
+  assert.equal(
+    twilioRoofDialTarget("+16155550199", "grease-patrol"),
+    '<Number url="https://musiccityspecialtywelding.com/api/twilio/roof-whisper?line=grease-patrol">+16155550199</Number>',
+  )
+  assert.equal(roofLineByBusiness("railing")?.greeting, "Nashville Ornamental.")
+  assert.equal(roofLineByBusiness("welding"), null)
+  assert.match(read("app/api/twilio/voice/route.ts"), /<Dial answerOnBridge="true">\$\{twilioRoofDialTarget\(ownerCell, roofLine\.business\)\}<\/Dial>/)
+  const whisper = read("app/api/twilio/roof-whisper/route.ts")
+  assert.match(whisper, /Call for \$\{line\.greeting\}/)
+  assert.doesNotMatch(whisper, /twiml\([^)]*, \d{3}\)/)
 })
