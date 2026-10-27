@@ -84,7 +84,9 @@ test("high-intent trailer repair has a proven landing page and every service sho
   const page = read("app/services/[slug]/page.tsx")
   const home = read("app/page.tsx")
   assert.match(services, /slug: "trailer-welding-repair"/)
-  assert.match(services, /IMG_20250809_180018\.webp/)
+  assert.match(services, /trailer-repair\.webp/)
+  // Owner 2026-10-27: the axle photo shows nothing; never use it again.
+  assert.doesNotMatch(services, /IMG_20250809_180018/)
   assert.match(home, /href: "\/services\/trailer-welding-repair"/)
   assert.match(services, /"@type": "BreadcrumbList"/)
   assert.match(services, /https:\/\/musiccityspecialtywelding\.com\/#services/)

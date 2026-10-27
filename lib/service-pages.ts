@@ -107,8 +107,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Repair the failure, not just the crack",
     intro:
       "Trailer damage can involve the frame, tongue, crossmembers, ramps, fenders, brackets, hangers, or the structure around the running gear. We inspect the damaged area and the surrounding load path before confirming what can be repaired and whether the work belongs on-site or in the shop.",
-    image: "/images/owner-work/IMG_20250809_180018.webp",
-    imageAlt: "Trailer frame and axle exposed during structural welding repair by Music City Specialty Welding",
+    image: "/images/owner-work/trailer-repair.webp",
+    imageAlt: "Trailer frame with new steel crossmembers welded in by Music City Specialty Welding",
     commonJobs: [
       "Cracked trailer frames, crossmembers, and support steel",
       "Ramps, fenders, brackets, hangers, and attachment points",
