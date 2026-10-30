@@ -433,22 +433,27 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
         <section className="card figures" aria-label="Job summary">
           <div className="figure">
             <p className="figure-label">Open jobs</p>
-            <p className="n"><b className="t-display">{board.counts.board}</b></p>
-            <dl className="under figure-stats">
-              <div className="figure-stat"><dt>In the shop</dt><dd>{board.counts.shop}</dd></div>
-              <div className="figure-stat"><dt>Waiting</dt><dd>{board.counts.waiting}</dd></div>
-              <div className="figure-stat"><dt>Ready</dt><dd>{board.counts.ready}</dd></div>
-            </dl>
+            <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
+            <div className="under">
+              <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
+              <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
+            </div>
           </div>
           <div className="figure">
             <p className="figure-label">Closed this week</p>
-            <p className="n"><b className="t-display">{chrome.owner ? money(outTheDoor.revenueCents) : outTheDoor.jobs}</b></p>
-            {chrome.owner && outTheDoor.revenueCents !== null &&
-              <dl className="under figure-stats">
-                <div className="figure-stat"><dt>Paid jobs</dt><dd>{outTheDoor.paidJobs} of {outTheDoor.jobs}</dd></div>
-                <div className="figure-stat"><dt>Still out</dt><dd>{money(outTheDoor.stillOutCents)}</dd></div>
-              </dl>}
-            {!chrome.owner && <p className="under">Finished and out the door</p>}
+            <p className="n"><b className="t-display">{chrome.owner ? money(outTheDoor.revenueCents) : outTheDoor.jobs}</b><span>this week</span></p>
+            <div className="under">
+              {chrome.owner && outTheDoor.jobs > 0 && <span className="bar" role="img"
+                aria-label={`${outTheDoor.jobs} ${outTheDoor.jobs === 1 ? "job" : "jobs"} went out this week: ${outTheDoor.paidJobs} paid, ${outTheDoor.jobs - outTheDoor.paidJobs} not`}>
+                {/* One mark per job, capped so a heavy week cannot overrun the
+                    field. The count beside it stays exact. */}
+                {Array.from({ length: Math.min(outTheDoor.jobs, 10) }, (_, index) =>
+                  <i className={index < outTheDoor.paidJobs ? "good" : "warn"} key={index}></i>)}
+              </span>}
+              {chrome.owner && outTheDoor.revenueCents !== null &&
+                <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
+              {!chrome.owner && <span>Finished and out the door</span>}
+            </div>
           </div>
         </section>
         {/* Calls waiting to become jobs, collapsed to one bar so the tracker
