@@ -1,0 +1,862 @@
+{
+  "timestamp": "2026-10-30T06:54:32.640Z",
+  "checks": [
+    {
+      "name": "portrait: 1. Board and More menu",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: 2. Forms and keyboard",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: 3. Job, Price, and Photo sections",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: 4. Customer directory",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Crew board",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Long totals",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Empty board",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Job error state",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Job pending state",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Completed job",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Account",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Settings",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Analytics",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Calls",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Updates",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Login layout",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: Customer page",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "portrait: More menu keyboard and scroll reachability",
+      "status": "pass",
+      "detail": {
+        "focusableControls": 17,
+        "names": [
+          "Close menu",
+          "Search jobs",
+          "Search",
+          "Job Control",
+          "New Job",
+          "Calls",
+          "Customers",
+          "Updates",
+          "Promises",
+          "Post to social",
+          "Analytics",
+          "Install MCSW Jobs",
+          "Settings",
+          "Morning Brief",
+          "Ask Jobs",
+          "Run recovery now",
+          "Sign out"
+        ],
+        "focusTrap": true,
+        "escapeAndFocusReturn": true,
+        "destinations": "Live navigation deliberately blocked by fixture; reachability checks controls only."
+      }
+    },
+    {
+      "name": "landscape: 1. Board and More menu",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: 2. Forms and keyboard",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: 3. Job, Price, and Photo sections",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: 4. Customer directory",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Crew board",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Long totals",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Empty board",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Job error state",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Job pending state",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Completed job",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Account",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Settings",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Analytics",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Calls",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Updates",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Login layout",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: Customer page",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 844,
+          "documentWidth": 844,
+          "bodyWidth": 844
+        },
+        "hydrated": true,
+        "textMode": "normal"
+      }
+    },
+    {
+      "name": "landscape: More menu keyboard and scroll reachability",
+      "status": "pass",
+      "detail": {
+        "focusableControls": 17,
+        "names": [
+          "Close menu",
+          "Search jobs",
+          "Search",
+          "Job Control",
+          "New Job",
+          "Calls",
+          "Customers",
+          "Updates",
+          "Promises",
+          "Post to social",
+          "Analytics",
+          "Install MCSW Jobs",
+          "Settings",
+          "Morning Brief",
+          "Ask Jobs",
+          "Run recovery now",
+          "Sign out"
+        ],
+        "focusTrap": true,
+        "escapeAndFocusReturn": true,
+        "destinations": "Live navigation deliberately blocked by fixture; reachability checks controls only."
+      }
+    },
+    {
+      "name": "text200: 1. Board and More menu",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: 2. Forms and keyboard",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: 3. Job, Price, and Photo sections",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: 4. Customer directory",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Crew board",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Long totals",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Empty board",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Job error state",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Job pending state",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Completed job",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Account",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Settings",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Analytics",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Calls",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 455
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Updates",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Login layout",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: Customer page",
+      "status": "pass",
+      "detail": {
+        "dimensions": {
+          "width": 390,
+          "documentWidth": 390,
+          "bodyWidth": 390
+        },
+        "hydrated": true,
+        "textMode": "200% root and product typography tokens; fixed-pixel text unaffected; not OS scaling or browser zoom"
+      }
+    },
+    {
+      "name": "text200: More menu keyboard and scroll reachability",
+      "status": "pass",
+      "detail": {
+        "focusableControls": 17,
+        "names": [
+          "Close menu",
+          "Search jobs",
+          "Search",
+          "Job Control",
+          "New Job",
+          "Calls",
+          "Customers",
+          "Updates",
+          "Promises",
+          "Post to social",
+          "Analytics",
+          "Install MCSW Jobs",
+          "Settings",
+          "Morning Brief",
+          "Ask Jobs",
+          "Run recovery now",
+          "Sign out"
+        ],
+        "focusTrap": true,
+        "escapeAndFocusReturn": true,
+        "destinations": "Live navigation deliberately blocked by fixture; reachability checks controls only."
+      }
+    },
+    {
+      "name": "Forms: focus and draft retained across orientation",
+      "status": "pass",
+      "detail": {
+        "focusedFields": 3,
+        "retainedAcrossOrientation": true,
+        "nativeKeyboard": "untested",
+        "saveRecovery": "separately covered by real Next HTTP acceptance"
+      }
+    },
+    {
+      "name": "Job fragments and bottom rail 390 normal",
+      "status": "fail",
+      "detail": "AssertionError [ERR_ASSERTION]: Missing/closed fragment {\"fragment\":\"finish-photo\",\"targetExists\":false,\"visible\":false,\"railTop\":782,\"railBottom\":844,\"height\":844}"
+    },
+    {
+      "name": "Job fragments and bottom rail 390 failed",
+      "status": "fail",
+      "detail": "AssertionError [ERR_ASSERTION]: Missing/closed fragment {\"fragment\":\"finish-photo\",\"targetExists\":false,\"visible\":false,\"railTop\":703.21875,\"railBottom\":844,\"height\":844}"
+    },
+    {
+      "name": "Job fragments and bottom rail 390 pending",
+      "status": "fail",
+      "detail": "AssertionError [ERR_ASSERTION]: Missing/closed fragment {\"fragment\":\"finish-photo\",\"targetExists\":false,\"visible\":false,\"railTop\":782,\"railBottom\":844,\"height\":844}"
+    },
+    {
+      "name": "Job fragments and bottom rail 390 completed",
+      "status": "pass",
+      "detail": [
+        {
+          "fragment": "lead-estimate",
+          "targetExists": true,
+          "visible": true,
+          "targetTop": 71.75,
+          "targetBottom": 115.75,
+          "railTop": 782,
+          "railBottom": 844,
+          "height": 844
+        },
+        {
+          "fragment": "done-photo",
+          "targetExists": true,
+          "visible": true,
+          "targetTop": 538.34375,
+          "targetBottom": 582.34375,
+          "railTop": 734.34375,
+          "railBottom": 796.34375,
+          "height": 844
+        }
+      ]
+    },
+    {
+      "name": "Job fragments and bottom rail 844 normal",
+      "status": "fail",
+      "detail": "AssertionError [ERR_ASSERTION]: Missing/closed fragment {\"fragment\":\"finish-photo\",\"targetExists\":false,\"visible\":false,\"railTop\":328,\"railBottom\":390,\"height\":390}"
+    },
+    {
+      "name": "Job fragments and bottom rail 844 failed",
+      "status": "fail",
+      "detail": "AssertionError [ERR_ASSERTION]: Missing/closed fragment {\"fragment\":\"finish-photo\",\"targetExists\":false,\"visible\":false,\"railTop\":288.40625,\"railBottom\":390,\"height\":390}"
+    },
+    {
+      "name": "Job fragments and bottom rail 844 pending",
+      "status": "fail",
+      "detail": "AssertionError [ERR_ASSERTION]: Missing/closed fragment {\"fragment\":\"finish-photo\",\"targetExists\":false,\"visible\":false,\"railTop\":328,\"railBottom\":390,\"height\":390}"
+    },
+    {
+      "name": "Job fragments and bottom rail 844 completed",
+      "status": "pass",
+      "detail": [
+        {
+          "fragment": "lead-estimate",
+          "targetExists": true,
+          "visible": true,
+          "targetTop": 71.8125,
+          "targetBottom": 115.8125,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390
+        },
+        {
+          "fragment": "done-photo",
+          "targetExists": true,
+          "visible": true,
+          "targetTop": 115.125,
+          "targetBottom": 159.125,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390
+        }
+      ]
+    },
+    {
+      "name": "Native Android keyboard, OS text scaling, TalkBack, physical touch, iPhone/Safari",
+      "status": "untested",
+      "detail": "No physical device observations; automation cannot establish these results."
+    },
+    {
+      "name": "Live navigation, saving in preview, uploads, microphone and provider delivery",
+      "status": "untested",
+      "detail": "Intentionally unavailable in the synthetic gateway; separate acceptance evidence applies."
+    }
+  ],
+  "errors": [],
+  "physicalDeviceTest": false,
+  "pass": 57,
+  "fail": 6,
+  "untested": 2
+}

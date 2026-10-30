@@ -1,0 +1,71 @@
+{
+  "records": [
+    {
+      "name": "signed-out session and export are denied",
+      "passed": true
+    },
+    {
+      "name": "malformed and expired login links cannot create sessions",
+      "passed": true
+    },
+    {
+      "name": "owner and crew redeem actual one-use links with secure cookie attributes",
+      "passed": true
+    },
+    {
+      "name": "consumed login link cannot be replayed",
+      "passed": true
+    },
+    {
+      "name": "actual sessions retain role and distinct cache and voice partitions",
+      "passed": true
+    },
+    {
+      "name": "real job HTTP and embedded RSC contain owner facts only for owner",
+      "passed": true
+    },
+    {
+      "name": "crew cannot open internal-test job by guessed URL",
+      "passed": true
+    },
+    {
+      "name": "owner-only export and analytics enforce real session role",
+      "passed": true
+    },
+    {
+      "name": "crew settings reveal no team-management form",
+      "passed": true
+    },
+    {
+      "name": "owner real browser login board and job render",
+      "passed": true,
+      "width": 1440
+    },
+    {
+      "name": "crew real browser login board and job render",
+      "passed": true,
+      "width": 390
+    },
+    {
+      "name": "browser has no application JavaScript error or remote request",
+      "passed": true
+    },
+    {
+      "name": "role downgrade takes effect in existing session",
+      "passed": true
+    },
+    {
+      "name": "deactivated operator cannot reuse existing session",
+      "passed": true
+    },
+    {
+      "name": "expired session is rejected by real HTTP endpoint",
+      "passed": true
+    },
+    {
+      "name": "logout revokes durable session and clears browser cookie",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

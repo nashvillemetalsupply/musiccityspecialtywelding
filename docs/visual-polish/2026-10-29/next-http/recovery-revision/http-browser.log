@@ -1,0 +1,22 @@
+PASS signed-out session and export are denied
+PASS malformed and expired login links cannot create sessions
+PASS owner and crew redeem actual one-use links with secure cookie attributes
+PASS consumed login link cannot be replayed
+PASS actual sessions retain role and distinct cache and voice partitions
+PASS real job HTTP and embedded RSC contain owner facts only for owner
+PASS crew cannot open internal-test job by guessed URL
+PASS owner-only export and analytics enforce real session role
+PASS crew settings reveal no team-management form
+PASS real voice recovery GET identifies missing stored bytes without exposing private paths
+PASS signed-out and other-operator sessions cannot read the voice intent
+PASS real voice recovery GET rejects a stale operator scope
+PASS workflow: real rejected server action retains the intake draft and writes no job
+PASS workflow: real intake submission creates one test job and test journal receipt visible after reload
+PASS workflow: real notes server action persists the note and immutable test receipt across reload
+PASS owner real browser login board and job render
+PASS crew real browser login board and job render
+PASS browser has no application JavaScript error or remote request
+PASS role downgrade takes effect in existing session
+PASS deactivated operator cannot reuse existing session
+PASS expired session is rejected by real HTTP endpoint
+PASS logout revokes durable session and clears browser cookie

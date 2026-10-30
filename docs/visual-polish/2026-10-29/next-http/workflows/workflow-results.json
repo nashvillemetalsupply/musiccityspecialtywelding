@@ -1,0 +1,17 @@
+{
+  "workflows": [
+    {
+      "name": "real rejected server action retains the intake draft and writes no job",
+      "passed": true
+    },
+    {
+      "name": "real intake submission creates one test job and test journal receipt visible after reload",
+      "passed": true
+    },
+    {
+      "name": "real notes server action persists the note and immutable test receipt across reload",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

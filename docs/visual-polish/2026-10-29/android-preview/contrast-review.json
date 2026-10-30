@@ -1,0 +1,247 @@
+{
+  "timestamp": "2026-10-30T07:22:27.180Z",
+  "checks": [
+    {
+      "width": 390,
+      "selector": ".ops-closeout-review-sheet legend",
+      "colors": {
+        "foreground": "rgb(241, 235, 220)",
+        "effectiveBackground": [
+          26,
+          25,
+          23
+        ],
+        "ratio": 14.771398663760088,
+        "text": "Review closeout"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 390,
+      "selector": ".ops-closeout-review-sheet label:nth-child(3) > span",
+      "colors": {
+        "foreground": "rgb(207, 198, 181)",
+        "effectiveBackground": [
+          26,
+          25,
+          23
+        ],
+        "ratio": 10.37184297828033,
+        "text": "Work status"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 390,
+      "selector": ".ops-swipe-thumb",
+      "colors": {
+        "foreground": "rgb(18, 16, 13)",
+        "effectiveBackground": [
+          232,
+          97,
+          28
+        ],
+        "ratio": 5.569411041943943,
+        "text": "→"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": [
+            {
+              "target": [
+                ".ops-swipe-thumb"
+              ],
+              "summary": "Fix any of the following:\n  Element content contains only non-text characters"
+            }
+          ]
+        }
+      ],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 390,
+      "selector": ".ops-done-photo > span",
+      "colors": {
+        "foreground": "rgb(207, 198, 181)",
+        "effectiveBackground": [
+          25,
+          24,
+          23
+        ],
+        "ratio": 10.46805551931384,
+        "text": "Add a finished-work photo"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 844,
+      "selector": ".ops-closeout-review-sheet legend",
+      "colors": {
+        "foreground": "rgb(241, 235, 220)",
+        "effectiveBackground": [
+          26,
+          25,
+          23
+        ],
+        "ratio": 14.771398663760088,
+        "text": "Review closeout"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 844,
+      "selector": ".ops-closeout-review-sheet label:nth-child(3) > span",
+      "colors": {
+        "foreground": "rgb(207, 198, 181)",
+        "effectiveBackground": [
+          26,
+          25,
+          23
+        ],
+        "ratio": 10.37184297828033,
+        "text": "Work status"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 844,
+      "selector": ".ops-swipe-thumb",
+      "colors": {
+        "foreground": "rgb(18, 16, 13)",
+        "effectiveBackground": [
+          232,
+          97,
+          28
+        ],
+        "ratio": 5.569411041943943,
+        "text": "→"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": [
+            {
+              "target": [
+                ".ops-swipe-thumb"
+              ],
+              "summary": "Fix any of the following:\n  Element content contains only non-text characters"
+            }
+          ]
+        }
+      ],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 844,
+      "selector": ".ops-done-photo > span",
+      "colors": {
+        "foreground": "rgb(207, 198, 181)",
+        "effectiveBackground": [
+          25,
+          24,
+          23
+        ],
+        "ratio": 10.46805551931384,
+        "text": "Add a finished-work photo"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 1440,
+      "selector": ".ops-closeout-review-sheet legend",
+      "colors": {
+        "foreground": "rgb(241, 235, 220)",
+        "effectiveBackground": [
+          26,
+          25,
+          23
+        ],
+        "ratio": 14.771398663760088,
+        "text": "Review closeout"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 1440,
+      "selector": ".ops-closeout-review-sheet label:nth-child(3) > span",
+      "colors": {
+        "foreground": "rgb(207, 198, 181)",
+        "effectiveBackground": [
+          26,
+          25,
+          23
+        ],
+        "ratio": 10.37184297828033,
+        "text": "Work status"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 1440,
+      "selector": ".ops-swipe-thumb",
+      "colors": {
+        "foreground": "rgb(18, 16, 13)",
+        "effectiveBackground": [
+          232,
+          97,
+          28
+        ],
+        "ratio": 5.569411041943943,
+        "text": "→"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": [
+            {
+              "target": [
+                ".ops-swipe-thumb"
+              ],
+              "summary": "Fix any of the following:\n  Element content contains only non-text characters"
+            }
+          ]
+        }
+      ],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    },
+    {
+      "width": 1440,
+      "selector": ".ops-done-photo > span",
+      "colors": {
+        "foreground": "rgb(207, 198, 181)",
+        "effectiveBackground": [
+          25,
+          24,
+          23
+        ],
+        "ratio": 10.46805551931384,
+        "text": "Add a finished-work photo"
+      },
+      "axeViolations": 0,
+      "axeIncomplete": [],
+      "method": "Each node scrolled into viewport; computed solid-background alpha composition and color contrast, plus focused axe scan. Decorative swipe arrow included conservatively."
+    }
+  ],
+  "pass": 12,
+  "expected": 12
+}

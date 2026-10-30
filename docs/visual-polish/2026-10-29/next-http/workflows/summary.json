@@ -1,0 +1,48 @@
+{
+  "success": true,
+  "stages": [
+    {
+      "label": "initdb",
+      "code": 0,
+      "durationMs": 12079
+    },
+    {
+      "label": "start-database",
+      "code": 0,
+      "durationMs": 655
+    },
+    {
+      "label": "createdb",
+      "code": 0,
+      "durationMs": 488
+    },
+    {
+      "label": "migrate",
+      "code": 0,
+      "durationMs": 6053
+    },
+    {
+      "label": "seed",
+      "code": 0,
+      "durationMs": 162
+    },
+    {
+      "label": "http-browser",
+      "code": 0,
+      "durationMs": 12445
+    },
+    {
+      "label": "stop-database",
+      "code": 0,
+      "durationMs": 2409
+    }
+  ],
+  "port": 59455,
+  "appPort": 3050,
+  "productionSourceModified": false,
+  "actualNextHttp": true,
+  "actualPostgreSql": true,
+  "providerCalls": false,
+  "syntheticDatabaseRemoved": true,
+  "completedAt": "2026-10-30T06:32:49.202Z"
+}

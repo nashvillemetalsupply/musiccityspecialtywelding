@@ -1,0 +1,609 @@
+{
+  "timestamp": "2026-10-30T07:22:06.608Z",
+  "checks": [
+    {
+      "name": "Job Photo 390 normal",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 590.03125,
+          "bottom": 673.21875,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 590.03125,
+          "bottom": 673.21875,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 426.03125,
+          "bottom": 522.03125,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 388.84375,
+          "bottom": 432.84375,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 466.65625,
+          "bottom": 569.4375,
+          "railTop": 733.625,
+          "railBottom": 795.625,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 158.03125,
+          "bottom": 254.03125,
+          "railTop": 782,
+          "railBottom": 844,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 388.84375,
+          "bottom": 432.84375,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        }
+      ]
+    },
+    {
+      "name": "Job Photo 390 failed",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 511.03125,
+          "bottom": 594.21875,
+          "railTop": 655.21875,
+          "railBottom": 796,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 511.03125,
+          "bottom": 594.21875,
+          "railTop": 655.21875,
+          "railBottom": 796,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 347.03125,
+          "bottom": 443.03125,
+          "railTop": 655.21875,
+          "railBottom": 796,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 309.84375,
+          "bottom": 353.84375,
+          "railTop": 655.21875,
+          "railBottom": 796,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 388.65625,
+          "bottom": 491.4375,
+          "railTop": 655.625,
+          "railBottom": 796.40625,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 158.03125,
+          "bottom": 254.03125,
+          "railTop": 703.21875,
+          "railBottom": 844,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 309.84375,
+          "bottom": 353.84375,
+          "railTop": 655.21875,
+          "railBottom": 796,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        }
+      ]
+    },
+    {
+      "name": "Job Photo 390 pending",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 590.03125,
+          "bottom": 673.21875,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 590.03125,
+          "bottom": 673.21875,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 426.03125,
+          "bottom": 522.03125,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 388.84375,
+          "bottom": 432.84375,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 466.65625,
+          "bottom": 569.4375,
+          "railTop": 733.625,
+          "railBottom": 795.625,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 158.03125,
+          "bottom": 254.03125,
+          "railTop": 782,
+          "railBottom": 844,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 388.84375,
+          "bottom": 432.84375,
+          "railTop": 734.21875,
+          "railBottom": 796.21875,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        }
+      ]
+    },
+    {
+      "name": "Job Photo 390 completed",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "done-photo",
+          "exists": true,
+          "focused": true,
+          "top": 538.34375,
+          "bottom": 582.34375,
+          "railTop": 734.34375,
+          "railBottom": 796.34375,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        },
+        {
+          "fragment": "done-photo",
+          "exists": true,
+          "focused": true,
+          "top": 538.34375,
+          "bottom": 582.34375,
+          "railTop": 734.34375,
+          "railBottom": 796.34375,
+          "height": 844,
+          "width": 390,
+          "documentWidth": 390
+        }
+      ]
+    },
+    {
+      "name": "Job Photo 844 normal",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 146.8125,
+          "bottom": 210.40625,
+          "railTop": 276.28125,
+          "railBottom": 338.28125,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 146.8125,
+          "bottom": 210.40625,
+          "railTop": 276.28125,
+          "railBottom": 338.28125,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 157.8125,
+          "bottom": 253.8125,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 112.25,
+          "bottom": 156.25,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 72.0625,
+          "bottom": 135.65625,
+          "railTop": 285.125,
+          "railBottom": 347.125,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 157.8125,
+          "bottom": 253.8125,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 112.25,
+          "bottom": 156.25,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        }
+      ]
+    },
+    {
+      "name": "Job Photo 844 failed",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 106.8125,
+          "bottom": 170.40625,
+          "railTop": 236.28125,
+          "railBottom": 337.875,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 106.8125,
+          "bottom": 170.40625,
+          "railTop": 236.28125,
+          "railBottom": 337.875,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 157.8125,
+          "bottom": 253.8125,
+          "railTop": 288.40625,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 112.25,
+          "bottom": 156.25,
+          "railTop": 288.40625,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 72.0625,
+          "bottom": 135.65625,
+          "railTop": 285.125,
+          "railBottom": 386.71875,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 157.8125,
+          "bottom": 253.8125,
+          "railTop": 288.40625,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 112.25,
+          "bottom": 156.25,
+          "railTop": 288.40625,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        }
+      ]
+    },
+    {
+      "name": "Job Photo 844 pending",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 146.8125,
+          "bottom": 210.40625,
+          "railTop": 276.28125,
+          "railBottom": 338.28125,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 146.8125,
+          "bottom": 210.40625,
+          "railTop": 276.28125,
+          "railBottom": 338.28125,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 157.8125,
+          "bottom": 253.8125,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 112.25,
+          "bottom": 156.25,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 72.0625,
+          "bottom": 135.65625,
+          "railTop": 285.125,
+          "railBottom": 347.125,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "closeout-source",
+          "exists": true,
+          "focused": true,
+          "top": 157.8125,
+          "bottom": 253.8125,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "finish-photo",
+          "exists": true,
+          "focused": true,
+          "top": 112.25,
+          "bottom": 156.25,
+          "railTop": 328,
+          "railBottom": 390,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        }
+      ]
+    },
+    {
+      "name": "Job Photo 844 completed",
+      "status": "pass",
+      "details": [
+        {
+          "fragment": "done-photo",
+          "exists": true,
+          "focused": true,
+          "top": 115.125,
+          "bottom": 159.125,
+          "railTop": 316,
+          "railBottom": 378,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        },
+        {
+          "fragment": "done-photo",
+          "exists": true,
+          "focused": true,
+          "top": 115.125,
+          "bottom": 159.125,
+          "railTop": 316,
+          "railBottom": 378,
+          "height": 390,
+          "width": 844,
+          "documentWidth": 844
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "physicalDeviceTest": false,
+  "pass": 8,
+  "fail": 0
+}

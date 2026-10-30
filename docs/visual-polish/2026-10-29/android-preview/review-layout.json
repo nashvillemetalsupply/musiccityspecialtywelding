@@ -1,0 +1,1206 @@
+{
+  "timestamp": "2026-10-30T07:20:04.285Z",
+  "checks": [
+    {
+      "name": "Reviewed closeout 320 complete",
+      "status": "pass",
+      "metrics": {
+        "viewport": 320,
+        "documentWidth": 320,
+        "benchContent": 270,
+        "form": 270,
+        "source": 270,
+        "sheet": 270,
+        "sheetContent": 244,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 244,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 244,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 244,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 244,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 244,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 244,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "270px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 320 partial",
+      "status": "pass",
+      "metrics": {
+        "viewport": 320,
+        "documentWidth": 320,
+        "benchContent": 270,
+        "form": 270,
+        "source": 270,
+        "sheet": 270,
+        "sheetContent": 244,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 244,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 244,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 244,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 244,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 244,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 244,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 242,
+            "scrollWidth": 242,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "270px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 390 complete",
+      "status": "pass",
+      "metrics": {
+        "viewport": 390,
+        "documentWidth": 390,
+        "benchContent": 324,
+        "form": 324,
+        "source": 324,
+        "sheet": 324,
+        "sheetContent": 298,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 298,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 298,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 298,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 298,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 298,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 298,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "324px"
+      },
+      "contrast": {
+        "label": {
+          "foreground": "rgb(207, 198, 181)",
+          "background": "color(srgb 0.101961 0.0980392 0.0901961 / 0.82)",
+          "text": "Add a finished-work photo"
+        },
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                "legend"
+              ],
+              [
+                "label:nth-child(3) > span"
+              ],
+              [
+                ".ops-swipe-thumb"
+              ]
+            ]
+          }
+        ],
+        "passedRules": 1
+      }
+    },
+    {
+      "name": "Reviewed closeout 390 partial",
+      "status": "pass",
+      "metrics": {
+        "viewport": 390,
+        "documentWidth": 390,
+        "benchContent": 324,
+        "form": 324,
+        "source": 324,
+        "sheet": 324,
+        "sheetContent": 298,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 298,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 298,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 298,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 298,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 298,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 298,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "324px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 768 complete",
+      "status": "pass",
+      "metrics": {
+        "viewport": 768,
+        "documentWidth": 768,
+        "benchContent": 694,
+        "form": 694,
+        "source": 694,
+        "sheet": 694,
+        "sheetContent": 668,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 328,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 328,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 328,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 328,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 668,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 666,
+            "scrollWidth": 666,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 668,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 666,
+            "scrollWidth": 666,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "694px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 768 partial",
+      "status": "pass",
+      "metrics": {
+        "viewport": 768,
+        "documentWidth": 768,
+        "benchContent": 694,
+        "form": 694,
+        "source": 694,
+        "sheet": 694,
+        "sheetContent": 668,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 328,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 328,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 328,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 328,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 326,
+            "scrollWidth": 326,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 668,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 666,
+            "scrollWidth": 666,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 668,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 666,
+            "scrollWidth": 666,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "694px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 844 complete",
+      "status": "pass",
+      "metrics": {
+        "viewport": 844,
+        "documentWidth": 844,
+        "benchContent": 770,
+        "form": 770,
+        "source": 770,
+        "sheet": 770,
+        "sheetContent": 744,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 366,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 366,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 366,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 366,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 744,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 744,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "770px"
+      },
+      "contrast": {
+        "label": {
+          "foreground": "rgb(207, 198, 181)",
+          "background": "color(srgb 0.101961 0.0980392 0.0901961 / 0.82)",
+          "text": "Add a finished-work photo"
+        },
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".ops-swipe-thumb"
+              ]
+            ]
+          }
+        ],
+        "passedRules": 1
+      }
+    },
+    {
+      "name": "Reviewed closeout 844 partial",
+      "status": "pass",
+      "metrics": {
+        "viewport": 844,
+        "documentWidth": 844,
+        "benchContent": 770,
+        "form": 770,
+        "source": 770,
+        "sheet": 770,
+        "sheetContent": 744,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 366,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 366,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 366,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 366,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 364,
+            "scrollWidth": 364,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 744,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 744,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "770px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 1024 complete",
+      "status": "pass",
+      "metrics": {
+        "viewport": 1024,
+        "documentWidth": 1024,
+        "benchContent": 950,
+        "form": 950,
+        "source": 950,
+        "sheet": 950,
+        "sheetContent": 924,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 300,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 300,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 300,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 300,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 924,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 922,
+            "scrollWidth": 922,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 924,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 922,
+            "scrollWidth": 922,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "950px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 1024 partial",
+      "status": "pass",
+      "metrics": {
+        "viewport": 1024,
+        "documentWidth": 1024,
+        "benchContent": 950,
+        "form": 950,
+        "source": 950,
+        "sheet": 950,
+        "sheetContent": 924,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 300,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 300,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 300,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 300,
+            "height": 48,
+            "fontSize": 16,
+            "clientWidth": 298,
+            "scrollWidth": 298,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 924,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 922,
+            "scrollWidth": 922,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 924,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 922,
+            "scrollWidth": 922,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "950px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 1440 complete",
+      "status": "pass",
+      "metrics": {
+        "viewport": 1440,
+        "documentWidth": 1440,
+        "benchContent": 1174,
+        "form": 1174,
+        "source": 1174,
+        "sheet": 1174,
+        "sheetContent": 1148,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 278,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 278,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 278,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 278,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 1148,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 1146,
+            "scrollWidth": 1146,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 1148,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 1146,
+            "scrollWidth": 1146,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "1174px"
+      },
+      "contrast": {
+        "label": {
+          "foreground": "rgb(207, 198, 181)",
+          "background": "color(srgb 0.101961 0.0980392 0.0901961 / 0.82)",
+          "text": "Add a finished-work photo"
+        },
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".ops-swipe-thumb"
+              ]
+            ]
+          }
+        ],
+        "passedRules": 1
+      }
+    },
+    {
+      "name": "Reviewed closeout 1440 partial",
+      "status": "pass",
+      "metrics": {
+        "viewport": 1440,
+        "documentWidth": 1440,
+        "benchContent": 1174,
+        "form": 1174,
+        "source": 1174,
+        "sheet": 1174,
+        "sheetContent": 1148,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 278,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": 74.39994812011719
+          },
+          {
+            "name": "fit",
+            "width": 278,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": 124.25592041015625
+          },
+          {
+            "name": "extraTrips",
+            "width": 278,
+            "height": 50,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 278,
+            "height": 49,
+            "fontSize": 16,
+            "clientWidth": 276,
+            "scrollWidth": 276,
+            "longestOptionWidth": 26.719985961914062
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 1148,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 1146,
+            "scrollWidth": 1146,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 1148,
+            "height": 96,
+            "fontSize": 16,
+            "clientWidth": 1146,
+            "scrollWidth": 1146,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "1174px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 390 complete-text200",
+      "status": "pass",
+      "metrics": {
+        "viewport": 390,
+        "documentWidth": 390,
+        "benchContent": 324,
+        "form": 324,
+        "source": 324,
+        "sheet": 324,
+        "sheetContent": 298,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 298,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 148.79994201660156
+          },
+          {
+            "name": "fit",
+            "width": 298,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 248.5118865966797
+          },
+          {
+            "name": "extraTrips",
+            "width": 298,
+            "height": 74,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 298,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 53.43998718261719
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 298,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 298,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "324px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 390 partial-text200",
+      "status": "pass",
+      "metrics": {
+        "viewport": 390,
+        "documentWidth": 390,
+        "benchContent": 324,
+        "form": 324,
+        "source": 324,
+        "sheet": 324,
+        "sheetContent": 298,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 298,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 148.79994201660156
+          },
+          {
+            "name": "fit",
+            "width": 298,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 248.5118865966797
+          },
+          {
+            "name": "extraTrips",
+            "width": 298,
+            "height": 74,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 298,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": 53.43998718261719
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 298,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 298,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 296,
+            "scrollWidth": 296,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "324px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 844 complete-text200",
+      "status": "pass",
+      "metrics": {
+        "viewport": 844,
+        "documentWidth": 844,
+        "benchContent": 770,
+        "form": 770,
+        "source": 770,
+        "sheet": 770,
+        "sheetContent": 744,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 744,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": 148.79994201660156
+          },
+          {
+            "name": "fit",
+            "width": 744,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": 248.5118865966797
+          },
+          {
+            "name": "extraTrips",
+            "width": 744,
+            "height": 74,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 744,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": 53.43998718261719
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 744,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 744,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "770px"
+      },
+      "contrast": null
+    },
+    {
+      "name": "Reviewed closeout 844 partial-text200",
+      "status": "pass",
+      "metrics": {
+        "viewport": 844,
+        "documentWidth": 844,
+        "benchContent": 770,
+        "form": 770,
+        "source": 770,
+        "sheet": 770,
+        "sheetContent": 744,
+        "controls": [
+          {
+            "name": "completion",
+            "width": 744,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": 148.79994201660156
+          },
+          {
+            "name": "fit",
+            "width": 744,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": 248.5118865966797
+          },
+          {
+            "name": "extraTrips",
+            "width": 744,
+            "height": 74,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "rework",
+            "width": 744,
+            "height": 66,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": 53.43998718261719
+          },
+          {
+            "name": "asBuiltDifferences",
+            "width": 744,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          },
+          {
+            "name": "remainingWork",
+            "width": 744,
+            "height": 122,
+            "fontSize": 32,
+            "clientWidth": 742,
+            "scrollWidth": 742,
+            "longestOptionWidth": null
+          }
+        ],
+        "sourceColumns": "770px"
+      },
+      "contrast": null
+    }
+  ],
+  "errors": [],
+  "overlay": false,
+  "physicalDeviceTest": false,
+  "pass": 16,
+  "fail": 0
+}

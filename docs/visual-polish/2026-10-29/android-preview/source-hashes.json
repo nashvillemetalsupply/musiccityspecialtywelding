@@ -1,0 +1,27 @@
+﻿[
+    {
+        "file":  "app/ops/leads/[id]/done-stamp.tsx",
+        "copySha256":  "1455442ccdb54c6936f851bbb5fec99d1925c1ee30e08cbe8fb10621084ce7f6",
+        "currentSha256":  "1455442ccdb54c6936f851bbb5fec99d1925c1ee30e08cbe8fb10621084ce7f6"
+    },
+    {
+        "file":  "app/ops/leads/[id]/job.css",
+        "copySha256":  "60ab71f5eaef0a7582ac9937d2464d77ad2764bd98a828f7bc1f95f14cf74b9a",
+        "currentSha256":  "60ab71f5eaef0a7582ac9937d2464d77ad2764bd98a828f7bc1f95f14cf74b9a"
+    },
+    {
+        "file":  "app/ops/leads/[id]/closeout-photo-input.tsx",
+        "copySha256":  "b93ac1f10f9544987dff23f0ad513dfbed128ec4cd07662a82f039f6c41efb21",
+        "currentSha256":  "d8a08f0e6cd5be2080d6bfc2d50947b986726f7390fb6089576f2d0c22ad4d18"
+    },
+    {
+        "file":  "app/ops/voice-capture-button.tsx",
+        "copySha256":  "b1b3fcf0404805bd2ced249da5d5a64bc08a79d2a48787136041a187a456cd36",
+        "currentSha256":  "269a7cb5432e2da6cd928acf983581a5b250f0f69ae8dd9a233ff537a0a21542"
+    },
+    {
+        "file":  "app/api/ops/transcribe/route.ts",
+        "copySha256":  "8a7741df82703c08c8fe23b6f11d0ca92a66036ffe1df5426163c302c7c48c5a",
+        "currentSha256":  "7307ac9897d1fcf95ad019c1d0436d0290abbdb5fb78a874153047c07383a94a"
+    }
+]
