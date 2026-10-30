@@ -27,6 +27,9 @@ yarn-error.log*
 next-env.d.ts
 
 # local backups and QA artifacts
+/mcsw-backup.dump*
+/mcsw-restored.dump*
+/.mcsw-backup-*
 /.backups/
 /.tmp/
 /.codex/

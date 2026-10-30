@@ -1,4 +1,7 @@
 .backups
+.mcsw-backup-*
+mcsw-backup.dump*
+mcsw-restored.dump*
 .next
 .scratch
 .shepherd-signals.jsonl

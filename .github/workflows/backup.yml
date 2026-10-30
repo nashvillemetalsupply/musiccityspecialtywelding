@@ -25,13 +25,13 @@ jobs:
 
       - name: Dump and encrypt database
         env:
-          PGDATABASE: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
           BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
         run: |
           set -euo pipefail
           umask 077
           trap 'rm -f mcsw-backup.dump' EXIT
-          if [[ -z "$PGDATABASE" ]]; then
+          if [[ -z "$DATABASE_URL_UNPOOLED" ]]; then
             echo "::error::Set the DATABASE_URL_UNPOOLED repository secret before enabling backups."
             exit 1
           fi
@@ -43,14 +43,7 @@ jobs:
           # Docker inherits this existing file's mode, not the host shell's umask.
           : > mcsw-backup.dump
           chmod 600 mcsw-backup.dump
-          docker run --rm \
-            --env PGDATABASE \
-            --env 'PGOPTIONS=-c default_transaction_read_only=on' \
-            --volume "$GITHUB_WORKSPACE:/backup" \
-            --workdir /backup \
-            postgres:17-alpine \
-            pg_dump --format=custom --no-owner --no-acl \
-              --file=/backup/mcsw-backup.dump
+          node scripts/backup-dump.mjs
           test -s mcsw-backup.dump
           node scripts/backup-crypto.mjs encrypt mcsw-backup.dump mcsw-backup.dump.enc
           test -s mcsw-backup.dump.enc

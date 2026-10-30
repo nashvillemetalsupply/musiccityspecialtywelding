@@ -8,7 +8,8 @@ https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflo
 ## Enable only after the secure workflow is released
 
 The predeployment branch adds authenticated AES-256-GCM encryption. Until that
-version of `.github/workflows/backup.yml` and `scripts/backup-crypto.mjs` is on the
+version of `.github/workflows/backup.yml`, `scripts/backup-dump.mjs`, and
+`scripts/backup-crypto.mjs` is on the
 default branch, **do not add `DATABASE_URL_UNPOOLED` to repository secrets or run
 the old backup workflow**. The old workflow uploads plaintext. No secrets were
 provisioned and no backup workflow was triggered in the October 29 audit.
@@ -44,6 +45,19 @@ header accompany each backup; a 128-bit GCM tag detects corruption/wrong keys.
 Output is published only after successful completion, never over an existing
 file. An interrupted process can leave a private `.partial` file; delete it
 before retrying. Never upload wildcard paths from the backup workspace.
+
+The dump helper parses the connection URL into separate libpq environment
+variables; a URI in `PGDATABASE` alone is not expanded by libpq. Credentials never
+appear in Docker/pg_dump arguments or public logs. The helper forces read-only
+transactions, a 15-second connection timeout, and `sslmode=verify-full`, using
+Node 24's bundled public CA roots in a temporary owner-only file mounted into
+the container. It preserves required channel binding and refuses URL options
+that could redirect or override the session. `--no-password` prevents an absent
+credential from hanging on an interactive prompt. Docker must be available;
+errors are deliberately sanitized rather than printing connection details.
+On a failed or timed-out dump, the helper also makes a bounded cleanup attempt
+against only its recorded container ID. The shell trap removes the plaintext;
+Git and deployment exclusions cover known backup and temporary certificate paths.
 
 ## Restore check in an isolated environment
 
