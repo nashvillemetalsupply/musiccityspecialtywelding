@@ -206,22 +206,19 @@ svg{display:block}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
 .card.figures{border:0;background:none}
 
-/* The three numbers are colour fields, not cards: the shop's own positive,
-   warning and danger, deepened enough to hold bone text at 4.5:1. */
-/* Two tiles side by side on a phone; stacked they cost a whole screen before
-   the tracker. */
-.figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2);border:0;background:none}
-.figure{border-radius:var(--r-md)}
-.figure{padding:var(--s3) var(--s4);min-width:0}
+/* Summary tiles keep the same reading order at every width: label, total,
+   then a wrapping ledger of values and labels. */
+.figures{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s3);border:0;background:none}
+.figure{display:flex;flex-direction:column;align-items:stretch;padding:var(--s4);min-width:0;border-radius:var(--r-md)}
 .figure p:where(.figure-label){font-size:var(--t-sub);font-weight:var(--w-med);color:var(--text-secondary)}
-/* On a phone two tiles share 390px, so the caption sits under the number
-   instead of beside it -- "36 on the books" broke the 36 into two lines. The
-   desktop block puts them back on one baseline. */
-.figure .n{display:flex;flex-wrap:wrap;min-width:0;flex-direction:column;align-items:flex-start;gap:0;margin:var(--s2) 0 0}
-.figure .n b{max-width:100%;flex-shrink:0;white-space:normal;overflow-wrap:anywhere}
-.figure .n span{color:var(--text-muted);font-size:var(--t-data)}
-.figure .under{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin:var(--s3) 0 0;
-  font-size:var(--t-caption);color:var(--text-secondary)}
+.figure .n{min-width:0;margin:var(--s2) 0 0;line-height:var(--lh-display)}
+.figure .n b{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.figure .under{display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--s4);margin:var(--s4) 0 0;
+  min-width:0;font-size:var(--t-caption);line-height:var(--lh-caption);color:var(--text-secondary)}
+.figure-stats .figure-stat{display:flex;flex:1 1 5rem;flex-direction:column;gap:var(--s1);min-width:0}
+.figure-stats dt,.figure-stats dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.figure-stats dd{order:-1;color:var(--on-field);font-size:var(--t-title);font-weight:var(--w-semi);
+  line-height:var(--lh-title);font-variant-numeric:tabular-nums}
 
 /* The post handoff belongs on the wall because it is part of the job's close,
    not a setting someone should have to hunt for. The inset action mark keeps
@@ -255,33 +252,12 @@ svg{display:block}
 .cpl .under{flex-basis:100%;font-size:var(--t-caption);color:var(--text-secondary)}
 .figures .figure,
 .figures .figure p:where(.figure-label),
-.figures .figure .n span,
 .figures .figure .under,
 .figures .figure .under b,
 .figures .figure .n b{color:var(--on-field)}
 .figures .figure p:where(.figure-label),
-.figures .figure .n span,
 .figures .figure .under{color:var(--on-field-muted)}
 .figures .figure .under b{color:var(--on-field);font-weight:var(--w-semi)}
-/* an outline rather than a translucent fill: white at 16% sits differently on
-   each of the three fields and cannot be measured honestly. The alpha stays a
-   literal — it is a translucent mark over whichever field it lands on, not one
-   of the field colours, and turning it into a token would misname it. */
-.figures .figure .chip{background:transparent;color:var(--on-field);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
-.figures .figure .chip i{background:var(--on-field)}
-/* the two graphics inside the fields were tinted with status colours that only
-   read on paper; on a saturated field they measured 1.16:1 */
-.figures .figure .spark polyline{stroke:var(--on-field)}
-.figures .figure .spark circle{fill:var(--on-field);stroke:transparent}
-.figures .figure .bar i{background:rgba(255,255,255,.28)}
-.figures .figure .bar i.good{background:var(--on-field)}
-.figures .figure .bar i.warn{background:rgba(255,255,255,.45)}
-.bar{display:flex;gap:2px;width:64px;flex:none}   /* 2px: a hairline gutter,
-                                                     not a spacing step      */
-.bar i{height:12px;flex:1;border-radius:2px;background:var(--status-idle-mark)}
-.bar i.good{background:var(--status-good-mark)} .bar i.warn{background:var(--status-warn-mark)}
-
 /* --- the live call sketch: the only place brand colour appears --- */
 /* Rendered at 360 this header never wrapped: the title was squeezed into a
    three-line column and the un-shrinkable button pair pushed the document
@@ -614,32 +590,13 @@ svg{display:block}
    =========================================================================== */
 
 @media (max-width:55rem){
-  .figure{padding:var(--s3)}
   .figure p:where(.figure-label){font-size:var(--t-label)}
-  .figure .n{margin-top:var(--s2)}
-  .figure .n .t-display{font-size:clamp(1.5rem,7.5vw,2rem);line-height:1.1}
-  .figure .n .figure-context{display:none}
-  .figure .under{gap:var(--s1);margin-top:var(--s2);line-height:1.4}
-  .figure .under .chip{height:auto;min-height:0;padding:0;background:none;white-space:normal}
   .social-post-card{padding:var(--s4);gap:var(--s3)}
   .social-post-kicker{letter-spacing:.025em;text-transform:none}
   .track-top{gap:var(--s1) var(--s2)}
   .track-top h1{width:auto;flex:1 1 auto}
   .track-top .count{width:auto}
   .track-top .end{width:auto;margin-left:auto}
-}
-
-/* Phone summaries read as two compact ledger rows. Each amount gets the
-   full row when it cannot share a baseline with its label; no digits are
-   clipped or reduced to caption size as the business grows. */
-@media (max-width:26.25rem){
-  .figures{grid-template-columns:minmax(0,1fr)}
-  .figure{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s1) var(--s3)}
-  .figure p:where(.figure-label){flex:1 1 8rem;min-width:0}
-  .figure .n{flex:0 1 auto;min-width:0;max-width:100%;margin:0;margin-left:auto;align-items:flex-end}
-  .figure .n .t-display{max-width:100%;font-size:clamp(1.5rem,6.5vw,1.75rem);
-    white-space:normal;overflow-wrap:anywhere;text-align:right}
-  .figure .under{flex:1 1 100%;min-width:0;margin:0;gap:var(--s1) var(--s3);overflow-wrap:anywhere}
 }
 
 /* Keep the menu reachable on a 320px viewport with a desktop scrollbar.
@@ -694,12 +651,10 @@ svg{display:block}
     background:var(--surface)}
   .card+.card{margin-top:var(--s5)}
 
-  /* --- the three numbers go back to a row -------------------------------- */
-  .figures{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
+  /* --- summaries share a row, retaining their vertical hierarchy --------- */
+  .figures{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3)}
   .figure+.figure{border-top:0}
   .figure{padding:var(--s5) var(--s6)}
-  .figure .n{flex-direction:row;align-items:baseline;gap:var(--s2);margin-top:var(--s3)}
-  .figure .under{flex-wrap:nowrap}
 
   /* --- the call sketch --------------------------------------------------- */
   .call-top{flex-direction:row;flex-wrap:nowrap;align-items:center;

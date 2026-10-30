@@ -429,8 +429,9 @@ test("the board chrome and Ask Jobs sources point at destinations that still exi
 
 // Crew receives a completed-job count from the existing server projection;
 // the summary must use it rather than render a dash for redacted money.
-test("crew weekly summary uses completed jobs and omits payment marks", () => {
+test("crew weekly summary uses completed jobs and omits the payment breakdown", () => {
   assert.match(PREVIEW_SOURCE, /chrome\.owner \? money\(outTheDoor\.revenueCents\) : outTheDoor\.jobs/)
-  assert.match(PREVIEW_SOURCE, /chrome\.owner && outTheDoor\.jobs > 0 && <span className="bar"/)
-  assert.match(PREVIEW_SOURCE, /!chrome\.owner && <span>Finished and out the door<\/span>/)
+  assert.match(PREVIEW_SOURCE, /chrome\.owner && outTheDoor\.revenueCents !== null &&\s+<dl className="under figure-stats">/)
+  assert.doesNotMatch(PREVIEW_SOURCE, /className="bar"/)
+  assert.match(PREVIEW_SOURCE, /!chrome\.owner && <p className="under">Finished and out the door<\/p>/)
 })
