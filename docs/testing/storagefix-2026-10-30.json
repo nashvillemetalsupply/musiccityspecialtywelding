@@ -1,0 +1,95 @@
+{
+  "task": "STORAGEFIX",
+  "checkedAt": "2026-10-30T09:37:19.194Z",
+  "node": "v24.22.2",
+  "codeCommit": "9b52dcf",
+  "provider": {
+    "checkedAt": "2026-10-30T09:20:31.075Z",
+    "type": "blob",
+    "access": "private",
+    "region": "iad1",
+    "status": "limits-exceeded-suspended",
+    "usageQuotaExceeded": true,
+    "plan": "hobby",
+    "billingPeriod": null,
+    "blockedFrom": "2026-10-13T08:05:39.574Z",
+    "blockedUntil": "2026-11-12T08:05:39.574Z",
+    "inventory": {
+      "count": 417,
+      "bytes": 70410215,
+      "pages": 1,
+      "byPrefix": {
+        "briefs/": {
+          "count": 118,
+          "bytes": 21067008
+        },
+        "glass/": {
+          "count": 2,
+          "bytes": 1151
+        },
+        "leads/": {
+          "count": 297,
+          "bytes": 49342056
+        }
+      }
+    },
+    "exactExhaustedMetric": "unknown",
+    "simpleOperations": "unknown",
+    "advancedOperations": "unknown",
+    "transferBytes": "unknown",
+    "productionEnvKeyCount": 60,
+    "alternateObjectStoreCredentialPresent": false,
+    "fileContentsRead": false,
+    "providerWritesPerformed": false,
+    "productionDatabaseAccessPerformed": false
+  },
+  "checks": {
+    "tests": {
+      "tests": 1124,
+      "pass": 1121,
+      "fail": 0,
+      "skipped": 3
+    },
+    "typecheck": {
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0
+    },
+    "lint": {
+      "command": "node node_modules/eslint/bin/eslint.js . --max-warnings=0",
+      "exitCode": 0
+    },
+    "build": {
+      "command": "node node_modules/next/dist/bin/next build --webpack",
+      "exitCode": 0,
+      "staticPages": 50,
+      "compilationSeconds": 48
+    },
+    "budgets": {
+      "exitCode": 0,
+      "publicBytes": 612409,
+      "publicThreshold": 648316,
+      "boardBytes": 715259,
+      "boardThreshold": 817538
+    },
+    "browser": {
+      "browser": "Chromium",
+      "syntheticOnly": true,
+      "externalRequestsAllowed": false,
+      "checks": 9,
+      "compression": {
+        "originalBytes": 8120018,
+        "preparedBytes": 745963,
+        "width": 1600,
+        "height": 1200
+      },
+      "reloadArchivePreserved": true,
+      "concurrentDedupe": true,
+      "identityAndJobIsolation": true
+    },
+    "productionQaRoutePresent": false
+  },
+  "safeToDeployBeforeReset": false,
+  "deployPerformed": false,
+  "pushPerformed": false,
+  "mergePerformed": false
+}
