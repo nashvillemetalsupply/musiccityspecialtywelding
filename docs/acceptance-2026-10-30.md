@@ -154,3 +154,17 @@ Supplemental read-only live-page layout probes with proposed CSS injected locall
 No paid plan, account creation, dashboard/billing/environment/storage write, production authentication/form/data write, or outbound message was performed. Authorized writes were local fixture activity, code/report commits and pushes, and the conditional application release. No production database was accessed directly under this task.
 
 Report finalized at 2026-10-30T12:39:42.706Z.
+
+## C - Backups (blocked follow-up)
+
+**Result: BLOCKED; section C remains open.** Follow-up at **2026-10-30T12:51:26Z** confirmed that both required repository secret names, `BACKUP_ENCRYPTION_KEY` and `DATABASE_URL_UNPOOLED`, now exist alongside `CRON_SECRET`. No secret value was read, printed, or logged. The earlier missing-secret blocker is superseded by the encryption-key format failure below.
+
+The workflow-first requirement is satisfied: fetched `origin/main` at `37500f865cc997ee7e96726c12103bdd6f3e3330` contains both backup fixes, `2339806` and `039f859`. GitHub file hashes match the reviewed `.github/workflows/backup.yml`, `scripts/backup-dump.mjs`, and `scripts/backup-crypto.mjs`. No workflow release or configuration change was needed.
+
+Dispatched exactly once with `gh workflow run backup.yml --ref main`, then checked with `gh run watch 41058053189 --exit-status`. [Run **41058053189**](https://github.com/nashvillemetalsupply/musiccityspecialtywelding/actions/runs/41058053189) **failed**, from **2026-10-30T12:47:46Z to 2026-10-30T12:47:55Z**, on that reviewed main revision. Checkout and Node setup succeeded. The dump/encrypt step failed its key-format preflight with the static annotation: `Set a 32-byte hexadecimal BACKUP_ENCRYPTION_KEY repository secret before enabling backups.` The production dump command was not reached, and the upload step was skipped.
+
+**Artifact facts:** GitHub reports **zero artifacts** for this run; no actual artifact name, size, or expiration exists. The workflow would name the artifact `mcsw-neon-backup-41058053189`, containing only `mcsw-backup.dump.enc`, with **90-day retention**. These are configured values, not evidence of a created backup. With no artifact available, no download, checksum/manifest check, decryption, or local restore could be performed. No production database write or local database restore occurred.
+
+**Future schedule:** workflow ID `368413259` is **active**, repository Actions are **enabled**, and main retains cron `5 12 * * 0` (Sunday at 12:05 UTC). The next scheduled slot is **2026-11-01T12:05:00Z**, or **November 1, 2026 at 6:05 a.m. CST (America/Chicago)**; actual GitHub start time may be delayed. The key preflight will continue to reject runs until the secret is corrected.
+
+**Required next step:** TJ must replace `BACKUP_ENCRYPTION_KEY` through GitHub's secure secret editor with the independently retained 32-byte key encoded as exactly 64 hexadecimal characters, without sharing it in chat or logs. Then retry the run and verify its ciphertext artifact and permitted local integrity/recovery check before marking backups closed. Sanitized local evidence: `.tmp/crmbackup/summary.json`. No backup closure is claimed by this follow-up.
