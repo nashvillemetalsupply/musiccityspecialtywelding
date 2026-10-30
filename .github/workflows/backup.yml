@@ -19,29 +19,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Dump database in custom format
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Dump and encrypt database
         env:
-          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          PGDATABASE: ${{ secrets.DATABASE_URL_UNPOOLED }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
         run: |
           set -euo pipefail
-          if [[ -z "$DATABASE_URL_UNPOOLED" ]]; then
+          umask 077
+          trap 'rm -f mcsw-backup.dump' EXIT
+          if [[ -z "$PGDATABASE" ]]; then
             echo "::error::Set the DATABASE_URL_UNPOOLED repository secret before enabling backups."
             exit 1
           fi
+          if [[ ! "$BACKUP_ENCRYPTION_KEY" =~ ^[a-fA-F0-9]{64}$ ]]; then
+            echo "::error::Set a 32-byte hexadecimal BACKUP_ENCRYPTION_KEY repository secret before enabling backups."
+            exit 1
+          fi
 
+          # Docker inherits this existing file's mode, not the host shell's umask.
+          : > mcsw-backup.dump
+          chmod 600 mcsw-backup.dump
           docker run --rm \
-            --env DATABASE_URL_UNPOOLED \
+            --env PGDATABASE \
+            --env 'PGOPTIONS=-c default_transaction_read_only=on' \
             --volume "$GITHUB_WORKSPACE:/backup" \
             --workdir /backup \
             postgres:17-alpine \
             pg_dump --format=custom --no-owner --no-acl \
-              --file=/backup/mcsw-backup.dump "$DATABASE_URL_UNPOOLED"
+              --file=/backup/mcsw-backup.dump
           test -s mcsw-backup.dump
+          node scripts/backup-crypto.mjs encrypt mcsw-backup.dump mcsw-backup.dump.enc
+          test -s mcsw-backup.dump.enc
 
-      - name: Upload 90-day backup artifact
+      - name: Upload encrypted 90-day backup artifact
         uses: actions/upload-artifact@v4
         with:
           name: mcsw-neon-backup-${{ github.run_id }}
-          path: mcsw-backup.dump
+          path: mcsw-backup.dump.enc
           if-no-files-found: error
           retention-days: 90
