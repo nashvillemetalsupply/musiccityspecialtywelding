@@ -38,6 +38,17 @@ export function roofCallLine(value: string) {
   return ROOF_CALL_LINES.find((line) => normalizedE164(process.env[line.env]) === normalized) ?? null
 }
 
+export function roofLineByBusiness(business: string) {
+  return ROOF_CALL_LINES.find((line) => line.business === business) ?? null
+}
+
+// Every roof line rings the same cell, so on answer the owner alone hears which
+// business was called before the caller is bridged.
+export function twilioRoofDialTarget(ownerCell: string, business: string) {
+  const whisperUrl = twilioCallbackUrl(`/api/twilio/roof-whisper?line=${encodeURIComponent(business)}`)
+  return `<Number url="${escapeXml(whisperUrl)}">${escapeXml(ownerCell)}</Number>`
+}
+
 function accountCredentialsConfigured() {
   return Boolean(
     /^AC[0-9a-f]{32}$/i.test(process.env.TWILIO_ACCOUNT_SID?.trim() ?? "") &&
@@ -300,9 +311,11 @@ async function inspectTwilioProviderReadiness(): Promise<TwilioProviderReadiness
   // The DNI numbers are printed to every paid visitor. One set in env but not
   // pointed at this app rings nothing, and nothing else would notice, so each
   // gets the same voice checks as the main line. None configured is vacuously
-  // ready: there is nothing a visitor could dial.
+  // ready: there is nothing a visitor could dial. The roof business lines ring
+  // the owner the same way, so a mis-pointed one fails this check too.
   const tracking = trackingNumbers()
-  const trackingResults = await Promise.all(tracking.map(async (trackingNumber) => {
+  const roofNumbers = ROOF_CALL_LINES.map((line) => normalizedE164(process.env[line.env])).filter(Boolean)
+  const trackingResults = await Promise.all([...tracking, ...roofNumbers].map(async (trackingNumber) => {
     const list = await twilioApiJson<{
       incoming_phone_numbers?: Array<{
         phone_number?: string
