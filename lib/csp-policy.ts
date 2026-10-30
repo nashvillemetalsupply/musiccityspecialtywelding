@@ -15,6 +15,10 @@
 // Meta pixel's second gateway (bded8a3c6ae-1-1053047382554.us-central1.run.app,
 // from connect.facebook.net/signals/config). Two img-src reports with blocked
 // "unknown" carry no host and stay unallowlisted.
+// 2026-10-30 (O18 re-read #2, window from 2026-10-23 16:21Z): connect-src needs the
+// Meta pixel's third gateway (n2n5o3nlb661.cloud.run, 3 reports on /, from
+// connect.facebook.net/signals/config). One img-src "unknown" and two eval reports on /
+// carry no host and stay unallowlisted.
 // See docs/testing/2026-10-08-csp-o18-triage.md.
 export const CSP_DIRECTIVES = Object.freeze({
   "default-src": ["'self'"],
@@ -56,6 +60,7 @@ export const CSP_DIRECTIVES = Object.freeze({
     "https://connect.facebook.net",
     "https://m6-211026f8a25b42c08fc190458268b30e.ecs.us-east-2.on.aws",
     "https://bded8a3c6ae-1-1053047382554.us-central1.run.app",
+    "https://n2n5o3nlb661.cloud.run",
     "https://www.google-analytics.com",
     "https://region1.google-analytics.com",
     "https://*.google-analytics.com",
