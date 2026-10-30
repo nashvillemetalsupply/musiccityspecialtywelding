@@ -75,9 +75,15 @@ export async function GET(req: Request) {
   const id = new URL(req.url).searchParams.get("id") ?? ""
   const sql = getSql()
   const rows = (await sql`
-    SELECT status, transcript, last_error, attempts FROM voice_transcription_intents
-    WHERE id = ${id}::text AND operator_id = ${operator.id}::bigint LIMIT 1`) as { status: string; transcript: string; last_error: string; attempts: number }[]
+    SELECT status, transcript, last_error, attempts, blob_path FROM voice_transcription_intents
+    WHERE id = ${id}::text AND operator_id = ${operator.id}::bigint LIMIT 1`) as { status: string; transcript: string; last_error: string; attempts: number; blob_path: string }[]
   if (!rows[0]) return Response.json({ error: "Voice note not found." }, { status: 404 })
+  // The intent can exist even when storage refused its bytes. Only this
+  // operator's device can supply that retained recording for another attempt.
+  if (!rows[0].blob_path) {
+    const { status, transcript, last_error, attempts } = rows[0]
+    return Response.json({ status, transcript, last_error, attempts, uploadRequired: true }, { headers: { "Cache-Control": "private, no-store" } })
+  }
   if (["queued", "failed"].includes(rows[0].status) && rows[0].attempts < 8) {
     const transcript = await transcribeVoiceIntent(id).catch(() => "")
     if (transcript) return Response.json({ status: "completed", transcript, last_error: "", attempts: rows[0].attempts + 1 })

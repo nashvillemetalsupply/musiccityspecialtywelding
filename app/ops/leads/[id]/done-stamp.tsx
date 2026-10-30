@@ -195,7 +195,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
     setReview((current) => current ? { ...current, [key]: value } : current)
   }
 
-  return <section ref={benchRef} className={`ops-done-bench${completed ? " is-done" : ""}`} aria-labelledby={domId("finish-job-title")}>
+  return <section ref={benchRef} className={`ops-done-bench${completed ? " is-done" : ""}${reviewedCloseout ? " is-reviewed" : ""}`} aria-labelledby={domId("finish-job-title")}>
     <div><strong id={domId("finish-job-title")}>{completed ? "Work finished" : "Finish work"}</strong></div>
 
     {!completed && <form ref={finishRef} action={finishAction} onSubmit={(event) => { if (voiceBusy || photoUploading) event.preventDefault() }} onReset={(event) => event.preventDefault()} className={reviewedCloseout ? "ops-closeout-form" : undefined} aria-busy={finishLocked || photoUploading}>
@@ -257,6 +257,18 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       </fieldset>}
 
       </>}
+
+      {reviewedCloseout && review?.completion !== "complete" && <div
+        id={domId("finish-photo")}
+        data-job-fragment="finish-photo"
+        tabIndex={-1}
+        className="ops-closeout-photo-prerequisite"
+      >
+        <p className="t-caption">{review?.completion === "partial"
+          ? "Finished-work photos are added after the work is complete. You can file this partial update and keep the job open."
+          : "Review the closeout before adding a finished-work photo."}</p>
+        <a className="btn btn--edge" href="#closeout-source">{review?.completion === "partial" ? "Update the closeout" : "Write and review the closeout"}</a>
+      </div>}
 
       {(!reviewedCloseout || review?.completion === "complete") && <CloseoutPhotoInput
         leadId={leadId}

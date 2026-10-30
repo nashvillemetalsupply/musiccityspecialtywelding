@@ -455,11 +455,16 @@
 .job-finish-close > :is(.ops-done-bench, .ops-handoff-control) :is(button, summary) { min-height: 44px; border-radius: 0 !important; }
 .job-page .ops-closeout-review-sheet,
 .job-page .ops-done-note { min-width: 0; display: grid; gap: var(--s3); }
-.job-page .ops-closeout-review-sheet { margin: 0; padding: var(--s3); border: 1px solid var(--border); }
-.job-page .ops-closeout-form { display: grid !important; gap: var(--s3); }
+.job-page .ops-done-bench.is-reviewed { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.job-page .ops-closeout-review-sheet { margin: 0; padding: var(--s3); border: 1px solid var(--border);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--t-name) * 16)), 1fr)); }
+.job-page .ops-closeout-form { display: grid !important; grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
 .job-page .ops-closeout-form > label,
 .job-page .ops-closeout-review-sheet label { min-width: 0; display: grid; gap: var(--s2); color: var(--text-secondary);
   font-size: var(--t-label); line-height: var(--lh-label); }
+.job-page .ops-closeout-review-sheet label { grid-column: auto; }
+.job-page .ops-closeout-review-sheet .ops-closeout-wide { grid-column: 1 / -1; }
+.job-page .ops-done-photo > span { color: var(--text-secondary); }
 .job-page .ops-closeout-form > textarea,
 .job-page .ops-closeout-review-sheet :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 48px;
   padding: var(--s3); border: 1px solid var(--border-strong); border-radius: 0; color: var(--text-primary);

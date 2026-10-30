@@ -185,25 +185,28 @@ export function VoiceCaptureButton({
       const poll = () => fetch(`/api/ops/transcribe?id=${encodeURIComponent(intentId)}`, { cache: "no-store", headers: { "X-Voice-Operator-Scope": scope } })
       let response = await poll()
       if (response.status === 409) throw new Error("The signed-in person changed. Your note remains saved on this device.")
-      if (response.status === 404 && saved && !resubmitted) {
+      let state = await response.json().catch(() => null) as { status?: string; transcript?: string; last_error?: string; uploadRequired?: boolean } | null
+      if ((response.status === 404 || (response.ok && state?.uploadRequired === true)) && saved && !resubmitted) {
         try {
           const upload = await uploadSavedVoice(saved, scope)
           resubmitted = true
           const uploadState = await upload.json().catch(() => null) as { transcript?: string } | null
           if (upload.ok && uploadState?.transcript) return uploadState.transcript
           response = await poll()
+          state = await response.json().catch(() => null)
         } catch (error) {
           if (scopeRef.current !== scope || !mountedRef.current) throw error
           resubmitted = false
           continue
         }
       }
-      const state = await response.json().catch(() => null) as { status?: string; transcript?: string; last_error?: string } | null
-      if (response.ok) serverHasIntent = true
+      if (response.ok && state?.uploadRequired !== true) serverHasIntent = true
       if (response.ok && state?.status === "completed" && state.transcript) return state.transcript
       if (state?.status === "failed" && wait === waits.at(-1)) throw new Error(state.last_error || "The saved voice note could not be transcribed yet.")
     }
-    if (!serverHasIntent) throw new Error("That voice note never reached the shop. It is still saved on this phone; reconnect and try again.")
+    if (!serverHasIntent) throw new Error(saved
+      ? "That voice note never reached the shop. It is still saved on this phone; reconnect and try again."
+      : "That recording has not reached storage. Try again from the device that recorded it.")
     throw new Error("Your voice note is safely filed. MCSW Jobs will finish it in the background.")
   }, [ensureScope, uploadSavedVoice, effectiveRecoveryKey])
 

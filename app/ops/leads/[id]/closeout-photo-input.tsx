@@ -20,13 +20,17 @@ export function CloseoutPhotoInput({
 }) {
   const instanceId = useId()
   const receiptRef = useRef<HTMLInputElement>(null)
+  const inFlightRef = useRef(false)
   const [message, setMessage] = useState("")
   const [progress, setProgress] = useState(0)
   const [uploading, setUploading] = useState(false)
+  const [retryFile, setRetryFile] = useState<{ file: File; leadId: number; mode: "completion" | "addendum" } | null>(null)
+  const canRetry = retryFile?.leadId === leadId && retryFile.mode === mode
   const fragment = mode === "completion" ? "finish-photo" : "done-photo"
   const fieldId = `${fragment}-${instanceId}`
 
   async function uploadPhoto(file: File) {
+    if (inFlightRef.current || disabled) return
     if (!file.type.toLowerCase().startsWith("image/") || file.size <= 0 || file.size > MAX_PHOTO_BYTES) {
       if (receiptRef.current) receiptRef.current.value = ""
       setMessage("Choose an image under 12 MB.")
@@ -36,7 +40,9 @@ export function CloseoutPhotoInput({
     const uploadId = crypto.randomUUID()
     const pathname = `closeouts/${uploadId}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/^\.+/, "").slice(-120) || "closeout-image"}`
     if (receiptRef.current) receiptRef.current.value = ""
+    inFlightRef.current = true
     setUploading(true)
+    setRetryFile(null)
     onBusyChange?.(true)
     setProgress(0)
     setMessage("Uploading photo…")
@@ -61,8 +67,13 @@ export function CloseoutPhotoInput({
       onUploaded?.()
     } catch (error) {
       if (receiptRef.current) receiptRef.current.value = ""
-      setMessage(error instanceof Error ? error.message : "The photo did not upload. Choose it again.")
+      setRetryFile({ file, leadId, mode })
+      const detail = error instanceof Error && /suspend|quota|limit.exceeded/i.test(error.message)
+        ? "Photo storage is temporarily unavailable."
+        : "The photo did not upload."
+      setMessage(`${detail} Keep this page open to retry the same photo.`)
     } finally {
+      inFlightRef.current = false
       setUploading(false)
       onBusyChange?.(false)
     }
@@ -87,5 +98,6 @@ export function CloseoutPhotoInput({
       />
     </label>
     {message && <small className="ops-done-voice-error" aria-live="polite">{message}</small>}
+    {canRetry && retryFile && <button type="button" className="ops-closeout-add" disabled={uploading || disabled} onClick={() => void uploadPhoto(retryFile.file)}>Retry photo</button>}
   </>
 }
