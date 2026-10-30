@@ -21,7 +21,7 @@ import { deliverGlassClipboard, glassUrl as customerGlassUrl } from "@/lib/glass
 import { redactCrewText } from "@/lib/visibility"
 import { fileIdentityConflict, findOrCreatePerson, isReservedShopPhone, normalizeEmail, normalizePhone } from "@/lib/people"
 import { lineItemsTotalCents, parseLineItemsText } from "@/lib/job-line-items.mjs"
-import { replaceJobLineItems } from "@/lib/job-line-items"
+import { replaceJobLineItems } from "@/lib/job-line-items.ts"
 import { isSafeRasterImage } from "@/lib/media-safety"
 import { reconcileRoutedLeadProjections } from "@/lib/routing"
 import { attachCloseoutPhotoToLead, getCloseoutPhotoUpload, isCloseoutUploadId } from "@/lib/closeout-photo-uploads"

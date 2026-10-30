@@ -18,18 +18,25 @@ function actionStrip() {
   return JOB.slice(start, end)
 }
 
-test("the sticky strip orders Call, Text, Photo, then the owner quote amount", () => {
+test("the sticky strip orders tracked Call, Text, Photo, then the owner price action", () => {
   const strip = actionStrip()
   const call = strip.indexOf('label="Call"')
   const text = strip.indexOf('href="?replyChannel=text#job-reply">Text</Link>')
   const photo = strip.indexOf('href={lead.completed_at ? "#done-photo" : "#finish-photo"}>Photo</Link>')
   const quote = strip.indexOf("job-action-price")
   assert.ok(call >= 0 && call < text && text < photo && photo < quote, "actions keep the approved order")
-  assert.match(strip, /compact directFallback/)
+  assert.match(strip, /TrackedCallButton[^>]*label="Call"[^>]*compact[^>]*btn--go/)
+  assert.doesNotMatch(strip, /directFallback/)
   assert.doesNotMatch(strip, /sms:/)
   assert.match(strip, /operator\.role === "owner"[\s\S]*?job-action-price[\s\S]*?money\(lead\.estimate_value_cents\)/)
   assert.match(TRACKED_CALL, /const directDialPhone = normalizeUsPhone\(phone\)/)
   assert.match(TRACKED_CALL, /href=\{`tel:\$\{directDialPhone\}`\}/)
+  const contactStart = JOB.indexOf('<div className="job-contact">')
+  const contactEnd = JOB.indexOf('className="job-contact-edit"', contactStart)
+  const contact = JOB.slice(contactStart, contactEnd)
+  assert.match(contact, /!needsJobMatch && !routedToLeadId && hasCustomerPhone && <details className="job-direct-call"/)
+  assert.match(contact, /Call directly — not saved/)
+  assert.match(contact, /href=\{`tel:\$\{customerPhone\}`\}/)
   const stripRule = JOB_CSS.match(/\.job-action-spine\s*\{([^}]*)\}/)?.[1] ?? ""
   const opsTopRule = OPS_SHELL_CSS.match(/\.ops-top\s*\{([^}]*)\}/)?.[1] ?? ""
   const stripZIndex = Number(stripRule.match(/z-index:\s*(\d+)/)?.[1])
@@ -66,13 +73,17 @@ test("the board row opens the job page with its action strip in one tap", () => 
 
 test("Photo opens the photo input for active and completed jobs", () => {
   const strip = actionStrip()
-  assert.match(strip, /className="btn btn--sm btn--go" href=\{lead\.completed_at \? "#done-photo" : "#finish-photo"\}>Photo<\/Link>/)
+  assert.match(strip, /href=\{lead\.completed_at \? "#done-photo" : "#finish-photo"\}>Photo<\/Link>/)
+  assert.match(strip, /hasCustomerPhone \? "btn--edge" : "btn--go"/)
   assert.match(JOB, /id="finish-close"[\s\S]*?completed=\{Boolean\(lead\.completed_at\)\}/)
   assert.match(DONE_STAMP, /\{!completed && <form[\s\S]*?mode="completion"/)
   assert.match(DONE_STAMP, /\{completed && addendumOpen && <form[\s\S]*?mode="addendum"/)
-  assert.match(DONE_STAMP, /window\.location\.hash === "#done-photo"\) setAddendumOpen\(true\)/)
-  assert.match(DONE_STAMP, /getElementById\("done-photo"\)\?\.scrollIntoView/)
-  assert.match(PHOTO_INPUT, /const fieldId = mode === "completion" \? "finish-photo" : "done-photo"/)
+  assert.match(DONE_STAMP, /window\.location\.hash === "#done-photo" && benchRef\.current\?\.getClientRects\(\)\.length\) setAddendumOpen\(true\)/)
+  assert.match(DONE_STAMP, /addendumRef\.current\?\.querySelector<HTMLElement>\('\[data-job-fragment="done-photo"\]'\)/)
+  assert.match(DONE_STAMP, /photo\?\.focus\(\{ preventScroll: true \}\)/)
+  assert.match(PHOTO_INPUT, /data-job-fragment=\{fragment\}/)
+  assert.match(PHOTO_INPUT, /const fieldId = `\$\{fragment\}-\$\{instanceId\}`/)
+  assert.match(PHOTO_INPUT, /const fragment = mode === "completion" \? "finish-photo" : "done-photo"/)
   assert.match(PHOTO_INPUT, /id=\{fieldId\}/)
   assert.match(PHOTO_INPUT, /type="file"[\s\S]*?accept="image\/\*"[\s\S]*?capture="environment"/)
 })

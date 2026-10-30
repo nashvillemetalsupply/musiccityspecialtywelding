@@ -3,7 +3,7 @@ import { experimental_generateSpeech, generateText } from "ai"
 import { AI_MAX_RETRIES, AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek, runAiCall } from "@/lib/ai"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
-import { getOwnerVoiceProfile, ownerVoiceGuide } from "@/lib/voice-of-character"
+import { getOwnerVoiceProfile, ownerVoiceGuide } from "@/lib/voice-of-character.ts"
 import { voiceProfileIsUsable } from "@/lib/voice-of-character.mjs"
 
 export const runtime = "nodejs"

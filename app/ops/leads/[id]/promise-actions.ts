@@ -10,6 +10,7 @@ import { getLead } from "@/lib/ops-data"
 import { createHash } from "node:crypto"
 import { isReservedShopPhone } from "@/lib/people"
 import { isDefinitiveTwilioError } from "@/lib/twilio"
+import { isSmsNotSentError } from "@/lib/sms-provider-truth.ts"
 
 async function context(formData: FormData) {
   const operator = await getAuthenticatedOperator()
@@ -204,7 +205,7 @@ export async function handlePromise(formData: FormData) {
       const sent = await sendSmsPersisted({ to: lead.phone, body, leadId, personId: lead.person_id, operatorId: operator.id, rescheduleId: intentId, idempotencyKey: `reschedule:${intentKey}:attempt:${attempt[0].attempts}` })
       await sql`UPDATE commitment_reschedules SET message_id = ${sent.id}::bigint, status = 'pending', sending_started_at = NULL WHERE id = ${intentId}::bigint AND status = 'sending'`
     } catch (error) {
-      await sql`UPDATE commitment_reschedules SET status = ${isDefinitiveTwilioError(error) ? "failed" : "unknown"}::text, resolved_at = now(), sending_started_at = NULL WHERE id = ${intentId}::bigint`
+      await sql`UPDATE commitment_reschedules SET status = ${isDefinitiveTwilioError(error) || isSmsNotSentError(error) ? "failed" : "unknown"}::text, resolved_at = now(), sending_started_at = NULL WHERE id = ${intentId}::bigint`
       throw error
     }
   }

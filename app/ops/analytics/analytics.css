@@ -122,6 +122,7 @@
 .analytics-card > header > div { display: grid; gap: var(--s1); min-width: 0; }
 
 .analytics-table-wrap { min-width: 0; padding: var(--s4); overflow-x: auto; }
+.analytics-table-wrap:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .analytics-empty { padding: var(--s4); color: var(--text-muted); }
 
 .analytics-table {

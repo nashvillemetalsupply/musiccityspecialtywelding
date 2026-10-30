@@ -3,7 +3,7 @@
 .board-route-nav{display:none}
 
 @media (max-width:55rem){
-  .cust,.calls,.updates-page{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  .customers-page,.calls,.updates-page{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
   .board-route-nav{position:fixed;z-index:90;left:0;right:0;bottom:0;display:flex;align-items:center;
     justify-content:space-around;gap:var(--s1);min-height:56px;padding:var(--s1) var(--s2) env(safe-area-inset-bottom,0px);
     border-top:1px solid var(--border);background:var(--surface);color:var(--text-primary)}

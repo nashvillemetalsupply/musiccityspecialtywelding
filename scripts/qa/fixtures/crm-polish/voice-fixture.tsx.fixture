@@ -1,0 +1,82 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import { VoiceCaptureButton } from "../../ops/voice-capture-button"
+import { scopedVoiceStorageKey } from "../../ops/voice-outbox-client"
+
+const recoveryKey = "qa-polish-voice-audit"
+const ownerScope = "operator:987654321:owner"
+const crewScope = "operator:987654322:crew"
+const ids = ["qa-polish-voice-owner", "qa-polish-voice-crew", "qa-polish-voice-legacy"]
+const keys = [scopedVoiceStorageKey(ownerScope, recoveryKey), scopedVoiceStorageKey(crewScope, recoveryKey), `mcsw-voice:${recoveryKey}`]
+
+async function database() {
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open("mcsw-voice-outbox", 1)
+    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains("voice_intents")) request.result.createObjectStore("voice_intents", { keyPath: "id" }) }
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
+export function VoiceFixture() {
+  const [ready, setReady] = useState(false)
+  const [role, setRole] = useState<"owner" | "crew">("crew")
+  const roleRef = useRef<"owner" | "crew">("crew")
+  const [events, setEvents] = useState<string[]>([])
+  const [stored, setStored] = useState<string[]>([])
+  const [message, setMessage] = useState("")
+  const [transcript, setTranscript] = useState("")
+  async function inspect() {
+    const db = await database()
+    try {
+      const results = await Promise.all(ids.map(id => new Promise<string>((resolve, reject) => {
+        const request = db.transaction("voice_intents", "readonly").objectStore("voice_intents").get(id)
+        request.onsuccess = () => resolve(`${id}: ${request.result ? `preserved (${request.result.scope || "unscoped legacy"})` : "absent"}`)
+        request.onerror = () => reject(request.error)
+      })))
+      setStored(results)
+    } finally { db.close() }
+  }
+  useEffect(() => {
+    let mounted = true
+    const original = window.fetch
+    window.fetch = async (input, init) => {
+      const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url, location.origin)
+      const method = (init?.method || "GET").toUpperCase()
+      const scope = roleRef.current === "owner" ? ownerScope : crewScope
+      if (url.pathname === "/api/ops/cache-session") return Response.json({ voiceScope: scope, role: roleRef.current, sessionId: "synthetic-fixture" })
+      if (url.pathname === "/api/ops/transcribe") {
+        const headers = new Headers(init?.headers)
+        const id = headers.get("X-Voice-Intent-Id") || url.searchParams.get("id")
+        const sentScope = headers.get("X-Voice-Operator-Scope")
+        const bodySize = init?.body instanceof Blob ? init.body.size : 0
+        if (mounted) setEvents(current => [...current, `${method} id=${id} scope=${sentScope} bytes=${bodySize} active=${scope}`])
+        if (method === "GET") return Response.json({ error: "Synthetic note not uploaded yet" }, { status: 404 })
+        return Response.json({ transcript: `[INTERNAL TEST] Recovered ${id} under ${sentScope}. No real recording or provider call.` })
+      }
+      if (method !== "GET") return Response.json({ error: "Fixture blocked this request" }, { status: 403 })
+      return original(input, init)
+    }
+    void (async () => {
+      const db = await database()
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const transaction = db.transaction("voice_intents", "readwrite")
+          ids.forEach((id, index) => transaction.objectStore("voice_intents").put({ id, recoveryKey, ...(index < 2 ? { scope: index === 0 ? ownerScope : crewScope } : {}), contentType: "text/plain", blob: new Blob(["[INTERNAL TEST] Synthetic text blob, not microphone audio."], { type: "text/plain" }) }))
+          transaction.oncomplete = () => resolve()
+          transaction.onerror = () => reject(transaction.error)
+        })
+        keys.forEach((key, index) => localStorage.setItem(key, ids[index]))
+        if (mounted) { await inspect(); setReady(true) }
+      } finally { db.close() }
+    })().catch(error => { if (mounted) setMessage(String(error)) })
+    return () => {
+      mounted = false
+      window.fetch = original
+      keys.forEach(key => { if (ids.includes(localStorage.getItem(key) || "")) localStorage.removeItem(key) })
+      void database().then(db => { const transaction = db.transaction("voice_intents", "readwrite"); ids.forEach(id => transaction.objectStore("voice_intents").delete(id)); transaction.oncomplete = () => db.close(); transaction.onerror = () => db.close() })
+    }
+  }, [])
+  return <section className="card" data-qa-local-interactions style={{ margin: "var(--s4)", padding: "var(--s4)", overflowWrap: "anywhere" }}><h1 className="t-title">Voice identity recovery fixture</h1><p className="t-caption">Real recovery component; seeded synthetic text blobs only. Microphone control is disabled. All transcription requests are intercepted locally.</p><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{(["crew", "owner"] as const).map(nextRole => <button type="button" className="btn btn--edge" key={nextRole} aria-pressed={role === nextRole} onClick={() => { roleRef.current = nextRole; setRole(nextRole) }}>Use {nextRole} identity</button>)}<button type="button" className="btn btn--edge" onClick={() => void inspect()}>Inspect saved notes</button></div>{ready && <VoiceCaptureButton key={role} available disabled recoveryKey={recoveryKey} onError={setMessage} onTranscript={value => { setTranscript(value); window.setTimeout(() => void inspect(), 100) }} />}<p role="status">{message}</p><p>{transcript}</p><h2 className="t-sub">Saved note inventory</h2><pre id="qa-voice-stored" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{stored.join("\n")}</pre><h2 className="t-sub">Intercepted requests</h2><pre id="qa-voice-events" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{events.join("\n")}</pre></section>
+}

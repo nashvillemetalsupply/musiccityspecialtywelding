@@ -3,6 +3,7 @@ import { put } from "@vercel/blob"
 import { getSql } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { transcribeVoiceIntent } from "@/lib/voice-transcription"
+import { voiceOperatorScope } from "@/lib/voice-outbox-scope.ts"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -10,6 +11,13 @@ export const maxDuration = 60
 export async function POST(req: Request) {
   const operator = await getAuthenticatedOperator()
   if (!operator) return Response.json({ error: "Sign in required." }, { status: 401 })
+  const requestedScope = req.headers.get("x-voice-operator-scope")
+  if (!requestedScope) {
+    return Response.json({ error: "Reload to update voice capture. Your saved recording is kept on this device." }, { status: 409 })
+  }
+  if (requestedScope !== voiceOperatorScope(operator)) {
+    return Response.json({ error: "The signed-in operator changed. This recording remains saved on its original device." }, { status: 409 })
+  }
   if (!process.env.DEEPGRAM_API_KEY?.trim() || !process.env.BLOB_READ_WRITE_TOKEN?.trim()) {
     return Response.json({ error: "Voice transcription is not configured." }, { status: 503 })
   }
@@ -21,7 +29,7 @@ export async function POST(req: Request) {
   const requestedId = req.headers.get("x-voice-intent-id")?.trim() ?? ""
   const id = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestedId) ? requestedId : randomUUID()
   const recoveryKey = (req.headers.get("x-voice-recovery-key") ?? "voice").replace(/[^a-z0-9:_-]/gi, "-").slice(0, 120)
-  const leadMatch = recoveryKey.match(/^(?:done|spike):(\d+)/)
+  const leadMatch = recoveryKey.match(/^(?:closeout|done|spike):(\d+)/)
   const leadId = leadMatch ? Number(leadMatch[1]) : null
   const sql = getSql()
   // Database intent precedes Blob storage and the transcription provider.
@@ -60,6 +68,10 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const operator = await getAuthenticatedOperator()
   if (!operator) return Response.json({ error: "Sign in required." }, { status: 401 })
+  const requestedScope = req.headers.get("x-voice-operator-scope")
+  if (requestedScope && requestedScope !== voiceOperatorScope(operator)) {
+    return Response.json({ error: "The signed-in operator changed. Open this recording with its original operator." }, { status: 409 })
+  }
   const id = new URL(req.url).searchParams.get("id") ?? ""
   const sql = getSql()
   const rows = (await sql`

@@ -4,6 +4,7 @@ import { hashGlassToken } from "@/lib/glass"
 import { sendSmsPersisted } from "@/lib/messages"
 import { isReservedShopPhone } from "@/lib/people"
 import { isDefinitiveTwilioError } from "@/lib/twilio"
+import { SmsNotSentError, isSmsNotSentError } from "@/lib/sms-provider-truth.ts"
 
 type GlassDelivery = {
   lead_id: number
@@ -66,7 +67,7 @@ export async function deliverGlassClipboard(input: { token: string; leadId: numb
     return { alreadySent: true, messageId: null }
   }
   try {
-    if (!lead.phone || isReservedShopPhone(lead.phone)) throw new Error("This work order needs a customer phone.")
+    if (!lead.phone || isReservedShopPhone(lead.phone)) throw new SmsNotSentError("This work order needs a customer phone.")
     const url = glassUrl(input.token)
     const sent = await sendSmsPersisted({
       to: lead.phone,
@@ -101,8 +102,9 @@ export async function deliverGlassClipboard(input: { token: string; leadId: numb
   } catch (error) {
     await sql`
       UPDATE glass_links SET send_claimed_at = NULL,
-        send_status = ${isDefinitiveTwilioError(error) ? "failed" : "unknown"}::text
-      WHERE token_hash = ${hash}::text AND lead_id = ${input.leadId}::bigint AND sent_at IS NULL`
+        send_status = ${isDefinitiveTwilioError(error) || isSmsNotSentError(error) ? "failed" : "unknown"}::text
+      WHERE token_hash = ${hash}::text AND lead_id = ${input.leadId}::bigint AND sent_at IS NULL
+        AND send_attempts = ${lead.send_attempts}::integer`
     throw error
   }
 }

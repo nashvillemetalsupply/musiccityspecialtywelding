@@ -30,7 +30,8 @@ test("concurrent manual payments verify the winning receipt and expose retryable
   const payment = source("app/ops/leads/[id]/payment-form.tsx")
   assert.match(actions, /SELECT lead_id FROM events[\s\S]*external_id = \$\{externalId\}::text/)
   assert.match(actions, /Number\(winner\[0\]\?\.lead_id\) !== leadId/)
-  assert.match(payment, /useActionState\(recordPaymentState, INITIAL_STATE\)/)
+  assert.match(payment, /await recordPaymentState\(previous, data\)/)
+  assert.match(payment, /name="paymentAmount" value=\{amount\}/)
   assert.match(payment, /role=\{state\.status === "error" \? "alert" : "status"\}/)
 })
 

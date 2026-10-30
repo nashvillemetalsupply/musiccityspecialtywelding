@@ -25,7 +25,7 @@ export default function BoardError({ error, reset }: { error: Error & { digest?:
     <SkipLink />
     <main id="main" tabIndex={-1} className="empty-state" style={{ gridColumn: "1 / -1", gridRow: "1 / -1" }}>
       <h1 className="t-title">The board hit an error.</h1>
-      <p>Your work is saved; reload or go back to the tracker.</p>
+      <p>Reload or return to the tracker. If you were saving a change, check the job before submitting it again.</p>
       <button className="btn btn--edge" onClick={reset}>Try again</button>
       <Link className="btn btn--go" href="/board">Back to the job tracker</Link>
     </main>

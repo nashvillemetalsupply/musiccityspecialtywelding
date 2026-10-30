@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
+import { useId, useActionState, useEffect, useState } from "react"
 import { handoffDisplayState } from "@/lib/shop-brain-invariants.ts"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import {
@@ -29,6 +29,7 @@ export function HandoffControl({
   initialHandoffEventId: number | null
   initialUndoUntil: string | null
 }) {
+  const titleId = useId()
   const [handoffState, handoffAction, handoffPending] = useActionState(markJobHandedOff, initialState)
   const [undoState, undoAction, undoPending] = useActionState(undoJobHandedOff, initialState)
   const [expiredHandoffEventId, setExpiredHandoffEventId] = useState<number | null>(null)
@@ -60,10 +61,10 @@ export function HandoffControl({
       : ""
   const error = undoState.status === "error" ? undoState.message : handoffState.status === "error" ? handoffState.message : ""
 
-  return <section className={`ops-handoff-control${isHandedOff ? " is-handed-off" : ""}`} id="job-close" aria-labelledby="job-handoff-title">
+  return <section className={`ops-handoff-control${isHandedOff ? " is-handed-off" : ""}`} id="job-close" aria-labelledby={titleId}>
     <div className="ops-handoff-copy">
       <span>Pickup or delivery</span>
-      <h2 id="job-handoff-title">{isHandedOff ? "Job closed" : "Close job"}</h2>
+      <h2 id={titleId}>{isHandedOff ? "Job closed" : "Close job"}</h2>
       <p>{isHandedOff
         ? "This job is out of Active Jobs. Its work order and customer history stay available."
         : "Use after pickup or delivery. Closing removes this Ready job from Active Jobs; its work order and customer history stay."}</p>

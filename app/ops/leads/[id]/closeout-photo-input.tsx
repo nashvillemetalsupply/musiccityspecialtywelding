@@ -1,7 +1,7 @@
 "use client"
 
 import { upload } from "@vercel/blob/client"
-import { useRef, useState } from "react"
+import { useId, useRef, useState } from "react"
 
 const MAX_PHOTO_BYTES = 12 * 1024 * 1024
 
@@ -10,17 +10,21 @@ export function CloseoutPhotoInput({
   mode,
   onBusyChange,
   onUploaded,
+  disabled = false,
 }: {
   leadId: number
   mode: "completion" | "addendum"
   onBusyChange?: (busy: boolean) => void
   onUploaded?: () => void
+  disabled?: boolean
 }) {
+  const instanceId = useId()
   const receiptRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState("")
   const [progress, setProgress] = useState(0)
   const [uploading, setUploading] = useState(false)
-  const fieldId = mode === "completion" ? "finish-photo" : "done-photo"
+  const fragment = mode === "completion" ? "finish-photo" : "done-photo"
+  const fieldId = `${fragment}-${instanceId}`
 
   async function uploadPhoto(file: File) {
     if (!file.type.toLowerCase().startsWith("image/") || file.size <= 0 || file.size > MAX_PHOTO_BYTES) {
@@ -70,10 +74,11 @@ export function CloseoutPhotoInput({
       <span>{uploading ? `Uploading photo ${progress}%` : "Add a finished-work photo"}</span>
       <input
         id={fieldId}
+        data-job-fragment={fragment}
         type="file"
         accept="image/*"
         capture="environment"
-        disabled={uploading}
+        disabled={uploading || disabled}
         onChange={(event) => {
           const file = event.currentTarget.files?.[0]
           event.currentTarget.value = ""

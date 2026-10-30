@@ -1,0 +1,101 @@
+import "../../../styles/ops-legacy.css"
+import "../../../styles/control.css"
+import "../../ops/ops-shell.css"
+import "../../ops/leads/[id]/job.css"
+import "../../ops/accounts/[id]/account.css"
+import "../../ops/shop/shop.css"
+import "../customers/customers.css"
+import "../board.css"
+import "../calls/calls.css"
+import "../updates/updates.css"
+import "../../ops/analytics/analytics.css"
+import "../../ops/install/install.css"
+import "../../ops/call-sketch/call-sketch.css"
+import "../../ops/leads/[id]/builds/builds.css"
+import "../../j/[token]/customer-page.css"
+import { notFound } from "next/navigation"
+import { golos, chivo } from "../../fonts"
+import { JobControl, type BoardPaneData } from "../board"
+import { JobCalendar } from "../job-calendar"
+import { PaymentForm } from "../../ops/leads/[id]/payment-form"
+import { MoreMenu } from "../../ops/more-menu"
+import { OpsCompactHeader } from "../../ops/ops-header"
+import { BusinessSwitcher } from "../business-workspace"
+import type { BoardJobRow } from "../../../lib/ops-data"
+import type { CalendarDay } from "../../../lib/job-calendar-data"
+import { FixtureBoundary } from "./fixture-boundary"
+import { JobFixture, AccountFixture } from "./job-fixture"
+import { CustomersFixture, ShopFixture } from "./secondary-fixtures"
+import { extendedSurfaces, ExtendedFixture } from "./extended-fixtures"
+import { FixtureTools, IntakeFixture } from "./fixture-tools"
+import { SkipLink } from "../skip-link"
+
+export const dynamic = "force-dynamic"
+export const metadata = { title: "CRM visual fixture", robots: { index: false, follow: false } }
+
+const NOW = "2026-10-29T17:00:00.000Z"
+
+function job(index: number, owner: boolean): BoardJobRow {
+  const names = ["[INTERNAL TEST] Riverbend Fabrication & Equipment", "[INTERNAL TEST] Alexander Montgomery-Washington", "[INTERNAL TEST] Lebanon Marina", "[INTERNAL TEST] Cedar Ridge", "[INTERNAL TEST] Southside Transport"]
+  const stages = ["attention", "shop", "waiting", "ready", "attention"] as const
+  const reasons = ["Customer text waiting", "In the shop", "Waiting on customer", "Ready for customer", "Promise overdue"]
+  return {
+    id: 987654321 + index, public_id: `TEST-${index + 1}`, created_at: `2026-10-${29-index}T15:00:00.000Z`, updated_at: NOW,
+    first_name: names[index], last_name: "", phone: "", phone_is_placeholder: true, email: "fixture@example.invalid",
+    service: ["Trailer / Truck Welding Repair", "Architectural Welding & Fabrication", "Aluminum / Boat Welding", "Custom Metal Planter Boxes", "Equipment & Structural Repair"][index],
+    message: ["Repair the cracked trailer tongue and reinforce both mounting brackets before the next delivery run.", "Fabricate a driveway gate with a pedestrian opening. Confirm the opening width and hinge clearance before cutting.", "Repair the aluminum swim platform and check mounting points for corrosion.", "Four weathering steel planters, ready for pickup.", "ThisIsAnIntentionallyLongUnbrokenCustomerReferenceToCheckWrappingWithoutHidingImportantContent"][index],
+    crew_message: null, preferred_contact: "phone", photo_count: 0, source: "internal-test", gclid: "", utm_source: "", utm_medium: "", utm_campaign: "", utm_term: "", utm_content: "", landing_page: "", referrer: "", ip: "", user_agent: "", is_test: true,
+    status: index === 0 ? "new" : "qualified", status_reason: "", first_response_at: index ? NOW : null, first_response_channel: "", next_follow_up_at: null, follow_up_notified_at: null,
+    person_id: null, assigned_operator_id: null, assigned_operator_name: "", routed_to_lead_id: null, photos: [], invoice_number: "", invoiced_at: null, invoice_due_at: null, invoice_pay_url: "", paid_at: null, paid_amount_cents: null,
+    invoice_total_cents: owner ? 87500 : null, estimate_value_cents: owner ? 87500 + index * 18200 : null, quoted_at: null, won_at: null, lost_at: null, revenue_cents: null, completed_at: null, handed_off_at: null, review_requested_at: null, review_received: false,
+    notes: "[INTERNAL TEST] Synthetic visual inspection data.", crew_notes: null, email_delivery_status: "", email_delivery_error: "", email_delivered_at: null, glass_caption_draft: "", glass_caption_approved_at: null, scheduled_at: index === 1 ? "2026-10-30T15:00:00.000Z" : null, work_started_at: null, person_job_count: 3, intake_key: `fixture-${index}`,
+    board_stage: stages[index], board_reason: reasons[index], board_since: NOW, board_stop_signal: index === 0, text_ready: false, heard_quote_cents: null,
+  }
+}
+
+export default async function CrmPolishFixture({ searchParams }: { searchParams: Promise<{ role?: string; state?: string; surface?: string; tools?: string }> }) {
+  if (process.env.NODE_ENV !== "development") notFound()
+  const query = await searchParams
+  const owner = query.role !== "crew"
+  const empty = query.state === "empty"
+  const large = query.state === "large"
+  const items = empty ? [] : Array.from({ length: 5 }, (_, index) => job(index, owner))
+  if (large && owner) for (const item of items) item.estimate_value_cents = 123456789
+  const board: BoardPaneData = {
+    counts: { board: items.length, attention: empty ? 0 : 2, shop: empty ? 0 : 1, waiting: empty ? 0 : 1, ready: empty ? 0 : 1, closed: 12 },
+    signalCounts: { waiting: empty ? 0 : 1, noreply: empty ? 0 : 1, promise: empty ? 0 : 1, followup: 0, bounced: 0 },
+    promises: { kept: 9, open: 2, broken: 1, overdue: null },
+    week: Array.from({ length: 7 }, (_, index) => ({ date: `2026-11-0${index + 1}`, dow: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][index], promises: index === 2 ? [{ leadId: null, label: "Confirm gate opening and hinge clearance", customer: "[INTERNAL TEST] Riverbend" }] : [], invoices: [], followUps: [] })),
+    outTheDoor: { jobs: 5, paidJobs: 4, revenueCents: owner ? 482500 : null, stillOutCents: owner ? 77500 : null },
+    costPerLead: null, medianFirstResponseMinutes: 6,
+    todayTrail: empty ? [] : [{ id: 1, occurredAt: NOW, kind: "note_added", body: "[INTERNAL TEST] Customer confirmed the trailer is ready to drop off tomorrow morning.", customer: "Riverbend Fabrication" }],
+    callSketch: null, voice: null, items, details: new Map(items.map(item => [item.id, { activeClaims: [], commitments: [], newestPhotoAt: null, eventTrail: [], lineItems: [] }])),
+    resultTotal: items.length, pageSize: 8, page: 1, hasNext: false, stage: "board", stages: ["board", "attention", "shop", "waiting", "ready", "closed"],
+  }
+  if (large) {
+    board.counts = { board: 1284, attention: 1002, shop: 124, waiting: 134, ready: 24, closed: 9821 }
+    board.signalCounts = { waiting: 1002, noreply: 1284, promise: 1024, followup: 1200, bounced: 1000 }
+    board.resultTotal = 1284
+    board.hasNext = true
+    board.promises = { kept: 12345, open: 1024, broken: 1000, overdue: null }
+    board.outTheDoor = { jobs: 1234, paidJobs: 1002, revenueCents: owner ? 123456789 : null, stillOutCents: owner ? 98765432 : null }
+  }
+  const calendar: CalendarDay[] = Array.from({ length: 31 }, (_, index) => ({
+    dateKey: `2026-10-${String(index + 1).padStart(2, "0")}`,
+    jobs: index === 29 ? [{ id: 987654321, publicId: "TEST-1", customer: "[INTERNAL TEST] Riverbend Fabrication", service: "Trailer repair", scheduledAt: "2026-10-30T15:30:00.000Z" }] : [],
+  }))
+  const role = owner ? "owner" : "crew"
+  const menu = <MoreMenu role={role} vapidPublicKey="" voiceReady={false} includeTests={owner} />
+  if (extendedSurfaces.includes(query.surface || "")) {
+    const surface = query.surface || ""
+    const content = <ExtendedFixture surface={surface} state={query.state || ""} owner={owner} />
+    const shell = ["analytics", "install", "builds", "sketch", "dock", "voice", "payment-check"].includes(surface)
+    return <><FixtureBoundary><div className={`${golos.variable} ${chivo.variable}`}>{shell || surface === "login" ? <div className="ops-shell"><div className="ops-frame">{surface === "login" ? <SkipLink /> : <OpsCompactHeader name="Daniel" role={role} voiceReady={false} />}<main id="main" tabIndex={-1} data-qa-local-interactions={surface === "login" ? true : undefined}>{content}</main></div></div> : content}</div></FixtureBoundary>{query.tools === "1" && <FixtureTools />}</>
+  }
+  return <><FixtureBoundary>
+    {query.surface === "customers" ? <CustomersFixture owner={owner} empty={empty} /> : query.surface === "job" || query.surface === "account" || query.surface === "shop" ? <div className={`ops-shell ${golos.variable} ${chivo.variable}`}><div className="ops-frame"><OpsCompactHeader name="Daniel" role={role} voiceReady={false} /><main id="main" tabIndex={-1}>{query.surface === "job" ? <JobFixture owner={owner} failed={query.state === "failed"} pending={query.state === "pending"} completed={query.state === "completed"} /> : query.surface === "shop" ? <ShopFixture owner={owner} /> : <AccountFixture />}</main></div></div> : query.surface === "forms" ? <div className={`ops-shell ${golos.variable} ${chivo.variable}`}><div className="ops-frame">
+      <OpsCompactHeader name="Daniel" role={role} voiceReady={false} /><main id="main" tabIndex={-1}><div className="intake-page"><IntakeFixture owner={owner} empty={empty} /></div>
+      <section className="job-page"><h1 className="t-title">[INTERNAL TEST] Payment form</h1><PaymentForm leadId={987654321} receiptKey="fixture-payment" reversalKey="fixture-reversal" paidAmountCents={25000} invoiceTotalCents={87500} paidAt={null} /></section></main>
+    </div></div> : <div className={`${golos.variable} ${chivo.variable} board-workspace`}><BusinessSwitcher /><JobControl board={board} chrome={{ date: "Thursday, Oct 29", operatorInitial: "D", owner, query: "", includeTests: owner }} nowMs={Date.parse(NOW)} fontClass={`${golos.variable} ${chivo.variable}`} menu={menu} calendar={<JobCalendar key="board-calendar" days={calendar} todayDateKey="2026-10-29" />} /></div>}
+  </FixtureBoundary>{query.tools === "1" && <FixtureTools />}</>
+}

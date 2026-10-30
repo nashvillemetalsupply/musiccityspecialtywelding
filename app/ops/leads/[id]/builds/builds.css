@@ -309,7 +309,6 @@
   color: inherit;
   font-size: var(--t-caption);
   font-weight: var(--w-reg);
-  opacity: .8;
 }
 
 .ops-builds-inline-form {

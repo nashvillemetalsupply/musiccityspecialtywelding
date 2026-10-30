@@ -2,15 +2,20 @@
 
 import Link from "next/link"
 import { Menu as MenuIcon, X as CloseIcon } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { PushToggle } from "./push-toggle"
 import { ShopDock } from "./shop-dock"
 import { RecoveryControl } from "@/app/board/recovery-control"
 
 export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "", includeTests = false }: { role: "owner" | "crew"; vapidPublicKey: string; voiceReady: boolean; initialSearch?: string; includeTests?: boolean }) {
+  const instanceId = useId()
+  const panelId = `ops-more-panel-${instanceId}`
+  const titleId = `ops-more-title-${instanceId}`
+  const searchId = `ops-menu-job-search-${instanceId}`
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const panelRef = useRef<HTMLElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (["#radio", "#handset"].includes(window.location.hash)) setOpen(true)
@@ -24,12 +29,12 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "",
     // Make every page surface outside the dialog unavailable to assistive
     // technology, including rails, headers and secondary board pages. Walking
     // ancestor siblings is resilient to the menu being mounted in different
-    // shells; the trigger stays available as the dialog's Close control.
+    // shells. The Close control is inside the modal; the opener is inert.
     const previousInert = new Map<HTMLElement, boolean>()
-    let branch: HTMLElement | null = document.querySelector(".ops-more-backdrop")
+    let branch: HTMLElement | null = panelRef.current?.parentElement ?? null
     while (branch?.parentElement) {
       for (const sibling of branch.parentElement.children) {
-        if (!(sibling instanceof HTMLElement) || sibling === branch || sibling === trigger) continue
+        if (!(sibling instanceof HTMLElement) || sibling === branch) continue
         if (!previousInert.has(sibling)) previousInert.set(sibling, sibling.inert)
         sibling.inert = true
       }
@@ -37,7 +42,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "",
       if (branch === document.body) break
     }
     document.body.style.overflow = "hidden"
-    trigger?.focus()
+    closeRef.current?.focus()
     const keydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault()
@@ -45,11 +50,12 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "",
         return
       }
       if (event.key !== "Tab") return
-      const focusable = [...(trigger ? [trigger] : []), ...(panelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? [])]
+      const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]):not([type='hidden']), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]") ?? []).filter(element => element.tabIndex >= 0 && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden" && !element.closest("[inert]"))
       if (!focusable.length) return
       const first = focusable[0]
       const last = focusable[focusable.length - 1]
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+      if (!panelRef.current?.contains(document.activeElement)) { event.preventDefault(); (event.shiftKey ? last : first).focus() }
+      else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
     }
     window.addEventListener("keydown", keydown)
@@ -62,14 +68,14 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "",
   }, [open])
   const close = () => setOpen(false)
   return <>
-    <button ref={triggerRef} className="ops-more-trigger" type="button" aria-label={open ? "Close menu" : "Open menu"} aria-haspopup="dialog" aria-expanded={open} aria-controls="ops-more-panel" onClick={() => open ? close() : setOpen(true)}><span className="ops-menu-icon" aria-hidden="true"><MenuIcon className="is-menu" /><CloseIcon className="is-close" /></span></button>
+    <button ref={triggerRef} className="ops-more-trigger" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => open ? close() : setOpen(true)}><span className="ops-menu-icon" aria-hidden="true"><MenuIcon className="is-menu" /><CloseIcon className="is-close" /></span></button>
     {open && <div className="ops-more-backdrop" onPointerDown={(event) => { if (event.target === event.currentTarget) close() }}>
-      <aside ref={panelRef} className="ops-more-panel" id="ops-more-panel" role="dialog" aria-modal="true" aria-labelledby="ops-more-title">
-        <header><div><span>MCSW</span><h2 id="ops-more-title">Menu</h2></div></header>
+      <div ref={panelRef} className="ops-more-panel" id={panelId} role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <header role="none"><div><span>MCSW</span><h2 id={titleId}>Menu</h2></div><button ref={closeRef} type="button" className="ops-more-close" aria-label="Close menu" onClick={close}><CloseIcon aria-hidden="true" /><span>Close</span></button></header>
         <form className="ops-more-search" action="/board" method="get" role="search" onSubmit={close}>
-          <label htmlFor="ops-menu-job-search">Find a job</label>
+          <label htmlFor={searchId}>Find a job</label>
           <div>
-            <input id="ops-menu-job-search" name="q" type="search" autoComplete="off" aria-label="Search jobs" defaultValue={initialSearch} placeholder="Name, job, or work" />
+            <input id={searchId} name="q" type="search" autoComplete="off" aria-label="Search jobs" defaultValue={initialSearch} placeholder="Name, job, or work" />
             {includeTests && <input type="hidden" name="tests" value="1" />}
             <button type="submit">Search</button>
           </div>
@@ -92,7 +98,7 @@ export function MoreMenu({ role, vapidPublicKey, voiceReady, initialSearch = "",
           <PushToggle vapidPublicKey={vapidPublicKey} />
           <form action="/api/ops/logout" method="post"><button type="submit">Sign out</button></form>
         </div>
-      </aside>
+      </div>
     </div>}
   </>
 }

@@ -33,6 +33,7 @@ next-env.d.ts
 /skill-staging/
 /tmp/
 /lighthouse*.json
+/debug.log
 /GROWTH_GAPS_AUDIT_*.md
 /.preview-*.log
 /.tmp-*.log

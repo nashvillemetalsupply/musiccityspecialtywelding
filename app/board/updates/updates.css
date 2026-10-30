@@ -68,8 +68,8 @@
    same 44px target here that the tracker gives it. */
 .updates-page .ops-update-open,
 .updates-page .ops-wire .ops-safe-action{
-  height:var(--control);padding:0 var(--s3);
-  font-size:var(--t-label);font-weight:var(--w-semi);white-space:nowrap;
+  min-height:var(--control);height:auto;padding:var(--s1) var(--s3);
+  font-size:var(--t-label);font-weight:var(--w-semi);white-space:normal;overflow-wrap:anywhere;text-align:center;
   display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
   color:var(--text-primary);box-shadow:inset 0 0 0 1px var(--border);
   transition:background .15s var(--ease),color .15s var(--ease)}
@@ -79,7 +79,7 @@
 
 .updates-page .ops-wire-action{flex:0 0 100%;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
 .updates-page .ops-wire-action form{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
-.updates-page .ops-wire-action input{height:var(--control);min-width:6rem;padding:0 var(--s3);
+.updates-page .ops-wire-action input{min-height:var(--control);height:auto;min-width:6rem;padding:0 var(--s3);
   border:1px solid var(--border);background:var(--surface-raised);
   color:var(--text-primary);font:inherit;font-size:var(--t-label)}
 .updates-page .ops-wire-result{flex:0 0 100%;font-size:var(--t-caption);color:var(--text-secondary);
@@ -94,7 +94,7 @@
 .updates-page .ops-wire-cabinet > summary span{font-size:var(--t-label);font-weight:var(--w-med);
   color:var(--text-muted)}
 .updates-page .ops-wire-search{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
-.updates-page .ops-wire-search input[type="search"]{flex:1;min-width:12rem;height:var(--control);
+.updates-page .ops-wire-search input[type="search"]{flex:1;min-width:12rem;min-height:var(--control);height:auto;
   padding:0 var(--s3);border:1px solid var(--border);background:var(--surface-raised);
   color:var(--text-primary);font:inherit;font-size:var(--t-body)}
 /* Search is the cabinet's only committing control, so it takes the action
@@ -109,6 +109,8 @@
   text-underline-offset:3px;min-height:44px;display:inline-flex;align-items:center}
 .updates-page .ops-wire-archive{font-size:var(--t-label);font-weight:var(--w-semi);
   color:var(--text-primary);text-decoration:underline;text-underline-offset:3px;
+  background:var(--surface);border:1px solid var(--border);font-family:var(--font);
+  letter-spacing:normal;text-transform:none;padding:var(--s2) var(--s3);
   min-height:44px;display:inline-flex;align-items:center}
 
 /* ================================================ the receipt drawer ==== */
@@ -143,8 +145,8 @@
   .ops-update-open,
   .ops-wire .ops-safe-action,
   .ops-paid-moment button{min-height:44px;padding-inline:var(--s4)}
-  .ops-wire-action input,
-  .ops-wire-search input[type="search"]{min-height:44px}
+  .updates-page .ops-wire-action input,
+  .updates-page .ops-wire-search input[type="search"]{min-height:44px;font-size:max(1rem,var(--t-name))}
 }
 
 /* ============================================= the marketing wire, undone ==
@@ -169,3 +171,9 @@
 .updates-page .ops-wire-action form{margin:0}
 .updates-page .ops-wire-result{margin:0;font-weight:var(--w-med)}
 .updates-page .ops-wire-empty{padding:0;color:var(--text-muted)}
+
+/* Keep narrow-phone update text readable; its action follows the whole message. */
+@media (max-width:26.25rem){
+  .updates-page .ops-update-copy{flex-basis:100%}
+  .updates-page .ops-update-open{flex:1 0 100%;min-height:44px}
+}

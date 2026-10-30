@@ -7,7 +7,7 @@
    is one row per account, and a row says exactly two things: who they are,
    and whether anything of theirs is live right now. */
 
-.cust{min-height:100dvh;background:var(--surface-sunken);color:var(--text-primary);
+.customers-page{min-height:100dvh;background:var(--surface-sunken);color:var(--text-primary);
   font-family:var(--font);padding-bottom:var(--s7)}
 
 .cust-top{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;
@@ -35,3 +35,14 @@
 
 .cust-pages{display:flex;align-items:center;justify-content:space-between;
   gap:var(--s3);padding:var(--s4)}
+
+/* The search label owns its own line on a phone; the field and submit button
+   stay together instead of wrapping into an accidental second row. */
+@media (max-width:55rem){
+  .cust-find{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2)}
+  .cust-find label{grid-column:1/-1}
+  .cust-find .find{width:100%;max-width:none;min-width:0}
+  .cust-find .find input{min-width:0;width:100%;font-size:max(16px,1rem)}
+  .cust-find .btn{min-height:44px}
+  .cust-pages{flex-wrap:wrap}
+}

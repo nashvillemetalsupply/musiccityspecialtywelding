@@ -29,7 +29,7 @@ function loadOpsData(revenueRows) {
   const moduleFakes = new Map([
     ["@/lib/db", { getSql: () => sql }],
     ["@/lib/events", { listBoardEventTrails: async () => [] }],
-    ["@/lib/job-line-items", { listJobLineItemsForLeads: async () => new Map() }],
+    ["@/lib/job-line-items.ts", { listJobLineItemsForLeads: async () => new Map() }],
     ["@/lib/leads", { LEAD_STATUSES: [] }],
     ["@/lib/ad-spend.ts", { AD_CHANNELS: [] }],
     ["@/lib/dni.ts", { dniNumber: () => "" }],

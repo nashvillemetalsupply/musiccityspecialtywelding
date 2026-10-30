@@ -96,6 +96,7 @@
   color: var(--text-primary);
   background: var(--surface-raised);
   font: inherit;
+  font-size: max(1rem, var(--t-name));
 }
 
 .shop-page input::placeholder { color: var(--text-muted); opacity: 1; }
@@ -158,8 +159,9 @@
 .shop-facts dt { color: var(--text-muted); font-size: var(--t-caption); }
 .shop-facts dd { color: var(--text-secondary); }
 
-.shop-actions { padding: 0 var(--s4) var(--s4); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: var(--s2); }
+.shop-actions { padding: 0 var(--s4) var(--s4); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--s2); }
 .shop-actions > .btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; }
+.shop-actions > form > .btn { width: 100%; }
 
 .shop-trust { display: grid; gap: var(--s3); padding: var(--s4); border-top: 1px solid var(--border); background: var(--surface-raised); }
 .shop-trust > div { display: grid; gap: var(--s1); min-width: 0; }
@@ -169,7 +171,7 @@
   .shop-page { padding: var(--s5); gap: var(--s5); }
   .shop-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .shop-form .btn { grid-column: 1 / -1; }
-  .shop-actions { grid-auto-flow: column; grid-template-columns: none; justify-content: start; }
+  .shop-actions { display: flex; flex-wrap: wrap; }
   .shop-actions > .btn { width: auto; }
   .shop-trust { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 }

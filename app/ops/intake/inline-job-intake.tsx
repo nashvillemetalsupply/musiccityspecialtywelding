@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useActionState, useEffect, useRef, useState } from "react"
+import { useId, useActionState, useEffect, useRef, useState } from "react"
 import "./intake.css"
 import { SafeActionButton, SafeSubmitButton } from "../safe-action-controls"
 import { VoiceCaptureButton } from "../voice-capture-button"
@@ -10,7 +10,8 @@ import { changeCallDraftDispositionAction, saveInlineJobAction, undoInlineJobAct
 import { LiveCallSketch } from "@/components/call-sketch/live-call-sketch"
 
 type IntakeSource = "phone-in" | "walk-in"
-type Fields = { name: string; phone: string; need: string }
+type Fields = { name: string; phone: string; need: string; service: string; referral: string }
+const EMPTY_FIELDS: Fields = { name: "", phone: "", need: "", service: "", referral: "" }
 const initialSaveState: InlineJobSaveState = { status: "idle" }
 
 function callLabel(status: string) {
@@ -51,19 +52,22 @@ export function InlineJobIntake({
     lastError: string
   }
 }) {
+  const instanceId = useId()
+  const domId = (name: string) => `${name}-${instanceId}`
   const router = useRouter()
   const [source, setSource] = useState<IntakeSource>(initialSource)
   const [manualIntakeKey, setManualIntakeKey] = useState(intakeKey)
   const [ignoredCallPublicId, setIgnoredCallPublicId] = useState("")
   const activeDraft = draft?.publicId === ignoredCallPublicId ? undefined : draft
   const callIdentity = activeDraft?.publicId ?? `manual:${manualIntakeKey}`
-  const serverCallFields = { name: activeDraft?.name ?? "", phone: activeDraft?.phone ?? "", need: activeDraft?.need ?? "" }
+  const serverCallFields = { ...EMPTY_FIELDS, name: activeDraft?.name ?? "", phone: activeDraft?.phone ?? "", need: activeDraft?.need ?? "" }
   const [callEdit, setCallEdit] = useState<{ identity: string; fields: Fields } | null>(null)
   const callFields = callEdit?.identity === callIdentity ? callEdit.fields : serverCallFields
-  const [walkInFields, setWalkInFields] = useState<Fields>({ name: "", phone: "", need: "" })
+  const [walkInFields, setWalkInFields] = useState<Fields>(EMPTY_FIELDS)
   const [moreOpen, setMoreOpen] = useState(false)
   const [dismissedCall, setDismissedCall] = useState<{ publicId: string; fields: Fields } | null>(null)
   const [actionError, setActionError] = useState("")
+  const [voiceBusy, setVoiceBusy] = useState(false)
   const [hiddenReceiptKey, setHiddenReceiptKey] = useState("")
   const [saveState, saveAction, savePending] = useActionState(saveInlineJobAction, initialSaveState)
   const inbound = Boolean(activeDraft && source === "phone-in")
@@ -92,9 +96,9 @@ export function InlineJobIntake({
     if (!saveFailed && !Object.values(invalid).some(Boolean)) return
     const form = formRef.current
     if (!form) return
-    const target = form.querySelector<HTMLElement>('[aria-invalid="true"]') ?? form.querySelector<HTMLElement>(":invalid")
+    const target = form.querySelector<HTMLElement>('[aria-invalid="true"]') ?? form.querySelector<HTMLElement>(":invalid") ?? (saveFailed ? form.querySelector<HTMLElement>('[name="firstName"]') : null)
     target?.focus()
-  }, [saveFailed, invalid])
+  }, [saveState, saveFailed, invalid])
 
   function switchSource(next: IntakeSource) {
     setSource(next)
@@ -135,7 +139,7 @@ export function InlineJobIntake({
       if (saveState.source === "manual") {
         const nextKey = crypto.randomUUID()
         setManualIntakeKey(nextKey)
-        const restored = { name: saveState.name, phone: saveState.phone, need: saveState.need }
+        const restored = { ...fields, name: saveState.name, phone: saveState.phone, need: saveState.need }
         if (source === "phone-in") setCallEdit({ identity: `manual:${nextKey}`, fields: restored })
         else setWalkInFields(restored)
       }
@@ -155,8 +159,8 @@ export function InlineJobIntake({
     }
     const nextKey = crypto.randomUUID()
     setManualIntakeKey(nextKey)
-    if (source === "phone-in") setCallEdit({ identity: `manual:${nextKey}`, fields: { name: "", phone: "", need: "" } })
-    else setWalkInFields({ name: "", phone: "", need: "" })
+    if (source === "phone-in") setCallEdit({ identity: `manual:${nextKey}`, fields: EMPTY_FIELDS })
+    else setWalkInFields(EMPTY_FIELDS)
   }
 
   function continueAfterDismissed() {
@@ -200,34 +204,35 @@ export function InlineJobIntake({
     </div>
   </section>
 
-  return <section className="card intake" aria-labelledby="jobs-home-intake-title">
+  return <section className="card intake" aria-labelledby={domId("jobs-home-intake-title")}>
     <header className="intake-head">
       <div>
         {source === "phone-in" && activeDraft && <p className="t-caption intake-kicker">{`${callLabel(activeDraft.callStatus)} · ${formatTime(activeDraft.createdAt)}`}</p>}
-        <h1 className="t-title" id="jobs-home-intake-title">{source === "phone-in" ? "Phone call" : "Walk-in"}</h1>
+        <h1 className="t-title" id={domId("jobs-home-intake-title")}>{source === "phone-in" ? "Phone call" : "Walk-in"}</h1>
       </div>
       <div className="intake-links">
         {source === "phone-in" && pendingTotal > 1 && <Link className="btn btn--sm btn--edge" href="/board/calls">{pendingTotal - 1} more {pendingTotal - 1 === 1 ? "call" : "calls"}</Link>}
         {owner && <Link className="btn btn--sm btn--edge intake-sketch-link" href="/ops/call-sketch" aria-label="Open the Call Sketch practice workspace">Call Sketch</Link>}
-        <button type="button" className="btn btn--sm btn--edge" onClick={() => switchSource(source === "phone-in" ? "walk-in" : "phone-in")}>{source === "phone-in" ? "Walk-in" : "Phone call"}</button>
+        <button type="button" className="btn btn--sm btn--edge" disabled={savePending || voiceBusy} onClick={() => switchSource(source === "phone-in" ? "walk-in" : "phone-in")}>{source === "phone-in" ? "Walk-in" : "Phone call"}</button>
       </div>
     </header>
 
-    {(activeDraft?.lastError || actionError || saveState.status === "error") && <p className="intake-alert" role="alert" id="jobs-inline-error">{actionError || (saveState.status === "error" ? saveState.message : activeDraft?.lastError)}</p>}
+    {(activeDraft?.lastError || actionError || saveState.status === "error") && <p className="intake-alert" role="alert" id={domId("jobs-inline-error")}>{actionError || (saveState.status === "error" ? saveState.message : activeDraft?.lastError)}</p>}
 
     {owner && inbound && <LiveCallSketch draftId={activeDraft!.publicId} />}
 
-    <form ref={formRef} action={saveAction} className="intake-form" aria-busy={savePending}>
+    <form ref={formRef} action={saveAction} onSubmit={(event) => { if (voiceBusy) event.preventDefault() }} onReset={(event) => event.preventDefault()} className="intake-form" aria-busy={savePending}>
       {inbound ? <input type="hidden" name="draftId" value={activeDraft!.publicId} /> : <>
         <input type="hidden" name="source" value={source} />
         <input type="hidden" name="intakeKey" value={manualIntakeKey} />
       </>}
+      {!moreOpen && <><input type="hidden" name="service" value={fields.service} /><input type="hidden" name="referral" value={fields.referral} /></>}
 
       <div className="intake-person">
-        <label className="intake-name" htmlFor="jobs-inline-name">
+        <label className="intake-name" htmlFor={domId("jobs-inline-name")}>
           <span className="intake-sr-only">Customer or company name</span>
           <input
-            id="jobs-inline-name"
+            id={domId("jobs-inline-name")}
             name="firstName"
             type="text"
             autoComplete="name"
@@ -235,24 +240,26 @@ export function InlineJobIntake({
             placeholder="Name or company"
             required
             aria-required="true"
-            aria-describedby={saveFailed ? "jobs-inline-error" : undefined}
+            aria-describedby={saveFailed ? domId("jobs-inline-error") : undefined}
             value={fields.name}
+            readOnly={savePending}
             {...flag("firstName")}
             onChange={(event) => setFields((current) => ({ ...current, name: event.target.value }))}
           />
         </label>
         <div className={`intake-phone${source === "walk-in" ? " is-walk-in" : ""}`}>
           <span>{source === "phone-in" ? "called from" : "Phone (optional)"}</span>
-          <label htmlFor="jobs-inline-phone">
+          <label htmlFor={domId("jobs-inline-phone")}>
             <span className="intake-sr-only">Phone number</span>
             <input
-              id="jobs-inline-phone"
+              id={domId("jobs-inline-phone")}
               name="phone"
               type="tel"
               inputMode="tel"
               autoComplete="tel"
               placeholder={source === "walk-in" ? "(615) 555-0123" : undefined}
               value={fields.phone}
+              readOnly={savePending}
               {...flag("phone")}
               onChange={(event) => setFields((current) => ({ ...current, phone: event.target.value }))}
             />
@@ -260,18 +267,19 @@ export function InlineJobIntake({
         </div>
       </div>
 
-      <label className="intake-need" htmlFor="jobs-inline-need">
+      <label className="intake-need" htmlFor={domId("jobs-inline-need")}>
         <span>{inbound ? "Needs (optional)" : "Needs"}</span>
         <textarea
-          id="jobs-inline-need"
+          id={domId("jobs-inline-need")}
           name="message"
           autoComplete="off"
           placeholder={source === "walk-in" ? "What did they bring in?" : "Gate, trailer, repair, fabrication…"}
           rows={2}
           required={!inbound}
           aria-required={!inbound}
-          aria-describedby={saveFailed ? "jobs-inline-error" : undefined}
+          aria-describedby={saveFailed ? domId("jobs-inline-error") : undefined}
           value={fields.need}
+          readOnly={savePending}
           {...flag("message")}
           onChange={(event) => setFields((current) => ({ ...current, need: event.target.value }))}
         />
@@ -280,23 +288,25 @@ export function InlineJobIntake({
       <div className="intake-tools">
         <VoiceCaptureButton
           available={voiceReady}
+          disabled={savePending}
+          onBusyChange={setVoiceBusy}
           className="btn btn--sm btn--edge intake-tool"
           idleLabel="Speak"
           recoveryKey={`home-intake:${activeDraft?.publicId ?? manualIntakeKey}`}
           onTranscript={(transcript) => setFields((current) => ({ ...current, need: [current.need.trim(), transcript.trim()].filter(Boolean).join(" ") }))}
           onError={setActionError}
         />
-        <button type="button" className="btn btn--sm btn--edge intake-tool" aria-expanded={moreOpen} aria-controls="jobs-inline-more" onClick={() => setMoreOpen((current) => !current)}>{moreOpen ? "Close details" : "More details"}</button>
+        <button type="button" className="btn btn--sm btn--edge intake-tool" disabled={savePending} aria-expanded={moreOpen} aria-controls={moreOpen ? domId("jobs-inline-more") : undefined} onClick={() => setMoreOpen((current) => !current)}>{moreOpen ? "Close details" : "More details"}</button>
       </div>
 
-      {moreOpen && <div className="intake-more" id="jobs-inline-more">
-        <label htmlFor="jobs-inline-service"><span>Service</span><select id="jobs-inline-service" name="service" defaultValue=""><option value="">Not set</option><option>Mobile Welding (On-Site)</option><option>Trailer / Truck Welding Repair</option><option>Equipment &amp; Structural Repair</option><option>Architectural Welding &amp; Fabrication</option><option>Specialty Fabrication</option><option>Aluminum / Boat Welding</option><option>Not Sure / Other</option></select></label>
-        <label htmlFor="jobs-inline-referral"><span>How they found us</span><select id="jobs-inline-referral" name="referral" defaultValue=""><option value="">Not asked</option><option>Google</option><option>Repeat customer</option><option>Referral</option><option>Facebook or Instagram</option><option>Other</option></select></label>
+      {moreOpen && <div className="intake-more" id={domId("jobs-inline-more")}>
+        <label htmlFor={domId("jobs-inline-service")}><span>Service</span><select id={domId("jobs-inline-service")} name="service" value={fields.service} disabled={savePending} onChange={(event) => setFields((current) => ({ ...current, service: event.target.value }))}><option value="">Not set</option><option>Mobile Welding (On-Site)</option><option>Trailer / Truck Welding Repair</option><option>Equipment &amp; Structural Repair</option><option>Architectural Welding &amp; Fabrication</option><option>Specialty Fabrication</option><option>Aluminum / Boat Welding</option><option>Not Sure / Other</option></select></label>
+        <label htmlFor={domId("jobs-inline-referral")}><span>How they found us</span><select id={domId("jobs-inline-referral")} name="referral" value={fields.referral} disabled={savePending} onChange={(event) => setFields((current) => ({ ...current, referral: event.target.value }))}><option value="">Not asked</option><option>Google</option><option>Repeat customer</option><option>Referral</option><option>Facebook or Instagram</option><option>Other</option></select></label>
       </div>}
 
       <div className="intake-actions">
-        {source === "walk-in" ? <button type="button" className="btn btn--sm btn--edge" onClick={() => switchSource("phone-in")}>Cancel</button> : owner || !activeDraft ? <SafeActionButton className="btn btn--sm btn--edge" busyLabel="Clearing…" onAction={() => changeDisposition("dismiss")}>Not a job</SafeActionButton> : <span />}
-        <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel={inbound ? "Saving call as job…" : "Saving job…"} disabled={!canSave}>{inbound ? "Save call as job" : "Save job"}</SafeSubmitButton>
+        {source === "walk-in" ? <button type="button" className="btn btn--sm btn--edge" disabled={savePending || voiceBusy} onClick={() => switchSource("phone-in")}>Cancel</button> : owner || !activeDraft ? <SafeActionButton className="btn btn--sm btn--edge" disabled={savePending || voiceBusy} busyLabel="Clearing…" onAction={() => changeDisposition("dismiss")}>Not a job</SafeActionButton> : <span />}
+        <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel={inbound ? "Saving call as job…" : "Saving job…"} disabled={!canSave || voiceBusy}>{inbound ? "Save call as job" : "Save job"}</SafeSubmitButton>
       </div>
     </form>
   </section>

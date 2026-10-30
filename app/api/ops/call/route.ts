@@ -20,13 +20,16 @@ export async function POST(req: Request) {
   if (!/^[0-9a-f-]{36}$/i.test(intentKey)) return Response.json({ error: "Reload the work order before starting this call." }, { status: 400 })
   const sql = getSql()
   const leads = (await sql`
-    SELECT l.id, l.first_name, l.phone, l.person_id, l.is_test,
+    SELECT l.id, l.first_name, l.phone, l.person_id, l.is_test, l.service, l.routed_to_lead_id,
+      COALESCE(p.is_test, false) AS person_is_test,
       COALESCE(p.account_key, '') AS account_key
     FROM leads l LEFT JOIN people p ON p.id = l.person_id
-    WHERE l.id = ${leadId}::bigint LIMIT 1`) as { id: number; first_name: string; phone: string; person_id: number | null; is_test: boolean; account_key: string }[]
+    WHERE l.id = ${leadId}::bigint LIMIT 1`) as { id: number; first_name: string; phone: string; person_id: number | null; is_test: boolean; person_is_test: boolean; service: string; routed_to_lead_id: number | null; account_key: string }[]
   const lead = leads[0]
   if (!lead) return Response.json({ error: "Work order not found." }, { status: 404 })
-  if (lead.is_test) return Response.json({ error: "Tracked calls never leave an INTERNAL TEST work order." }, { status: 409 })
+  if (lead.is_test || lead.person_is_test) return Response.json({ error: "Tracked calls never leave an INTERNAL TEST work order." }, { status: 409 })
+  if (lead.routed_to_lead_id) return Response.json({ error: `This conversation was filed to Job #${lead.routed_to_lead_id}. Open that job before calling.` }, { status: 409 })
+  if (lead.service === "Needs job match") return Response.json({ error: "Choose the correct job before calling." }, { status: 409 })
   const requestedPhone = normalizePhone(body?.targetPhone ?? "")
   const leadPhone = normalizePhone(lead.phone)
   const targetPhone = requestedPhone || leadPhone
@@ -54,15 +57,17 @@ export async function POST(req: Request) {
       mcsw_is_test_row(${leadId}::bigint, ${targetPersonId}::bigint, NULL::bigint, ${pendingSid}::text,
         ${JSON.stringify({ operatorCell: operator.cell_phone })}::jsonb, ${targetPhone}::text))
     ON CONFLICT (idempotency_key) WHERE idempotency_key <> '' DO NOTHING
-    RETURNING id`) as { id: number }[]
+    RETURNING id, is_test`) as { id: number; is_test: boolean }[]
   const prior = rows[0] ? [] : (await sql`
-    SELECT id, status, twilio_sid FROM calls
+    SELECT id, status, twilio_sid, lead_id, to_phone, is_test FROM calls
     WHERE idempotency_key = ${`tracked-call:${operator.id}:${intentKey}`}::text
-    LIMIT 1`) as { id: number; status: string; twilio_sid: string }[]
+    LIMIT 1`) as { id: number; status: string; twilio_sid: string; lead_id: number; to_phone: string; is_test: boolean }[]
   const callId = Number(rows[0]?.id ?? prior[0]?.id)
   const intentSid = rows[0] ? pendingSid : prior[0]?.twilio_sid
   if (!callId) return Response.json({ error: "The tracked call intent could not be filed." }, { status: 500 })
+  if (rows[0]?.is_test || prior[0]?.is_test) return Response.json({ error: "Internal test calls never contact customers." }, { status: 409 })
   if (prior[0]) {
+    if (Number(prior[0].lead_id) !== leadId || prior[0].to_phone !== targetPhone) return Response.json({ error: "This call request belongs to a different job or contact. Reload before calling." }, { status: 409 })
     if (prior[0].status === "unknown") return Response.json({ error: "This call may have started. Check the call receipt before ringing again." }, { status: 409 })
     if (prior[0].status === "failed") return Response.json({ error: "That call did not start. Tap again to retry safely.", retryAllowed: true }, { status: 409 })
     // `persisted` is the safe pre-provider state. A response loss between the
@@ -70,9 +75,9 @@ export async function POST(req: Request) {
     // false success and leaving the customer uncalled.
     if (prior[0].status !== "persisted") return Response.json({ ok: true, callId, message: "That tracked call is already ringing or filed." })
   }
+  const eventId = await recordEvent({ kind: "call.out.intent", actorType: "operator", actorId: operator.id, leadId, personId: targetPersonId, externalId: intentSid, body: `Calling ${lead.first_name || "customer"} through the shop line`, crewBody: `Calling ${lead.first_name || "customer"} through the shop line`, detail: { callId, targetPersonId } })
   const claimed = (await sql`UPDATE calls SET status = 'starting', starting_started_at = now() WHERE id = ${callId}::bigint AND status = 'persisted' RETURNING id`) as { id: number }[]
   if (!claimed[0]) return Response.json({ ok: true, callId, message: "That tracked call is already being handled." })
-  const eventId = await recordEvent({ kind: "call.out.intent", actorType: "operator", actorId: operator.id, leadId, personId: targetPersonId, externalId: intentSid, body: `Calling ${lead.first_name || "customer"} through the shop line`, crewBody: `Calling ${lead.first_name || "customer"} through the shop line`, detail: { callId, targetPersonId } })
   try {
     const call = await startVoiceCall({
       to: operator.cell_phone,

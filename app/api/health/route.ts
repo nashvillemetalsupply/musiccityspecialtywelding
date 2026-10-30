@@ -6,7 +6,7 @@ import {
 import { dbConfigured, getSql } from "@/lib/db"
 import { getOwnerEmail, isAuthorizedCron } from "@/lib/ops-auth"
 import { aiConfigured } from "@/lib/ai"
-import { listDeadNotificationRows, listHealthDeliveryErrors } from "@/lib/delivery-errors"
+import { listDeadNotificationRows, listHealthDeliveryErrors } from "@/lib/delivery-errors.ts"
 import {
   splitHealthDeliveryErrors,
   summarizeDeadNotifications,

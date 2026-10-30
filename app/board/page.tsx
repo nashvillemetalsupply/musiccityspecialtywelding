@@ -10,7 +10,7 @@ import { listTodayEvents } from "@/lib/events"
 import { getLatestBoardCallSketch } from "@/lib/call-sketch-store"
 import { getAuthenticatedOperator, getOpsCacheSessionId } from "@/lib/ops-auth"
 import { voiceTranscriptionConfigured } from "@/lib/voice-transcription"
-import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character"
+import { getOwnerVoiceSnapshot } from "@/lib/voice-of-character.ts"
 import { normalizePage } from "@/lib/pagination"
 import { chivo, golos } from "@/app/fonts"
 import { MoreMenu } from "@/app/ops/more-menu"
@@ -88,10 +88,10 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   // response (throttled to 5 min) so a slow site never slows the board.
   const badges = await leadBadgeCounts()
   after(() => syncLeadFeeds())
-  if (business) return <>
+  if (business) return <div className={`${FONT_CLASS} business-shell`}>
     <BusinessSwitcher active={business} badges={badges} />
     <BusinessWorkspace business={business} operator={operator} saved={params.saved} />
-  </>
+  </div>
   const sessionCacheId = await getOpsCacheSessionId()
   // Internal test rows are owner-only. The flag is decided here, on the server,
   // from the role the session resolved to -- a crew member or a signed-out
@@ -142,7 +142,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     // test mode: test work is not a real shop appointment.
     listMonthJobCalendar(role, now),
   ])
-  const calls = <RecentCalls owner={role === "owner"} nowMs={nowMs} total={pendingCalls.total}
+  const calls = <RecentCalls key="board-recent-calls" owner={role === "owner"} nowMs={nowMs} total={pendingCalls.total}
     calls={pendingCalls.items.map((draft) => ({
       publicId: draft.public_id,
       name: draft.caller_name,
@@ -158,8 +158,9 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
   return <>
     <ThemeBoot />
     <OpsOfflineSupport sessionCacheId={sessionCacheId} />
+    <div className={`${FONT_CLASS} board-workspace`}>
     <BusinessSwitcher badges={badges} />
-    <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
+    <JobControl chrome={chrome} menu={menu} calls={calls} calendar={<JobCalendar key="board-calendar" days={calendar} todayDateKey={centralDateKey(now) ?? ""} quickAddIntakeKey={randomUUID()} />} nowMs={nowMs} fontClass={FONT_CLASS} board={{
     counts: page.counts,
     signalCounts: page.signalCounts,
     promises,
@@ -180,5 +181,6 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
     signal,
     stages: [...JOB_BOARD_STAGES],
   }} />
+    </div>
   </>
 }

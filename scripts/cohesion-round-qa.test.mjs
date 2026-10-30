@@ -82,7 +82,7 @@ test("QA step 4: no invoice plus the settles tick sets fullyPaid", () => {
     paymentRollup({ currentPaidCents: 0, amountCents: 40000, invoiceTotalCents: null, settles: true }),
     { paidTotalCents: 40000, fullyPaid: true },
   )
-  assert.match(PAYMENT_FORM_SOURCE, /<input type="checkbox" name="settles" value="1" \/>/)
+  assert.match(PAYMENT_FORM_SOURCE, /<input type="checkbox"[^\n]*name="settles" value="1"[^\n]*checked=\{settles\}/)
   assert.match(exportedFunction(ACTIONS_SOURCE, "recordPayment"), /const settles = String\(formData\.get\("settles"\) \?\? ""\) === "1"/)
 })
 

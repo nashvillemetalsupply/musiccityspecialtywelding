@@ -1,4 +1,5 @@
 .calendar {
+  position: relative;
   overflow: hidden;
   box-shadow: inset 0 3px 0 var(--action);
 }
@@ -81,8 +82,9 @@
   background: var(--border);
 }
 
-.weekdays span {
+.weekdays > span {
   min-width: 0;
+  overflow-wrap: anywhere;
   padding: var(--s3) 1px;
   background: var(--surface-raised);
   color: var(--text-muted);
@@ -90,6 +92,10 @@
   font-weight: var(--w-med);
   text-align: center;
   text-transform: uppercase;
+}
+
+.weekdayCompact {
+  display: none;
 }
 
 .instruction {
@@ -126,6 +132,12 @@
   background: var(--surface-raised);
 }
 
+.today .dayNumber {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: .15em;
+}
+
 .dayButton:hover {
   background: var(--surface-raised);
   color: var(--text-secondary);
@@ -150,11 +162,11 @@
 }
 
 .dayName {
-  overflow: hidden;
+  min-width: 0;
   width: 100%;
   font-size: var(--t-caption);
-  text-overflow: clip;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .dayNumber {
@@ -441,6 +453,17 @@
 
   .total {
     justify-items: start;
+  }
+}
+
+@media (max-width: 30rem) {
+  .weekdayFull,
+  .dayName {
+    display: none;
+  }
+
+  .weekdayCompact {
+    display: inline;
   }
 }
 

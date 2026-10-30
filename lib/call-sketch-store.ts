@@ -8,7 +8,7 @@ import { mergeClaimFacts } from "@/lib/call-sketch-claims.ts"
 import { recordEvent } from "@/lib/events"
 import type { OperatorRole } from "@/lib/operators"
 import { shopClaimText } from "@/lib/shop-language"
-import { captureCallVoiceSamples, rebuildOwnerVoiceProfile } from "@/lib/voice-of-character"
+import { captureCallVoiceSamples, rebuildOwnerVoiceProfile } from "@/lib/voice-of-character.ts"
 import { projectClaimForRole } from "@/lib/visibility"
 
 export type LiveTranscriptionEvent = {

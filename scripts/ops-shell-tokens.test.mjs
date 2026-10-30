@@ -11,7 +11,7 @@ const LEGACY = read("../styles/ops-legacy.css")
 // Every marketing token that ops-legacy.css uses inside an .ops-* rule has
 // to resolve to a shell role on the dark shell, or it renders as ink on ink.
 test("every legacy colour token the ops rules reference is aliased on the shell", () => {
-  const start = CONTROL.indexOf(".ops-shell,.app,.updates-page,.calls,.cust{")
+  const start = CONTROL.indexOf(".ops-shell,.app,.updates-page,.calls,.customers-page{")
   assert.ok(start > -1, "the alias block is scoped to every shell root, board routes included")
   const shellBlock = CONTROL.slice(start, CONTROL.indexOf("}", start))
   const referenced = new Set([...LEGACY.matchAll(/var\((--color-[a-z0-9-]+)\)/g)].map((m) => m[1]))

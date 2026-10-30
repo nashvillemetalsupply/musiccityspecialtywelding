@@ -1,0 +1,36 @@
+"use client"
+
+import { useEffect, useState, type ReactNode } from "react"
+import { enableUsage } from "../usage"
+
+/** Local visual fixture: only disclosures, theme and calendar selection are interactive. */
+export function FixtureBoundary({ children }: { children: ReactNode }) {
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    let mounted = true
+    enableUsage(false)
+    queueMicrotask(() => { if (mounted) setHydrated(true) })
+    return () => { mounted = false }
+  }, [])
+  return <div data-qa-boundary-hydrated={hydrated ? "true" : "false"} onSubmitCapture={(event) => { if (!(event.target as HTMLElement).closest("[data-qa-local-interactions]")) { event.preventDefault(); event.stopPropagation() } }}
+    onChangeCapture={(event) => { if ((event.target as HTMLElement).matches('input[type="file"]')) { event.preventDefault(); event.stopPropagation() } }}
+    onClickCapture={(event) => {
+      const element = event.target as HTMLElement
+      if (element.closest("[data-qa-local-interactions]") && !element.closest("a")) return
+      const link = element.closest("a")
+      if (link && !link.getAttribute("href")?.startsWith("/board/qa-polish") && !link.getAttribute("href")?.startsWith("#")) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+      const button = element.closest("button")
+      if (button?.matches(".ops-closeout-review,.ops-closeout-add")) return
+      if (button && button.id !== "theme" && !button.hasAttribute("aria-expanded")
+        && button.textContent?.trim() !== "Close"
+        && button.getAttribute("role") !== "gridcell" && !button.hasAttribute("aria-pressed")) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }}>
+    {children}
+  </div>
+}

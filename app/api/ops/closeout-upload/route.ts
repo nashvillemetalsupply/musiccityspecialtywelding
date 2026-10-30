@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client"
 import { cookies } from "next/headers"
-import { closeoutPhotoPath, confirmCloseoutPhotoUpload, createCloseoutPhotoUpload, type CloseoutPhotoMode } from "@/lib/closeout-photo-uploads"
+import { confirmCloseoutPhotoUpload, createCloseoutPhotoUpload, type CloseoutPhotoMode } from "@/lib/closeout-photo-uploads"
 import { OPS_SESSION_COOKIE, validateSessionToken } from "@/lib/ops-auth"
 
 export const runtime = "nodejs"

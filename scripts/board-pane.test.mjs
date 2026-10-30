@@ -426,3 +426,11 @@ test("the board chrome and Ask Jobs sources point at destinations that still exi
   assert.match(brief, /const ownerPromiseSheet[\s\S]{0,240}"\/board\?signal=promise"/)
   assert.match(brief, /const crewPromiseSheet[\s\S]{0,240}redactCrewText[\s\S]{0,120}"\/board\?signal=promise"/)
 })
+
+// Crew receives a completed-job count from the existing server projection;
+// the summary must use it rather than render a dash for redacted money.
+test("crew weekly summary uses completed jobs and omits payment marks", () => {
+  assert.match(PREVIEW_SOURCE, /chrome\.owner \? money\(outTheDoor\.revenueCents\) : outTheDoor\.jobs/)
+  assert.match(PREVIEW_SOURCE, /chrome\.owner && outTheDoor\.jobs > 0 && <span className="bar"/)
+  assert.match(PREVIEW_SOURCE, /!chrome\.owner && <span>Finished and out the door<\/span>/)
+})

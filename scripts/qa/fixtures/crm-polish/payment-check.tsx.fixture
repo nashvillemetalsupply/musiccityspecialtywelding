@@ -1,0 +1,16 @@
+"use client"
+import { useEffect, useState } from "react"
+import { PaymentForm, PAYMENT_FIXTURE_SOURCE_SHA256 } from "./payment-form-copy"
+
+export function PaymentCheckFixture() {
+  const [submissions, setSubmissions] = useState<unknown[]>([])
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    let mounted = true
+    const capture = (event: Event) => setSubmissions(current => [...current, (event as CustomEvent).detail])
+    window.addEventListener("qa-payment-action", capture)
+    queueMicrotask(() => { if (mounted) setHydrated(true) })
+    return () => { mounted = false; window.removeEventListener("qa-payment-action", capture) }
+  }, [])
+  return <section className="card job-payment" data-qa-local-interactions data-qa-hydrated={hydrated ? "true" : "false"} style={{ margin: "var(--s4)", padding: "var(--s4)", overflowWrap: "anywhere" }}><h1 className="t-title">Payment action fixture</h1><p className="t-caption" data-payment-source-sha={PAYMENT_FIXTURE_SOURCE_SHA256}>Source SHA-256: {PAYMENT_FIXTURE_SOURCE_SHA256}. Only action wiring and relative import paths differ; no database or provider calls.</p><PaymentForm leadId={987654321} receiptKey="internal-test-payment" reversalKey="internal-test-reversal" paidAmountCents={50000} invoiceTotalCents={87500} paidAt={null} /><pre id="qa-payment-submissions" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{JSON.stringify(submissions, null, 2)}</pre></section>
+}

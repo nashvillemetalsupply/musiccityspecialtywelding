@@ -4,7 +4,7 @@ import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { redactCrewText } from "@/lib/visibility"
-import { ownerVoiceGuide } from "@/lib/voice-of-character"
+import { ownerVoiceGuide } from "@/lib/voice-of-character.ts"
 
 export const runtime = "nodejs"
 export const maxDuration = 60

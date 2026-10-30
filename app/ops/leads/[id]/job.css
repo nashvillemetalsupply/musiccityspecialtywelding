@@ -69,6 +69,10 @@
 .job-page :is(p, dd, td, th, strong, small, span, a, label) { overflow-wrap: anywhere; }
 .job-page audio { width: 100%; max-width: 100%; }
 .job-page summary { cursor: pointer; }
+.job-page :is([id], a, button, input, select, textarea, summary, label) {
+  scroll-margin-block-start: calc(56px + env(safe-area-inset-top, 0px) + var(--s4));
+  scroll-margin-block-end: calc(var(--job-dock-height, 62px) + var(--safe-area-bottom) + var(--s4));
+}
 
 .job-page .card,
 .job-finish-close > :is(.ops-done-bench, .ops-handoff-control) {
@@ -117,6 +121,7 @@
   color: var(--text-primary);
   background: var(--surface-raised);
   font: inherit;
+  font-size: max(1rem, var(--t-name));
 }
 
 .job-page textarea { min-height: 7rem; resize: vertical; }
@@ -128,13 +133,13 @@
 .job-alert--stop { border-left-color: var(--status-stop-mark); background: var(--status-stop-sur); color: var(--status-stop-ink); }
 
 .job-lead { display: grid; overflow: clip; }
-.job-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s3); align-items: start; padding: var(--s4); border-bottom: 1px solid var(--border); }
+.job-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s3); align-items: start; padding: var(--s4); border-bottom: 1px solid var(--border); }
 .job-head > div:first-child { display: grid; gap: var(--s2); }
 .job-head h1 { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
 .job-back a { display: inline-flex; min-height: 44px; align-items: center; color: var(--text-secondary); }
 .job-meta strong { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .job-test-flag { font-style: normal; }
-.job-status { justify-self: end; color: var(--status-info-ink); background: var(--status-info-sur); }
+.job-status { justify-self: start; color: var(--status-info-ink); background: var(--status-info-sur); }
 .job-status:is(.is-lost, .is-spam) { color: var(--status-stop-ink); background: var(--status-stop-sur); }
 .job-status:is(.is-won, .is-closed) { color: var(--status-good-ink); background: var(--status-good-sur); }
 .job-builds { width: fit-content; }
@@ -145,15 +150,23 @@
 .job-contact > div > strong { font-family: var(--font-display); font-size: var(--t-title); font-variant-numeric: tabular-nums; }
 .job-repeat { width: fit-content; margin-top: var(--s2); }
 .job-email { width: fit-content; margin-top: var(--s2); }
-.job-action-spine { position: sticky; bottom: var(--safe-area-bottom); z-index: 10; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s1); padding: var(--s2); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-raised); }
-.job-action-spine > :is(a, .ops-tracked-call) { width: 100%; min-width: 0; }
-.job-action-spine > .job-action-price { grid-column: 1 / -1; text-align: left; }
+.job-direct-call { margin-top: var(--s2); color: var(--text-muted); font-size: var(--t-caption); }
+.job-direct-call > summary { display: flex; align-items: center; min-height: 44px; color: var(--text-secondary); }
+.job-direct-call > summary::after { content: "+"; margin-left: var(--s2); }
+.job-direct-call[open] > summary::after { content: "−"; }
+.job-direct-call > p { margin-bottom: var(--s2); max-width: 44ch; }
+.job-action-spine { position: sticky; bottom: var(--safe-area-bottom); z-index: 10; display: flex; flex-wrap: wrap; gap: var(--s1); padding: var(--s2); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-raised); }
+.job-action-spine > a,
+.job-action-spine .ops-tracked-call > button { flex: 1 1 0; min-width: 0; }
+.job-action-spine .btn { min-height: 44px !important; padding-inline: var(--s2); }
+.job-action-spine > .job-action-price { text-align: center; }
 /* No nowrap: at 14px "Text the customer" is wider than a quarter of a phone,
    and holding it on one line pushed the page sideways. */
 .job-action-spine > a,
 .job-action-spine .ops-tracked-call > button { width: 100%; min-height: 44px; padding-block: var(--s2); overflow-wrap: normal; line-height: var(--lh-sub); text-align: center; }
 .job-action-spine .ops-tracked-call > button { min-height: var(--control); padding: 0 var(--s3); border: 0; border-radius: var(--r-md); color: var(--action-ink); background: var(--action); font-family: var(--font); font-size: var(--t-label); font-weight: var(--w-semi); line-height: 1; text-transform: none; }
-.job-action-spine .ops-tracked-call { display: grid; gap: var(--s1); }
+.job-action-spine .ops-tracked-call { display: contents; }
+.job-action-spine .ops-tracked-call > small[aria-live] { flex-basis: 100%; order: 1; min-width: 0; width: 100%; max-width: none; margin: 0; padding: var(--s2); font: var(--w-reg) var(--t-caption)/var(--lh-caption) var(--font); }
 .job-action-spine .ops-tracked-call > :is(details, small) { color: var(--text-muted); font-size: var(--t-caption); }
 .job-action-spine .ops-tracked-call summary { min-height: 44px; display: flex; align-items: center; }
 .job-action-spine .ops-tracked-call details a { min-height: 44px; display: flex; align-items: center; color: var(--text-primary); }
@@ -284,7 +297,7 @@
 .job-page :is(.ops-channel-stamp, .ops-mic-key, .ops-reply-chips button, .ops-glass-link button, .ops-glass-link a) { min-height: 44px !important; border: 1px solid var(--border) !important; border-radius: 0 !important; color: var(--text-primary) !important; background: var(--surface-raised) !important; }
 .job-page .ops-glass-control h2 { font-size: var(--t-sub); line-height: var(--lh-sub); }
 .job-page .ops-glass-control p { color: var(--text-secondary); }
-.job-page #job-reply { scroll-margin-top: var(--s4); }
+.job-page [data-job-fragment="job-reply"] { scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px) + var(--s4)); }
 
 .job-details { overflow: clip; }
 .job-details > summary,
@@ -385,6 +398,7 @@
 .job-schedule-form label small { color: var(--text-muted); font-size: var(--t-caption); font-weight: var(--w-reg); }
 .job-schedule-form input[type="datetime-local"] { min-height: 44px; }
 .job-traveler form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+.job-traveler .job-schedule-form { grid-template-columns: minmax(0, 1fr); }
 .job-traveler .is-stamped { color: var(--status-good-ink) !important; background: var(--status-good-sur) !important; }
 .job-paid-line { color: var(--status-good-ink); }
 .job-danger { color: var(--status-stop-ink) !important; box-shadow: inset 0 0 0 1px var(--status-stop-mark) !important; }
@@ -400,7 +414,7 @@
 .sum-style code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: var(--text-primary); }
 
 .job-payment,
-.job-onsite-payment { overflow: clip; scroll-margin-top: var(--s4); }
+.job-onsite-payment { overflow: clip; scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px) + var(--s4)); }
 .job-onsite-payment > header,
 .job-payment > header { min-height: var(--row); padding: var(--s3) var(--s4); display: flex; align-items: center; justify-content: space-between; gap: var(--s3); border-bottom: 1px solid var(--border); }
 .job-onsite-payment > header > div,
@@ -432,7 +446,7 @@
 .job-page .ops-spike-reply > p.is-warning { grid-column:1 / -1; border-left:3px solid var(--status-warn-mark); background:var(--status-warn-sur); color:var(--status-warn-ink); padding:var(--s2) var(--s3); }
 .job-payment-form > button { width: 100%; }
 
-.job-finish-close { min-width: 0; display: grid; gap: var(--s3); scroll-margin-top: var(--s4); }
+.job-finish-close { min-width: 0; display: grid; gap: var(--s3); scroll-margin-top: calc(56px + env(safe-area-inset-top, 0px) + var(--s4)); }
 .job-finish-close-head { padding: 0 var(--s1); display: grid; gap: var(--s1); }
 .job-finish-close-head > span { color: var(--text-muted); font-size: var(--t-caption); }
 .job-finish-close > :is(.ops-done-bench, .ops-handoff-control) { min-width: 0; padding: var(--s4) !important; display: grid; gap: var(--s3); overflow: clip; }
@@ -492,6 +506,8 @@
 
 @media (min-width: 40rem) {
   .job-page { padding: var(--s5); gap: var(--s5); }
+  .job-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .job-status { justify-self: end; }
   .job-contact { grid-template-columns: minmax(0, 1fr); align-items: start; }
   .job-contact-edit > form { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; }
   .job-identity-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -590,6 +606,8 @@
 }
 
 .job-head h1 {
+  font-size: var(--t-lede);
+  line-height: var(--lh-lede);
   letter-spacing: var(--tracking-heading);
 }
 
@@ -699,7 +717,6 @@
   }
 
   .job-action-spine {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: start;
   }
 }

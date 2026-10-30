@@ -3,7 +3,7 @@
    shell pins the dark role map the same way each converted page already does —
    the pages keep their own pins, which now resolve to the same values. */
 
-.ops-shell {
+html .ops-shell {
   --surface-sunken: var(--dark-surface-sunken);
   --surface: var(--dark-surface);
   --surface-raised: var(--dark-surface-raised);
@@ -63,7 +63,7 @@
   display: flex;
   flex-direction: column;
 }
-.ops-frame > :not(.ops-top) {
+.ops-frame > :not(.ops-top):not(.skip) {
   width: min(100%, 92rem);
   margin-inline: auto;
 }
@@ -72,6 +72,10 @@
   flex: 1;
   min-width: 0;
   padding-bottom: calc(var(--s7) + var(--safe-area-bottom));
+}
+
+.ops-frame > main:has(> .ops-login-screen) {
+  padding-bottom: 0;
 }
 
 /* --- top bar ------------------------------------------------------------ */
@@ -116,6 +120,7 @@
 
 .ops-top-inner > nav {
   margin-left: auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--s3);
@@ -148,6 +153,7 @@
 /* --- menu (classes owned by more-menu.tsx; restyled here) ---------------- */
 
 .ops-shell .ops-more-trigger {
+  flex: none;
   min-width: 44px;
   min-height: 44px;
   padding: 0 var(--s3);
@@ -171,13 +177,7 @@
   outline-offset: 2px;
 }
 
-/* The open trigger stays put above the panel so Close is where Open was. */
-.ops-shell .ops-more-trigger[aria-expanded="true"] {
-  position: fixed;
-  z-index: 122;
-  top: max(var(--s3), env(safe-area-inset-top, 0px));
-  right: max(var(--s4), env(safe-area-inset-right, 0px));
-}
+.ops-shell .ops-more-trigger[aria-expanded="true"] { visibility: hidden; }
 
 .ops-shell .ops-menu-icon {
   display: grid;
@@ -206,6 +206,7 @@
 
 .ops-shell .ops-more-panel {
   width: min(100%, 30rem);
+  min-width: 0;
   height: 100dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -220,11 +221,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s3);
+  min-height: 44px;
   padding-bottom: var(--s4);
   border-bottom: 1px solid var(--border);
 }
 
-.ops-shell .ops-more-panel > header span {
+.ops-shell .ops-more-panel > header > div > span {
   font-size: var(--t-label);
   font-weight: var(--w-med);
   color: var(--text-muted);
@@ -239,6 +241,7 @@
   font-weight: 680;
   letter-spacing: -0.01em;
   line-height: var(--lh-lede);
+  overflow-wrap: anywhere;
 }
 
 .ops-shell .ops-more-search {
@@ -273,7 +276,7 @@
 
 .ops-shell .ops-more-panel > nav {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s2);
   padding: var(--s4) 0;
 }
@@ -282,7 +285,7 @@
   display: flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 var(--s3);
+  padding: var(--s2) var(--s3);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   background: var(--surface-raised);
@@ -290,6 +293,17 @@
   font-size: var(--t-data);
   font-weight: var(--w-med);
   text-decoration: none;
+  white-space: normal;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The panel is at most 30rem wide. Below that, full-width destinations keep
+   longer labels readable without squeezed columns or two-line controls. */
+@media (min-width: 30rem) {
+  .ops-shell .ops-more-panel > nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .ops-shell .ops-more-panel > nav a:hover {
@@ -362,3 +376,8 @@
     align-items: center;
   }
 }
+
+.ops-top:has(.ops-more-backdrop) { z-index: 121; }
+.ops-shell .ops-more-close { display: inline-flex; align-items: center; justify-content: center; gap: var(--s1); min-width: 44px; min-height: 44px; padding: var(--s2); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text-primary); cursor: pointer; }
+.ops-shell .ops-more-close svg { width: 22px; height: 22px; flex: none; }
+.ops-shell .ops-more-close span { color: inherit; font-size: var(--t-label); letter-spacing: 0; text-transform: none; }

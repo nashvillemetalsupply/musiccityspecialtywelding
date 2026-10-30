@@ -1,0 +1,55 @@
+import { randomUUID } from "node:crypto"
+import { JobFragmentNavigation } from "../../ops/leads/[id]/job-fragment-navigation"
+import { PaymentForm } from "../../ops/leads/[id]/payment-form"
+import { SpikeReply } from "../../ops/leads/[id]/spike-reply"
+import { DoneStamp } from "../../ops/leads/[id]/done-stamp"
+
+/** Mirrors the job page's actual markup with inert, synthetic values. */
+export function JobFixture({ owner, failed = false, pending = false, completed = false }: { owner: boolean; failed?: boolean; pending?: boolean; completed?: boolean }) {
+  const jobDomPrefix = `job-987654321-${randomUUID()}`
+  const domId = (alias: string) => `${jobDomPrefix}-${alias}`
+  return <div className="job-page">
+    <JobFragmentNavigation />
+    <section className="card job-lead" aria-labelledby={domId("work-order-title")}>
+      <header className="job-head"><div>
+        <span className="job-back t-caption"><a href="/board/qa-polish">Back to Jobs</a></span>
+        <h1 className="t-title" id={domId("work-order-title")} data-job-fragment="work-order-title">[INTERNAL TEST] Alexander Montgomery-Washington <em className="chip chip--warn job-test-flag">Test</em></h1>
+        <p className="job-meta t-caption">Job <strong>#987654321</strong>, opened Thursday, October 29, 2026, 10:00 AM</p>
+      </div><div className="chip job-status is-qualified">Customer contacted</div></header>
+      <div className="job-contact"><div><span>Contact</span><strong>(615) 555-0123</strong><small>Not assigned</small>
+        <a className="btn btn--sm btn--edge job-repeat" href="#account">Repeat customer, 12 prior jobs</a>
+        <a className="btn btn--sm btn--edge job-email" href="#job-reply">Email</a>
+        <details className="job-direct-call"><summary>Call directly — not saved</summary><p>Use your phone’s own number. This call will not be saved to the job.</p><button type="button" className="btn btn--sm btn--edge">Open Phone app</button></details>
+      </div></div>
+      <details className="job-contact-edit"><summary>Edit contact</summary><form>
+        <label htmlFor={domId("job-contact-phone")}>Mobile number<input id={domId("job-contact-phone")} data-job-fragment="job-contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue="(615) 555-0123" /></label>
+        <label htmlFor={domId("job-contact-email")}>Email<input id={domId("job-contact-email")} data-job-fragment="job-contact-email" name="email" type="email" inputMode="email" autoComplete="email" defaultValue="long.customer.reference@example.invalid" /></label>
+        <button className="btn btn--sm btn--edge" type="submit">Save contact</button>
+      </form><small>The customer record is checked before saving.</small></details>
+    </section>
+    <div className="job-flow">
+      <section className="card job-summary" aria-label="Job summary"><header><h2 className="t-sub">Job Summary</h2></header><div className="job-brief"><strong>Architectural Welding &amp; Fabrication</strong><p>Fabricate a driveway gate with a pedestrian opening. Confirm the opening width and hinge clearance before cutting. The customer will bring drawings and a photo of the driveway.</p></div></section>
+      <section id="spike" className="card job-thread" aria-label="Customer thread"><header><h2 className="t-sub">Calls &amp; Messages</h2></header><div className="job-thread-stack"><p className="job-empty t-caption">No calls or messages yet.</p></div><SpikeReply leadId={987654321} hasEmail hasPhone voiceReady={false} initialChannel="text" /></section>
+    </div>
+      <section className="card job-details" aria-labelledby={domId("job-details-title")}><header className="job-details-head"><div><span>Work context</span><h2 className="t-title" id={domId("job-details-title")} data-job-fragment="job-details-title">Job Details</h2></div><small>Contact, price, status, notes</small></header>
+        <div className="job-details-body"><div className="job-columns">
+          <details className="job-ledger" aria-label="Customer and source"><summary><span><strong>Customer &amp; Source</strong><small>long.customer.reference@example.invalid</small></span><b aria-hidden="true" /></summary><div className="job-ledger-body"><h2 className="t-sub">Customer</h2><dl><div><dt>Email</dt><dd>long.customer.reference@example.invalid</dd></div><div><dt>Prefers</dt><dd>Phone call</dd></div><div><dt>Source</dt><dd>Website</dd></div></dl></div></details>
+          <section className="job-command" aria-label="Work the job">
+          {owner && <details className="job-drawer"><summary><span><strong>Price &amp; Invoice</strong><small>$875 estimate</small></span><b aria-hidden="true" /></summary><div className="job-drawer-body"><form className="job-form job-money-form"><table className="sum-style"><tbody><tr><th><label htmlFor={domId("lead-estimate")}>Estimate ($); saves the job as quoted</label></th><td><input id={domId("lead-estimate")} data-job-fragment="lead-estimate" name="estimate" inputMode="decimal" defaultValue="875" /></td></tr><tr className="total"><td colSpan={2}><button className="btn btn--sm btn--edge" type="submit">Save quote</button></td></tr></tbody></table></form>
+          </div></details>}
+          <details className="job-drawer"><summary><span><strong>Status &amp; Notes</strong><small>Customer contacted, notes, review</small></span><b aria-hidden="true" /></summary><div className="job-drawer-body"><div className="job-traveler" aria-label="Customer job status"><span>Job Status</span><form className="job-form job-schedule-form"><label htmlFor={domId("lead-scheduled-at")}>Schedule date and time <small>Central time</small></label><input id={domId("lead-scheduled-at")} data-job-fragment="lead-scheduled-at" name="scheduledAt" type="datetime-local" defaultValue="2026-10-30T10:30" aria-describedby={domId("lead-scheduled-help")} required /><button className="btn btn--sm btn--go" type="submit">Reschedule job</button><small id={domId("lead-scheduled-help")} data-job-fragment="lead-scheduled-help" className="job-current">This is the same schedule shown on the main Job Control calendar.</small></form></div><form className="job-form"><label htmlFor={domId("lead-notes")}>Shop notes</label><textarea id={domId("lead-notes")} data-job-fragment="lead-notes" rows={4} defaultValue="[INTERNAL TEST] Confirm the gate opening before fabrication." /><button className="btn btn--sm btn--edge" type="submit">Save notes</button></form></div></details>
+          </section>
+        </div></div>
+      </section>
+      {owner && <section className="card job-payment" id="job-payment" aria-labelledby={domId("job-payment-title")}><header><div><span>Cash, check, or outside payment</span><h2 className="t-sub" id={domId("job-payment-title")} data-job-fragment="job-payment-title">Record what changed hands</h2></div><strong>Paid $250 of $875</strong></header><PaymentForm leadId={987654321} receiptKey="fixture-job-payment" reversalKey="fixture-job-reversal" paidAmountCents={25000} invoiceTotalCents={87500} paidAt={null} /></section>}
+      <section className="job-finish-close" id="finish-close" aria-labelledby={domId("finish-close-title")}><header className="job-finish-close-head"><span>Final steps</span><h2 className="t-sub" id={domId("finish-close-title")} data-job-fragment="finish-close-title">Finish &amp; close</h2></header><DoneStamp leadId={987654321} completed={completed} undoUntil={null} voiceReady={false} reviewedCloseout={owner} closeoutKey="internal-test-closeout" /></section>
+    <nav className="job-action-spine" aria-label="Job actions"><span className="ops-tracked-call"><button className="btn btn--sm btn--go" type="button" disabled={pending}>{pending ? "Ringing…" : "Call"}</button>{failed && <small aria-live="polite">The call could not connect. Check your connection and try again. The customer has not been called.</small>}</span><a className="btn btn--sm btn--edge" href="#job-reply">Text</a><a className="btn btn--sm btn--edge" href={completed ? "#done-photo" : "#finish-photo"}>Photo</a>{owner && <a className="btn btn--sm btn--edge job-action-price" href="#lead-estimate" aria-label="Edit price: $875">Price</a>}</nav>
+  </div>
+}
+
+export function AccountFixture() {
+  return <div className="account-page" id="account">
+    <header className="card account-head"><div><a className="account-back t-caption" href="/board/qa-polish">Back to Jobs</a><span className="t-label">Regular Customer</span><h1 className="t-title">[INTERNAL TEST] Riverbend Fabrication &amp; Equipment</h1><p className="t-caption">Jobs and contact information.</p></div><div className="account-head-actions"><button type="button" className="btn btn--sm btn--edge">Call from shop number</button><button type="button" className="btn btn--sm btn--edge">Email</button></div></header>
+    <section className="card account-jobs" aria-label="Job history"><header className="account-jobs-head"><div><span className="t-label">3 total</span><h2 className="t-sub">Jobs</h2></div><form className="account-search"><input name="q" type="search" placeholder="Search jobs" aria-label="Search jobs" /><select name="year" aria-label="Filter jobs by year"><option>All years</option><option>2026</option></select><button className="btn btn--sm btn--edge" type="submit">Search</button></form></header><div className="account-rows">{[1, 2, 3].map(index => <article className="account-row" key={index}><div className="account-row-id"><span>Job #{987654321 + index}</span><em className="t-caption">10/29/2026</em></div><div className="account-row-who"><a href="/board/qa-polish?surface=job">Architectural Welding &amp; Fabrication</a><span className="t-caption">[INTERNAL TEST] Alexander Montgomery-Washington</span></div><div className="chip account-stamp is-qualified"><i />Customer contacted</div><div className="account-row-actions"><button type="button" className="btn btn--sm btn--edge">Call from shop number</button><a className="btn btn--sm btn--edge" href="/board/qa-polish?surface=job">Open</a></div></article>)}</div></section>
+  </div>
+}

@@ -131,6 +131,7 @@
   color: var(--text-primary);
   background: var(--surface-raised);
   font: inherit;
+  font-size: max(1rem, var(--t-name));
 }
 .intake textarea { resize: vertical; }
 .intake :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }

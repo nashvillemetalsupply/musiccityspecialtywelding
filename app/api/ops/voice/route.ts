@@ -2,7 +2,7 @@ import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import {
   addManualVoiceSample, backfillOwnerVoiceSamples, getOwnerVoiceProfile,
   ownerVoiceGuide, ownerVoiceSampleCounts, rebuildOwnerVoiceProfile,
-} from "@/lib/voice-of-character"
+} from "@/lib/voice-of-character.ts"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

@@ -12,7 +12,7 @@ import { listLeadMessages } from "@/lib/messages"
 import { listCommitments } from "@/lib/commitments"
 import { listActiveClaims } from "@/lib/claims"
 import { listPhotoDraftEntries, photoDraftsEnabled } from "@/lib/photo-drafts"
-import { listJobLineItems } from "@/lib/job-line-items"
+import { listJobLineItems } from "@/lib/job-line-items.ts"
 import { formatLineItemsText, lineItemsTotalCents } from "@/lib/job-line-items.mjs"
 import { listLeadCalls } from "@/lib/calls"
 import { listLeadEventPage, listLeadEvents as listUnifiedEvents } from "@/lib/events"
@@ -43,6 +43,7 @@ import { recordVerbalTextConsent } from "./message-actions"
 import { confirmPromise, handlePromise, keepPromise, publishPromiseToGlass, rejectPromise } from "./promise-actions"
 import { acceptQuoteCapture, correctClaim, rejectQuoteCapture } from "./claim-actions"
 import { PhotoDrafts } from "./photo-drafts"
+import { JobFragmentNavigation } from "./job-fragment-navigation"
 import {
   acknowledgeDeliveryFailure,
   assignLeadOperator,
@@ -415,15 +416,20 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     if (status) emailDelivery.set(sourceId, status)
   }
 
+  // A cached prior render can remain hidden in the DOM, including this same job.
+  const jobDomPrefix = `job-${lead.id}-${randomUUID()}`
+  const domId = (alias: string) => `${jobDomPrefix}-${alias}`
+
   return (
     <div className="job-page">
-      <section className="card job-lead" aria-labelledby="work-order-title">
+      <JobFragmentNavigation />
+      <section className="card job-lead" aria-labelledby={domId("work-order-title")}>
       <header className="job-head">
         <div>
           <span className="job-back t-caption">
             <Link href="/ops">Back to Jobs</Link>
           </span>
-          <h1 className="t-title" id="work-order-title">
+          <h1 className="t-title" id={domId("work-order-title")} data-job-fragment="work-order-title">
             {lead.first_name} {lead.last_name}
             {lead.is_test && <em className="chip chip--warn job-test-flag">Test</em>}
           </h1>
@@ -441,11 +447,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       {routedToLeadId && <p className="job-alert job-alert--success job-routing-done">
         Conversation filed to <Link href={`/ops/leads/${routedToLeadId}#spike`}>Job #{routedToLeadId}</Link>. New messages will stay with the matched job while it is active.
       </p>}
-      {needsJobMatch && operator.role === "owner" && <section className="job-routing" aria-labelledby="job-routing-title">
-        <div><span>One quick decision</span><h2 className="t-sub" id="job-routing-title">Which job are these messages about?</h2><p>The text stayed separate so it could not land on the wrong work order.</p></div>
+      {needsJobMatch && operator.role === "owner" && <section className="job-routing" aria-labelledby={domId("job-routing-title")}>
+        <div><span>One quick decision</span><h2 className="t-sub" id={domId("job-routing-title")} data-job-fragment="job-routing-title">Which job are these messages about?</h2><p>The text stayed separate so it could not land on the wrong work order.</p></div>
         {fileChoices.length ? <form action={routeConversationToJob}>
           <input type="hidden" name="sourceLeadId" value={lead.id} />
-          <label htmlFor="job-route-target">File conversation under<select id="job-route-target" name="targetLeadId" required defaultValue="">
+          <label htmlFor={domId("job-route-target")}>File conversation under<select id={domId("job-route-target")} data-job-fragment="job-route-target" name="targetLeadId" required defaultValue="">
             <option value="" disabled>Choose the correct job</option>
             {fileChoices.map((choice) => <option value={choice.id} key={choice.id}>Job #{choice.id} · {choice.service} · {choice.message.slice(0, 70)}</option>)}
           </select></label>
@@ -464,6 +470,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           <small>{assignedOperator?.name || (lead.assigned_operator_id === operator.id ? operator.name : "Not assigned")}</small>
           {lead.person_id && Number(lead.person_job_count ?? 0) > 1 && <Link className="btn btn--sm btn--edge job-repeat" href={`/ops/accounts/${lead.person_id}`}>Repeat customer, {Number(lead.person_job_count) - 1} prior jobs</Link>}
           {lead.email && <Link className="btn btn--sm btn--edge job-email" href="?replyChannel=email#job-reply">Email</Link>}
+          {!needsJobMatch && !routedToLeadId && hasCustomerPhone && <details className="job-direct-call">
+            <summary>Call directly — not saved</summary>
+            <p>Use your phone’s own number. This call will not be saved to the job.</p>
+            <a className="btn btn--sm btn--edge" href={`tel:${customerPhone}`}>Open Phone app</a>
+          </details>}
         </div>
       </div>
 
@@ -471,11 +482,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         <summary>{hasCustomerPhone || lead.email ? "Edit contact" : "Add contact"}</summary>
         <form action={captureLeadContact}>
           <input type="hidden" name="leadId" value={lead.id} />
-          <label htmlFor="job-contact-phone">Mobile number<input id="job-contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={!lead.phone_is_placeholder ? lead.phone : ""} placeholder="(615) 555-0123" aria-describedby="job-contact-hint" /></label>
-          <label htmlFor="job-contact-email">Email<input id="job-contact-email" name="email" type="email" inputMode="email" autoComplete="email" defaultValue={lead.email} placeholder="customer@company.com" aria-describedby="job-contact-hint" /></label>
+          <label htmlFor={domId("job-contact-phone")}>Mobile number<input id={domId("job-contact-phone")} data-job-fragment="job-contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={!lead.phone_is_placeholder ? lead.phone : ""} placeholder="(615) 555-0123" aria-describedby={domId("job-contact-hint")} /></label>
+          <label htmlFor={domId("job-contact-email")}>Email<input id={domId("job-contact-email")} data-job-fragment="job-contact-email" name="email" type="email" inputMode="email" autoComplete="email" defaultValue={lead.email} placeholder="customer@company.com" aria-describedby={domId("job-contact-hint")} /></label>
           <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Save contact</SafeSubmitButton>
         </form>
-        <small id="job-contact-hint">The customer record is checked before saving.</small>
+        <small id={domId("job-contact-hint")} data-job-fragment="job-contact-hint">The customer record is checked before saving.</small>
       </details>}
 
       {!needsJobMatch && !routedToLeadId && smsServiceReady && hasCustomerPhone && consentState === "unknown" && operator.role === "owner" && <details className="job-consent" id="text-permission">
@@ -559,7 +570,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               <form action={rejectPromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Removing...">Not a promise</SafeSubmitButton></form>
               {operator.role === "owner" && promise.direction === "we_promised" && promise.due_at && <form action={publishPromiseToGlass}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Adding...">Add to Customer Page</SafeSubmitButton></form>}
             </div>
-            {promise.due_at && isPast(promise.due_at) && customerTextReady && <details className="job-handle"><summary>Handle it</summary><form action={handlePromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><LatePromiseMessage leadId={lead.id} commitmentId={promise.id} fallback={`Running behind on your ${lead.service.toLowerCase()}. I’m sorry.`} /><input name="reason" type="text" autoComplete="off" defaultValue="Running behind — new date confirmed with the shop." aria-label="Reason shown on Customer Page" /><label htmlFor={`promise-due-${promise.id}`}>New promise<select id={`promise-due-${promise.id}`} name="quickDue" defaultValue="tomorrow-am"><option value="tomorrow-am">Tomorrow morning</option><option value="two-days-am">In two mornings</option><option value="next-monday-am">Next Monday morning</option></select></label><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sending...">Text + update date</SafeSubmitButton></form></details>}
+            {promise.due_at && isPast(promise.due_at) && customerTextReady && <details className="job-handle"><summary>Handle it</summary><form action={handlePromise}><input type="hidden" name="leadId" value={lead.id} /><input type="hidden" name="commitmentId" value={promise.id} /><LatePromiseMessage leadId={lead.id} commitmentId={promise.id} fallback={`Running behind on your ${lead.service.toLowerCase()}. I’m sorry.`} /><input name="reason" type="text" autoComplete="off" defaultValue="Running behind — new date confirmed with the shop." aria-label="Reason shown on Customer Page" /><label htmlFor={domId(`promise-due-${promise.id}`)}>New promise<select id={domId(`promise-due-${promise.id}`)} data-job-fragment={`promise-due-${promise.id}`} name="quickDue" defaultValue="tomorrow-am"><option value="tomorrow-am">Tomorrow morning</option><option value="two-days-am">In two mornings</option><option value="next-monday-am">Next Monday morning</option></select></label><SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Sending...">Text + update date</SafeSubmitButton></form></details>}
             {promise.due_at && isPast(promise.due_at) && !customerTextReady && <p className="job-empty t-caption">Texting is unavailable until the customer has consented.</p>}
           </article>
         ))}</div>
@@ -611,17 +622,17 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       />}
       </div>
 
-      {!needsJobMatch && !routedToLeadId && <section className="card job-details" aria-labelledby="job-details-title">
+      {!needsJobMatch && !routedToLeadId && <section className="card job-details" aria-labelledby={domId("job-details-title")}>
         <header className="job-details-head">
           <div>
             <span>Work context</span>
-            <h2 className="t-title" id="job-details-title">Job Details</h2>
+            <h2 className="t-title" id={domId("job-details-title")} data-job-fragment="job-details-title">Job Details</h2>
           </div>
           <small>Contact, price, status, notes</small>
         </header>
         <div className="job-details-body">
       <div className="job-columns">
-        <details className="job-ledger" aria-label="Customer and source" name="job-detail-group" open>
+        <details className="job-ledger" aria-label="Customer and source">
           <summary><span><strong>Customer &amp; Source</strong><small>{lead.email || lead.preferred_contact || "Contact details"}</small></span><b aria-hidden="true" /></summary>
           <div className="job-ledger-body">
           <h2 className="t-sub">Customer</h2>
@@ -687,7 +698,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             })}
           </section>}
 
-          <details className={`job-drawer${!lead.first_response_at ? " is-needs-response" : ""}`} open>
+          <details className={`job-drawer${!lead.first_response_at ? " is-needs-response" : ""}`} open={!lead.first_response_at}>
             <summary>
               <span><strong>Contact</strong><small>{lead.first_response_at ? "Call-back logged" : "Call-back needed"}</small></span>
               <b aria-hidden="true" />
@@ -697,8 +708,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           {!lead.first_response_at && (
             <form action={markFirstResponse} className="job-form">
               <input type="hidden" name="leadId" value={lead.id} />
-              <label htmlFor="response-channel">Called them back via</label>
-              <select id="response-channel" name="channel" defaultValue="phone">
+              <label htmlFor={domId("response-channel")}>Called them back via</label>
+              <select id={domId("response-channel")} data-job-fragment="response-channel" name="channel" defaultValue="phone">
                 <option value="phone">phone</option>
                 <option value="text">text</option>
                 <option value="email">email</option>
@@ -710,8 +721,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           <form action={logInteraction} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="interaction-channel">Log a touch</label>
-            <select id="interaction-channel" name="channel" defaultValue="phone">
+            <label htmlFor={domId("interaction-channel")}>Log a touch</label>
+            <select id={domId("interaction-channel")} data-job-fragment="interaction-channel" name="channel" defaultValue="phone">
               <option value="phone">called</option>
               <option value="text">texted</option>
               <option value="email">emailed</option>
@@ -724,8 +735,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           <form action={setFollowUp} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="follow-up-when">Remind me</label>
-            <select id="follow-up-when" name="quick" defaultValue="1d">
+            <label htmlFor={domId("follow-up-when")}>Remind me</label>
+            <select id={domId("follow-up-when")} data-job-fragment="follow-up-when" name="quick" defaultValue="1d">
               <option value="4h">in 4 hours</option>
               <option value="1d">tomorrow</option>
               <option value="3d">in 3 days</option>
@@ -741,7 +752,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             </div>
           </details>
 
-          {operator.role === "owner" && <details className="job-drawer" open>
+          {operator.role === "owner" && <details className="job-drawer">
           <summary>
             <span><strong>Price &amp; Invoice</strong><small>{lead.invoice_number ? `Invoice #${lead.invoice_number}` : lead.estimate_value_cents !== null ? `${money(lead.estimate_value_cents)} estimate` : "No price saved"}</small></span>
             {lead.paid_at && <strong className="chip chip--good job-paid-stamp">PAID</strong>}
@@ -754,8 +765,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <input type="hidden" name="leadId" value={lead.id} />
             <table className="sum-style">
               <tbody>
-                <tr><th><label htmlFor="lead-estimate">Estimate ($); saves the job as quoted</label></th><td><input
-                  id="lead-estimate"
+                <tr><th><label htmlFor={domId("lead-estimate")}>Estimate ($); saves the job as quoted</label></th><td><input
+                  id={domId("lead-estimate")} data-job-fragment="lead-estimate"
                   name="estimate"
                   type="text"
                   inputMode="decimal"
@@ -787,11 +798,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <input type="hidden" name="leadId" value={lead.id} />
             <table className="sum-style">
               <tbody>
-                <tr><th colSpan={2}><label htmlFor="lead-line-items">
+                <tr><th colSpan={2}><label htmlFor={domId("lead-line-items")}>
                   What is in the price. One line each: <code>Label | note | amount</code>, or <code>Label | amount</code>.
                 </label></th></tr>
                 <tr><td colSpan={2}><textarea
-                  id="lead-line-items"
+                  id={domId("lead-line-items")} data-job-fragment="lead-line-items"
                   name="lineItems"
                   rows={6}
                   autoComplete="off"
@@ -814,9 +825,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           <form action={saveOutcome} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="lead-revenue">Final job revenue ($). Finishing the job is separate.</label>
+            <label htmlFor={domId("lead-revenue")}>Final job revenue ($). Finishing the job is separate.</label>
             <input
-              id="lead-revenue"
+              id={domId("lead-revenue")} data-job-fragment="lead-revenue"
               name="revenue"
               type="text"
               inputMode="decimal"
@@ -835,11 +846,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           <form action={recordInvoice} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="invoice-number">
+            <label htmlFor={domId("invoice-number")}>
               QuickBooks invoice. The board watches it until payment is verified.
             </label>
             <input
-              id="invoice-number"
+              id={domId("invoice-number")} data-job-fragment="invoice-number"
               name="invoiceNumber"
               type="text"
               inputMode="numeric"
@@ -872,7 +883,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           </div>
           </details>}
 
-          <details className="job-drawer" open>
+          <details className="job-drawer">
           <summary>
             <span><strong>Status &amp; Notes</strong><small>{visibleJobStatus}, notes, review</small></span>
             <b aria-hidden="true" />
@@ -881,8 +892,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           {operator.role === "owner" && <form action={assignLeadOperator} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="lead-assignee">Running this job</label>
-            <select id="lead-assignee" name="assigneeId" defaultValue={lead.assigned_operator_id ?? ""}>
+            <label htmlFor={domId("lead-assignee")}>Running this job</label>
+            <select id={domId("lead-assignee")} data-job-fragment="lead-assignee" name="assigneeId" defaultValue={lead.assigned_operator_id ?? ""}>
               <option value="">Not assigned</option>
               {operators.map((item) => <option value={item.id} key={item.id}>{item.name || item.email}</option>)}
             </select>
@@ -894,17 +905,17 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             <form action={scheduleLead} className="job-form job-schedule-form">
               <input type="hidden" name="leadId" value={lead.id} />
               <input type="hidden" name="scheduleKey" value={randomUUID()} />
-              <label htmlFor="lead-scheduled-at">Schedule date and time <small>Central time</small></label>
+              <label htmlFor={domId("lead-scheduled-at")}>Schedule date and time <small>Central time</small></label>
               <input
-                id="lead-scheduled-at"
+                id={domId("lead-scheduled-at")} data-job-fragment="lead-scheduled-at"
                 name="scheduledAt"
                 type="datetime-local"
                 defaultValue={centralDateTimeInputValue(lead.scheduled_at)}
-                aria-describedby="lead-scheduled-help"
+                aria-describedby={domId("lead-scheduled-help")}
                 required
               />
               <SafeSubmitButton className="btn btn--sm btn--go" pendingLabel="Saving...">{lead.scheduled_at ? "Reschedule job" : "Add to calendar"}</SafeSubmitButton>
-              <small id="lead-scheduled-help" className="job-current">This is the same schedule shown on the main Job Control calendar.</small>
+              <small id={domId("lead-scheduled-help")} data-job-fragment="lead-scheduled-help" className="job-current">This is the same schedule shown on the main Job Control calendar.</small>
             </form>
             <form action={setJobTravelerStage}>
               <input type="hidden" name="leadId" value={lead.id} />
@@ -915,8 +926,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           {!lead.completed_at && !lead.handed_off_at ? <form action={updateLeadStatus} className="job-form">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="lead-status">Update job status</label>
-            <select id="lead-status" name="status" defaultValue={lead.status}>
+            <label htmlFor={domId("lead-status")}>Update job status</label>
+            <select id={domId("lead-status")} data-job-fragment="lead-status" name="status" defaultValue={lead.status}>
             {LEAD_STATUSES.filter((status) => status !== "won" && (operator.role === "owner" || (status !== "lost" && status !== "spam"))).map((status) => (
                 <option key={status} value={status}>{shopJobStatusLabel(status)}</option>
               ))}
@@ -938,9 +949,9 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
 
           <form action={saveNotes} className="job-form job-notes">
             <input type="hidden" name="leadId" value={lead.id} />
-            <label htmlFor="lead-notes">Notes</label>
+            <label htmlFor={domId("lead-notes")}>Notes</label>
             <textarea
-              id="lead-notes"
+              id={domId("lead-notes")} data-job-fragment="lead-notes"
               name="notes"
               rows={5}
               autoComplete="off"
@@ -963,11 +974,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </div>
       </section>}
 
-      {!needsJobMatch && !routedToLeadId && <><section className="card job-onsite-payment" id="onsite-payment" aria-labelledby="onsite-payment-title">
+      {!needsJobMatch && !routedToLeadId && <><section className="card job-onsite-payment" id="onsite-payment" aria-labelledby={domId("onsite-payment-title")}>
         <header>
           <div>
             <span>On site</span>
-            <h2 className="t-sub" id="onsite-payment-title">Take a card or tap payment</h2>
+            <h2 className="t-sub" id={domId("onsite-payment-title")} data-job-fragment="onsite-payment-title">Take a card or tap payment</h2>
           </div>
           <strong>QuickBooks GoPayment</strong>
         </header>
@@ -991,11 +1002,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </div>
       </section>
 
-      {operator.role === "owner" && <section className="card job-payment" id="job-payment" aria-labelledby="job-payment-title">
+      {operator.role === "owner" && <section className="card job-payment" id="job-payment" aria-labelledby={domId("job-payment-title")}>
         <header>
           <div>
             <span>Cash, check, or outside payment</span>
-            <h2 className="t-sub" id="job-payment-title">Record what changed hands</h2>
+            <h2 className="t-sub" id={domId("job-payment-title")} data-job-fragment="job-payment-title">Record what changed hands</h2>
           </div>
           {Number(lead.paid_amount_cents ?? 0) > 0 && <strong>
             Paid {money(lead.paid_amount_cents)}
@@ -1012,10 +1023,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         />
       </section>}
 
-      <section className="job-finish-close" id="finish-close" aria-labelledby="finish-close-title">
+      <section className="job-finish-close" id="finish-close" aria-labelledby={domId("finish-close-title")}>
         <header className="job-finish-close-head">
           <span>Final steps</span>
-          <h2 className="t-sub" id="finish-close-title">Finish &amp; close</h2>
+          <h2 className="t-sub" id={domId("finish-close-title")} data-job-fragment="finish-close-title">Finish &amp; close</h2>
         </header>
         <DoneStamp leadId={lead.id} completed={Boolean(lead.completed_at)} undoUntil={completionUndoUntil} voiceReady={voiceReady} reviewedCloseout={Boolean(operator.role === "owner" && lead.is_test && buildSheetsEnabled())} closeoutKey={randomUUID()} />
         <HandoffControl
@@ -1054,10 +1065,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
         </details>
       </section>
       {!needsJobMatch && !routedToLeadId && <nav className="job-action-spine" aria-label="Job actions">
-        {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={customerPhone} label="Call" compact directFallback className="btn btn--sm btn--edge" />}
+        {hasCustomerPhone && <TrackedCallButton leadId={lead.id} phone={customerPhone} label="Call" compact className="btn btn--sm btn--go" />}
         {customerTextReady && <Link className="btn btn--sm btn--edge" href="?replyChannel=text#job-reply">Text</Link>}
-        <Link className="btn btn--sm btn--go" href={lead.completed_at ? "#done-photo" : "#finish-photo"}>Photo</Link>
-        {operator.role === "owner" && <Link className="btn btn--sm btn--edge job-action-price" href="#lead-estimate">Price · {lead.estimate_value_cents === null ? "No price" : money(lead.estimate_value_cents)}</Link>}
+        <Link className={`btn btn--sm ${hasCustomerPhone ? "btn--edge" : "btn--go"}`} href={lead.completed_at ? "#done-photo" : "#finish-photo"}>Photo</Link>
+        {operator.role === "owner" && <Link className="btn btn--sm btn--edge job-action-price" href="#lead-estimate" aria-label={`Edit price: ${lead.estimate_value_cents === null ? "no price saved" : money(lead.estimate_value_cents)}`}>Price</Link>}
       </nav>}
     </div>
   )

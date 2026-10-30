@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useRef, useState } from "react"
+import { useId, useActionState, useRef, useState } from "react"
 import Link from "next/link"
 import { SafeSubmitButton } from "@/app/ops/safe-action-controls"
 import type { CalendarDay } from "@/lib/job-calendar-data"
@@ -60,6 +60,10 @@ export function JobCalendar({
   todayDateKey: string
   quickAddIntakeKey?: string
 }) {
+  const instanceId = useId()
+  const titleId = `job-calendar-title-${instanceId}`
+  const instructionsId = `job-calendar-instructions-${instanceId}`
+  const agendaId = `job-calendar-agenda-${instanceId}`
   const [selectedDateKey, setSelectedDateKey] = useState(() => (
     days.some((day) => day.dateKey === todayDateKey) ? todayDateKey : days[0]?.dateKey ?? ""
   ))
@@ -83,11 +87,11 @@ export function JobCalendar({
     dayButtonRefs.current[nextIndex]?.focus()
   }
 
-  return <section className={`card ${styles.calendar}`} aria-labelledby="job-calendar-title">
+  return <section className={`card ${styles.calendar}`} aria-labelledby={titleId}>
     <header className={styles.header}>
       <div className={styles.headerLead}>
         <span className={styles.eyebrow}>Schedule</span>
-        <h2 className="t-title" id="job-calendar-title">{MONTH_YEAR.format(firstDate)}</h2>
+        <h2 className="t-title" id={titleId}>{MONTH_YEAR.format(firstDate)}</h2>
         <p>Full month · Central time</p>
       </div>
       <div className={styles.headerMeta}>
@@ -95,13 +99,13 @@ export function JobCalendar({
       </div>
     </header>
 
-    <p className={styles.instruction} id="job-calendar-instructions">
+    <p className={styles.instruction} id={instructionsId}>
       Use arrow keys to move by day or week. Home and End move within a row.
     </p>
     <div className={styles.body}>
-      <div className={styles.grid} role="group" aria-label={`${MONTH_YEAR.format(firstDate)} calendar`} aria-describedby="job-calendar-instructions">
+      <div className={styles.grid} role="group" aria-label={`${MONTH_YEAR.format(firstDate)} calendar`} aria-describedby={instructionsId}>
         <div className={styles.weekdays} aria-hidden="true">
-          {WEEKDAY_LABELS.map((label) => <span key={label}>{label}</span>)}
+          {WEEKDAY_LABELS.map((label) => <span key={label}><span className={styles.weekdayFull}>{label}</span><span className={styles.weekdayCompact}>{label.slice(0, 2)}</span></span>)}
         </div>
         <div className={styles.days}>
           {Array.from({ length: leadingBlankCount }, (_, index) => <span className={styles.blankDay} aria-hidden="true" key={`leading-${index}`} />)}
@@ -120,7 +124,8 @@ export function JobCalendar({
               ref={(element) => { dayButtonRefs.current[index] = element }}
               aria-label={`${isToday ? "Today, " : ""}${fullDate}, ${jobLabel}`}
               aria-pressed={selected}
-              aria-controls="job-calendar-agenda"
+              aria-current={isToday ? "date" : undefined}
+              aria-controls={agendaId}
               tabIndex={selected ? 0 : -1}
               onClick={() => setSelectedDateKey(day.dateKey)}
               onKeyDown={(event) => moveSelection(index, event)}
@@ -134,7 +139,7 @@ export function JobCalendar({
         </div>
       </div>
 
-      <div className={styles.agenda} id="job-calendar-agenda" aria-live="polite">
+      <div className={styles.agenda} id={agendaId} aria-live="polite">
         <div className={styles.agendaHeader}>
           <div>
             <span className={styles.agendaKicker}>{selectedDay.dateKey === todayDateKey ? "Today" : "Selected day"}</span>
@@ -169,6 +174,8 @@ export function JobCalendar({
                 <input
                   name="scheduledDate"
                   type="date"
+                  min={days[0].dateKey}
+                  max={days[days.length - 1].dateKey}
                   value={selectedDay.dateKey}
                   required
                   onChange={(event) => {

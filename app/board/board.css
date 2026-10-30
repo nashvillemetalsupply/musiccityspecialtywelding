@@ -3,13 +3,13 @@
 .empty-state{max-width:56ch;margin:var(--s8) auto;padding:0 var(--s4);display:grid;gap:var(--s4)}
 
 /* Tab strip sits flush with the app header: left edge on the logo, underline for the active tab. */
-.business-switcher{display:flex;gap:4px;overflow-x:auto;padding:0 8px;background:var(--dark-surface-sunken);border-bottom:1px solid var(--dark-border);scrollbar-width:thin}
-.business-switcher a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;margin-bottom:-1px;white-space:nowrap;color:var(--dark-text-secondary);text-decoration:none;border-bottom:2px solid transparent;font:var(--w-semi) var(--t-label)/1.2 var(--font-sans,Arial,sans-serif)}
+.business-switcher{min-width:0;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));background:var(--dark-surface-sunken);border-bottom:1px solid var(--dark-border);scrollbar-width:thin}
+.business-switcher a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;margin-bottom:-1px;white-space:nowrap;color:var(--dark-text-secondary);text-decoration:none;border-bottom:2px solid transparent;font:var(--w-semi) var(--t-label)/1.2 var(--font-golos,Arial),sans-serif}
 .business-switcher a:hover,.business-switcher a:focus-visible{color:var(--dark-text-primary);border-bottom-color:var(--dark-border-strong)}
 .business-switcher a.active{color:var(--dark-text-primary);border-bottom-color:var(--dark-action)}
 /* Lead badges (Fable 2026-10-24): count only, action colour, no motion. */
-.business-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:2px;background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) 12px/1 var(--font-sans,Arial,sans-serif);font-variant-numeric:tabular-nums}
-.business-workspace{max-width:900px;margin:0 auto;padding:32px 20px 64px;color:var(--dark-text-primary);font-family:var(--font-sans,Arial,sans-serif)}
+.business-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;min-height:22px;padding:0 5px;border-radius:2px;background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-caption)/1.2 var(--font-golos,Arial),sans-serif;font-variant-numeric:tabular-nums}
+.business-workspace{max-width:900px;margin:0 auto;padding:32px 20px 64px;color:var(--dark-text-primary);font-family:var(--font-golos,Arial),sans-serif}
 .business-workspace header{margin-bottom:28px}
 .business-workspace h1{font-size:var(--t-display);line-height:1.05;margin:6px 0 10px}
 .business-workspace h2{font-size:var(--t-title);line-height:1.2;margin:0 0 18px}
@@ -19,7 +19,7 @@
 .business-entry-panel form{display:grid;grid-template-columns:minmax(130px,.6fr) minmax(180px,1.4fr) auto;align-items:end;gap:14px}
 .business-entry-panel label{display:grid;gap:8px;font-size:var(--t-label);font-weight:var(--w-med)}
 .business-entry-panel select,.business-entry-panel input{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--dark-border-strong);background:var(--dark-surface-sunken);color:var(--dark-text-primary);font:inherit}
-.business-entry-panel button{min-height:46px;padding:0 18px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif);cursor:pointer}
+.business-entry-panel button{min-height:46px;padding:0 18px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-golos,Arial),sans-serif;cursor:pointer}
 .business-entry-panel button:focus-visible,.business-entry-panel input:focus-visible,.business-entry-panel select:focus-visible{outline:3px solid var(--dark-focus);outline-offset:2px}
 .business-entry-list ol{list-style:none;padding:0;margin:0}
 .business-entry-list li{display:flex;justify-content:space-between;padding:14px 0;border-top:1px solid var(--dark-border)}
@@ -29,12 +29,12 @@
 .roof-job-note,.roof-job-test{grid-column:1/-1}
 .business-entry-panel .roof-job-test{display:flex;align-items:center;gap:10px}
 .business-entry-panel .roof-job-test input{width:22px;min-height:22px}
-.business-ops-link{display:inline-flex;align-items:center;min-height:46px;padding:0 18px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);text-decoration:none;font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif)}
+.business-ops-link{display:inline-flex;align-items:center;min-height:46px;padding:0 18px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);text-decoration:none;font:var(--w-semi) var(--t-label)/1 var(--font-golos,Arial),sans-serif}
 .business-ops-link:focus-visible{outline:3px solid var(--dark-focus);outline-offset:2px}
 .business-entry-list li{gap:14px;align-items:center}
 .roof-job-pay{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .roof-job-pay input{width:110px;min-height:44px;padding:8px 10px;border:1px solid var(--dark-border-strong);background:var(--dark-surface-sunken);color:var(--dark-text-primary);font:inherit}
-.roof-job-pay button{min-height:44px;padding:0 14px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-sans,Arial,sans-serif);cursor:pointer}
+.roof-job-pay button{min-height:44px;padding:0 14px;border:1px solid var(--dark-action);background:var(--dark-action);color:var(--dark-action-ink);font:var(--w-semi) var(--t-label)/1 var(--font-golos,Arial),sans-serif;cursor:pointer}
 .roof-job-pay button:focus-visible,.roof-job-pay input:focus-visible{outline:3px solid var(--dark-focus);outline-offset:2px}
 @media(max-width:700px){.business-entry-panel form,.business-entry-panel form.roof-job-form{grid-template-columns:1fr}.business-entry-list li{flex-direction:column;align-items:stretch}.business-workspace{padding:24px 16px 48px}.business-entry-panel,.business-entry-list{padding:18px}}
 
@@ -132,6 +132,7 @@ svg{display:block}
 /* PHONE FIRST. Everything from here down is the phone board; the desktop
    shell is restored in the min-width layers at the end of the file. A rule
    that carries no width-dependent value simply never appears down there. */
+.board-workspace,.business-shell{min-width:0;min-height:100dvh;font-family:var(--font-golos),system-ui,sans-serif}
 .app{width:100%;min-width:0;display:block;min-height:100dvh}
 
 /* the bar is sticky over a scrolling document on a phone, and a fixed grid
@@ -216,10 +217,10 @@ svg{display:block}
 /* On a phone two tiles share 390px, so the caption sits under the number
    instead of beside it -- "36 on the books" broke the 36 into two lines. The
    desktop block puts them back on one baseline. */
-.figure .n{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:var(--s2) 0 0}
-.figure .n b{white-space:nowrap}
+.figure .n{display:flex;flex-wrap:wrap;min-width:0;flex-direction:column;align-items:flex-start;gap:0;margin:var(--s2) 0 0}
+.figure .n b{max-width:100%;flex-shrink:0;white-space:normal;overflow-wrap:anywhere}
 .figure .n span{color:var(--text-muted);font-size:var(--t-data)}
-.figure .under{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
+.figure .under{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin:var(--s3) 0 0;
   font-size:var(--t-caption);color:var(--text-secondary)}
 
 /* The post handoff belongs on the wall because it is part of the job's close,
@@ -388,7 +389,7 @@ svg{display:block}
 .tabs{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1);padding:0 var(--s4) var(--s3)}
 /* min-height: a 14px label line box no longer fits inside a fixed 32px tab. */
 .tab{min-height:32px;padding:0 var(--s3);border-radius:var(--r-md);font-size:var(--t-label);
-  font-weight:var(--w-med);color:var(--text-muted);white-space:nowrap}
+  font-weight:var(--w-med);color:var(--text-muted);white-space:normal;text-align:center}
 /* the stage tabs are server-filtered links now, not toggle buttons */
 /* The JSX puts a space between the label and the count, but a flex container
    drops that whitespace text node, so "Attention" and "9" ran together. The
@@ -439,7 +440,7 @@ svg{display:block}
 
 .cust{min-width:0;display:flex;flex-direction:column;gap:2px}
 .cust b{font-size:var(--t-name);font-weight:var(--w-semi);line-height:var(--lh-name);
-  letter-spacing:-.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  letter-spacing:-.008em;white-space:normal;overflow-wrap:anywhere}
 .cust span{font-size:var(--t-data);color:var(--text-secondary);font-weight:var(--w-reg);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .val{font-size:var(--t-data);font-weight:var(--w-med);white-space:nowrap;
@@ -500,7 +501,7 @@ svg{display:block}
 .spec b{color:var(--text-primary);font-weight:var(--w-semi)}
 .not-a-job{display:flex;justify-content:flex-end}
 
-.why-end{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin:var(--s4) 0 0;
+.why-end{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin:var(--s3) 0 0;
   font-size:var(--t-caption);color:var(--text-muted)}
 .why-end.acts{margin:0}
 .why-end .end{margin-left:0;width:100%;display:flex;align-items:flex-start;gap:var(--s2)}
@@ -612,6 +613,43 @@ svg{display:block}
    Breakpoints stay in rem so they respect the reader's font size.
    =========================================================================== */
 
+@media (max-width:55rem){
+  .figure{padding:var(--s3)}
+  .figure p:where(.figure-label){font-size:var(--t-label)}
+  .figure .n{margin-top:var(--s2)}
+  .figure .n .t-display{font-size:clamp(1.5rem,7.5vw,2rem);line-height:1.1}
+  .figure .n .figure-context{display:none}
+  .figure .under{gap:var(--s1);margin-top:var(--s2);line-height:1.4}
+  .figure .under .chip{height:auto;min-height:0;padding:0;background:none;white-space:normal}
+  .social-post-card{padding:var(--s4);gap:var(--s3)}
+  .social-post-kicker{letter-spacing:.025em;text-transform:none}
+  .track-top{gap:var(--s1) var(--s2)}
+  .track-top h1{width:auto;flex:1 1 auto}
+  .track-top .count{width:auto}
+  .track-top .end{width:auto;margin-left:auto}
+}
+
+/* Phone summaries read as two compact ledger rows. Each amount gets the
+   full row when it cannot share a baseline with its label; no digits are
+   clipped or reduced to caption size as the business grows. */
+@media (max-width:26.25rem){
+  .figures{grid-template-columns:minmax(0,1fr)}
+  .figure{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s1) var(--s3)}
+  .figure p:where(.figure-label){flex:1 1 8rem;min-width:0}
+  .figure .n{flex:0 1 auto;min-width:0;max-width:100%;margin:0;margin-left:auto;align-items:flex-end}
+  .figure .n .t-display{max-width:100%;font-size:clamp(1.5rem,6.5vw,1.75rem);
+    white-space:normal;overflow-wrap:anywhere;text-align:right}
+  .figure .under{flex:1 1 100%;min-width:0;margin:0;gap:var(--s1) var(--s3);overflow-wrap:anywhere}
+}
+
+/* Keep the menu reachable on a 320px viewport with a desktop scrollbar.
+   The operator's accessible name remains present; actions retain 44px targets. */
+@media (max-width:24rem){
+  .top{gap:var(--s2)}
+  .top .who-dot{position:absolute;width:1px;min-height:0;height:1px;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap}
+}
+
 /* ----------------------------------------------------- 26.25rem · 420px ---- */
 /* Display is the one role that still steps with the viewport — it is seen
    across a room rather than read. Title, name and the lede are single values
@@ -628,6 +666,8 @@ svg{display:block}
   :root{--t-display:64px}
 
   /* --- the shell -------------------------------------------------------- */
+  .board-workspace{display:grid;height:100dvh;min-height:0;grid-template-rows:auto minmax(0,1fr)}
+  .board-workspace>.app{height:100%;min-height:0}
   .app{display:grid;height:100dvh;
     grid-template-columns:56px minmax(0,1fr);
     grid-template-rows:56px minmax(0,1fr)}
@@ -657,7 +697,7 @@ svg{display:block}
   /* --- the three numbers go back to a row -------------------------------- */
   .figures{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s2)}
   .figure+.figure{border-top:0}
-  .figure{padding:var(--s6)}
+  .figure{padding:var(--s5) var(--s6)}
   .figure .n{flex-direction:row;align-items:baseline;gap:var(--s2);margin-top:var(--s3)}
   .figure .under{flex-wrap:nowrap}
 
@@ -764,10 +804,7 @@ svg{display:block}
   transition:background .15s var(--ease)}
 .board-more .ops-more-trigger:hover{background:var(--surface)}
 .board-more .ops-more-trigger:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-/* The open trigger stays put above the panel so Close is where Open was. */
-.board-more .ops-more-trigger[aria-expanded="true"]{position:fixed;z-index:122;
-  top:max(var(--s3),env(safe-area-inset-top,0px));
-  right:max(var(--s4),env(safe-area-inset-right,0px))}
+.board-more .ops-more-trigger[aria-expanded="true"]{visibility:hidden}
 .board-more .ops-menu-icon{display:grid;place-items:center}
 .board-more .ops-menu-icon svg{width:22px;height:22px}
 .board-more .ops-more-trigger[aria-expanded="false"] .is-close,
@@ -781,11 +818,11 @@ svg{display:block}
   padding:max(var(--s4),env(safe-area-inset-top,0px)) max(var(--s4),env(safe-area-inset-right,0px)) max(var(--s4),var(--safe-area-bottom)) var(--s4);
   background:var(--surface);color:var(--text-primary);border-left:1px solid var(--border)}
 .board-more .ops-more-panel>header{display:flex;align-items:center;justify-content:space-between;
-  gap:var(--s3);padding-bottom:var(--s4);border-bottom:1px solid var(--border)}
-.board-more .ops-more-panel>header span{font-size:var(--t-label);font-weight:var(--w-med);
+  gap:var(--s3);min-height:44px;padding-bottom:var(--s4);border-bottom:1px solid var(--border)}
+.board-more .ops-more-panel>header>div>span{font-size:var(--t-label);font-weight:var(--w-med);
   color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
 .board-more .ops-more-panel>header h2{margin:var(--s1) 0 0;font-family:var(--font-display);
-  font-size:var(--t-lede);font-weight:680;letter-spacing:-.01em;line-height:var(--lh-lede)}
+  font-size:var(--t-lede);font-weight:680;letter-spacing:-.01em;line-height:var(--lh-lede);overflow-wrap:anywhere}
 .board-more .ops-more-search{display:grid;gap:var(--s2);padding:var(--s4) 0 0}
 .board-more .ops-more-search>label{color:var(--text-secondary);font-size:var(--t-label);font-weight:var(--w-med)}
 .board-more .ops-more-search>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2)}
@@ -793,11 +830,12 @@ svg{display:block}
   border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-raised);color:var(--text-primary)}
 .board-more .ops-more-search input{min-width:0;padding:0 var(--s3)}
 .board-more .ops-more-search button{padding:0 var(--s4);font-weight:var(--w-med);cursor:pointer}
-.board-more .ops-more-panel>nav{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);padding:var(--s4) 0}
+.board-more .ops-more-panel>nav{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s2);padding:var(--s4) 0}
 .board-more .ops-more-panel>nav a{display:flex;align-items:center;min-height:44px;
-  padding:0 var(--s3);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:var(--s2) var(--s3);border:1px solid var(--border);border-radius:var(--r-md);
   background:var(--surface-raised);color:var(--text-primary);
-  font-size:var(--t-data);font-weight:var(--w-med);text-decoration:none}
+  font-size:var(--t-data);font-weight:var(--w-med);text-decoration:none;white-space:normal;min-width:0;overflow-wrap:anywhere}
+@media(min-width:30rem){.board-more .ops-more-panel>nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .board-more .ops-more-panel>nav a:hover{border-color:var(--border-strong)}
 .board-more .ops-more-panel a:focus-visible,
 .board-more .ops-more-panel button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -813,3 +851,9 @@ svg{display:block}
    sheet, which this page does not load. */
 .board-more .jobs-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
   overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* The entire modal header context must paint above the fixed bottom rail. */
+.top:has(.ops-more-backdrop){z-index:121}
+.board-more .ops-more-close{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);min-width:44px;min-height:44px;padding:var(--s2);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text-primary);cursor:pointer}
+.board-more .ops-more-close svg{width:22px;height:22px;flex:none}
+.board-more .ops-more-close span{color:inherit;font-size:var(--t-label);letter-spacing:0;text-transform:none}

@@ -4,6 +4,14 @@
 .shepherd-signals.jsonl
 .tmp
 .vercel
+.env*
+.git
+debug.log
+docs/visual-polish
+scripts/qa/.auth.json
+scripts/qa/fixtures
+scripts/qa/report
+test-results
 error_discovery_data
 node_modules
 tmp

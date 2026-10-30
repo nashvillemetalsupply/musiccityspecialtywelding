@@ -135,7 +135,7 @@ export default async function OwnerAnalyticsPage({ searchParams }: { searchParam
 
     <section className="card analytics-card" aria-labelledby="period-totals-heading">
       <header><div><span className="t-label">{periodLabel(analytics.current)}</span><h2 className="t-sub" id="period-totals-heading">Current vs prior period</h2></div><p className="t-caption">Compared with {periodLabel(analytics.prior)}</p></header>
-      <div className="analytics-table-wrap">
+      <div className="analytics-table-wrap" role="region" aria-label="Period totals table" tabIndex={0}>
         <table className="analytics-table">
           <caption className="t-caption">Shop totals for equal lead-arrival periods</caption>
           <thead><tr><th scope="col">Measure</th><th scope="col">Current</th><th scope="col">Prior</th><th scope="col">Change</th></tr></thead>
@@ -151,7 +151,7 @@ export default async function OwnerAnalyticsPage({ searchParams }: { searchParam
 
     <section className="card analytics-card" aria-labelledby="lead-sources-heading">
       <header><div><span className="t-label">Top seven plus other</span><h2 className="t-sub" id="lead-sources-heading">Lead sources</h2></div></header>
-      {analytics.sources.length === 0 ? <p className="analytics-empty t-caption">No leads arrived in either period.</p> : <div className="analytics-table-wrap">
+      {analytics.sources.length === 0 ? <p className="analytics-empty t-caption">No leads arrived in either period.</p> : <div className="analytics-table-wrap" role="region" aria-label="Lead sources table" tabIndex={0}>
         <table className="analytics-table">
           <caption className="t-caption">Lead source and booking results</caption>
           <thead><tr><th scope="col">Source</th><th scope="col">Current leads</th><th scope="col">Current booked</th><th scope="col">Conversion</th><th scope="col">Prior leads</th></tr></thead>

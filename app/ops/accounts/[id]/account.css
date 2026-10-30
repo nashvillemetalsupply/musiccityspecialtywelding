@@ -109,6 +109,7 @@
   color: var(--text-primary);
   background: var(--surface-raised);
   font: inherit;
+  font-size: max(1rem, var(--t-name));
 }
 
 .account-page input::placeholder { color: var(--text-muted); opacity: 1; }
@@ -142,7 +143,7 @@
 .account-head { display: grid; gap: var(--s3); padding: var(--s4); }
 .account-head > div:first-child { display: grid; gap: var(--s2); min-width: 0; }
 .account-head .account-back { display: inline-flex; min-height: 44px; align-items: center; color: var(--text-secondary); }
-.account-head-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: var(--s2); align-items: start; }
+.account-head-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--s2); align-items: start; }
 .account-head-actions > .btn { width: 100%; }
 
 .account-clipboard { display: grid; }
@@ -178,7 +179,7 @@
 .account-people article.is-departed { color: var(--text-muted); }
 .account-people article.is-departed > strong { color: var(--text-muted); }
 .account-people article > strong { color: var(--text-primary); }
-.account-people nav { margin-top: var(--s2); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: var(--s2); align-items: start; }
+.account-people nav { margin-top: var(--s2); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--s2); align-items: start; }
 .account-people nav > .btn { width: 100%; }
 
 .account-tools { display: grid; gap: var(--s4); min-width: 0; }
@@ -235,13 +236,20 @@
   .account-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .account-people nav { grid-auto-flow: column; grid-template-columns: none; justify-content: start; }
   .account-search { grid-template-columns: minmax(0, 1fr) minmax(7rem, auto) auto; align-items: center; }
-  .account-row { grid-template-columns: minmax(6rem, auto) minmax(0, 1fr) minmax(7rem, auto) minmax(9rem, auto); gap: var(--s3); }
+  .account-row { grid-template-columns: minmax(0, 1fr) auto; gap: var(--s3); }
+  .account-row-who { grid-column: 1; }
+  .account-row .account-stamp { grid-column: 2; grid-row: 1; justify-self: end; }
+  .account-row-actions { grid-column: 2; grid-row: 2; }
   .account-row-actions { grid-auto-flow: column; grid-template-columns: none; justify-content: end; }
 }
 
 @media (min-width: 56rem) {
   .account-head { padding: var(--s5); }
   .account-facts { padding: var(--s5); }
+  .account-row { grid-template-columns: minmax(6rem, auto) minmax(0, 1fr) auto auto; }
+  .account-row-who,
+  .account-row .account-stamp,
+  .account-row-actions { grid-column: auto; grid-row: auto; }
 }
 
 @media (pointer: coarse), (max-width: 55rem) {

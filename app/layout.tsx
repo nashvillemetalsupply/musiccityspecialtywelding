@@ -101,7 +101,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    // ThemeBoot sets only the saved theme attribute before hydration. This
+    // one-level suppression covers that intentional root attribute difference;
+    // mismatches inside the page still surface normally.
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className={`${_barlowCondensed.variable} ${_marker.variable} font-sans antialiased`}>
         <script
           id="local-business-schema"

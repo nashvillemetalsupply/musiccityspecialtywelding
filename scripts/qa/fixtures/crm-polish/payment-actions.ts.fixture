@@ -1,0 +1,12 @@
+import type { OpsActionState } from "../../ops/actions"
+export type { OpsActionState } from "../../ops/actions"
+
+async function respond(kind: string, form: FormData): Promise<OpsActionState> {
+  window.dispatchEvent(new CustomEvent("qa-payment-action", { detail: { kind, values: Object.fromEntries(form.entries()) } }))
+  const mode = new URL(location.href).searchParams.get("state")
+  if (mode === "pending") return new Promise<OpsActionState>(() => {})
+  await new Promise(resolve => window.setTimeout(resolve, 800))
+  return mode === "success" ? { status: "success", message: "[INTERNAL TEST] Payment fixture accepted. No money moved." } : { status: "error", message: "[INTERNAL TEST] Payment fixture rejected. No money moved." }
+}
+export async function recordPaymentState(_state: OpsActionState, form: FormData) { return respond("payment", form) }
+export async function reversePaymentState(_state: OpsActionState, form: FormData) { return respond("reversal", form) }

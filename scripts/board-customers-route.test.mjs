@@ -84,3 +84,13 @@ test("the raw page param is floored by normalizePage and the rendered page is th
   assert.ok(!/Number\(params\.accountPage\)/.test(PAGE), "the page param must never be parsed raw")
   assert.match(PAGE, /const page = result\.page/)
 })
+
+// Global route CSS remains loaded across client navigation. The customer
+// directory root must never match a customer-name cell in the board.
+test("customer directory shell cannot resize board customer cells", () => {
+  const directory = PAGE
+  const styles = ["../app/board/customers/customers.css", "../app/board/board-route-nav.css"].map(read).join("\n")
+  assert.match(directory, /className="customers-page"/)
+  assert.match(styles, /\.customers-page\s*[,\{]/)
+  assert.doesNotMatch(styles, /\.cust(?=[\s,.#:[{])/, "directory and nav rules must not target the board name cell")
+})

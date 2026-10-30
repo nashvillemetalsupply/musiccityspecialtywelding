@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { offlineRecordingScope, readCurrentVoiceScope, scopedVoiceStorageKey, voiceIntentMatchesScope } from "./voice-outbox-client"
 
-type SavedVoiceIntent = { id: string; recoveryKey: string; contentType: string; blob: Blob }
+type SavedVoiceIntent = { scope?: string; id: string; recoveryKey: string; contentType: string; blob: Blob }
 const VOICE_DB = "mcsw-voice-outbox"
 const VOICE_STORE = "voice_intents"
 
@@ -50,6 +51,7 @@ export function VoiceCaptureButton({
   onTranscript,
   onError,
   onAudio,
+  onBusyChange,
   available,
   disabled = false,
   className = "",
@@ -60,6 +62,7 @@ export function VoiceCaptureButton({
   onTranscript: (transcript: string, intentId?: string) => void
   onError?: (message: string) => void
   onAudio?: (blob: Blob) => void
+  onBusyChange?: (busy: boolean) => void
   available: boolean
   disabled?: boolean
   className?: string
@@ -67,56 +70,130 @@ export function VoiceCaptureButton({
   unavailableLabel?: string
   recoveryKey?: string
 }) {
+  const [voiceScope, setVoiceScope] = useState("")
+  const [scopeLoading, setScopeLoading] = useState(available)
+  const mountedRef = useRef(true)
+  const scopeRef = useRef("")
+  const scopeRequestRef = useRef(0)
   const [listening, setListening] = useState(false)
   const [starting, setStarting] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
+  const [checkingCapture, setCheckingCapture] = useState(false)
+  const captureBusy = checkingCapture || starting || listening || transcribing
+  useEffect(() => { onBusyChange?.(captureBusy) }, [captureBusy, onBusyChange])
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange])
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const pressedRef = useRef(false)
+  const captureRequestRef = useRef(0)
   const transcriptHandler = useRef(onTranscript)
   const errorHandler = useRef(onError)
   const effectiveRecoveryKey = recoveryKey === "voice" ? (className || idleLabel) : recoveryKey
-  const storageKey = `mcsw-voice:${effectiveRecoveryKey.replace(/[^a-z0-9:_-]/gi, "-")}`
+  const recoveryKeyRef = useRef(effectiveRecoveryKey)
+  const legacyStorageKey = `mcsw-voice:${effectiveRecoveryKey.replace(/[^a-z0-9:_-]/gi, "-")}`
+  const storageKey = voiceScope ? scopedVoiceStorageKey(voiceScope, effectiveRecoveryKey) : ""
 
   useEffect(() => {
     transcriptHandler.current = onTranscript
     errorHandler.current = onError
-  }, [onError, onTranscript])
+    recoveryKeyRef.current = effectiveRecoveryKey
+  }, [onError, onTranscript, effectiveRecoveryKey])
 
-  useEffect(() => () => {
-    recorderRef.current?.stop()
-    streamRef.current?.getTracks().forEach((track) => track.stop())
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      scopeRequestRef.current += 1
+      pressedRef.current = false
+      if (recorderRef.current?.state === "recording") recorderRef.current.stop()
+      streamRef.current?.getTracks().forEach((track) => track.stop())
+    }
   }, [])
 
   function report(message: string) {
-    onError?.(message)
+    if (mountedRef.current) errorHandler.current?.(message)
   }
 
-  const uploadSavedVoice = useCallback(async (intent: SavedVoiceIntent) => {
-    return fetch("/api/ops/transcribe", {
-      method: "POST",
-      headers: { "Content-Type": intent.contentType, "X-Voice-Intent-Id": intent.id, "X-Voice-Recovery-Key": intent.recoveryKey },
-      body: intent.blob,
-    })
+  const ensureScope = useCallback(async (expected?: string) => {
+    const requestId = ++scopeRequestRef.current
+    let current: string
+    try { current = await readCurrentVoiceScope() }
+    catch (error) {
+      if (mountedRef.current && requestId === scopeRequestRef.current) {
+        if (!offlineRecordingScope(error, scopeRef.current)) {
+          scopeRef.current = ""
+          setVoiceScope("")
+        }
+      }
+      throw error
+    }
+    if (!mountedRef.current || requestId !== scopeRequestRef.current) throw new Error("Voice identity changed. Your note remains saved on this device.")
+    if (scopeRef.current && scopeRef.current !== current) {
+      pressedRef.current = false
+      if (recorderRef.current?.state === "recording") recorderRef.current.stop()
+      setTranscribing(false)
+    }
+    scopeRef.current = current
+    setVoiceScope(current)
+    if (expected && current !== expected) throw new Error("The signed-in person changed. Your note remains saved for the person who recorded it.")
+    return current
   }, [])
 
-  const recoverTranscript = useCallback(async (intentId: string) => {
+  useEffect(() => {
+    if (!available) return
+    let active = true
+    const refresh = () => {
+      if (document.visibilityState === "hidden") return
+      void ensureScope().catch(() => undefined).finally(() => { if (active) setScopeLoading(false) })
+    }
+    refresh()
+    window.addEventListener("focus", refresh)
+    window.addEventListener("pageshow", refresh)
+    document.addEventListener("visibilitychange", refresh)
+    return () => {
+      active = false
+      window.removeEventListener("focus", refresh)
+      window.removeEventListener("pageshow", refresh)
+      document.removeEventListener("visibilitychange", refresh)
+    }
+  }, [available, ensureScope])
+
+  const uploadSavedVoice = useCallback(async (intent: SavedVoiceIntent, scope: string) => {
+    if (!voiceIntentMatchesScope(intent, scope)) throw new Error("This older voice note is kept here and will not be sent automatically.")
+    await ensureScope(scope)
+    if (intent.recoveryKey !== recoveryKeyRef.current) throw new Error("The job changed. Your voice note remains saved with its original job.")
+    return fetch("/api/ops/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": intent.contentType, "X-Voice-Intent-Id": intent.id, "X-Voice-Recovery-Key": intent.recoveryKey, "X-Voice-Operator-Scope": scope },
+      body: intent.blob,
+    })
+  }, [ensureScope])
+
+  const recoverTranscript = useCallback(async (intentId: string, scope: string) => {
     const waits = [900, 1600, 2800, 4800, 8000, 15000, 30000, 45000]
     const saved = await readVoiceIntent(intentId).catch(() => null)
+    if (saved && !voiceIntentMatchesScope(saved, scope)) throw new Error("This older voice note is kept here and will not be sent automatically.")
+    const recoveryContext = effectiveRecoveryKey
+    if (saved && saved.recoveryKey !== recoveryContext) throw new Error("This saved note belongs to a different job and has been kept intact.")
     let resubmitted = false
     let serverHasIntent = false
     for (const wait of waits) {
       await new Promise((resolve) => window.setTimeout(resolve, wait))
-      let response = await fetch(`/api/ops/transcribe?id=${encodeURIComponent(intentId)}`, { cache: "no-store" })
+      await ensureScope(scope)
+      if (recoveryKeyRef.current !== recoveryContext) throw new Error("The job changed. Your voice note remains saved with its original job.")
+      const poll = () => fetch(`/api/ops/transcribe?id=${encodeURIComponent(intentId)}`, { cache: "no-store", headers: { "X-Voice-Operator-Scope": scope } })
+      let response = await poll()
+      if (response.status === 409) throw new Error("The signed-in person changed. Your note remains saved on this device.")
       if (response.status === 404 && saved && !resubmitted) {
         try {
-          const upload = await uploadSavedVoice(saved)
+          const upload = await uploadSavedVoice(saved, scope)
           resubmitted = true
           const uploadState = await upload.json().catch(() => null) as { transcript?: string } | null
           if (upload.ok && uploadState?.transcript) return uploadState.transcript
-          response = await fetch(`/api/ops/transcribe?id=${encodeURIComponent(intentId)}`, { cache: "no-store" })
-        } catch {
+          response = await poll()
+        } catch (error) {
+          if (scopeRef.current !== scope || !mountedRef.current) throw error
           resubmitted = false
           continue
         }
@@ -128,44 +205,73 @@ export function VoiceCaptureButton({
     }
     if (!serverHasIntent) throw new Error("That voice note never reached the shop. It is still saved on this phone; reconnect and try again.")
     throw new Error("Your voice note is safely filed. MCSW Jobs will finish it in the background.")
-  }, [uploadSavedVoice])
+  }, [ensureScope, uploadSavedVoice, effectiveRecoveryKey])
+
+  const applyTranscript = useCallback(async (transcript: string, intentId: string, scope: string, key: string) => {
+    await ensureScope(scope)
+    const saved = await readVoiceIntent(intentId).catch(() => null)
+    if (!mountedRef.current || scopeRef.current !== scope || key !== scopedVoiceStorageKey(scope, recoveryKeyRef.current)
+      || (saved && (!voiceIntentMatchesScope(saved, scope) || saved.recoveryKey !== recoveryKeyRef.current))) return
+    transcriptHandler.current(transcript, intentId)
+    if (window.localStorage.getItem(key) === intentId) window.localStorage.removeItem(key)
+    if (saved && voiceIntentMatchesScope(saved, scope)) await deleteVoiceIntent(intentId).catch(() => undefined)
+    navigator.vibrate?.(24)
+  }, [ensureScope])
 
   useEffect(() => {
-    if (!available) return
-    const pendingId = window.localStorage.getItem(storageKey)
-    if (!pendingId) return
+    if (!available || !voiceScope || !storageKey) return
     let active = true
     const kickoff = window.setTimeout(() => {
       if (!active) return
+      // Legacy keys never establish who recorded the blob. Keep them intact.
+      let pendingId: string | null
+      try {
+        if (window.localStorage.getItem(legacyStorageKey)) errorHandler.current?.("An older voice note is kept here and will not be sent automatically.")
+        pendingId = window.localStorage.getItem(storageKey)
+      } catch {
+        errorHandler.current?.("This browser cannot access saved voice notes. Use a regular browser window or type your note.")
+        return
+      }
+      if (!pendingId) return
       setTranscribing(true)
-      void recoverTranscript(pendingId).then(async (transcript) => {
-        if (!active) return
-        window.localStorage.removeItem(storageKey)
-        await deleteVoiceIntent(pendingId).catch(() => undefined)
-        transcriptHandler.current(transcript, pendingId)
-        navigator.vibrate?.(24)
+      void recoverTranscript(pendingId, voiceScope).then(async (transcript) => {
+        if (active) await applyTranscript(transcript, pendingId, voiceScope, storageKey)
       }).catch((error) => {
         if (active) errorHandler.current?.(error instanceof Error ? error.message : "Your saved voice note is still being processed.")
       }).finally(() => { if (active) setTranscribing(false) })
     }, 0)
     return () => { active = false; window.clearTimeout(kickoff) }
-  }, [available, recoverTranscript, storageKey])
+  }, [available, voiceScope, recoverTranscript, applyTranscript, storageKey, legacyStorageKey])
 
   async function startRecording() {
     if (!available || disabled || transcribing || recorderRef.current) return
-    const pendingId = window.localStorage.getItem(storageKey)
+    const captureRequest = ++captureRequestRef.current
+    setCheckingCapture(true)
+    try {
+    let scope: string
+    report("")
+    try { scope = await ensureScope() }
+    catch (error) {
+      if (captureRequest !== captureRequestRef.current) return
+      const offlineScope = offlineRecordingScope(error, scopeRef.current)
+      if (!offlineScope || !mountedRef.current) { report(error instanceof Error ? error.message : "Reconnect before using voice."); return }
+      scope = offlineScope
+      report("Offline: this recording will stay on this device for the person last signed in. Reconnect to transcribe it.")
+    }
+    if (!pressedRef.current || !mountedRef.current || captureRequest !== captureRequestRef.current) return
+    const key = scopedVoiceStorageKey(scope, effectiveRecoveryKey)
+    let pendingId: string | null
+    try { pendingId = window.localStorage.getItem(key) }
+    catch { report("This browser cannot save voice notes. Use a regular browser window or type your note."); return }
     if (pendingId) {
       setTranscribing(true)
       try {
-        const transcript = await recoverTranscript(pendingId)
-        window.localStorage.removeItem(storageKey)
-        await deleteVoiceIntent(pendingId).catch(() => undefined)
-        onTranscript(transcript, pendingId)
-        navigator.vibrate?.(24)
+        const transcript = await recoverTranscript(pendingId, scope)
+        await applyTranscript(transcript, pendingId, scope, key)
       } catch (error) {
         report(error instanceof Error ? error.message : "The saved voice note is still waiting on this phone.")
       } finally {
-        setTranscribing(false)
+        if (mountedRef.current) setTranscribing(false)
       }
       return
     }
@@ -173,13 +279,12 @@ export function VoiceCaptureButton({
       report("This phone does not expose its microphone to the browser.")
       return
     }
-    report("")
     try {
       setStarting(true)
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      if (!pressedRef.current) {
+      if (!pressedRef.current || !mountedRef.current || captureRequest !== captureRequestRef.current || scopeRef.current !== scope || recoveryKeyRef.current !== effectiveRecoveryKey) {
         stream.getTracks().forEach((track) => track.stop())
-        setStarting(false)
+        if (mountedRef.current) setStarting(false)
         return
       }
       const recorder = new MediaRecorder(stream)
@@ -192,41 +297,41 @@ export function VoiceCaptureButton({
         recorderRef.current = null
         streamRef.current?.getTracks().forEach((track) => track.stop())
         streamRef.current = null
-        setListening(false)
+        if (mountedRef.current) setListening(false)
         if (!blob.size) return
-        onAudio?.(blob)
-        setTranscribing(true)
+        if (mountedRef.current) setTranscribing(true)
+        const clientIntentId = crypto.randomUUID()
+        const intent = { id: clientIntentId, scope, recoveryKey: effectiveRecoveryKey, contentType: blob.type, blob }
+        let persisted = false
         try {
-          const clientIntentId = crypto.randomUUID()
-          await saveVoiceIntent({ id: clientIntentId, recoveryKey: effectiveRecoveryKey, contentType: blob.type, blob })
-          window.localStorage.setItem(storageKey, clientIntentId)
+          // Persist under the recording identity even if the route was closed.
+          await saveVoiceIntent(intent)
+          window.localStorage.setItem(key, clientIntentId)
+          persisted = true
+          if (!mountedRef.current || scopeRef.current !== scope || recoveryKeyRef.current !== effectiveRecoveryKey) return
+          await ensureScope(scope)
+          if (recoveryKeyRef.current !== effectiveRecoveryKey) return
+          onAudio?.(blob)
           let response: Response
-          try {
-            response = await uploadSavedVoice({ id: clientIntentId, recoveryKey: effectiveRecoveryKey, contentType: blob.type, blob })
-          } catch {
-            const transcript = await recoverTranscript(clientIntentId)
-            window.localStorage.removeItem(storageKey)
-            await deleteVoiceIntent(clientIntentId).catch(() => undefined)
-            onTranscript(transcript, clientIntentId)
-            navigator.vibrate?.(24)
+          try { response = await uploadSavedVoice(intent, scope) }
+          catch {
+            const transcript = await recoverTranscript(clientIntentId, scope)
+            await applyTranscript(transcript, clientIntentId, scope, key)
             return
           }
           const data = await response.json() as { transcript?: string; error?: string; intentId?: string; retryable?: boolean }
-          if (data.intentId && data.retryable) window.localStorage.setItem(storageKey, data.intentId)
           const transcript = response.ok && data.transcript
             ? data.transcript
-            : data.intentId && data.retryable
-              ? await recoverTranscript(data.intentId)
+            : data.retryable
+              ? await recoverTranscript(clientIntentId, scope)
               : ""
           if (!transcript) throw new Error(data.error || "Could not catch that voice note.")
-          window.localStorage.removeItem(storageKey)
-          await deleteVoiceIntent(data.intentId || clientIntentId).catch(() => undefined)
-          onTranscript(transcript, data.intentId || clientIntentId)
-          navigator.vibrate?.(24)
+          await applyTranscript(transcript, clientIntentId, scope, key)
         } catch (error) {
-          report(error instanceof Error ? error.message : "Voice transcription failed.")
+          const detail = error instanceof Error ? error.message : "Reconnect to transcribe it."
+          report(persisted ? `Your voice note is saved on this device for the person who recorded it. ${detail}` : detail)
         } finally {
-          setTranscribing(false)
+          if (mountedRef.current) setTranscribing(false)
         }
       }
       recorder.start()
@@ -234,12 +339,15 @@ export function VoiceCaptureButton({
       setListening(true)
       navigator.vibrate?.(12)
     } catch (error) {
+      if (captureRequest !== captureRequestRef.current) return
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
       recorderRef.current = null
-      setStarting(false)
-      setListening(false)
+      if (mountedRef.current) { setStarting(false); setListening(false) }
       report(error instanceof Error ? error.message : "Microphone permission was not granted.")
+    }
+    } finally {
+      if (mountedRef.current && captureRequest === captureRequestRef.current) setCheckingCapture(false)
     }
   }
 
@@ -250,6 +358,8 @@ export function VoiceCaptureButton({
 
   function pressEnd() {
     pressedRef.current = false
+    captureRequestRef.current += 1
+    setCheckingCapture(false)
     setStarting(false)
     if (recorderRef.current?.state === "recording") recorderRef.current.stop()
   }
@@ -282,10 +392,14 @@ export function VoiceCaptureButton({
       }
     }}
     onContextMenu={(event) => event.preventDefault()}
-    disabled={!available || disabled || transcribing}
+    disabled={!available || disabled || transcribing || scopeLoading}
     aria-pressed={available && (listening || starting)}
     aria-label={!available
       ? unavailableLabel
+      : scopeLoading
+        ? "Checking voice sign-in"
+      : !voiceScope
+        ? "Retry voice connection"
       : transcribing
         ? "Transcribing voice note"
       : listening
@@ -294,5 +408,5 @@ export function VoiceCaptureButton({
           ? "Opening the microphone. Activate to cancel."
         : `${idleLabel}. Activate to start, then activate again to stop.`}
     title={!available ? unavailableLabel : undefined}
-  >{!available ? unavailableLabel : transcribing ? "Printing words…" : listening ? "Release to use it" : starting ? "Opening microphone…" : idleLabel}</button>
+  >{!available ? unavailableLabel : scopeLoading ? "Checking sign-in..." : !voiceScope ? "Retry voice connection" : transcribing ? "Printing words…" : listening ? "Release to use it" : starting ? "Opening microphone…" : idleLabel}</button>
 }

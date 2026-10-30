@@ -1,0 +1,154 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { OpsLoginForm } from "../../ops/login-form"
+import { ShopDock } from "../../ops/shop-dock"
+import { InlineJobIntake } from "../../ops/intake/inline-job-intake"
+import { emptyCallSketchSpec } from "../../../lib/call-sketch-live"
+
+export function IntakeFixture({ owner, empty }: { owner: boolean; empty: boolean }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const original = window.fetch
+    let mounted = true
+    const spec = emptyCallSketchSpec()
+    Object.assign(spec.kind, { value: "gate", truth: "stated", evidence: "Driveway gate" })
+    Object.assign(spec.width, { value: 144, truth: "stated", evidence: "Twelve feet wide" })
+    Object.assign(spec.height, { value: 72, truth: "stated", evidence: "Six feet tall" })
+    Object.assign(spec.stockSize, { value: 2, truth: "stated", evidence: "Two inch square tubing" })
+    Object.assign(spec.railCount, { value: 3, truth: "stated", evidence: "Three rails" })
+    Object.assign(spec.hingeSide, { value: "left", truth: "stated", evidence: "Hinges left" })
+    Object.assign(spec.latchSide, { value: "right", truth: "stated", evidence: "Latch right" })
+    window.fetch = async (input, init) => {
+      const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url, location.origin)
+      if (url.pathname === "/api/ops/call-sketch/TEST-CALL") {
+        if ((init?.method || "GET").toUpperCase() !== "GET") return Response.json({ error: "Fixture actions are disabled." }, { status: 403 })
+        return Response.json({ callerName: "[INTERNAL TEST] Riverbend Fabrication", callStatus: "completed", status: "review", observedSpec: spec, confirmedSpec: null, revision: 1, confirmedAt: null, lastError: "", lastEventAt: "2026-10-29T17:00:00Z", liveTranscriptionEnabled: true, buildQuestion: { question: "Confirm the opening width before cutting.", reason: "The call supplied an approximate measurement." }, utterances: [{ sequenceId: 1, speaker: "Customer", transcript: "[INTERNAL TEST] A twelve foot gate, six feet tall, with three rails.", final: true }] })
+      }
+      return original(input, init)
+    }
+    queueMicrotask(() => { if (mounted) setReady(true) })
+    return () => { mounted = false; window.fetch = original }
+  }, [])
+  return ready ? <InlineJobIntake intakeKey="internal-test-fixture" owner={owner} voiceReady={false} draft={empty ? undefined : { publicId: "TEST-CALL", name: "[INTERNAL TEST] Riverbend Fabrication", phone: "", need: "Repair trailer mounting brackets and check the cracked tongue.", callStatus: "completed", createdAt: "2026-10-29T17:00:00Z", lastError: "" }} /> : <p role="status">Preparing isolated intake fixture…</p>
+}
+
+/** Development-only controls. Root text sizing is not browser zoom. */
+export function FixtureTools() {
+  const [open, setOpen] = useState(false)
+  const [large, setLarge] = useState(false)
+  const [largeTokens, setLargeTokens] = useState(false)
+  const [status, setStatus] = useState("Not run")
+  const [report, setReport] = useState("")
+  useEffect(() => {
+    let mounted = true
+    queueMicrotask(() => {
+      try {
+        const saved = localStorage.getItem(`mcsw-qa-polish-report:${location.search}`)
+        if (mounted && saved) { setReport(saved); setStatus("Restored previous local audit; run again for current results") }
+      } catch { /* Storage is optional in this development fixture. */ }
+    })
+    return () => { mounted = false }
+  }, [])
+  useEffect(() => {
+    const previous = document.documentElement.style.fontSize
+    if (large) document.documentElement.style.fontSize = "200%"
+    return () => { document.documentElement.style.fontSize = previous }
+  }, [large])
+  useEffect(() => {
+    if (!largeTokens) return
+    const root = document.documentElement
+    const properties = ["display", "lede", "title", "name", "sub", "body", "data", "label", "caption"].map(name => `--t-${name}`)
+    const previous = properties.map(property => ({ property, value: root.style.getPropertyValue(property), priority: root.style.getPropertyPriority(property), computed: getComputedStyle(root).getPropertyValue(property) }))
+    previous.forEach(({ property, computed }) => root.style.setProperty(property, `calc(${computed.trim()} * 2)`, "important"))
+    return () => previous.forEach(({ property, value, priority }) => { if (value) root.style.setProperty(property, value, priority); else root.style.removeProperty(property) })
+  }, [largeTokens])
+  async function audit() {
+    setStatus("Running accessibility audit")
+    try {
+      const axe = (await import("axe-core")).default
+      const results = await axe.run({ exclude: [["[data-qa-tools]"]] })
+      const concise = {
+        url: location.href, width: innerWidth, rootFontSize: getComputedStyle(document.documentElement).fontSize, typeTokenScale: largeTokens ? 2 : 1,
+        typeTokens: Object.fromEntries(["display", "lede", "title", "name", "sub", "body", "data", "label", "caption"].map(name => [name, getComputedStyle(document.documentElement).getPropertyValue(`--t-${name}`).trim()])),
+        renderedSamples: Array.from(document.querySelectorAll<HTMLElement>("h1, h2, p, button, input, .t-data, .t-name")).filter(element => !element.closest("[data-qa-tools]") && element.getClientRects().length > 0).slice(0, 24).map(element => ({ tag: element.tagName, class: element.className, text: element.textContent?.trim().slice(0, 90), fontSize: getComputedStyle(element).fontSize, lineHeight: getComputedStyle(element).lineHeight, height: Math.round(element.getBoundingClientRect().height) })),
+        violations: results.violations.map(({ id, impact, description, help, nodes }) => ({ id, impact, description, help, nodes: nodes.map(({ target, failureSummary, html }) => ({ target, failureSummary, html })) })),
+        incomplete: results.incomplete.map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target) })),
+        passedRules: results.passes.length,
+      }
+      const json = JSON.stringify(concise, null, 2)
+      setReport(json)
+      try { localStorage.setItem(`mcsw-qa-polish-report:${location.search}`, json) } catch { /* Audit remains visible if storage is unavailable. */ }
+      setStatus(`${results.violations.length} violations; ${results.incomplete.length} need review; ${results.passes.length} rules passed`)
+    } catch (error) { setStatus(`Audit failed: ${String(error)}`) }
+  }
+  return <aside data-qa-tools style={{ position: "fixed", zIndex: 2147483647, top: 8, right: 8, maxWidth: "calc(100vw - 16px)", font: "14px/1.4 sans-serif", color: "#fff", background: "#141414", border: "1px solid #777", borderRadius: 8, padding: 8 }} aria-label="Development audit controls">
+    <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>QA tools</button>
+    {open && <div style={{ display: "grid", gap: 8, width: 620, maxWidth: "calc(100vw - 34px)", maxHeight: "70dvh", overflow: "auto" }}>
+      <label><input type="checkbox" checked={large} onChange={(event) => setLarge(event.target.checked)} /> Root text size 200% (not browser zoom)</label>
+      <label><input type="checkbox" checked={largeTokens} onChange={(event) => setLargeTokens(event.target.checked)} /> Product type tokens 200% (fixed-pixel text unchanged)</label>
+      <button type="button" onClick={() => void audit()}>Run axe accessibility audit</button>
+      <button type="button" onClick={() => { setStatus("Audit scheduled in 5 seconds; open the dialog now"); window.setTimeout(() => void audit(), 5000) }}>Audit in 5 seconds (for dialogs)</button>
+      <p id="qa-audit-status" role="status">{status}</p>
+      <pre id="qa-audit-report" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", font: "12px/1.5 monospace" }}>{report}</pre>
+    </div>}
+  </aside>
+}
+
+export function DockFixture({ state }: { state: string }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const original = window.fetch
+    let mounted = true
+    let briefCount = 0
+    const slips = [1, 2].map(id => ({ id, question: `[INTERNAL TEST] Saved answer ${id === 1 ? "A" : "B"}`, answer: `Answer ${id === 1 ? "A" : "B"}: confirm the gate measurement before cutting. [e:${id}]`, receipt_ids: [id], created_at: "2026-10-29T17:00:00Z" }))
+    window.fetch = async (input, init) => {
+      const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url, location.origin)
+      const method = (init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase()
+      if (url.pathname === "/api/ops/handset-slips") {
+        if (method === "GET") return Response.json({ slips })
+        if (state === "failed") return Response.json({ error: "[INTERNAL TEST] Saved answers could not be cleared." }, { status: 503 })
+        return Response.json(method === "POST" ? { slip: slips[1] } : { ok: true })
+      }
+      if (url.pathname === "/api/ops/receipts") {
+        const first = url.searchParams.get("ids") === "1"
+        await new Promise(resolve => window.setTimeout(resolve, state === "delayed-source" && first ? 5000 : 100))
+        return state === "failed" ? Response.json({ error: "[INTERNAL TEST] Sources unavailable." }, { status: 503 }) : Response.json({ receipts: [{ id: first ? 1 : 2, occurred_at: "2026-10-29T17:00:00Z", kind: "note_added", lead_id: null, body: `[INTERNAL TEST] Source ${first ? "A" : "B"}: measured ${first ? "144" : "148"} inches.` }] })
+      }
+      if (url.pathname === "/api/ops/ask") return state === "failed" ? Response.json({ error: "[INTERNAL TEST] Ask Jobs unavailable. Try again." }, { status: 503 }) : new Response("[INTERNAL TEST] Confirmed the final opening measurement. [e:2]", { headers: { "Content-Type": "text/plain" } })
+      if (url.pathname.startsWith("/api/ops/brief")) {
+        const count = ++briefCount
+        await new Promise(resolve => window.setTimeout(resolve, state === "stale-brief" && count === 1 ? 5000 : 100))
+        return state === "failed" ? Response.json({ error: "Brief unavailable" }, { status: 503 }) : Response.json({ brief: { body: `[INTERNAL TEST] Morning Brief ${count}. Verify today's gate dimensions and call the customer.` }, audioUrl: "", daySheet: [] })
+      }
+      if (method !== "GET") return Response.json({ error: "Fixture blocked this request." }, { status: 403 })
+      return original(input, init)
+    }
+    queueMicrotask(() => { if (mounted) setReady(true) })
+    return () => { mounted = false; window.fetch = original }
+  }, [state])
+  return <section className="card" style={{ margin: "var(--s4)", padding: "var(--s4)" }}><h1 className="t-title">Ask Jobs &amp; Morning Brief</h1><p className="t-caption">Synthetic local responses. No provider or database access.</p>{ready && <div data-qa-local-interactions><ShopDock voiceReady={false} /></div>}</section>
+}
+
+/** The real login form, isolated behind a browser-local fetch adapter. */
+export function LoginFixture({ state }: { state: string }) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const original = window.fetch
+    const pending: Array<() => void> = []
+    window.fetch = async (input, init) => {
+      const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url, location.origin)
+      if (url.pathname === "/api/ops/login" || url.pathname.startsWith("/api/ops/sms-login/")) {
+        if (state === "pending") await new Promise<void>((resolve) => { pending.push(resolve) })
+        const failed = state === "failed" || url.pathname.endsWith("/verify")
+        return Response.json(failed ? { error: "[INTERNAL TEST] We could not deliver this sign-in request. Check your details and try again; no message was sent." } : { message: "[INTERNAL TEST] Simulated delivery only. No email or text was sent." }, { status: failed ? 503 : 200 })
+      }
+      if ((init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase() !== "GET") return Response.json({ error: "Fixture blocked this request." }, { status: 403 })
+      return original(input, init)
+    }
+    let mounted = true
+    queueMicrotask(() => { if (mounted) setReady(true) })
+    return () => { mounted = false; window.fetch = original; pending.forEach(resolve => resolve()) }
+  }, [state])
+  return ready ? <OpsLoginForm linkError={state === "failed"} operators={[{ selector: "fixture-daniel", name: "[INTERNAL TEST] Daniel Montgomery-Washington", hasEmail: true, hasSms: true }, { selector: "fixture-crew", name: "[INTERNAL TEST] Shop crew", hasEmail: true, hasSms: true }]} smsReady /> : <p role="status">Preparing isolated login fixture…</p>
+}

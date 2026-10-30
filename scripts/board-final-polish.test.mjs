@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import vm from "node:vm"
 
 // Final polish pass after the ops→board conversion: the owner Morning Brief
 // must never leak the crew-redaction marker, the satellite board pages must
@@ -75,4 +76,19 @@ test("the latest-brief route responds with an allowlisted brief DTO, not the raw
   // The DTO carries only id/kind/body/occurred_at — no detail, no tsvector columns.
   const dto = latest.slice(latest.indexOf("brief: brief ? {"), latest.indexOf("} : null,"))
   assert.doesNotMatch(dto, /detail|tsv|crew_tsv/)
+})
+
+test("saved-theme boot accepts only supported themes and tolerates blocked storage", () => {
+  const script = BOOT.match(/const BOOT = `([\s\S]*?)`/)[1]
+  for (const stored of ["light", "dark", "", null, "LIGHT", "unexpected"]) {
+    const attributes = []
+    vm.runInNewContext(script, {
+      localStorage: { getItem: () => stored },
+      document: { documentElement: { setAttribute: (...args) => attributes.push(args) } },
+    })
+    assert.deepEqual(attributes, ["light", "dark"].includes(stored) ? [["data-theme", stored]] : [])
+  }
+  assert.doesNotThrow(() => vm.runInNewContext(script, {
+    localStorage: { getItem() { throw new Error("Storage blocked") } },
+  }))
 })

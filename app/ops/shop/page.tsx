@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import Link from "next/link"
 import "./shop.css"
 import { dbConfigured } from "@/lib/db"
@@ -27,14 +28,16 @@ export default async function ShopPage() {
   }
 
   const [operators, documents] = await Promise.all([listOperators(true), listShopDocuments()])
+  const instanceId = randomUUID()
+  const domId = (name: string) => `${name}-${instanceId}`
   return (
     <div className="shop-page">
       <header className="card shop-head">
         <Link className="shop-back t-caption" href="/ops">Back to Jobs</Link><h1 className="t-title">Settings</h1><p className="t-caption">Team, documents, phone, and exports.</p>
       </header>
 
-      <section className="card shop-card" aria-labelledby="crew-heading">
-        <header className="shop-card-head"><h2 className="t-sub" id="crew-heading">Team</h2><span className="t-label">{operators.filter((item) => item.active).length} active</span></header>
+      <section className="card shop-card" aria-labelledby={domId("crew-heading")}>
+        <header className="shop-card-head"><h2 className="t-sub" id={domId("crew-heading")}>Team</h2><span className="t-label">{operators.filter((item) => item.active).length} active</span></header>
         <div className="shop-crew">
           {operators.map((item) => (
             <article className={`shop-crew-card${item.active ? "" : " is-inactive"}`} key={item.id}>
@@ -53,16 +56,16 @@ export default async function ShopPage() {
           ))}
         </div>
         <details className="shop-drawer"><summary>Add team member <span className="t-label">Open</span></summary><form action={saveCrewMember} className="shop-form">
-            <label htmlFor="shop-crew-name">Name<input id="shop-crew-name" name="name" type="text" autoComplete="name" spellCheck={false} /></label>
-            <label htmlFor="shop-crew-email">Email<input id="shop-crew-email" name="email" type="email" inputMode="email" autoComplete="email" /></label>
-            <label htmlFor="shop-crew-cell">Cell<input id="shop-crew-cell" name="cellPhone" type="tel" inputMode="tel" autoComplete="tel" /></label>
-            <label htmlFor="shop-crew-role">Role<select id="shop-crew-role" name="role" defaultValue="crew"><option value="crew">Crew</option><option value="owner">Owner</option></select></label>
+            <label htmlFor={domId("shop-crew-name")}>Name<input id={domId("shop-crew-name")} name="name" type="text" autoComplete="name" spellCheck={false} /></label>
+            <label htmlFor={domId("shop-crew-email")}>Email<input id={domId("shop-crew-email")} name="email" type="email" inputMode="email" autoComplete="email" /></label>
+            <label htmlFor={domId("shop-crew-cell")}>Cell<input id={domId("shop-crew-cell")} name="cellPhone" type="tel" inputMode="tel" autoComplete="tel" /></label>
+            <label htmlFor={domId("shop-crew-role")}>Role<select id={domId("shop-crew-role")} name="role" defaultValue="crew"><option value="crew">Crew</option><option value="owner">Owner</option></select></label>
             <SafeSubmitButton className="btn btn--go" pendingLabel="Adding...">Add team member</SafeSubmitButton>
           </form></details>
       </section>
 
-      <section className="card shop-card" aria-labelledby="paperwork-heading">
-        <header className="shop-card-head"><h2 className="t-sub" id="paperwork-heading">Documents</h2></header>
+      <section className="card shop-card" aria-labelledby={domId("paperwork-heading")}>
+        <header className="shop-card-head"><h2 className="t-sub" id={domId("paperwork-heading")}>Documents</h2></header>
         <div className="shop-documents">
           {(["w9", "coi"] as const).map((kind) => {
             const document = documents.find((item) => item.kind === kind)
@@ -70,15 +73,15 @@ export default async function ShopPage() {
           })}
         </div>
         <details className="shop-drawer"><summary>Update a document <span className="t-label">Open</span></summary><form action="/api/ops/shop/document" method="post" encType="multipart/form-data" className="shop-form">
-            <label htmlFor="shop-doc-kind">Document<select id="shop-doc-kind" name="kind"><option value="w9">W-9</option><option value="coi">Insurance certificate</option></select></label>
-            <label htmlFor="shop-doc-file">PDF<input id="shop-doc-file" name="file" type="file" accept="application/pdf" /></label>
-            <label htmlFor="shop-doc-expires">Expires<input id="shop-doc-expires" name="expiresAt" type="date" autoComplete="off" /></label>
+            <label htmlFor={domId("shop-doc-kind")}>Document<select id={domId("shop-doc-kind")} name="kind"><option value="w9">W-9</option><option value="coi">Insurance certificate</option></select></label>
+            <label htmlFor={domId("shop-doc-file")}>PDF<input id={domId("shop-doc-file")} name="file" type="file" accept="application/pdf" /></label>
+            <label htmlFor={domId("shop-doc-expires")}>Expires<input id={domId("shop-doc-expires")} name="expiresAt" type="date" autoComplete="off" /></label>
             <SafeSubmitButton className="btn btn--go" pendingLabel="Uploading...">Save document</SafeSubmitButton>
           </form></details>
       </section>
 
-      <section className="card shop-card" aria-labelledby="utilities-heading">
-        <header className="shop-card-head"><h2 className="t-sub" id="utilities-heading">Phone &amp; Exports</h2></header>
+      <section className="card shop-card" aria-labelledby={domId("utilities-heading")}>
+        <header className="shop-card-head"><h2 className="t-sub" id={domId("utilities-heading")}>Phone &amp; Exports</h2></header>
         <dl className="shop-facts">
           <div><dt>Tracking number</dt><dd>{process.env.TWILIO_PHONE_NUMBER?.trim() || "Not connected yet"}</dd></div>
           <div><dt>Voice capture</dt><dd>{voiceTranscriptionConfigured() ? "Ready" : "Waiting on voice setup"}</dd></div>

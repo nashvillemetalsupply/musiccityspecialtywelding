@@ -161,18 +161,27 @@ export async function getCloseoutPhotoUpload(input: {
 }) {
   if (!isCloseoutUploadId(input.id)) throw new Error("The closeout photo receipt is invalid.")
   const sql = getSql()
-  const rows = (await sql`
+  const readReceipt = async () => (await sql`
     SELECT id, lead_id, operator_id, upload_mode AS mode, pathname, original_name, content_type,
       size_bytes, is_test, status, attached_event_id, expires_at
     FROM closeout_photo_uploads
     WHERE id = ${input.id}::text AND lead_id = ${input.leadId}::bigint
       AND operator_id = ${input.operatorId}::bigint AND upload_mode = ${input.mode}::text
       AND is_test = ${input.isTest}::boolean
-      AND status IN ('uploaded','attached')
+      AND status IN ('pending','uploaded','attached')
       AND (status = 'attached' OR expires_at > now())
     LIMIT 1`) as CloseoutPhotoUpload[]
-  if (!rows[0]) throw new Error("The closeout photo is not ready. Upload it again before saving.")
-  return rows[0]
+  let receipt = (await readReceipt())[0]
+  if (!receipt) throw new Error("The closeout photo receipt is unavailable for this job. Choose the photo again.")
+  if (receipt.status === "pending") {
+    // Browser upload completion can beat the signed Blob callback. Only after
+    // authorizing the exact job/operator receipt, verify the stored bytes with
+    // the same path/size checks used by that callback instead of reuploading.
+    await confirmCloseoutPhotoUpload(receipt.id, receipt.pathname)
+    receipt = (await readReceipt())[0]
+  }
+  if (!receipt || receipt.status === "pending") throw new Error("The closeout photo is still being confirmed. Try saving again in a moment.")
+  return receipt
 }
 
 export async function attachCloseoutPhotoToLead(input: {

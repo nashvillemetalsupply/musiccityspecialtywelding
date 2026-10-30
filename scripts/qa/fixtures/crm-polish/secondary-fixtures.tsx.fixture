@@ -1,0 +1,35 @@
+import { randomUUID } from "node:crypto"
+import Link from "next/link"
+import { BoardRouteNav } from "../board-route-nav"
+import { SkipLink } from "../skip-link"
+import { ThemeBoot } from "../theme-boot"
+import { golos, chivo } from "../../fonts"
+
+export function CustomersFixture({ owner, empty }: { owner: boolean; empty: boolean }) {
+  const searchFieldId = `account-q-${randomUUID()}`
+  const customers = ["[INTERNAL TEST] Riverbend Fabrication & Equipment Services", "[INTERNAL TEST] Alexander Montgomery-Washington", "[INTERNAL TEST] VeryLongUnbrokenCompanyNameThatChecksWrappingAcrossNarrowScreens", "[INTERNAL TEST] Lebanon Marina"]
+  return <div className={`${golos.variable} ${chivo.variable}`}>
+    <SkipLink /><ThemeBoot />
+    <main id="main" tabIndex={-1} className="customers-page">
+      <header className="cust-top"><Link className="btn btn--edge" href="/board">Board</Link><h1 className="t-title">Regular Customers</h1><span className="cust-count t-label">{empty ? 0 : 1284} on the books</span></header>
+      <form className="cust-find" action="/board/customers" method="get"><label className="t-label" htmlFor={searchFieldId}>Search customers</label><div className="find"><input id={searchFieldId} name="accountQ" type="search" autoComplete="off" placeholder="Name, company or account" /></div><button className="btn btn--go" type="submit">Search</button></form>
+      {empty ? <p className="cust-empty t-data">No customers found.</p> : <ul className="cust-list">{customers.map((name, index) => <li key={name}><Link className="cust-row" href="/board/qa-polish?surface=account"><strong className="cust-name t-data">{name}</strong><span className={`chip ${index < 2 ? "chip--warn" : "chip--info"}`}><i />{index < 2 ? `${index + 2} active` : `${index * 6} jobs`}</span></Link></li>)}</ul>}
+      {!empty && <nav className="cust-pages" aria-label="Customer pages"><span /><span className="t-label">Page 1</span><Link className="btn btn--edge" href="/board/customers?accountPage=2">Older</Link></nav>}
+    </main><BoardRouteNav role={owner ? "owner" : "crew"} current="customers" />
+  </div>
+}
+
+export function ShopFixture({ owner }: { owner: boolean }) {
+  const prefix = `shop-${randomUUID()}`
+  const domId = (name: string) => `${prefix}-${name}`
+  return <div className="shop-page">
+    <header className="card shop-head"><Link className="shop-back t-caption" href="/ops">Back to Jobs</Link><h1 className="t-title">Settings</h1><p className="t-caption">Team, documents, phone, and exports.</p></header>
+    {!owner ? <section className="card shop-state"><h2 className="t-sub">Owner settings</h2><p>Crew can work every job. Philippe manages team and paperwork settings.</p></section> : <>
+    <section className="card shop-card" aria-labelledby={domId("crew-heading")}><header className="shop-card-head"><h2 className="t-sub" id={domId("crew-heading")}>Team</h2><span className="t-label">2 active</span></header><div className="shop-crew"><article className="shop-crew-card"><strong>[INTERNAL TEST] Alexander Montgomery-Washington</strong><span className="t-caption">Owner, (615) 555-0123</span><small className="t-caption">long.customer.reference@example.invalid</small></article><article className="shop-crew-card"><strong>[INTERNAL TEST] Shop crew</strong><span className="t-caption">Crew, no cell</span><small className="t-caption">crew@example.invalid</small><form><button className="btn btn--sm btn--edge" type="submit">Deactivate</button></form></article></div>
+      <details className="shop-drawer"><summary>Add team member <span className="t-label">Open</span></summary><form className="shop-form"><label htmlFor={domId("shop-crew-name")}>Name<input id={domId("shop-crew-name")} name="name" type="text" autoComplete="name" /></label><label htmlFor={domId("shop-crew-email")}>Email<input id={domId("shop-crew-email")} name="email" type="email" inputMode="email" autoComplete="email" /></label><label htmlFor={domId("shop-crew-cell")}>Cell<input id={domId("shop-crew-cell")} name="cellPhone" type="tel" inputMode="tel" autoComplete="tel" /></label><label htmlFor={domId("shop-crew-role")}>Role<select id={domId("shop-crew-role")} name="role" defaultValue="crew"><option value="crew">Crew</option><option value="owner">Owner</option></select></label><button className="btn btn--go" type="submit">Add team member</button></form></details>
+    </section>
+    <section className="card shop-card" aria-labelledby={domId("paperwork-heading")}><header className="shop-card-head"><h2 className="t-sub" id={domId("paperwork-heading")}>Documents</h2></header><div className="shop-documents"><div><strong>W-9</strong><span className="t-caption">Nothing on file</span></div><div><strong>Insurance certificate</strong><span className="t-caption">[INTERNAL TEST] ExtremelyLongInsuranceCertificateFilenameForWrapping2026.pdf</span><small className="t-caption">Expires 10/29/2027</small></div></div><details className="shop-drawer"><summary>Update a document <span className="t-label">Open</span></summary><form className="shop-form"><label htmlFor={domId("shop-doc-kind")}>Document<select id={domId("shop-doc-kind")} name="kind"><option value="w9">W-9</option><option value="coi">Insurance certificate</option></select></label><label htmlFor={domId("shop-doc-file")}>PDF<input id={domId("shop-doc-file")} name="file" type="file" accept="application/pdf" /></label><label htmlFor={domId("shop-doc-expires")}>Expires<input id={domId("shop-doc-expires")} name="expiresAt" type="date" autoComplete="off" /></label><button className="btn btn--go" type="submit">Save document</button></form></details></section>
+    <section className="card shop-card" aria-labelledby={domId("utilities-heading")}><header className="shop-card-head"><h2 className="t-sub" id={domId("utilities-heading")}>Phone &amp; Exports</h2></header><dl className="shop-facts"><div><dt>Tracking number</dt><dd>Not connected yet</dd></div><div><dt>Voice capture</dt><dd>Waiting on voice setup</dd></div><div><dt>Review link</dt><dd>Not set</dd></div></dl><div className="shop-actions"><a className="btn btn--sm btn--edge" href="/api/ops/export">Export CSV</a><a className="btn btn--sm btn--edge" href="/api/ops/export?format=google-oci">Ads conversions</a><Link className="btn btn--sm btn--edge" href="/board?tests=1">Internal tests</Link><form action="/api/ops/logout" method="post"><button className="btn btn--sm btn--edge" type="submit">Revoke this session</button></form></div><div className="shop-trust"><div><strong>Customer Page photo approval</strong><span className="t-caption">4 / 10 clean owner approvals</span><small className="t-caption">Owner still approves every customer-facing caption.</small></div><form><button className="btn btn--edge" type="submit" disabled>6 approvals to go</button></form></div></section>
+    </>}
+  </div>
+}

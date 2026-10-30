@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useRef, useState } from "react"
+import { useId, useActionState, useEffect, useRef, useState } from "react"
 import { deriveCloseoutDraft, type CloseoutReview } from "@/lib/closeout-domain.ts"
 import { swipeFinishDecision } from "@/lib/shop-brain-invariants.ts"
 import { SafeSubmitButton } from "../../safe-action-controls"
@@ -12,6 +12,9 @@ type SwipeStart = { x: number; y: number; width: number } | null
 const INITIAL_FINISH_STATE: OpsActionState = { status: "idle", message: "" }
 
 export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCloseout = false, closeoutKey = "" }: { leadId: number; completed: boolean; undoUntil: string | null; voiceReady: boolean; reviewedCloseout?: boolean; closeoutKey?: string }) {
+  const instanceId = useId()
+  const domId = (name: string) => `${name}-${instanceId}`
+  const benchRef = useRef<HTMLElement>(null)
   const finishRef = useRef<HTMLFormElement>(null)
   const addendumRef = useRef<HTMLFormElement>(null)
   const swipeStartRef = useRef<SwipeStart>(null)
@@ -23,14 +26,48 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   const [keyboardArmed, setKeyboardArmed] = useState(false)
   const [buttonArmed, setButtonArmed] = useState(false)
   const [addendumOpen, setAddendumOpen] = useState(false)
+  const [autoFileRequested, setAutoFileRequested] = useState(false)
   const [undoExpired, setUndoExpired] = useState(false)
   const [note, setNote] = useState("")
   const [noteSource, setNoteSource] = useState<"typed" | "voice">("typed")
   const [voiceIntentId, setVoiceIntentId] = useState("")
   const [voiceError, setVoiceError] = useState("")
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [voiceBusy, setVoiceBusy] = useState(false)
   const [review, setReview] = useState<CloseoutReview | null>(null)
-  const [finishState, finishAction] = useActionState(markLeadCompleteState, INITIAL_FINISH_STATE)
+  const [finishState, finishAction, finishPending] = useActionState(markLeadCompleteState, INITIAL_FINISH_STATE)
+  const [addendumState, addendumAction, addendumPending] = useActionState(async (_previous: OpsActionState, data: FormData): Promise<OpsActionState> => {
+    if (!String(data.get("note") ?? "").trim() && !String(data.get("photoUploadId") ?? "").trim() && !String(data.get("voiceIntentId") ?? "").trim()) return { status: "error", message: "Add a note or photo before filing." }
+    try {
+      await addLeadCompletionNote(data)
+      return { status: "success", message: "Closeout note filed." }
+    } catch (error) {
+      return { status: "error", message: error instanceof Error ? error.message : "The closeout note could not be filed. Try again." }
+    }
+  }, INITIAL_FINISH_STATE)
+  const finishLocked = submitting || finishPending
+
+  useEffect(() => {
+    if (addendumState.status !== "success") return
+    const timer = window.setTimeout(() => {
+      setAddendumOpen(false)
+      setAutoFileRequested(false)
+      setNote("")
+      setNoteSource("typed")
+      setVoiceIntentId("")
+      setVoiceError("")
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [addendumState])
+
+  useEffect(() => {
+    if (!completed || !addendumOpen || !autoFileRequested || voiceBusy || photoUploading || addendumPending) return
+    const frame = window.requestAnimationFrame(() => {
+      setAutoFileRequested(false)
+      addendumRef.current?.requestSubmit()
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [completed, addendumOpen, autoFileRequested, voiceBusy, photoUploading, addendumPending])
 
   useEffect(() => {
     const remaining = undoUntil ? new Date(undoUntil).getTime() - Date.now() : 0
@@ -45,17 +82,32 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
   useEffect(() => {
     if (!completed) return
     function openPhotoAddendum() {
-      if (window.location.hash === "#done-photo") setAddendumOpen(true)
+      if (window.location.hash === "#done-photo" && benchRef.current?.getClientRects().length) setAddendumOpen(true)
     }
+    const bench = benchRef.current
+    const followPhoto = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null
+      if (!link || link.target === "_blank" || link.hasAttribute("download")) return
+      const url = new URL(link.href, window.location.href)
+      if (url.origin === location.origin && url.pathname === location.pathname && url.search === location.search && url.hash === "#done-photo") setAddendumOpen(true)
+    }
+    const job = bench?.closest(".job-page")
     openPhotoAddendum()
     window.addEventListener("hashchange", openPhotoAddendum)
-    return () => window.removeEventListener("hashchange", openPhotoAddendum)
+    job?.addEventListener("click", followPhoto as EventListener)
+    return () => {
+      window.removeEventListener("hashchange", openPhotoAddendum)
+      job?.removeEventListener("click", followPhoto as EventListener)
+    }
   }, [completed])
 
   useEffect(() => {
     if (!completed || !addendumOpen || window.location.hash !== "#done-photo") return
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById("done-photo")?.scrollIntoView({ block: "start" })
+      const photo = addendumRef.current?.querySelector<HTMLElement>('[data-job-fragment="done-photo"]')
+      photo?.scrollIntoView({ block: "start" })
+      photo?.focus({ preventScroll: true })
     })
     return () => window.cancelAnimationFrame(frame)
   }, [completed, addendumOpen])
@@ -81,6 +133,9 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       setKeyboardArmed(false)
       setButtonArmed(false)
       setNote("")
+      setNoteSource("typed")
+      setVoiceIntentId("")
+      setAutoFileRequested(false)
       setReview(null)
       setVoiceError("")
     }, 0)
@@ -106,6 +161,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
 
   function finish() {
     if (completed || submitting || photoUploading || submittedRef.current) return
+    if (finishPending || voiceBusy) return
     if (reviewedCloseout && (!review || review.completion !== "complete" || review.remainingWork.trim())) return
     submittedRef.current = true
     setSubmitting(true)
@@ -139,10 +195,10 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
     setReview((current) => current ? { ...current, [key]: value } : current)
   }
 
-  return <section className={`ops-done-bench${completed ? " is-done" : ""}`} aria-labelledby="finish-job-title">
-    <div><strong id="finish-job-title">{completed ? "Work finished" : "Finish work"}</strong></div>
+  return <section ref={benchRef} className={`ops-done-bench${completed ? " is-done" : ""}`} aria-labelledby={domId("finish-job-title")}>
+    <div><strong id={domId("finish-job-title")}>{completed ? "Work finished" : "Finish work"}</strong></div>
 
-    {!completed && <form ref={finishRef} action={finishAction} className={reviewedCloseout ? "ops-closeout-form" : undefined} aria-busy={submitting || photoUploading}>
+    {!completed && <form ref={finishRef} action={finishAction} onSubmit={(event) => { if (voiceBusy || photoUploading) event.preventDefault() }} onReset={(event) => event.preventDefault()} className={reviewedCloseout ? "ops-closeout-form" : undefined} aria-busy={finishLocked || photoUploading}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="reviewedCloseout" value={reviewedCloseout ? "1" : "0"} />
       {reviewedCloseout && <input type="hidden" name="closeoutKey" value={closeoutKey} />}
@@ -150,13 +206,15 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       <input type="hidden" name="noteSource" value={noteSource} />
       <input type="hidden" name="sourceWords" value={note} />
       <input type="hidden" name="voiceIntentId" value={voiceIntentId} />
-      <label htmlFor="closeout-source">One-breath closeout</label>
+      <label htmlFor={domId("closeout-source")}>One-breath closeout</label>
       <div className="ops-closeout-capture ops-closeout-voice">
         <VoiceCaptureButton
           available={voiceReady}
           recoveryKey={`closeout:${leadId}`}
           className="ops-done-voice"
           idleLabel="Hold to say closeout"
+          disabled={finishLocked}
+          onBusyChange={setVoiceBusy}
           onError={setVoiceError}
           onTranscript={(transcript, intentId) => {
             setNoteSource("voice")
@@ -167,11 +225,13 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         />
       </div>
       <textarea
-        id="closeout-source"
+        id={domId("closeout-source")}
+        data-job-fragment="closeout-source"
         autoComplete="off"
         aria-invalid={finishState.status === "error" ? "true" : undefined}
-        aria-describedby={finishState.message ? "finish-job-result" : undefined}
+        aria-describedby={finishState.message ? domId("finish-job-result") : undefined}
         value={note}
+        readOnly={finishLocked}
         onChange={(event) => {
           setNoteSource("typed")
           setNote(event.target.value)
@@ -181,19 +241,19 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         maxLength={2000}
       />
       <div className="ops-closeout-capture">
-        <button type="button" className="ops-closeout-review" disabled={!note.trim()} onClick={() => setReview({ ...deriveCloseoutDraft(note), reviewed: true })}>Review closeout</button>
+        <button type="button" className="ops-closeout-review" disabled={!note.trim() || finishLocked || voiceBusy} onClick={() => setReview({ ...deriveCloseoutDraft(note), reviewed: true })}>Review closeout</button>
       </div>
       {voiceError && <small className="ops-done-voice-error" role="alert">{voiceError}</small>}
 
-      {review && <fieldset className="ops-closeout-review-sheet">
+      {review && <fieldset className="ops-closeout-review-sheet" disabled={finishLocked}>
         <legend>Review closeout</legend>
         <input type="hidden" name="reviewed" value="1" />
-        <label htmlFor="closeout-completion"><span>Work status</span><select id="closeout-completion" name="completion" value={review.completion} onChange={(event) => updateReview("completion", event.target.value as CloseoutReview["completion"])}><option value="complete">Complete</option><option value="partial">Partial</option></select></label>
-        <label htmlFor="closeout-fit"><span>Final fit</span><select id="closeout-fit" name="fit" value={review.fit} onChange={(event) => updateReview("fit", event.target.value as CloseoutReview["fit"])}><option value="fit">Fit</option><option value="adjusted">Adjusted on site</option><option value="not-checked">Not checked</option></select></label>
-        <label htmlFor="closeout-extra-trips"><span>Extra trips</span><input id="closeout-extra-trips" name="extraTrips" type="number" min="0" step="1" inputMode="numeric" autoComplete="off" value={review.extraTrips} onChange={(event) => updateReview("extraTrips", Math.max(0, Number(event.target.value) || 0))} /></label>
-        <label htmlFor="closeout-rework"><span>Rework</span><select id="closeout-rework" name="rework" value={review.rework} onChange={(event) => updateReview("rework", event.target.value as CloseoutReview["rework"])}><option value="no">No</option><option value="yes">Yes</option></select></label>
-        <label className="ops-closeout-wide" htmlFor="closeout-as-built"><span>As-built differences</span><textarea id="closeout-as-built" name="asBuiltDifferences" autoComplete="off" value={review.asBuiltDifferences} onChange={(event) => updateReview("asBuiltDifferences", event.target.value)} placeholder="What changed from the plan?" /></label>
-        <label className="ops-closeout-wide" htmlFor="closeout-remaining"><span>Remaining work</span><textarea id="closeout-remaining" name="remainingWork" autoComplete="off" value={review.remainingWork} onChange={(event) => updateReview("remainingWork", event.target.value)} placeholder="Leave blank when nothing remains." /></label>
+        <label htmlFor={domId("closeout-completion")}><span>Work status</span><select id={domId("closeout-completion")} name="completion" value={review.completion} onChange={(event) => updateReview("completion", event.target.value as CloseoutReview["completion"])}><option value="complete">Complete</option><option value="partial">Partial</option></select></label>
+        <label htmlFor={domId("closeout-fit")}><span>Final fit</span><select id={domId("closeout-fit")} name="fit" value={review.fit} onChange={(event) => updateReview("fit", event.target.value as CloseoutReview["fit"])}><option value="fit">Fit</option><option value="adjusted">Adjusted on site</option><option value="not-checked">Not checked</option></select></label>
+        <label htmlFor={domId("closeout-extra-trips")}><span>Extra trips</span><input id={domId("closeout-extra-trips")} name="extraTrips" type="number" min="0" step="1" inputMode="numeric" autoComplete="off" value={review.extraTrips} onChange={(event) => updateReview("extraTrips", Math.max(0, Number(event.target.value) || 0))} /></label>
+        <label htmlFor={domId("closeout-rework")}><span>Rework</span><select id={domId("closeout-rework")} name="rework" value={review.rework} onChange={(event) => updateReview("rework", event.target.value as CloseoutReview["rework"])}><option value="no">No</option><option value="yes">Yes</option></select></label>
+        <label className="ops-closeout-wide" htmlFor={domId("closeout-as-built")}><span>As-built differences</span><textarea id={domId("closeout-as-built")} name="asBuiltDifferences" autoComplete="off" value={review.asBuiltDifferences} onChange={(event) => updateReview("asBuiltDifferences", event.target.value)} placeholder="What changed from the plan?" /></label>
+        <label className="ops-closeout-wide" htmlFor={domId("closeout-remaining")}><span>Remaining work</span><textarea id={domId("closeout-remaining")} name="remainingWork" autoComplete="off" value={review.remainingWork} onChange={(event) => updateReview("remainingWork", event.target.value)} placeholder="Leave blank when nothing remains." /></label>
       </fieldset>}
 
       </>}
@@ -201,11 +261,12 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
       {(!reviewedCloseout || review?.completion === "complete") && <CloseoutPhotoInput
         leadId={leadId}
         mode="completion"
+        disabled={finishLocked}
         onBusyChange={setPhotoUploading}
       />}
 
       {reviewedCloseout && review?.completion === "partial" && <div className="ops-closeout-finish is-partial">
-        <SafeSubmitButton pendingLabel="Filing update…">File update · keep job open</SafeSubmitButton>
+        <SafeSubmitButton disabled={voiceBusy || photoUploading} pendingLabel="Filing update…">File update · keep job open</SafeSubmitButton>
         <small>Records the reviewed outcome without finishing the job or closing promises.</small>
       </div>}
 
@@ -213,9 +274,9 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         <button
           type="button"
           className={`ops-swipe-finish${dragging ? " is-dragging" : ""}${submitting ? " is-submitting" : ""}`}
-          aria-disabled={submitting || photoUploading}
+          aria-disabled={finishLocked || photoUploading || voiceBusy}
           aria-pressed={keyboardArmed}
-          aria-describedby="swipe-finish-help"
+          aria-describedby={domId("swipe-finish-help")}
           aria-label={keyboardArmed ? "Press again to finish work" : "Swipe to finish work. Activate twice without swiping."}
           style={{ "--swipe-progress": progress } as React.CSSProperties}
           onClick={(event) => {
@@ -251,7 +312,7 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           <span className="ops-swipe-track">{submitting ? "Finishing work…" : keyboardArmed ? "Press again to finish work" : "Swipe to finish work"}</span>
           <span className="ops-swipe-thumb" aria-hidden="true">→</span>
         </button>
-        <small id="swipe-finish-help">
+        <small id={domId("swipe-finish-help")}>
           {reviewedCloseout ? "Swipe right after reviewing the outcome. Vertical scrolling stays safe." : "Swipe right to finish work. Vertical scrolling stays safe."}
           <span className="ops-sr-only"> Keyboard users press Enter twice.</span>
         </small>
@@ -259,8 +320,8 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
           type="button"
           className="ops-finish-button"
           aria-pressed={buttonArmed}
-          aria-describedby="finish-button-help"
-          disabled={submitting || photoUploading}
+          aria-describedby={domId("finish-button-help")}
+          disabled={finishLocked || photoUploading || voiceBusy}
           onClick={armButtonOrFinish}
           onBlur={() => setButtonArmed(false)}
           onKeyDown={(event) => {
@@ -270,40 +331,44 @@ export function DoneStamp({ leadId, completed, undoUntil, voiceReady, reviewedCl
         >
           {submitting ? "Completing job…" : buttonArmed ? "Confirm completion" : "Complete job"}
         </button>
-        <small id="finish-button-help">No swipe needed. Press twice to protect against a stray tap.</small>
+        <small id={domId("finish-button-help")}>No swipe needed. Press twice to protect against a stray tap.</small>
       </div>}
-      {finishState.message && <p id="finish-job-result" className={`job-action-result is-${finishState.status}`} role={finishState.status === "error" ? "alert" : "status"} aria-live="polite">{finishState.message}</p>}
+      {finishState.message && <p id={domId("finish-job-result")} className={`job-action-result is-${finishState.status}`} role={finishState.status === "error" ? "alert" : "status"} aria-live="polite">{finishState.message}</p>}
     </form>}
 
     {completed && !addendumOpen && <button type="button" className="ops-closeout-add" onClick={() => setAddendumOpen(true)}>Add closeout note or photo</button>}
 
-    {completed && addendumOpen && <form ref={addendumRef} action={addLeadCompletionNote} className="ops-done-note" onSubmit={() => setAddendumOpen(false)}>
+    {completed && addendumOpen && <form ref={addendumRef} action={addendumAction} className="ops-done-note" aria-busy={addendumPending} onSubmit={(event) => { if (voiceBusy || photoUploading) event.preventDefault(); else setAutoFileRequested(false) }} onReset={(event) => event.preventDefault()}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="noteSource" value={noteSource} />
       <input type="hidden" name="voiceIntentId" value={voiceIntentId} />
-      <label htmlFor="done-note">Optional closeout note</label>
-      <input id="done-note" name="note" type="text" autoComplete="off" value={note} onChange={(event) => { setNoteSource("typed"); setNote(event.target.value) }} placeholder="Welded hinge, tested swing, customer happy" />
+      <label htmlFor={domId("done-note")}>Optional closeout note</label>
+      <input id={domId("done-note")} name="note" type="text" autoComplete="off" value={note} readOnly={addendumPending} onChange={(event) => { setNoteSource("typed"); setNote(event.target.value) }} placeholder="Welded hinge, tested swing, customer happy" />
       <VoiceCaptureButton
         available={voiceReady}
         recoveryKey={`done:${leadId}`}
         className="ops-done-voice"
         idleLabel="Hold to say it"
+        disabled={addendumPending}
+        onBusyChange={setVoiceBusy}
         onError={setVoiceError}
         onTranscript={(transcript, intentId) => {
           setNoteSource("voice")
           setVoiceIntentId(intentId ?? "")
           setNote((current) => current.trim() ? `${current.trim()} ${transcript}` : transcript)
-          window.setTimeout(() => addendumRef.current?.requestSubmit(), 100)
+          setAutoFileRequested(true)
         }}
       />
       {voiceError && <small className="ops-done-voice-error" aria-live="polite">{voiceError}</small>}
       <CloseoutPhotoInput
         leadId={leadId}
         mode="addendum"
+        disabled={addendumPending}
         onBusyChange={setPhotoUploading}
-        onUploaded={() => window.setTimeout(() => addendumRef.current?.requestSubmit(), 0)}
+        onUploaded={() => setAutoFileRequested(true)}
       />
-      <SafeSubmitButton className="ops-ghost" disabled={photoUploading} pendingLabel="Filing…">File closeout note</SafeSubmitButton>
+      <SafeSubmitButton className="ops-ghost" disabled={photoUploading || voiceBusy} pendingLabel="Filing…">File closeout note</SafeSubmitButton>
+      {addendumState.status === "error" && <p className="ops-alert" role="alert">{addendumState.message}</p>}
     </form>}
 
     {completed && (undoUntil && !undoExpired

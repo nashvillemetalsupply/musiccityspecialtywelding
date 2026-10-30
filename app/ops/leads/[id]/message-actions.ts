@@ -13,6 +13,7 @@ import { notify } from "@/lib/notify"
 import { getSql } from "@/lib/db"
 import { operatorSignature } from "@/lib/operators"
 import { isDefinitiveTwilioError } from "@/lib/twilio"
+import { isSmsNotSentError } from "@/lib/sms-provider-truth.ts"
 import { getMessagingConsentState, recordMessagingConsent } from "@/lib/messaging-consent"
 import { EmailProviderError, isDefinitiveEmailProviderError, sendEmailWithProviderTruth, strongestEmailReceiptStatus } from "@/lib/email-provider-truth.ts"
 
@@ -190,6 +191,6 @@ export async function sendLeadReplyState(_state: ReplyActionState, formData: For
     }
     return { status: "sent", message: `${channel === "email" ? "Email" : "Text"} added to Calls & Messages.`, sentAt: Date.now() }
   } catch (error) {
-    return { status: "error", message: error instanceof Error ? error.message : "Reply failed.", sentAt: 0, retryable: isDefinitiveTwilioError(error) || isDefinitiveEmailProviderError(error) }
+    return { status: "error", message: error instanceof Error ? error.message : "Reply failed.", sentAt: 0, retryable: isDefinitiveTwilioError(error) || isDefinitiveEmailProviderError(error) || isSmsNotSentError(error) }
   }
 }

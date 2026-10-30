@@ -34,7 +34,7 @@ export function WireStrip({ slips, unreadTotal, history, page, hasOlder, query }
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids: [id] }),
       keepalive: true,
-    })
+    }).catch(() => undefined)
   }
 
   async function runAction(slip: WireSlip, decision = "", value = "") {
@@ -71,9 +71,9 @@ export function WireStrip({ slips, unreadTotal, history, page, hasOlder, query }
     <div className="ops-wire-current">
       <p className="ops-update-summary">{summary}</p>
       <div className="ops-wire-line">
-        {slips.length === 0 ? <p className="ops-wire-empty">No new updates.</p> : slips.map((slip) => <article className={`ops-wire-slip is-${slip.stock}`} key={slip.id}>
+        {slips.length === 0 ? <p className="ops-wire-empty">{query ? "No updates match this search." : history ? "No past updates." : "No new updates."}</p> : slips.map((slip) => <article className={`ops-wire-slip is-${slip.stock}`} key={slip.id}>
           <div className="ops-update-copy"><strong>{plainUpdateText(slip.title)}</strong>{slip.body && <span>{plainUpdateText(slip.body)}</span>}<time>{slip.age} ago</time></div>
-          <Link className="ops-update-open" onClick={() => openUpdate(slip.id)} href={slip.url || "/ops"}>Open</Link>
+          <Link className="ops-update-open" aria-label={`Open ${plainUpdateText(slip.title)}`} onClick={() => openUpdate(slip.id)} href={slip.url || "/ops"}>Open</Link>
           {!history && slip.actionKind && <div className="ops-wire-action">
             {slip.actionKind === "usual-paperwork" && <SafeActionButton disabled={working !== null} onAction={() => runAction(slip)}>Send it</SafeActionButton>}
             {slip.actionKind === "quote-capture" && <><SafeActionButton disabled={working !== null} onAction={() => runAction(slip, "yep")}>Quoted</SafeActionButton><SafeActionButton disabled={working !== null} onAction={() => runAction(slip, "nah")}>Not a quote</SafeActionButton></>}

@@ -35,9 +35,9 @@ export default function OpsError({ error, reset }: { error: Error & { digest?: s
   useEffect(() => { console.error("MCSW Jobs route failed", error) }, [error])
   return <div style={ground}>
     <section style={card} role="alert">
-      <p className="t-label">Nothing was changed</p>
+      <p className="t-label">Connection interrupted</p>
       <h1 className="t-title">MCSW Jobs could not load.</h1>
-      <p>Check the connection and try again. If this repeats, call the shop before entering the job twice.</p>
+      <p>Check your connection and try again. If you were saving a change, check the job before submitting it again.</p>
       <div style={{ display: "grid", gap: "var(--s2)" }}><button type="button" className="btn btn--go" style={wide} onClick={reset}>Try again</button><Link className="btn btn--edge" style={wide} href="/ops">Back to jobs</Link></div>
     </section>
   </div>

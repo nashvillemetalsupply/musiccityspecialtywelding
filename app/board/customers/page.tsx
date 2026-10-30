@@ -1,4 +1,5 @@
 import "../../../styles/ops-legacy.css"
+import { randomUUID } from "node:crypto"
 import type { ReactNode } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
@@ -47,6 +48,7 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
   // The page is whatever the query settled on, not what was asked for: an
   // over-run page number clamps back into range inside listRegularAccounts.
   const page = result.page
+  const searchFieldId = `account-q-${randomUUID()}`
 
   return <PageShell nav={<BoardRouteNav role={operator.role} current="customers" />}>
       <header className="cust-top">
@@ -56,9 +58,9 @@ export default async function BoardCustomersPage({ searchParams }: { searchParam
       </header>
 
       <form className="cust-find" action="/board/customers" method="get">
-        <label className="t-label" htmlFor="account-q">Search customers</label>
+        <label className="t-label" htmlFor={searchFieldId}>Search customers</label>
         <div className="find">
-          <input id="account-q" name="accountQ" type="search" autoComplete="off" defaultValue={query} placeholder="Name, company or account" />
+          <input id={searchFieldId} name="accountQ" type="search" autoComplete="off" defaultValue={query} placeholder="Name, company or account" />
         </div>
         <button className="btn btn--go" type="submit">Search</button>
       </form>
@@ -96,7 +98,7 @@ function PageShell({ children, nav }: { children: ReactNode; nav?: ReactNode }) 
   return <div className={`${golos.variable} ${chivo.variable}`}>
     <SkipLink />
     <ThemeBoot />
-    <main id="main" tabIndex={-1} className="cust">{children}</main>
+    <main id="main" tabIndex={-1} className="customers-page">{children}</main>
     {nav}
   </div>
 }

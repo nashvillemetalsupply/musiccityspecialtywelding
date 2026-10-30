@@ -43,7 +43,7 @@ test("digest excludes internal test leads and sends the expected owner summary",
   ]
   const queries = []
   const sent = []
-  const sql = async (strings, ...values) => {
+  const sql = async (strings) => {
     const text = normalizedSql(strings)
     queries.push(text)
     if (text.includes("SELECT count(*)::int AS count FROM leads")) {

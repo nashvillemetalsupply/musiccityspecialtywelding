@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
+import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character.ts"
 
 // Below this the profile refuses to draft, and the strip says so instead of
 // offering a button that only ever returns an apology. It is the same floor

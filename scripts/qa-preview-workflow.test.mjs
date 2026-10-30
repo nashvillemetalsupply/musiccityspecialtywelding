@@ -28,7 +28,6 @@ function parseYaml(source) {
   }
 
   function parseBlockScalar(index, parentIndent, style) {
-    const first = lines[index]
     if (!lines[index + 1] || lines[index + 1].indent <= parentIndent) return ["", index + 1]
     const blockIndent = lines[index + 1].indent
     const value = []

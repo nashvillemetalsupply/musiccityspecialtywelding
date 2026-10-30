@@ -14,14 +14,14 @@ import {
   factText, factTone, pricingSentence, sketchAriaLabel, sketchGeometry,
 } from "@/lib/call-sketch-panel.ts"
 import type { BoardCallSketch } from "@/lib/call-sketch-store"
-import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character"
+import type { OwnerVoiceSnapshot } from "@/lib/voice-of-character.ts"
 import { VoicePreview } from "./voice-preview"
 import { TrackedCallButton } from "@/app/ops/tracked-call-button"
 import type { BoardSignalKind } from "@/lib/shop-brain-invariants.ts"
 import type { PromiseSummary } from "@/lib/commitments"
 import type { BoardJobDetail, BoardJobRow, JobBoardStage, MonthCostPerLead, OutTheDoorWeek, WeekAheadDay } from "@/lib/ops-data"
 import { shopClaimLabel, shopClaimText, shopSourceLabel } from "@/lib/shop-language"
-import { outcomeLine } from "@/lib/call-summary-shared"
+import { outcomeLine } from "@/lib/call-summary-outcome"
 import { enableUsage, tapped, TAPS } from "./usage"
 
 type TodayTrailItem = {
@@ -402,7 +402,7 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
           </Link>
           <button className="icon" id="theme" type="button" aria-label="Switch between the light and dark board">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2.2a5.8 5.8 0 1 0 5.8 5.8A4.4 4.4 0 0 1 8 2.2z"/></svg></button>
-          {chrome.operatorInitial && <span className="who-dot" aria-label="Signed-in operator">{chrome.operatorInitial}</span>}
+          {chrome.operatorInitial && <span className="who-dot" role="img" aria-label={`Signed-in operator ${chrome.operatorInitial}`}>{chrome.operatorInitial}</span>}
           {menu && <div className="board-more">{menu}</div>}
         </div>
       </header>
@@ -433,38 +433,28 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
         <section className="card figures">
           <div className="figure">
             <p className="figure-label">Open jobs</p>
-            <p className="n"><b className="t-display">{board.counts.board}</b><span>on the books</span></p>
+            <p className="n"><b className="t-display">{board.counts.board}</b><span className="figure-context">on the books</span></p>
             <div className="under">
               <span className="chip chip--good"><i></i>{board.counts.shop} in the shop</span>
-              <span>{board.counts.waiting} waiting on customers &middot; {board.counts.ready} ready</span>
+              <span>{board.counts.waiting} waiting &middot; {board.counts.ready} ready</span>
             </div>
           </div>
           <div className="figure">
             <p className="figure-label">Closed this week</p>
-            <p className="n"><b className="t-display">{money(outTheDoor.revenueCents)}</b><span>this week</span></p>
+            <p className="n"><b className="t-display">{chrome.owner ? money(outTheDoor.revenueCents) : outTheDoor.jobs}</b><span className="figure-context">{chrome.owner ? "this week" : "completed"}</span></p>
             <div className="under">
-              {outTheDoor.jobs > 0 && <span className="bar" role="img"
+              {chrome.owner && outTheDoor.jobs > 0 && <span className="bar" role="img"
                 aria-label={`${outTheDoor.jobs} ${outTheDoor.jobs === 1 ? "job" : "jobs"} went out this week: ${outTheDoor.paidJobs} paid, ${outTheDoor.jobs - outTheDoor.paidJobs} not`}>
                 {/* One mark per job, capped so a heavy week cannot overrun the
                     field. The count beside it stays exact. */}
                 {Array.from({ length: Math.min(outTheDoor.jobs, 10) }, (_, index) =>
                   <i className={index < outTheDoor.paidJobs ? "good" : "warn"} key={index}></i>)}
               </span>}
-              {outTheDoor.revenueCents !== null &&
+              {chrome.owner && outTheDoor.revenueCents !== null &&
                 <span>{outTheDoor.paidJobs} of {outTheDoor.jobs} paid &middot; <b>{money(outTheDoor.stillOutCents)}</b> still out</span>}
+              {!chrome.owner && <span>Finished and out the door</span>}
             </div>
           </div>
-        </section>
-        <section className="card social-post-card" aria-labelledby="social-post-title">
-          <div className="social-post-copy">
-            <p className="social-post-kicker">After the job</p>
-            <h2 id="social-post-title">Share the work</h2>
-            <p>Upload a photo or video to the MCSW Social Posts folder. The automated poster handles the rest and sends it to our social channels.</p>
-          </div>
-          <a className="btn btn--go social-post-button" href={SOCIAL_POSTING_FOLDER_URL} target="_blank" rel="noreferrer">
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="1.5" /><circle cx="8" cy="6.5" r="1.5" /><path d="m3.5 11 2.4-2.4 1.8 1.8 1.4-1.4 2.9 2.9" /></svg>
-            Upload photo or video
-          </a>
         </section>
         {/* Calls waiting to become jobs, collapsed to one bar so the tracker
             stays the first thing on the screen. Rendered by the server page;
@@ -487,13 +477,13 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
             </span>
           </div>
 
-          <div className="tabs" aria-label="Job stages">
+          <nav className="tabs" aria-label="Job stages">
             {TAB_ORDER.filter((stage) => board.stages.includes(stage)).map((stage) => (
               <Link className="tab" key={stage} href={`/board?stage=${stage}${chrome.includeTests ? "&tests=1" : ""}`} aria-current={board.stage === stage ? "page" : undefined} onClick={() => tapped(TAPS.stageTab, { stage })}>
                 {TAB_LABELS[stage]} <b className={stage === "attention" ? "hot" : undefined}>{board.counts[stage]}</b>
               </Link>
             ))}
-          </div>
+          </nav>
 
           <div className="cols colhead">
             <span>Part</span>
@@ -769,6 +759,18 @@ export function JobControl({ board, chrome, menu, calls, calendar, nowMs, fontCl
               )}
             </nav>
           )}
+        </section>
+
+        <section className="card social-post-card" aria-labelledby="social-post-title">
+          <div className="social-post-copy">
+            <p className="social-post-kicker">After the job</p>
+            <h2 id="social-post-title">Share the work</h2>
+            <p>Add job photos or videos to the MCSW Social Posts folder for automatic posting.</p>
+          </div>
+          <a className="btn btn--go social-post-button" href={SOCIAL_POSTING_FOLDER_URL} target="_blank" rel="noreferrer">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="1.5" /><circle cx="8" cy="6.5" r="1.5" /><path d="m3.5 11 2.4-2.4 1.8 1.8 1.4-1.4 2.9 2.9" /></svg>
+            Upload photo or video
+          </a>
         </section>
 
         {/* Cost per lead, as Fable ruled it 2026-09-18: all ad spend over

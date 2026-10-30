@@ -1,10 +1,9 @@
 import { z } from "zod"
 
-// The browser-safe half of the call read: the shape and the sentence that
-// says what happened. Nothing here touches the database, the model, or push.
-// board.tsx is a client component and imports from here; importing from
-// call-summary.ts pulled web-push into the browser bundle and broke the build
-// on 2026-09-03.
+// The validated shape of a call read. This module initializes a Zod schema;
+// browser displays import their formatter from call-summary-outcome instead.
+// Nothing here touches the database, the model, or push.
+export { outcomeLine } from "./call-summary-outcome.ts"
 
 // Parse loosely, store tightly. The first backfill lost four calls to a
 // detail of 81 characters and a null need -- a model that wrote a good
@@ -24,12 +23,4 @@ export const callSummarySchema = z.object({
 // the read so the board can say what happened, not guess from other rows.
 export type CallOutcome = "saved" | "filed" | "left" | "already" | "failed"
 export type CallSummary = z.output<typeof callSummarySchema> & { auto?: CallOutcome }
-
-export function outcomeLine(summary: CallSummary, leadId: number | null) {
-  if (summary.auto === "filed") return "Repeat caller. Filed to their open job."
-  if (leadId != null || summary.auto === "saved") return "Saved as a job. It is on the tracker."
-  if (summary.is_job === "no") return summary.not_job_reason ? `${summary.not_job_reason}. Left in calls to save.` : "Left in calls to save."
-  if (summary.auto === "failed") return "The save did not go through. It is in calls to save."
-  return "Could not tell if it is a job. Left in calls to save."
-}
 

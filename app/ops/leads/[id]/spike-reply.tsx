@@ -1,7 +1,8 @@
 "use client"
 
-import { useActionState, useEffect, useRef, useState } from "react"
+import { useId, useActionState, useEffect, useRef, useState } from "react"
 import { VoiceCaptureButton } from "../../voice-capture-button"
+import { draftAfterReplyDelivery } from "./reply-draft"
 import { SafeSubmitButton } from "../../safe-action-controls"
 import { sendLeadReplyState, type ReplyActionState } from "./message-actions"
 
@@ -31,6 +32,8 @@ export function SpikeReply({
   voiceReady: boolean
   focusOnMount?: boolean
 }) {
+  const instanceId = useId()
+  const domId = (name: string) => `${name}-${instanceId}`
   const [state, action, pending] = useActionState(sendLeadReplyState, initialState)
   const canText = targetPersonId ? Boolean(targetHasPhone) : hasPhone
   const canEmail = targetPersonId ? Boolean(targetHasEmail) : hasEmail
@@ -39,6 +42,7 @@ export function SpikeReply({
   const [voiceError, setVoiceError] = useState("")
   const [intentKey, setIntentKey] = useState(() => crypto.randomUUID())
   const bodyRef = useRef<HTMLInputElement>(null)
+  const submittedBody = useRef<string | null>(null)
 
   useEffect(() => {
     if (!focusOnMount) return
@@ -47,12 +51,13 @@ export function SpikeReply({
 
   useEffect(() => {
     if (state.status !== "sent" && state.status !== "queued") return
-    const timer = window.setTimeout(() => { setBody(""); setIntentKey(crypto.randomUUID()) }, 0)
+    const submitted = submittedBody.current
+    const timer = window.setTimeout(() => { setBody((current) => draftAfterReplyDelivery(current, submitted)); setIntentKey(crypto.randomUUID()) }, 0)
     return () => window.clearTimeout(timer)
   }, [state.sentAt, state.status])
 
   return (
-    <form action={action} className="ops-spike-reply" id="job-reply" aria-busy={pending}>
+    <form action={action} onSubmit={() => { submittedBody.current = bodyRef.current?.value ?? body }} className="ops-spike-reply" id={domId("job-reply")} data-job-fragment="job-reply" aria-busy={pending}>
       <input type="hidden" name="leadId" value={leadId} />
       <input type="hidden" name="channel" value={channel} />
       <input type="hidden" name="intentKey" value={intentKey} />
@@ -62,7 +67,7 @@ export function SpikeReply({
         type="button"
         className="ops-channel-stamp"
         onClick={() => canEmail && canText && setChannel((current) => current === "text" ? "email" : "text")}
-        disabled={!canEmail || !canText}
+        disabled={pending || !canEmail || !canText}
         title={canEmail && canText ? "Tap to flip the reply channel" : `This contact only has ${canEmail ? "email" : "text"}`}
       >Goes by {channel}</button>
       <VoiceCaptureButton
@@ -73,13 +78,13 @@ export function SpikeReply({
         onError={setVoiceError}
         onTranscript={(transcript) => setBody((current) => current.trim() ? `${current.trim()} ${transcript}` : transcript)}
       />
-      <input ref={bodyRef} id="job-reply-body" name="body" type="text" autoComplete="off" required aria-label={channel === "email" ? "Email reply" : "Text reply"} aria-invalid={state.status === "error" ? "true" : undefined} aria-describedby={voiceError || state.message ? "job-reply-result" : undefined} value={body} onChange={(event) => setBody(event.target.value)} placeholder={channel === "email" ? "Short shop email…" : "Short shop reply…"} />
+      <input ref={bodyRef} id={domId("job-reply-body")} data-job-fragment="job-reply-body" name="body" readOnly={pending} type="text" autoComplete="off" required aria-label={channel === "email" ? "Email reply" : "Text reply"} aria-invalid={state.status === "error" ? "true" : undefined} aria-describedby={voiceError || state.message ? domId("job-reply-result") : undefined} value={body} onChange={(event) => setBody(event.target.value)} placeholder={channel === "email" ? "Short shop email…" : "Short shop reply…"} />
       <SafeSubmitButton disabled={pending || !body.trim()} pendingLabel="Sending…">Send {channel}</SafeSubmitButton>
-      <div className="ops-reply-chips" aria-label="Quick replies">
-        {QUICK_COPIES.map((copy) => <button type="button" key={copy} onClick={() => setBody(copy)}>{copy}</button>)}
+      <div className="ops-reply-chips" role="group" aria-label="Quick replies">
+        {QUICK_COPIES.map((copy) => <button type="button" disabled={pending} key={copy} onClick={() => setBody(copy)}>{copy}</button>)}
       </div>
-      {(voiceError || state.message) && <p id="job-reply-result" className={voiceError || state.status === "error" ? "is-error" : state.quietHoursExempt ? "is-warning" : "is-ok"} role={voiceError || state.status === "error" || state.quietHoursExempt ? "alert" : "status"} aria-live="polite">{voiceError || state.message}</p>}
-      {state.status === "error" && state.retryable && <button type="button" className="ops-ghost" onClick={() => { setIntentKey(crypto.randomUUID()); setVoiceError("") }}>File a fresh retry attempt</button>}
+      {(voiceError || state.message) && <p id={domId("job-reply-result")} className={voiceError || state.status === "error" ? "is-error" : state.quietHoursExempt ? "is-warning" : "is-ok"} role={voiceError || state.status === "error" || state.quietHoursExempt ? "alert" : "status"} aria-live="polite">{voiceError || state.message}</p>}
+      {state.status === "error" && state.retryable && <button type="button" disabled={pending} className="ops-ghost" onClick={() => { setIntentKey(crypto.randomUUID()); setVoiceError("") }}>File a fresh retry attempt</button>}
     </form>
   )
 }

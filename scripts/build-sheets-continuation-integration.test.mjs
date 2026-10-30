@@ -80,6 +80,6 @@ test("closeout filing stores reviewed outcomes without payment coupling", async 
   assert.match(component, /Review closeout/)
   assert.match(component, /One-breath closeout/)
   const voiceControl = component.indexOf("<VoiceCaptureButton")
-  const keyboardControl = component.indexOf('id="closeout-source"')
+  const keyboardControl = component.indexOf('data-job-fragment="closeout-source"')
   assert.ok(voiceControl >= 0 && keyboardControl >= 0 && voiceControl < keyboardControl, "voice must precede keyboard in reviewed closeout")
 })

@@ -1,3 +1,15 @@
+/** The SMS provider was never called; retrying cannot duplicate delivery. */
+export class SmsNotSentError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "SmsNotSentError"
+  }
+}
+
+export function isSmsNotSentError(error: unknown) {
+  return error instanceof SmsNotSentError
+}
+
 type SmsProjectionLink = {
   leadId?: number | string | null
   personId?: number | string | null

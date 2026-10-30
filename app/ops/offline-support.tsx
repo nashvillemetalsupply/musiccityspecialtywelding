@@ -19,7 +19,11 @@ export function OpsOfflineSupport({ sessionCacheId }: { sessionCacheId: string |
       worker?.postMessage({ type: "ops-session", sessionId: sessionCacheId })
     }
     const handleWorkerMessage = (event: MessageEvent) => {
-      if (event.data?.type === "ops-session-expired") window.location.assign("/ops")
+      if (event.data?.type === "ops-session-expired") {
+        // Discard cached private UI and App Router state after background session revalidation fails.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.assign("/ops")
+      }
     }
     const register = async () => {
       try {

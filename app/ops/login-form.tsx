@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import type { CSSProperties } from "react"
-import { useState } from "react"
+import { useId, useEffect, useRef, useState } from "react"
 
 type PunchCard = { selector: string; name: string; hasEmail: boolean; hasSms: boolean }
 
@@ -45,7 +45,7 @@ const logo: CSSProperties = { width: "56px", height: "auto" }
 const field: CSSProperties = {
   width: "100%", minHeight: "44px", padding: "0 var(--s3)", background: "var(--surface-raised)",
   border: "1px solid var(--border)", borderRadius: "var(--r-md)", color: "var(--text-primary)",
-  fontFamily: "var(--font)", fontSize: "var(--t-data)",
+  fontFamily: "var(--font)", fontSize: "max(1rem, var(--t-name))", minWidth: 0,
 }
 /* one tone map for both notes: a refusal wears stop, a receipt wears good */
 const note = (tone: "stop" | "good"): CSSProperties => ({
@@ -63,6 +63,8 @@ const pick = (on: boolean): CSSProperties => ({
 const wide = (busy = false): CSSProperties => ({ width: "100%", opacity: busy ? 0.65 : 1 })
 
 export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { linkError: boolean; operators?: PunchCard[]; smsReady?: boolean }) {
+  const instanceId = useId()
+  const domId = (name: string) => `${name}-${instanceId}`
   const router = useRouter()
   const [mode, setMode] = useState<"email" | "sms">("email")
   const [email, setEmail] = useState("")
@@ -73,7 +75,24 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
   const [codeRequested, setCodeRequested] = useState(false)
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle")
   const [message, setMessage] = useState("")
+  const emailRef = useRef<HTMLInputElement>(null)
+  const phoneRef = useRef<HTMLInputElement>(null)
+  const codeRef = useRef<HTMLInputElement>(null)
+  const firstOperatorRef = useRef<HTMLButtonElement>(null)
+  const messageRef = useRef<HTMLParagraphElement>(null)
+  const sending = state === "sending"
   const picked = operators.find((operator) => operator.selector === selector) ?? null
+
+  useEffect(() => {
+    if (codeRequested && mode === "sms") codeRef.current?.focus()
+    else if (manual && !selector) (mode === "email" ? emailRef : phoneRef).current?.focus()
+  }, [codeRequested, manual, selector, mode])
+
+  useEffect(() => {
+    if (state !== "error") return
+    const field = codeRequested && mode === "sms" ? codeRef.current : !selector ? (mode === "email" ? emailRef.current : phoneRef.current) : null
+    ;(field ?? messageRef.current)?.focus()
+  }, [state, codeRequested, mode, selector])
 
   const resetDelivery = () => { setState("idle"); setCodeRequested(false); setMessage(""); setCode("") }
   const chooseOperator = (operator: PunchCard) => {
@@ -121,7 +140,7 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
 
   const chooseMode = (next: "email" | "sms") => { setMode(next); resetDelivery() }
 
-  return <div style={ground}>
+  return <div className="ops-login-screen" style={ground}>
     <div style={card}>
       <div style={plate}>
         <div style={mark}>
@@ -135,32 +154,33 @@ export function OpsLoginForm({ linkError, operators = [], smsReady = false }: { 
 
       {operators.length > 0 && <section style={stack} aria-label="Team members">
         <span className="t-label">Choose your name</span>
-        <div style={rows}>{operators.map((operator) => <button type="button" key={operator.selector} aria-label={`Sign in as ${operator.name}`} aria-pressed={selector === operator.selector} style={pick(selector === operator.selector)} onClick={() => chooseOperator(operator)}><strong className="t-data">{operator.name}</strong><small className="t-caption">{selector === operator.selector ? "Selected" : "Sign in"}</small></button>)}</div>
+        <div style={rows}>{operators.map((operator, index) => <button ref={index === 0 ? firstOperatorRef : undefined} disabled={sending} type="button" key={operator.selector} aria-label={`Sign in as ${operator.name}`} aria-pressed={selector === operator.selector} style={pick(selector === operator.selector)} onClick={() => chooseOperator(operator)}><strong className="t-data">{operator.name}</strong><small className="t-caption">{selector === operator.selector ? "Selected" : "Sign in"}</small></button>)}</div>
       </section>}
       {!picked && !manual && <p className="t-caption">One tap. Then choose text or email.</p>}
 
       {(picked || manual) && <section style={stack}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "var(--s2)" }} role="group" aria-label="Sign-in method">
-          {(!picked || picked.hasEmail) && <button type="button" aria-pressed={mode === "email"} style={pick(mode === "email")} onClick={() => chooseMode("email")}><strong className="t-data">Email link</strong><span className="t-caption">Open it once</span></button>}
-          {smsReady && (!picked || picked.hasSms) && <button type="button" aria-pressed={mode === "sms"} style={pick(mode === "sms")} onClick={() => chooseMode("sms")}><strong className="t-data">Text code</strong><span className="t-caption">Six digits</span></button>}
+          {(!picked || picked.hasEmail) && <button type="button" disabled={sending} aria-pressed={mode === "email"} style={pick(mode === "email")} onClick={() => chooseMode("email")}><strong className="t-data">Email link</strong><span className="t-caption">Open it once</span></button>}
+          {smsReady && (!picked || picked.hasSms) && <button type="button" disabled={sending} aria-pressed={mode === "sms"} style={pick(mode === "sms")} onClick={() => chooseMode("sms")}><strong className="t-data">Text code</strong><span className="t-caption">Six digits</span></button>}
         </div>
 
         {mode === "email" ? <form onSubmit={submitEmail} style={stack} aria-busy={state === "sending"}>
-          {picked ? <p className="t-caption">Send the one-tap key to {picked.name}&apos;s shop email.</p> : <><label className="t-label" htmlFor="ops-email">Your email</label><input id="ops-email" aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? "ops-login-message" : undefined} type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={field} /></>}
+          {picked ? <p className="t-caption">Send the one-tap key to {picked.name}&apos;s shop email.</p> : <><label className="t-label" htmlFor={domId("ops-email")}>Your email</label><input ref={emailRef} readOnly={sending} id={domId("ops-email")} aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? domId("ops-login-message") : undefined} type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={field} /></>}
           <button type="submit" className="btn btn--go" style={wide(state === "sending")} disabled={state === "sending"}>{state === "sending" ? "Sending..." : "Send my link"}</button>
         </form> : codeRequested ? <form onSubmit={verifyCode} style={stack} aria-busy={state === "sending"}>
-          <label className="t-label" htmlFor="ops-code">Six-digit code</label><input id="ops-code" aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? "ops-login-message" : undefined} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} required style={field} />
+          <label className="t-label" htmlFor={domId("ops-code")}>Six-digit code</label><input ref={codeRef} readOnly={sending} id={domId("ops-code")} aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? domId("ops-login-message") : undefined} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} required style={field} />
           <button type="submit" className="btn btn--go" style={wide(state === "sending")} disabled={state === "sending"}>{state === "sending" ? "Checking..." : "Sign in"}</button>
-          <button type="button" className="btn btn--edge" style={wide()} onClick={resetDelivery}>Send another code</button>
+          <button type="button" className="btn btn--edge" style={wide()} disabled={sending} onClick={resetDelivery}>Send another code</button>
         </form> : <form onSubmit={requestCode} style={stack} aria-busy={state === "sending"}>
-          {picked ? <p className="t-caption">Text six shop digits to {picked.name}&apos;s phone.</p> : <><label className="t-label" htmlFor="ops-phone">Your cell number</label><input id="ops-phone" aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? "ops-login-message" : undefined} type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required style={field} /></>}
+          {picked ? <p className="t-caption">Text six shop digits to {picked.name}&apos;s phone.</p> : <><label className="t-label" htmlFor={domId("ops-phone")}>Your cell number</label><input ref={phoneRef} readOnly={sending} id={domId("ops-phone")} aria-invalid={state === "error" ? "true" : undefined} aria-describedby={message ? domId("ops-login-message") : undefined} type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required style={field} /></>}
           <button type="submit" className="btn btn--go" style={wide(state === "sending")} disabled={state === "sending"}>{state === "sending" ? "Sending..." : "Text my code"}</button>
         </form>}
       </section>}
 
-      {picked && <button type="button" className="btn btn--edge" style={wide()} onClick={() => { setSelector(""); resetDelivery() }}>Choose a different person</button>}
-      {!picked && operators.length > 0 && <details style={stack} open={manual}><summary className="t-label" style={{ minHeight: "44px", display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => setManual(true)}>My name isn&apos;t here</summary>{manual && <><p className="t-caption">Ask the owner to add you, or use manual sign-in below.</p><button type="button" className="btn btn--edge" style={wide()} onClick={() => setManual(true)}>Use manual sign-in</button></>}</details>}
-      {message && <p id="ops-login-message" style={note(state === "error" ? "stop" : "good")} role={state === "error" ? "alert" : "status"}>{message}</p>}
+      {picked && <button type="button" className="btn btn--edge" style={wide()} disabled={sending} onClick={() => { setSelector(""); resetDelivery(); firstOperatorRef.current?.focus() }}>Choose a different person</button>}
+      {!picked && operators.length > 0 && !manual && <button type="button" className="btn btn--edge" style={wide()} disabled={sending} onClick={() => { setManual(true); resetDelivery() }}>My name isn&apos;t here</button>}
+      {!picked && manual && operators.length > 0 && <p className="t-caption">Use your shop email or phone, or ask the owner to add you.</p>}
+      {message && <p ref={messageRef} tabIndex={-1} id={domId("ops-login-message")} style={note(state === "error" ? "stop" : "good")} role={state === "error" ? "alert" : "status"}>{message}</p>}
     </div>
   </div>
 }

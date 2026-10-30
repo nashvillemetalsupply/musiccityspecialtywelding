@@ -37,7 +37,9 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   assert.match(header, /MCSW Jobs/)
   assert.match(header, /firstName/)
   assert.match(header, /<MoreMenu/)
-  assert.match(more, /aria-label=\{open \? "Close menu" : "Open menu"\}/)
+  assert.match(more, /aria-label="Open menu"/)
+  assert.match(more, /<div[^>]*role="dialog"[^>]*aria-modal="true"[\s\S]*?className="ops-more-close" aria-label="Close menu"/)
+  assert.match(more, /closeRef\.current\?\.focus\(\)/)
   assert.match(more, /<MenuIcon/)
   assert.match(more, /<CloseIcon/)
   assert.doesNotMatch(header, /<strong>Jobs<\/strong>/)
@@ -61,13 +63,11 @@ test("MCSW Jobs exposes the compact mobile hierarchy and keeps advanced tools un
   // The frame is full-bleed since 2026-09-03 so the top bar spans the
   // viewport; the 92rem column moved to the bar's contents and the pages.
   assert.match(css, /\.ops-frame\s*\{[^}]*width:\s*100%/s)
-  assert.match(css, /\.ops-frame > :not\(\.ops-top\)\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
+  assert.match(css, /\.ops-frame > :not\(\.ops-top\):not\(\.skip\)\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
   assert.match(css, /\.ops-top-inner\s*\{[^}]*width:\s*min\(100%, 92rem\)/s)
   assert.match(css, /min-height:\s*44px/)
-  assert.match(
-    css,
-    /\.ops-more-trigger\[aria-expanded="true"\]\s*\{[^}]*position:\s*fixed;[^}]*top:\s*max\([^;]*env\(safe-area-inset-top[^;]*;[^}]*right:\s*max\([^;]*env\(safe-area-inset-right[^;]*;/s,
-  )
+  assert.match(css, /\.ops-more-trigger\[aria-expanded="true"\]\s*\{[^}]*visibility:\s*hidden/s)
+  assert.match(css, /\.ops-more-close\s*\{[^}]*min-height:\s*44px/s)
 })
 
 test("mobile side effects use centered scroll-safe controls with busy-state protection", () => {
@@ -469,7 +469,7 @@ test("every Jobs recorder follows the Deepgram and Blob readiness gate", () => {
   assert.match(capture, /available: boolean/)
   assert.match(capture, /if \(!available\) return/)
   assert.match(capture, /if \(!available \|\| disabled \|\| transcribing/)
-  assert.match(capture, /disabled=\{!available \|\| disabled \|\| transcribing\}/)
+  assert.match(capture, /disabled=\{!available \|\| disabled \|\| transcribing \|\| scopeLoading\}/)
   assert.match(capture, /unavailableLabel = "Voice not set up"/)
 
   assert.match(layout, /voiceTranscriptionConfigured\(\)/)
@@ -570,21 +570,28 @@ test("the work order has one captured action spine and a visible owner payment s
   assert.match(workOrder, /customerTextReady && <Link[^>]*href="\?replyChannel=text#job-reply">Text<\/Link>/)
   assert.match(workOrder, /href=\{lead\.completed_at \? "#done-photo" : "#finish-photo"\}>Photo/)
   assert.match(workOrder, /operator\.role === "owner" && <Link[^>]*job-action-price/)
-  assert.match(workOrder, /<section className="card job-details" aria-labelledby="job-details-title">/)
-  assert.match(workOrder, /<details className="job-ledger" aria-label="Customer and source" name="job-detail-group" open>/)
-  assert.match(workOrder, /<details className="job-drawer" open>/)
+  assert.match(workOrder, /<section className="card job-details" aria-labelledby=\{domId\("job-details-title"\)\}>/)
+  assert.match(workOrder, /id=\{domId\("job-details-title"\)\} data-job-fragment="job-details-title"/)
+  assert.match(workOrder, /<details className="job-ledger" aria-label="Customer and source">/)
+  assert.match(workOrder, /<details className="job-drawer">/)
+  assert.match(workOrder, /open=\{!lead\.first_response_at\}/)
+  assert.match(workOrder, /<JobFragmentNavigation \/>/)
+  assert.match(workOrder, /className="job-direct-call"/)
+  assert.doesNotMatch(workOrder.slice(workOrder.indexOf('<nav className="job-action-spine"')), /directFallback/)
 
-  const detailsStart = workOrder.indexOf('<section className="card job-details" aria-labelledby="job-details-title">')
+  const detailsStart = workOrder.indexOf('<section className="card job-details" aria-labelledby={domId("job-details-title")}>')
   const paymentStart = workOrder.indexOf('<section className="card job-payment"')
   assert.ok(detailsStart >= 0 && paymentStart > detailsStart)
   assert.doesNotMatch(workOrder.slice(detailsStart, paymentStart), /action=\{recordPayment\}/)
   assert.match(workOrder.slice(paymentStart), /<PaymentForm/)
-  assert.match(paymentForm, /<label htmlFor="payment-amount">Amount received<\/label>/)
-  assert.match(paymentForm, /<label htmlFor="payment-method">Payment method<\/label>/)
+  assert.match(paymentForm, /<label htmlFor=\{domId\("payment-amount"\)\}>Amount received<\/label>/)
+  assert.match(paymentForm, /<input id=\{domId\("payment-amount"\)\}/)
+  assert.match(paymentForm, /<label htmlFor=\{domId\("payment-method"\)\}>Payment method<\/label>/)
+  assert.match(paymentForm, /<select id=\{domId\("payment-method"\)\}/)
   assert.match(paymentForm, /Mark remaining balance paid in full/)
   assert.match(paymentForm, /Payment does not finish or close the job/)
 
-  assert.match(reply, /id="job-reply"/)
+  assert.match(reply, /data-job-fragment="job-reply"/)
   assert.match(reply, /bodyRef\.current\?\.focus\(\{ preventScroll: true \}\)/)
   assert.match(trackedCall, /Your phone rings first\. Answer it, then we connect the customer/)
   assert.match(trackedCall, /Call directly — not saved/)

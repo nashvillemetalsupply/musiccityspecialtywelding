@@ -8,6 +8,7 @@ import { FALLBACK_SHOP_PHONE_E164 } from "@/lib/shop-phone-shared"
 import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { getDeferredSmsSendAt, isCentralQuietHours } from "@/lib/sms-quiet-hours.ts"
 import { sendIfClaimed } from "@/lib/deferred-sms.ts"
+import { SmsNotSentError } from "@/lib/sms-provider-truth.ts"
 
 export type MessageRow = {
   id: number
@@ -36,6 +37,7 @@ type SmsIntentRow = {
   operator_id: number | null
   idempotency_key: string
   quiet_hours_exempt: boolean
+  is_test: boolean
 }
 
 type SmsResult = {
@@ -47,22 +49,44 @@ type SmsResult = {
   quietHoursExempt?: boolean
 }
 
-async function sendClaimedSms(intent: SmsIntentRow): Promise<SmsResult> {
+async function sendClaimedSms(intent: SmsIntentRow, deferred = false): Promise<SmsResult> {
   const sql = getSql()
   const messageId = Number(intent.id)
   const intentSid = intent.twilio_sid
   const quietHoursExempt = Boolean(intent.quiet_hours_exempt)
-  const eventId = await recordEvent({
-    kind: "sms.out",
-    actorType: intent.operator_id ? "operator" : "system",
-    actorId: intent.operator_id ?? "",
-    leadId: intent.lead_id,
-    personId: intent.person_id,
-    externalId: intentSid,
-    body: intent.body,
-    detail: { messageId, quietHoursExempt },
-  })
-  const glassLink = /^glass:([a-f0-9]{64}):send:/i.exec(intent.idempotency_key)
+  const glassLink = /^glass:([a-f0-9]{64}):send:([0-9]+)$/i.exec(intent.idempotency_key)
+  let eventId: number | null = null
+  let blockedReason = ""
+  try {
+    if (intent.is_test) blockedReason = "Internal test messages never contact customers."
+    else if (!(await customerSmsAllowed(intent.to_phone))) blockedReason = "Text canceled: this customer no longer has texting permission."
+    if (blockedReason) throw new Error(blockedReason)
+    eventId = await recordEvent({
+      kind: "sms.out",
+      actorType: intent.operator_id ? "operator" : "system",
+      actorId: intent.operator_id ?? "",
+      leadId: intent.lead_id,
+      personId: intent.person_id,
+      externalId: intentSid,
+      body: intent.body,
+      detail: { messageId, quietHoursExempt },
+    })
+  } catch (error) {
+    // No provider call has happened. Keep a transient journal/consent lookup
+    // failure retryable; a revoked consent or test message is canceled.
+    // Finish this attempt's link cleanup before exposing the text to a retry.
+    // A late cleanup must never release a newer Customer Page send claim.
+    if (glassLink) await sql`
+      UPDATE glass_links SET send_claimed_at = NULL,
+        send_status = ${blockedReason ? (intent.is_test ? "suppressed" : "failed") : deferred ? "deferred" : "failed"}::text
+      WHERE token_hash = ${glassLink[1].toLowerCase()}::text AND sent_at IS NULL
+        AND send_attempts = ${Number(glassLink[2])}::integer`
+    await sql`
+      UPDATE messages SET status = ${blockedReason ? "canceled" : deferred ? "queued" : "persisted"}::text,
+        sending_started_at = NULL, send_after = ${!blockedReason && deferred ? new Date().toISOString() : null}::timestamptz
+      WHERE id = ${messageId}::bigint AND twilio_sid = ${intentSid}::text AND status = 'sending'`
+    throw new SmsNotSentError(error instanceof Error ? error.message : "Text was not sent. Try again.")
+  }
 
   try {
     const sent = await sendSms({
@@ -172,11 +196,14 @@ export async function sendSmsPersisted(input: {
 }) {
   const to = normalizeUsPhone(input.to)
   const reservedPhones = [FALLBACK_SHOP_PHONE_E164, process.env.TWILIO_PHONE_NUMBER ?? "", process.env.OWNER_CELL_PHONE ?? ""]
-  if (!to || isReservedCustomerPhone(to, reservedPhones)) throw new Error("A real customer phone number is required.")
-  if (!twilioSmsConfigured()) throw new Error("Shop texting is waiting for A2P approval.")
-  if (!(await customerSmsAllowed(to))) throw new Error("Texting is blocked until this customer opts in. Record their permission or ask them to text the shop first.")
+  if (!to || isReservedCustomerPhone(to, reservedPhones)) throw new SmsNotSentError("A real customer phone number is required.")
+  if (!twilioSmsConfigured()) throw new SmsNotSentError("Shop texting is waiting for A2P approval.")
+  let allowed: boolean
+  try { allowed = await customerSmsAllowed(to) }
+  catch (error) { throw new SmsNotSentError(error instanceof Error ? error.message : "Texting permission could not be checked. Try again.") }
+  if (!allowed) throw new SmsNotSentError("Texting is blocked until this customer opts in. Record their permission or ask them to text the shop first.")
   const from = process.env.TWILIO_PHONE_NUMBER?.trim()
-  if (!from) throw new Error("Twilio SMS is not configured.")
+  if (!from) throw new SmsNotSentError("Twilio SMS is not configured.")
   const pendingSid = `pending:${randomUUID()}`
   const sql = getSql()
 
@@ -200,29 +227,35 @@ export async function sendSmsPersisted(input: {
       mcsw_is_test_row(${input.leadId ?? null}::bigint, ${input.personId ?? null}::bigint,
         NULL::bigint, NULL::text, NULL::jsonb, ${input.body}::text)
     ) ON CONFLICT (idempotency_key) WHERE idempotency_key <> '' DO NOTHING
-    RETURNING id, twilio_sid, status, send_after, quiet_hours_exempt`) as Array<{
-      id: number; twilio_sid: string; status: string; send_after: string | null; quiet_hours_exempt: boolean
+    RETURNING id, twilio_sid, status, send_after, quiet_hours_exempt, is_test`) as Array<{
+      id: number; twilio_sid: string; status: string; send_after: string | null; quiet_hours_exempt: boolean; is_test: boolean
     }>
   const existing = rows[0] ? rows : idempotencyKey
-    ? (await sql`SELECT id, twilio_sid, status, send_after, quiet_hours_exempt FROM messages WHERE idempotency_key = ${idempotencyKey}::text LIMIT 1`) as Array<{
-      id: number; twilio_sid: string; status: string; send_after: string | null; quiet_hours_exempt: boolean
+    ? (await sql`SELECT id, twilio_sid, status, send_after, quiet_hours_exempt, is_test FROM messages WHERE idempotency_key = ${idempotencyKey}::text LIMIT 1`) as Array<{
+      id: number; twilio_sid: string; status: string; send_after: string | null; quiet_hours_exempt: boolean; is_test: boolean
     }>
     : []
   if (!existing[0]) throw new Error("The persisted text could not be found.")
   const messageId = Number(existing[0].id)
+  if (existing[0].is_test) {
+    await sql`UPDATE messages SET status = 'canceled', send_after = NULL
+      WHERE id = ${messageId}::bigint AND status IN ('persisted','queued')`
+    throw new SmsNotSentError("Internal test messages never contact customers.")
+  }
   if (existing[0].status === "queued" && existing[0].send_after) {
     return { id: messageId, sid: null, eventId: null, deferred: true, sendAfter: existing[0].send_after, quietHoursExempt: false }
   }
   if (["queued", "accepted", "sent", "delivered", "read"].includes(existing[0].status)) {
     return { id: messageId, sid: existing[0].twilio_sid, eventId: null, quietHoursExempt: Boolean(existing[0].quiet_hours_exempt) }
   }
-  if (["failed", "undelivered", "canceled"].includes(existing[0].status)) throw new Error("That text already failed; open the work order to retry safely.")
+  if (existing[0].status === "canceled") throw new SmsNotSentError("That text was canceled before sending. Check customer permission before trying again.")
+  if (["failed", "undelivered"].includes(existing[0].status)) throw new Error("That text already failed; open the work order to retry safely.")
   if (existing[0].status === "unknown") throw new Error("Twilio may have accepted this attempt. Check Calls & Messages before sending a new reply.")
   const claimed = (await sql`
     UPDATE messages SET status = 'sending', sending_started_at = now(), send_after = NULL
     WHERE id = ${messageId}::bigint AND status = 'persisted'
     RETURNING id, twilio_sid, to_phone, body, lead_id, person_id, operator_id,
-      idempotency_key, quiet_hours_exempt`) as SmsIntentRow[]
+      idempotency_key, quiet_hours_exempt, is_test`) as SmsIntentRow[]
   if (!claimed[0]) throw new Error("That text is already sending; check Calls & Messages before retrying.")
   return sendClaimedSms(claimed[0])
 }
@@ -246,9 +279,9 @@ export async function sendDeferredSms(limit = 40) {
           WHERE id = ${candidate.id}::bigint AND direction = 'out' AND status = 'queued'
             AND send_after IS NOT NULL AND send_after <= now()
           RETURNING id, twilio_sid, to_phone, body, lead_id, person_id, operator_id,
-            idempotency_key, quiet_hours_exempt`) as SmsIntentRow[]
+            idempotency_key, quiet_hours_exempt, is_test`) as SmsIntentRow[]
         return rows[0] ?? null
-      }, sendClaimedSms)
+      }, (intent) => sendClaimedSms(intent, true))
       if (claimed) sent += 1
       else lostClaims += 1
     } catch (error) {
