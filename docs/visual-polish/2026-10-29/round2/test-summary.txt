@@ -1,0 +1,9 @@
+Runtime: Node 24.22.2
+Tests: 1046
+Passed: 1043
+Skipped: 3
+Failed: 0
+Cancelled: 0
+Duration milliseconds: 41619.0473
+Exit code: 0
+Source log: .tmp/final-source-tests.log

@@ -1,0 +1,610 @@
+{
+    "generated":  "2026-10-29T21:35:46.802Z",
+    "baseline":  "46b4ed5a1aa7b66e26c91eac6309d62ba676b414",
+    "branch":  "task/crm-polish-2026-10-29",
+    "method":  "Targeted retests replace matching case keys; the compact matrix records original and replacement timestamps. Production/fixture hashes describe the final saved files. Raw full measurements remain task-local; selected screenshots and compact results are archived here.",
+    "production":  [
+                       {
+                           "file":  "app/api/health/route.ts",
+                           "sha256":  "29e9592c8edd42c37d0bd992a93c9954c4c014ef82e8f3dc52b3ea9f805e2a06"
+                       },
+                       {
+                           "file":  "app/api/ops/cache-session/route.ts",
+                           "sha256":  "e0b4ffadf261b44fd537e43cef70f14a92dc13468d5e974597312b9b404bac34"
+                       },
+                       {
+                           "file":  "app/api/ops/call/route.ts",
+                           "sha256":  "7fcf17cf30feefed72dcdcdaf6265d7c82aeb50206208f8926888a8a5cdbedfe"
+                       },
+                       {
+                           "file":  "app/api/ops/promises/draft/route.ts",
+                           "sha256":  "dd2b4c04e236a3ea4968c3c6a49c751a7f2cde0a14ef17dfb1294da81337c373"
+                       },
+                       {
+                           "file":  "app/api/ops/transcribe/route.ts",
+                           "sha256":  "8a7741df82703c08c8fe23b6f11d0ca92a66036ffe1df5426163c302c7c48c5a"
+                       },
+                       {
+                           "file":  "app/api/ops/voice/preview/route.ts",
+                           "sha256":  "6fe1cc1e0a37d61ff756d24e0da959f90a4f20c05c8be8a59f7f075899ececc9"
+                       },
+                       {
+                           "file":  "app/api/ops/voice/route.ts",
+                           "sha256":  "fe5fdcb532e49f238959e29933b283dd235b8cf41e8c72a039a363d8c6f1e828"
+                       },
+                       {
+                           "file":  "app/board/board-route-nav.css",
+                           "sha256":  "d27acd3a8b9912ab605fafe34cd23e805f100bf11ea172b0aa0cdd769111f90c"
+                       },
+                       {
+                           "file":  "app/board/board.css",
+                           "sha256":  "cd9bf62b2bc355d60be25c28517f5f5ab89b096935bf4b500545486e758d6b89"
+                       },
+                       {
+                           "file":  "app/board/board.tsx",
+                           "sha256":  "f2d56a666166d46224e83a7fc922c7d773e961906c593c9a0ad5e5d096a37abe"
+                       },
+                       {
+                           "file":  "app/board/customers/customers.css",
+                           "sha256":  "caff305fbbda6590cd684d6af3409f70c7ac69184434fb9aab0c4ed1118d520e"
+                       },
+                       {
+                           "file":  "app/board/customers/page.tsx",
+                           "sha256":  "768f8b7112d7dce3d7770d745f1d22c6d9e14c3fddcdb3defa7afac1756b7c14"
+                       },
+                       {
+                           "file":  "app/board/error.tsx",
+                           "sha256":  "71deae0230522795c83d24e6e84f442735e2b7f40ae714f2a69d2f5205488311"
+                       },
+                       {
+                           "file":  "app/board/job-calendar.module.css",
+                           "sha256":  "2f1a9742791a8b9986b530346d985eac1f9fb5d65bc3f34f58287381acd0de8e"
+                       },
+                       {
+                           "file":  "app/board/job-calendar.tsx",
+                           "sha256":  "039f61dd0505b25fa11f17903703e9ec7e309e5dc1fb2bb48e58c7071ea6d332"
+                       },
+                       {
+                           "file":  "app/board/page.tsx",
+                           "sha256":  "7f1a3e0a8a96aae944136bb884633d5daacbb79871394fbbd59971b849ce37b8"
+                       },
+                       {
+                           "file":  "app/board/skip-link.tsx",
+                           "sha256":  "e22120b585f8628dee333ee29e835b1ac396328e193762c41c683d062f3823d9"
+                       },
+                       {
+                           "file":  "app/board/theme-boot.tsx",
+                           "sha256":  "70d40f6e6c2fa440c2367d6b3aaf394579a14257816443bd269cf90b4cf4dd12"
+                       },
+                       {
+                           "file":  "app/board/updates/page.tsx",
+                           "sha256":  "1e224254cf55c44598a6a9ad5ec597e00af1aee2754a2e0a557f3568e1908906"
+                       },
+                       {
+                           "file":  "app/board/updates/updates.css",
+                           "sha256":  "b437a27cb7b2b7e6075bf7870e0214fb0f17060a03df298d903ab57fded44779"
+                       },
+                       {
+                           "file":  "app/board/voice-preview.tsx",
+                           "sha256":  "15fc4f3749707d654416470319b54350604bff7c46c365fdbca012c6fb3660bd"
+                       },
+                       {
+                           "file":  "app/layout.tsx",
+                           "sha256":  "9b4c441ed5b734416b8bed2305d2d05d8b8ba4877128328a0c26b6c3291c1b79"
+                       },
+                       {
+                           "file":  "app/ops/accounts/[id]/account.css",
+                           "sha256":  "596fcb1cf270e2b4557ddd5d3dd51f74086d4cb6811dc2bf07cbf886ef505e7d"
+                       },
+                       {
+                           "file":  "app/ops/accounts/[id]/page.tsx",
+                           "sha256":  "1a4b0926a6e3762f5e5da9099b856b63b00b6fc20e0cef7a4491d3f651fa46e9"
+                       },
+                       {
+                           "file":  "app/ops/actions.ts",
+                           "sha256":  "0a95ef4438d4114217e90334e84ede45ad952c852bd5206383748d5b67f0a37f"
+                       },
+                       {
+                           "file":  "app/ops/analytics/analytics.css",
+                           "sha256":  "41876e296bd59adb6f38172a4d1b57e4c8b4b05d64b3b6987bbfe297497d108e"
+                       },
+                       {
+                           "file":  "app/ops/analytics/page.tsx",
+                           "sha256":  "543045491ab1e122e009bb4b51fb9880de0d338dc203b963d08ecb7b20c73ef4"
+                       },
+                       {
+                           "file":  "app/ops/error.tsx",
+                           "sha256":  "08bb453d43e66928e2d388ee2673ab0ba4c3ae9533fe08e4ce1dfc7d4954d54d"
+                       },
+                       {
+                           "file":  "app/ops/intake/inline-job-intake.tsx",
+                           "sha256":  "7497b17d4ac33855de7b2860aa0695e61a85464a759ccc518a8f5c3a5a1580a7"
+                       },
+                       {
+                           "file":  "app/ops/intake/intake.css",
+                           "sha256":  "75cd806505822b74e13e01fff20fdba49dae0f874719f1d7221cf773e2f274a9"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/builds/builds.css",
+                           "sha256":  "b16dbdde991f085c63aa2d2269ec62e85f3eb4e56525b8533bb3bf84e725100c"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/builds/page.tsx",
+                           "sha256":  "5742adcbb1ec6a9699a4125c53e1005cec954ed8a5c31d01135761e58f1fd7c9"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/closeout-photo-input.tsx",
+                           "sha256":  "b93ac1f10f9544987dff23f0ad513dfbed128ec4cd07662a82f039f6c41efb21"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/done-stamp.tsx",
+                           "sha256":  "2cb8bf9d1c8a5251e4135ffb211550e78f3661b7d5f35671cdfd7f4ab6020de4"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/handoff-control.tsx",
+                           "sha256":  "5afb60ab014003dfea1ba44355f257b4a9aa06e1517b81a27d01c3c87f5ea2fc"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/job-fragment-navigation.tsx",
+                           "sha256":  "df419e0af7da2da723f51894a5ba3c248edd5acbf3671504b58cfc99d13dd627"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/job-fragment.ts",
+                           "sha256":  "741d4f535581c44d0cc0ccec6a0e949a2c0dcd73902f7088a32c43b69d518fd0"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/job.css",
+                           "sha256":  "67a69589c15479fecf15c782cf6bd2118b4e51a447603f5d9a0dc8de576b1d6a"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/message-actions.ts",
+                           "sha256":  "55afc82b0d9aa870da2faec158a24ca305c15b3f6d78032a357f8f3df6de875f"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/page.tsx",
+                           "sha256":  "584ce2180c46cd547ed384e344f419ea7b5e2330d0bb11b5bbddcb6d5ababd71"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/payment-form.tsx",
+                           "sha256":  "47b9608a0528a0da3508f600810889cb128b10a46237ad5a455371206bc89037"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/promise-actions.ts",
+                           "sha256":  "c9b05e910090c2658327225aae50101206064de10ee7f2b615c7d6bac80eb738"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/reply-draft.ts",
+                           "sha256":  "6b5de1fe9e4c37b3a3eb9600241c882e256a706ded437dcf24566c0700d5c96a"
+                       },
+                       {
+                           "file":  "app/ops/leads/[id]/spike-reply.tsx",
+                           "sha256":  "7fe56e90e0a9f34b03a05b3311d2f8cb220452edec98c5a3bc9800f7264aae35"
+                       },
+                       {
+                           "file":  "app/ops/login-form.tsx",
+                           "sha256":  "090c6ea175c99a2ac7059a3a05b22a2cd43e99813da32388d8739a7b43a23aff"
+                       },
+                       {
+                           "file":  "app/ops/more-menu.tsx",
+                           "sha256":  "5bcc4abf579edfda8ad7a199c3979a14ca5c64bfbfec7c3b055daf53936bfffb"
+                       },
+                       {
+                           "file":  "app/ops/ops-shell.css",
+                           "sha256":  "be6fa126fa6c6cf084c9ec96e2a3369cce38fceba2e59d929cb2c9c70ec7ea1f"
+                       },
+                       {
+                           "file":  "app/ops/shop-dock-requests.ts",
+                           "sha256":  "39efbdadda50fe625a7aadaa8ae9661676a715ccae70da02e937019199c70eda"
+                       },
+                       {
+                           "file":  "app/ops/shop-dock.tsx",
+                           "sha256":  "1b9fb71774ff74968e1cc8b2e85c59adba9e59aac771a1fd3bdd2f9d0aa69ddb"
+                       },
+                       {
+                           "file":  "app/ops/shop/page.tsx",
+                           "sha256":  "99ff8fa418c53bb0d4211db2d987aa1720c377cc443e8f1aff574fde56dcbd02"
+                       },
+                       {
+                           "file":  "app/ops/shop/shop.css",
+                           "sha256":  "af5acdd73adaf381228bfa0dc8a5a398b75ae227e51103fb4bf85af7c14ab227"
+                       },
+                       {
+                           "file":  "app/ops/voice-capture-button.tsx",
+                           "sha256":  "b1b3fcf0404805bd2ced249da5d5a64bc08a79d2a48787136041a187a456cd36"
+                       },
+                       {
+                           "file":  "app/ops/voice-outbox-client.ts",
+                           "sha256":  "c39e6e0b7df0dd5973ced51ddc6dd0a1078af7b0c8c72eba341923688babf6b7"
+                       },
+                       {
+                           "file":  "app/ops/wire-strip.tsx",
+                           "sha256":  "feb97600077454d67908ab6272fdaaf637de1b951bc3fc09c5507ee95e7f18f7"
+                       },
+                       {
+                           "file":  "lib/call-sketch-store.ts",
+                           "sha256":  "e1343692c80f244594e9f99623510fd71aeabd52f14859974bae957b317bbd8a"
+                       },
+                       {
+                           "file":  "lib/call-summary-outcome.ts",
+                           "sha256":  "c7c6a96595bb1e564a21e9f41451783e9640fef3008db56b2da194b08bc67b91"
+                       },
+                       {
+                           "file":  "lib/call-summary-shared.ts",
+                           "sha256":  "c16788d8a125405d356ed867e877905483c816ddbeac7c318f89fa4b05824332"
+                       },
+                       {
+                           "file":  "lib/closeout-photo-uploads.ts",
+                           "sha256":  "33db04670b8d8099aa6740a98d4ddb1c1760843d42d3e0e37dd412a0fb9c748b"
+                       },
+                       {
+                           "file":  "lib/glass-delivery.ts",
+                           "sha256":  "cf6f107576587018f73a6d85112f937d8a3afb71c19006997fcf2767223d69a4"
+                       },
+                       {
+                           "file":  "lib/messages.ts",
+                           "sha256":  "276156e4d54a2ead3c0ad5830ffc9177230a0ad2b6746b23b3d858f65e93b7a2"
+                       },
+                       {
+                           "file":  "lib/ops-data.ts",
+                           "sha256":  "e60c7263f08a4a15fbd3dfd89a8426e62c1531d5c8326cbb619b0f8d0ddcc326"
+                       },
+                       {
+                           "file":  "lib/sms-provider-truth.ts",
+                           "sha256":  "a855b6c6178ef9b6fe73bfeba7fad2d1012f3e98314493a3f92c728fbb305391"
+                       },
+                       {
+                           "file":  "lib/voice-outbox-scope.ts",
+                           "sha256":  "a6342c6ad3f1955a5d3e36909f53416a9b277138dbed7e2f183bd1c5d13ff84f"
+                       },
+                       {
+                           "file":  "styles/control.css",
+                           "sha256":  "95d109768b3808a40570753d80a527a39716deb7ad8d7c2dd9bcf376476f2c10"
+                       }
+                   ],
+    "fixtures":  [
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/extended-fixtures.tsx.fixture",
+                         "sha256":  "1390de229576a5579d5db311c2d3b7b8187a65221ff2ff29b78726097a539e90"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/fixture-boundary.tsx.fixture",
+                         "sha256":  "f6e41c0c036bbf57f6c60c07363881eee1dacc764684f5e9d69d8d09bf9d42ee"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/fixture-tools.tsx.fixture",
+                         "sha256":  "cd8624f9c4d27fbb4ecf54314af9eaf67e2cd3a1fa7ec383af9e4648e0d8bbd6"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/job-fixture.tsx.fixture",
+                         "sha256":  "bc71041854830da624b23b4f4b26019926e6685e748c02916622034d73da4e77"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/page.tsx.fixture",
+                         "sha256":  "7890312addcb7b24ed86e71e1f39142b217551aee07bbf44f20db1c1a5c185a3"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/payment-actions.ts.fixture",
+                         "sha256":  "eb06deae2283b0762beb9693250702846ab1191e113d74506496b4eb8a55d22c"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/payment-check.tsx.fixture",
+                         "sha256":  "cfcb791f15603da4fe7454b4b85d2d17dd437a18647954bb7ac9af4e9bfd5647"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/payment-form-copy.tsx.fixture",
+                         "sha256":  "5749495dd702eb8591b8d138bd0543152233ad34e9858f0a8a0848a7e59a6f28"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/secondary-fixtures.tsx.fixture",
+                         "sha256":  "86b813d606ad4fab6d91050e970ff81f888e8b2b56695967fd164d28657edf58"
+                     },
+                     {
+                         "file":  "scripts/qa/fixtures/crm-polish/voice-fixture.tsx.fixture",
+                         "sha256":  "a22762c358216e87515e65dccdc10f76c7b6313a8d38d92e20652552dbc5f9ef"
+                     }
+                 ],
+    "raw":  [
+                {
+                    "file":  ".tmp/round2-matrix/final-breakpoints.json",
+                    "sha256":  "e2cb3897201da9704a19c059fa273d5ace0f19673cbaa26f2941cfd7eb1fd8d5"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-compact.json",
+                    "sha256":  "05a9298b72fb3dddecc681a9fedb5ef1c0079ea54cee3d7e0da3b3c46daab20a"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-normal-analytics.json",
+                    "sha256":  "fc6b31bd645ba38bb0cbf6eba101fd8c799210576fa602e84bdc926302f3eef5"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-normal-board.json",
+                    "sha256":  "1916511abf68d8847065abaf00b569c20e77028a45f6909379640138e3df7323"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-normal-forms.json",
+                    "sha256":  "890a8402b13098f7a332eeff471d8d5f30a84a91b03d4145a2220ed71f3e7b0f"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-normal-job.json",
+                    "sha256":  "999a7149ac461301f52a9bf5947bff02cef6b874c311b00e26c65559e22a758c"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-normal-login.json",
+                    "sha256":  "293c9304c79c4bca1cfd544afe04390935995b16954bb49d6b47276444bc07e7"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-normal-menu.json",
+                    "sha256":  "c9c220c2a9fa65e9f2addec076df386d283b48f8911bb9dc7ffcb366f07fe2c5"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-normal.json",
+                    "sha256":  "3dcc063bab7d94f3d113c0d1292613f8d478b2ee5156fe7045a6b38617fcc865"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-short.json",
+                    "sha256":  "dae2499786e62eb1a45d4f6f464d9427fddd37198ac853095b7863aabe9ca960"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-states-job-pending.json",
+                    "sha256":  "d55d2fd65c7006376d7ec11403ceaade08c9e9519374d889db851a3098ef1743"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-states-job.json",
+                    "sha256":  "4a74a26baa79482db51ffd7df21ecdb963ea758bd0a7e76dd15ba473db6c4600"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-states.json",
+                    "sha256":  "d600394818a04fa60b7f11590557c7f8e3fd534c17c901933c77dd44da89b901"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-stress-board.json",
+                    "sha256":  "827567103554b502df7b25ee979cb199884dbd7c927538c2cf687d42fadd59c9"
+                },
+                {
+                    "file":  ".tmp/round2-matrix/final-stress.json",
+                    "sha256":  "ed5f28271d0c1f05d5df54716f4eda6b7e606677a0d5850e6d9be8451519a017"
+                }
+            ],
+    "artifacts":  [
+                      {
+                          "source":  ".tmp/round2-matrix/final-compact.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/final-compact.json",
+                          "sha256":  "05a9298b72fb3dddecc681a9fedb5ef1c0079ea54cee3d7e0da3b3c46daab20a"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/browser-zoom.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/browser-zoom.json",
+                          "sha256":  "be251854355f9071e925f6a95bee3a997153cc082afc73620f89b05f184b8b42"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/board-owner-populated-320-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/board-owner-populated-320-1x-viewport.jpg",
+                          "sha256":  "8c52a11817a3fabe3c81f08dba68c1bb50d612e53a6323bcfe11d5c864c9bd32"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/board-owner-populated-1440-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/board-owner-populated-1440-1x-viewport.jpg",
+                          "sha256":  "8cad162386e2c2dcf7afe748bf07b649fcd2e1e10b0410c9e74fecdff6508824"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/board-owner-populated-390-2x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/board-owner-populated-390-2x-viewport.jpg",
+                          "sha256":  "36043fbf5e5b9de757de8d15773bb57643cad3f34cb72233e27266ea00d64138"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/board-owner-populated-390-2x.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/board-owner-populated-390-2x.jpg",
+                          "sha256":  "42aacf9199d53a3ea0395ac3cf6f040f405396fd08e9d8c47b7f3d58468aadbf"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/customers-owner-populated-320-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/customers-owner-populated-320-1x-viewport.jpg",
+                          "sha256":  "709c6735c428bb4a015db3d9f29006c3ffca34db6197c354ddf4475730422a6c"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/job-owner-populated-320-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/job-owner-populated-320-1x-viewport.jpg",
+                          "sha256":  "debd40118dc9c51aed34ba10d20092d97a89d5efa6ff5130c81c5baaf6c9a81c"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/forms-owner-populated-320-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/forms-owner-populated-320-1x-viewport.jpg",
+                          "sha256":  "695c238508aaf28d866ae24cdd715d03a235b705cd7a6411031209a57279052a"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/updates-owner-populated-320-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/updates-owner-populated-320-1x-viewport.jpg",
+                          "sha256":  "b704d9b03e534bf3ea12a103cd23f62da27640a38e121261aaed80292ad35431"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/analytics-owner-populated-1440-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/analytics-owner-populated-1440-1x-viewport.jpg",
+                          "sha256":  "6050f618e77b558a69bae37db18ea3ec2527a2f8b042d3ab21e53ef04e02cf56"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/login-owner-populated-320-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/login-owner-populated-320-1x-viewport.jpg",
+                          "sha256":  "7ab291d7a255890448ca0a58dc28833c0ff71f198dfff34d869a014d8a277741"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/menu-owner-populated-390-2x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/menu-owner-populated-390-2x-viewport.jpg",
+                          "sha256":  "8fa98d4996d439d8b7f696349e70b58ca52b6097afea0803b30ee45fa9b360b5"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/menu-owner-populated-320h568-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/menu-owner-populated-320h568-1x-viewport.jpg",
+                          "sha256":  "3eae9b62225a6b60d8f39d4f0a5b4d526b37b685b5b01028c7332c0cfddb58b2"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/job-owner-populated-844h390-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/job-owner-populated-844h390-1x-viewport.jpg",
+                          "sha256":  "f3b801af54bd6c41aa9d2b9fa19fa452ac5bb2779c13c0f62626cf22e20188ce"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/forms-owner-populated-844h390-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/forms-owner-populated-844h390-1x-viewport.jpg",
+                          "sha256":  "676d6f40bdf9b3d74c8c15b07fb0d7d21b394f8d4674f71f24da64396a688382"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/job-owner-pending-320-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/job-owner-pending-320-1x-viewport.jpg",
+                          "sha256":  "49b13462e9e9215c5e2fc620ea1d1ec145e09be73e29930b407414e05180acc2"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/job-owner-pending-768-1x-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/job-owner-pending-768-1x-viewport.jpg",
+                          "sha256":  "7bfce3e779075c888a37023911b098464d4650d04b31fe511c6bd2d92d535035"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/zoom200-board-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/zoom200-board-viewport.jpg",
+                          "sha256":  "43969091f26a799c4b6ffd61c16862056fc57327cddf7c7c77505e26c39dc0ea"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/zoom200-job-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/zoom200-job-viewport.jpg",
+                          "sha256":  "3f00b364fad6e27e9b84687cbcf80fdb865ce69591813ba07e9f89b06c0217ae"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/zoom200-forms-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/zoom200-forms-viewport.jpg",
+                          "sha256":  "a3159ef3353c843011865f5628afec2d7a925d51181272b99d8afdcab24264fe"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/zoom200-customers-viewport.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/zoom200-customers-viewport.jpg",
+                          "sha256":  "85e72d67de9c971ba990fe3cf322dccf81145820d4d7b6a6f9d1f8250ed62eaa"
+                      },
+                      {
+                          "source":  ".tmp/round2-interactions/final-results.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/interactions.json",
+                          "sha256":  "79530bb9bb4d16059b074ca52563665825afb3361407a8c7f84fe45f3505778e"
+                      },
+                      {
+                          "source":  ".tmp/round2-interactions/final-voice-results.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/interactions-final-voice.json",
+                          "sha256":  "8e7e8d4172171bed3d1747c342c046f84d57038e16cc5573935949fb95ef7e4b"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/payment-check.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/payment-check.json",
+                          "sha256":  "edd6ecccc6ab4e32dd55b4ba22678de5730f7eeb508e47d1a259449a33001593"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/final-shell/firefox.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/final-shell-firefox.json",
+                          "sha256":  "19a652d7d9d7617a1c2717e9cf5499b89d54574de35f22c5833c793a5671ab16"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/final-shell/webkit.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/final-shell-webkit.json",
+                          "sha256":  "8caa88ee466cb7bcdcb8694b3b19804e6ef307b43e6dd49d7d660b43fc2de7ba"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/final-login-dark/firefox.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/final-login-dark-firefox.json",
+                          "sha256":  "fa6a80b21a34ace686d103f34bf1a90e454887a9eed26b83175da023a3a6db7b"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/final-login-dark/webkit.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/final-login-dark-webkit.json",
+                          "sha256":  "e7f6ba82a128ac05dfea68feda3da3bbf72a396b08723f67b6620bb401cc0fe0"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/final-calendar-menu/firefox.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/final-calendar-menu-firefox.json",
+                          "sha256":  "200d43ca9430548182836abf7bc6ec07e17ef2e0ee26909db3db3a8a9acd6e1b"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/final-calendar-menu/webkit.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/final-calendar-menu-webkit.json",
+                          "sha256":  "c9d0b5b605ca620d24d28f70749543218ed10b1639b44dffd12e72fb21066893"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/final-calendar-menu-clean/webkit.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/final-calendar-menu-clean-webkit.json",
+                          "sha256":  "33c09e978f7e2bb99315910578027bb02e826090b0d8ffc0435fb963f71de593"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/production-smoke/chromium.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/production-smoke-chromium.json",
+                          "sha256":  "e4bc6956193bb251256e3dc67fe98bfd79dc5330d7eb94f38fb71fce99d36017"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/production-smoke/webkit.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/cross-engine/production-smoke-webkit.json",
+                          "sha256":  "a873484f6323e4569d2fd6ff32ec97dd188f04324262bb25f8dc5ecf00f9d961"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/production-smoke/chromium-board-owner-normal-390.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/production-chromium-board-owner-normal-390.jpg",
+                          "sha256":  "a74c320f90e4605855d755fb29b81bc6a10df72e953f2e8a81e9605e4e5e80c1"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/production-smoke/chromium-board-owner-normal-1440.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/production-chromium-board-owner-normal-1440.jpg",
+                          "sha256":  "eedc8f902767f277744324702de82dfd9dd6b801ddfc35945a311c7dc73fc470"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/production-smoke/chromium-board-owner-normal-390-menu.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/production-chromium-board-owner-normal-390-menu.jpg",
+                          "sha256":  "08f9dd19df4ec7fe32c2c1fbcd6247857ae7dcebe2d2ff92317d4f38b8e9035b"
+                      },
+                      {
+                          "source":  ".tmp/round2-cross-engine/production-smoke/chromium-forms-owner-normal-390.jpg",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/production-chromium-forms-owner-normal-390.jpg",
+                          "sha256":  "4426e7e0ede7b9450fe3b4e9db9108ca3bfe7e2f71f96f3c26bac460a1a38329"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/failed-hydration-stress-board.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/dev-preview-failed-hydration.json",
+                          "sha256":  "441f1d490186b52cba771973ce6ee3a282752b978dd6e3101b96b4053c5c90fe"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/failed-hydration-states-job.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/dev-preview-pending-hydration-timeout.json",
+                          "sha256":  "4a74a26baa79482db51ffd7df21ecdb963ea758bd0a7e76dd15ba473db6c4600"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/chunk-diagnostic-1.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/dev-preview-diagnostic-1.json",
+                          "sha256":  "4281caba4d8a2369eaf5cbaca2dae0a25049f7a52172c163be2d294bb967880b"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/chunk-diagnostic-2.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/dev-preview-diagnostic-2.json",
+                          "sha256":  "f3693ecc00ef46115f985d054af8280fedd4f7227943e2da64b32030e90c45a0"
+                      },
+                      {
+                          "source":  ".tmp/round2-matrix/chunk-diagnostic-3.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/dev-preview-diagnostic-3.json",
+                          "sha256":  "06850e598435b357c7348d179df498b17781837e9011ef440f14dedcddc953e1"
+                      },
+                      {
+                          "source":  "docs/visual-polish/2026-10-29/round2/release-gates.json",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/release-gates.json",
+                          "sha256":  "8a70ab443414de7dd45e68725a1b90229f54a9f15b03f63efd341e98e706c801"
+                      },
+                      {
+                          "source":  "docs/visual-polish/2026-10-29/round2/production-build.log",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/production-build.log",
+                          "sha256":  "7816822d82c35f9f59dafd3674947b88b92c96c48098fc9b54c9a8b84ccb7de5"
+                      },
+                      {
+                          "source":  "docs/visual-polish/2026-10-29/round2/release-lint.log",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/release-lint.log",
+                          "sha256":  "acf836608e975f6d6802434ad1b7d0b23bfca4030994a4e46bb1839f8ee27eb0"
+                      },
+                      {
+                          "source":  "docs/visual-polish/2026-10-29/round2/bundle-budget.log",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/bundle-budget.log",
+                          "sha256":  "e2939cbaa39f778c704c1226211a7a2f802d081c34a8b66acb65b873c43f75a1"
+                      },
+                      {
+                          "source":  "docs/visual-polish/2026-10-29/round2/test-summary.txt",
+                          "archive":  "docs/visual-polish/2026-10-29/round2/test-summary.txt",
+                          "sha256":  "c4c3b817c3c814e268cd12be64e30237c33a2ae3f3be49b57d73488f9a040f30"
+                      }
+                  ]
+}

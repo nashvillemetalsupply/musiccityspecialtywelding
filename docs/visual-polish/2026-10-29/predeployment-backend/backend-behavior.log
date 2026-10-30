@@ -1,0 +1,54 @@
+TAP version 13
+# Subtest: real database preserves event journal truth and strips money from crew board trails
+ok 1 - real database preserves event journal truth and strips money from crew board trails
+  ---
+  duration_ms: 441.4421
+  type: 'test'
+  ...
+# Subtest: real payment ledger converges simultaneous duplicate receipts and immutable reversals
+ok 2 - real payment ledger converges simultaneous duplicate receipts and immutable reversals
+  ---
+  duration_ms: 264.4884
+  type: 'test'
+  ...
+# Deferred customer text needs attention: SmsNotSentError: Text canceled: this customer no longer has texting permission.
+#     at sendClaimedSms (evalmachine.<anonymous>:59:15)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+#     at async sendIfClaimed (evalmachine.<anonymous>:9:5)
+#     at async Object.sendDeferredSms (evalmachine.<anonymous>:244:29)
+#     at async TestContext.<anonymous> (file:///C:/Users/Owner/Desktop/Shepherd/Music%20City%20Speciality%20Welding/.worktrees/crm-polish/scripts/qa/predeploy-postgres.behavior.mjs:104:3)
+#     at async Test.run (node:internal/test_runner/test:1409:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+# Subtest: real database suppresses test SMS and consent revoked after durable enqueue
+ok 3 - real database suppresses test SMS and consent revoked after durable enqueue
+  ---
+  duration_ms: 522.1918
+  type: 'test'
+  ...
+# Subtest: real SMS persistence quarantines ambiguous dispatch and converges simultaneous retries
+ok 4 - real SMS persistence quarantines ambiguous dispatch and converges simultaneous retries
+  ---
+  duration_ms: 298.9872
+  type: 'test'
+  ...
+# Subtest: actual call route with real persistence cannot redial an ambiguous intent or reuse it for another job
+ok 5 - actual call route with real persistence cannot redial an ambiguous intent or reuse it for another job
+  ---
+  duration_ms: 298.2256
+  type: 'test'
+  ...
+# Subtest: real upload receipts authorize before storage and converge delayed callback with finish
+ok 6 - real upload receipts authorize before storage and converge delayed callback with finish
+  ---
+  duration_ms: 168.1899
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3247.3143

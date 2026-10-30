@@ -1,0 +1,30 @@
+﻿{
+    "databaseVersion":  "PostgreSQL 17.10",
+    "nodeVersion":  "24.22.2",
+    "source":  "synthetic fixtures only",
+    "productionExported":  false,
+    "liveProviderCalls":  0,
+    "modelApiCalls":  0,
+    "persistenceTestsPassed":  2,
+    "runtimeDatabaseTestsPassed":  6,
+    "tablesWithMatchingCounts":  60,
+    "restartCounts":  {
+                          "events":  11,
+                          "messages":  3,
+                          "calls":  2,
+                          "uploads":  1,
+                          "migrations":  295
+                      },
+    "plaintextSha256":  "3AA002EE8C108A428F33567564B638668DB5B83A7342076C5B6A24C7A8D024C2",
+    "decryptedSha256":  "3AA002EE8C108A428F33567564B638668DB5B83A7342076C5B6A24C7A8D024C2",
+    "encryptedSha256":  "870583D3C2C6CF622AF5EB4F1599E1E23BB36DD0F5B1B8B51B6843F345A11767",
+    "localClusterStopped":  true,
+    "sourceFiles":  {
+                        "scripts/qa/local-postgres-transport.mjs":  "9DF2C8F5DBE0C1E8E982355DFFD79EF030153AF5D15C720095E714A6449154E0",
+                        "scripts/backup-crypto.mjs":  "6BDEF79CB53262A1D0CCF94C49E67A9F3EB7C1C02A09DAAA30C1DF7C90D78568",
+                        "scripts/qa/predeploy-local-postgres.mjs":  "7BA9BB491A7138600A105F40A31C3B5E158419044BC325F16629E708ACB99047",
+                        "scripts/qa/predeploy-postgres.behavior.mjs":  "E3EFDD40C2105ACFCF9D0AC1504CA8A6273A107D2029E792F5E27A327AD0EAF1"
+                    },
+    "ownedSyntheticClustersRemoved":  7,
+    "syntheticDumpFilesRemoved":  true
+}

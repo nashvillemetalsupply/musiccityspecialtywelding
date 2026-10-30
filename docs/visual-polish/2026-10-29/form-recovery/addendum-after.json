@@ -1,0 +1,22 @@
+{
+  "checks": [
+    {
+      "name": "addendum-pending-mounted",
+      "forms": 1
+    },
+    {
+      "name": "addendum-failure-preserves-draft",
+      "forms": 1,
+      "note": "Additional hinge adjustment"
+    },
+    {
+      "name": "addendum-retry-success-clears-note",
+      "passed": true
+    },
+    {
+      "name": "repeated-photo-same-hash-reopens-after-success",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

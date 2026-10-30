@@ -1,0 +1,101 @@
+{
+    "recordedAt":  "2026-10-30",
+    "runtime":  "Node 24.22.2",
+    "branch":  "task/crm-polish-2026-10-29",
+    "baseline":  "46b4ed5a1aa7b66e26c91eac6309d62ba676b414",
+    "deployed":  false,
+    "gates":  {
+                  "productionBuild":  {
+                                          "status":  "pass",
+                                          "exitCode":  0,
+                                          "compileSeconds":  44,
+                                          "typecheckSeconds":  39.6,
+                                          "staticPages":  50
+                                      },
+                  "typecheck":  {
+                                    "status":  "pass",
+                                    "exitCode":  0,
+                                    "afterFixtureCleanup":  true
+                                },
+                  "lint":  {
+                               "status":  "pass",
+                               "exitCode":  0,
+                               "maxWarnings":  0
+                           },
+                  "tests":  {
+                                "total":  1054,
+                                "passed":  1051,
+                                "failed":  0,
+                                "skipped":  3,
+                                "durationMs":  40238.5455,
+                                "skips":  [
+                                              "Paid AI evaluation intentionally disabled",
+                                              "Two persistence tests passed in separate real-PostgreSQL run"
+                                          ]
+                            },
+                  "realDatabase":  {
+                                       "passed":  8,
+                                       "failed":  0,
+                                       "syntheticEncryptedRestoreTables":  60
+                                   },
+                  "bundle":  {
+                                 "status":  "pass",
+                                 "units":  "uncompressed JavaScript bytes",
+                                 "publicBytes":  612409,
+                                 "publicThreshold":  648316,
+                                 "boardBytes":  712282,
+                                 "boardThreshold":  817538
+                             },
+                  "fixtureExclusion":  {
+                                           "sourceRouteAbsent":  true,
+                                           "productionManifestEntryAbsent":  true
+                                       },
+                  "whitespace":  {
+                                     "status":  "pass"
+                                 },
+                  "productionRecovery":  {
+                                             "status":  "pass",
+                                             "verifiedTls":  true,
+                                             "readOnly":  true,
+                                             "tablesCompared":  69,
+                                             "totalRows":  33008,
+                                             "structure":  {
+                                                               "tables":  69,
+                                                               "constraints":  265,
+                                                               "invalidConstraints":  0,
+                                                               "indexes":  190,
+                                                               "invalidIndexes":  0,
+                                                               "triggers":  5
+                                                           },
+                                             "encryptedRoundtrip":  true,
+                                             "copiesRemoved":  true,
+                                             "evidence":  "../production-recovery/summary.json"
+                                         }
+              },
+    "unverified":  [
+                       "Native screen-reader acceptance: required window inventory rejected by automatic review after user approval",
+                       "Physical iPhone/Android/native Safari and virtual keyboards",
+                       "Live provider delivery and deployed authentication",
+                       "Remote encrypted backup workflow and secret provisioning"
+                   ],
+    "artifactSha256":  {
+                           "tests-summary.log":  "1ce60a6b52b463b783d2a0359c2f2e34c6764ccf59524b9112a723013dee3317",
+                           "lint.log":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                           "bundle-budget.log":  "9c3966592e38743881e442592ebaeaa223dce5a3a62823c2b5abd90948e4d7a3",
+                           "typecheck.log":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                           "production-build.log":  "a96a1c168ade169ba22b41a948873e615fdd690a341e1b09707ec7cb66ebc6ab"
+                       },
+    "provenance":  "Exit codes confirmed by parent tool execution; empty lint/typecheck logs alone are not treated as proof.",
+    "localImplementationCommits":  [
+                                       "2339806",
+                                       "a97e299",
+                                       "039f859"
+                                   ],
+    "releaseStatus":  "Local release checks and production snapshot recovery passed; native screen-reader, physical-device, live-provider, and remote-workflow acceptance remain explicitly unverified",
+    "logArchiving":  "Archived logs normalize UTF-8, LF line endings, and trailing whitespace. Original raw logs remain under ignored .tmp. Hashes refer to these normalized archived files.",
+    "finalCodeHead":  "039f859",
+    "backupReleasePair":  [
+                              "2339806",
+                              "039f859"
+                          ]
+}

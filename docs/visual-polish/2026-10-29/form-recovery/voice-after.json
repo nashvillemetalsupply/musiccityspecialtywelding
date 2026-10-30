@@ -1,0 +1,42 @@
+{
+  "checks": [
+    {
+      "name": "keyboard-release-cancels-delayed-identity-and-unlocks-save",
+      "passed": true
+    },
+    {
+      "name": "pointer-release-cancels-pending-permission-and-stops-late-stream",
+      "passed": true
+    },
+    {
+      "name": "stale-microphone-rejection-does-not-stop-new-capture",
+      "passed": true
+    },
+    {
+      "name": "canceled-identity-cannot-start-newer-capture",
+      "passed": true
+    },
+    {
+      "name": "capture-identity-await-blocks-save",
+      "passed": true
+    },
+    {
+      "name": "recording-and-persist-transcribe-block-save",
+      "passed": true
+    },
+    {
+      "name": "transcript-applies-before-save-unlocks",
+      "passed": true
+    },
+    {
+      "name": "completion-clears-prior-voice-identity",
+      "passed": true
+    },
+    {
+      "name": "addendum-auto-files-after-delayed-voice-cleanup",
+      "delayMs": 250,
+      "passed": true
+    }
+  ],
+  "errors": []
+}

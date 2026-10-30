@@ -1,0 +1,26 @@
+TAP version 13
+# (node:26352) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/Owner/Desktop/Shepherd/Music%20City%20Speciality%20Welding/.worktrees/crm-polish/lib/build-sheets-persistence.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to \\\\?\\C:\\Users\\Owner\\Desktop\\Shepherd\\Music City Speciality Welding\\.worktrees\\crm-polish\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: real persistence converges ingest retries and lock receipts without sequence gaps
+ok 1 - real persistence converges ingest retries and lock receipts without sequence gaps
+  ---
+  duration_ms: 543.8065
+  type: 'test'
+  ...
+# Subtest: simultaneous lock receipts converge across two database connections
+ok 2 - simultaneous lock receipts converge across two database connections
+  ---
+  duration_ms: 407.8795
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1439.2218

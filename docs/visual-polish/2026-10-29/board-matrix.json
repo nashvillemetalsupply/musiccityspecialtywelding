@@ -1,0 +1,102 @@
+[
+  {
+    "amountOverflow": false,
+    "bodyHeight": 4003,
+    "client": 305,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 320
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 3928,
+    "client": 345,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 360
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 3919,
+    "client": 360,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 375
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 3889,
+    "client": 375,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 390
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 3835,
+    "client": 399,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 414
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 3664,
+    "client": 753,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 768
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 900,
+    "client": 1009,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 1024
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 900,
+    "client": 1265,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 1280
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 900,
+    "client": 1425,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 1440
+  },
+  {
+    "amountOverflow": false,
+    "bodyHeight": 900,
+    "client": 1905,
+    "font": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif",
+    "headerOutside": 0,
+    "horizontalOverflow": false,
+    "viewportHeight": 900,
+    "width": 1920
+  }
+]

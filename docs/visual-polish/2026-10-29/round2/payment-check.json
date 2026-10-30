@@ -1,0 +1,82 @@
+{
+  "engine": "webkit",
+  "sourceHash": "47b9608a0528a0da3508f600810889cb128b10a46237ad5a455371206bc89037",
+  "checks": [
+    {
+      "state": "failed",
+      "passed": true,
+      "submissions": [
+        {
+          "kind": "payment",
+          "values": {
+            "leadId": "987654321",
+            "receiptKey": "internal-test-payment",
+            "paymentAmount": "125.25",
+            "paymentMethod": "check",
+            "settles": "1"
+          }
+        },
+        {
+          "kind": "reversal",
+          "values": {
+            "leadId": "987654321",
+            "reversalKey": "internal-test-reversal",
+            "reversalAmount": "35.50",
+            "reason": "Correct duplicate cash receipt"
+          }
+        }
+      ]
+    },
+    {
+      "state": "pending",
+      "passed": true,
+      "submissions": [
+        {
+          "kind": "payment",
+          "values": {
+            "leadId": "987654321",
+            "receiptKey": "internal-test-payment",
+            "paymentAmount": "125.25",
+            "paymentMethod": "check",
+            "settles": "1"
+          }
+        }
+      ]
+    },
+    {
+      "state": "success",
+      "passed": true,
+      "submissions": [
+        {
+          "kind": "reversal",
+          "values": {
+            "leadId": "987654321",
+            "reversalKey": "internal-test-reversal",
+            "reversalAmount": "20.00",
+            "reason": "Refund 20.00"
+          }
+        },
+        {
+          "kind": "reversal",
+          "values": {
+            "leadId": "987654321",
+            "reversalKey": "ae32babb-a84d-4696-accb-8bc832d66481",
+            "reversalAmount": "30.00",
+            "reason": "Refund 30.00"
+          }
+        },
+        {
+          "kind": "payment",
+          "values": {
+            "leadId": "987654321",
+            "receiptKey": "internal-test-payment",
+            "paymentAmount": "75.00",
+            "paymentMethod": "card",
+            "settles": "1"
+          }
+        }
+      ]
+    }
+  ],
+  "appErrors": []
+}

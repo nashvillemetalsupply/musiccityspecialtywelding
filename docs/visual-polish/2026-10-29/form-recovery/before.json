@@ -1,0 +1,49 @@
+{
+  "sourceHashes": {
+    "intake": "5f49f65d98b4afd30ee267a6f074f510a62584bfed38e5bd1782f0b4e7e430da",
+    "closeout": "9fb631beca685c3e641998d108be1075c56c92fee6f92645932188ae3376d52a"
+  },
+  "checks": [
+    {
+      "name": "intake-error-retention",
+      "service": "",
+      "referral": "",
+      "submission": {
+        "source": "phone-in",
+        "intakeKey": "internal-test-manual",
+        "firstName": "[INTERNAL TEST] Form recovery",
+        "phone": "6155550123",
+        "message": "Repair gate",
+        "service": "Aluminum / Boat Welding",
+        "referral": "Referral"
+      }
+    },
+    {
+      "name": "intake-details-retention",
+      "service": "",
+      "referral": ""
+    },
+    {
+      "name": "closeout-error-retention",
+      "fit": "fit",
+      "rework": "no",
+      "extraTrips": "2",
+      "submission": {
+        "leadId": "999",
+        "reviewedCloseout": "1",
+        "closeoutKey": "internal-test",
+        "noteSource": "typed",
+        "sourceWords": "Finished the gate and adjusted on site. Two extra trips. Rework was required.",
+        "voiceIntentId": "",
+        "reviewed": "1",
+        "completion": "complete",
+        "fit": "adjusted",
+        "extraTrips": "2",
+        "rework": "yes",
+        "asBuiltDifferences": "Adjusted hinge spacing",
+        "remainingWork": ""
+      }
+    }
+  ],
+  "errors": []
+}

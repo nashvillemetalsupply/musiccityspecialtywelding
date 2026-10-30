@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-10-30T05:45:18.849Z",
+  "purpose": "Explicitly authorized temporary read-only production snapshot recovery test",
+  "stages": [
+    {
+      "label": "production-readonly-metadata",
+      "exitCode": 4294967295,
+      "durationMs": 233638
+    }
+  ],
+  "productionWrites": false,
+  "providerCalls": false,
+  "uploaded": false,
+  "failure": {
+    "stage": "production-readonly-metadata",
+    "classification": "unclassified command failure"
+  },
+  "passed": false,
+  "productionCopiesRemoved": true,
+  "completedAt": "2026-10-30T05:49:12.490Z"
+}

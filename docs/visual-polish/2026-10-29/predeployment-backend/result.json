@@ -1,0 +1,103 @@
+{
+  "runDir": "C:\\Users\\Owner\\Desktop\\Shepherd\\Music City Speciality Welding\\.worktrees\\crm-polish\\.tmp\\predeploy-postgres-1793311164026",
+  "port": 57860,
+  "stages": [
+    {
+      "label": "initdb",
+      "code": 0,
+      "durationMs": 9100
+    },
+    {
+      "label": "start",
+      "code": 0,
+      "durationMs": 1059
+    },
+    {
+      "label": "createdb",
+      "code": 0,
+      "durationMs": 678
+    },
+    {
+      "label": "migrate-fresh",
+      "code": 0,
+      "durationMs": 23592
+    },
+    {
+      "label": "migrate-replay",
+      "code": 0,
+      "durationMs": 5127
+    },
+    {
+      "label": "persistence",
+      "code": 0,
+      "durationMs": 1716
+    },
+    {
+      "label": "backend-behavior",
+      "code": 0,
+      "durationMs": 3371
+    },
+    {
+      "label": "durability-before",
+      "code": 0,
+      "durationMs": 112
+    },
+    {
+      "label": "stop-for-restart",
+      "code": 0,
+      "durationMs": 2506
+    },
+    {
+      "label": "start-after-restart",
+      "code": 0,
+      "durationMs": 646
+    },
+    {
+      "label": "durability-after",
+      "code": 0,
+      "durationMs": 249
+    },
+    {
+      "label": "source-table-counts",
+      "code": 0,
+      "durationMs": 298
+    },
+    {
+      "label": "dump-synthetic",
+      "code": 0,
+      "durationMs": 440
+    },
+    {
+      "label": "authenticated-encryption-roundtrip",
+      "code": 0,
+      "durationMs": 57
+    },
+    {
+      "label": "create-restore-db",
+      "code": 0,
+      "durationMs": 585
+    },
+    {
+      "label": "restore-synthetic",
+      "code": 0,
+      "durationMs": 1417
+    },
+    {
+      "label": "restore-counts",
+      "code": 0,
+      "durationMs": 114
+    },
+    {
+      "label": "restored-table-counts",
+      "code": 0,
+      "durationMs": 238
+    },
+    {
+      "label": "stop",
+      "code": 0,
+      "durationMs": 3489
+    }
+  ],
+  "remoteConnections": false,
+  "providerCalls": false
+}

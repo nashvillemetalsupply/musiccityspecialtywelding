@@ -1,0 +1,31 @@
+{
+  "started": "2026-10-29T21:25:05.922Z",
+  "updated": "2026-10-29T21:25:34.877Z",
+  "results": [
+    {
+      "name": "voice-inflight-identity-guard",
+      "evidence": {
+        "inventory": "qa-polish-voice-owner: preserved (operator:987654321:owner)\nqa-polish-voice-crew: absent\nqa-polish-voice-legacy: preserved (unscoped legacy)",
+        "visibleTranscript": [
+          "Real recovery component; seeded synthetic text blobs only. Microphone control is disabled. All transcription requests are intercepted locally.",
+          "An older voice note is kept here and will not be sent automatically.",
+          "[INTERNAL TEST] Recovered qa-polish-voice-crew under operator:987654322:crew. No real recording or provider call."
+        ],
+        "ownerLaterRecovered": true
+      },
+      "pass": true
+    },
+    {
+      "name": "voice-identity-preservation",
+      "evidence": {
+        "crewInventory": "qa-polish-voice-owner: preserved (operator:987654321:owner)\nqa-polish-voice-crew: absent\nqa-polish-voice-legacy: preserved (unscoped legacy)",
+        "ownerInventory": "qa-polish-voice-owner: absent\nqa-polish-voice-crew: absent\nqa-polish-voice-legacy: preserved (unscoped legacy)",
+        "events": "GET id=qa-polish-voice-crew scope=operator:987654322:crew bytes=0 active=operator:987654322:crew\nPOST id=qa-polish-voice-crew scope=operator:987654322:crew bytes=58 active=operator:987654322:crew\nGET id=qa-polish-voice-owner scope=operator:987654321:owner bytes=0 active=operator:987654321:owner\nPOST id=qa-polish-voice-owner scope=operator:987654321:owner bytes=58 active=operator:987654321:owner",
+        "noCrossUpload": true
+      },
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "blocked": []
+}

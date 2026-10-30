@@ -1,0 +1,34 @@
+{
+  "started": "2026-10-29T21:06:12.560Z",
+  "updated": "2026-10-29T21:07:17.099Z",
+  "browser": "153.0.8010.12",
+  "phase": "stress",
+  "results": [
+    {
+      "surface": "board",
+      "role": "owner",
+      "state": "",
+      "width": 390,
+      "scale": 2,
+      "key": "board-owner-populated-390-2x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=board&role=owner&state=",
+      "errors": [
+        "SyntaxError: Invalid or unexpected token"
+      ],
+      "httpStatus": 200,
+      "failure": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-qa-boundary-hydrated=\"true\"]')\u001b[22m\n"
+    },
+    {
+      "surface": "board",
+      "role": "owner",
+      "state": "",
+      "width": 768,
+      "scale": 2,
+      "key": "board-owner-populated-768-2x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=board&role=owner&state=",
+      "errors": [],
+      "httpStatus": 200,
+      "failure": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-qa-boundary-hydrated=\"true\"]')\u001b[22m\n"
+    }
+  ]
+}

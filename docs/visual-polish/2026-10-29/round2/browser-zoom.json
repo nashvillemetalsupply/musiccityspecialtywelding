@@ -1,0 +1,382 @@
+{
+  "method": "Page zoom 200% selected through chrome://settings/appearance in isolated Playwright Chromium profile",
+  "profile": "C:\\Users\\Owner\\Desktop\\Shepherd\\Music City Speciality Welding\\.worktrees\\crm-polish\\.tmp\\round2-zoom-profile-1793308727823",
+  "started": "2026-10-29T21:18:47.824Z",
+  "results": [
+    {
+      "surface": "board",
+      "geometry": {
+        "innerWidth": 632,
+        "innerHeight": 452,
+        "outerWidth": 1280,
+        "outerHeight": 1000,
+        "dpr": 2,
+        "visualViewportScale": 1,
+        "rootFontSize": "16px",
+        "documentScrollWidth": 624,
+        "bodyScrollWidth": 625
+      },
+      "ratio": 2,
+      "widthRatio": 0.5,
+      "verified": true,
+      "screenshot": "zoom200-board-viewport.jpg",
+      "bodyOverflow": false,
+      "samples": [
+        {
+          "text": "MCSW Jobs",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", sans-serif",
+          "rect": {
+            "x": 8,
+            "y": 0,
+            "width": 105.484375,
+            "height": 44
+          }
+        },
+        {
+          "text": "Grease Patrol",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", sans-serif",
+          "rect": {
+            "x": 117.484375,
+            "y": 0,
+            "width": 116.2890625,
+            "height": 44
+          }
+        },
+        {
+          "text": "LD2R",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", sans-serif",
+          "rect": {
+            "x": 237.7734375,
+            "y": 0,
+            "width": 60.09375,
+            "height": 44
+          }
+        },
+        {
+          "text": "Railing",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", sans-serif",
+          "rect": {
+            "x": 301.8671875,
+            "y": 0,
+            "width": 70.890625,
+            "height": 44
+          }
+        },
+        {
+          "text": "BuilderBox",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", sans-serif",
+          "rect": {
+            "x": 376.7578125,
+            "y": 0,
+            "width": 98.4140625,
+            "height": 44
+          }
+        },
+        {
+          "text": "Job tracker",
+          "fontSize": "18px",
+          "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+          "rect": {
+            "x": 33,
+            "y": 258.5390625,
+            "width": 327.765625,
+            "height": 22.5
+          }
+        }
+      ],
+      "layoutMetrics": {
+        "cssLayoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624,
+          "clientHeight": 452
+        },
+        "layoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 1249,
+          "clientHeight": 905
+        },
+        "cssVisualViewport": {
+          "offsetX": 0,
+          "offsetY": 0,
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624.5,
+          "clientHeight": 452.5,
+          "scale": 1,
+          "zoom": 2
+        }
+      },
+      "image": {
+        "width": 1264,
+        "height": 905,
+        "method": "CDP viewport capture without CSS clip"
+      },
+      "actionsScreenshot": "zoom200-board-actions.jpg"
+    },
+    {
+      "surface": "job",
+      "geometry": {
+        "innerWidth": 632,
+        "innerHeight": 452,
+        "outerWidth": 1280,
+        "outerHeight": 1000,
+        "dpr": 2,
+        "visualViewportScale": 1,
+        "rootFontSize": "16px",
+        "documentScrollWidth": 624,
+        "bodyScrollWidth": 625
+      },
+      "ratio": 2,
+      "widthRatio": 0.5,
+      "verified": true,
+      "screenshot": "zoom200-job-viewport.jpg",
+      "bodyOverflow": false,
+      "samples": [
+        {
+          "text": "[INTERNAL TEST] Alexander Montgomery-Washington Test",
+          "fontSize": "22px",
+          "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+          "rect": {
+            "x": 35.953125,
+            "y": 144.953125,
+            "width": 552.59375,
+            "height": 87
+          }
+        },
+        {
+          "text": "Call",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+          "rect": {
+            "x": 25,
+            "y": 399.5,
+            "width": 146.625,
+            "height": 44
+          }
+        },
+        {
+          "text": "Text",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+          "rect": {
+            "x": 175.625,
+            "y": 399.5,
+            "width": 138.625,
+            "height": 44
+          }
+        },
+        {
+          "text": "Photo",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+          "rect": {
+            "x": 318.25,
+            "y": 399.5,
+            "width": 138.625,
+            "height": 44
+          }
+        },
+        {
+          "text": "Price",
+          "fontSize": "14px",
+          "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+          "rect": {
+            "x": 460.875,
+            "y": 399.5,
+            "width": 138.625,
+            "height": 44
+          }
+        }
+      ],
+      "layoutMetrics": {
+        "cssLayoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624,
+          "clientHeight": 452
+        },
+        "layoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 1249,
+          "clientHeight": 905
+        },
+        "cssVisualViewport": {
+          "offsetX": 0,
+          "offsetY": 0,
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624.5,
+          "clientHeight": 452.5,
+          "scale": 1,
+          "zoom": 2
+        }
+      },
+      "image": {
+        "width": 1264,
+        "height": 905,
+        "method": "CDP viewport capture without CSS clip"
+      }
+    },
+    {
+      "surface": "forms",
+      "geometry": {
+        "innerWidth": 632,
+        "innerHeight": 452,
+        "outerWidth": 1280,
+        "outerHeight": 1000,
+        "dpr": 2,
+        "visualViewportScale": 1,
+        "rootFontSize": "16px",
+        "documentScrollWidth": 624,
+        "bodyScrollWidth": 625
+      },
+      "ratio": 2,
+      "widthRatio": 0.5,
+      "verified": true,
+      "screenshot": "zoom200-forms-viewport.jpg",
+      "bodyOverflow": false,
+      "samples": [
+        {
+          "text": "Phone call",
+          "fontSize": "18px",
+          "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+          "rect": {
+            "x": 33,
+            "y": 113.59375,
+            "width": 558.5,
+            "height": 22.5
+          }
+        },
+        {
+          "text": "[INTERNAL TEST] Payment form",
+          "fontSize": "18px",
+          "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+          "rect": {
+            "x": 16,
+            "y": 1650.0703125,
+            "width": 592.5,
+            "height": 22.5
+          }
+        }
+      ],
+      "layoutMetrics": {
+        "cssLayoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624,
+          "clientHeight": 452
+        },
+        "layoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 1249,
+          "clientHeight": 905
+        },
+        "cssVisualViewport": {
+          "offsetX": 0,
+          "offsetY": 0,
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624.5,
+          "clientHeight": 452.5,
+          "scale": 1,
+          "zoom": 2
+        }
+      },
+      "image": {
+        "width": 1264,
+        "height": 905,
+        "method": "CDP viewport capture without CSS clip"
+      }
+    },
+    {
+      "surface": "customers",
+      "geometry": {
+        "innerWidth": 632,
+        "innerHeight": 452,
+        "outerWidth": 1280,
+        "outerHeight": 1000,
+        "dpr": 2,
+        "visualViewportScale": 1,
+        "rootFontSize": "16px",
+        "documentScrollWidth": 624,
+        "bodyScrollWidth": 625
+      },
+      "ratio": 2,
+      "widthRatio": 0.5,
+      "verified": true,
+      "screenshot": "zoom200-customers-viewport.jpg",
+      "bodyOverflow": false,
+      "samples": [
+        {
+          "text": "Regular Customers",
+          "fontSize": "18px",
+          "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+          "rect": {
+            "x": 100.046875,
+            "y": 22.75,
+            "width": 166.7265625,
+            "height": 22.5
+          }
+        }
+      ],
+      "layoutMetrics": {
+        "cssLayoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624,
+          "clientHeight": 452
+        },
+        "layoutViewport": {
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 1249,
+          "clientHeight": 905
+        },
+        "cssVisualViewport": {
+          "offsetX": 0,
+          "offsetY": 0,
+          "pageX": 0,
+          "pageY": 0,
+          "clientWidth": 624.5,
+          "clientHeight": 452.5,
+          "scale": 1,
+          "zoom": 2
+        }
+      },
+      "image": {
+        "width": 1264,
+        "height": 905,
+        "method": "CDP viewport capture without CSS clip"
+      }
+    }
+  ],
+  "before": {
+    "innerWidth": 1264,
+    "innerHeight": 905,
+    "outerWidth": 1280,
+    "outerHeight": 1000,
+    "dpr": 1,
+    "visualViewportScale": 1,
+    "rootFontSize": "16px",
+    "documentScrollWidth": 1264,
+    "bodyScrollWidth": 1264
+  },
+  "zoomSelect": {
+    "id": "zoomLevel",
+    "ariaLabel": null,
+    "initialValue": "1"
+  },
+  "selected": {
+    "value": "2",
+    "label": "200%"
+  }
+}

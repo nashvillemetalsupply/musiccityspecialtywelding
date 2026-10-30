@@ -1,0 +1,16 @@
+{
+  "origin": "http://127.0.0.1:3047",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15",
+  "secure": true,
+  "writes": [
+    {
+      "id": "text",
+      "stored": true
+    },
+    {
+      "id": "blob",
+      "error": "UnknownError",
+      "message": "Error preparing Blob/File data to be stored in object store"
+    }
+  ]
+}

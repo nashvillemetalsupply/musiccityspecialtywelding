@@ -1,0 +1,14 @@
+{
+  "checks": [
+    {
+      "name": "addendum-pending-mounted",
+      "forms": 0
+    },
+    {
+      "name": "addendum-failure-preserves-draft",
+      "forms": 0,
+      "note": null
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,1098 @@
+{
+  "engine": "chromium",
+  "version": "153.0.8010.12",
+  "base": "http://127.0.0.1:3048",
+  "started": "2026-10-29T21:30:55.678Z",
+  "scope": "Desktop engine with resized viewport; not physical Safari/iPhone testing",
+  "cases": [
+    {
+      "surface": "board",
+      "width": 390,
+      "role": "owner",
+      "state": "",
+      "key": "chromium-board-owner-normal-390",
+      "appErrors": [],
+      "appErrorStacks": [],
+      "consoleErrors": [],
+      "blockedRequests": [
+        {
+          "method": "GET",
+          "path": "/api/ops/pulse"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/intake/new"
+        },
+        {
+          "method": "GET",
+          "path": "/board/customers"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/analytics"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/install"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/leads/987654321"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/leads/987654322"
+        },
+        {
+          "method": "GET",
+          "path": "/api/ops/handset-slips"
+        },
+        {
+          "method": "GET",
+          "path": "/board/calls"
+        },
+        {
+          "method": "GET",
+          "path": "/board/updates"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/shop"
+        }
+      ],
+      "navigations": [
+        {
+          "url": "http://127.0.0.1:3048/board/qa-polish?surface=board&role=owner&state=",
+          "time": "2026-10-29T21:30:55.970Z"
+        },
+        {
+          "url": "http://127.0.0.1:3048/board/qa-polish?surface=board&role=owner&state=",
+          "time": "2026-10-29T21:30:56.648Z"
+        }
+      ],
+      "httpStatus": 200,
+      "layout": {
+        "width": 390,
+        "height": 900,
+        "documentWidth": 390,
+        "documentHeight": 3841,
+        "bodyHeight": 900,
+        "rootChildren": [
+          {
+            "tag": "HEAD",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "height": 900,
+            "top": 0
+          }
+        ],
+        "bodyChildren": [
+          {
+            "tag": "DIV",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "local-business-schema",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "height": 3841.421875,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "_R_",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "NEXT-ROUTE-ANNOUNCER",
+            "id": "",
+            "height": 0,
+            "top": 3841.421875
+          }
+        ],
+        "horizontalOverflow": false,
+        "escaped": [],
+        "clippedControls": [],
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          }
+        ],
+        "headings": [
+          {
+            "tag": "H1",
+            "id": "",
+            "class": "t-title",
+            "text": "Job tracker",
+            "x": 33,
+            "y": 300.9375,
+            "width": 217.65625,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          },
+          {
+            "tag": "H2",
+            "id": "social-post-title",
+            "class": "",
+            "text": "Share the work",
+            "x": 33,
+            "y": 1657.8125,
+            "width": 324,
+            "height": 27,
+            "fontSize": "18px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif"
+          },
+          {
+            "tag": "H2",
+            "id": "job-calendar-title-_R_qpav5ubvb_",
+            "class": "t-title",
+            "text": "October 2026",
+            "x": 33,
+            "y": 1872.8125,
+            "width": 166.6875,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          },
+          {
+            "tag": "H2",
+            "id": "",
+            "class": "t-title",
+            "text": "Last call",
+            "x": 33,
+            "y": 2586.90625,
+            "width": 324,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          }
+        ]
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                "a[href=\"/board?business=builderbox\"]"
+              ]
+            ]
+          }
+        ],
+        "passed": 25
+      },
+      "screenshot": "chromium-board-owner-normal-390.jpg",
+      "keyboard": {
+        "calendar": {
+          "before": "Today, Thursday, October 29, 2026, no jobs scheduled",
+          "after": "Friday, October 30, 2026, 1 job scheduled",
+          "focused": true,
+          "controls": "job-calendar-agenda-_R_qpav5ubvb_",
+          "targetMatches": true,
+          "currentDateCount": 1,
+          "weekdayHeaders": [
+            "SU",
+            "MO",
+            "TU",
+            "WE",
+            "TH",
+            "FR",
+            "SA"
+          ]
+        },
+        "menu": {
+          "tabStops": [
+            {
+              "tag": "INPUT",
+              "text": "Search jobs",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Search",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Job Control",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "New Job",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Calls",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Customers",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Updates",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Promises",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Post to social",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Analytics",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Install MCSW Jobs",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Settings",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Morning Brief",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Ask Jobs",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Run recovery now",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Sign out",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Close menu",
+              "inside": true
+            },
+            {
+              "tag": "INPUT",
+              "text": "Search jobs",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Search",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Job Control",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "New Job",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Calls",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Customers",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Updates",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Promises",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Post to social",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Analytics",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Install MCSW Jobs",
+              "inside": true
+            },
+            {
+              "tag": "A",
+              "text": "Settings",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Morning Brief",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Ask Jobs",
+              "inside": true
+            },
+            {
+              "tag": "BUTTON",
+              "text": "Run recovery now",
+              "inside": true
+            }
+          ],
+          "escaped": false,
+          "initialFocusInside": true,
+          "coversBottomRail": true,
+          "axe": {
+            "violations": [],
+            "incomplete": [],
+            "passed": 24
+          },
+          "escapeRestoredFocus": true
+        }
+      }
+    },
+    {
+      "surface": "board",
+      "width": 1440,
+      "role": "owner",
+      "state": "",
+      "key": "chromium-board-owner-normal-1440",
+      "appErrors": [],
+      "appErrorStacks": [],
+      "consoleErrors": [],
+      "blockedRequests": [
+        {
+          "method": "GET",
+          "path": "/api/ops/pulse"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/intake/new"
+        },
+        {
+          "method": "GET",
+          "path": "/board/customers"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/analytics"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/install"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/board"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/leads/987654321"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/leads/987654322"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/leads/987654323"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/leads/987654324"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/leads/987654325"
+        }
+      ],
+      "navigations": [
+        {
+          "url": "http://127.0.0.1:3048/board/qa-polish?surface=board&role=owner&state=",
+          "time": "2026-10-29T21:30:59.404Z"
+        },
+        {
+          "url": "http://127.0.0.1:3048/board/qa-polish?surface=board&role=owner&state=",
+          "time": "2026-10-29T21:31:00.208Z"
+        }
+      ],
+      "httpStatus": 200,
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "documentHeight": 900,
+        "bodyHeight": 900,
+        "rootChildren": [
+          {
+            "tag": "HEAD",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "height": 900,
+            "top": 0
+          }
+        ],
+        "bodyChildren": [
+          {
+            "tag": "DIV",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "local-business-schema",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "height": 900,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "_R_",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "NEXT-ROUTE-ANNOUNCER",
+            "id": "",
+            "height": 0,
+            "top": 900
+          }
+        ],
+        "horizontalOverflow": false,
+        "escaped": [],
+        "clippedControls": [],
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          }
+        ],
+        "headings": [
+          {
+            "tag": "H1",
+            "id": "",
+            "class": "t-title",
+            "text": "Job tracker",
+            "x": 113,
+            "y": 312.25,
+            "width": 100.28125,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          },
+          {
+            "tag": "H2",
+            "id": "social-post-title",
+            "class": "",
+            "text": "Share the work",
+            "x": 109,
+            "y": 831.984375,
+            "width": 1061.53125,
+            "height": 27,
+            "fontSize": "18px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, sans-serif"
+          },
+          {
+            "tag": "H2",
+            "id": "job-calendar-title-_R_qpav5ubvb_",
+            "class": "t-title",
+            "text": "October 2026",
+            "x": 113,
+            "y": 990.984375,
+            "width": 166.6875,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          },
+          {
+            "tag": "H2",
+            "id": "",
+            "class": "t-title",
+            "text": "Last call",
+            "x": 113,
+            "y": 1607.484375,
+            "width": 71.1875,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          }
+        ]
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [],
+        "passed": 28
+      },
+      "screenshot": "chromium-board-owner-normal-1440.jpg",
+      "keyboard": {
+        "calendar": {
+          "before": "Today, Thursday, October 29, 2026, no jobs scheduled",
+          "after": "Friday, October 30, 2026, 1 job scheduled",
+          "focused": true,
+          "controls": "job-calendar-agenda-_R_qpav5ubvb_",
+          "targetMatches": true,
+          "currentDateCount": 1,
+          "weekdayHeaders": [
+            "SUN",
+            "MON",
+            "TUE",
+            "WED",
+            "THU",
+            "FRI",
+            "SAT"
+          ]
+        }
+      }
+    },
+    {
+      "surface": "forms",
+      "width": 390,
+      "role": "owner",
+      "state": "",
+      "key": "chromium-forms-owner-normal-390",
+      "appErrors": [],
+      "appErrorStacks": [],
+      "consoleErrors": [],
+      "blockedRequests": [
+        {
+          "method": "GET",
+          "path": "/ops"
+        },
+        {
+          "method": "GET",
+          "path": "/ops/call-sketch"
+        }
+      ],
+      "navigations": [
+        {
+          "url": "http://127.0.0.1:3048/board/qa-polish?surface=forms&role=owner&state=",
+          "time": "2026-10-29T21:31:02.869Z"
+        },
+        {
+          "url": "http://127.0.0.1:3048/board/qa-polish?surface=forms&role=owner&state=",
+          "time": "2026-10-29T21:31:03.482Z"
+        }
+      ],
+      "httpStatus": 200,
+      "layout": {
+        "width": 390,
+        "height": 900,
+        "documentWidth": 390,
+        "documentHeight": 2932,
+        "bodyHeight": 900,
+        "rootChildren": [
+          {
+            "tag": "HEAD",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "height": 900,
+            "top": 0
+          }
+        ],
+        "bodyChildren": [
+          {
+            "tag": "DIV",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "local-business-schema",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "height": 2931.859375,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "_R_",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "SCRIPT",
+            "id": "",
+            "height": 0,
+            "top": 0
+          },
+          {
+            "tag": "NEXT-ROUTE-ANNOUNCER",
+            "id": "",
+            "height": 0,
+            "top": 2931.859375
+          }
+        ],
+        "horizontalOverflow": false,
+        "escaped": [],
+        "clippedControls": [
+          {
+            "tag": "INPUT",
+            "id": "jobs-inline-name-_r_0_",
+            "class": "",
+            "text": "",
+            "x": 33,
+            "y": 1646.109375,
+            "width": 324,
+            "height": 44,
+            "fontSize": "16px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+          }
+        ],
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          }
+        ],
+        "headings": [
+          {
+            "tag": "H1",
+            "id": "jobs-home-intake-title-_r_0_",
+            "class": "t-title",
+            "text": "Phone call",
+            "x": 33,
+            "y": 113.59375,
+            "width": 324,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          },
+          {
+            "tag": "H2",
+            "id": "live-call-sketch-title",
+            "class": "",
+            "text": "Say it. See it.",
+            "x": 61,
+            "y": 263.09375,
+            "width": 124,
+            "height": 46,
+            "fontSize": "20px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif"
+          },
+          {
+            "tag": "H1",
+            "id": "",
+            "class": "t-title",
+            "text": "[INTERNAL TEST] Payment form",
+            "x": 16,
+            "y": 2087.109375,
+            "width": 358,
+            "height": 22.5,
+            "fontSize": "18px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif"
+          }
+        ]
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                "text[x=\"445\"]"
+              ],
+              [
+                "text[transform=\"translate(102 257) rotate(-90)\"]"
+              ],
+              [
+                "text[x=\"685\"]"
+              ],
+              [
+                "text[x=\"249\"]"
+              ],
+              [
+                "text[x=\"641\"]"
+              ]
+            ]
+          }
+        ],
+        "passed": 31
+      },
+      "screenshot": "chromium-forms-owner-normal-390.jpg",
+      "keyboard": {}
+    }
+  ],
+  "updated": "2026-10-29T21:31:05.371Z"
+}

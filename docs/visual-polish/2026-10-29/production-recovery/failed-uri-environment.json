@@ -1,0 +1,22 @@
+{
+  "startedAt": "2026-10-30T05:50:36.853Z",
+  "purpose": "Explicitly authorized temporary read-only production snapshot recovery test",
+  "stages": [
+    {
+      "label": "production-readonly-metadata",
+      "exitCode": 2,
+      "durationMs": 129
+    }
+  ],
+  "productionWrites": false,
+  "providerCalls": false,
+  "uploaded": false,
+  "connectionTransport": "Native pg_dump/psql over a loopback-only TCP bridge to the verified-TLS Neon WSS endpoint; no remote plaintext transport",
+  "failure": {
+    "stage": "production-readonly-metadata",
+    "classification": "connection failed"
+  },
+  "passed": false,
+  "productionCopiesRemoved": true,
+  "completedAt": "2026-10-30T05:50:37.005Z"
+}

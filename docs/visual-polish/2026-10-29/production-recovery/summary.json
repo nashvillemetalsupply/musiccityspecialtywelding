@@ -1,0 +1,93 @@
+{
+  "startedAt": "2026-10-30T05:53:56.852Z",
+  "purpose": "Explicitly authorized temporary read-only production snapshot recovery test",
+  "stages": [
+    {
+      "label": "production-readonly-metadata",
+      "exitCode": 0,
+      "durationMs": 989
+    },
+    {
+      "label": "source-snapshot-counts",
+      "exitCode": 0,
+      "durationMs": 3642
+    },
+    {
+      "label": "source-snapshot-structure",
+      "exitCode": 0,
+      "durationMs": 935
+    },
+    {
+      "label": "production-readonly-dump",
+      "exitCode": 0,
+      "durationMs": 15008
+    },
+    {
+      "label": "initdb-local",
+      "exitCode": 0,
+      "durationMs": 15117
+    },
+    {
+      "label": "start-local",
+      "exitCode": 0,
+      "durationMs": 927
+    },
+    {
+      "label": "createdb-local",
+      "exitCode": 0,
+      "durationMs": 519
+    },
+    {
+      "label": "restore-production-snapshot",
+      "exitCode": 0,
+      "durationMs": 4490
+    },
+    {
+      "label": "restored-counts",
+      "exitCode": 0,
+      "durationMs": 481
+    },
+    {
+      "label": "restored-structure",
+      "exitCode": 0,
+      "durationMs": 135
+    },
+    {
+      "label": "stop-local",
+      "exitCode": 0,
+      "durationMs": 4380
+    }
+  ],
+  "productionWrites": false,
+  "providerCalls": false,
+  "uploaded": false,
+  "connectionTransport": "Native pg_dump/psql directly to Neon with sslmode=verify-full and trusted Node24 bundled CA roots",
+  "source": {
+    "serverMajor": 17,
+    "readOnly": "on",
+    "extensions": [
+      "pg_trgm",
+      "plpgsql"
+    ]
+  },
+  "encryptionRoundtrip": true,
+  "archiveSha256": "b83df07f0509f8024d07c8b4685b2fbc537c913a9c8afa29852371ac91338ae3",
+  "encryptedDiffers": true,
+  "counts": {
+    "tablesCompared": 69,
+    "totalRows": 33008,
+    "allMatched": true
+  },
+  "structure": {
+    "tables": 69,
+    "constraints": 265,
+    "invalidConstraints": 0,
+    "indexes": 190,
+    "invalidIndexes": 0,
+    "triggers": 5
+  },
+  "structureMatched": true,
+  "passed": true,
+  "productionCopiesRemoved": true,
+  "completedAt": "2026-10-30T05:54:44.979Z"
+}

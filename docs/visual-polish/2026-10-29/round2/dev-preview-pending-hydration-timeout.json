@@ -1,0 +1,3020 @@
+{
+  "started": "2026-10-29T21:13:08.840Z",
+  "updated": "2026-10-29T21:14:44.665Z",
+  "browser": "153.0.8010.12",
+  "phase": "states",
+  "results": [
+    {
+      "surface": "job",
+      "role": "crew",
+      "state": "",
+      "width": 320,
+      "scale": 1,
+      "key": "job-crew-populated-320-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=crew&state=",
+      "errors": [],
+      "httpStatus": 200,
+      "renderReady": true,
+      "layout": {
+        "width": 320,
+        "height": 900,
+        "bodyScrollWidth": 320,
+        "documentScrollWidth": 320,
+        "bodyOverflow": false,
+        "documentHeight": 2480,
+        "rootFontSize": "16px",
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          }
+        ],
+        "samples": [
+          {
+            "selector": "div.ops-frame > header.ops-top > div.ops-top-inner > nav > button.ops-more-trigger",
+            "tag": "button",
+            "text": "",
+            "left": 256,
+            "right": 304,
+            "width": 48,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-bf6ca922-cdf0-43b2-aa54-3f8073ef1263-work-order-title",
+            "tag": "h1",
+            "text": "[INTERNAL TEST] Alexander Montgomery-Washington Test",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 114.5,
+            "fontSize": "22px",
+            "lineHeight": "27.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-summary:nth-of-type(1) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Job Summary",
+            "left": 25,
+            "right": 122.4,
+            "width": 97.4,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Calls & Messages",
+            "left": 25,
+            "right": 151.2,
+            "width": 126.2,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-channel-stamp:nth-of-type(1)",
+            "tag": "button",
+            "text": "Goes by text",
+            "left": 25,
+            "right": 135,
+            "width": 110,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-mic-key:nth-of-type(2)",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-reply-body-_R_776atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-safe-action:nth-of-type(3)",
+            "tag": "button",
+            "text": "Send text",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(1)",
+            "tag": "button",
+            "text": "On it.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(2)",
+            "tag": "button",
+            "text": "What’s the address?",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(3)",
+            "tag": "button",
+            "text": "Can swing by tomorrow AM.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(4)",
+            "tag": "button",
+            "text": "Send a photo of it.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-bf6ca922-cdf0-43b2-aa54-3f8073ef1263-job-details-title",
+            "tag": "h2",
+            "text": "Job Details",
+            "left": 25,
+            "right": 119.9,
+            "width": 94.9,
+            "height": 22.5,
+            "fontSize": "18px",
+            "lineHeight": "22.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-bf6ca922-cdf0-43b2-aa54-3f8073ef1263-finish-close-title",
+            "tag": "h2",
+            "text": "Finish & close",
+            "left": 12,
+            "right": 308,
+            "width": 296,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#finish-photo-_R_5bd6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 39,
+            "right": 281,
+            "width": 242,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(3) > section.ops-done-bench > form > div.ops-closeout-finish > button.ops-swipe-finish:nth-of-type(1)",
+            "tag": "button",
+            "text": "Swipe to finish work→",
+            "left": 25,
+            "right": 277.5,
+            "width": 252.5,
+            "height": 64,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "hidden",
+            "overflowY": "hidden",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(3) > section.ops-done-bench > form > div.ops-closeout-finish > button.ops-finish-button:nth-of-type(2)",
+            "tag": "button",
+            "text": "Complete job",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > nav.job-action-spine > span.ops-tracked-call > button.btn.btn--sm.btn--go",
+            "tag": "button",
+            "text": "Call",
+            "left": 17,
+            "right": 115,
+            "width": 98,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          }
+        ],
+        "outOfViewport": [],
+        "clippedControls": [],
+        "textOverflowControls": [],
+        "touchUnder44": [],
+        "scrollContainers": []
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".job-brief > p"
+              ],
+              [
+                ".ops-done-photo > span"
+              ],
+              [
+                ".ops-swipe-thumb"
+              ]
+            ]
+          }
+        ],
+        "passed": 42
+      }
+    },
+    {
+      "surface": "job",
+      "role": "crew",
+      "state": "",
+      "width": 768,
+      "scale": 1,
+      "key": "job-crew-populated-768-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=crew&state=",
+      "errors": [],
+      "httpStatus": 200,
+      "renderReady": true,
+      "layout": {
+        "width": 768,
+        "height": 900,
+        "bodyScrollWidth": 768,
+        "documentScrollWidth": 768,
+        "bodyOverflow": false,
+        "documentHeight": 1984,
+        "rootFontSize": "16px",
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          }
+        ],
+        "samples": [
+          {
+            "selector": "div.ops-frame > header.ops-top > div.ops-top-inner > nav > button.ops-more-trigger",
+            "tag": "button",
+            "text": "",
+            "left": 704,
+            "right": 752,
+            "width": 48,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-bf6ca922-cdf0-43b2-aa54-3f8073ef1263-work-order-title",
+            "tag": "h1",
+            "text": "[INTERNAL TEST] Alexander Montgomery-Washington Test",
+            "left": 41,
+            "right": 562,
+            "width": 521,
+            "height": 87,
+            "fontSize": "22px",
+            "lineHeight": "27.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-summary:nth-of-type(1) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Job Summary",
+            "left": 37,
+            "right": 134.4,
+            "width": 97.4,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Calls & Messages",
+            "left": 37,
+            "right": 163.2,
+            "width": 126.2,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-channel-stamp:nth-of-type(1)",
+            "tag": "button",
+            "text": "Goes by text",
+            "left": 37,
+            "right": 147,
+            "width": 110,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-mic-key:nth-of-type(2)",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 37,
+            "right": 154.5,
+            "width": 117.5,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-reply-body-_R_776atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 166.5,
+            "right": 649.5,
+            "width": 483.1,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-safe-action:nth-of-type(3)",
+            "tag": "button",
+            "text": "Send text",
+            "left": 661.5,
+            "right": 731,
+            "width": 69.5,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(1)",
+            "tag": "button",
+            "text": "On it.",
+            "left": 166.5,
+            "right": 349.3,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(2)",
+            "tag": "button",
+            "text": "What’s the address?",
+            "left": 357.3,
+            "right": 540.2,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(3)",
+            "tag": "button",
+            "text": "Can swing by tomorrow AM.",
+            "left": 548.2,
+            "right": 731,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(4)",
+            "tag": "button",
+            "text": "Send a photo of it.",
+            "left": 166.5,
+            "right": 349.3,
+            "width": 182.8,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-bf6ca922-cdf0-43b2-aa54-3f8073ef1263-job-details-title",
+            "tag": "h2",
+            "text": "Job Details",
+            "left": 41,
+            "right": 135.9,
+            "width": 94.9,
+            "height": 22.5,
+            "fontSize": "18px",
+            "lineHeight": "22.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-bf6ca922-cdf0-43b2-aa54-3f8073ef1263-finish-close-title",
+            "tag": "h2",
+            "text": "Finish & close",
+            "left": 24,
+            "right": 744,
+            "width": 720,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#finish-photo-_R_5bd6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 216.4,
+            "right": 717,
+            "width": 500.6,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(3) > section.ops-done-bench > form > div.ops-closeout-finish > button.ops-swipe-finish:nth-of-type(1)",
+            "tag": "button",
+            "text": "Swipe to finish work→",
+            "left": 202.4,
+            "right": 454.9,
+            "width": 252.5,
+            "height": 64,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "hidden",
+            "overflowY": "hidden",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(3) > section.ops-done-bench > form > div.ops-closeout-finish > button.ops-finish-button:nth-of-type(2)",
+            "tag": "button",
+            "text": "Complete job",
+            "left": 202.4,
+            "right": 731,
+            "width": 528.6,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > nav.job-action-spine > span.ops-tracked-call > button.btn.btn--sm.btn--go",
+            "tag": "button",
+            "text": "Call",
+            "left": 29,
+            "right": 268.3,
+            "width": 239.3,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          }
+        ],
+        "outOfViewport": [],
+        "clippedControls": [],
+        "textOverflowControls": [],
+        "touchUnder44": [],
+        "scrollContainers": []
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".job-brief > p"
+              ],
+              [
+                ".ops-done-photo > span"
+              ],
+              [
+                ".ops-swipe-thumb"
+              ]
+            ]
+          }
+        ],
+        "passed": 42
+      }
+    },
+    {
+      "surface": "job",
+      "role": "owner",
+      "state": "pending",
+      "width": 320,
+      "scale": 1,
+      "key": "job-owner-pending-320-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=owner&state=pending",
+      "errors": [],
+      "httpStatus": 200,
+      "failure": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-qa-boundary-hydrated=\"true\"]')\u001b[22m\n"
+    },
+    {
+      "surface": "job",
+      "role": "owner",
+      "state": "pending",
+      "width": 768,
+      "scale": 1,
+      "key": "job-owner-pending-768-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=owner&state=pending",
+      "errors": [],
+      "httpStatus": 200,
+      "failure": "TimeoutError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-qa-boundary-hydrated=\"true\"]')\u001b[22m\n"
+    },
+    {
+      "surface": "job",
+      "role": "owner",
+      "state": "failed",
+      "width": 320,
+      "scale": 1,
+      "key": "job-owner-failed-320-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=owner&state=failed",
+      "errors": [],
+      "httpStatus": 200,
+      "renderReady": true,
+      "layout": {
+        "width": 320,
+        "height": 900,
+        "bodyScrollWidth": 320,
+        "documentScrollWidth": 320,
+        "bodyOverflow": false,
+        "documentHeight": 3490,
+        "rootFontSize": "16px",
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          }
+        ],
+        "samples": [
+          {
+            "selector": "div.ops-frame > header.ops-top > div.ops-top-inner > nav > button.ops-more-trigger",
+            "tag": "button",
+            "text": "",
+            "left": 256,
+            "right": 304,
+            "width": 48,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-work-order-title",
+            "tag": "h1",
+            "text": "[INTERNAL TEST] Alexander Montgomery-Washington Test",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 114.5,
+            "fontSize": "22px",
+            "lineHeight": "27.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-summary:nth-of-type(1) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Job Summary",
+            "left": 25,
+            "right": 122.4,
+            "width": 97.4,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Calls & Messages",
+            "left": 25,
+            "right": 151.2,
+            "width": 126.2,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-channel-stamp:nth-of-type(1)",
+            "tag": "button",
+            "text": "Goes by text",
+            "left": 25,
+            "right": 135,
+            "width": 110,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-mic-key:nth-of-type(2)",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-reply-body-_R_776atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-safe-action:nth-of-type(3)",
+            "tag": "button",
+            "text": "Send text",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(1)",
+            "tag": "button",
+            "text": "On it.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(2)",
+            "tag": "button",
+            "text": "What’s the address?",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(3)",
+            "tag": "button",
+            "text": "Can swing by tomorrow AM.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(4)",
+            "tag": "button",
+            "text": "Send a photo of it.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-job-details-title",
+            "tag": "h2",
+            "text": "Job Details",
+            "left": 25,
+            "right": 119.9,
+            "width": 94.9,
+            "height": 22.5,
+            "fontSize": "18px",
+            "lineHeight": "22.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-job-payment-title",
+            "tag": "h2",
+            "text": "Record what changed hands",
+            "left": 25,
+            "right": 189.1,
+            "width": 164.1,
+            "height": 40.5,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-method-_R_1b6atpesnflb_",
+            "tag": "select",
+            "text": "CashCheckCardOther",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "normal",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > label.job-check.job-payment-settles:nth-of-type(3) > input",
+            "tag": "input",
+            "text": "",
+            "left": 25,
+            "right": 49,
+            "width": 24,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 9,
+            "right": 311,
+            "width": 302,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-reason-_R_1b6atpesnflb_",
+            "tag": "textarea",
+            "text": "",
+            "left": 9,
+            "right": 311,
+            "width": 302,
+            "height": 66,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-reversal:nth-of-type(2) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment reversal",
+            "left": 9,
+            "right": 311,
+            "width": 302,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-finish-close-title",
+            "tag": "h2",
+            "text": "Finish & close",
+            "left": 12,
+            "right": 308,
+            "width": 296,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(4) > section.ops-done-bench > form.ops-closeout-form > div.ops-closeout-capture.ops-closeout-voice:nth-of-type(1) > button.ops-done-voice",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 25,
+            "right": 156.8,
+            "width": 131.8,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#closeout-source-_R_1d6atpesnflb_",
+            "tag": "textarea",
+            "text": "",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 96,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(4) > section.ops-done-bench > form.ops-closeout-form > div.ops-closeout-capture:nth-of-type(2) > button.ops-closeout-review",
+            "tag": "button",
+            "text": "Review closeout",
+            "left": 25,
+            "right": 142.9,
+            "width": 117.9,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > nav.job-action-spine > span.ops-tracked-call > button.btn.btn--sm.btn--go",
+            "tag": "button",
+            "text": "Call",
+            "left": 17,
+            "right": 91.5,
+            "width": 74.5,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          }
+        ],
+        "outOfViewport": [],
+        "clippedControls": [],
+        "textOverflowControls": [],
+        "touchUnder44": [],
+        "scrollContainers": []
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".job-brief > p"
+              ]
+            ]
+          }
+        ],
+        "passed": 43
+      }
+    },
+    {
+      "surface": "job",
+      "role": "owner",
+      "state": "failed",
+      "width": 768,
+      "scale": 1,
+      "key": "job-owner-failed-768-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=owner&state=failed",
+      "errors": [],
+      "httpStatus": 200,
+      "renderReady": true,
+      "layout": {
+        "width": 768,
+        "height": 900,
+        "bodyScrollWidth": 768,
+        "documentScrollWidth": 768,
+        "bodyOverflow": false,
+        "documentHeight": 2771,
+        "rootFontSize": "16px",
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          }
+        ],
+        "samples": [
+          {
+            "selector": "div.ops-frame > header.ops-top > div.ops-top-inner > nav > button.ops-more-trigger",
+            "tag": "button",
+            "text": "",
+            "left": 704,
+            "right": 752,
+            "width": 48,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-work-order-title",
+            "tag": "h1",
+            "text": "[INTERNAL TEST] Alexander Montgomery-Washington Test",
+            "left": 41,
+            "right": 562,
+            "width": 521,
+            "height": 87,
+            "fontSize": "22px",
+            "lineHeight": "27.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-summary:nth-of-type(1) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Job Summary",
+            "left": 37,
+            "right": 134.4,
+            "width": 97.4,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Calls & Messages",
+            "left": 37,
+            "right": 163.2,
+            "width": 126.2,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-channel-stamp:nth-of-type(1)",
+            "tag": "button",
+            "text": "Goes by text",
+            "left": 37,
+            "right": 147,
+            "width": 110,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-mic-key:nth-of-type(2)",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 37,
+            "right": 154.5,
+            "width": 117.5,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-reply-body-_R_776atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 166.5,
+            "right": 649.5,
+            "width": 483.1,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-safe-action:nth-of-type(3)",
+            "tag": "button",
+            "text": "Send text",
+            "left": 661.5,
+            "right": 731,
+            "width": 69.5,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(1)",
+            "tag": "button",
+            "text": "On it.",
+            "left": 166.5,
+            "right": 349.3,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(2)",
+            "tag": "button",
+            "text": "What’s the address?",
+            "left": 357.3,
+            "right": 540.2,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(3)",
+            "tag": "button",
+            "text": "Can swing by tomorrow AM.",
+            "left": 548.2,
+            "right": 731,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(4)",
+            "tag": "button",
+            "text": "Send a photo of it.",
+            "left": 166.5,
+            "right": 349.3,
+            "width": 182.8,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-job-details-title",
+            "tag": "h2",
+            "text": "Job Details",
+            "left": 41,
+            "right": 135.9,
+            "width": 94.9,
+            "height": 22.5,
+            "fontSize": "18px",
+            "lineHeight": "22.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-job-payment-title",
+            "tag": "h2",
+            "text": "Record what changed hands",
+            "left": 37,
+            "right": 255.8,
+            "width": 218.8,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 37,
+            "right": 731,
+            "width": 694,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-method-_R_1b6atpesnflb_",
+            "tag": "select",
+            "text": "CashCheckCardOther",
+            "left": 37,
+            "right": 731,
+            "width": 694,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "normal",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > label.job-check.job-payment-settles:nth-of-type(3) > input",
+            "tag": "input",
+            "text": "",
+            "left": 37,
+            "right": 61,
+            "width": 24,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment",
+            "left": 37,
+            "right": 731,
+            "width": 694,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 21,
+            "right": 747,
+            "width": 726,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-reason-_R_1b6atpesnflb_",
+            "tag": "textarea",
+            "text": "",
+            "left": 21,
+            "right": 747,
+            "width": 726,
+            "height": 66,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-reversal:nth-of-type(2) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment reversal",
+            "left": 21,
+            "right": 747,
+            "width": 726,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-6c5c425d-e205-4d36-9ce9-10c542504b87-finish-close-title",
+            "tag": "h2",
+            "text": "Finish & close",
+            "left": 24,
+            "right": 744,
+            "width": 720,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(4) > section.ops-done-bench > form.ops-closeout-form > div.ops-closeout-capture.ops-closeout-voice:nth-of-type(1) > button.ops-done-voice",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 599.2,
+            "right": 731,
+            "width": 131.8,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#closeout-source-_R_1d6atpesnflb_",
+            "tag": "textarea",
+            "text": "",
+            "left": 202.4,
+            "right": 587.2,
+            "width": 384.8,
+            "height": 96,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.job-finish-close:nth-of-type(4) > section.ops-done-bench > form.ops-closeout-form > div.ops-closeout-capture:nth-of-type(2) > button.ops-closeout-review",
+            "tag": "button",
+            "text": "Review closeout",
+            "left": 599.2,
+            "right": 717.1,
+            "width": 117.9,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > nav.job-action-spine > span.ops-tracked-call > button.btn.btn--sm.btn--go",
+            "tag": "button",
+            "text": "Call",
+            "left": 29,
+            "right": 209.5,
+            "width": 180.5,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          }
+        ],
+        "outOfViewport": [],
+        "clippedControls": [],
+        "textOverflowControls": [],
+        "touchUnder44": [],
+        "scrollContainers": []
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".job-brief > p"
+              ]
+            ]
+          }
+        ],
+        "passed": 43
+      }
+    },
+    {
+      "surface": "job",
+      "role": "owner",
+      "state": "completed",
+      "width": 320,
+      "scale": 1,
+      "key": "job-owner-completed-320-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=owner&state=completed",
+      "errors": [],
+      "httpStatus": 200,
+      "renderReady": true,
+      "layout": {
+        "width": 320,
+        "height": 900,
+        "bodyScrollWidth": 320,
+        "documentScrollWidth": 320,
+        "bodyOverflow": false,
+        "documentHeight": 3250,
+        "rootFontSize": "16px",
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          }
+        ],
+        "samples": [
+          {
+            "selector": "div.ops-frame > header.ops-top > div.ops-top-inner > nav > button.ops-more-trigger",
+            "tag": "button",
+            "text": "",
+            "left": 256,
+            "right": 304,
+            "width": 48,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-work-order-title",
+            "tag": "h1",
+            "text": "[INTERNAL TEST] Alexander Montgomery-Washington Test",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 114.5,
+            "fontSize": "22px",
+            "lineHeight": "27.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-summary:nth-of-type(1) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Job Summary",
+            "left": 25,
+            "right": 122.4,
+            "width": 97.4,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Calls & Messages",
+            "left": 25,
+            "right": 151.2,
+            "width": 126.2,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-channel-stamp:nth-of-type(1)",
+            "tag": "button",
+            "text": "Goes by text",
+            "left": 25,
+            "right": 135,
+            "width": 110,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-mic-key:nth-of-type(2)",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-reply-body-_R_776atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-safe-action:nth-of-type(3)",
+            "tag": "button",
+            "text": "Send text",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(1)",
+            "tag": "button",
+            "text": "On it.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(2)",
+            "tag": "button",
+            "text": "What’s the address?",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(3)",
+            "tag": "button",
+            "text": "Can swing by tomorrow AM.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(4)",
+            "tag": "button",
+            "text": "Send a photo of it.",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-job-details-title",
+            "tag": "h2",
+            "text": "Job Details",
+            "left": 25,
+            "right": 119.9,
+            "width": 94.9,
+            "height": 22.5,
+            "fontSize": "18px",
+            "lineHeight": "22.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-job-payment-title",
+            "tag": "h2",
+            "text": "Record what changed hands",
+            "left": 25,
+            "right": 189.1,
+            "width": 164.1,
+            "height": 40.5,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-method-_R_1b6atpesnflb_",
+            "tag": "select",
+            "text": "CashCheckCardOther",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "normal",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > label.job-check.job-payment-settles:nth-of-type(3) > input",
+            "tag": "input",
+            "text": "",
+            "left": 25,
+            "right": 49,
+            "width": 24,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment",
+            "left": 25,
+            "right": 295,
+            "width": 270,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 9,
+            "right": 311,
+            "width": 302,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-reason-_R_1b6atpesnflb_",
+            "tag": "textarea",
+            "text": "",
+            "left": 9,
+            "right": 311,
+            "width": 302,
+            "height": 66,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-reversal:nth-of-type(2) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment reversal",
+            "left": 9,
+            "right": 311,
+            "width": 302,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-finish-close-title",
+            "tag": "h2",
+            "text": "Finish & close",
+            "left": 12,
+            "right": 308,
+            "width": 296,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > section.job-finish-close:nth-of-type(4) > section.ops-done-bench.is-done > button.ops-closeout-add",
+            "tag": "button",
+            "text": "Add closeout note or photo",
+            "left": 25,
+            "right": 298.4,
+            "width": 273.4,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > nav.job-action-spine > span.ops-tracked-call > button.btn.btn--sm.btn--go",
+            "tag": "button",
+            "text": "Call",
+            "left": 17,
+            "right": 91.5,
+            "width": 74.5,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          }
+        ],
+        "outOfViewport": [],
+        "clippedControls": [],
+        "textOverflowControls": [],
+        "touchUnder44": [],
+        "scrollContainers": []
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".job-brief > p"
+              ]
+            ]
+          }
+        ],
+        "passed": 43
+      }
+    },
+    {
+      "surface": "job",
+      "role": "owner",
+      "state": "completed",
+      "width": 768,
+      "scale": 1,
+      "key": "job-owner-completed-768-1x",
+      "url": "http://127.0.0.1:3047/board/qa-polish?surface=job&role=owner&state=completed",
+      "errors": [],
+      "httpStatus": 200,
+      "renderReady": true,
+      "layout": {
+        "width": 768,
+        "height": 900,
+        "bodyScrollWidth": 768,
+        "documentScrollWidth": 768,
+        "bodyOverflow": false,
+        "documentHeight": 2699,
+        "rootFontSize": "16px",
+        "fonts": [
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "status": "unloaded"
+          },
+          {
+            "family": "Barlow Condensed Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker",
+            "status": "unloaded"
+          },
+          {
+            "family": "Permanent Marker Fallback",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "unloaded"
+          },
+          {
+            "family": "Golos Text",
+            "status": "loaded"
+          },
+          {
+            "family": "Golos Text Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "unloaded"
+          },
+          {
+            "family": "Chivo",
+            "status": "loaded"
+          },
+          {
+            "family": "Chivo Fallback",
+            "status": "loaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist",
+            "status": "unloaded"
+          },
+          {
+            "family": "__nextjs-Geist Mono",
+            "status": "unloaded"
+          }
+        ],
+        "samples": [
+          {
+            "selector": "div.ops-frame > header.ops-top > div.ops-top-inner > nav > button.ops-more-trigger",
+            "tag": "button",
+            "text": "",
+            "left": 704,
+            "right": 752,
+            "width": 48,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-work-order-title",
+            "tag": "h1",
+            "text": "[INTERNAL TEST] Alexander Montgomery-Washington Test",
+            "left": 41,
+            "right": 562,
+            "width": 521,
+            "height": 87,
+            "fontSize": "22px",
+            "lineHeight": "27.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-summary:nth-of-type(1) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Job Summary",
+            "left": 37,
+            "right": 134.4,
+            "width": 97.4,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > header > h2.t-sub",
+            "tag": "h2",
+            "text": "Calls & Messages",
+            "left": 37,
+            "right": 163.2,
+            "width": 126.2,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-channel-stamp:nth-of-type(1)",
+            "tag": "button",
+            "text": "Goes by text",
+            "left": 37,
+            "right": 147,
+            "width": 110,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-mic-key:nth-of-type(2)",
+            "tag": "button",
+            "text": "Voice not set up",
+            "left": 37,
+            "right": 154.5,
+            "width": 117.5,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-reply-body-_R_776atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 166.5,
+            "right": 649.5,
+            "width": 483.1,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > button.ops-safe-action:nth-of-type(3)",
+            "tag": "button",
+            "text": "Send text",
+            "left": 661.5,
+            "right": 731,
+            "width": 69.5,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(1)",
+            "tag": "button",
+            "text": "On it.",
+            "left": 166.5,
+            "right": 349.3,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(2)",
+            "tag": "button",
+            "text": "What’s the address?",
+            "left": 357.3,
+            "right": 540.2,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(3)",
+            "tag": "button",
+            "text": "Can swing by tomorrow AM.",
+            "left": 548.2,
+            "right": 731,
+            "width": 182.8,
+            "height": 60,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-flow > section.card.job-thread:nth-of-type(2) > form.ops-spike-reply > div.ops-reply-chips > button:nth-of-type(4)",
+            "tag": "button",
+            "text": "Send a photo of it.",
+            "left": 166.5,
+            "right": 349.3,
+            "width": 182.8,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "21px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-job-details-title",
+            "tag": "h2",
+            "text": "Job Details",
+            "left": 41,
+            "right": 135.9,
+            "width": 94.9,
+            "height": 22.5,
+            "fontSize": "18px",
+            "lineHeight": "22.5px",
+            "fontFamily": "Chivo, \"Chivo Fallback\", system-ui, sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-job-payment-title",
+            "tag": "h2",
+            "text": "Record what changed hands",
+            "left": 37,
+            "right": 255.8,
+            "width": 218.8,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 37,
+            "right": 731,
+            "width": 694,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-method-_R_1b6atpesnflb_",
+            "tag": "select",
+            "text": "CashCheckCardOther",
+            "left": 37,
+            "right": 731,
+            "width": 694,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "normal",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > label.job-check.job-payment-settles:nth-of-type(3) > input",
+            "tag": "input",
+            "text": "",
+            "left": 37,
+            "right": 61,
+            "width": 24,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-form:nth-of-type(1) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment",
+            "left": 37,
+            "right": 731,
+            "width": 694,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-amount-_R_1b6atpesnflb_",
+            "tag": "input",
+            "text": "",
+            "left": 21,
+            "right": 747,
+            "width": 726,
+            "height": 44,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "clip",
+            "overflowY": "clip",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#payment-reversal-reason-_R_1b6atpesnflb_",
+            "tag": "textarea",
+            "text": "",
+            "left": 21,
+            "right": 747,
+            "width": 726,
+            "height": 66,
+            "fontSize": "16px",
+            "lineHeight": "24px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "scrollContainer": null
+          },
+          {
+            "selector": "div.job-page > section.card.job-payment:nth-of-type(3) > div.job-payment-workflow > form.job-payment-reversal:nth-of-type(2) > button.ops-safe-action.btn.btn--sm",
+            "tag": "button",
+            "text": "Record payment reversal",
+            "left": 21,
+            "right": 747,
+            "width": 726,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "#job-987654321-f80afb35-e92f-497c-b8fd-6855a5b56881-finish-close-title",
+            "tag": "h2",
+            "text": "Finish & close",
+            "left": 24,
+            "right": 744,
+            "width": 720,
+            "height": 20.3,
+            "fontSize": "15px",
+            "lineHeight": "20.25px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > section.job-finish-close:nth-of-type(4) > section.ops-done-bench.is-done > button.ops-closeout-add",
+            "tag": "button",
+            "text": "Add closeout note or photo",
+            "left": 306.7,
+            "right": 626.7,
+            "width": 320,
+            "height": 44,
+            "fontSize": "15px",
+            "lineHeight": "22.5px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          },
+          {
+            "selector": "main > div.job-page > nav.job-action-spine > span.ops-tracked-call > button.btn.btn--sm.btn--go",
+            "tag": "button",
+            "text": "Call",
+            "left": 29,
+            "right": 209.5,
+            "width": 180.5,
+            "height": 44,
+            "fontSize": "14px",
+            "lineHeight": "14px",
+            "fontFamily": "\"Golos Text\", \"Golos Text Fallback\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "overflowX": "visible",
+            "overflowY": "visible",
+            "scrollContainer": null
+          }
+        ],
+        "outOfViewport": [],
+        "clippedControls": [],
+        "textOverflowControls": [],
+        "touchUnder44": [],
+        "scrollContainers": []
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "targets": [
+              [
+                ".job-brief > p"
+              ]
+            ]
+          }
+        ],
+        "passed": 43
+      }
+    }
+  ]
+}

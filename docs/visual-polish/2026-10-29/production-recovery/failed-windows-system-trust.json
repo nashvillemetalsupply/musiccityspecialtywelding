@@ -1,0 +1,36 @@
+{
+  "startedAt": "2026-10-30T05:53:20.335Z",
+  "purpose": "Explicitly authorized temporary read-only production snapshot recovery test",
+  "stages": [
+    {
+      "label": "production-readonly-metadata",
+      "exitCode": 2,
+      "durationMs": 496
+    }
+  ],
+  "productionWrites": false,
+  "providerCalls": false,
+  "uploaded": false,
+  "connectionTransport": "Native pg_dump/psql directly to Neon with sslmode=verify-full and system certificate trust",
+  "failure": {
+    "stage": "production-readonly-metadata",
+    "classification": "connection failed",
+    "flags": {
+      "certificate": true,
+      "root certificate file": false,
+      "SSL": true,
+      "password": false,
+      "channel binding": false,
+      "SCRAM": false,
+      "could not translate": false,
+      "timed out": false,
+      "Connection refused": false,
+      "unsupported startup": false,
+      "invalid connection option": false,
+      "server does not support": false
+    }
+  },
+  "passed": false,
+  "productionCopiesRemoved": true,
+  "completedAt": "2026-10-30T05:53:20.836Z"
+}

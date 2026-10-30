@@ -1,0 +1,93 @@
+{
+  "sourceHashes": {
+    "intake": "7497b17d4ac33855de7b2860aa0695e61a85464a759ccc518a8f5c3a5a1580a7",
+    "closeout": "2cb8bf9d1c8a5251e4135ffb211550e78f3661b7d5f35671cdfd7f4ab6020de4",
+    "voice": "eaa4110e179680eaa3ed96b46638da82a04ba33009bc7be5c5fe5ba98acf94f2"
+  },
+  "checks": [
+    {
+      "name": "intake-pending-locks",
+      "nameReadonly": true,
+      "needReadonly": true,
+      "serviceDisabled": true,
+      "sourceDisabled": true,
+      "dispositionDisabled": true
+    },
+    {
+      "name": "intake-error-retention",
+      "service": "Aluminum / Boat Welding",
+      "referral": "Referral",
+      "submission": {
+        "source": "phone-in",
+        "intakeKey": "internal-test-manual",
+        "firstName": "[INTERNAL TEST] Form recovery",
+        "phone": "6155550123",
+        "message": "Repair gate",
+        "service": "Aluminum / Boat Welding",
+        "referral": "Referral"
+      }
+    },
+    {
+      "name": "intake-details-retention",
+      "service": "Aluminum / Boat Welding",
+      "referral": "Referral"
+    },
+    {
+      "name": "intake-source-isolation",
+      "passed": true
+    },
+    {
+      "name": "intake-closed-details-submit-and-repeat-error-focus",
+      "passed": true,
+      "submission": {
+        "source": "phone-in",
+        "intakeKey": "internal-test-manual",
+        "service": "Aluminum / Boat Welding",
+        "referral": "Referral",
+        "firstName": "[INTERNAL TEST] Form recovery",
+        "phone": "6155550123",
+        "message": "Repair gate"
+      }
+    },
+    {
+      "name": "intake-success-undo-preserves-details",
+      "passed": true
+    },
+    {
+      "name": "intake-success-new-job-clears-details",
+      "passed": true
+    },
+    {
+      "name": "closeout-pending-locks",
+      "sourceReadonly": true,
+      "reviewDisabled": true,
+      "fitDisabled": true
+    },
+    {
+      "name": "closeout-error-retention",
+      "fit": "adjusted",
+      "rework": "yes",
+      "extraTrips": "2",
+      "submission": {
+        "leadId": "999",
+        "reviewedCloseout": "1",
+        "closeoutKey": "internal-test",
+        "noteSource": "typed",
+        "sourceWords": "Finished the gate and adjusted on site. Two extra trips. Rework was required.",
+        "voiceIntentId": "",
+        "reviewed": "1",
+        "completion": "complete",
+        "fit": "adjusted",
+        "extraTrips": "2",
+        "rework": "yes",
+        "asBuiltDifferences": "Adjusted hinge spacing",
+        "remainingWork": ""
+      }
+    },
+    {
+      "name": "partial-closeout-pending-lock-and-draft-retention",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

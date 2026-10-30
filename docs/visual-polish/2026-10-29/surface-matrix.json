@@ -1,0 +1,73 @@
+[
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=account",
+    "width": 320
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=account",
+    "width": 768
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=account",
+    "width": 1440
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=customers",
+    "width": 320
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=customers",
+    "width": 768
+  },
+  {
+    "overflow": false,
+    "smallInputs": 1,
+    "url": "?surface=customers",
+    "width": 1440
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=forms",
+    "width": 320
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=forms",
+    "width": 768
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=forms",
+    "width": 1440
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=shop",
+    "width": 320
+  },
+  {
+    "overflow": false,
+    "smallInputs": 0,
+    "url": "?surface=shop",
+    "width": 768
+  },
+  {
+    "overflow": false,
+    "url": "?surface=shop",
+    "width": 1440
+  }
+]

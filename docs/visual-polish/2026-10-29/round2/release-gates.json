@@ -1,0 +1,52 @@
+{
+    "generated":  "2026-10-29T21:40:15.9876841Z",
+    "runtime":  "Node 24.22.2",
+    "tests":  {
+                  "exitCode":  0,
+                  "durationMs":  41619.0473,
+                  "skipped":  3,
+                  "summary":  "test-summary.txt",
+                  "taskLog":  ".tmp/final-source-tests.log",
+                  "total":  1046,
+                  "passed":  1043,
+                  "failed":  0
+              },
+    "build":  {
+                  "localFixtureFlag":  false,
+                  "staticPages":  50,
+                  "exitCode":  0,
+                  "log":  "production-build.log",
+                  "typecheckSeconds":  23,
+                  "compileSeconds":  47,
+                  "command":  "next build --webpack",
+                  "qaRoutePresent":  false
+              },
+    "typecheck":  {
+                      "exitCode":  0,
+                      "command":  "tsc --noEmit",
+                      "note":  "Successful tool completion confirmed exit0; command produced no output.",
+                      "taskLog":  ".tmp/final-release-typecheck.log"
+                  },
+    "lint":  {
+                 "existingWarnings":  4,
+                 "exitCode":  0,
+                 "errors":  0,
+                 "log":  "release-lint.log"
+             },
+    "bundle":  {
+                   "boardBytes":  712282,
+                   "exitCode":  0,
+                   "log":  "bundle-budget.log",
+                   "boardThreshold":  817538,
+                   "unit":  "uncompressed JavaScript bytes",
+                   "publicThreshold":  648316,
+                   "publicBytes":  612409
+               },
+    "mainCheckoutClean":  true,
+    "qaRouteRemoved":  true,
+    "previewServersStopped":  [
+                                  3047,
+                                  3048
+                              ],
+    "deployed":  false
+}

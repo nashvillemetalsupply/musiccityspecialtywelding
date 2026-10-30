@@ -1,0 +1,612 @@
+{
+  "started": "2026-10-29T21:18:40.860Z",
+  "updated": "2026-10-29T21:21:03.085Z",
+  "results": [
+    {
+      "name": "login-sms-focus-error",
+      "evidence": {
+        "codeFocus": true,
+        "errorFocus": {
+          "id": "ops-code-_r_0_",
+          "text": "",
+          "tag": "INPUT"
+        },
+        "personReturn": true
+      },
+      "pass": true
+    },
+    {
+      "name": "login-pending-locked",
+      "evidence": {
+        "buttons": [
+          {
+            "text": "[INTERNAL TEST] Daniel Montgomery-WashingtonSelected",
+            "disabled": true
+          },
+          {
+            "text": "[INTERNAL TEST] Shop crewSign in",
+            "disabled": true
+          },
+          {
+            "text": "Email linkOpen it once",
+            "disabled": true
+          },
+          {
+            "text": "Text codeSix digits",
+            "disabled": true
+          },
+          {
+            "text": "Sending...",
+            "disabled": true
+          },
+          {
+            "text": "Choose a different person",
+            "disabled": true
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "name": "menu-keyboard",
+      "evidence": {
+        "tabs": [
+          {
+            "id": "",
+            "text": "Search",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "",
+            "text": "Job Control",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "New Job",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Calls",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Customers",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Updates",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Promises",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Post to social",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Analytics",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Install MCSW Jobs",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Settings",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Morning Brief",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "",
+            "text": "Ask Jobs",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "",
+            "text": "Run recovery now",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "",
+            "text": "Sign out",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "",
+            "text": "Close",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "ops-menu-job-search-_R_i56atpesnflb_",
+            "text": "",
+            "tag": "INPUT"
+          },
+          {
+            "id": "",
+            "text": "Search",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "",
+            "text": "Job Control",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "New Job",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Calls",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Customers",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Updates",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Promises",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Post to social",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Analytics",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Install MCSW Jobs",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Settings",
+            "tag": "A"
+          },
+          {
+            "id": "",
+            "text": "Morning Brief",
+            "tag": "BUTTON"
+          },
+          {
+            "id": "",
+            "text": "Ask Jobs",
+            "tag": "BUTTON"
+          }
+        ],
+        "disclosure": 0,
+        "escapeRestored": true
+      },
+      "pass": true
+    },
+    {
+      "name": "menu-cached-dom-scope",
+      "evidence": {
+        "inertAncestor": false,
+        "focused": "ops-more-close"
+      },
+      "pass": true
+    },
+    {
+      "name": "menu-native-disclosure",
+      "evidence": {
+        "nativeDisclosure": true,
+        "tabOrder": true,
+        "escapeRestored": true
+      },
+      "pass": true
+    },
+    {
+      "name": "skip-retained-main",
+      "evidence": {
+        "id": "main",
+        "visible": true,
+        "className": "main"
+      },
+      "pass": true
+    },
+    {
+      "name": "price-repeated-fragment",
+      "evidence": {
+        "bounds": {
+          "input": {
+            "top": 71.75,
+            "bottom": 115.75
+          },
+          "label": {
+            "top": 71.75,
+            "bottom": 105.75
+          },
+          "dockTop": 838
+        },
+        "repeatedHash": true
+      },
+      "pass": true
+    },
+    {
+      "name": "job-label-retained-id",
+      "evidence": {
+        "focused": true
+      },
+      "pass": true
+    },
+    {
+      "name": "photo-completed-repeat",
+      "evidence": {
+        "initialFocus": true,
+        "preventedSubmitKeepsDraft": true,
+        "repeatedSameHashKeepsDraft": true,
+        "networkActionPrevented": true
+      },
+      "pass": true
+    },
+    {
+      "name": "job-dock-states",
+      "evidence": {
+        "states": [
+          {
+            "state": "pending",
+            "height": 62,
+            "text": "Ringing…TextPhotoPrice",
+            "disabled": true
+          },
+          {
+            "state": "failed",
+            "height": 140.78125,
+            "text": "CallThe call could not connect. Check your connection and try again. The customer has not been called.TextPhotoPrice",
+            "disabled": false
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "name": "dock-source-provenance",
+      "evidence": {
+        "answer": "Answer\n\nAnswer B: confirm the gate measurement before cutting.\n\nSources\nJob update, Oct 29, 12:00 PM\nCLEAR ANSWER",
+        "closeFocus": true
+      },
+      "pass": true
+    },
+    {
+      "name": "dock-stale-brief",
+      "evidence": {
+        "text": "[INTERNAL TEST] Morning Brief 2. Verify today's gate dimensions and call the customer."
+      },
+      "pass": true
+    },
+    {
+      "name": "dock-nonok-feedback",
+      "evidence": {
+        "clearMessage": "Saved answers could not be cleared. Check your connection and try again.",
+        "answer": "Answer\n\n[INTERNAL TEST] Ask Jobs unavailable. Try again.\n\nCLEAR ANSWER"
+      },
+      "pass": true
+    },
+    {
+      "name": "client-labels-retained-route",
+      "evidence": [
+        {
+          "surface": "forms",
+          "labels": [
+            {
+              "label": "Customer or company name",
+              "for": "jobs-inline-name-_r_0_",
+              "control": "jobs-inline-name-_r_0_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Phone number",
+              "for": "jobs-inline-phone-_r_0_",
+              "control": "jobs-inline-phone-_r_0_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Needs (optional)Repair trailer mounting brackets and check the cracked tongue.",
+              "for": "jobs-inline-need-_r_0_",
+              "control": "jobs-inline-need-_r_0_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "ServiceNot setMobile Welding (On-Site)Trailer / Truck Welding RepairEquipment & Structural RepairArchitectural Welding & FabricationSpecialty FabricationAluminum / Boat WeldingNot Sure / Other",
+              "for": "jobs-inline-service-_r_0_",
+              "control": "jobs-inline-service-_r_0_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "How they found usNot askedGoogleRepeat customerReferralFacebook or InstagramOther",
+              "for": "jobs-inline-referral-_r_0_",
+              "control": "jobs-inline-referral-_r_0_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Amount received",
+              "for": "payment-amount-_R_l6atpesnflb_",
+              "control": "payment-amount-_R_l6atpesnflb_",
+              "visible": true,
+              "references": [
+                {
+                  "id": "payment-hint-_R_l6atpesnflb_",
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "label": "Payment method",
+              "for": "payment-method-_R_l6atpesnflb_",
+              "control": "payment-method-_R_l6atpesnflb_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Amount reversed",
+              "for": "payment-reversal-amount-_R_l6atpesnflb_",
+              "control": "payment-reversal-amount-_R_l6atpesnflb_",
+              "visible": true,
+              "references": [
+                {
+                  "id": "reversal-hint-_R_l6atpesnflb_",
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "label": "Reason",
+              "for": "payment-reversal-reason-_R_l6atpesnflb_",
+              "control": "payment-reversal-reason-_R_l6atpesnflb_",
+              "visible": true,
+              "references": [
+                {
+                  "id": "reversal-hint-_R_l6atpesnflb_",
+                  "visible": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "surface": "job",
+          "labels": [
+            {
+              "label": "Mobile number",
+              "for": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-job-contact-phone",
+              "control": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-job-contact-phone",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Email",
+              "for": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-job-contact-email",
+              "control": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-job-contact-email",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Estimate ($); saves the job as quoted",
+              "for": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-lead-estimate",
+              "control": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-lead-estimate",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Schedule date and time Central time",
+              "for": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-lead-scheduled-at",
+              "control": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-lead-scheduled-at",
+              "visible": true,
+              "references": [
+                {
+                  "id": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-lead-scheduled-help",
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "label": "Shop notes",
+              "for": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-lead-notes",
+              "control": "job-987654321-a35ac8f5-5396-4894-9848-cf86a1ac0364-lead-notes",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Amount received",
+              "for": "payment-amount-_R_1b6atpesnflb_",
+              "control": "payment-amount-_R_1b6atpesnflb_",
+              "visible": true,
+              "references": [
+                {
+                  "id": "payment-hint-_R_1b6atpesnflb_",
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "label": "Payment method",
+              "for": "payment-method-_R_1b6atpesnflb_",
+              "control": "payment-method-_R_1b6atpesnflb_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Amount reversed",
+              "for": "payment-reversal-amount-_R_1b6atpesnflb_",
+              "control": "payment-reversal-amount-_R_1b6atpesnflb_",
+              "visible": true,
+              "references": [
+                {
+                  "id": "reversal-hint-_R_1b6atpesnflb_",
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "label": "Reason",
+              "for": "payment-reversal-reason-_R_1b6atpesnflb_",
+              "control": "payment-reversal-reason-_R_1b6atpesnflb_",
+              "visible": true,
+              "references": [
+                {
+                  "id": "reversal-hint-_R_1b6atpesnflb_",
+                  "visible": true
+                }
+              ]
+            },
+            {
+              "label": "One-breath closeout",
+              "for": "closeout-source-_R_1d6atpesnflb_",
+              "control": "closeout-source-_R_1d6atpesnflb_",
+              "visible": true,
+              "references": []
+            }
+          ]
+        },
+        {
+          "surface": "login",
+          "labels": [
+            {
+              "label": "Your email",
+              "for": "ops-email-_r_0_",
+              "control": "ops-email-_r_0_",
+              "visible": true,
+              "references": []
+            }
+          ]
+        },
+        {
+          "surface": "dock",
+          "labels": [
+            {
+              "label": "Question for Ask Jobs",
+              "for": "ops-handset-question-_r_0_",
+              "control": "ops-handset-question-_r_0_",
+              "visible": true,
+              "references": []
+            },
+            {
+              "label": "Read answer aloud",
+              "for": "ops-handset-speak-_r_0_",
+              "control": "ops-handset-speak-_r_0_",
+              "visible": true,
+              "references": []
+            }
+          ]
+        }
+      ],
+      "pass": true
+    },
+    {
+      "name": "voice-inflight-identity-guard",
+      "evidence": {
+        "inventory": "qa-polish-voice-owner: preserved (operator:987654321:owner)\nqa-polish-voice-crew: absent\nqa-polish-voice-legacy: preserved (unscoped legacy)",
+        "visibleTranscript": [
+          "Real recovery component; seeded synthetic text blobs only. Microphone control is disabled. All transcription requests are intercepted locally.",
+          "An older voice note is kept here and will not be sent automatically.",
+          "[INTERNAL TEST] Recovered qa-polish-voice-crew under operator:987654322:crew. No real recording or provider call."
+        ],
+        "ownerLaterRecovered": true
+      },
+      "pass": true
+    },
+    {
+      "name": "voice-identity-preservation",
+      "evidence": {
+        "crewInventory": "qa-polish-voice-owner: preserved (operator:987654321:owner)\nqa-polish-voice-crew: absent\nqa-polish-voice-legacy: preserved (unscoped legacy)",
+        "ownerInventory": "qa-polish-voice-owner: absent\nqa-polish-voice-crew: absent\nqa-polish-voice-legacy: preserved (unscoped legacy)",
+        "events": "GET id=qa-polish-voice-crew scope=operator:987654322:crew bytes=0 active=operator:987654322:crew\nPOST id=qa-polish-voice-crew scope=operator:987654322:crew bytes=58 active=operator:987654322:crew\nGET id=qa-polish-voice-owner scope=operator:987654321:owner bytes=0 active=operator:987654321:owner\nPOST id=qa-polish-voice-owner scope=operator:987654321:owner bytes=58 active=operator:987654321:owner",
+        "noCrossUpload": true
+      },
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "blocked": [
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/handset-slips",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/handset-slips",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/handset-slips",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/handset-slips",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/api/ops/pulse",
+      "method": "GET"
+    },
+    {
+      "url": "/__nextjs_font/geist-latin.woff2",
+      "method": "GET"
+    },
+    {
+      "url": "/__nextjs_font/geist-latin.woff2",
+      "method": "GET"
+    }
+  ]
+}
