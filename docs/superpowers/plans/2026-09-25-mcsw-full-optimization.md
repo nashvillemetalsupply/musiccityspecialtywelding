@@ -635,11 +635,11 @@ JS, 38 KB gz CSS, 204 KB raw CSS.
   keep one); `/ops` redirect hops; install page is Chrome-only (add the iOS
   Share → Add to Home Screen path); duplicate social link.
   - Observation: S14 landed a53bc61: base64 logo, theme boot dedupe, /ops hops, iOS install path (app/ops/install/page.tsx), duplicate social link. Preview and on-device checks were replaced by tests.
-- [x] **Owner loop.** Today a lead takes 2–4 taps. Sticky action strip on the
+- [ ] **Owner loop.** Today a lead takes 2–4 taps. Sticky action strip on the
   job page (Call, Text, Photo, Quote amount inline in the board detail), photo
   as first tap target, voice capture on the row. Present the layout to the
   owner as a screenshot before building; design rules apply.
-  - Observation: S14 landed a53bc61: sticky action strip and owner loop. Voice capture on the row was skipped (the recorder is MediaRecorder).
+  - Observation: S14 landed a53bc61: sticky action strip. Voice capture on the board row is not built; the ops recorder exists separately. Reopened per R28-10.
 
 ## P7 — Innovation that earns its place
 
