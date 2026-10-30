@@ -46,7 +46,9 @@ test("two concurrent deferred claims hand a row to the provider only once", asyn
 test("deferred sends persist first and use one conditional queued-to-sending claim", () => {
   const messages = read("lib/messages.ts")
   const source = messages.slice(messages.indexOf("export async function sendSmsPersisted"), messages.indexOf("/** Never guesses"))
-  assert.ok(source.indexOf("INSERT INTO messages") < source.indexOf("sendClaimedSms(claimed[0])"), "intent is saved before the provider handoff helper")
+  const intentIndex = source.indexOf("INSERT INTO messages")
+  const handoffIndex = source.indexOf("return sendClaimedSms(")
+  assert.ok(intentIndex >= 0 && handoffIndex > intentIndex, "intent is saved before the provider handoff helper")
   assert.match(source, /getDeferredSmsSendAt\(/)
   assert.match(messages, /UPDATE messages SET status = 'sending'[\s\S]{0,260}WHERE id = \$\{messageId\}::bigint AND status = 'persisted'/)
   assert.match(messages, /UPDATE messages SET status = 'sending'[\s\S]{0,300}WHERE id = \$\{candidate\.id\}::bigint AND direction = 'out' AND status = 'queued'[\s\S]{0,120}send_after <= now\(\)[\s\S]{0,80}RETURNING/)

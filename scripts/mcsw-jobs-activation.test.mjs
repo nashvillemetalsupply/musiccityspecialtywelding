@@ -289,7 +289,7 @@ test("text consent is immutable, explicit, keyword-aware, and enforced before ev
   assert.match(sms, /if \(eventId && !consentKeyword/)
   assert.match(sms, /return twiml\(""\)/)
   assert.match(messages, /customerSmsAllowed\(to\)/)
-  assert.match(messages, /Texting is blocked until this customer opts in/)
+  assert.match(messages, /Text canceled: this customer no longer has texting permission/)
   assert.match(migration, /CREATE TABLE IF NOT EXISTS messaging_consents/)
   assert.match(migration, /messaging_consents_source_check/)
   assert.match(migration, /messaging_consents_append_only/)

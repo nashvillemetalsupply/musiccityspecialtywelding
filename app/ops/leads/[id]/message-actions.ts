@@ -191,6 +191,6 @@ export async function sendLeadReplyState(_state: ReplyActionState, formData: For
     }
     return { status: "sent", message: `${channel === "email" ? "Email" : "Text"} added to Calls & Messages.`, sentAt: Date.now() }
   } catch (error) {
-    return { status: "error", message: error instanceof Error ? error.message : "Reply failed.", sentAt: 0, retryable: isDefinitiveTwilioError(error) || isDefinitiveEmailProviderError(error) || isSmsNotSentError(error) }
+    return { status: "error", message: error instanceof Error ? error.message : "Reply failed.", sentAt: 0, retryable: isDefinitiveTwilioError(error) || isDefinitiveEmailProviderError(error) || (isSmsNotSentError(error) && !error.sameIntentOnly) }
   }
 }

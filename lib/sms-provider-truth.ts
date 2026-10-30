@@ -1,12 +1,15 @@
-/** The SMS provider was never called; retrying cannot duplicate delivery. */
+/** No provider call occurred in this attempt; a durable intent may still require same-key retry. */
 export class SmsNotSentError extends Error {
-  constructor(message: string) {
+  sameIntentOnly: boolean
+
+  constructor(message: string, sameIntentOnly = false) {
     super(message)
     this.name = "SmsNotSentError"
+    this.sameIntentOnly = sameIntentOnly
   }
 }
 
-export function isSmsNotSentError(error: unknown) {
+export function isSmsNotSentError(error: unknown): error is SmsNotSentError {
   return error instanceof SmsNotSentError
 }
 

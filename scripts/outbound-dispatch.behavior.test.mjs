@@ -13,7 +13,7 @@ function load(relativePath, fakes) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   const context = vm.createContext({
-    console: { error() {} }, Date, Error, Request, Response, URL,
+    console: fakes.get("console") ?? { error() {} }, Date, Error, Request, Response, FormData, URL,
     process: { env: { TWILIO_PHONE_NUMBER: "+16155550100" } },
   })
   const loaded = { exports: {} }
@@ -25,17 +25,21 @@ function load(relativePath, fakes) {
   return loaded.exports
 }
 
-function smsHarness({ status = "persisted", isTest = false, consent = [true, true], journalFailures = 0, providerFailure = false, glass = false, glassAttempts = 1 } = {}) {
+function smsHarness({ status = "persisted", isTest = false, consent = [true, true], journalFailures = 0, providerFailure = false, glass = false, glassAttempts = 1, configured = true, onReceiptRead = () => {}, sendAfter = null, queueFailures = 0 } = {}) {
   const state = {
-    id: 41, twilio_sid: "pending:sms-fixture", status, send_after: status === "queued" ? "2026-10-29T13:00:00Z" : null,
+    id: 41, twilio_sid: status === "accepted" ? "SMaccepted" : "pending:sms-fixture", status, send_after: status === "queued" ? "2026-10-29T13:00:00Z" : null,
     to_phone: "+16155550111", body: "Your job is ready", lead_id: 7, person_id: 3,
     operator_id: 2, idempotency_key: glass ? `glass:${"a".repeat(64)}:send:1` : "fixture-sms-intent", quiet_hours_exempt: false, is_test: isTest,
   }
-  const effects = { provider: 0, journal: [], notifications: 0, consentChecks: 0, glassStatus: glass ? "sending" : null, glassClaimed: glass, cleanupOrder: [] }
+  const effects = { provider: 0, journal: [], notifications: 0, consentChecks: 0, glassStatus: glass ? "sending" : null, glassClaimed: glass, cleanupOrder: [], errors: [] }
   const sql = async (strings, ...values) => {
     const query = strings.join(" ? ").replace(/\s+/g, " ").trim()
     if (query.startsWith("INSERT INTO messages")) return [] // Replay the durable synthetic intent.
-    if (query.startsWith("SELECT id, twilio_sid")) return [{ ...state }]
+    if (query.startsWith("SELECT id, twilio_sid")) {
+      const receipt = { ...state }
+      onReceiptRead(state, effects)
+      return [receipt]
+    }
     if (query.startsWith("SELECT id FROM messages")) return state.status === "queued" ? [{ id: state.id }] : []
     if (query.startsWith("UPDATE messages SET status = 'sending'")) {
       const expected = query.includes("status = 'queued'") ? "queued" : "persisted"
@@ -43,6 +47,13 @@ function smsHarness({ status = "persisted", isTest = false, consent = [true, tru
       state.status = "sending"
       state.send_after = null
       return [{ ...state }]
+    }
+    if (query.startsWith("UPDATE messages SET status = 'queued'")) {
+      if (state.status !== "sending") return []
+      state.status = "queued"
+      state.send_after = values[0]
+      if (queueFailures-- > 0) throw new Error("queue response lost")
+      return [{ id: state.id }]
     }
     if (query.startsWith("UPDATE messages SET status = 'canceled'")) { state.status = "canceled"; return [] }
     if (query.startsWith("UPDATE messages SET status = ?")) {
@@ -64,6 +75,7 @@ function smsHarness({ status = "persisted", isTest = false, consent = [true, tru
     throw new Error(`Unexpected SMS SQL: ${query}`)
   }
   const fakes = new Map([
+    ["console", { error: (...args) => effects.errors.push(args[1]) }],
     ["node:crypto", { randomUUID: () => "synthetic-sms-uuid" }],
     ["@/lib/db", { getSql: () => sql }],
     ["@/lib/events", { recordEvent: async (event) => {
@@ -72,7 +84,7 @@ function smsHarness({ status = "persisted", isTest = false, consent = [true, tru
     } }],
     ["@/lib/notify", { notify: async () => { effects.notifications++ }, notifyAll: async () => { effects.notifications++ } }],
     ["@/lib/twilio", {
-      twilioSmsConfigured: () => true, isDefinitiveTwilioError: () => false,
+      twilioSmsConfigured: () => configured, isDefinitiveTwilioError: () => false,
       twilioCallbackUrl: (path) => path,
       sendSms: async () => { effects.provider++; if (providerFailure) throw new Error("provider response lost"); return { sid: "SMaccepted", status: "accepted" } },
     }],
@@ -83,7 +95,7 @@ function smsHarness({ status = "persisted", isTest = false, consent = [true, tru
     } }],
     ["@/lib/shop-phone-shared", { FALLBACK_SHOP_PHONE_E164: "+16155550100" }],
     ["@/lib/shop-brain-invariants.ts", { normalizeUsPhone: (phone) => phone, isReservedCustomerPhone: () => false }],
-    ["@/lib/sms-quiet-hours.ts", { isCentralQuietHours: () => false, getDeferredSmsSendAt: () => null }],
+    ["@/lib/sms-quiet-hours.ts", { isCentralQuietHours: () => false, getDeferredSmsSendAt: () => sendAfter }],
     ["@/lib/deferred-sms.ts", { sendIfClaimed }],
     ["@/lib/sms-provider-truth.ts", { SmsNotSentError }],
   ])
@@ -177,16 +189,149 @@ test("late Customer Page wrapper failure cannot clear the next attempt's active 
   assert.equal(link.claimed, true)
 })
 
-test("consent revoked between request validation and dispatch also prevents immediate SMS", async () => {
-  const harness = smsHarness({ consent: [true, false] })
+test("consent revoked before dispatch also prevents immediate SMS", async () => {
+  const consent = [true]
+  const harness = smsHarness({ consent, onReceiptRead: () => { consent[0] = false } })
   await assert.rejects(harness.send(), /no longer has texting permission/)
   assert.equal(harness.state.status, "canceled")
   assert.equal(harness.effects.provider, 0)
 })
 
+for (const status of ["accepted", "queued", "unknown", "sending"]) {
+  for (const outage of ["consent", "configuration"]) {
+    test(`replaying ${status} SMS preserves its receipt during a ${outage} outage`, async () => {
+      const harness = smsHarness({
+        status,
+        consent: outage === "consent" ? [new Error("consent unavailable")] : [true],
+        configured: outage !== "configuration",
+      })
+      if (status === "accepted") {
+        const result = await harness.send()
+        assert.equal(result.id, harness.state.id)
+        assert.equal(result.sid, "SMaccepted")
+      } else if (status === "queued") {
+        const result = await harness.send()
+        assert.equal(result.id, harness.state.id)
+        assert.equal(result.deferred, true)
+        assert.equal(result.sendAfter, harness.state.send_after)
+      } else {
+        await assert.rejects(harness.send(), (error) => !isSmsNotSentError(error)
+          && /may have accepted|already sending/.test(error.message))
+      }
+      assert.equal(harness.effects.provider, 0)
+      assert.equal(harness.effects.consentChecks, 0)
+      assert.equal(harness.state.status, status)
+    })
+  }
+}
+
+test("a concurrent claim cannot turn a replay into a safely unsent fresh retry", async () => {
+  const harness = smsHarness({
+    consent: [new Error("consent unavailable")],
+    onReceiptRead: (state) => { state.status = "sending" },
+  })
+  await assert.rejects(harness.send(), (error) => !isSmsNotSentError(error)
+    && /already sending/.test(error.message))
+  assert.equal(harness.state.status, "sending")
+  assert.equal(harness.effects.provider, 0)
+  assert.equal(harness.effects.consentChecks, 0)
+})
+
+test("configuration outage after claiming a persisted SMS remains safely retryable", async () => {
+  const harness = smsHarness({ configured: false })
+  await assert.rejects(harness.send(), isSmsNotSentError)
+  assert.equal(harness.state.status, "persisted")
+  assert.equal(harness.effects.provider, 0)
+  assert.equal(harness.effects.journal.length, 0)
+})
+
+test("a new deferred intent is validated before publishing one queued receipt", async () => {
+  const sendAfter = new Date("2026-11-01T14:00:00Z")
+  const harness = smsHarness({ sendAfter })
+  const result = await harness.send()
+  assert.equal(result.deferred, true)
+  assert.equal(result.sendAfter, sendAfter.toISOString())
+  assert.equal(harness.state.status, "queued")
+  assert.equal(harness.effects.consentChecks, 1)
+  assert.equal(harness.effects.provider, 0)
+  assert.equal(harness.effects.journal.length, 0)
+  await harness.send()
+  assert.equal(harness.effects.consentChecks, 1)
+  await harness.api.sendDeferredSms()
+  assert.equal(harness.state.status, "accepted")
+  assert.equal(harness.effects.provider, 1)
+})
+
+test("lost queue publication response stays ambiguous and replays the queued receipt", async () => {
+  const harness = smsHarness({ sendAfter: new Date("2026-11-01T14:00:00Z"), queueFailures: 1 })
+  await assert.rejects(harness.send(), (error) => !isSmsNotSentError(error) && error.message === "queue response lost")
+  assert.equal(harness.state.status, "queued")
+  assert.equal((await harness.send()).deferred, true)
+  assert.equal(harness.effects.provider, 0)
+})
+
+test("new deferred SMS config and consent failures cannot leave a dispatchable queue entry", async () => {
+  for (const failure of ["configuration", "revoked consent"]) {
+    const harness = smsHarness({
+      sendAfter: new Date("2026-11-01T14:00:00Z"),
+      configured: failure !== "configuration",
+      consent: [failure !== "revoked consent"],
+    })
+    await assert.rejects(harness.send(), isSmsNotSentError)
+    assert.equal(harness.state.status, failure === "configuration" ? "persisted" : "canceled")
+    await harness.api.sendDeferredSms()
+    assert.equal(harness.effects.provider, 0)
+    assert.equal(harness.effects.journal.length, 0)
+  }
+})
+
+test("pre-provider recovery keeps the original key even after another replay has sent it", async () => {
+  const harness = smsHarness({ consent: [new Error("consent unavailable"), true] })
+  let retryAdvice
+  await assert.rejects(harness.send(), (error) => {
+    retryAdvice = error
+    return isSmsNotSentError(error) && error.sameIntentOnly
+  })
+  await harness.send()
+  assert.equal(harness.state.status, "accepted")
+  assert.equal(harness.effects.provider, 1)
+  assert.equal(retryAdvice.sameIntentOnly, true)
+  await harness.send()
+  assert.equal(harness.effects.provider, 1)
+})
+
+test("reply action offers a fresh SMS key only for terminally unsent attempts", async () => {
+  for (const sameIntentOnly of [false, true]) {
+    const error = new SmsNotSentError("synthetic pre-provider failure", sameIntentOnly)
+    const api = load("app/ops/leads/[id]/message-actions.ts", new Map([
+      ["node:crypto", { randomUUID: () => "synthetic" }],
+      ["next/cache", { revalidatePath() {} }],
+      ["next/server", { after() {} }],
+      ["resend", {}],
+      ["@/lib/ops-data", { getLead: async () => ({ id: 7, phone: "+16155550111", person_id: 3, is_test: false }) }],
+      ["@/lib/ops-auth", { getAuthenticatedOperator: async () => ({ id: 2, role: "owner" }) }],
+      ["@/lib/messages", { sendSmsPersisted: async () => { throw error } }],
+      ["@/lib/events", {}], ["@/lib/extract", {}], ["@/lib/notify", {}],
+      ["@/lib/db", {}], ["@/lib/operators", {}],
+      ["@/lib/twilio", { isDefinitiveTwilioError: () => false }],
+      ["@/lib/sms-provider-truth.ts", { isSmsNotSentError }],
+      ["@/lib/messaging-consent", {}],
+      ["@/lib/email-provider-truth.ts", { isDefinitiveEmailProviderError: () => false }],
+    ]))
+    const form = new FormData()
+    form.set("leadId", "7")
+    form.set("body", "Your job is ready")
+    form.set("intentKey", "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa")
+    const state = await api.sendLeadReplyState({ status: "idle", message: "", sentAt: 0 }, form)
+    assert.equal(state.status, "error")
+    assert.equal(state.message, error.message)
+    assert.equal(state.retryable, !sameIntentOnly)
+  }
+})
+
 test("initial consent lookup outage is known unsent and the same intent can retry", async () => {
   const harness = smsHarness({ consent: [new Error("consent unavailable"), true, true] })
-  await assert.rejects(harness.send(), (error) => isSmsNotSentError(error) && error.message === "consent unavailable")
+  await assert.rejects(harness.send(), (error) => isSmsNotSentError(error) && error.sameIntentOnly && error.message === "consent unavailable")
   assert.equal(harness.effects.provider, 0)
   assert.equal(harness.effects.journal.length, 0)
   assert.equal(harness.state.status, "persisted")
@@ -235,11 +380,12 @@ test("journal outage before SMS provider dispatch preserves a safely retryable i
   for (const status of ["persisted", "queued"]) {
     const harness = smsHarness({ status, journalFailures: 1 })
     if (status === "queued") await harness.api.sendDeferredSms()
-    else await assert.rejects(harness.send(), /journal unavailable/)
+    else await assert.rejects(harness.send(), (error) => isSmsNotSentError(error) && error.sameIntentOnly && /journal unavailable/.test(error.message))
     assert.equal(harness.state.status, status)
     assert.equal(harness.effects.provider, 0)
     assert.equal(harness.effects.notifications, 0)
     if (status === "queued") {
+      assert.equal(harness.effects.errors[0].sameIntentOnly, true)
       assert.ok(harness.state.send_after)
       await harness.api.sendDeferredSms()
     } else await harness.send()
