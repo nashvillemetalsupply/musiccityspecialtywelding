@@ -45,31 +45,37 @@ function hooks() {
   }
 }
 const jsx = { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }), Fragment: "fragment" }
-function elements(node) {
-  if (!node || typeof node !== "object") return []
-  return [node, ...[node.props?.children].flat(Infinity).flatMap(elements)]
-}
-
 function voiceFixture({ uploaded = false, completed = false, retained = true, savedScope = scope, existing = true } = {}) {
-  const row = { status: completed ? "completed" : uploaded ? "queued" : "persisted", blob_path: uploaded || completed ? "synthetic/audio.webm" : "", transcript: completed ? "Recovered words" : "", last_error: "", attempts: 0 }
-  const effects = { uploads: 0, transcriptions: 0, deleted: 0, posts: 0, transcripts: [], errors: [] }
+  const row = { status: completed ? "completed" : uploaded ? "queued" : "persisted", blob_path: uploaded || completed ? "synthetic/audio.webm" : "", content_type: "audio/webm", recovery_key: "done:7", transcript: completed ? "Recovered words" : "", last_error: "", attempts: 0 }
+  const effects = { uploads: 0, transcriptions: 0, deleted: 0, archived: 0, posts: 0, transcripts: [], errors: [] }
   let suspended = true
   let intentExists = existing
+  let storedObject = uploaded || completed
+  class BlobNotFoundError extends Error {}
   const route = load("app/api/ops/transcribe/route.ts", {
     "node:crypto": { randomUUID: () => id },
     "@/lib/ops-auth": { getAuthenticatedOperator: async () => ({ id: 2, role: "owner" }) },
     "@/lib/voice-outbox-scope.ts": { voiceOperatorScope },
     "@/lib/db": { getSql: () => async (strings, ...values) => {
       const query = strings.join(" ? ").replace(/\s+/g, " ").trim()
-      if (query.startsWith("INSERT INTO voice_transcription_intents")) intentExists = true
+      if (query.startsWith("INSERT INTO voice_transcription_intents")) {
+        const fresh = !intentExists
+        intentExists = true
+        return fresh ? [{ id }] : []
+      }
       if (query.startsWith("SELECT")) return intentExists ? [{ ...row }] : []
       if (query.includes("SET blob_path")) { row.blob_path = values[0]; row.status = "queued" }
       if (query.includes("SET status = 'failed'")) { row.status = "failed"; row.last_error = values[0] }
       return []
     } },
-    "@vercel/blob": { put: async (pathname) => {
+    "@vercel/blob": { BlobNotFoundError, head: async (pathname) => {
+      if (suspended) throw new Error("Blob store suspended")
+      if (!storedObject) throw new BlobNotFoundError("Not found")
+      return { pathname, size: audio.size, contentType: audio.type }
+    }, put: async (pathname) => {
       effects.uploads++
       if (suspended) throw new Error("Blob store suspended")
+      storedObject = true
       return { pathname }
     } },
     "@/lib/voice-transcription": { transcribeVoiceIntent: async () => {
@@ -79,7 +85,7 @@ function voiceFixture({ uploaded = false, completed = false, retained = true, sa
       return row.transcript
     } },
   }, { process: { env: { DEEPGRAM_API_KEY: "synthetic", BLOB_READ_WRITE_TOKEN: "synthetic" } } })
-  const saved = retained ? { id, scope: savedScope, recoveryKey: "done:7", contentType: audio.type, blob: audio } : null
+  let saved = retained ? { id, scope: savedScope, recoveryKey: "done:7", contentType: audio.type, blob: audio } : null
   const storage = new Map([[`mcsw-voice:${scope}:done:7`, id]])
   const indexedDB = { open: () => {
     const request = {}
@@ -87,6 +93,8 @@ function voiceFixture({ uploaded = false, completed = false, retained = true, sa
       request.result = { close() {}, transaction: () => {
         const transaction = { objectStore: () => ({
           get: () => { const read = {}; queueMicrotask(() => { read.result = saved; read.onsuccess() }); return read },
+          getAll: () => { const read = {}; queueMicrotask(() => { read.result = saved ? [saved] : []; read.onsuccess() }); return read },
+          put: (record) => { saved = record; if (record.archivedAt) effects.archived++; queueMicrotask(() => transaction.oncomplete()) },
           delete: () => { effects.deleted++; queueMicrotask(() => transaction.oncomplete()) },
         }) }
         return transaction
@@ -106,7 +114,7 @@ function voiceFixture({ uploaded = false, completed = false, retained = true, sa
     },
   }, {
     indexedDB, navigator: {},
-    window: { setTimeout: (callback) => { queueMicrotask(callback); return 1 }, localStorage: { getItem: (key) => storage.get(key) ?? null, removeItem: (key) => storage.delete(key) } },
+    window: { setTimeout: (callback) => { queueMicrotask(callback); return 1 }, localStorage: { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) } },
     fetch: async (url, options = {}) => {
       const request = new Request(`https://fixture.invalid${url}`, options)
       if (options.method === "POST") { effects.posts++; return route.POST(request) }
@@ -136,9 +144,10 @@ test("a retained recording recovers an existing intent after Blob storage resume
   await current.retry()
   assert.deepEqual(current.effects.transcripts, ["Recovered words"])
   assert.equal(current.effects.posts, 1)
-  assert.equal(current.effects.uploads, 2, "one initial refusal and one recovery upload")
+  assert.equal(current.effects.uploads, 1, "an ambiguous existing intent must be reconciled before uploading")
   assert.equal(current.effects.transcriptions, 1)
-  assert.equal(current.effects.deleted, 1, "device bytes clear only after transcript handoff")
+  assert.equal(current.effects.deleted, 0, "captured bytes are never deleted")
+  assert.equal(current.effects.archived, 1, "device bytes archive only after transcript handoff")
 })
 
 test("a continuing storage failure retries once and retains the recording without claiming success", async () => {
@@ -163,8 +172,9 @@ test("a retained recording recreates a missing intent after a 404 without duplic
   assert.equal(current.effects.posts, 1)
   assert.equal(current.effects.uploads, 1)
   assert.equal(current.effects.transcriptions, 1)
-  assert.equal(current.effects.deleted, 1)
-  assert.equal(current.storage.size, 0)
+  assert.equal(current.effects.deleted, 0)
+  assert.equal(current.effects.archived, 1)
+  assert.equal([...current.storage.values()].filter(Boolean).length, 0)
 })
 
 test("an intent without stored audio or retained bytes never claims it can finish in the background", async () => {
@@ -192,38 +202,5 @@ test("another operator's retained audio cannot be resubmitted", async () => {
   assert.match(current.effects.errors.join(" "), /will not be sent automatically/)
 })
 
-test("a failed closeout photo can retry the identical file without retaking it or filing false success", async () => {
-  const hook = hooks()
-  const uploads = []
-  let filed = 0
-  const api = load("app/ops/leads/[id]/closeout-photo-input.tsx", {
-    react: hook.react, "react/jsx-runtime": jsx,
-    "@vercel/blob/client": { upload: async (_path, file) => {
-      uploads.push(file)
-      if (uploads.length === 1) throw new Error("Blob store suspended")
-    } },
-  })
-  const render = (leadId = 7, mode = "addendum") => { hook.reset(); return elements(api.CloseoutPhotoInput({ leadId, mode, onUploaded: () => { filed++ } })) }
-  let tree = render()
-  const receipt = { value: "" }
-  tree.find((node) => node.props?.type === "hidden").props.ref.current = receipt
-  const file = new File(["synthetic pixels"], "fixture.jpg", { type: "image/jpeg" })
-  tree.find((node) => node.props?.type === "file").props.onChange({ currentTarget: { files: [file], value: "fixture.jpg" } })
-  await new Promise(setImmediate)
-  tree = render()
-  assert.equal(filed, 0)
-  assert.equal(receipt.value, "")
-  assert.match(tree.find((node) => node.type === "small").props.children, /storage is temporarily unavailable.*Keep this page open/)
-  for (const [leadId, mode] of [[8, "addendum"], [7, "completion"]]) {
-    assert.equal(render(leadId, mode).some((node) => node.type === "button" && node.props.children === "Retry photo"), false, "retained photo must not transfer to another job or workflow")
-  }
-  tree = render()
-  tree.find((node) => node.type === "button" && node.props.children === "Retry photo").props.onClick()
-  await new Promise(setImmediate)
-  tree = render()
-  assert.equal(uploads[0], file)
-  assert.equal(uploads[1], file)
-  assert.equal(filed, 1)
-  assert.ok(receipt.value)
-  assert.equal(tree.some((node) => node.type === "button" && node.props.children === "Retry photo"), false)
-})
+// Durable closeout photo recovery, compression and deduplication are exercised
+// in photo-storage.behavior.test.mjs, including reload and lost-response cases.

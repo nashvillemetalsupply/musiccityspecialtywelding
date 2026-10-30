@@ -1083,7 +1083,8 @@ export async function addLeadCompletionNote(formData: FormData) {
   const recoveredVoice = hasVoiceIntent ? (await sql`
     SELECT blob_path, content_type FROM voice_transcription_intents
     WHERE id = ${voiceIntentId}::text AND operator_id = ${operator.id}::bigint
-      AND lead_id = ${leadId}::bigint AND recovery_key = ${`done:${leadId}`}::text
+      AND lead_id = ${leadId}::bigint
+      AND recovery_key IN (${`done:${leadId}`}::text, ${`closeout:${leadId}`}::text)
       AND status = 'completed' AND blob_path <> '' LIMIT 1`) as Array<{ blob_path: string; content_type: string }> : []
   if (hasVoiceIntent && !recoveredVoice[0]) throw new Error("That saved voice note does not belong to this closeout.")
   const signature = createHash("sha256").update(JSON.stringify({ note, noteSource, voiceIntentId, voiceSize: voiceNote instanceof File ? voiceNote.size : 0, photoUploadId })).digest("hex")

@@ -1,4 +1,4 @@
-import { head } from "@vercel/blob"
+import { BlobNotFoundError, head } from "@vercel/blob"
 import { getSql } from "@/lib/db"
 import { requireLeadMutationAccess, type Operator } from "@/lib/operators"
 
@@ -66,7 +66,9 @@ export async function createCloseoutPhotoUpload(input: {
   const lead = leads[0]
   if (!lead) throw new Error("Job not found.")
   if (access.isTest !== lead.is_test) throw new Error("The job changed while the photo was being authorized. Reload and try again.")
-  if (input.mode === "completion" && lead.completed_at) throw new Error("This job is already finished.")
+  // A completion capture can be queued offline while the job is finished.
+  // Keep that original receipt mode and object identity; the addendum action
+  // can file it later after rechecking this same job/operator/test partition.
   if (input.mode === "addendum" && !lead.completed_at) throw new Error("Finish the job before adding a closeout photo.")
 
   const inserted = (await sql`
@@ -108,14 +110,19 @@ export async function createCloseoutPhotoUpload(input: {
     || receipt.content_type !== contentType
     || Number(receipt.size_bytes) !== input.sizeBytes
     || receipt.is_test !== lead.is_test
-    || receipt.status !== "pending"
-    || new Date(receipt.expires_at).getTime() <= Date.now()) {
+    || receipt.status !== "pending") {
     throw new Error("This closeout photo receipt cannot be reused. Choose the photo again.")
   }
+  // Device queues can outlive a quota suspension. Reauthorize the same receipt
+  // instead of issuing a new object path when its short upload window expires.
+  await sql`
+    UPDATE closeout_photo_uploads SET expires_at = now() + interval '24 hours', updated_at = now()
+    WHERE id = ${input.id}::text AND operator_id = ${input.operator.id}::bigint
+      AND lead_id = ${input.leadId}::bigint AND upload_mode = ${input.mode}::text AND status = 'pending'`
   return { pathname, contentType }
 }
 
-export async function confirmCloseoutPhotoUpload(id: string, callbackPathname: string) {
+export async function confirmCloseoutPhotoUpload(id: string, callbackPathname: string, verifiedBlob?: { pathname: string; size: number }) {
   if (!isCloseoutUploadId(id)) throw new Error("Invalid closeout photo receipt.")
   const sql = getSql()
   const rows = (await sql`
@@ -134,7 +141,7 @@ export async function confirmCloseoutPhotoUpload(id: string, callbackPathname: s
     throw new Error("This closeout photo receipt expired. Choose the photo again.")
   }
 
-  const blob = await head(intent.pathname)
+  const blob = verifiedBlob ?? await head(intent.pathname)
   if (blob.pathname !== intent.pathname || Number(blob.size) !== Number(intent.size_bytes)) {
     throw new Error("The uploaded closeout photo did not match its saved receipt.")
   }
@@ -152,6 +159,51 @@ export async function confirmCloseoutPhotoUpload(id: string, callbackPathname: s
   }
 }
 
+export async function recoverCloseoutPhotoUpload(input: {
+  operator: Operator
+  id: string
+  leadId: number
+  mode: CloseoutPhotoMode
+}) {
+  if (!isCloseoutUploadId(input.id)) throw new Error("Invalid closeout photo receipt.")
+  if (!Number.isInteger(input.leadId) || input.leadId <= 0) throw new Error("Invalid job.")
+  if (input.mode !== "completion" && input.mode !== "addendum") throw new Error("Invalid closeout photo action.")
+  const access = await requireLeadMutationAccess(input.operator, input.leadId)
+  const sql = getSql()
+  const rows = (await sql`
+    SELECT id, lead_id, operator_id, upload_mode AS mode, pathname, original_name, content_type,
+      size_bytes, is_test, status, attached_event_id, expires_at
+    FROM closeout_photo_uploads
+    WHERE id = ${input.id}::text AND lead_id = ${input.leadId}::bigint
+      AND operator_id = ${input.operator.id}::bigint AND upload_mode = ${input.mode}::text
+      AND is_test = ${access.isTest}::boolean LIMIT 1`) as CloseoutPhotoUpload[]
+  const receipt = rows[0]
+  if (!receipt) return { ready: false, uploadRequired: true, attached: false }
+  if (receipt.status === "attached") return { ready: true, uploadRequired: false, attached: true }
+  if (new Date(receipt.expires_at).getTime() <= Date.now() + 60 * 60 * 1000) {
+    // This request has just rechecked the operator and job. Keep the original
+    // intent/path and reopen only its authorization window; nothing is removed.
+    await sql`
+      UPDATE closeout_photo_uploads SET expires_at = now() + interval '24 hours', updated_at = now()
+      WHERE id = ${input.id}::text AND operator_id = ${input.operator.id}::bigint
+        AND lead_id = ${input.leadId}::bigint AND upload_mode = ${input.mode}::text
+        AND is_test = ${access.isTest}::boolean AND status IN ('pending','uploaded')`
+  }
+  if (receipt.status === "uploaded") return { ready: true, uploadRequired: false, attached: false }
+  if (receipt.status !== "pending") throw new Error("The closeout photo receipt cannot be recovered.")
+  let blob
+  try {
+    blob = await head(receipt.pathname)
+  } catch (error) {
+    // A quota pause, timeout or denied read is not proof that upload failed.
+    // Only confirmed absence permits bytes to be sent again to this same path.
+    if (error instanceof BlobNotFoundError) return { ready: false, uploadRequired: true, attached: false }
+    throw error
+  }
+  await confirmCloseoutPhotoUpload(receipt.id, receipt.pathname, blob)
+  return { ready: true, uploadRequired: false, attached: false }
+}
+
 export async function getCloseoutPhotoUpload(input: {
   id: string
   leadId: number
@@ -161,24 +213,34 @@ export async function getCloseoutPhotoUpload(input: {
 }) {
   if (!isCloseoutUploadId(input.id)) throw new Error("The closeout photo receipt is invalid.")
   const sql = getSql()
-  const readReceipt = async () => (await sql`
+  const readReceipt = async (mode: CloseoutPhotoMode) => (await sql`
     SELECT id, lead_id, operator_id, upload_mode AS mode, pathname, original_name, content_type,
       size_bytes, is_test, status, attached_event_id, expires_at
     FROM closeout_photo_uploads
     WHERE id = ${input.id}::text AND lead_id = ${input.leadId}::bigint
-      AND operator_id = ${input.operatorId}::bigint AND upload_mode = ${input.mode}::text
+      AND operator_id = ${input.operatorId}::bigint AND upload_mode = ${mode}::text
       AND is_test = ${input.isTest}::boolean
       AND status IN ('pending','uploaded','attached')
       AND (status = 'attached' OR expires_at > now())
     LIMIT 1`) as CloseoutPhotoUpload[]
-  let receipt = (await readReceipt())[0]
+  let receiptMode = input.mode
+  let receipt = (await readReceipt(receiptMode))[0]
+  if (!receipt && input.mode === "addendum") {
+    const completed = (await sql`
+      SELECT id FROM leads WHERE id = ${input.leadId}::bigint
+        AND completed_at IS NOT NULL AND is_test = ${input.isTest}::boolean LIMIT 1`) as Array<{ id: number }>
+    if (completed[0]) {
+      receiptMode = "completion"
+      receipt = (await readReceipt(receiptMode))[0]
+    }
+  }
   if (!receipt) throw new Error("The closeout photo receipt is unavailable for this job. Choose the photo again.")
   if (receipt.status === "pending") {
     // Browser upload completion can beat the signed Blob callback. Only after
     // authorizing the exact job/operator receipt, verify the stored bytes with
     // the same path/size checks used by that callback instead of reuploading.
     await confirmCloseoutPhotoUpload(receipt.id, receipt.pathname)
-    receipt = (await readReceipt())[0]
+    receipt = (await readReceipt(receiptMode))[0]
   }
   if (!receipt || receipt.status === "pending") throw new Error("The closeout photo is still being confirmed. Try saving again in a moment.")
   return receipt
@@ -201,7 +263,7 @@ export async function attachCloseoutPhotoToLead(input: {
     sensitivity: "photo",
     isTest: input.upload.is_test,
     sourceCompletionEventId: input.completionEventId,
-    ...(input.upload.mode === "addendum" ? { sourceAddendumEventId: input.eventId } : {}),
+    ...(input.upload.mode === "addendum" || input.eventId !== input.completionEventId ? { sourceAddendumEventId: input.eventId } : {}),
     sourceCloseoutUploadId: input.upload.id,
   }
   const attached = (await sql`

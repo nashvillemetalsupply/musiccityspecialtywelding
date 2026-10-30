@@ -19,6 +19,7 @@ function fixture({ status = "pending", blobSize = 1234, expired = false } = {}) 
         && mode === receipt.mode && isTest === receipt.is_test && allowedStatuses.includes(receipt.status)
         && (!expired || receipt.status === "attached") ? [{ ...receipt }] : []
     }
+    if (query.startsWith("SELECT id FROM leads")) return []
     if (query.startsWith("SELECT id, pathname, size_bytes")) return [{ ...receipt }]
     if (query.startsWith("UPDATE closeout_photo_uploads SET status = 'uploaded'")) {
       effects.writes++

@@ -3,9 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { offlineRecordingScope, readCurrentVoiceScope, scopedVoiceStorageKey, voiceIntentMatchesScope } from "./voice-outbox-client"
 
-type SavedVoiceIntent = { scope?: string; id: string; recoveryKey: string; contentType: string; blob: Blob }
+type SavedVoiceIntent = { scope?: string; id: string; recoveryKey: string; contentType: string; blob: Blob; archivedAt?: string }
 const VOICE_DB = "mcsw-voice-outbox"
 const VOICE_STORE = "voice_intents"
+
+function voiceRecoveryMatches(savedKey: string, currentKey: string) {
+  return savedKey === currentKey || (/^done:[1-9][0-9]*$/.test(currentKey) && savedKey === currentKey.replace(/^done:/, "closeout:"))
+}
 
 function voiceDb() {
   return new Promise<IDBDatabase>((resolve, reject) => {
@@ -25,6 +29,7 @@ async function saveVoiceIntent(intent: SavedVoiceIntent) {
     transaction.objectStore(VOICE_STORE).put(intent)
     transaction.oncomplete = () => resolve()
     transaction.onerror = () => reject(transaction.error || new Error("Voice note could not be saved on this phone."))
+    transaction.onabort = () => reject(transaction.error || new Error("Voice note could not be saved on this phone."))
   }).finally(() => db.close())
 }
 
@@ -37,14 +42,32 @@ async function readVoiceIntent(id: string) {
   }).finally(() => db.close())
 }
 
-async function deleteVoiceIntent(id: string) {
+async function pendingVoiceIntent(scope: string, recoveryKey: string) {
   const db = await voiceDb()
-  await new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(VOICE_STORE, "readwrite")
-    transaction.objectStore(VOICE_STORE).delete(id)
-    transaction.oncomplete = () => resolve()
-    transaction.onerror = () => reject(transaction.error || new Error("Voice outbox could not be cleared."))
+  return new Promise<SavedVoiceIntent | null>((resolve, reject) => {
+    const request = db.transaction(VOICE_STORE, "readonly").objectStore(VOICE_STORE).getAll()
+    request.onsuccess = () => resolve((request.result as SavedVoiceIntent[]).find((intent) =>
+      voiceIntentMatchesScope(intent, scope) && voiceRecoveryMatches(intent.recoveryKey, recoveryKey) && !intent.archivedAt) ?? null)
+    request.onerror = () => reject(request.error || new Error("Saved voice notes could not be reopened."))
   }).finally(() => db.close())
+}
+
+async function archiveVoiceIntent(intent: SavedVoiceIntent) {
+  await saveVoiceIntent({ ...intent, archivedAt: new Date().toISOString() })
+}
+
+async function pendingVoiceId(scope: string, recoveryKey: string, key: string) {
+  const pending = await pendingVoiceIntent(scope, recoveryKey)
+  if (pending) return { id: pending.id, retained: true }
+  let pointer: string | null = null
+  try { pointer = window.localStorage.getItem(key) } catch { /* Optional legacy pointer. */ }
+  if (!pointer) return null
+  const pointed = await readVoiceIntent(pointer)
+  if (!pointed) return { id: pointer, retained: false }
+  if (pointed.archivedAt) return null
+  if (!voiceIntentMatchesScope(pointed, scope)) throw new Error("This older voice note is kept here and will not be sent automatically.")
+  if (!voiceRecoveryMatches(pointed.recoveryKey, recoveryKey)) throw new Error("This saved note belongs to a different job and has been kept intact.")
+  return { id: pointed.id, retained: true }
 }
 
 export function VoiceCaptureButton({
@@ -79,7 +102,13 @@ export function VoiceCaptureButton({
   const [starting, setStarting] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
   const [checkingCapture, setCheckingCapture] = useState(false)
-  const captureBusy = checkingCapture || starting || listening || transcribing
+  const [savedPending, setSavedPending] = useState(false)
+  const [unsavedCapture, setUnsavedCapture] = useState(false)
+  const [retryVersion, setRetryVersion] = useState(0)
+  const unsavedRef = useRef<SavedVoiceIntent | null>(null)
+  const recoveringRef = useRef(false)
+  const deliveredIntentIds = useRef(new Set<string>())
+  const captureBusy = checkingCapture || starting || listening || transcribing || unsavedCapture
   useEffect(() => { onBusyChange?.(captureBusy) }, [captureBusy, onBusyChange])
   useEffect(() => () => onBusyChange?.(false), [onBusyChange])
   const recorderRef = useRef<MediaRecorder | null>(null)
@@ -162,7 +191,7 @@ export function VoiceCaptureButton({
   const uploadSavedVoice = useCallback(async (intent: SavedVoiceIntent, scope: string) => {
     if (!voiceIntentMatchesScope(intent, scope)) throw new Error("This older voice note is kept here and will not be sent automatically.")
     await ensureScope(scope)
-    if (intent.recoveryKey !== recoveryKeyRef.current) throw new Error("The job changed. Your voice note remains saved with its original job.")
+    if (!voiceRecoveryMatches(intent.recoveryKey, recoveryKeyRef.current)) throw new Error("The job changed. Your voice note remains saved with its original job.")
     return fetch("/api/ops/transcribe", {
       method: "POST",
       headers: { "Content-Type": intent.contentType, "X-Voice-Intent-Id": intent.id, "X-Voice-Recovery-Key": intent.recoveryKey, "X-Voice-Operator-Scope": scope },
@@ -170,16 +199,18 @@ export function VoiceCaptureButton({
     })
   }, [ensureScope])
 
-  const recoverTranscript = useCallback(async (intentId: string, scope: string) => {
-    const waits = [900, 1600, 2800, 4800, 8000, 15000, 30000, 45000]
+  const recoverTranscript = useCallback(async (intentId: string, scope: string, isActive: () => boolean = () => mountedRef.current) => {
+    const waits = [0, 900, 1600, 2800]
     const saved = await readVoiceIntent(intentId).catch(() => null)
+    if (saved?.archivedAt) throw new Error("This voice note has already been recovered. Its recording is archived on this device.")
     if (saved && !voiceIntentMatchesScope(saved, scope)) throw new Error("This older voice note is kept here and will not be sent automatically.")
     const recoveryContext = effectiveRecoveryKey
-    if (saved && saved.recoveryKey !== recoveryContext) throw new Error("This saved note belongs to a different job and has been kept intact.")
+    if (saved && !voiceRecoveryMatches(saved.recoveryKey, recoveryContext)) throw new Error("This saved note belongs to a different job and has been kept intact.")
     let resubmitted = false
     let serverHasIntent = false
     for (const wait of waits) {
       await new Promise((resolve) => window.setTimeout(resolve, wait))
+      if (!isActive()) throw new Error("Voice recovery paused. Your note remains on this device.")
       await ensureScope(scope)
       if (recoveryKeyRef.current !== recoveryContext) throw new Error("The job changed. Your voice note remains saved with its original job.")
       const poll = () => fetch(`/api/ops/transcribe?id=${encodeURIComponent(intentId)}`, { cache: "no-store", headers: { "X-Voice-Operator-Scope": scope } })
@@ -188,6 +219,7 @@ export function VoiceCaptureButton({
       let state = await response.json().catch(() => null) as { status?: string; transcript?: string; last_error?: string; uploadRequired?: boolean } | null
       if ((response.status === 404 || (response.ok && state?.uploadRequired === true)) && saved && !resubmitted) {
         try {
+          if (!isActive()) throw new Error("Voice recovery paused. Your note remains on this device.")
           const upload = await uploadSavedVoice(saved, scope)
           resubmitted = true
           const uploadState = await upload.json().catch(() => null) as { transcript?: string } | null
@@ -205,7 +237,7 @@ export function VoiceCaptureButton({
       if (state?.status === "failed" && wait === waits.at(-1)) throw new Error(state.last_error || "The saved voice note could not be transcribed yet.")
     }
     if (!serverHasIntent) throw new Error(saved
-      ? "That voice note never reached the shop. It is still saved on this phone; reconnect and try again."
+      ? "That voice note never reached the shop. Saved on this device; will upload when storage is available."
       : "That recording has not reached storage. Try again from the device that recorded it.")
     throw new Error("Your voice note is safely filed. MCSW Jobs will finish it in the background.")
   }, [ensureScope, uploadSavedVoice, effectiveRecoveryKey])
@@ -214,40 +246,76 @@ export function VoiceCaptureButton({
     await ensureScope(scope)
     const saved = await readVoiceIntent(intentId).catch(() => null)
     if (!mountedRef.current || scopeRef.current !== scope || key !== scopedVoiceStorageKey(scope, recoveryKeyRef.current)
-      || (saved && (!voiceIntentMatchesScope(saved, scope) || saved.recoveryKey !== recoveryKeyRef.current))) return
-    transcriptHandler.current(transcript, intentId)
-    if (window.localStorage.getItem(key) === intentId) window.localStorage.removeItem(key)
-    if (saved && voiceIntentMatchesScope(saved, scope)) await deleteVoiceIntent(intentId).catch(() => undefined)
+      || saved?.archivedAt || (saved && (!voiceIntentMatchesScope(saved, scope) || !voiceRecoveryMatches(saved.recoveryKey, recoveryKeyRef.current)))) return
+    const deliveryKey = `${scope}:${intentId}`
+    if (!deliveredIntentIds.current.has(deliveryKey)) {
+      transcriptHandler.current(transcript, intentId)
+      deliveredIntentIds.current.add(deliveryKey)
+    }
+    if (saved && voiceIntentMatchesScope(saved, scope)) await archiveVoiceIntent(saved)
+    try { if (window.localStorage.getItem(key) === intentId) window.localStorage.setItem(key, "") } catch { /* The retained record is already archived in IndexedDB. */ }
+    setSavedPending(false)
     navigator.vibrate?.(24)
   }, [ensureScope])
 
   useEffect(() => {
     if (!available || !voiceScope || !storageKey) return
     let active = true
-    const kickoff = window.setTimeout(() => {
+    let delay = 30000
+    let timer: number
+    const retry = async () => {
       if (!active) return
-      // Legacy keys never establish who recorded the blob. Keep them intact.
-      let pendingId: string | null
-      try {
-        if (window.localStorage.getItem(legacyStorageKey)) errorHandler.current?.("An older voice note is kept here and will not be sent automatically.")
-        pendingId = window.localStorage.getItem(storageKey)
-      } catch {
-        errorHandler.current?.("This browser cannot access saved voice notes. Use a regular browser window or type your note.")
+      if (recoveringRef.current || recorderRef.current || document.visibilityState === "hidden") {
+        timer = window.setTimeout(() => { void retry() }, delay)
         return
       }
-      if (!pendingId) return
-      setTranscribing(true)
-      void recoverTranscript(pendingId, voiceScope).then(async (transcript) => {
-        if (active) await applyTranscript(transcript, pendingId, voiceScope, storageKey)
-      }).catch((error) => {
-        if (active) errorHandler.current?.(error instanceof Error ? error.message : "Your saved voice note is still being processed.")
-      }).finally(() => { if (active) setTranscribing(false) })
-    }, 0)
-    return () => { active = false; window.clearTimeout(kickoff) }
-  }, [available, voiceScope, recoverTranscript, applyTranscript, storageKey, legacyStorageKey])
+      recoveringRef.current = true
+      let pending: { id: string; retained: boolean } | null = null
+      try {
+        const volatile = unsavedRef.current
+        if (volatile && voiceIntentMatchesScope(volatile, voiceScope) && volatile.recoveryKey === effectiveRecoveryKey) {
+          await saveVoiceIntent(volatile)
+          unsavedRef.current = null
+          if (mountedRef.current) setUnsavedCapture(false)
+        }
+        pending = await pendingVoiceId(voiceScope, effectiveRecoveryKey, storageKey)
+        // Legacy keys never establish who recorded the blob. Keep them intact.
+        try {
+          if (window.localStorage.getItem(legacyStorageKey)) errorHandler.current?.("An older voice note is kept here and will not be sent automatically.")
+        } catch { /* A missing localStorage pointer cannot hide durable bytes. */ }
+        if (!pending || !active) return
+        setSavedPending(pending.retained)
+        setTranscribing(true)
+        const transcript = await recoverTranscript(pending.id, voiceScope, () => active)
+        if (active) await applyTranscript(transcript, pending.id, voiceScope, storageKey)
+      } catch (error) {
+        if (active) errorHandler.current?.(unsavedRef.current
+          ? "Voice note is not saved yet. Keep this page open; local saving will retry automatically."
+          : pending?.retained ? `Saved on this device; will upload when storage is available. ${error instanceof Error ? error.message : ""}`
+          : error instanceof Error ? error.message : "Saved voice notes could not be reopened.")
+      } finally {
+        recoveringRef.current = false
+        if (active) {
+          setTranscribing(false)
+          timer = window.setTimeout(() => { void retry() }, delay)
+          delay = Math.min(delay * 2, 15 * 60 * 1000)
+        }
+      }
+    }
+    const wake = () => {
+      window.clearTimeout(timer)
+      delay = 30000
+      void retry()
+    }
+    timer = window.setTimeout(() => { void retry() }, 0)
+    window.addEventListener("online", wake)
+    window.addEventListener("focus", wake)
+    document.addEventListener("visibilitychange", wake)
+    return () => { active = false; window.clearTimeout(timer); window.removeEventListener("online", wake); window.removeEventListener("focus", wake); document.removeEventListener("visibilitychange", wake) }
+  }, [available, voiceScope, recoverTranscript, applyTranscript, storageKey, legacyStorageKey, effectiveRecoveryKey, retryVersion])
 
   async function startRecording() {
-    if (!available || disabled || transcribing || recorderRef.current) return
+    if (!available || disabled || transcribing || recorderRef.current || recoveringRef.current) return
     const captureRequest = ++captureRequestRef.current
     setCheckingCapture(true)
     try {
@@ -263,10 +331,14 @@ export function VoiceCaptureButton({
     }
     if (!pressedRef.current || !mountedRef.current || captureRequest !== captureRequestRef.current) return
     const key = scopedVoiceStorageKey(scope, effectiveRecoveryKey)
-    let pendingId: string | null
-    try { pendingId = window.localStorage.getItem(key) }
-    catch { report("This browser cannot save voice notes. Use a regular browser window or type your note."); return }
+    if (unsavedRef.current) { setRetryVersion((value) => value + 1); report("Voice note is not saved yet. Keep this page open; local saving will retry automatically."); return }
+    const pending = await pendingVoiceId(scope, effectiveRecoveryKey, key)
+    if (!pressedRef.current || !mountedRef.current || captureRequest !== captureRequestRef.current) return
+    const pendingId = pending?.id
     if (pendingId) {
+      if (recoveringRef.current) return
+      recoveringRef.current = true
+      setSavedPending(pending.retained)
       setTranscribing(true)
       try {
         const transcript = await recoverTranscript(pendingId, scope)
@@ -274,6 +346,7 @@ export function VoiceCaptureButton({
       } catch (error) {
         report(error instanceof Error ? error.message : "The saved voice note is still waiting on this phone.")
       } finally {
+        recoveringRef.current = false
         if (mountedRef.current) setTranscribing(false)
       }
       return
@@ -284,13 +357,13 @@ export function VoiceCaptureButton({
     }
     try {
       setStarting(true)
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
       if (!pressedRef.current || !mountedRef.current || captureRequest !== captureRequestRef.current || scopeRef.current !== scope || recoveryKeyRef.current !== effectiveRecoveryKey) {
         stream.getTracks().forEach((track) => track.stop())
         if (mountedRef.current) setStarting(false)
         return
       }
-      const recorder = new MediaRecorder(stream)
+      const recorder = new MediaRecorder(stream, { audioBitsPerSecond: 32000 })
       chunksRef.current = []
       streamRef.current = stream
       recorderRef.current = recorder
@@ -302,15 +375,21 @@ export function VoiceCaptureButton({
         streamRef.current = null
         if (mountedRef.current) setListening(false)
         if (!blob.size) return
+        recoveringRef.current = true
         if (mountedRef.current) setTranscribing(true)
         const clientIntentId = crypto.randomUUID()
         const intent = { id: clientIntentId, scope, recoveryKey: effectiveRecoveryKey, contentType: blob.type, blob }
+        unsavedRef.current = intent
+        if (mountedRef.current) setUnsavedCapture(true)
         let persisted = false
         try {
           // Persist under the recording identity even if the route was closed.
           await saveVoiceIntent(intent)
-          window.localStorage.setItem(key, clientIntentId)
           persisted = true
+          unsavedRef.current = null
+          if (mountedRef.current) setUnsavedCapture(false)
+          try { window.localStorage.setItem(key, clientIntentId) } catch { /* Recovery discovers IndexedDB directly. */ }
+          if (mountedRef.current) setSavedPending(true)
           if (!mountedRef.current || scopeRef.current !== scope || recoveryKeyRef.current !== effectiveRecoveryKey) return
           await ensureScope(scope)
           if (recoveryKeyRef.current !== effectiveRecoveryKey) return
@@ -332,9 +411,10 @@ export function VoiceCaptureButton({
           await applyTranscript(transcript, clientIntentId, scope, key)
         } catch (error) {
           const detail = error instanceof Error ? error.message : "Reconnect to transcribe it."
-          report(persisted ? `Your voice note is saved on this device for the person who recorded it. ${detail}` : detail)
+          report(persisted ? `Saved on this device; will upload when storage is available. ${detail}` : "Voice note is not saved yet. Keep this page open; local saving will retry automatically.")
         } finally {
-          if (mountedRef.current) setTranscribing(false)
+          recoveringRef.current = false
+          if (mountedRef.current) { setTranscribing(false); setRetryVersion((value) => value + 1) }
         }
       }
       recorder.start()
@@ -349,6 +429,8 @@ export function VoiceCaptureButton({
       if (mountedRef.current) { setStarting(false); setListening(false) }
       report(error instanceof Error ? error.message : "Microphone permission was not granted.")
     }
+    } catch (error) {
+      report(error instanceof Error ? error.message : "Voice could not be saved on this device. Keep this page open.")
     } finally {
       if (mountedRef.current && captureRequest === captureRequestRef.current) setCheckingCapture(false)
     }
@@ -409,7 +491,8 @@ export function VoiceCaptureButton({
         ? "Recording voice note. Activate to stop."
         : starting
           ? "Opening the microphone. Activate to cancel."
+        : savedPending ? "Saved on this device; will upload. Activate to retry."
         : `${idleLabel}. Activate to start, then activate again to stop.`}
     title={!available ? unavailableLabel : undefined}
-  >{!available ? unavailableLabel : scopeLoading ? "Checking sign-in..." : !voiceScope ? "Retry voice connection" : transcribing ? "Printing words…" : listening ? "Release to use it" : starting ? "Opening microphone…" : idleLabel}</button>
+  >{!available ? unavailableLabel : scopeLoading ? "Checking sign-in..." : !voiceScope ? "Retry voice connection" : transcribing ? "Printing words…" : listening ? "Release to use it" : starting ? "Opening microphone…" : savedPending ? "Saved; will upload" : idleLabel}</button>
 }

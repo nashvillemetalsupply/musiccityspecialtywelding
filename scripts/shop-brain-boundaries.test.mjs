@@ -345,7 +345,9 @@ test("deterministic private Blob writes can resume after response loss", () => {
   const closeoutPhotos = source("lib/closeout-photo-uploads.ts")
   const closeoutPhotoInput = source("app/ops/leads/[id]/closeout-photo-input.tsx")
   const attachments = source("lib/attachment-retry.ts")
-  assert.match(transcribe, /voice-notes\/\$\{operator\.id\}\/\$\{id\}[\s\S]{0,180}allowOverwrite: true/)
+  assert.match(transcribe, /voice-notes\/\$\{operator\.id\}\/\$\{id\}/)
+  assert.match(transcribe, /addRandomSuffix: false, allowOverwrite: false/)
+  assert.match(transcribe, /await head\(pathname\)/)
   assert.equal((brief.match(/allowOverwrite: true/g) ?? []).length, 2)
   assert.ok((actions.match(/allowOverwrite: true/g) ?? []).length >= 2)
   assert.ok(closeoutUpload.indexOf("await createCloseoutPhotoUpload") < closeoutUpload.indexOf("return {"))
@@ -1025,7 +1027,7 @@ test("DONE voice addenda remain playable from their receipt", () => {
   assert.match(capture, /onTranscript: \(transcript: string, intentId\?: string\)/)
   assert.match(done, /name="voiceIntentId" value=\{voiceIntentId\}/)
   assert.match(actions, /FROM voice_transcription_intents[\s\S]{0,260}recovery_key = \$\{`closeout:\$\{leadId\}`\}/)
-  assert.match(actions, /FROM voice_transcription_intents[\s\S]{0,260}recovery_key = \$\{`done:\$\{leadId\}`\}/)
+  assert.match(actions, /FROM voice_transcription_intents\s+WHERE id = \$\{voiceIntentId\}::text AND operator_id = \$\{operator\.id\}::bigint\s+AND lead_id = \$\{leadId\}::bigint\s+AND recovery_key IN \(\$\{`done:\$\{leadId\}`\}::text, \$\{`closeout:\$\{leadId\}`\}::text\)\s+AND status = 'completed' AND blob_path <> ''/)
   assert.match(actions, /recoveredVoiceIntentId/)
 })
 
@@ -1039,8 +1041,9 @@ test("voice capture persists audio locally before upload and never calls a missi
   assert.match(voice, /if \(response\.ok && state\?\.uploadRequired !== true\) serverHasIntent = true/)
   assert.match(voice, /if \(!serverHasIntent\) throw new Error\(saved\s*\? "That voice note never reached the shop/)
   assert.match(voice, /: "That recording has not reached storage\. Try again from the device that recorded it\."/)
-  assert.match(voice, /pendingId = window\.localStorage\.getItem\(key\)[\s\S]{0,500}await recoverTranscript\(pendingId, scope\)[\s\S]{0,500}return/)
-  assert.match(voice, /await deleteVoiceIntent/)
+  assert.match(voice, /const pending = await pendingVoiceId\(scope, effectiveRecoveryKey, key\)[\s\S]{0,500}await recoverTranscript\(pendingId, scope\)[\s\S]{0,500}return/)
+  assert.match(voice, /await archiveVoiceIntent/)
+  assert.doesNotMatch(voice, /\.delete\(|removeItem\(/)
 })
 
 test("Swipe to Finish keeps the closeout cue and one-tap photo", () => {

@@ -14,7 +14,11 @@ function harness(operator = { id: 2, role: "owner" }) {
     ["@/lib/db", { getSql: () => async (strings, ...values) => {
       const query = strings.join(" ? ").replace(/\s+/g, " ").trim()
       effects.queries.push({ query, values })
-      if (query.startsWith("SELECT status, transcript, blob_path")) return [{ status: "persisted", transcript: "", blob_path: "" }]
+      if (query.startsWith("INSERT INTO voice_transcription_intents")) return [{ id: values[0] }]
+      if (query.startsWith("SELECT status, transcript, blob_path")) {
+        const inserted = effects.queries.find(({ query }) => query.startsWith("INSERT INTO voice_transcription_intents"))
+        return [{ status: "persisted", transcript: "", blob_path: "", content_type: "audio/webm", recovery_key: inserted?.values[3] }]
+      }
       return []
     } }],
     ["@vercel/blob", { put: async (pathname) => { effects.uploads++; return { pathname } } }],

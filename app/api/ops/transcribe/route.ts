@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { put } from "@vercel/blob"
+import { BlobNotFoundError, head, put } from "@vercel/blob"
 import { getSql } from "@/lib/db"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { transcribeVoiceIntent } from "@/lib/voice-transcription"
@@ -33,20 +33,56 @@ export async function POST(req: Request) {
   const leadId = leadMatch ? Number(leadMatch[1]) : null
   const sql = getSql()
   // Database intent precedes Blob storage and the transcription provider.
-  await sql`
+  const inserted = (await sql`
     INSERT INTO voice_transcription_intents (id, operator_id, content_type, status, recovery_key, lead_id)
     VALUES (${id}::text, ${operator.id}::bigint, ${contentType}::text, 'persisted', ${recoveryKey}::text, ${leadId}::bigint)
-    ON CONFLICT (id) DO NOTHING`
+    ON CONFLICT (id) DO NOTHING RETURNING id`) as Array<{ id: string }>
   const existing = (await sql`
-    SELECT status, transcript, blob_path FROM voice_transcription_intents
-    WHERE id = ${id}::text AND operator_id = ${operator.id}::bigint LIMIT 1`) as { status: string; transcript: string; blob_path: string }[]
+    SELECT status, transcript, blob_path, content_type, recovery_key FROM voice_transcription_intents
+    WHERE id = ${id}::text AND operator_id = ${operator.id}::bigint LIMIT 1`) as { status: string; transcript: string; blob_path: string; content_type: string; recovery_key: string }[]
   if (!existing[0]) return Response.json({ error: "Voice intent belongs to another operator." }, { status: 409 })
+  if (existing[0].recovery_key !== recoveryKey || existing[0].content_type !== contentType) {
+    return Response.json({ error: "This recording belongs to another voice capture. Its saved bytes have been kept." }, { status: 409 })
+  }
   if (existing[0].status === "completed" && existing[0].transcript) return Response.json({ transcript: existing[0].transcript, intentId: id })
+  if (existing[0].status === "submitting") {
+    return Response.json({ intentId: id, status: "submitting", retryable: true }, { status: 202, headers: { "Cache-Control": "private, no-store" } })
+  }
   try {
     let suppliedBytes: Buffer | undefined = bytes
     if (!existing[0].blob_path) {
       const extension = contentType.includes("ogg") ? "ogg" : contentType.includes("mp4") ? "m4a" : "webm"
-      const blob = await put(`voice-notes/${operator.id}/${id}.${extension}`, bytes, { access: "private", contentType, allowOverwrite: true })
+      const pathname = `voice-notes/${operator.id}/${id}.${extension}`
+      let blob
+      if (!inserted[0]) {
+        // An existing intent may have reached storage before its response/DB
+        // acknowledgement was lost. Prove absence before sending bytes again.
+        try {
+          blob = await head(pathname)
+        } catch (error) {
+          if (!(error instanceof BlobNotFoundError)) throw error
+        }
+      }
+      if (blob) {
+        if (blob.pathname !== pathname || Number(blob.size) !== bytes.byteLength || blob.contentType !== contentType) {
+          throw new Error("The stored voice recording does not match this capture. Saved bytes have been kept.")
+        }
+        suppliedBytes = undefined
+      } else {
+        try {
+          blob = await put(pathname, bytes, { access: "private", contentType, addRandomSuffix: false, allowOverwrite: false })
+        } catch (uploadError) {
+          // The first upload can also succeed before its response is lost.
+          try {
+            const stored = await head(pathname)
+            if (stored.pathname !== pathname || Number(stored.size) !== bytes.byteLength || stored.contentType !== contentType) throw uploadError
+            blob = stored
+            suppliedBytes = undefined
+          } catch {
+            throw uploadError
+          }
+        }
+      }
       await sql`
         UPDATE voice_transcription_intents SET blob_path = ${blob.pathname}::text,
           status = 'queued', updated_at = now() WHERE id = ${id}::text AND operator_id = ${operator.id}::bigint`
@@ -60,7 +96,7 @@ export async function POST(req: Request) {
     const message = error instanceof Error ? error.message : "Voice transcription failed."
     await sql`
       UPDATE voice_transcription_intents SET status = 'failed', last_error = ${message.slice(0, 500)}::text, updated_at = now()
-      WHERE id = ${id}::text AND status <> 'completed'`
+      WHERE id = ${id}::text AND operator_id = ${operator.id}::bigint AND status NOT IN ('completed','submitting')`
     return Response.json({ error: message, intentId: id, retryable: true }, { status: 502 })
   }
 }
