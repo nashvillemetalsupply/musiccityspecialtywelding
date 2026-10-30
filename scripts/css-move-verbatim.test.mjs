@@ -148,8 +148,8 @@ const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
     "  .ms-area-cities > div > a { min-height: 2.8rem; font-size: 1.05rem; }",
   ],
   [
-    ".ms-process-call {\r\n  border: 0;\r\n  background: transparent;\r\n  padding: 0;\r\n}",
-    ".ms-process-call {\r\n  border: 0;\r\n  background: transparent;\r\n  padding: 0;\r\n  min-height: 44px;\r\n}",
+    ".ms-process-call {\n  border: 0;\n  background: transparent;\n  padding: 0;\n}",
+    ".ms-process-call {\n  border: 0;\n  background: transparent;\n  padding: 0;\n  min-height: 44px;\n}",
   ],
   [
     ".ms-text-consent a { color: var(--sw-red); font-weight: 700; text-underline-offset: .15em; }",
@@ -158,7 +158,12 @@ const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
 ]
 
 function applyApprovedPublicCssReplacements(css) {
-  for (const [before, after] of APPROVED_PUBLIC_CSS_REPLACEMENTS) {
+  // Git checks out LF on Linux and CRLF here. Adapt only these canonical rule
+  // literals to the input; the complete expected/current byte check stays exact.
+  const lineEnding = css.match(/\r?\n/)?.[0] || "\n"
+  for (const [canonicalBefore, canonicalAfter] of APPROVED_PUBLIC_CSS_REPLACEMENTS) {
+    const before = canonicalBefore.replaceAll("\n", lineEnding)
+    const after = canonicalAfter.replaceAll("\n", lineEnding)
     assert.equal(css.split(before).length - 1, 1, `approved public CSS source rule must occur once: ${before}`)
     css = css.replace(before, after)
   }
