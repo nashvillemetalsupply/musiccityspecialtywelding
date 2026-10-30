@@ -77,8 +77,70 @@ html:has(.ms-home) {
   padding: 0.55rem;
 }
 
+.ms-home .ms-brand {
+  flex: 1;
+}
+
+/* Enlarged text must wrap inside the rail and sign, rather than be clipped
+ * by the page's decorative horizontal-overflow boundary. */
+.ms-home .ms-brand-words strong,
 .ms-home .ms-brand-words span {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ms-home .sw-sign,
+.ms-home .sw-sign > span,
+.ms-home .ms-sticker {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.ms-home .ms-sticker {
+  white-space: normal;
+}
+
+.ms-home .ms-job-glass > *,
+.ms-home .ms-job-glass-demo :where(div, strong, span, p, small) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ms-home .ms-job-glass-demo figcaption,
+.ms-home .ms-job-glass-footer {
+  flex-wrap: wrap;
+}
+
+.ms-home .ms-job-glass-route {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.ms-home .ms-territory-copy,
+.ms-home .ms-city-list span {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.ms-home .ms-territory {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .ms-home .ms-job-glass {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  }
+
+  .ms-home .ms-territory {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .ms-home .ms-job-glass-route {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .ms-home .ms-text-link,

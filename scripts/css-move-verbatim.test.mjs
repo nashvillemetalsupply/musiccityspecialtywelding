@@ -124,6 +124,8 @@ test("every retained live selector arm and declaration block survives the move",
 // P02 moves each service-area tile style onto its link so the visible tile is
 // the target. Keep this allowlist at full-rule granularity: every other public
 // CSS byte remains frozen, and each old rule must appear once in the baseline.
+// CRMACCEPT gives the process phone link and both consent links 44px touch
+// targets. Only these two exact rules join the approved replacements.
 const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
   [
     ".ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon), var(--sw-fire) 60%); color: #1b0f02; }",
@@ -145,6 +147,14 @@ const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
     "  .ms-area-cities > div strong { min-height: 2.8rem; font-size: 1.05rem; }",
     "  .ms-area-cities > div > a { min-height: 2.8rem; font-size: 1.05rem; }",
   ],
+  [
+    ".ms-process-call {\r\n  border: 0;\r\n  background: transparent;\r\n  padding: 0;\r\n}",
+    ".ms-process-call {\r\n  border: 0;\r\n  background: transparent;\r\n  padding: 0;\r\n  min-height: 44px;\r\n}",
+  ],
+  [
+    ".ms-text-consent a { color: var(--sw-red); font-weight: 700; text-underline-offset: .15em; }",
+    ".ms-text-consent a { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; vertical-align: middle; color: var(--sw-red); font-weight: 700; text-underline-offset: .15em; }",
+  ],
 ]
 
 function applyApprovedPublicCssReplacements(css) {
@@ -155,12 +165,12 @@ function applyApprovedPublicCssReplacements(css) {
   return css
 }
 
-test("public CSS remains frozen except approved P01/P02 public polish", () => {
+test("public CSS remains frozen except approved P01/P02 and CRMACCEPT public polish", () => {
   const original = read("scripts/qa/baseline/pre-s11-public-css.css")
   const current = read("app/globals.css")
   const root = fileURLToPath(new URL("..", import.meta.url))
   const expected = applyApprovedPublicCssReplacements(classify(original, scanClassUsage(root)).text.KEEP)
-  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01/P02 changes")
+  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01/P02 and CRMACCEPT changes")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
   assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")
 })

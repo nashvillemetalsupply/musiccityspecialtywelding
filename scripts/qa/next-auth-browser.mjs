@@ -65,6 +65,14 @@ try {
   assert.equal(ownerJob.status, 200)
   assert.match(ownerHtml, /OWNER_ONLY_ACCEPTANCE_913579/)
   assert.match(ownerHtml, /Acceptance Gate/)
+  // PostgreSQL BIGINT IDs arrive as text. The job boundary must send numeric
+  // IDs to client components; the durable photo outbox rejects text IDs.
+  const flightText = [...ownerHtml.matchAll(/<script>self\.__next_f\.push\((\[1,.*?\])\)<\/script>/g)]
+    .map((match) => JSON.parse(match[1])[1]).join("")
+  const clientLeadIds = [...flightText.matchAll(/"leadId":("[0-9]+"|[0-9]+)/g)].map((match) => JSON.parse(match[1]))
+  assert.ok(clientLeadIds.length > 0, "Real job HTTP must include client job IDs")
+  assert.ok(clientLeadIds.every((id) => Number.isSafeInteger(id) && id === Number(data.lead)),
+    "The real database job must cross the client boundary with numeric IDs")
   const crewJob = await request(`/ops/leads/${data.lead}`, crew)
   const crewHtml = await crewJob.text()
   assert.equal(crewJob.status, 200)

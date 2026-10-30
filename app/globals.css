@@ -2375,6 +2375,7 @@ html {
   border: 0;
   background: transparent;
   padding: 0;
+  min-height: 44px;
 }
 
 .ms-process-call:hover { color: inherit; }
@@ -3053,7 +3054,7 @@ body { overflow-x: clip; }
 .ms-text-consent strong { color: var(--sw-form-ink); font-size: var(--text-base); line-height: 1.35; }
 .ms-text-consent strong i { color: var(--sw-form-rule); font-size: var(--text-sm); font-style: normal; }
 .ms-text-consent small { color: var(--sw-form-muted); font-size: var(--text-sm); line-height: 1.5; }
-.ms-text-consent a { color: var(--sw-red); font-weight: 700; text-underline-offset: .15em; }
+.ms-text-consent a { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; vertical-align: middle; color: var(--sw-red); font-weight: 700; text-underline-offset: .15em; }
 .ms-text-consent > input { accent-color: var(--sw-red); }
 
 @media (max-width: 640px) {

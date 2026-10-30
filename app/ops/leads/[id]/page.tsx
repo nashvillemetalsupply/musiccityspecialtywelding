@@ -231,7 +231,8 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   if (!operator) return <OpsLoginForm linkError={false} />
 
   const includeTests = canAccessInternalTests(operator.role)
-  const lead = requireRouteValue(await getCachedLead(leadId, operator.role), notFound)
+  // Neon returns BIGINT IDs as text; client outboxes require a numeric job ID.
+  const lead = { ...requireRouteValue(await getCachedLead(leadId, operator.role), notFound), id: leadId }
   const showPhotoDrafts = operator.role === "owner" && photoDraftsEnabled()
   const [messages, promises, claims, calls, unifiedEvents, activityPage, operators, lineItems, attachmentClassifications, routingChoices, photoDraftEntries] = await Promise.all([
     listLeadMessages(leadId),
