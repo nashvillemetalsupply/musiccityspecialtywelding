@@ -50,7 +50,7 @@ test("only a new consented quote schedules one persisted acknowledgement without
   await assert.doesNotReject(callbacks[0])
   assert.deepEqual(sent, [{
     to: eligible.consentPhone,
-    body: "Got your request. Send a photo and the size if you can and we'll get you a price. — Music City Specialty Welding",
+    body: "Got your request. We'll call or email you back. Send a photo and the size if you can. - Music City Specialty Welding",
     leadId: 42,
     personId: 7,
     idempotencyKey: "form:42:ack",

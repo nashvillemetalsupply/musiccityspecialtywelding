@@ -455,7 +455,7 @@ export async function POST(req: Request) {
         try {
           await sendSmsPersisted({
             to: consentPhone,
-            body: "Got your request. Send a photo and the size if you can and we'll get you a price. — Music City Specialty Welding",
+            body: "Got your request. We'll call or email you back. Send a photo and the size if you can. - Music City Specialty Welding",
             leadId,
             personId: leadPersonId,
             idempotencyKey: `form:${leadId}:ack`,
