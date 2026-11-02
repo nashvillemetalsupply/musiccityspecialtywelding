@@ -20,6 +20,9 @@ import { processEvent } from "@/lib/extract";
 import { recordLeadEvent } from "@/lib/leads";
 import { prepareQuoteDraft } from "@/lib/follow-up-cadence.ts";
 import { getMessagingConsentState } from "@/lib/messaging-consent";
+import { sendSmsPersisted } from "@/lib/messages";
+import { isReservedShopPhone } from "@/lib/people";
+import { twilioSmsConfigured } from "@/lib/twilio";
 import {
   normalizeUsPhone,
   QUOTE_CONSENT_DISCLOSURE_VERSION,
@@ -344,6 +347,7 @@ export async function POST(req: Request) {
     let leadId: number | null = null;
     let leadPublicId = "";
     let leadPersonId: number | null = null;
+    let wasNewLead = false;
     if (dbConfigured()) {
       try {
         const lead = await createLead(
@@ -422,6 +426,7 @@ export async function POST(req: Request) {
           }
         }
         leadPersonId = leadRows[0]?.person_id ?? null;
+        wasNewLead = !lead.reused;
         if (lead.eventId) after(() => processEvent(lead.eventId!).catch((error) => console.error("Quote intake extraction failed:", error)));
       } catch (dbError) {
         if (textConsent && !isTest) {
@@ -443,6 +448,22 @@ export async function POST(req: Request) {
         { ok: false, accepted: false, error: `We couldn't safely save your request. Please call ${shopPhone.display} or try again.` },
         { status: 503, headers: { "Retry-After": "15" } }
       );
+    }
+
+    if (leadId !== null && wasNewLead && textConsent && !isTest && consentPhone && webTextGrant && !consentConflict && twilioSmsConfigured() && !isReservedShopPhone(consentPhone)) {
+      after(async () => {
+        try {
+          await sendSmsPersisted({
+            to: consentPhone,
+            body: "Got your request. Send a photo and the size if you can and we'll get you a price. — Music City Specialty Welding",
+            leadId,
+            personId: leadPersonId,
+            idempotencyKey: `form:${leadId}:ack`,
+          });
+        } catch (error) {
+          console.error("Quote acknowledgement text failed:", error);
+        }
+      });
     }
 
     if (leadId !== null && !isTest) {
