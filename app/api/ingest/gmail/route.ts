@@ -4,6 +4,7 @@ import { recordEvent } from "@/lib/events"
 import { processEvent } from "@/lib/extract"
 import { emailAddress, emailName, getGmailMessage, getMailboxHistoryId, gmailAccessToken, gmailAttachmentDescriptors, gmailConfigured, gmailHeaders, gmailHeaderValues, gmailPlaintext, listGmailMessageIds } from "@/lib/gmail"
 import { resolveEmailConversation } from "@/lib/ingest"
+import { acknowledgeNewEmailLead } from "@/lib/email-in-ack"
 import { notifyAll } from "@/lib/notify"
 import { isAuthorizedCron } from "@/lib/ops-auth"
 import { extractQuickBooksPaymentFacts, isAuthenticatedIntuitPayment, looksLikeIntuitPaymentEnvelope, paymentCompletesInvoice, sentMessageMayStartWork, shouldSkipGmailMessage } from "@/lib/gmail-routing.ts"
@@ -261,11 +262,29 @@ export async function GET(req: Request) {
         LIMIT 1`) as { id: number }[] : []
       const sentOperatorId = sentOperators[0]?.id ? Number(sentOperators[0].id) : null
       let eventId = await recordEvent({ kind, actorType: sent ? "operator" : "customer", actorId: sent ? sentOperatorId ?? "" : conversation.person.id, leadId: conversation.leadId, personId: conversation.person.id, externalId: id, occurredAt, body: body || subject, detail: { threadId: message.threadId, subject, from, to, labels: message.labelIds ?? [], deliveryStatus: sent ? "delivered" : null, isTest } })
+      const firstInboundReceipt = Boolean(eventId)
       if (eventId) counters.inserted++
       else {
         const existing = (await sql`SELECT id FROM events WHERE kind = ${kind}::text AND external_id = ${id}::text LIMIT 1`) as { id: number }[]
         eventId = Number(existing[0]?.id) || null
       }
+      if (!eventId) throw new Error("Email receipt could not be resumed.")
+      await acknowledgeNewEmailLead({
+        source: sent ? "email-out" : "email-in",
+        createdLead: conversation.createdLead && firstInboundReceipt,
+        existingThread: Boolean(mapped[0]),
+        messageId: id,
+        threadId: message.threadId,
+        leadId: conversation.leadId,
+        personId: conversation.person.id,
+        displayName: conversation.person.display_name || emailName(headers.from),
+        email: customerEmail,
+        subject,
+        body,
+        headers,
+        categorizedNoise: Boolean(categorizedNoise),
+        isTest: isTest || conversation.person.is_test,
+      })
       const attachmentIds: number[] = []
       for (const attachment of gmailAttachmentDescriptors(message)) {
         attachmentIds.push(await queueIngestAttachment({ provider: "gmail", externalMessageId: id, attachmentKey: attachment.key, leadId: conversation.leadId, personId: conversation.person.id, filename: attachment.filename, contentType: attachment.contentType, sensitivity: classifyAttachmentSensitivity(attachment.filename, attachment.contentType, `${subject}\n${body}`), sourceDetail: { attachmentId: attachment.attachmentId, inlineData: attachment.inlineData, declaredSize: attachment.size } }))
