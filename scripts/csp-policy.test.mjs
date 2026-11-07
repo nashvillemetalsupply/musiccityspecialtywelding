@@ -92,6 +92,8 @@ const OBSERVED_VIOLATIONS = [
   ["connect-src", "https://bded8a3c6ae-1-1053047382554.us-central1.run.app/events"],
   // O18 re-read #2 2026-10-30.
   ["connect-src", "https://n2n5o3nlb661.cloud.run/events"],
+  // O18 re-read #3 2026-11-07.
+  ["connect-src", "https://www.google.co.in/ads/ga-audiences"],
 ]
 
 test("every production-observed CSP violation is allowed by its directive", () => {

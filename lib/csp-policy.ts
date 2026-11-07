@@ -19,6 +19,11 @@
 // Meta pixel's third gateway (n2n5o3nlb661.cloud.run, 3 reports on /, from
 // connect.facebook.net/signals/config). One img-src "unknown" and two eval reports on /
 // carry no host and stay unallowlisted.
+// 2026-11-07 (O18 re-read #3, window from 2026-10-30 16:33Z): connect-src needs
+// https://www.google.co.in for the GA4 ga-audiences beacon (1 report on /).
+// apis.google.com (gapi, 3), toolytics.pa.clients6.google.com frame (2),
+// wasm-eval (/board 9, /services/:slug 1) and one img-src "unknown" stay
+// unallowlisted as extension noise.
 // See docs/testing/2026-10-08-csp-o18-triage.md.
 export const CSP_DIRECTIVES = Object.freeze({
   "default-src": ["'self'"],
@@ -68,6 +73,7 @@ export const CSP_DIRECTIVES = Object.freeze({
     "https://*.analytics.google.com",
     "https://*.googletagmanager.com",
     "https://www.google.com",
+    "https://www.google.co.in",
     "https://*.google.com",
     "https://www.googleadservices.com",
     "https://googleads.g.doubleclick.net",
