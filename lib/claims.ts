@@ -24,6 +24,7 @@ export async function addClaim(input: {
   extractedBy: string
   itemKey?: string
 }): Promise<number> {
+  if (input.value === undefined || input.value === null) throw new Error(`Claim value is required for predicate "${input.predicate}".`)
   const sql = getSql()
   const itemKey = input.itemKey || createHash("sha256").update(`${input.predicate}:${JSON.stringify(input.value)}`).digest("hex")
   const rows = (await sql`
@@ -54,6 +55,7 @@ export async function addClaim(input: {
 }
 
 export async function supersedeClaim(oldId: number, replacement: Parameters<typeof addClaim>[0]) {
+  if (replacement.value === undefined || replacement.value === null) throw new Error(`Claim value is required for predicate "${replacement.predicate}".`)
   const sql = getSql()
   const itemKey = replacement.itemKey || createHash("sha256")
     .update(`${replacement.predicate}:${JSON.stringify(replacement.value)}`)

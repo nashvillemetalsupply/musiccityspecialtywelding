@@ -181,6 +181,7 @@ export async function processEvent(eventId: number) {
   }
   for (const fact of object.facts) {
     if (fact.confidence < 0.6 || (!projectionLeadId && !event.person_id)) continue
+    if (fact.value === undefined || fact.value === null) continue
     const factHash = createHash("sha256").update(JSON.stringify({ predicate: fact.predicate, value: fact.value })).digest("hex")
     const claimId = await addClaim({ subjectType: projectionLeadId ? "lead" : "person", subjectId: projectionLeadId ?? event.person_id!, predicate: fact.predicate, value: fact.value, confidence: fact.confidence, sourceEventId: event.id, extractedBy: AI_MODELS.extraction, itemKey: `fact:${factHash}` })
     if (fact.supersedes_claim_id) {
