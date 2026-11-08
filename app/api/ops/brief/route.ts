@@ -68,7 +68,7 @@ async function shelveBriefAudio(eventId: number, day: string) {
 
 export async function GET(req: Request) {
   if (!isAuthorizedCron(req)) return Response.json({ ok: false }, { status: 401 })
-  if (!isCentralBriefHour()) return Response.json({ ok: true, skipped: "Outside the 6 AM America/Chicago brief hour." })
+  if (!isCentralBriefHour()) return Response.json({ ok: true, skipped: "Outside the 6 AM through 11:59 AM America/Chicago brief window." })
   const sql = getSql()
   const day = centralDay()
   const existing = (await sql`

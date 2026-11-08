@@ -520,6 +520,9 @@ export async function GET(req: Request) {
   )
   const centralHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hourCycle: "h23" }).format(new Date()))
   const reminderStale = database.lastReminderAt === null ? centralHour >= 2 : Date.now() - new Date(database.lastReminderAt).getTime() > 3 * 60 * 60 * 1000
+  // GitHub can delay reminders for hours; only missing the daily Vercel run
+  // plus two hours of slack holds readiness false.
+  const reminderDead = database.lastReminderAt === null ? centralHour >= 2 : Date.now() - new Date(database.lastReminderAt).getTime() > 26 * 60 * 60 * 1000
   const digestStale = database.lastDigestAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastDigestAt).getTime() > 26 * 60 * 60 * 1000
   // GitHub schedules Gmail every 15 minutes from 12:00-23:59 UTC and hourly
   // overnight. Scheduled runs can be delayed under load, so the readiness
@@ -533,12 +536,13 @@ export async function GET(req: Request) {
   // attempts (pending/failed past 48h; stored photos keep blocking until
   // attached) and voice notes no retry can finish. Visible, never deleted.
   const warnings = [
+    reminderStale ? { kind: "reminder-stale", lastAt: database.lastReminderAt } : null,
     gmailConfigured() && gmailStale ? { kind: "gmail-stale", lastAt: database.lastGmailAt } : null,
     (database.quotePhotoAbandoned ?? 0) > 0 ? { kind: "quote-photos-abandoned", count: database.quotePhotoAbandoned } : null,
     (database.voiceTranscriptExhausted ?? 0) > 0 ? { kind: "voice-transcripts-exhausted", count: database.voiceTranscriptExhausted } : null,
   ].filter((warning) => warning !== null)
   const morningBriefStale = database.lastBriefAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastBriefAt).getTime() > 26 * 60 * 60 * 1000
-  const reminderHealthy = !reminderStale && (database.lastReminderOk === true || database.lastReminderAt === null)
+  const reminderHealthy = !reminderDead && (database.lastReminderOk === true || database.lastReminderAt === null)
   const digestHealthy = !digestStale && (database.lastDigestOk === true || database.lastDigestAt === null)
   const briefHealthy = !morningBriefStale && (database.lastBriefOk === true || database.lastBriefAt === null)
   const durableFailuresHealthy = (
@@ -634,6 +638,7 @@ export async function GET(req: Request) {
         lastBriefOk: database.lastBriefOk,
         // Surfaces a silently-disabled GitHub schedule once reminders have run at least once.
         reminderStale,
+        reminderDead,
         digestStale,
         gmailStale: gmailConfigured() && gmailStale,
         morningBriefStale,

@@ -685,7 +685,7 @@ test("time, transcript, and activity windows preserve current truth", () => {
   const events = source("lib/events.ts")
   assert.match(brief, /timeZone: "America\/Chicago"/)
   assert.match(briefSchedule, /timeZone: "America\/Chicago"/)
-  assert.match(briefSchedule, /return hour === 6/)
+  assert.match(briefSchedule, /return hour >= 6 && hour <= 11/)
   assert.match(brief, /brief_audio_status = 'submitting'/)
   assert.match(calls, /ORDER BY started_at DESC, id DESC LIMIT 200\) recent ORDER BY started_at ASC/)
   assert.match(messages, /ORDER BY sent_at DESC, id DESC LIMIT 300[\s\S]{0,80}recent ORDER BY sent_at ASC/)

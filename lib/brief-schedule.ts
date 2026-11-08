@@ -4,7 +4,7 @@ export function isCentralBriefHour(date: Date = new Date()) : boolean {
     hour: "2-digit",
     hour12: false,
   }).format(date))
-  return hour === 6
+  return hour >= 6 && hour <= 11
 }
 
 export function morningBriefDedupeKey(day: string) : string {
