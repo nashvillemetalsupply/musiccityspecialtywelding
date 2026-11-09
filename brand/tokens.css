@@ -1,0 +1,102 @@
+/* W1 kit tokens. Import into the public site during W2, after the owner look. */
+:root {
+  /* Brand palette. Original logo blue and red stay inside the artwork. */
+  --mcsw-carbon: #0B0A09;
+  --mcsw-bone: #E8E1D4;
+  --mcsw-steel: #777872;
+  --mcsw-arc: #FF4A1C;
+
+  /* Neutral support tones. Neither is a second accent. */
+  --mcsw-neutral-muted-dark: #B5B3A9;
+  --mcsw-neutral-muted-light: #4B4B46;
+
+  /* Semantic layer: dark is the default brand field. */
+  --mcsw-bg: var(--mcsw-carbon);
+  --mcsw-surface: var(--mcsw-carbon);
+  --mcsw-surface-inverse: var(--mcsw-bone);
+  --mcsw-text: var(--mcsw-bone);
+  --mcsw-text-muted: var(--mcsw-neutral-muted-dark);
+  --mcsw-text-inverse: var(--mcsw-carbon);
+  --mcsw-border: var(--mcsw-steel);
+  --mcsw-action-bg: var(--mcsw-arc);
+  --mcsw-action-text: var(--mcsw-carbon);
+  --mcsw-action-hover-bg: var(--mcsw-arc);
+  --mcsw-action-active-bg: var(--mcsw-arc);
+  --mcsw-focus: var(--mcsw-arc);
+  --mcsw-data: var(--mcsw-arc);
+  --mcsw-disabled-text: var(--mcsw-steel);
+  --mcsw-focus-width: 3px;
+  --mcsw-focus-offset: 4px;
+
+  /* W2 supplies the two --font-* variables with next/font/google. */
+  --mcsw-font-display: var(--font-archivo, "Archivo"), sans-serif;
+  --mcsw-font-body: var(--font-ibm-plex-sans, "IBM Plex Sans"), sans-serif;
+  --mcsw-weight-display: 800;
+  --mcsw-weight-body: 400;
+  --mcsw-weight-label: 500;
+  --mcsw-weight-strong: 600;
+  --mcsw-tracking-display: -0.045em;
+  --mcsw-tracking-label: 0.08em;
+  --mcsw-leading-display: 0.92;
+  --mcsw-leading-body: 1.5;
+  --mcsw-type-display: clamp(3.25rem, 8vw, 7.5rem);
+  --mcsw-type-section: clamp(2rem, 4.5vw, 4rem);
+  --mcsw-type-body: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+  --mcsw-type-small: 0.875rem;
+  --mcsw-type-label: 0.75rem;
+  --mcsw-measure: 58ch;
+
+  --mcsw-space-1: 0.25rem;
+  --mcsw-space-2: 0.5rem;
+  --mcsw-space-3: 0.75rem;
+  --mcsw-space-4: 1rem;
+  --mcsw-space-6: 1.5rem;
+  --mcsw-space-8: 2rem;
+  --mcsw-space-12: 3rem;
+  --mcsw-space-16: 4rem;
+  --mcsw-space-section: clamp(3rem, 7vw, 7rem);
+  --mcsw-gutter: clamp(1.25rem, 4vw, 4rem);
+  --mcsw-content-width: 80rem;
+  --mcsw-border-width: 1px;
+  --mcsw-radius: 0;
+  --mcsw-radius-max: 6px;
+  --mcsw-tap-target: 44px;
+
+  /* Start here. Adjust exposure per source only when weld detail disappears. */
+  --mcsw-photo-grade: saturate(0.72) contrast(1.12) brightness(0.88);
+  --mcsw-photo-position: 50% 50%;
+  --mcsw-duration-fast: 120ms;
+  --mcsw-duration-reveal: 220ms;
+  --mcsw-ease: cubic-bezier(0.2, 0, 0, 1);
+  --mcsw-action-shift: -1px;
+}
+
+/* Put the context on the section that owns the light field. */
+[data-mcsw-theme="light"] {
+  --mcsw-bg: var(--mcsw-bone);
+  --mcsw-surface: var(--mcsw-bone);
+  --mcsw-surface-inverse: var(--mcsw-carbon);
+  --mcsw-text: var(--mcsw-carbon);
+  --mcsw-text-muted: var(--mcsw-neutral-muted-light);
+  --mcsw-text-inverse: var(--mcsw-bone);
+  --mcsw-focus: var(--mcsw-carbon);
+}
+
+/* A dark island inside a light section restores all context-dependent roles. */
+[data-mcsw-theme="dark"] {
+  --mcsw-bg: var(--mcsw-carbon);
+  --mcsw-surface: var(--mcsw-carbon);
+  --mcsw-surface-inverse: var(--mcsw-bone);
+  --mcsw-text: var(--mcsw-bone);
+  --mcsw-text-muted: var(--mcsw-neutral-muted-dark);
+  --mcsw-text-inverse: var(--mcsw-carbon);
+  --mcsw-focus: var(--mcsw-arc);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --mcsw-duration-fast: 0ms;
+    --mcsw-duration-reveal: 0ms;
+    --mcsw-action-shift: 0px;
+  }
+}
