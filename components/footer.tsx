@@ -2,7 +2,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShopCrest } from "@/components/weldment"
 import { getShopPhone } from "@/lib/shop-contact"
-import { ShopActions } from "@/components/shop-actions"
 
 export function Footer({ home = false }: { home?: boolean }) {
   const shopPhone = getShopPhone()
@@ -14,7 +13,6 @@ export function Footer({ home = false }: { home?: boolean }) {
         <p className="ms-display">Built here.<br />Fixed where it sits.</p>
       </div>
       <div className="ms-footer-contact">
-        <ShopActions phoneHref={shopPhone.href} />
         <div className="ms-footer-call">
           <strong>Phone</strong>
           <a href={shopPhone.href}>{shopPhone.display}</a>

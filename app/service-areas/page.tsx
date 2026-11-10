@@ -41,8 +41,6 @@ export default function ServiceAreasPage() {
           <span>Outside this list? Call with the exact address and scope to check the fit.</span>
         </section>
 
-        <div className="ms-subactions"><ShopActions phoneHref={shopPhone.href} /></div>
-
         <section className="ms-area-travel">
           <h2 className="ms-display">What makes a road call work.</h2>
           <ul>

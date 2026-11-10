@@ -80,8 +80,6 @@ export default async function ServicePage({ params }: PageProps) {
           </div>
         </section>
 
-        <div className="ms-subactions"><ShopActions phoneHref={shopPhone.href} /></div>
-
         <section className="ms-subplan">
           <div className="ms-subplan-lead">
             <h2 className="ms-display">Help us see the whole job.</h2>
@@ -96,8 +94,6 @@ export default async function ServicePage({ params }: PageProps) {
           <p>Once the job is active, your customer page holds job updates, approved progress photos, and paperwork.</p>
           <Link href="/#job-glass">See how it works <ArrowUpRight aria-hidden="true" /></Link>
         </aside>
-
-        <div className="ms-subactions"><ShopActions phoneHref={shopPhone.href} /></div>
 
         <section className="ms-subfaq">
           <h2 className="ms-display">Straight answers.</h2>
@@ -126,7 +122,7 @@ export default async function ServicePage({ params }: PageProps) {
           </div>
         </section>
 
-        <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
+        <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} showActions={false} />
       </main>
       <Footer />
       <MobileQuickActions phoneHref={shopPhone.href} />

@@ -94,3 +94,63 @@ including `browser-results.json`, `interactions.json`, `full-suite-final.log`,
 `typecheck-final.log`, `eslint-final.log`, `build-webpack.log` and the full-page
 `home-390.png` / `home-1440.png` captures. No server or acquisition settings were
 changed. No push or deployment was performed.
+
+## CTA trim — November 10, 2026
+
+Branch: `cta-trim`. Baseline: `1e7a23e`, including the actions introduced in
+`51d0ea0`. Local commit only; no push or deployment.
+
+Home now has three in-page Call the shop / Ask the shop pairs: the hero,
+after the process steps (following services), and beside the quote form before
+the footer. Removed the work/proof, capabilities, customer-example, separate
+after-form, and footer actions. The customer-page example retains its wording
+as plain text. Each service page and service areas retain only hero and closing
+pairs. Header, mobile menu, `.ms-mobile-cta`, and assistant widget are unchanged.
+Existing plain phone links in the form fallback and footer remain.
+
+Counts below come from parsed **production HTML**, excluding only the header
+and `.ms-mobile-cta`. Both builds enable `NEXT_PUBLIC_ASSISTANT_CHAT=1`. Each
+`tel:` anchor counts once; Ask counts actual links/buttons labeled Ask the shop.
+Hydration payload strings and copy mentions do not count. The unchanged assistant
+launcher/dialog contributes **2 tel links and 1 Ask button** to every row,
+including its hidden dialog link.
+
+| Page | Tel before | Tel after | Ask before | Ask after |
+| --- | ---: | ---: | ---: | ---: |
+| `/` | 12 | 7 | 8 | 4 |
+| `/services/mobile-welding` | 10 | 6 | 6 | 3 |
+| `/services/trailer-welding-repair` | 10 | 6 | 6 | 3 |
+| `/services/gate-repair` | 10 | 6 | 6 | 3 |
+| `/services/equipment-repair` | 10 | 6 | 6 | 3 |
+| `/services/architectural-welding` | 10 | 6 | 6 | 3 |
+| `/services/custom-fabrication` | 10 | 6 | 6 | 3 |
+| `/services/custom-metal-products` | 10 | 6 | 6 | 3 |
+| `/service-areas` | 7 | 5 | 5 | 3 |
+
+Within main content plus footer, home changes from **10 tel / 7 Ask** to
+**5 tel / 3 Ask** (3 call buttons plus 2 plain phone links). Each service changes
+from **8 / 5** to **4 / 2**; service areas changes from **5 / 4** to **3 / 2**.
+The unchanged header/menu contributes 2 tel / 2 Ask, and the unchanged sticky
+bar contributes 1 tel / 1 Ask. Thus the baseline whole home HTML has 15 tel links.
+
+Removed unused action-wrapper CSS from the cohesion and homepage polish sheets.
+Kept shared action components and historical CSS still covered by preservation
+tests. The quote form's closing action group keeps the original top spacing and
+aligns both controls together. No other copy, colors, or layout changed.
+
+Verification and built-HTML measurements are recorded in
+`.scratch/cta-trim/`. Rendered regression tests cover all seven service routes,
+home, and service areas with the assistant both enabled and disabled.
+
+- Full final suite: **1,492 passed, 3 skipped, 0 failed** (1,495 total), Node
+  24.22.1. `npx tsc --noEmit` and full `npx eslint .`: passed.
+- Production build: `npx next build --webpack` passed, followed by
+  `node scripts/bundle-budget.mjs`: home **622,536 / 648,316 bytes**, board
+  **725,353 / 817,538 bytes**. Default `npm run build` encounters the same
+  pre-existing Turbopack external-dependency-junction limitation documented above.
+- All nine public route HTML files were counted before/after. Header/menu and
+  sticky counts match exactly on every route.
+- Six production viewport checks: home, mobile welding, and service areas at
+  390px and 1440px. Expected action-group counts, aligned Call/Ask controls,
+  targets at least 44px tall, and no horizontal overflow. Home contact screenshots
+  visually checked at both widths. No form submissions or outbound messages.

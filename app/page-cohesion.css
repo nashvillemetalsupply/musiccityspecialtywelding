@@ -127,7 +127,6 @@
 .ms-site .ms-text-link { color: inherit; text-transform: none; letter-spacing: 0; font: 700 1rem/1.4 var(--font-ms-sans), Arial, sans-serif; }
 .ms-site .ms-text-link svg { width: 1.1rem; height: 1.1rem; }
 .ms-site .ms-section-actions { margin-top: 2rem; }
-.ms-site .ms-capability-actions { grid-column: 1 / -1; }
 
 /* The real shop and its work carry the character, without simulated props. */
 .ms-site .ms-hero { max-width: 88rem; margin-inline: auto; background: var(--ms-carbon); }
@@ -208,8 +207,6 @@
 .ms-site .ms-job-glass-route .is-done { color: var(--ms-carbon); border-color: var(--ms-carbon); background: none; }
 .ms-site .ms-job-glass-route .is-now { color: var(--ms-bone); border-color: var(--ms-carbon); background: var(--ms-carbon); }
 .ms-site .ms-job-glass-progress img { border: 0; box-shadow: none; transform: none; }
-.ms-site .ms-job-glass-footer .ms-button-primary { color: var(--ms-carbon); background: var(--ms-arc); border: 1px solid var(--ms-arc); font: 700 1rem/1.25 var(--font-ms-sans), Arial, sans-serif; text-transform: none; }
-.ms-site .ms-job-glass-footer .ms-button-primary:hover { color: var(--ms-bone); background: var(--ms-carbon); border-color: var(--ms-carbon); }
 .ms-site .ms-quote-form { color: var(--ms-carbon); background: var(--ms-bone); border: 1px solid var(--ms-rule-light); border-radius: 0; box-shadow: none; transform: none; }
 .ms-site .ms-form-heading span { color: var(--ms-carbon); font: 700 1.25rem/1.4 var(--font-ms-sans), Arial, sans-serif; }
 .ms-site .ms-form-heading small, .ms-site .wm-order-no { color: var(--ms-ink-muted); }
@@ -221,13 +218,13 @@
 .ms-site .ms-form-fallback, .ms-site .ms-form-note, .ms-site .ms-upload small { color: var(--ms-ink-muted); }
 .ms-site .ms-quote-form .ms-button-secondary { color: var(--ms-carbon); border-color: var(--ms-carbon); }
 .ms-site .ms-quote-form .ms-button-secondary:hover { color: var(--ms-bone); background: var(--ms-carbon); }
+.ms-site .ms-contact-lead > .ms-actions { margin-top: 1.9rem; }
+.ms-site .ms-contact-lead .ms-contact-call { margin-top: 0; }
 .ms-site .ms-contact-call svg { color: currentColor; }
 .ms-site .ms-contact-number { margin-top: .5rem; font-size: 1rem; }
-.ms-site .ms-subactions { padding: 2rem var(--ms-gutter); }
 .ms-site .ms-previews button { color: var(--ms-bone); background: var(--ms-carbon); }
 .ms-site .ms-text-consent { grid-template-columns: 44px minmax(0, 1fr); }
 .ms-site .ms-text-consent > input { width: 44px !important; height: 44px; margin: 0; accent-color: var(--ms-carbon); }
-.ms-site .ms-closing-actions { padding: 2rem var(--ms-gutter); border-top: 1px solid var(--ms-rule); }
 
 /* Shared shell and service pages follow the home page's hierarchy. */
 .ms-site.ms-nav, .ms-site .ms-nav { background: var(--ms-carbon); border-bottom: 1px solid var(--ms-rule); box-shadow: none; }

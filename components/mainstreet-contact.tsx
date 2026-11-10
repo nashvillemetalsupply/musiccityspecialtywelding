@@ -3,6 +3,7 @@
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
+import { AskShopButton } from "@/components/shop-actions"
 import { captureAttribution } from "@/lib/attribution"
 import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID, queueMeasurementEvent, reportMetaLead } from "@/lib/measurement"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
@@ -39,7 +40,7 @@ const emptyForm: QuoteForm = {
   textConsent: false,
 }
 
-export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY }: { phoneHref?: string; phoneDisplay?: string }) {
+export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY, showActions = true }: { phoneHref?: string; phoneDisplay?: string; showActions?: boolean }) {
   const [formData, setFormData] = useState<QuoteForm>(emptyForm)
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
@@ -192,10 +193,13 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
       <div className="ms-contact-lead">
         <h2 className="ms-display" id="contact-title">Show us the job.</h2>
         <p>Call the shop or send the details below. Photos help us see what needs welding.</p>
-        <a className="ms-contact-call ms-button ms-button-primary" href={phoneHref}>
-          <Phone aria-hidden="true" />
-          <span>Call the shop</span>
-        </a>
+        {showActions && <div className="ms-actions">
+          <a className="ms-contact-call ms-button ms-button-primary" href={phoneHref}>
+            <Phone aria-hidden="true" />
+            <span>Call the shop</span>
+          </a>
+          <AskShopButton />
+        </div>}
         <p className="ms-contact-number">{phoneDisplay}</p>
       </div>
 

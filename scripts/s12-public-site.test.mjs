@@ -55,7 +55,7 @@ test("service-area city links own the full visual tile and keep their destinatio
 
 test("service pages keep the local form and share the site-wide Call and Ask actions", () => {
   assert.match(servicePage, /import \{ MainstreetContact \} from "@\/components\/mainstreet-contact"/)
-  assert.match(servicePage, /<MainstreetContact phoneHref=\{shopPhone\.href\} phoneDisplay=\{shopPhone\.display\} \/>/)
+  assert.match(servicePage, /<MainstreetContact phoneHref=\{shopPhone\.href\} phoneDisplay=\{shopPhone\.display\} showActions=\{false\} \/>/)
   assert.match(servicePage, /import \{ ShopActions \} from "@\/components\/shop-actions"/)
   assert.match(servicePage, /<ShopActions phoneHref=\{shopPhone\.href\}/)
   const actions = readFileSync(new URL("../components/shop-actions.tsx", import.meta.url), "utf8")

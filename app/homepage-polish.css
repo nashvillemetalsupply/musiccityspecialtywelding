@@ -54,19 +54,6 @@ html:has(.ms-home) {
   margin-top: 2rem;
 }
 
-.ms-home .ms-capability-actions {
-  grid-column: 1 / -1;
-}
-
-.ms-home .ms-closing-actions {
-  padding: 2rem clamp(1rem, 4vw, 2.75rem);
-}
-
-.ms-home .ms-closing-actions > * {
-  max-width: 68rem;
-  margin-inline: auto;
-}
-
 /* Keep every homepage anchor clear of the pinned shop navigation. */
 .ms-home :where(section[id]) {
   scroll-margin-top: 5rem;

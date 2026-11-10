@@ -12,7 +12,7 @@ import { Footer } from "@/components/footer"
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { Navbar } from "@/components/navbar"
-import { AskShopButton, ShopActions } from "@/components/shop-actions"
+import { ShopActions } from "@/components/shop-actions"
 import { createPublicMetadata, publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./homepage-polish.css"
@@ -263,7 +263,6 @@ export default function Page() {
               More work on Facebook <ArrowUpRight aria-hidden="true" />
             </a>
           </div>
-          <ShopActions phoneHref={shopPhone.href} className="ms-section-actions" />
         </section>
 
         <WeldSeam id="wm-bead-services" />
@@ -310,7 +309,6 @@ export default function Page() {
             <ul>
               {adVerifiedCapabilities.map((capability) => <li key={capability}>{capability}</li>)}
             </ul>
-            <ShopActions phoneHref={shopPhone.href} className="ms-capability-actions" />
           </aside>
         </section>
 
@@ -355,7 +353,6 @@ export default function Page() {
               <li><strong>The work</strong><span>Status and approved progress photos from the crew doing it.</span></li>
               <li><strong>The paperwork</strong><span>Quote, invoice, and payment link in one clean place.</span></li>
             </ul>
-            <AskShopButton className="ms-button ms-button-secondary" />
           </div>
 
           <figure className="ms-job-glass-demo" aria-label="Example private customer job page">
@@ -370,7 +367,7 @@ export default function Page() {
               <Image src="/images/owner-work/IMG_20250723_161108.webp" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 760px) 5.8rem, 7.5rem" />
               <p><small>Example shop update</small><strong>Frame fitted square. Hinge stock is next.</strong></p>
             </div>
-            <div className="ms-job-glass-footer"><span>Questions about the job?</span><a className="ms-button ms-button-primary" href={shopPhone.href}>Call the shop</a></div>
+            <div className="ms-job-glass-footer"><span>Questions about the job?</span><span>Call the shop</span></div>
           </figure>
         </section>
 
@@ -414,9 +411,6 @@ export default function Page() {
         <WeldSeam id="wm-bead-contact" />
 
         <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
-        <div className="ms-closing-actions" aria-label="Talk to the shop">
-          <ShopActions phoneHref={shopPhone.href} />
-        </div>
       </main>
 
       <WeldSeam id="wm-bead-footer" />
