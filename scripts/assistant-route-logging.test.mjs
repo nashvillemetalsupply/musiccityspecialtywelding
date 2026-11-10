@@ -40,8 +40,14 @@ function route({ enabled = true, reason, failure, invalidInput = false } = {}) {
     assert.ok(modules.has(name), `unmocked route import ${name}`)
     return modules.get(name)
   }, loaded, loaded.exports)
-  return { logs, post: () => loaded.exports.POST(new Request("http://localhost/api/assist", { method: "POST" })) }
+  return { logs, config: loaded.exports, post: () => loaded.exports.POST(new Request("http://localhost/api/assist", { method: "POST" })) }
 }
+
+test("assist declares a Node runtime and duration above its shared model budget", () => {
+  const { config } = route()
+  assert.equal(config.runtime, "nodejs")
+  assert.equal(config.maxDuration, 60)
+})
 
 test("assist 200 responses log only an allowlisted handoff reason and status", async () => {
   for (const reason of [undefined, "human", "unknown", "model-error", "rate-limit", "private customer 615-555-0199"]) {

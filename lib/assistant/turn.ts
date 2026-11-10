@@ -1,4 +1,5 @@
 import { jsonWithClaude, type ClaudeModelDiagnostics } from "../ai.ts"
+import { recordClaudeRequestDiagnostics, type ClaudeRequestDiagnostics } from "../claude-diagnostics.ts"
 import { ASSISTANT_KNOWLEDGE, ASSISTANT_SHOP_PHONE, assistantKnowledge } from "./knowledge.ts"
 import { stripAssistantMoney } from "./money.ts"
 import { ASSISTANT_SHOP_EMAIL, assistantContactReply, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
@@ -153,7 +154,7 @@ function parseFields(value: unknown, conversation: AssistantMessage[]): Assistan
   }
 }
 
-function parseTurnOutput(value: unknown, conversation: AssistantMessage[], diagnostics?: ClaudeModelDiagnostics): {
+function parseTurnOutput(value: unknown, conversation: AssistantMessage[], diagnostics?: ClaudeModelDiagnostics, requestDiagnostics?: ClaudeRequestDiagnostics): {
   output: Record<string, unknown> & { reply: string }; fields: AssistantFields
 } {
   try {
@@ -168,6 +169,7 @@ function parseTurnOutput(value: unknown, conversation: AssistantMessage[], diagn
     const safeMessages = ["Invalid assistant response.", "Invalid assistant reply.", "Invalid assistant fields.", "Invalid assistant job classification.", "Invalid assistant lead field.", "Invalid assistant callback phone."]
     const error = new Error(failure instanceof Error && safeMessages.includes(failure.message) ? failure.message : "Invalid assistant response.")
     if (diagnostics) Object.assign(error, { modelDiagnostics: diagnostics })
+    if (requestDiagnostics) recordClaudeRequestDiagnostics(error, requestDiagnostics)
     throw error
   }
 }
@@ -182,6 +184,7 @@ export async function handleAssistantTurn(
   if (!conversation.length || conversation.at(-1)?.role !== "user") throw new Error("Assistant needs a customer turn.")
   const phone = options.phone ?? ASSISTANT_SHOP_PHONE
   let modelDiagnostics: ClaudeModelDiagnostics | undefined
+  let requestDiagnostics: ClaudeRequestDiagnostics | undefined
   const result = await jsonWithClaude({
     system: `${ASSISTANT_SYSTEM_PROMPT}\nRepository knowledge:\n${ASSISTANT_KNOWLEDGE}\nShop phone: ${JSON.stringify(phone)}` + (options.voice
       ? `\nThis is a phone conversation. Use at most two short sentences, no links or phone digits. To reach a person, say person or press zero. Ask for the need and name; do not infer either from caller ID. The application uses the verified caller number ${JSON.stringify(options.voice.callbackPhone || "unavailable")} for callbacks; do not ask for another number. Never say an audio recording is running. Answers are saved as job notes.`
@@ -193,8 +196,9 @@ export async function handleAssistantTurn(
     maxRetries: 0,
     signal: options.signal ?? AbortSignal.timeout(25_000),
     onModelDiagnostics: (diagnostics) => { modelDiagnostics = diagnostics },
+    onRequestDiagnostics: (diagnostics) => { requestDiagnostics = diagnostics },
   })
-  const { output, fields } = parseTurnOutput(result, conversation, modelDiagnostics)
+  const { output, fields } = parseTurnOutput(result, conversation, modelDiagnostics, requestDiagnostics)
   const contact = extractAssistantContact(conversation)
   if (contact.email) fields.email = contact.email
   // A corrected number in a later customer turn overrides a stale model choice.

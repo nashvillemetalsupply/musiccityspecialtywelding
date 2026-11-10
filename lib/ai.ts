@@ -1,7 +1,9 @@
 import { getSql } from "@/lib/db"
 import { AI_MAX_RETRIES, buildAiUsageRun, retryAiRequest, runLoggedAiCall, type AiCallOptions, type AiCallRecord, type AiUsageRun } from "@/lib/ai-usage.ts"
+import { ClaudeResponseError, recordClaudeRequestDiagnostics, type ClaudeModelDiagnostics, type ClaudeRequestDiagnostics } from "./claude-diagnostics.ts"
 
 export { AI_MAX_RETRIES }
+export { ClaudeResponseError, type ClaudeModelDiagnostics } from "./claude-diagnostics.ts"
 
 async function persistAiUsageRun(row: AiUsageRun): Promise<void> {
   try {
@@ -44,23 +46,7 @@ export function claudeConfigured() {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim())
 }
 
-type ClaudeInput = { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; isTest?: boolean; operation?: string; onModelDiagnostics?: (diagnostics: ClaudeModelDiagnostics) => void }
-
-export type ClaudeModelDiagnostics = {
-  stop_reason: string | null
-  content_block_types: string[]
-  usage: Record<string, number> | null
-}
-
-export class ClaudeResponseError extends Error {
-  readonly modelDiagnostics: ClaudeModelDiagnostics
-
-  constructor(message: string, modelDiagnostics: ClaudeModelDiagnostics) {
-    super(message)
-    this.name = "ClaudeResponseError"
-    this.modelDiagnostics = modelDiagnostics
-  }
-}
+type ClaudeInput = { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; isTest?: boolean; operation?: string; onModelDiagnostics?: (diagnostics: ClaudeModelDiagnostics) => void; onRequestDiagnostics?: (diagnostics: ClaudeRequestDiagnostics) => void }
 
 type ClaudeMessage = { content?: { type?: string; text?: unknown }[]; stop_reason?: string; usage?: unknown }
 
@@ -104,69 +90,89 @@ function firstJsonObject(content: string): string {
 
 async function postClaude(input: ClaudeInput, responseFormat: "text" | "json") {
   const key = process.env.ANTHROPIC_API_KEY?.trim()
-  if (!key) throw new Error("ANTHROPIC_API_KEY is not set.")
+  if (!key) throw new ClaudeResponseError("ANTHROPIC_API_KEY is not set.", claudeModelDiagnostics({}))
   const maxRetries = Math.max(0, Math.min(input.maxRetries ?? AI_MAX_RETRIES, 4))
-  return runAiCall({ operation: input.operation ?? `claude-${responseFormat}`, provider: "anthropic", model: CLAUDE_MODEL, isTest: input.isTest }, async () => {
-    const request = async (maxTokens: number, previousDiagnostics?: ClaudeModelDiagnostics): Promise<ClaudeMessage> => {
-      try {
-        const response = await retryAiRequest(() => fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({
-            model: CLAUDE_MODEL,
-            system: responseFormat === "json" ? `${input.system}\nReturn only one valid JSON object, without markdown or any other text.` : input.system,
-            messages: [{ role: "user", content: input.prompt }],
-            max_tokens: maxTokens,
-            stream: false,
-          }),
-          signal: input.signal ?? AbortSignal.timeout(30_000),
-        }), (candidate) => !candidate.ok && (candidate.status === 429 || candidate.status >= 500), maxRetries)
-        if (!response.ok) throw new ClaudeResponseError(`Claude refused the request (${response.status}).`, claudeModelDiagnostics({}))
+  let attemptCount = 0
+  let httpStatus: number | null = null
+  try {
+    const result = await runAiCall({ operation: input.operation ?? `claude-${responseFormat}`, provider: "anthropic", model: CLAUDE_MODEL, isTest: input.isTest }, async () => {
+      const request = async (maxTokens: number, previousDiagnostics?: ClaudeModelDiagnostics): Promise<ClaudeMessage> => {
         try {
-          const message: unknown = await response.json()
-          if (!message || typeof message !== "object" || Array.isArray(message)) throw new Error("Invalid Messages response")
-          return message as ClaudeMessage
-        } catch {
-          throw new ClaudeResponseError("Claude returned an invalid response.", claudeModelDiagnostics({}))
+          const response = await retryAiRequest(async () => {
+            attemptCount++
+            // A failed network attempt must not inherit a previous HTTP status.
+            httpStatus = null
+            const candidate = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+              body: JSON.stringify({
+                model: CLAUDE_MODEL,
+                system: responseFormat === "json" ? `${input.system}\nReturn only one valid JSON object, without markdown or any other text.` : input.system,
+                messages: [{ role: "user", content: input.prompt }],
+                max_tokens: maxTokens,
+                stream: false,
+              }),
+              signal: input.signal ?? AbortSignal.timeout(30_000),
+            })
+            httpStatus = candidate.status
+            return candidate
+          }, (candidate) => !candidate.ok && (candidate.status === 429 || candidate.status >= 500), maxRetries)
+          if (!response.ok) throw new ClaudeResponseError(`Claude refused the request (${response.status}).`, claudeModelDiagnostics({}))
+          try {
+            const message: unknown = await response.json()
+            if (!message || typeof message !== "object" || Array.isArray(message)) throw new Error("Invalid Messages response")
+            return message as ClaudeMessage
+          } catch (error) {
+            const failure = new ClaudeResponseError("Claude returned an invalid response.", claudeModelDiagnostics({}))
+            // Reading the body also observes the request deadline. Keep that
+            // distinction without copying body/parser error text into logs.
+            if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) failure.name = error.name
+            throw failure
+          }
+        } catch (error) {
+          if (!previousDiagnostics) throw error
+          // A failed retry has no replacement response metadata. Retain the
+          // truncated response's evidence without copying transport error text.
+          const failure = new ClaudeResponseError(error instanceof ClaudeResponseError ? error.message : "Claude request failed.", previousDiagnostics)
+          if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) failure.name = error.name
+          throw failure
         }
-      } catch (error) {
-        if (!previousDiagnostics) throw error
-        // A failed retry has no replacement response metadata. Retain the
-        // truncated response's evidence without copying transport error text.
-        const failure = new ClaudeResponseError(error instanceof ClaudeResponseError ? error.message : "Claude request failed.", previousDiagnostics)
-        if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) failure.name = error.name
-        throw failure
       }
-    }
-    const maxTokens = input.maxTokens ?? (responseFormat === "json" ? 2000 : 1000)
-    let json = await request(maxTokens)
-    // A truncated response is never parsed, even if its text happens to contain
-    // a complete object. Retry once with room for the full response instead.
-    if (json.stop_reason === "max_tokens") json = await request(maxTokens * 2, claudeModelDiagnostics(json))
-    const diagnostics = claudeModelDiagnostics(json)
-    input.onModelDiagnostics?.(diagnostics)
-    if (json.stop_reason !== "end_turn" && json.stop_reason !== "stop_sequence") {
-      throw new ClaudeResponseError("Claude did not finish its response.", diagnostics)
-    }
-    const content = (Array.isArray(json.content) ? json.content : [])
-      .filter((block) => block?.type === "text" && typeof block.text === "string")
-      .map((block) => block.text).join("").trim()
-    if (!content) throw new ClaudeResponseError("Claude returned no text.", diagnostics)
-    let parsed: unknown
-    if (responseFormat === "json") {
-      try {
-        parsed = JSON.parse(firstJsonObject(content))
-      } catch {
-        // JSON.parse errors can quote the model's answer; keep failure records
-        // to protocol metadata and a stable error message instead.
-        throw new ClaudeResponseError("Claude returned an invalid JSON object.", diagnostics)
+      const maxTokens = input.maxTokens ?? (responseFormat === "json" ? 2000 : 1000)
+      let json = await request(maxTokens)
+      // A truncated response is never parsed, even if its text happens to contain
+      // a complete object. Retry once with room for the full response instead.
+      if (json.stop_reason === "max_tokens") json = await request(maxTokens * 2, claudeModelDiagnostics(json))
+      const diagnostics = claudeModelDiagnostics(json)
+      input.onModelDiagnostics?.(diagnostics)
+      if (json.stop_reason !== "end_turn" && json.stop_reason !== "stop_sequence") {
+        throw new ClaudeResponseError("Claude did not finish its response.", diagnostics)
       }
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new ClaudeResponseError("Claude returned an invalid JSON object.", diagnostics)
+      const content = (Array.isArray(json.content) ? json.content : [])
+        .filter((block) => block?.type === "text" && typeof block.text === "string")
+        .map((block) => block.text).join("").trim()
+      if (!content) throw new ClaudeResponseError("Claude returned no text.", diagnostics)
+      let parsed: unknown
+      if (responseFormat === "json") {
+        try {
+          parsed = JSON.parse(firstJsonObject(content))
+        } catch {
+          // JSON.parse errors can quote the model's answer; keep failure records
+          // to protocol metadata and a stable error message instead.
+          throw new ClaudeResponseError("Claude returned an invalid JSON object.", diagnostics)
+        }
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new ClaudeResponseError("Claude returned an invalid JSON object.", diagnostics)
+        }
       }
-    }
-    return { content, parsed, usage: json.usage ?? null }
-  })
+      return { content, parsed, usage: json.usage ?? null }
+    })
+    input.onRequestDiagnostics?.({ http_status: httpStatus, attempt_count: attemptCount })
+    return result
+  } catch (error) {
+    recordClaudeRequestDiagnostics(error, { http_status: httpStatus, attempt_count: attemptCount })
+    throw error
+  }
 }
 
 export async function draftWithClaude(input: ClaudeInput): Promise<string> {

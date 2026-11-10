@@ -66,6 +66,7 @@ function modulePath(candidate) {
 
 async function loadStandaloneTs(relativePath) {
   const absolute = resolve(root, relativePath)
+  const sourceRequire = createRequire(absolute)
   const source = readFileSync(absolute, "utf8")
   const output = ts.transpileModule(source, {
     fileName: absolute,
@@ -80,7 +81,7 @@ async function loadStandaloneTs(relativePath) {
   const localRequire = (specifier) => {
     if (specifier === "@/lib/db") return { getSql: () => async () => [] }
     if (specifier === "@/lib/ai-usage.ts") return aiUsage
-    return nativeRequire(specifier)
+    return sourceRequire(specifier)
   }
   Function("exports", "require", "module", "__filename", "__dirname", output)(
     loadedModule.exports,

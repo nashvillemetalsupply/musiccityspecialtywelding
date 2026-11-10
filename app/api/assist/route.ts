@@ -12,6 +12,8 @@ import { consumeStrictRateLimit, rateLimitFingerprint } from "@/lib/rate-limit"
 import { getShopPhone } from "@/lib/shop-contact"
 
 export const runtime = "nodejs"
+// The model shares a 25s budget; leave room for durable intake and handoff writes.
+export const maxDuration = 60
 
 function logAssistantResponse(status: number, reason?: unknown) {
   const handoffReason = reason === "human" || reason === "unknown" || reason === "model-error"

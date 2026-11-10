@@ -1,6 +1,7 @@
 import type { AssistantFields, AssistantMessage, AssistantTurn } from "./turn.ts"
 import type { AssistantInput } from "./input.ts"
 import type { ClaudeModelDiagnostics } from "../ai.ts"
+import { assistantModelErrorDiagnostics } from "../claude-diagnostics.ts"
 import { AssistantRequestError } from "./input.ts"
 import { stripAssistantMoney } from "./money.ts"
 import { assistantContactReply, assistantHandoffReason, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
@@ -100,9 +101,11 @@ export async function processAssistantTurn(input: AssistantInput, ip: string, de
       const messages = await deps.store.history(input.session_id, input.turn_index)
       const customerText = messages.filter((message) => message.role === "user").map((message) => message.content).join("\n")
       await deps.store.verifyLease(claim)
+      const modelStarted = performance.now()
       try {
         result = scrubTurn(await deps.model(messages, { isTest: claim.session.is_test, phone: deps.phone }))
       } catch (error) {
+        console.warn(`Assistant model error. ${JSON.stringify(assistantModelErrorDiagnostics(error, performance.now() - modelStarted))}`)
         // The inbound is already durable. An unavailable model must leave both
         // a useful customer reply and enough customer evidence for a callback.
         const contact = extractAssistantContact(messages)
