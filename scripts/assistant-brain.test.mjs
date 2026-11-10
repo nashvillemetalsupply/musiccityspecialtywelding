@@ -46,8 +46,9 @@ test("knowledge loads once from the actual service pages, area page and approved
   assert.equal(ASSISTANT_SHOP_PHONE.href, "tel:+16157033296")
 })
 
-test("system rules require disclosure, no prices, evidence-only answers and one question", () => {
-  assert.match(ASSISTANT_SYSTEM_PROMPT, /first reply.*automated assistant/)
+test("system rules reserve disclosure for the app, forbid self-introductions, and require safe concise answers", () => {
+  assert.match(ASSISTANT_SYSTEM_PROMPT, /Do not introduce yourself or write a self-disclosure sentence in any language/)
+  assert.match(ASSISTANT_SYSTEM_PROMPT, /application adds the automated-assistant disclosure to the first reply/)
   assert.match(ASSISTANT_SYSTEM_PROMPT, /Never quote prices/)
   assert.match(ASSISTANT_SYSTEM_PROMPT, /Never invent capabilities, dates, hours, availability/)
   assert.match(ASSISTANT_SYSTEM_PROMPT, /Ask one question at a time/)

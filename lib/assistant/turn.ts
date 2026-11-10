@@ -4,6 +4,7 @@ import { ASSISTANT_KNOWLEDGE, ASSISTANT_SHOP_PHONE, assistantKnowledge } from ".
 import { stripAssistantMoney } from "./money.ts"
 import { ASSISTANT_SHOP_EMAIL, assistantContactReply, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
 import { nextAssistantQuestion as nextQuestion } from "./intake.ts"
+import { stripAssistantSelfDisclosure } from "./disclosure.ts"
 
 export { stripAssistantMoney } from "./money.ts"
 
@@ -35,7 +36,7 @@ export type AssistantTurn = {
 
 export const ASSISTANT_SYSTEM_PROMPT = [
   "You are Music City Specialty Welding's automated shop assistant.",
-  "In your first reply, say clearly that you are an automated assistant. Never pretend to be a person.",
+  "Do not introduce yourself or write a self-disclosure sentence in any language. The application adds the automated-assistant disclosure to the first reply. Never pretend to be a person.",
   "Never quote prices, rates, dollar amounts, deposits, estimates, or payment details. Quotes belong to a person at the shop.",
   "Never invent capabilities, dates, hours, availability, certifications, guarantees, or response times. Answer shop questions only from the supplied repository knowledge. Unknown means the shop must confirm.",
   "If the customer wants a person or asks for a price, offer the supplied shop phone as a tap-to-call link. Calling is the primary action.",
@@ -108,10 +109,19 @@ function currentRepairDetails(latest: string, fields: AssistantFields): boolean 
   // updated its extracted fields or is_job classification. Require repository
   // vocabulary throughout this new repair evidence: a familiar noun alone
   // cannot establish support for an unverified accessory such as a gate intercom.
-  const latestWords = capabilityWords(latest.replace(/\[INTERNAL TEST\]/gi, ""))
-  if (repairSubjects.some((subject) => latestWords.includes(subject))
-    && latestWords.every((word) => questionWords.has(word) || failureWords.has(word) || knownCapabilityWords.has(word))) return true
-  if (fields.is_job !== "yes" || !repairSubjects.some((subject) => capabilityWords(fields.need).includes(subject))) return false
+  let repairEvidence = latest.replace(/\[INTERNAL TEST\]/gi, "").toLowerCase()
+  // Grounded contact and site values can accompany repair evidence without
+  // becoming new capability vocabulary (for example, "Casey. The gate is steel.").
+  for (const detail of [fields.name, fields.location, fields.timing, fields.callback_window]) {
+    if (detail) repairEvidence = repairEvidence.replaceAll(detail.toLowerCase(), "")
+  }
+  const latestWords = capabilityWords(repairEvidence)
+  const supportedRepairWords = (words: string[]) => repairSubjects.some((subject) => words.includes(subject))
+    && words.every((word) => questionWords.has(word) || failureWords.has(word) || knownCapabilityWords.has(word))
+  if (repairSubjects.some((subject) => latestWords.includes(subject))) {
+    return supportedRepairWords(latestWords)
+  }
+  if (fields.is_job !== "yes" || !supportedRepairWords(capabilityWords(fields.need))) return false
   if (fields.callback_phone && latest.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").includes(fields.callback_phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""))) return true
   return [fields.need, ...(fields.material_size?.split(";").map((part) => part.trim()) ?? []), fields.location, fields.timing, fields.callback_window, fields.name, fields.callback_phone]
     .some((value) => value && latest.toLowerCase().includes(value.toLowerCase()))
@@ -218,25 +228,31 @@ export async function handleAssistantTurn(
   let reply = stripAssistantMoney(output.reply)
     // The model cannot choose a different phone, destination or HTML surface.
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    // Block tags delimit sentences; inline tags can split a word.
+    .replace(/<\/?(?:address|article|aside|blockquote|br|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi, " ")
     .replace(/<[^>]*>/g, "")
+  reply = stripAssistantSelfDisclosure(reply)
   const customerHandoff = assistantHandoffReason(latest)
   const unsupportedCapability = unsupportedCapabilityQuestion(latest)
-  // Retain this probe for A4 comparison with earlier runs; it no longer decides
-  // whether a customer may continue intake.
   const repairDetails = currentRepairDetails(latest, fields)
-  // Only a current customer request can carry a human transfer forward.
-  // Uncertainty about any job still belongs to the shop, but keeps intake open.
-  const staleModelHandoff = !firstReply && !customerHandoff && output.handoff_reason === "human"
-  const modelHandoff = staleModelHandoff ? "unknown" : output.handoff_reason
+  // A supported current repair replaces an earlier capability question. Model
+  // metadata and cautious inspection wording can lag behind that change;
+  // current customer requests, unsupported work and expert boundaries still win.
+  const resumeSupportedRepair = !firstReply && !customerHandoff && !unsupportedCapability && !concern && repairDetails
+  const staleHumanHandoff = !firstReply && !customerHandoff && output.handoff_reason === "human"
+  const modelHandoff = staleHumanHandoff ? "unknown" : output.handoff_reason
+  const inferredHandoff = assistantHandoffReason(latest, reply, modelHandoff)
+  const staleModelHandoff = staleHumanHandoff || (resumeSupportedRepair && inferredHandoff === "unknown")
+  const currentHandoff = resumeSupportedRepair && inferredHandoff === "unknown" ? null : inferredHandoff
   const decisionTrace: NonNullable<AssistantTurn["decision_trace"]> = {
     raw_model_handoff_reason: output.handoff_reason === "human" || output.handoff_reason === "unknown"
       || output.handoff_reason === "model-error" || output.handoff_reason === "rate-limit" ? output.handoff_reason : null,
     customerHandoff, unsupportedCapability, concern, staleModelHandoff, currentRepairDetails: repairDetails,
-    assistantHandoffReason: assistantHandoffReason(latest, reply, modelHandoff),
+    assistantHandoffReason: currentHandoff,
   }
   let handoff = !customerHandoff && unsupportedCapability && modelHandoff !== "model-error" && modelHandoff !== "rate-limit"
     ? "unknown" as AssistantHandoffReason
-    : customerHandoff ?? assistantHandoffReason(latest, reply, modelHandoff)
+    : customerHandoff ?? currentHandoff
   // Model metadata and cautious reply wording describe uncertainty, not a
   // customer request to stop. Money, dates and human requests remain contact.
   let continueIntake = handoff === "unknown" && !customerHandoff
@@ -276,6 +292,7 @@ export async function handleAssistantTurn(
     handoff = null
     continueIntake = false
   }
-  if (firstReply && !/^I(?:'m| am) an automated assistant\b|^Soy un asistente automatizado\b/i.test(reply)) reply = `${spanish ? "Soy un asistente automatizado de Music City Specialty Welding." : DISCLOSURE} ${reply}`
+  reply = reply.trim()
+  if (firstReply) reply = `${spanish ? "Soy un asistente automatizado de Music City Specialty Welding." : DISCLOSURE} ${reply}`
   return { reply, fields, branch, decision_trace: decisionTrace, ...(modelDiagnostics ? { model_diagnostics: modelDiagnostics } : {}), ...(handoff ? { handoff_reason: handoff } : {}), ...(continueIntake ? { continue_intake: true } : {}) }
 }

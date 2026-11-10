@@ -58,15 +58,16 @@ test("live price then stair-railing detail keeps reply uncertainty in intake thr
   assert.match(result.responses[1].reply, /What name should the shop use\?/)
 })
 
-test("live gate answer with cautious wording cannot become contact-only after unsupported intake", async () => {
+test("live gate inspection caveat clears prior unknown intake through the service", async () => {
+  const cautiousGateReply = "We repair steel gate hinges and posts, but the shop needs to review the damage before confirming the repair. Did the hinge tear metal from the post?"
   const result = await serviceConversation([
     { message: ladder, output: { reply: "The shop must confirm that job. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) } },
-    { message: gate, output: { reply: "We repair steel gate hinges and posts, but the shop needs to review the damage before confirming the repair. Did the hinge tear metal from the post?", handoff_reason: "unknown", fields: fields({ need: "gate hinge broke off the post", material_size: "steel", location: "Lebanon", is_job: "yes" }) } },
+    { message: gate, output: { reply: cautiousGateReply, handoff_reason: null, fields: fields({ need: "gate hinge broke off the post", material_size: "steel", location: "Lebanon", is_job: "yes" }) } },
   ])
   assert.equal(result.stored[0].branch, "unknown-capability-intake")
-  assert.equal(result.stored[1].branch, "expert-claim-intake")
-  assert.equal(result.responses[1].continue_intake, true)
-  assert.doesNotMatch(result.responses[1].reply, /A person at the shop can help/)
+  assert.equal(result.stored[1].branch, "model-answer")
+  assert.equal(result.responses[1].handoff_reason, undefined)
+  assert.equal(result.responses[1].reply, cautiousGateReply)
 })
 
 test("stale human model metadata cannot bypass trailer safety intake after a human request", async () => {
@@ -144,7 +145,23 @@ test("production ladder then Lebanon gate keeps unknown intake and resumes exper
   assert.equal(second.branch, "model-answer")
 })
 
-test("production ladder then Lebanon gate keeps a model handoff in expert intake", async () => {
+test("exact live boat-ladder then Lebanon gate pair clears a stale unknown handoff", async () => {
+  const conversation = [{ role: "user", content: "Do you weld aluminum boat ladders?" }]
+  globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
+  const first = await handleAssistantTurn(conversation, { isTest: true })
+  assert.equal(first.handoff_reason, "unknown")
+  assert.equal(first.branch, "unknown-capability-intake")
+  conversation.push({ role: "assistant", content: first.reply }, { role: "user", content: "My steel gate hinge broke off the post in Lebanon. Can you fix it?" })
+  globalThis.__turnRegressionModel = async () => ({ reply: gateReply, handoff_reason: "unknown", fields: fields({ need: "gate hinge broke off the post", material_size: "steel", location: "Lebanon", is_job: "yes" }) })
+  const second = await handleAssistantTurn(conversation, { isTest: true })
+  assert.equal(second.reply, gateReply)
+  assert.equal(second.handoff_reason, undefined)
+  assert.equal(second.branch, "model-answer")
+  assert.equal(second.decision_trace.currentRepairDetails, true)
+  assert.equal(second.decision_trace.staleModelHandoff, true)
+})
+
+test("production ladder then Lebanon gate clears model handoff even with stale job fields", async () => {
   const conversation = [{ role: "user", content: ladder }]
   globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
   const first = await handleAssistantTurn(conversation, { isTest: true })
@@ -156,10 +173,10 @@ test("production ladder then Lebanon gate keeps a model handoff in expert intake
   conversation.push({ role: "assistant", content: first.reply }, { role: "user", content: gate })
   globalThis.__turnRegressionModel = async () => ({ reply: gateReply, handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
   const second = await handleAssistantTurn(conversation, { isTest: true })
-  assert.match(second.reply, /What name should the shop use\?/)
-  assert.equal(second.handoff_reason, "unknown")
-  assert.equal(second.continue_intake, true)
-  assert.equal(second.branch, "expert-claim-intake")
+  assert.equal(second.reply, gateReply)
+  assert.equal(second.handoff_reason, undefined)
+  assert.equal(second.continue_intake, undefined)
+  assert.equal(second.branch, "model-answer")
 })
 
 test("a known repair noun cannot clear an unknown accessory handoff", async () => {
@@ -174,6 +191,30 @@ test("a known repair noun cannot clear an unknown accessory handoff", async () =
   assert.equal(second.branch, "expert-claim-intake")
   assert.equal(second.continue_intake, true)
   assert.match(second.reply, /A person at the shop will confirm that job\./)
+})
+
+test("contact details for an unsupported boat ladder do not clear its unknown handoff", async () => {
+  globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm that repair. What callback number should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladder", material_size: "aluminum", name: "Casey", is_job: "yes" }) })
+  const result = await handleAssistantTurn([
+    { role: "user", content: "I need an aluminum boat ladder repaired." },
+    { role: "assistant", content: "The shop must confirm that job. What name should the shop use?" },
+    { role: "user", content: "Casey" },
+  ], { isTest: true })
+  assert.equal(result.handoff_reason, "unknown")
+  assert.equal(result.branch, "expert-claim-intake")
+  assert.equal(result.decision_trace.currentRepairDetails, false)
+})
+
+test("a steel gate intercom cannot reuse stale supported gate fields to clear unknown", async () => {
+  globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm the intercom repair. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "gate hinge broke off the post", material_size: "steel", location: "Lebanon", is_job: "yes" }) })
+  const result = await handleAssistantTurn([
+    { role: "user", content: gate },
+    { role: "assistant", content: "Did the hinge break?" },
+    { role: "user", content: "I need a steel gate intercom repaired." },
+  ], { isTest: true })
+  assert.equal(result.handoff_reason, "unknown")
+  assert.equal(result.branch, "expert-claim-intake")
+  assert.equal(result.decision_trace.currentRepairDetails, false)
 })
 
 test("unsupported boat ladders keep intake even when the model mistakes confirmation for a human request", async () => {
@@ -213,15 +254,9 @@ test("known gate repair survives in a fresh conversation and after human or mode
         ...(previous ? [{ role: "user", content: previous }, { role: "assistant", content: "A person at the shop can help. Call the shop. What callback number should the shop use?" }] : []),
         { role: "user", content: gate },
       ], { isTest: true })
-      if (!handoff_reason) {
-        assert.equal(result.reply, previous ? gateReply : `I'm an automated assistant for Music City Specialty Welding. ${gateReply}`)
-        assert.equal(result.handoff_reason, undefined)
-        assert.equal(result.branch, "model-answer")
-      } else {
-        assert.equal(result.handoff_reason, "unknown")
-        assert.equal(result.continue_intake, true)
-        assert.equal(result.branch, "expert-claim-intake")
-      }
+      assert.equal(result.reply, previous ? gateReply : `I'm an automated assistant for Music City Specialty Welding. ${gateReply}`)
+      assert.equal(result.handoff_reason, undefined)
+      assert.equal(result.branch, "model-answer")
     }
   }
 })
@@ -233,9 +268,9 @@ test("new contact details after a known gate handoff do not carry a stale model 
     { role: "assistant", content: "A person at the shop can help. What name should the shop use?" },
     { role: "user", content: "Casey. The gate is steel." },
   ], { isTest: true })
-  assert.match(result.reply, /What callback number should the shop use\?/)
-  assert.equal(result.handoff_reason, "unknown")
-  assert.equal(result.continue_intake, true)
+  assert.equal(result.reply, "Did the hinge break, or did it tear metal out of the post?")
+  assert.equal(result.handoff_reason, undefined)
+  assert.equal(result.branch, "model-answer")
 })
 
 test("formatted callback details after a known gate handoff do not carry stale model metadata", async () => {
@@ -245,9 +280,9 @@ test("formatted callback details after a known gate handoff do not carry stale m
     { role: "assistant", content: "A person at the shop can help. What callback number should the shop use?" },
     { role: "user", content: "615-555-0199" },
   ], { isTest: true })
-  assert.match(result.reply, /What name should the shop use\?/)
-  assert.equal(result.handoff_reason, "unknown")
-  assert.equal(result.continue_intake, true)
+  assert.equal(result.reply, "Did the hinge break, or did it tear metal out of the post?")
+  assert.equal(result.handoff_reason, undefined)
+  assert.equal(result.branch, "model-answer")
 })
 
 test("individual size and callback-window details after a known gate handoff keep intake open", async () => {
@@ -261,10 +296,9 @@ test("individual size and callback-window details after a known gate handoff kee
       { role: "assistant", content: "A person at the shop can help. What detail should the shop use?" },
       { role: "user", content: latest },
     ], { isTest: true })
-    assert.match(result.reply, /What name should the shop use\?/)
-    assert.equal(result.handoff_reason, "unknown")
-    assert.equal(result.continue_intake, true)
-    assert.equal(result.branch, "expert-claim-intake")
+    assert.equal(result.reply, "Did the hinge break, or did it tear metal out of the post?")
+    assert.equal(result.handoff_reason, undefined)
+    assert.equal(result.branch, "model-answer")
   }
 })
 
@@ -358,8 +392,8 @@ test("a stale model handoff cannot end supported gate intake after a prior hando
     { role: "assistant", content: "A person at the shop can help. What callback number should the shop use?" },
     { role: "user", content: gate },
   ], { isTest: true })
-  assert.match(result.reply, /What name should the shop use\?/)
-  assert.equal(result.handoff_reason, "unknown")
-  assert.equal(result.continue_intake, true)
-  assert.equal(result.branch, "expert-claim-intake")
+  assert.equal(result.reply, gateReply)
+  assert.equal(result.handoff_reason, undefined)
+  assert.equal(result.continue_intake, undefined)
+  assert.equal(result.branch, "model-answer")
 })
