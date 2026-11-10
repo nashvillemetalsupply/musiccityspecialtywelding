@@ -154,3 +154,85 @@ home, and service areas with the assistant both enabled and disabled.
   390px and 1440px. Expected action-group counts, aligned Call/Ask controls,
   targets at least 44px tall, and no horizontal overflow. Home contact screenshots
   visually checked at both widths. No form submissions or outbound messages.
+
+## Palette
+
+November 10, 2026, `cta-trim`: restore the owner's warm Southern direction with
+espresso, cream paper, saddle tan and copper. This pass changes color treatments
+only. It preserves CTA counts, layout, typography, place names and all public
+copy. The existing logo image and its blue/red colors remain unchanged.
+
+`git show 51d0ea0^:app/globals.css` is the historical source. The requested
+`#16100b` appeared there as button-label ink; it now supplies the shared espresso
+canvas. `#241d12` was the sticky bar's brown secondary action and now supplies
+raised dark surfaces. Cream `#f3ead8`, muted cream `#e3d9c0`, ink `#4f4433`, rule
+`#7a6a4d` and copper `#7d3a0c` also retain exact historical values. Saddle tan is
+the restrained new accent, following the brief's “Southern without costume” rule.
+
+| Token | Old | New |
+| --- | --- | --- |
+| `--ms-carbon` | `#0b0a09` | `#16100b` espresso canvas, header, footer and sticky bar |
+| `--ms-bone` | `#e8e1d4` | `#f3ead8` cream paper and light text |
+| `--ms-surface` | `#1c1b18` | `#241d12` raised brown surfaces |
+| `--ms-muted` | `#bcb8ad` | `#e3d9c0` secondary text on dark surfaces |
+| `--ms-ink-muted` | `#514e47` | `#4f4433` secondary ink on cream |
+| `--ms-arc` | `#ff4a1c` | `#c79b65` saddle tan actions and dark-surface accents |
+| `--ms-copper` | New shared role | `#7d3a0c` cream-surface links and focus |
+| `--ms-rule` | `#5b5952` | `#7a6a4d` warm rules and control borders |
+| `--ms-rule-light` | `#a9a398` | Alias of `--ms-rule` |
+| `--ms-steel` | `#777872` | Alias of `--ms-rule` |
+| `--ms-backdrop` | `rgb(11 10 9 / 65%)` | `rgb(22 16 11 / 65%)` |
+| `--ms-shadow` | Separate black shadows | `rgb(22 16 11 / 34%)` shared espresso shadow |
+
+`app/page-cohesion.css` remains the single active public token set. Existing
+`--mx-*` and `--sw-*` roles alias those tokens. Historical CSS and its exact
+preservation tokens remain intact. Palette overrides also bring privacy, terms,
+the missing-page ticket, form feedback and preview surfaces into the same system.
+Warm rules replace inherited orange or gray details without changing dimensions.
+
+The whole assistant uses the shared tokens in
+`components/assistant-chat.module.css`: espresso launcher/header, cream assistant
+messages and input, tan customer messages and send/call buttons, brown input
+footer, copper links, and contrasting focus rings. The launcher has espresso and
+cream perimeter rings so its button boundary remains visible over either canvas.
+Mobile keeps its existing sticky-bar entry point and dialog placement.
+
+Calculated WCAG ratios: cream/espresso **15.79:1**; cream/brown **13.95:1**;
+muted cream/brown **11.87:1**; espresso/tan **7.46:1**; secondary ink/cream
+**7.96:1**; copper/cream **7.08:1**. Warm rules reach **3.17:1** on brown,
+**3.59:1** on espresso and **4.40:1** on cream. The historical rule color serves
+borders and the large 404 numeral; small cream-surface text uses the darker ink
+because **4.40:1** falls below the **4.5:1** normal-text requirement.
+
+Palette verification:
+
+- Recovery snapshot: `.scratch/southern-palette/before-21bf535.zip` exists and
+  was verified before the palette change.
+- Full suite: **1,492 passed, 3 skipped, 0 failed** (1,495 total), Node
+  **24.22.1**.
+- `npx tsc --noEmit`: passed (exit 0). Full `npx eslint .`: passed (exit 0),
+  with no errors and one pre-existing unused-`phones` warning in the ignored
+  scratch helper `.scratch/cta-trim/count-built.mjs`.
+- `npm run build` reproduced the documented Turbopack external-dependency-junction
+  limitation. `node node_modules/next/dist/bin/next build --webpack`: passed.
+  Bundle budgets: home **622,536 / 648,316 bytes**, board
+  **725,353 / 817,538 bytes**.
+- **26 production viewport checks:** home at 320, 390, 768 and 1440px; all seven
+  service pages, service areas, privacy, terms and the missing page at 390 and
+  1440px. Every section was scrolled into view. No horizontal overflow or heading
+  clipping; CTA counts, shell counts, action groups and 44px action targets match
+  the CTA-trim baseline.
+- Assistant checks at 390 and 1440px passed: cream/tan message and input contrast,
+  send button, links, keyboard focus, Escape dismissal, turn-limit fallback and
+  automated WCAG A/AA checks. Real keyboard Tab verified the Send button's solid
+  espresso focus ring at both widths; input tan and launcher cream focus rings
+  were also verified. The desktop launcher was checked over cream and espresso.
+- The initial automated page checks found only the translucent 404 numeral, at **1.14:1**.
+  Its color now uses `--ms-rule`, reaching **3.17:1** on the brown ticket and
+  exceeding the **3:1** large-text threshold. Both 404 viewports and the assistant
+  checks passed again against the final production rebuild. Combined with the
+  24 unchanged page checks, the final **26-page-viewport** report has zero
+  automated WCAG A/AA violations, geometry or CTA failures, browser errors or
+  POST attempts. Aggregated results are in
+  `.scratch/southern-palette/browser-results.json` and `browser.log`; the initial
+  findings are retained separately in the same evidence directory.

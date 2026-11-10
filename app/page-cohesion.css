@@ -1,15 +1,17 @@
 /* Public-site system. Keep palette literals in this token block. */
 :root {
-  --ms-carbon: #0b0a09;
-  --ms-bone: #e8e1d4;
-  --ms-steel: #777872;
-  --ms-arc: #ff4a1c;
-  --ms-surface: #1c1b18;
-  --ms-muted: #bcb8ad;
-  --ms-ink-muted: #514e47;
-  --ms-rule: #5b5952;
-  --ms-rule-light: #a9a398;
-  --ms-backdrop: rgb(11 10 9 / 65%);
+  --ms-carbon: #16100b;
+  --ms-bone: #f3ead8;
+  --ms-steel: var(--ms-rule);
+  --ms-arc: #c79b65;
+  --ms-copper: #7d3a0c;
+  --ms-surface: #241d12;
+  --ms-muted: #e3d9c0;
+  --ms-ink-muted: #4f4433;
+  --ms-rule: #7a6a4d;
+  --ms-rule-light: var(--ms-rule);
+  --ms-backdrop: rgb(22 16 11 / 65%);
+  --ms-shadow: rgb(22 16 11 / 34%);
   --mx-coal: var(--ms-carbon);
   --mx-bone: var(--ms-bone);
   --mx-arc: var(--ms-arc);
@@ -25,8 +27,8 @@
   --mx-paper: var(--ms-bone);
   --mx-ink: var(--ms-carbon);
   --mx-arc: var(--ms-arc);
-  --mx-arc-deep: var(--ms-arc);
-  --mx-oxide: var(--ms-arc);
+  --mx-arc-deep: var(--ms-copper);
+  --mx-oxide: var(--ms-copper);
   --mx-steel: var(--ms-muted);
   --mx-steel-dark: var(--ms-ink-muted);
   --mx-line-bone: var(--ms-rule);
@@ -37,7 +39,7 @@
   --sw-chalk: var(--ms-bone);
   --sw-fire: var(--ms-arc);
   --sw-neon: var(--ms-arc);
-  --sw-red: var(--ms-carbon);
+  --sw-red: var(--ms-copper);
   --sw-form-paper: var(--ms-bone);
   --sw-form-ink: var(--ms-carbon);
   --sw-form-muted: var(--ms-ink-muted);
@@ -251,7 +253,7 @@
 .ms-site .ms-subglass { background: var(--ms-surface); color: var(--ms-bone); border-color: var(--ms-rule); }
 .ms-site .ms-subglass > div span { color: var(--ms-muted); }
 .ms-site .ms-subglass p { color: var(--ms-muted); }
-.ms-site .ms-subglass a { color: var(--ms-bone); font-size: .875rem; text-transform: none; letter-spacing: 0; }
+.ms-site .ms-subglass a { color: var(--ms-bone); border-color: var(--ms-arc); font-size: .875rem; text-transform: none; letter-spacing: 0; }
 .ms-site .ms-subplan ul li { background: var(--ms-surface); border-color: var(--ms-rule); }
 .ms-site .ms-subscope li, .ms-site .ms-subscope li:last-child { border-color: var(--ms-rule); }
 .ms-site .ms-subscope h2, .ms-site .ms-subfaq h2, .ms-site .ms-subfaq summary { color: var(--ms-bone); }
@@ -267,6 +269,38 @@
 .ms-mobile-cta .ms-button { min-height: calc(3.5rem + env(safe-area-inset-bottom)); padding: .75rem .5rem calc(.75rem + env(safe-area-inset-bottom)); border: 0; }
 .ms-mobile-cta .ms-button-secondary { background: var(--ms-carbon); border-left: 1px solid var(--ms-rule); color: var(--ms-bone); }
 .ms-mobile-cta :focus-visible { outline: 3px solid currentColor; outline-offset: -5px; }
+
+/* Warm paper needs copper ink for accents; saddle tan belongs on espresso. */
+.ms-site .ms-service-row,
+.ms-site .ms-area-travel ul,
+.ms-site .ms-area-travel li,
+.ms-site .ms-form-heading,
+.ms-site .wm-order-no,
+.ms-site .ms-job-glass-demo :is(figcaption, .ms-job-glass-title, .ms-job-glass-progress, .ms-job-glass-footer),
+.ms-site .ms-footer-meta { border-color: var(--ms-rule); }
+.ms-site .ms-quote-form :is(.ms-form-fallback a, .ms-text-consent a) { color: var(--ms-copper); }
+.ms-site .ms-quote-form :is(input, textarea, select):focus-visible { outline-color: var(--ms-copper); }
+.ms-site .ms-quote-form .ms-upload-field:focus-within .ms-upload { outline-color: var(--ms-copper); }
+.ms-site .ms-previews > div { background: var(--ms-bone); border-color: var(--ms-rule); }
+.ms-site .ms-form-status { color: var(--ms-carbon); background: var(--ms-bone); border-color: var(--ms-copper); }
+
+/* Legal and missing-page surfaces share the public palette without moving them. */
+.ms-site.ms-legal, .ms-site.ms-lost { background: var(--ms-carbon); }
+.ms-site.ms-legal .prose { color: var(--ms-carbon); background: var(--ms-bone); border-color: var(--ms-rule); box-shadow: 1rem 1.15rem 0 var(--ms-shadow); }
+.ms-site.ms-legal :is(h1, h2, .space-y-8) { color: var(--ms-carbon); }
+.ms-site.ms-legal :is(h1 + p, section p, section li) { color: var(--ms-ink-muted); }
+.ms-site.ms-legal section { border-color: var(--ms-rule); }
+.ms-site.ms-legal section a { color: var(--ms-copper); text-decoration-color: currentColor; }
+.ms-site.ms-legal section:last-child > div { color: var(--ms-carbon); background: var(--ms-muted); border-color: var(--ms-rule); }
+.ms-site .ms-lost-ticket { color: var(--ms-bone); background: var(--ms-surface); border-color: var(--ms-rule); box-shadow: .7rem .8rem 0 var(--ms-shadow); }
+.ms-site .ms-lost-ticket::after { border-color: var(--ms-rule); }
+.ms-site .ms-lost-kicker { color: var(--ms-arc); }
+.ms-site .ms-lost-code { color: var(--ms-rule); }
+.ms-site .ms-lost-ticket > p:not(.ms-lost-code) { color: var(--ms-muted); }
+.ms-site .ms-lost-actions a { color: var(--ms-carbon); background: var(--ms-arc); border-color: var(--ms-arc); box-shadow: .2rem .25rem 0 var(--ms-copper); }
+.ms-site .ms-lost-actions a:first-child { color: var(--ms-bone); background: transparent; border-color: var(--ms-rule); box-shadow: none; }
+.ms-site .ms-lost-actions a:hover { color: var(--ms-carbon); background: var(--ms-bone); border-color: var(--ms-bone); }
+
 @media (min-width: 860px) {
   .ms-site .ms-service-row { grid-template-columns: minmax(0, 1fr) minmax(0, 26rem); gap: 2.5rem; }
   .ms-site .ms-process-list li + li { border-top: 0; border-left: 1px solid var(--ms-rule); }
