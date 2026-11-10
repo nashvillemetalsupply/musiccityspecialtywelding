@@ -36,6 +36,36 @@ test("production ladder then Lebanon gate keeps unknown intake and resumes exper
   assert.equal(second.branch, "model-answer")
 })
 
+test("production ladder then Lebanon gate clears a model handoff carried from unknown intake", async () => {
+  const conversation = [{ role: "user", content: ladder }]
+  globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
+  const first = await handleAssistantTurn(conversation, { isTest: true })
+  assert.match(first.reply, /A person at the shop will confirm that job\./)
+  assert.equal(first.handoff_reason, "unknown")
+  assert.equal(first.continue_intake, true)
+  assert.equal(first.branch, "unknown-capability-intake")
+
+  conversation.push({ role: "assistant", content: first.reply }, { role: "user", content: gate })
+  globalThis.__turnRegressionModel = async () => ({ reply: gateReply, handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
+  const second = await handleAssistantTurn(conversation, { isTest: true })
+  assert.equal(second.reply, gateReply)
+  assert.equal(second.handoff_reason, undefined)
+  assert.equal(second.branch, "model-answer")
+})
+
+test("a known repair noun cannot clear an unknown accessory handoff", async () => {
+  const conversation = [{ role: "user", content: ladder }]
+  globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
+  const first = await handleAssistantTurn(conversation, { isTest: true })
+  assert.equal(first.branch, "unknown-capability-intake")
+  conversation.push({ role: "assistant", content: first.reply }, { role: "user", content: "I need a gate intercom repaired." })
+  globalThis.__turnRegressionModel = async () => ({ reply: "What brand is the intercom?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
+  const second = await handleAssistantTurn(conversation, { isTest: true })
+  assert.equal(second.handoff_reason, "unknown")
+  assert.equal(second.branch, "contact-handoff")
+  assert.match(second.reply, /A person at the shop can help\./)
+})
+
 test("unsupported boat ladders keep intake even when the model mistakes confirmation for a human request", async () => {
   for (const handoff_reason of [null, "unknown", "human"]) {
     globalThis.__turnRegressionModel = async () => ({ reply: "The shop needs to confirm that job. What name should the shop use?", handoff_reason, fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })

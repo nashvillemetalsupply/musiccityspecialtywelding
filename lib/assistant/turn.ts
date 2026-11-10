@@ -94,6 +94,13 @@ const repairSubjects = assistantKnowledge.services.filter((service) => service.s
   .flatMap((service) => capabilityWords(service.shortTitle).filter((word) => !/^(?:repair|weld|and|metal|mobile|fabrication|specialty|custom)$/.test(word)))
 
 function currentRepairDetails(latest: string, fields: AssistantFields): boolean {
+  // A new supported repair can replace the previous job before the model has
+  // updated its extracted fields or is_job classification. Require repository
+  // vocabulary throughout this new repair evidence: a familiar noun alone
+  // cannot establish support for an unverified accessory such as a gate intercom.
+  const latestWords = capabilityWords(latest.replace(/\[INTERNAL TEST\]/gi, ""))
+  if (repairSubjects.some((subject) => latestWords.includes(subject))
+    && latestWords.every((word) => questionWords.has(word) || failureWords.has(word) || knownCapabilityWords.has(word))) return true
   if (fields.is_job !== "yes" || !repairSubjects.some((subject) => capabilityWords(fields.need).includes(subject))) return false
   if (fields.callback_phone && latest.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").includes(fields.callback_phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""))) return true
   return [fields.need, ...(fields.material_size?.split(";").map((part) => part.trim()) ?? []), fields.location, fields.timing, fields.callback_window, fields.name, fields.callback_phone]

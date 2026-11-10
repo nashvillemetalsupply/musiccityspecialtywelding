@@ -137,6 +137,37 @@ function fixture() {
   return { store, leads, receipts, notifications, deps, counts: () => ({ modelCalls, leadCalls }) }
 }
 
+test("ladder then Lebanon gate resumes the model answer through persisted unknown intake", async () => {
+  const f = fixture(), handoffs = []
+  f.deps.handoff = async (value) => { handoffs.push(copy(value)); return { leadId: null } }
+  const ladder = "[INTERNAL TEST] Do you weld aluminum boat ladders?"
+  const gate = "[INTERNAL TEST] My steel gate hinge broke off the post in Lebanon. Can you fix it?"
+  const gateReply = "We repair metal gate hinges and posts. Did the hinge break, or did it tear metal out of the post?"
+  globalThis.__assistantApiModel = async ({ prompt }) => {
+    const conversation = JSON.parse(prompt).conversation
+    const users = conversation.filter((message) => message.role === "user")
+    if (users.length === 2) {
+      assert.deepEqual(users.map((message) => message.content), [ladder, gate])
+      assert.equal(conversation[1].content, f.store.turns.get(0).response.reply)
+      assert.match(conversation[1].content, /A person at the shop will confirm that job\./)
+    }
+    // The model answers the new job but carries the earlier unknown metadata.
+    return { reply: users.length === 1 ? "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?" : gateReply,
+      handoff_reason: "unknown", fields: { ...emptyFields(), need: "aluminum boat ladders", material_size: "aluminum", is_job: "unsure" } }
+  }
+  const first = await processAssistantTurn(input({ message: ladder, is_test: true }), "ip", f.deps)
+  assert.equal(first.handoff_reason, "unknown")
+  assert.equal(first.continue_intake, true)
+  assert.equal(f.store.turns.get(0).result.branch, "unknown-capability-intake")
+  const second = await processAssistantTurn(input({ message: gate, turn_index: 1, is_test: true }), "ip", f.deps)
+  assert.equal(second.reply, gateReply)
+  assert.equal(second.handoff_reason, undefined)
+  assert.equal(f.store.turns.get(1).result.branch, "model-answer")
+  assert.equal(f.store.session.next_turn, 2)
+  assert.equal(handoffs.length, 1)
+  assert.equal(f.notifications.size, 0)
+})
+
 test("unknown capability intake survives service normalization and still hands off before later contact", async () => {
   const f = fixture(), handoffs = []
   f.deps.handoff = async (value) => { handoffs.push(copy(value)); return { leadId: null } }

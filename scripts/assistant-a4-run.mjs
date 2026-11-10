@@ -434,7 +434,10 @@ try {
             WHERE session_id = ${sessionId}::uuid ORDER BY turn_index`
           return rows.find((row) => Number(row.turn_index) === turnIndex)?.result ?? null
         },
-        onTurn: (turn) => console.log(JSON.stringify(turn)),
+        onTurn: (turn) => {
+          console.log(`A4 turn ${turn.turn} branch: ${turn.branch ?? "unavailable"}`)
+          console.log(JSON.stringify(turn))
+        },
       })
       await drain()
       verifyPartition(await snapshot(id))
