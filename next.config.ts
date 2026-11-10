@@ -9,8 +9,8 @@ const nextConfig = {
     root: process.cwd(),
   },
   outputFileTracingIncludes: {
-    "/api/assist": ["./BRAND-BRIEF.md", "./app/service-areas/page.tsx"],
-    "/api/twilio/assist-voice": ["./BRAND-BRIEF.md", "./app/service-areas/page.tsx"],
+    "/api/assist": ["./BRAND-BRIEF.md", "./app/service-areas/page.tsx", "./app/page.tsx", "./components/mainstreet-contact.tsx"],
+    "/api/twilio/assist-voice": ["./BRAND-BRIEF.md", "./app/service-areas/page.tsx", "./app/page.tsx", "./components/mainstreet-contact.tsx"],
   },
   images: {
     formats: ["image/avif", "image/webp"],

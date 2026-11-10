@@ -7,7 +7,7 @@ import {
   acceptChatReply, CHAT_MESSAGE_LIMIT, CHAT_TURN_LIMIT,
   prepareChatRequest, readChatSession, writeChatSession, type ChatSession,
 } from "@/lib/assistant/chat-client.ts"
-import { ASSISTANT_SHOP_EMAIL } from "@/lib/assistant/contact.ts"
+import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM } from "@/lib/assistant/contact.ts"
 import styles from "./assistant-chat.module.css"
 
 type Props = { phoneHref: string; phoneDisplay: string }
@@ -44,12 +44,12 @@ function browserStorage() {
   try { return window.sessionStorage } catch { return null }
 }
 
-export function AssistantReply({ text, phoneHref }: { text: string; phoneHref: string }) {
+export function AssistantReply({ text, phoneHref, onCallback }: { text: string; phoneHref: string; onCallback?: () => void }) {
   // Only the shop's approved contact destinations can become clickable.
   return text.split(/(\[[^\]]{1,100}\]\([^)]{1,120}\))/g).map((part, index) => {
     const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part)
-    return link && (link[2] === phoneHref || link[2] === `mailto:${ASSISTANT_SHOP_EMAIL}`)
-      ? <a key={index} href={link[2]}>{link[1]}</a>
+    return link && (link[2] === phoneHref || link[2] === `mailto:${ASSISTANT_SHOP_EMAIL}` || link[2] === ASSISTANT_QUOTE_FORM)
+      ? <a key={index} href={link[2]} onClick={link[2] === ASSISTANT_QUOTE_FORM ? onCallback : undefined}>{link[1]}</a>
       : <span key={index}>{part}</span>
   })
 }
@@ -151,7 +151,7 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
             {session?.messages.map((message, index) => (
               <p key={index} className={message.role === "user" ? styles.customer : styles.assistant}>
                 <span className={styles.byline}>{message.role === "user" ? "You" : "Automated assistant"}</span>
-                <AssistantReply text={message.content} phoneHref={phoneHref} />
+                <AssistantReply text={message.content} phoneHref={phoneHref} onCallback={() => setOpen(false)} />
               </p>
             ))}
             {session?.pending && <p className={styles.customer}><span className={styles.byline}>You · awaiting reply</span>{session.pending}</p>}

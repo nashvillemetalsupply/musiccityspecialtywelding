@@ -257,11 +257,25 @@ test("network, timeout, 409, rate limit and server failures use the same static 
   }
 })
 
-test("assistant replies make only approved phone and email destinations clickable", () => {
+test("assistant replies make only approved phone, email and quote form destinations clickable", () => {
   const { AssistantReply } = widgetExports("1")
-  const text = "[Call](tel:+16157033296) [Email](mailto:Sales@musiccityspecialtywelding.com) [Other](mailto:other@example.com) [Wrong](tel:+16155550199) [Site](https://example.com)"
+  const text = "[Call](tel:+16157033296) [Email](mailto:Sales@musiccityspecialtywelding.com) [Quote form](/#contact) [Other form](/other#contact) [Other](mailto:other@example.com) [Wrong](tel:+16155550199) [Site](https://example.com)"
   const html = renderToStaticMarkup(React.createElement(AssistantReply, { text, phoneHref: props.phoneHref }))
   assert.match(html, /href="tel:\+16157033296"/)
   assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
-  assert.equal((html.match(/<a /g) ?? []).length, 2)
+  assert.match(html, /href="\/#contact"/)
+  assert.doesNotMatch(html, /href="\/other#contact"/)
+  assert.equal((html.match(/<a /g) ?? []).length, 3)
+  assert.match(source("components/assistant-chat.tsx"), /<AssistantReply[^>]+onCallback=\{\(\) => setOpen\(false\)\}/)
+})
+
+test("quote form reply link closes the chat so the contact form is usable", () => {
+  const { AssistantReply } = widgetExports("1")
+  let closed = false
+  const nodes = AssistantReply({ text: "[Quote form](/#contact) [Call](tel:+16157033296)", phoneHref: props.phoneHref, onCallback: () => { closed = true } })
+  const quote = nodes.find((node) => node.props.href === "/#contact")
+  assert.ok(quote)
+  quote.props.onClick()
+  assert.equal(closed, true)
+  assert.equal(nodes.find((node) => node.props.href === props.phoneHref).props.onClick, undefined)
 })

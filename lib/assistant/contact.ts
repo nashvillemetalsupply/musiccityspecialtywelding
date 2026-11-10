@@ -1,10 +1,11 @@
 // Browser-safe contact fallback. It must work without the model or an API.
 export const ASSISTANT_SHOP_EMAIL = "Sales@musiccityspecialtywelding.com"
+export const ASSISTANT_QUOTE_FORM = "/#contact"
 export type AssistantHandoffReason = "human" | "unknown" | "model-error" | "rate-limit"
 
 export function assistantContactReply(phone: { display: string; href: string }, customerText = "", question = "What callback number should the shop use?"): string {
-  if (assistantSpanish(customerText)) return `Una persona del taller debe confirmar el trabajo. [Llama al taller al ${phone.display}](${phone.href}). ${assistantQuestionInSpanish(question)} [Correo ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
-  return `A person at the shop can help. [Call the shop at ${phone.display}](${phone.href}). ${question} [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
+  if (assistantSpanish(customerText)) return `Una persona del taller debe confirmar el trabajo. [Llama al taller al ${phone.display}](${phone.href}). ${assistantQuestionInSpanish(question)} [Formulario de presupuesto](${ASSISTANT_QUOTE_FORM}) o [Correo ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
+  return `A person at the shop can help. [Call the shop at ${phone.display}](${phone.href}). ${question} [Quote form](${ASSISTANT_QUOTE_FORM}) or [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
 }
 
 export function assistantQuestionInSpanish(question: string): string {

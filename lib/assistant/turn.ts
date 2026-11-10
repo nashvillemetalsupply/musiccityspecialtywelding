@@ -2,7 +2,7 @@ import { jsonWithClaude, type ClaudeModelDiagnostics } from "../ai.ts"
 import { recordClaudeRequestDiagnostics, type ClaudeRequestDiagnostics } from "../claude-diagnostics.ts"
 import { ASSISTANT_KNOWLEDGE, ASSISTANT_SHOP_PHONE, assistantKnowledge } from "./knowledge.ts"
 import { stripAssistantMoney } from "./money.ts"
-import { ASSISTANT_SHOP_EMAIL, assistantContactReply, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
+import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM, assistantContactReply, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
 import { nextAssistantQuestion as nextQuestion } from "./intake.ts"
 import { stripAssistantSelfDisclosure } from "./disclosure.ts"
 
@@ -51,7 +51,7 @@ export const ASSISTANT_SYSTEM_PROMPT = [
   "Qualify like a careful fabricator: ask the material/alloy if known, thickness, approximate dimensions, indoor or outdoor setting, and whether the part is structural/load-bearing or cosmetic, one missing detail per turn. Unknown material is a valid answer; never identify an alloy from appearance alone. Ask about the failure, prior repairs, corrosion, intended load/use, access and site hot-work conditions when relevant. Request full-item and close-up photos or drawings through the existing website contact form or supplied shop email; chat and voice cannot accept photo uploads. Do not repeat requests after the customer says they do not know or cannot provide photos.",
   "Trailer tongues, hitches, running-gear mounts, lifting equipment, guardrails, stairs and structural parts require physical assessment and sometimes engineering. Never say safe to tow, safe to use, roadworthy, DOT approved, load rated, code approved, or that a repair restores a capacity. Do not tell a customer to tow, load, lift with, or use a damaged part. Do not prescribe weld procedures, filler/rod, preheat, drilling, grinding, reinforcement or DIY repair steps. The shop must assess the material, failure and load path before choosing a method. Fuel/propane tanks, pressure vessels, gas work and contaminated containers require specialist assessment; never suggest emptying, rinsing or welding them yourself.",
   "Steel, aluminum and stainless are not interchangeable; cast iron is not wrought iron. Aluminum boat repair and stainless countertops are supported, but an alloy, cast iron repair, food-grade approval, pressure certification, AWS/CWI credentials, underwater/aerospace work, or a particular repair method is unverified unless the repository explicitly says otherwise. Gate motor, opener, operator and electrical repairs are excluded by the gate service page; explain the metal-only scope and refer motor/electrical work to the installer. Engineering, permits and inspection responsibility must be confirmed with the shop, never assumed included.",
-  "Listed service areas describe usual coverage, not a fixed travel radius or a dispatch promise. For any other place, keep the job and location and ask the shop to confirm travel; do not promise travel or reject the lead solely by location. Urgent requests need the shop phone and current availability confirmation; no emergency dispatch or same-day promise. Acknowledge frustration briefly and keep a useful next step. Reply in Spanish when the customer uses Spanish, without claiming a Spanish-speaking staff member is available. Spam, sales offers and unrelated requests need a brief polite close, without collecting an unwanted lead.",
+  "Listed service areas describe usual coverage, not a fixed travel radius or a dispatch promise. For any other place, keep the job and location and ask the shop to confirm travel; do not promise travel or reject the lead solely by location. Urgent requests need the shop phone and current availability confirmation; no emergency dispatch or same-day promise. Acknowledge frustration briefly and keep a useful next step. Reply in Spanish when the customer uses Spanish, without claiming a Spanish-speaking staff member is available. Spam, sales offers and wrong numbers need a brief polite close, without collecting an unwanted lead. A genuine customer question outside the supplied knowledge still needs handoff_reason unknown, even if is_job is no.",
   "callback_window is when the customer wants a phone callback (for example after 3 or tomorrow morning), separate from timing for the work. Use the latest customer preference, never a shop promise. After the callback phone, ask what time works for a callback if not supplied. Do not infer a callback window from a requested job date.",
   "Never say a lead was saved, a booking made, a message sent, a callback promised or a job accepted. The application records those outcomes separately. You cannot upload photos or send links or texts.",
   'Return JSON only: {"reply":string,"handoff_reason":"human"|"unknown"|null,"fields":{"name":string|null,"callback_phone":string|null,"need":string,"material_size":string|null,"location":string|null,"timing":string|null,"callback_window":string|null,"is_job":"yes"|"no"|"unsure"}}.',
@@ -60,17 +60,24 @@ export const ASSISTANT_SYSTEM_PROMPT = [
 const DISCLOSURE = "I'm an automated assistant for Music City Specialty Welding."
 
 export function assistantExpertConcern(message: string, reply: string): "safety" | "scope" | "claim" | null {
-  if (/\b(?:gate|gates)\b.{0,45}\b(?:motors?|openers?|operators?|electri\w*)\b|\b(?:motors?|openers?)\b.{0,30}\bgate\b|\b(?:motor|el[eé]ctrico)\b.{0,30}\bpuerta\b|\bpuerta\b.{0,30}\bmotor\b/i.test(message)) return "scope"
+  if (/\b(?:gate|gates)\b.{0,45}\b(?:motors?|openers?|operators?|electri\w*|controls?|intercoms?)\b|\b(?:motors?|openers?|controls?|intercoms?)\b.{0,30}\bgate\b|\b(?:motor|el[eé]ctrico)\b.{0,30}\bpuerta\b|\bpuerta\b.{0,30}\bmotor\b/i.test(message)) return "scope"
+  if (/\b(?:how to|how (?:do|can|should) I|DIY|step[ -]by[ -]step)\b.{0,70}\b(?:weld|repair|grind|braze)\b|\b(?:weld|repair)\b.{0,50}\bmyself\b|\b(?:what|which)\b.{0,30}\b(?:filler|rod|preheat|welding settings)\b/i.test(message)) return "safety"
   if (/\b(?:safe to (?:tow|use|drive|lift)|roadworthy|tow (?:it|this|the trailer)|fuel tank|propane tank|pressure vessel|lifting fork|forklift fork|load capacity|rated load|doubl\w*.*capacity|seguro remolcar|tanque de (?:gas|propano))\b/i.test(message)) return "safety"
   if (/\b(?:trailer|hitch|tongue|lifting|guardrail|stairs?|structural)\b/i.test(message)
     && /\b(?:repair|crack\w*|broke\w*|damag\w*|failure|bent|rust\w*)\b/i.test(message)) return "safety"
   if (/\b(?:cast iron|titanium|magnesium|underwater|aerospace|ASME|AWS|CWI|certif\w*)\b/i.test(message)) return "claim"
+  // These policies are not published in the repository knowledge. Even a
+  // plausible model answer needs a person rather than a new business promise.
+  if (/\b(?:licens\w*|insur\w*|bonded|warrant\w*|payments?|paying|pay|cash|credit cards?|debit cards?|financing|installments?|opening hours|business hours|after[ -]?hours|emergenc\w*)\b/i.test(message)) return "claim"
+  if (/\b(?:shop|you|we|business)\b.{0,35}\b(?:open|closed?|opening|closing)\b|\b(?:opening|closing) (?:time|hours)\b/i.test(message)) return "claim"
   // Negative safety guidance is useful. Remove only explicit negative phrases
   // before checking for positive approval or instructions from the model.
   const positive = reply.replace(/\b(?:not safe to (?:tow|use|drive|lift)|(?:cannot|can't|do not|don't|never) (?:confirm|guarantee|certify|approve)(?:\s+\w+){0,5}|do not (?:tow|use|drive|lift))\b/gi, "")
+  if (/\b(?:licens\w*|insur\w*|bonded|cash|credit cards?|debit cards?|financing|installments?)\b|\b(?:payments?|hours)\s+(?:are|is|accepted|include|from)\b/i.test(positive)) return "claim"
+  if (/\b(?:grind (?:out|a|the)|weld with|clean the crack|preheat)\b/i.test(positive)) return "safety"
   if (/\b(?:safe to (?:tow|use|drive|lift)|safely (?:tow|use|drive|lift)|seguro (?:para )?remolcar|puedes remolcar|roadworthy|DOT approved|AWS|ASME|CWI|(?:certified|qualified) (?:welder|inspector)|will hold|stronger than (?:the )?original|restores? (?:the )?(?:rated )?capacity|(?:you can|you should|just|first|then) (?:tow|load|lift|drive|weld|grind|drill|braze)|(?:use|run) (?:a )?(?:7018|6011|nickel)|preheat.{0,25}\d)\b/i.test(positive)) return "safety"
   if (/\b(?:you can|you should|it is okay to|it's okay to|go ahead and) (?:continue\s+)?(?:tow|drive|haul|load|lift|use)\b|(?:^|[.!?]\s*)(?:drive|tow|haul|load|lift|keep (?:using|hauling)|continue (?:using|hauling))\b|\b(?:food[ -]?safe|food[ -]?grade|approved for food)\b/i.test(positive)) return "safety"
-  if (/\b(?:powder coat\w*|ceramic coat\w*|machining|CNC|laser cut\w*|waterjet|engine rebuild\w*)\b|\b(?:we|shop).{0,20}(?:open|close).{0,20}\d|https?:\/\/|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(positive.replaceAll(ASSISTANT_SHOP_EMAIL, ""))) return "claim"
+  if (/\b(?:powder coat\w*|ceramic coat\w*|machining|CNC|laser cut\w*|waterjet|engine rebuild\w*|rebuild\w* (?:engines?|transmissions?)|intercoms?|automatic gate controls?)\b|\b(?:we|shop).{0,20}(?:open|close).{0,20}(?:\d|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|weekdays?|weekends?)|https?:\/\/|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(positive.replaceAll(ASSISTANT_SHOP_EMAIL, ""))) return "claim"
   if (/\b(?:costs?|price[ds]?|hourly rate|rates?|charges?|deposits?)\s+(?:is|are|would|will|you|of|about|around|approximately|starts?|\d)|\b(?:cuesta|cuestan|costar[aá]|tarifa|anticipo)\b/i.test(positive)) return "claim"
   if (/\b(?:we(?:'ll| will)|it(?:'ll| will))\b.{0,35}\b(?:ready|done|finished|arrive|there|dispatch)|\b(?:ready|done|finished|completed) (?:by|in|on|today|tomorrow)\b|\b(?:guaranteed|certifications?|certified|warrant(?:y|ied)|24[ -]?hour service|same[ -]?day service)\b/i.test(positive)) return "claim"
   if (/\b(?:statewide|nationwide|anywhere in|all of Tennessee|(?:can|will) (?:be|arrive) (?:there|on[ -]?site)|dispatch(?:ed)? within)\b/i.test(positive)) return "claim"
@@ -98,6 +105,20 @@ function unsupportedCapabilityQuestion(message: string): boolean {
     const capability = clause.slice(question.index)
     const evidence = /\b(?:it|this|that|these|those)\b/i.test(capability) ? message : capability
     return capabilityWords(evidence).some((word) => !questionWords.has(word) && !failureWords.has(word) && !knownCapabilityWords.has(word))
+  })
+}
+
+function unsupportedCapabilityAssertion(reply: string): boolean {
+  // A declarative request need not contain "Can you". Validate affirmative
+  // capability claims independently of the customer's question syntax, so a
+  // known object (a bracket) cannot license an unknown process (zinc plating).
+  return reply.split(/[!?\n]+|\.(?=\s|$)/).some((clause) => {
+    const claim = /\b(?:we|the shop)\s+(?:(?:can|could|will|also)\s+)*(?:do|provide|offer|handle|perform|repair|weld|build|fabricate|rebuild|plate|install|specialize in)\b/i.exec(clause)
+    if (!claim) return false
+    if (/\b(?:confirm|check|review)\s+(?:whether|if)\s*$/i.test(clause.slice(0, claim.index))) return false
+    const capability = clause.slice(claim.index)
+    if (/^(?:we|the shop)\s+(?:(?:can|could|will|also)\s+)*do not\b/i.test(capability)) return false
+    return capabilityWords(capability).some((word) => !questionWords.has(word) && !failureWords.has(word) && !knownCapabilityWords.has(word))
   })
 }
 
@@ -224,7 +245,6 @@ export async function handleAssistantTurn(
   const outsideUsualArea = Boolean(fields.location && !assistantKnowledge.serviceAreas.some((area) => fields.location!.toLowerCase().includes(area.toLowerCase())))
   const replyPhones = String(output.reply).match(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g) ?? []
   const foreignPhone = replyPhones.some((value) => value.replace(/\D/g, "").slice(-10) !== phone.display.replace(/\D/g, "").slice(-10))
-  const concern = assistantExpertConcern(customerText, String(output.reply)) ?? (outsideUsualArea || foreignPhone ? "claim" : null)
   let reply = stripAssistantMoney(output.reply)
     // The model cannot choose a different phone, destination or HTML surface.
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
@@ -232,6 +252,7 @@ export async function handleAssistantTurn(
     .replace(/<\/?(?:address|article|aside|blockquote|br|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi, " ")
     .replace(/<[^>]*>/g, "")
   reply = stripAssistantSelfDisclosure(reply)
+  const concern = assistantExpertConcern(customerText, String(output.reply)) ?? (outsideUsualArea || foreignPhone || unsupportedCapabilityAssertion(reply) ? "claim" : null)
   const customerHandoff = assistantHandoffReason(latest)
   const unsupportedCapability = unsupportedCapabilityQuestion(latest)
   const repairDetails = currentRepairDetails(latest, fields)
@@ -252,13 +273,14 @@ export async function handleAssistantTurn(
   }
   let handoff = !customerHandoff && unsupportedCapability && modelHandoff !== "model-error" && modelHandoff !== "rate-limit"
     ? "unknown" as AssistantHandoffReason
-    : customerHandoff ?? currentHandoff
+    : customerHandoff ?? currentHandoff ?? (!reply.trim() ? "unknown" : null)
   // Model metadata and cautious reply wording describe uncertainty, not a
   // customer request to stop. Money, dates and human requests remain contact.
   let continueIntake = handoff === "unknown" && !customerHandoff
   let branch = "model-answer"
+  const writtenContacts = options.voice ? "" : ` [${spanish ? "Formulario de presupuesto" : "Quote form"}](${ASSISTANT_QUOTE_FORM}) ${spanish ? "o" : "or"} [${spanish ? "Correo" : "Email"} ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
   const intakeReply = () => `${spanish ? "Una persona del taller debe confirmar el trabajo." : "A person at the shop will confirm that job."} ${question()} ${callLink}.` + (options.voice
-    ? "" : ` [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`)
+    ? "" : writtenContacts)
   if (concern && handoff !== "human" && handoff !== "model-error" && handoff !== "rate-limit" && !customerHandoff) {
     branch = `expert-${concern}-intake`
     handoff = "unknown"
@@ -270,7 +292,7 @@ export async function handleAssistantTurn(
     const spanishBoundary = concern === "scope" ? "Reparamos el metal de puertas; el motor y la electricidad corresponden al instalador."
       : concern === "safety" ? "No puedo evaluar la seguridad a distancia; la pieza dañada necesita inspección antes de remolcarla, cargarla o usarla."
         : outsideUsualArea ? "El taller debe confirmar el viaje según el trabajo y la ubicación." : "Una persona del taller debe confirmar el trabajo."
-    reply = `${spanish ? spanishBoundary : boundary} ${question()} ${callLink}.` + (options.voice ? "" : ` [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`)
+    reply = `${spanish ? spanishBoundary : boundary} ${question()} ${callLink}.` + writtenContacts
   } else if (handoff) {
     branch = continueIntake ? unsupportedCapability ? "unknown-capability-intake" : "expert-claim-intake" : "contact-handoff"
     reply = continueIntake ? intakeReply() : options.voice ? `${spanish ? "Una persona del taller puede ayudarte." : "A person at the shop can help."} ${callLink}.` : assistantContactReply(phone, customerText, fields.callback_phone ? nextQuestion(fields, conversation) : undefined)
@@ -283,14 +305,33 @@ export async function handleAssistantTurn(
     // Keep one question even when a provider ignores the reply-length rule.
     const firstQuestion = reply.indexOf("?")
     if (firstQuestion >= 0) reply = reply.slice(0, firstQuestion + 1)
-    if (reply.length > 420) reply = question()
+    if (reply.length > 420) {
+      branch = "response-length-handoff"
+      handoff = "unknown"
+      continueIntake = true
+      reply = intakeReply()
+    }
     if (!reply.includes("?") && fields.is_job !== "no") reply = `${reply} ${question()}`
   }
-  if (fields.is_job === "no" && handoff !== "human") {
+  // A non-job classification cannot discard an unanswered customer question.
+  // Only explicit solicitation, wrong-number or goodbye evidence closes it.
+  const closeEvidence = latest.replace(/\[INTERNAL TEST\]/gi, "").trim()
+  const solicitation = /^we\s+(?:sell|offer|provide|guarantee)\b.{0,80}\b(?:SEO|rankings?|marketing|websites?|advertising)\b/i.test(closeEvidence)
+  const wrongNumber = /^(?:this is (?:the |a )?)?wrong number(?:,? sorry)?[.!]?$/i.test(closeEvidence)
+    || /^is this (?:the |a )?(?:pizza |other )?(?:restaurant|pizzeria)\s*\?$/i.test(closeEvidence)
+  const farewell = /^(?:goodbye|bye|adi[oó]s)[.!]?$/i.test(closeEvidence)
+  const optOut = /^(?:please )?(?:remove me from (?:your |the )?(?:mailing )?list|unsubscribe(?: me)?)[.!]?$/i.test(closeEvidence)
+  const politeClose = solicitation || wrongNumber || farewell || optOut
+  if (fields.is_job === "no" && handoff !== "human" && politeClose) {
     branch = "non-job-close"
     reply = spanish ? "Este es Music City Specialty Welding. Gracias." : "This is Music City Specialty Welding. Take care."
     handoff = null
     continueIntake = false
+  } else if ((fields.is_job === "no" && !handoff) || !reply.trim()) {
+    branch = "non-job-handoff"
+    handoff = "unknown"
+    continueIntake = false
+    reply = options.voice ? `${spanish ? "Una persona del taller puede ayudarte." : "A person at the shop can help."} ${callLink}.` : assistantContactReply(phone, customerText)
   }
   reply = reply.trim()
   if (firstReply) reply = `${spanish ? "Soy un asistente automatizado de Music City Specialty Welding." : DISCLOSURE} ${reply}`
