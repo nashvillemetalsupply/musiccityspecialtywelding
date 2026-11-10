@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai"
 import { getSql } from "@/lib/db"
-import { AI_MAX_RETRIES, AI_MODELS, aiConfigured, deepseekConfigured, jsonWithDeepSeek, runAiCall } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, aiConfigured, claudeConfigured, jsonWithClaude, runAiCall } from "@/lib/ai"
 import { fileCallOntoOpenLead, saveInboundCallAsJob } from "@/lib/job-intake"
 import { findOpenLeadResolutionForPerson } from "@/lib/people"
 import { notifyAll } from "@/lib/notify"
@@ -77,7 +77,7 @@ const JSON_SHAPE = 'Reply with one JSON object and nothing else: {"caller_name":
 
 // The gateway first (structured output, the same model the extractor uses).
 // When it refuses -- the free tier rate-limits a burst -- the shop's own
-// DeepSeek key reads the same call. Both answers pass the same schema.
+// Anthropic key reads the same call. Both answers pass the same schema.
 async function readCall(prompt: string, isTest: boolean): Promise<CallSummary> {
   return readWithSchemaFallback({
     primary: async () => (await runAiCall({ operation: "call-summary", model: AI_MODELS.extraction, isTest }, () => generateText({
@@ -87,14 +87,14 @@ async function readCall(prompt: string, isTest: boolean): Promise<CallSummary> {
       prompt,
       maxRetries: AI_MAX_RETRIES,
     }))).output,
-    fallback: () => jsonWithDeepSeek({ system: `${SYSTEM} ${JSON_SHAPE}`, prompt, isTest, operation: "call-summary" }),
-    fallbackConfigured: deepseekConfigured(),
+    fallback: () => jsonWithClaude({ system: `${SYSTEM} ${JSON_SHAPE}`, prompt, isTest, operation: "call-summary" }),
+    fallbackConfigured: claudeConfigured(),
     parse: (value) => callSummarySchema.parse(value),
   })
 }
 
 export async function summarizeCallDraft(callSid: string): Promise<{ summarized: boolean; reason?: string }> {
-  if (!aiConfigured() && !deepseekConfigured()) return { summarized: false, reason: "not-configured" }
+  if (!aiConfigured() && !claudeConfigured()) return { summarized: false, reason: "not-configured" }
   const sql = getSql()
   const rows = (await sql`
     SELECT d.id, d.public_id, d.call_sid, d.person_id, d.status, d.caller_name, d.phone, d.need, d.is_test,
@@ -224,7 +224,7 @@ async function settleCall(draft: DraftForSummary, summary: CallSummary, name: st
 // that existed when this shipped (28) in one sweep; in steady state only the
 // calls since the last sweep qualify, so the ceiling costs nothing.
 export async function summarizePendingCalls(limit = 30) {
-  if (!aiConfigured() && !deepseekConfigured()) return { configured: false, attempted: 0, summarized: 0 }
+  if (!aiConfigured() && !claudeConfigured()) return { configured: false, attempted: 0, summarized: 0 }
   const sql = getSql()
   // A claim that never wrote back -- the function was cut off mid-read --
   // would hold its row forever. After ten minutes it is a failure like any

@@ -6,15 +6,15 @@ test("AI calls use two explicit retries and preserve token usage plus test statu
   assert.equal(AI_MAX_RETRIES, 2)
   assert.deepEqual(buildAiUsageRun({
     operation: "call-summary",
-    provider: "deepseek",
-    model: "deepseek-chat",
+    provider: "anthropic",
+    model: "claude-haiku-5-5",
     ok: true,
     isTest: true,
     usage: { prompt_tokens: 90, completion_tokens: 30, total_tokens: 120 },
   }), {
     job: "ai-usage",
     ok: true,
-    detail: { operation: "call-summary", provider: "deepseek", model: "deepseek-chat" },
+    detail: { operation: "call-summary", provider: "anthropic", model: "claude-haiku-5-5" },
     meta: { usage: { prompt_tokens: 90, completion_tokens: 30, total_tokens: 120 }, isTest: true },
   })
 })

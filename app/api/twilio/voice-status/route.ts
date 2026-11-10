@@ -5,7 +5,7 @@ import { sendSmsPersisted } from "@/lib/messages"
 import { notifyAll } from "@/lib/notify"
 import { normalizePhone } from "@/lib/people"
 import { prepareInboundCallIntake, type CallIntakeDraft } from "@/lib/job-intake"
-import { readTwilioForm, twilioSmsConfigured, twilioVoiceConfigured, twiml } from "@/lib/twilio"
+import { escapeXml, readTwilioForm, twilioCallbackUrl, twilioSmsConfigured, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 import { runRecoverySweep } from "@/lib/recovery-sweep"
 import { wakeGmailIngest } from "@/lib/gmail-wake"
 import { z } from "zod"
@@ -143,8 +143,7 @@ export async function POST(req: Request) {
     }
     // Every side effect below is independently idempotent, so a provider retry
     // resumes work after a crash between the immutable receipt and notification.
-    if (!eventId || call.is_test) return twiml("")
-    await notifyAll({
+    if (eventId && !call.is_test) await notifyAll({
       priority: "interrupt",
       stock: "red",
       title: "Missed shop call",
@@ -155,6 +154,12 @@ export async function POST(req: Request) {
       quietHoursExempt: true,
       smsFallback: true,
     })
+    // The crew alert must survive a caller hanging up during the assistant.
+    // Only the customer auto-reply is skipped while the assistant is talking.
+    if (process.env.ASSISTANT_VOICE === "1") {
+      return twiml(`<Redirect method="POST">${escapeXml(twilioCallbackUrl("/api/twilio/assist-voice"))}</Redirect>`)
+    }
+    if (!eventId || call.is_test) return twiml("")
     if (twilioSmsConfigured() && normalizePhone(call.from_phone)) await sendSmsPersisted({
       to: call.from_phone,
       body: "Sorry we missed you. Text what you need and send a photo if you can. — Music City Specialty Welding",

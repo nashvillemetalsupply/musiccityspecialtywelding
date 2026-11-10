@@ -8,6 +8,10 @@ const nextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  outputFileTracingIncludes: {
+    "/api/assist": ["./BRAND-BRIEF.md", "./app/service-areas/page.tsx"],
+    "/api/twilio/assist-voice": ["./BRAND-BRIEF.md", "./app/service-areas/page.tsx"],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [390, 640, 768, 1024, 1280, 1440, 1920],

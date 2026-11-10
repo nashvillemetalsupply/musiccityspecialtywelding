@@ -36,55 +36,142 @@ export function aiConfigured() {
   )
 }
 
-// The gateway refuses every paid model on the shop's plan -- "Free tier users do
-// not have access to this model", which is what killed the first voice preview.
-// The shop already pays DeepSeek for its own key, and DeepSeek speaks the OpenAI
-// chat format, so one fetch reaches it: no provider package, no second billing
-// relationship, and no Vercel credit. The gateway stays the path for everything
-// that needs tools, streaming or structured output; this is for plain drafting.
-export const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat"
+// Direct Claude JSON calls use the shop's Anthropic account independently of
+// gateway availability. Keep the model choice shared by every direct caller.
+export const CLAUDE_MODEL = "claude-haiku-5-5"
 
-export function deepseekConfigured() {
-  return Boolean(process.env.DEEPSEEK_API_KEY?.trim())
+export function claudeConfigured() {
+  return Boolean(process.env.ANTHROPIC_API_KEY?.trim())
 }
 
-async function postDeepSeek(input: { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; operation: string; isTest?: boolean }, responseFormat: "text" | "json") {
-  const key = process.env.DEEPSEEK_API_KEY?.trim()
-  if (!key) throw new Error("DEEPSEEK_API_KEY is not set.")
-  const maxRetries = Math.max(0, Math.min(input.maxRetries ?? AI_MAX_RETRIES, 4))
-  return runAiCall({ operation: input.operation, provider: "deepseek", model: DEEPSEEK_MODEL, isTest: input.isTest }, async () => {
-    const response = await retryAiRequest(() => fetch("https://api.deepseek.com/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-      body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
-        messages: [
-          { role: "system", content: input.system },
-          { role: "user", content: input.prompt },
-        ],
-        ...(responseFormat === "json" ? { response_format: { type: "json_object" } } : {}),
-        max_tokens: input.maxTokens ?? (responseFormat === "json" ? 600 : 300),
-        stream: false,
-      }),
-      signal: input.signal ?? AbortSignal.timeout(30_000),
-    }), (candidate) => !candidate.ok && (candidate.status === 429 || candidate.status >= 500), maxRetries)
-    if (!response.ok) {
-      const detail = (await response.text().catch(() => "")).slice(0, 300)
-      throw new Error(`DeepSeek refused the request (${response.status}). ${detail}`)
+type ClaudeInput = { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; isTest?: boolean; operation?: string }
+
+export type ClaudeModelDiagnostics = {
+  stop_reason: string | null
+  content_block_types: string[]
+  usage: Record<string, number> | null
+}
+
+export class ClaudeResponseError extends Error {
+  readonly modelDiagnostics: ClaudeModelDiagnostics
+
+  constructor(message: string, modelDiagnostics: ClaudeModelDiagnostics) {
+    super(message)
+    this.name = "ClaudeResponseError"
+    this.modelDiagnostics = modelDiagnostics
+  }
+}
+
+type ClaudeMessage = { content?: { type?: string; text?: unknown }[]; stop_reason?: string; usage?: unknown }
+
+function claudeModelDiagnostics(message: ClaudeMessage): ClaudeModelDiagnostics {
+  const usage: Record<string, number> = {}
+  if (message.usage && typeof message.usage === "object") {
+    for (const field of ["input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"]) {
+      const count = (message.usage as Record<string, unknown>)[field]
+      if (typeof count === "number" && Number.isFinite(count) && count >= 0) usage[field] = count
     }
-    const json = await response.json() as { choices?: { message?: { content?: string } }[]; usage?: unknown }
-    const content = String(json.choices?.[0]?.message?.content ?? "").trim()
-    if (!content) throw new Error("DeepSeek returned no content.")
-    return { content, parsed: responseFormat === "json" ? JSON.parse(content) : undefined, usage: json.usage ?? null }
+  }
+  return {
+    stop_reason: typeof message.stop_reason === "string" ? message.stop_reason : null,
+    content_block_types: Array.isArray(message.content) ? message.content.map((block) => typeof block?.type === "string" ? block.type : "unknown") : [],
+    usage: Object.keys(usage).length ? usage : null,
+  }
+}
+
+// Find the first object without mistaking braces inside JSON strings for its
+// boundary. Markdown fences and a short prose introduction are harmless here.
+function firstJsonObject(content: string): string {
+  const start = content.indexOf("{")
+  if (start < 0) throw new Error("Missing JSON object")
+  let depth = 0
+  let quoted = false
+  let escaped = false
+  for (let index = start; index < content.length; index++) {
+    const character = content[index]
+    if (quoted) {
+      if (escaped) escaped = false
+      else if (character === "\\") escaped = true
+      else if (character === '"') quoted = false
+    } else if (character === '"') quoted = true
+    else if (character === "{") depth++
+    else if (character === "}" && --depth === 0) return content.slice(start, index + 1)
+  }
+  throw new Error("Incomplete JSON object")
+}
+
+async function postClaude(input: ClaudeInput, responseFormat: "text" | "json") {
+  const key = process.env.ANTHROPIC_API_KEY?.trim()
+  if (!key) throw new Error("ANTHROPIC_API_KEY is not set.")
+  const maxRetries = Math.max(0, Math.min(input.maxRetries ?? AI_MAX_RETRIES, 4))
+  return runAiCall({ operation: input.operation ?? `claude-${responseFormat}`, provider: "anthropic", model: CLAUDE_MODEL, isTest: input.isTest }, async () => {
+    const request = async (maxTokens: number, previousDiagnostics?: ClaudeModelDiagnostics): Promise<ClaudeMessage> => {
+      try {
+        const response = await retryAiRequest(() => fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            system: responseFormat === "json" ? `${input.system}\nReturn only one valid JSON object, without markdown or any other text.` : input.system,
+            messages: [{ role: "user", content: input.prompt }],
+            max_tokens: maxTokens,
+            stream: false,
+          }),
+          signal: input.signal ?? AbortSignal.timeout(30_000),
+        }), (candidate) => !candidate.ok && (candidate.status === 429 || candidate.status >= 500), maxRetries)
+        if (!response.ok) throw new ClaudeResponseError(`Claude refused the request (${response.status}).`, claudeModelDiagnostics({}))
+        try {
+          const message: unknown = await response.json()
+          if (!message || typeof message !== "object" || Array.isArray(message)) throw new Error("Invalid Messages response")
+          return message as ClaudeMessage
+        } catch {
+          throw new ClaudeResponseError("Claude returned an invalid response.", claudeModelDiagnostics({}))
+        }
+      } catch (error) {
+        if (!previousDiagnostics) throw error
+        // A failed retry has no replacement response metadata. Retain the
+        // truncated response's evidence without copying transport error text.
+        const failure = new ClaudeResponseError(error instanceof ClaudeResponseError ? error.message : "Claude request failed.", previousDiagnostics)
+        if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) failure.name = error.name
+        throw failure
+      }
+    }
+    const maxTokens = input.maxTokens ?? (responseFormat === "json" ? 2000 : 1000)
+    let json = await request(maxTokens)
+    // A truncated response is never parsed, even if its text happens to contain
+    // a complete object. Retry once with room for the full response instead.
+    if (json.stop_reason === "max_tokens") json = await request(maxTokens * 2, claudeModelDiagnostics(json))
+    const diagnostics = claudeModelDiagnostics(json)
+    if (json.stop_reason !== "end_turn" && json.stop_reason !== "stop_sequence") {
+      throw new ClaudeResponseError("Claude did not finish its response.", diagnostics)
+    }
+    const content = (Array.isArray(json.content) ? json.content : [])
+      .filter((block) => block?.type === "text" && typeof block.text === "string")
+      .map((block) => block.text).join("").trim()
+    if (!content) throw new ClaudeResponseError("Claude returned no text.", diagnostics)
+    let parsed: unknown
+    if (responseFormat === "json") {
+      try {
+        parsed = JSON.parse(firstJsonObject(content))
+      } catch {
+        // JSON.parse errors can quote the model's answer; keep failure records
+        // to protocol metadata and a stable error message instead.
+        throw new ClaudeResponseError("Claude returned an invalid JSON object.", diagnostics)
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new ClaudeResponseError("Claude returned an invalid JSON object.", diagnostics)
+      }
+    }
+    return { content, parsed, usage: json.usage ?? null }
   })
 }
 
-export async function draftWithDeepSeek(input: { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; isTest?: boolean; operation?: string }) {
-  const result = await postDeepSeek({ ...input, operation: input.operation ?? "deepseek-draft" }, "text")
+export async function draftWithClaude(input: ClaudeInput): Promise<string> {
+  const result = await postClaude(input, "text")
   return result.content
 }
 
-export async function jsonWithDeepSeek(input: { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; isTest?: boolean; operation?: string }): Promise<unknown> {
-  const result = await postDeepSeek({ ...input, operation: input.operation ?? "deepseek-json" }, "json")
+export async function jsonWithClaude(input: ClaudeInput): Promise<unknown> {
+  const result = await postClaude(input, "json")
   return result.parsed
 }

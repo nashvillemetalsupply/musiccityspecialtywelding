@@ -111,7 +111,8 @@ async function withFakeProviderFetch(run) {
     return new Response(JSON.stringify({
       sid: "SM-test-123",
       status: "queued",
-      choices: [{ message: { content: "{\"ok\":true}" } }],
+      content: [{ type: "text", text: "{\"ok\":true}" }],
+      stop_reason: "end_turn",
     }), { status: 200, headers: { "Content-Type": "application/json" } })
   }
   try {
@@ -703,7 +704,7 @@ test("a Twilio-triggered recovery pass bypasses only the ten-minute cooldown", (
   assert.match(recovery, /\$\{force\}::boolean OR automation_leases\.last_finished_at/)
 })
 
-test("Twilio, DeepSeek, and weather fetches use bounded abort signals", async () => {
+test("Twilio, Claude, and weather fetches use bounded abort signals", async () => {
   await withEnv({
     TWILIO_ACCOUNT_SID: `AC${"a".repeat(32)}`,
     TWILIO_AUTH_TOKEN: "fake-auth-token",
@@ -711,7 +712,7 @@ test("Twilio, DeepSeek, and weather fetches use bounded abort signals", async ()
     TWILIO_PHONE_NUMBER: "+16155550100",
     TWILIO_SMS_ENABLED: "true",
     TWILIO_WEBHOOK_BASE_URL: "https://example.test",
-    DEEPSEEK_API_KEY: "fake-deepseek-key",
+    ANTHROPIC_API_KEY: "fake-anthropic-key",
   }, async () => withFakeProviderFetch(async ({ durations, calls, signal }) => {
     const twilio = await loadStandaloneTs("lib/twilio.ts")
     const ai = await loadStandaloneTs("lib/ai.ts")
@@ -724,8 +725,8 @@ test("Twilio, DeepSeek, and weather fetches use bounded abort signals", async ()
     assert.equal(calls.length, 0, "the preview failure switch must not contact Twilio")
 
     await twilio.sendSms({ to: "+16155550141", body: "[INTERNAL TEST] timeout fixture" })
-    await ai.draftWithDeepSeek({ system: "fixture", prompt: "fixture" })
-    await ai.jsonWithDeepSeek({ system: "fixture", prompt: "fixture" })
+    await ai.draftWithClaude({ system: "fixture", prompt: "fixture" })
+    await ai.jsonWithClaude({ system: "fixture", prompt: "fixture" })
 
     assert.deepEqual(durations, [8_000, 30_000, 30_000])
     assert.equal(calls.length, 3)

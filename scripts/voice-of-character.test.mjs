@@ -160,7 +160,7 @@ test("the late-promise draft cannot send, invent a date, or carry money", () => 
 
   // Intent before the provider call, the order every AI path here keeps.
   const record = DRAFT_SOURCE.indexOf("recordEvent(")
-  const model = DRAFT_SOURCE.indexOf("draftWithDeepSeek(")
+  const model = DRAFT_SOURCE.indexOf("draftWithClaude(")
   assert.ok(record > 0 && record < model, "intent is written before the model runs")
 
   // The promise has to be the shop's own, still owed, and actually late --

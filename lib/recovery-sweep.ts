@@ -184,6 +184,10 @@ export async function runRecoverySweep({
     detail.promiseTextReconciliation = await reconcileStaleCommitmentReschedules()
     detail.glassUploadReconciliation = await reconcileGlassUploads()
     detail.interruptDeliveryRetries = await retryPendingInterrupts()
+    if (process.env.NEXT_PUBLIC_ASSISTANT_CHAT === "1" || process.env.ASSISTANT_VOICE === "1") {
+      const { recoverAssistantHandoffs } = await import("@/lib/assistant/handoff.ts")
+      detail.assistantHandoffs = await recoverAssistantHandoffs()
+    }
 
     const expiring = (await sql`
       SELECT id, filename, expires_at FROM shop_documents

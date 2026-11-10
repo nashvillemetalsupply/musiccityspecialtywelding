@@ -1,6 +1,6 @@
 import { gateway } from "@ai-sdk/gateway"
 import { experimental_generateSpeech, generateText } from "ai"
-import { AI_MAX_RETRIES, AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek, runAiCall } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, CLAUDE_MODEL, aiConfigured, claudeConfigured, draftWithClaude, runAiCall } from "@/lib/ai"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
 import { getOwnerVoiceProfile, ownerVoiceGuide } from "@/lib/voice-of-character.ts"
@@ -41,11 +41,9 @@ export async function POST(req: Request) {
       sourceCount: profile?.sourceCount ?? 0,
     }, { status: 409 })
   }
-  // Either drafter will do. DeepSeek is preferred when the shop's own key is
-  // set: it is the one the shop already pays for, and the gateway's plan does
-  // not run paid models.
-  const drafter = deepseekConfigured() ? DEEPSEEK_MODEL : AI_MODELS.reasoning
-  if (!deepseekConfigured() && !aiConfigured()) {
+  // Prefer the shop's direct Anthropic key; the gateway is the fallback.
+  const drafter = claudeConfigured() ? CLAUDE_MODEL : AI_MODELS.reasoning
+  if (!claudeConfigured() && !aiConfigured()) {
     return Response.json({ error: "The voice preview has no model to draft with." }, { status: 503 })
   }
 
@@ -75,8 +73,8 @@ export async function POST(req: Request) {
   // difference between a bug and a bill.
   let text = ""
   try {
-    text = deepseekConfigured()
-      ? await draftWithDeepSeek({ system, prompt: ask, isTest: true, operation: "voice-preview-copy", maxRetries: AI_MAX_RETRIES })
+    text = claudeConfigured()
+      ? await draftWithClaude({ system, prompt: ask, isTest: true, operation: "voice-preview-copy", maxRetries: AI_MAX_RETRIES })
       : (await runAiCall({ operation: "voice-preview-copy", model: AI_MODELS.reasoning, isTest: true }, () => generateText({ model: AI_MODELS.reasoning, system, prompt: ask, maxRetries: AI_MAX_RETRIES }))).text
     text = text.replace(/\s+/g, " ").trim().slice(0, 600)
     if (!text) return Response.json({ error: "The preview came back empty." }, { status: 502 })
@@ -92,7 +90,7 @@ export async function POST(req: Request) {
     }, { status: restricted ? 402 : 502 })
   }
 
-  // Speech is the optional half. DeepSeek has no text-to-speech at all and the
+  // Speech is the optional half. The direct Messages API only drafts text and the
   // gateway's is behind the same plan wall, so a preview that cannot be spoken
   // still returns his words -- the board reads them in the browser's own voice
   // rather than throwing away a draft that came back fine.

@@ -693,6 +693,117 @@ export async function notifyAll(input: Omit<Parameters<typeof notify>[0], "opera
   return Promise.all(operators.filter((operator) => !input.ownerOnly || operator.role === "owner").map((operator) => notify({ ...input, operatorId: operator.id })))
 }
 
+// Assistant handoffs need the whole conversation in the shop inbox. Operator
+// notification bodies are intentionally bounded and cannot carry a transcript.
+export async function emailAssistantTranscript(input: {
+  eventId: number; sessionId: string; reason: string; transcript: string; leadId: number | null; isTest: boolean
+}): Promise<"accepted" | "unavailable" | "failed" | "unknown" | "suppressed"> {
+  if (input.isTest || /\[INTERNAL TEST\]/i.test(input.transcript)) return "suppressed"
+  const apiKey = process.env.RESEND_API_KEY?.trim()
+  const from = process.env.QUOTE_FROM_EMAIL?.trim()
+  // Leave the handoff receipt available for recovery when email is unconfigured.
+  // No send claim is created until a provider handoff is actually possible.
+  if (!apiKey || !from) return "unavailable"
+  if (!Number.isSafeInteger(input.eventId) || input.eventId <= 0
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.sessionId)
+    || !/^[a-z][a-z0-9_-]{0,63}$/.test(input.reason)) throw new Error("Invalid assistant handoff receipt.")
+  const source = (await getSql()`
+    SELECT e.lead_id, e.person_id, (
+      e.is_test OR s.is_test
+      OR lower(COALESCE(e.detail->>'isTest', 'false')) = 'true'
+      OR COALESCE(e.body, '') ILIKE '%[INTERNAL TEST]%'
+      OR COALESCE(e.crew_body, '') ILIKE '%[INTERNAL TEST]%'
+      OR COALESCE(el.is_test, false) OR COALESCE(ep.is_test, false)
+      OR COALESCE(elp.is_test, false) OR COALESCE(sl.is_test, false)
+      OR COALESCE(slp.is_test, false)
+      OR EXISTS (SELECT 1 FROM assistant_turns t WHERE t.session_id = s.id
+        AND (t.is_test OR t.inbound ILIKE '%[INTERNAL TEST]%'
+          OR COALESCE(t.result::text, '') ILIKE '%[INTERNAL TEST]%'))
+    ) AS is_test
+    FROM events e JOIN assistant_sessions s ON s.id = ${input.sessionId}::uuid
+    LEFT JOIN leads el ON el.id = e.lead_id
+    LEFT JOIN people ep ON ep.id = e.person_id
+    LEFT JOIN people elp ON elp.id = el.person_id
+    LEFT JOIN leads sl ON sl.id = s.lead_id
+    LEFT JOIN people slp ON slp.id = sl.person_id
+    WHERE e.id = ${input.eventId}::bigint
+      AND e.detail->>'sessionId' = ${input.sessionId}::text
+      AND e.lead_id IS NOT DISTINCT FROM ${input.leadId}::bigint
+    LIMIT 1`) as { lead_id: number | null; person_id: number | null; is_test: boolean }[]
+  // Missing evidence and any sticky test marker both fail closed.
+  if (!source[0] || source[0].is_test !== false) return "suppressed"
+  const { recordEvent } = await import("@/lib/events")
+  const { stripAssistantMoney } = await import("./assistant/money.ts")
+  const to = "Sales@musiccityspecialtywelding.com"
+  const subject = "MCSW: Customer needs the shop"
+  const text = ["Customer needs the shop", `Reason: ${input.reason}`, input.transcript]
+    .map((part) => part.split(/\r?\n/).map(stripAssistantMoney).join("\n")).join("\n\n")
+  const baseKey = `assistant-transcript:${input.sessionId}:${input.reason}`
+  let key = baseKey
+  const intent = {
+    kind: "email.out", actorType: "system", leadId: source[0].lead_id, personId: source[0].person_id,
+    externalId: key, body: text, crewBody: text,
+    detail: {
+      to, from, subject, sessionId: input.sessionId, reason: input.reason, handoffEventId: input.eventId,
+      audience: "assistant-shop", deliveryStatus: "pending", isTest: false,
+    },
+  } as const
+  let sourceEventId = await recordEvent(intent)
+  // The unique immutable intent is the send claim. Replays never submit a new
+  // provider request, including a request whose acceptance response was lost.
+  if (!sourceEventId) {
+    const prior = (await getSql()`
+      SELECT intent.id,
+        (SELECT count(*)::int FROM events attempts WHERE attempts.kind = 'email.out'
+          AND attempts.detail->>'sessionId' = ${input.sessionId}::text
+          AND attempts.detail->>'reason' = ${input.reason}::text
+          AND attempts.detail->>'audience' = 'assistant-shop') AS attempts,
+        EXISTS (SELECT 1 FROM events receipt WHERE receipt.kind = 'email.accepted'
+          AND receipt.detail->>'sourceEventId' = intent.id::text) AS accepted,
+        EXISTS (SELECT 1 FROM events receipt WHERE receipt.kind = 'email.failed'
+          AND receipt.detail->>'sourceEventId' = intent.id::text
+          AND receipt.detail->>'ambiguous' = 'false') AS failed
+      FROM events intent WHERE intent.kind = 'email.out'
+        AND intent.detail->>'sessionId' = ${input.sessionId}::text
+        AND intent.detail->>'reason' = ${input.reason}::text
+        AND intent.detail->>'audience' = 'assistant-shop'
+      ORDER BY intent.id DESC LIMIT 1`) as {
+      id: number; attempts: number; accepted: boolean; failed: boolean
+    }[]
+    // A lost receipt is ambiguous. Never repeat a potentially accepted email;
+    // the handoff caller raises a separate durable phone alert for inspection.
+    if (prior[0]?.accepted) return "accepted"
+    if (!prior[0]?.failed) return "unknown"
+    if (prior[0].attempts >= 3) return "failed"
+    // Only a definitive rejection permits another provider attempt. A unique
+    // retry intent fences concurrent recovery; acceptance ambiguity never does.
+    key = `${baseKey}:retry-${prior[0].attempts}`
+    sourceEventId = await recordEvent({ ...intent, externalId: key })
+    if (!sourceEventId) return "unknown"
+  }
+  let receipt: { kind: string; externalId: string; body: string; detail: Record<string, unknown> }
+  try {
+    const accepted = await sendEmailWithProviderTruth(() => new Resend(apiKey).emails.send({
+      from, to, subject, text,
+    }, { idempotencyKey: key }))
+    receipt = {
+      kind: "email.accepted", externalId: accepted.id, body: "Assistant transcript accepted by the email provider.",
+      detail: { sourceEventId, providerEmailId: accepted.id, audience: "assistant-shop", isTest: false },
+    }
+  } catch (error) {
+    const definitive = isDefinitiveEmailProviderError(error)
+    receipt = {
+      kind: definitive ? "email.failed" : "email.unknown", externalId: `${definitive ? "failed" : "unknown"}:${key}`,
+      body: definitive ? "Assistant transcript email was rejected." : "Assistant transcript email acceptance is unconfirmed; check before retrying.",
+      detail: { sourceEventId, ambiguous: !definitive, audience: "assistant-shop", isTest: false },
+    }
+  }
+  await recordEvent({
+    ...receipt, actorType: "system", leadId: source[0].lead_id, personId: source[0].person_id, crewBody: receipt.body,
+  })
+  return receipt.kind === "email.accepted" ? "accepted" : receipt.kind === "email.failed" ? "failed" : "unknown"
+}
+
 export async function retryPendingInterrupts(limit = 10) {
   const sql = getSql()
   const allowPreviewSmsProbe = process.env.VERCEL_ENV !== "production" && process.env.MCSW_TEST_SMS_FAIL === "1"

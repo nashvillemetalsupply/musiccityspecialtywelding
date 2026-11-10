@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Barlow_Condensed, Permanent_Marker } from "next/font/google"
 import { PublicAnalytics } from "@/components/public-analytics"
+import { AssistantChat } from "@/components/assistant-chat"
 import { publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./globals.css"
@@ -114,6 +115,9 @@ export default function RootLayout({
         {/* Customer bearer links and internal operations never load third-party analytics. */}
         <PublicAnalytics measurementId={googleAnalyticsMeasurementId} />
         {children}
+        {process.env.NEXT_PUBLIC_ASSISTANT_CHAT === "1" && (
+          <AssistantChat phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
+        )}
       </body>
     </html>
   )

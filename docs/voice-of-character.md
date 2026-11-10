@@ -73,13 +73,11 @@ Keeping these apart prevents the confusion that cost an afternoon.
 
 ## Who drafts the words
 
-`draftWithDeepSeek` in `lib/ai.ts` is preferred whenever `DEEPSEEK_API_KEY` is
-set, and the AI Gateway is the fallback. Two reasons: the gateway refuses every
-paid model on the shop's plan — *"Free tier users do not have access to this
-model"*, a 403 that produced three silent 500s before the error was surfaced —
-and the shop already pays DeepSeek for a key it uses elsewhere. DeepSeek speaks
-the OpenAI chat format, so one `fetch` reaches it: no provider package, no Vercel
-credit, no second bill. `DEEPSEEK_MODEL` defaults to `deepseek-chat`.
+`draftWithClaude` in `lib/ai.ts` is preferred whenever `ANTHROPIC_API_KEY` is
+set, and the AI Gateway is the fallback. The direct Anthropic Messages API uses
+the `CLAUDE_MODEL` constant in `lib/ai.ts` through `fetch`, without an additional
+provider package. The gateway's plan has refused paid models, so the shop's
+direct Anthropic credential keeps drafting independent of that plan.
 
 The gateway stays the path for anything needing tools, streaming or structured
 output — extraction, Ask Jobs and the morning brief still run through it, and

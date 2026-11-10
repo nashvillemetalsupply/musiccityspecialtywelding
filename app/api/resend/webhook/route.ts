@@ -1,7 +1,7 @@
 import { Resend } from "resend"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
-import { notifyAll } from "@/lib/notify"
+import { notifyAll, notifyOwnerCellSms } from "@/lib/notify"
 
 export const runtime = "nodejs"
 
@@ -119,10 +119,19 @@ export async function POST(req: Request) {
   }
   const accepted = (await sql`
     SELECT accepted_event.lead_id, accepted_event.person_id, accepted_event.detail,
-      COALESCE(source_event.detail->>'audience', '') AS audience
+      COALESCE(source_event.detail->>'audience', '') AS audience,
+      (accepted_event.is_test OR COALESCE(source_event.is_test, false)
+        OR lower(COALESCE(source_event.detail->>'isTest', 'false')) = 'true'
+        OR COALESCE(l.is_test, false) OR COALESCE(p.is_test, false) OR COALESCE(s.is_test, false)
+        OR EXISTS (SELECT 1 FROM assistant_turns t WHERE t.session_id = s.id
+          AND (t.is_test OR t.inbound ILIKE '%[INTERNAL TEST]%'))
+      ) AS is_test
     FROM events accepted_event
     LEFT JOIN events source_event
       ON source_event.id::text = accepted_event.detail->>'sourceEventId'
+    LEFT JOIN leads l ON l.id = accepted_event.lead_id
+    LEFT JOIN people p ON p.id = accepted_event.person_id
+    LEFT JOIN assistant_sessions s ON s.id::text = source_event.detail->>'sessionId'
     WHERE accepted_event.kind = 'email.accepted'
       AND accepted_event.external_id = ${webhook.data.email_id}::text
     ORDER BY accepted_event.id DESC LIMIT 1`) as {
@@ -130,6 +139,7 @@ export async function POST(req: Request) {
     person_id: number | null
     detail: { sourceEventId?: number }
     audience: string
+    is_test: boolean
   }[]
   const sourceEventId = Number(accepted[0]?.detail?.sourceEventId)
   if (!accepted[0] || !Number.isInteger(sourceEventId) || sourceEventId <= 0) {
@@ -150,13 +160,24 @@ export async function POST(req: Request) {
     externalId: `resend:${webhook.type}:${webhook.data.email_id}`,
     body: reason,
     crewBody: failed ? "Customer email did not deliver." : delayed ? "Customer email is delayed." : "Customer email delivered.",
-    detail: { sourceEventId, providerEmailId: webhook.data.email_id, providerType: webhook.type },
+    detail: { sourceEventId, providerEmailId: webhook.data.email_id, providerType: webhook.type, isTest: accepted[0].is_test === true },
   })
   if (!eventId) {
     const existing = (await sql`SELECT id FROM events WHERE kind = ${eventKind}::text AND external_id = ${`resend:${webhook.type}:${webhook.data.email_id}`}::text LIMIT 1`) as { id: number }[]
     eventId = Number(existing[0]?.id) || null
   }
   if (!eventId) return Response.json({ error: "Delivery receipt could not be resumed." }, { status: 500 })
+  if (accepted[0].audience === "assistant-shop" && (failed || delayed) && accepted[0].is_test === false) {
+    // A human request may have no callback or lead yet. Its saved transcript
+    // must still reach the owner's existing phone alert path on inbox failure.
+    const alert = await notifyOwnerCellSms({ title: failed ? "Assistant transcript email did not deliver" : "Assistant transcript email is delayed",
+      body: "Open the saved assistant conversation and contact the customer.",
+      url: accepted[0].lead_id ? `/ops/leads/${accepted[0].lead_id}` : `/board/updates?receipt=${sourceEventId}#receipt`,
+      sourceEventId: eventId, dedupeKey: `assistant-email-status:${webhook.type}:${webhook.data.email_id}`,
+      capExempt: true, quietHoursExempt: true })
+    if (alert.reason === "not-for-role") return Response.json({ ok: false, retry: true,
+      error: "Assistant shop phone recipient is not configured." }, { status: 503, headers: { "Retry-After": "60" } })
+  }
   if (accepted[0].lead_id && accepted[0].audience === "shop") {
     // This legacy lead column is explicitly labelled "Owner email" in the
     // work order. Customer replies and confirmations keep their own immutable

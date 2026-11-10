@@ -19,15 +19,16 @@ These are product rules, not suggestions.
 The current working model is the **orchestrator**.
 It owns the plan, decides what to delegate, reviews results, keeps context coherent, and owns every merge. Delegate the actual work.
 
-## Pi is the default
+## Implementation and discovery
 
-Use the `delegate-to-pi` skill for:
+Delegate to available Codex subagents for:
 
 - Reading, discovery, and exploration
 - Single-file or small localized edits
 - Straightforward implementation with clear acceptance criteria
 
-Prefer `deepseek-v4-flash`. Use `deepseek-v4-pro` only for harder reasoning.
+Use the Anthropic Claude API for direct MCSW model calls. DeepSeek is prohibited
+for MCSW runtime calls and delegation: its unfunded account returns 402.
 
 Hand off explicitly: goal, relevant files, and acceptance criteria.
 
@@ -43,7 +44,7 @@ Send to Codex `gpt-5.6-sol` at `xhigh` when:
 
 Package tightly: goal, relevant files/diffs, the specific claims or open questions, and the desired output format. Send only that package.
 
-After a Codex review, the orchestrator decides: accept, send a targeted follow-up to Pi, or escalate again.
+After a Codex review, the orchestrator decides: accept, send a targeted follow-up to the implementer, or escalate again.
 
 ## Factory mode
 

@@ -94,6 +94,27 @@ export async function createOrReuseQuoteGlassLink(leadId: number, operatorId: nu
   return createGlassLink(leadId, operatorId)
 }
 
+// Assistant retries share one token identity per lead. Unlike operator rotation,
+// this never revokes another link or reopens an expired/revoked assistant link.
+export async function createOrReuseAssistantGlassLink(leadId: number): Promise<string | null> {
+  const secret = process.env.GLASS_TOKEN_SECRET?.trim()
+  if (!secret || Buffer.byteLength(secret, "utf8") < 32) return null
+  const active = await getActiveGlassLinkState(leadId)
+  if (active.token) return active.token
+  if (active.needsReplacement) return null
+  const nonce = createHash("sha256").update(`mcsw-assistant-photo:${leadId}`).digest("hex")
+  const token = tokenFromNonce(nonce)
+  const hash = hashGlassToken(token)
+  await getSql()`
+    INSERT INTO glass_links (token_hash, lead_id, created_by, expires_at, token_nonce)
+    SELECT ${hash}::text, l.id, NULL::bigint, now() + interval '180 days', ${nonce}::text
+    FROM leads l WHERE l.id = ${leadId}::bigint AND l.is_test = false AND l.status <> 'lost'
+      AND NOT EXISTS (SELECT 1 FROM people p WHERE p.id = l.person_id AND p.is_test)
+    ON CONFLICT (token_hash) DO NOTHING`
+  const job = await getGlassJob(token)
+  return job && job.status !== "closed" && !job.is_test && Number(job.lead_id) === leadId ? token : null
+}
+
 export async function rotateGlassLink(leadId: number, operatorId: number) {
   const nonce = randomBytes(32).toString("hex")
   const token = tokenFromNonce(nonce)

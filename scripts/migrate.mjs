@@ -1578,6 +1578,30 @@ function createTaggedSql(client) {
   }
 }
 
+const assistantChatStatement = `
+  CREATE TABLE IF NOT EXISTS assistant_sessions (
+    id UUID PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    next_turn INT NOT NULL DEFAULT 0 CHECK (next_turn BETWEEN 0 AND 30),
+    is_test BOOLEAN NOT NULL DEFAULT false,
+    lead_id BIGINT REFERENCES leads(id),
+    lease_token UUID,
+    lease_until TIMESTAMPTZ
+  );
+  CREATE TABLE IF NOT EXISTS assistant_turns (
+    session_id UUID NOT NULL REFERENCES assistant_sessions(id),
+    turn_index INT NOT NULL CHECK (turn_index BETWEEN 0 AND 29),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    inbound TEXT NOT NULL CHECK (length(inbound) <= 2400),
+    is_test BOOLEAN NOT NULL DEFAULT false,
+    result JSONB,
+    response JSONB,
+    lead_captured BOOLEAN NOT NULL DEFAULT false,
+    PRIMARY KEY (session_id, turn_index)
+  );
+`
+
 export async function runMigrations({
   connectionString = resolveDatabaseUrl(),
   poolFactory = (options) => new Pool(options),
@@ -1597,6 +1621,7 @@ export async function runMigrations({
     { name: "events-lead-events-immutable", query: eventsImmutabilityStatement },
     { name: "roof-jobs-o1-2026-10-23", query: roofJobsStatement },
     { name: "roof-leads-badges-2026-10-24", query: roofLeadsStatement },
+    { name: "assistant-chat-a1-2026-11-10", query: assistantChatStatement },
   ]
 
   await runWithMigrationLock({

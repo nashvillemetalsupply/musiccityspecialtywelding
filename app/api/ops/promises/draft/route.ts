@@ -1,5 +1,5 @@
 import { generateText } from "ai"
-import { AI_MAX_RETRIES, AI_MODELS, DEEPSEEK_MODEL, aiConfigured, deepseekConfigured, draftWithDeepSeek, runAiCall } from "@/lib/ai"
+import { AI_MAX_RETRIES, AI_MODELS, CLAUDE_MODEL, aiConfigured, claudeConfigured, draftWithClaude, runAiCall } from "@/lib/ai"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { getAuthenticatedOperator } from "@/lib/ops-auth"
@@ -68,10 +68,10 @@ export async function POST(req: Request) {
   if (!guide) {
     return Response.json({ error: "There is not enough of him on record to write in his voice yet.", reason: "voice-thin" }, { status: 409 })
   }
-  if (!deepseekConfigured() && !aiConfigured()) {
+  if (!claudeConfigured() && !aiConfigured()) {
     return Response.json({ error: "There is no model configured to draft with.", reason: "no-model" }, { status: 503 })
   }
-  const drafter = deepseekConfigured() ? DEEPSEEK_MODEL : AI_MODELS.reasoning
+  const drafter = claudeConfigured() ? CLAUDE_MODEL : AI_MODELS.reasoning
 
   // Intent before the provider call, the order every AI path here keeps: the
   // receipt exists whether or not the model answers.
@@ -97,8 +97,8 @@ You are writing one short text message to a customer, in that voice. The shop is
 
   let text = ""
   try {
-    text = deepseekConfigured()
-      ? await draftWithDeepSeek({ system, prompt: ask, isTest: promise.is_test, operation: "late-promise-draft", maxRetries: AI_MAX_RETRIES })
+    text = claudeConfigured()
+      ? await draftWithClaude({ system, prompt: ask, isTest: promise.is_test, operation: "late-promise-draft", maxRetries: AI_MAX_RETRIES })
       : (await runAiCall({ operation: "late-promise-draft", model: AI_MODELS.reasoning, isTest: promise.is_test }, () => generateText({ model: AI_MODELS.reasoning, system, prompt: ask, maxRetries: AI_MAX_RETRIES }))).text
     text = text.replace(/\s+/g, " ").trim().replace(/^["']|["']$/g, "").slice(0, 400)
     if (!text) return Response.json({ error: "The draft came back empty.", reason: "model" }, { status: 502 })

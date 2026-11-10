@@ -20,12 +20,12 @@ test("the summary is one post-call model read, never a live poll", () => {
   assert.match(SUMMARY, /model: AI_MODELS\.extraction/)
 })
 
-test("the gateway is read first and the shop's DeepSeek key is the fallback, both through one schema", () => {
+test("the gateway is read first and the shop's Claude key is the fallback, both through one schema", () => {
   const AI = read("../lib/ai.ts")
-  assert.match(AI, /export async function jsonWithDeepSeek/)
-  assert.match(AI, /response_format: \{ type: "json_object" \}/)
+  assert.match(AI, /export async function jsonWithClaude/)
+  assert.match(AI, /https:\/\/api\.anthropic\.com\/v1\/messages/)
   assert.match(SUMMARY, /readWithSchemaFallback\(/)
-  assert.match(SUMMARY, /fallbackConfigured: deepseekConfigured\(\)/)
+  assert.match(SUMMARY, /fallbackConfigured: claudeConfigured\(\)/)
   assert.match(SUMMARY, /parse: \(value\) => callSummarySchema\.parse\(value\)/)
   assert.match(SUMMARY, /WHERE summary_status = 'pending' AND updated_at < now\(\) - interval '10 minutes'/)
   assert.match(SUMMARY, /setTimeout\(resolve, 1500\)/)

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import type { AssistantFields } from "./assistant/turn.ts"
 import type { CallSummary } from "@/lib/call-summary"
 import { attachRecoveredCallArtifacts } from "@/lib/call-artifacts"
 import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
@@ -13,6 +14,68 @@ import {
 } from "@/lib/people"
 
 export type CallIntakeStatus = "pending" | "saving" | "saved" | "dismissed" | "failed" | "unknown"
+
+// Both assistant doors use the existing lead/person intake. Voice shares the
+// call intake key so an operator saving the same call cannot create a second job.
+export async function fileAssistantLead(input: {
+  sessionId: string
+  fields: AssistantFields
+  isTest: boolean
+  channel?: "voice"
+  callSid?: string
+  partial?: boolean
+  transcript?: string
+}): Promise<{ leadId: number; isTest: boolean }> {
+  const { stripAssistantMoney } = await import("./assistant/money.ts")
+  const fields = input.fields
+  const customerName = stripAssistantMoney(fields.name ?? "").slice(0, 120)
+  const normalizedPhone = normalizePhone(fields.callback_phone ?? "")
+  const phone = normalizedPhone && !isReservedAssistantPhone(normalizedPhone) ? normalizedPhone : ""
+  const candidateEmail = fields.email?.trim() ?? ""
+  const email = candidateEmail.length <= 254 && /^[^\s<>@\p{Cc}]+@[^\s<>@\p{Cc}]+\.[^\s<>@\p{Cc}]+$/u.test(candidateEmail) ? candidateEmail : ""
+  const need = stripAssistantMoney(fields.need).slice(0, 400)
+  if (input.partial ? !phone && !email : !customerName || !phone || !need || fields.is_job !== "yes") {
+    throw new Error("Chat intake needs a name, customer callback number, and job.")
+  }
+  const name = customerName || "Assistant callback (partial)"
+  const missing = [!customerName && "name", !phone && "callback phone", !need && "job details", fields.is_job !== "yes" && "job confirmation"].filter(Boolean)
+  const message = stripAssistantMoney([
+    input.partial ? `Partial assistant request. Missing: ${missing.join(", ") || "shop confirmation"}.` : "",
+    need,
+    fields.material_size ? `Material / size: ${fields.material_size}` : "",
+    fields.location ? `Location: ${fields.location}` : "",
+    fields.timing ? `Requested timing: ${fields.timing}` : "",
+    fields.callback_window ? `Callback requested: ${fields.callback_window}` : "",
+    input.transcript ? `Conversation: ${input.transcript}` : "",
+  ].filter(Boolean).join(" · ")).slice(0, 1800)
+  // Inspect the full evidence before bounded lead text can trim away a marker.
+  const isTest = input.isTest || /\[INTERNAL TEST\]/i.test(`${JSON.stringify(fields)} ${input.transcript ?? ""}`)
+  if (input.channel === "voice" && !/^CA[0-9a-f]{32}$/i.test(input.callSid ?? "")
+    && !(isTest && /^CA_INTERNAL_TEST_[0-9a-f]{32}$/i.test(input.callSid ?? ""))) throw new Error("Voice intake needs a call receipt.")
+  const intakeKey = input.channel === "voice" ? `call:${input.callSid}` : `assistant:${input.sessionId}`
+  const sql = getSql()
+  const previous = (await sql`SELECT id, is_test FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as { id: number; is_test: boolean }[]
+  if (previous[0] && previous[0].is_test !== isTest) throw new Error("Chat intake test partition changed.")
+  const created = await createLead({
+    firstName: name, lastName: "", phone, email, service: input.channel === "voice" ? "Phone assistant request" : "Website chat request",
+    message: `${isTest && !/\[INTERNAL TEST\]/i.test(message) ? "[INTERNAL TEST] " : ""}${message}`,
+    preferredContact: phone ? "Call" : "Email", photoCount: 0, gclid: "", utmSource: "", utmMedium: "",
+    utmCampaign: "", utmTerm: "", utmContent: "", landingPage: "", referrer: "", ip: "",
+    userAgent: input.channel === "voice" ? "phone-assistant" : "website-assistant", isTest,
+  }, { sourceOverride: input.channel === "voice" ? "phone-assistant" : "website-chat", actor: "system", intakeKey })
+  // createLead can reuse the winner of an intake-key race. Its persisted
+  // partition, rather than this request's flag, decides whether it is safe.
+  const saved = (await sql`SELECT id, is_test FROM leads WHERE id = ${created.id}::bigint LIMIT 1`) as { id: number; is_test: boolean }[]
+  if (!saved[0] || saved[0].is_test !== isTest) throw new Error("Chat intake test partition changed.")
+  return { leadId: Number(saved[0].id), isTest: saved[0].is_test }
+}
+
+function isReservedAssistantPhone(phone: string) {
+  // Keep routing infrastructure out of customer identity and callback capture.
+  const digits = phone.replace(/\D/g, "").slice(-10)
+  return ["6157033296", "6158104910", process.env.TWILIO_PHONE_NUMBER ?? "", process.env.OWNER_CELL_PHONE ?? ""]
+    .some((value) => value.replace(/\D/g, "").slice(-10) === digits)
+}
 
 export type CallIntakeDraft = {
   id: number

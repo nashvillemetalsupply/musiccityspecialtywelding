@@ -1,0 +1,191 @@
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { createRequire } from "node:module"
+import test from "node:test"
+import vm from "node:vm"
+import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
+import ts from "typescript"
+import {
+  acceptChatReply, CHAT_STORAGE_KEY, CHAT_TURN_LIMIT,
+  newChatSession, prepareChatRequest, readChatSession, writeChatSession,
+} from "../lib/assistant/chat-client.ts"
+
+const nativeRequire = createRequire(import.meta.url)
+const sessionId = "f25a71b1-34a5-4f89-a7b2-e1930b812ef8"
+const props = { phoneHref: "tel:+16157033296", phoneDisplay: "(615) 703-3296" }
+const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+
+function loadComponent(path, env, fakes) {
+  const output = ts.transpileModule(source(path), {
+    fileName: path,
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+  }).outputText
+  const loaded = { exports: {} }
+  const context = vm.createContext({
+    URL,
+    AbortSignal,
+    process: { env },
+    require: (name) => Object.hasOwn(fakes, name) ? fakes[name] : nativeRequire(name),
+  })
+  vm.runInContext(`(function(exports, require, module) { ${output}\n})`, context)(loaded.exports, context.require, loaded)
+  return loaded.exports
+}
+
+function widgetExports(flag, pathname = "/") {
+  return loadComponent("components/assistant-chat.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, {
+    "next/navigation": { usePathname: () => pathname },
+    "@/lib/assistant/chat-client.ts": nativeRequire("../lib/assistant/chat-client.ts"),
+    "@/lib/assistant/contact.ts": nativeRequire("../lib/assistant/contact.ts"),
+    "./assistant-chat.module.css": { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) },
+  })
+}
+
+function widget(flag, pathname = "/") { return widgetExports(flag, pathname).AssistantChat }
+
+test("widget renders nothing with its flag unset or a value other than 1", () => {
+  for (const flag of [undefined, "", "0", "true"]) {
+    assert.equal(renderToStaticMarkup(React.createElement(widget(flag), props)), "")
+  }
+})
+
+test("root layout only mounts the widget with the exact enabled flag", () => {
+  for (const flag of [undefined, "0", "1"]) {
+    let mounts = 0
+    const layout = loadComponent("app/layout.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, {
+      "next/font/google": { Barlow_Condensed: () => ({ variable: "display" }), Permanent_Marker: () => ({ variable: "marker" }) },
+      "@/components/public-analytics": { PublicAnalytics: () => null },
+      "@/components/assistant-chat": { AssistantChat: () => { mounts++; return React.createElement("aside", null, "Chat door") } },
+      "@/lib/public-metadata": { publicDefaultTitle: "Welding", publicDefaultDescription: "Shop" },
+      "@/lib/shop-contact": { getShopPhone: () => ({ e164: "+16157033296", href: props.phoneHref, display: props.phoneDisplay }) },
+      "./globals.css": {}, "../styles/reduced-motion.css": {},
+    }).default
+    renderToStaticMarkup(React.createElement(layout, null, "Page"))
+    assert.equal(mounts, flag === "1" ? 1 : 0)
+  }
+})
+
+test("enabled widget stays off internal operations and customer bearer pages", () => {
+  for (const path of ["/ops", "/ops/leads/10", "/board", "/j/secret", "/design-preview", null]) {
+    assert.equal(renderToStaticMarkup(React.createElement(widget("1", path), props)), "")
+  }
+})
+
+test("enabled public widget includes disclosure, a persistent call action, and accessible chat controls", () => {
+  const html = renderToStaticMarkup(React.createElement(widget("1", "/services/mobile-welding"), props))
+  assert.match(html, /automated shop assistant/)
+  assert.match(html, /<aside[\s\S]*href="tel:\+16157033296"[\s\S]*Call the shop/)
+  assert.match(html, /<dialog[^>]*aria-labelledby="shop-assistant-title"/)
+  assert.match(html, /role="log" aria-live="polite"/)
+  assert.match(html, /<label for="shop-assistant-message"/)
+  assert.match(html, /maxLength="2000"/)
+  const code = source("components/assistant-chat.tsx")
+  assert.match(code, /\.showModal\(\)/)
+  assert.match(code, /onCancel=/)
+  assert.match(code, /launcherRef\.current\?\.focus\(\)/)
+})
+
+test("retry after a timeout and reload preserves one session, index, and message", () => {
+  let stored = null
+  const storage = { getItem: () => stored, setItem: (key, value) => { assert.equal(key, CHAT_STORAGE_KEY); stored = value } }
+  const initial = readChatSession(storage, () => sessionId)
+  const first = prepareChatRequest(initial, "My trailer frame cracked.")
+  writeChatSession(storage, first.session)
+  const restored = readChatSession(storage, () => assert.fail("must reuse the saved session"))
+  const retry = prepareChatRequest(restored, "Replacement draft must not create another turn")
+  assert.deepEqual(retry.payload, first.payload)
+  assert.equal(restored.nextTurn, 0)
+  assert.equal(restored.messages.length, 0)
+  const accepted = acceptChatReply(restored, "What is your name?", false)
+  assert.equal(accepted.nextTurn, 1)
+  assert.equal(accepted.messages.filter((item) => item.role === "user").length, 1)
+  assert.equal(accepted.pending, null)
+  assert.equal(accepted.leadSaved, false)
+  assert.equal(prepareChatRequest(accepted, "Pat").payload.turn_index, 1)
+})
+
+test("browser storage strips money while preserving dimensions and callback numbers", () => {
+  const session = prepareChatRequest(newChatSession(sessionId), "48 inch gate, $500 budget. Call 615-555-0123.").session
+  const accepted = acceptChatReply(session, "500 dollars is owner-only. What material?", true)
+  let stored
+  writeChatSession({ getItem: () => null, setItem: (_, value) => { stored = value } }, accepted)
+  assert.doesNotMatch(stored, /\$500|500 dollars/)
+  assert.match(stored, /48 inch gate/)
+  assert.match(stored, /615-555-0123/)
+  assert.equal(accepted.leadSaved, true)
+})
+
+test("length and turn limits prevent new submissions and empty replies preserve pending state", () => {
+  const session = newChatSession(sessionId)
+  assert.throws(() => prepareChatRequest(session, " "), /characters/)
+  assert.throws(() => prepareChatRequest(session, "x".repeat(2001)), /characters/)
+  assert.throws(() => prepareChatRequest(session, "$1 ".repeat(600)), /characters/)
+  assert.equal(session.pending, null, "a scrub-expanded oversized draft must remain editable")
+  assert.throws(() => prepareChatRequest({ ...session, nextTurn: CHAT_TURN_LIMIT }, "Another message"), /call the shop/)
+  const pending = prepareChatRequest(session, "Repair a gate").session
+  assert.throws(() => acceptChatReply(pending, "", false), /could not be read/)
+  assert.equal(pending.pending, "Repair a gate")
+  assert.equal(pending.nextTurn, 0)
+})
+
+test("blocked, corrupt, or unavailable browser storage leaves a usable in-memory session", () => {
+  for (const storage of [null, { getItem: () => { throw new Error("blocked") } }, { getItem: () => "not json" }, { getItem: () => JSON.stringify({ id: sessionId, nextTurn: 40, messages: [] }) }]) {
+    assert.deepEqual(readChatSession(storage, () => sessionId), newChatSession(sessionId))
+  }
+  assert.doesNotThrow(() => writeChatSession({ setItem: () => { throw new Error("quota") } }, newChatSession(sessionId)))
+})
+
+test("restored sessions cannot trap a customer in an invalid retry", () => {
+  const corrupt = [
+    { ...newChatSession(sessionId), id: sessionId.replace("-4f89-", "-7f89-") },
+    { ...newChatSession(sessionId), pending: "$1 ".repeat(600).trim() },
+  ]
+  for (const value of corrupt) {
+    const restored = readChatSession({ getItem: () => JSON.stringify(value) }, () => sessionId)
+    assert.deepEqual(restored, newChatSession(sessionId))
+    assert.equal(prepareChatRequest(restored, "Repair my gate").payload.message, "Repair my gate")
+  }
+})
+
+test("static fallback renders call, existing callback fields and shop email with no server", () => {
+  const { AssistantContactFallback } = widgetExports("1")
+  const html = renderToStaticMarkup(React.createElement(AssistantContactFallback, props))
+  assert.match(html, /role="alert"/)
+  assert.match(html, /href="tel:\+16157033296"/)
+  assert.match(html, /\(615\) 703-3296/)
+  assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+  assert.match(html, /href="\/#contact"/)
+  assert.match(html, /Leave your number for a callback request/)
+  assert.doesNotMatch(html, /we&#x27;ll call you back/)
+  assert.ok(html.indexOf("tel:") < html.indexOf("mailto:"), "calling remains primary")
+  assert.match(source("components/mainstreet-contact.tsx"), /id="contact"/)
+  assert.match(source("components/mainstreet-contact.tsx"), /id="quote-phone"/)
+})
+
+test("network, timeout, 409, rate limit and server failures use the same static fallback without exposing server errors", async () => {
+  const { requestAssistantReply, AssistantContactFallback } = widgetExports("1")
+  const requests = [
+    async () => { throw new TypeError("Failed to fetch") },
+    async () => { throw Object.assign(new Error("deadline"), { name: "TimeoutError" }) },
+    ...[409, 429, 500, 502, 503].map((status) => async () => Response.json({ ok: false, error: "private provider payload" }, { status })),
+    async () => new Response("<h1>Server down</h1>", { status: 503 }),
+    async () => Response.json({ ok: true, reply: "" }),
+  ]
+  for (const request of requests) {
+    await assert.rejects(requestAssistantReply({ session_id: sessionId, turn_index: 0, message: "Need a person" }, request), /The reply couldn't be confirmed/)
+    const html = renderToStaticMarkup(React.createElement(AssistantContactFallback, props))
+    assert.match(html, /href="tel:\+16157033296"/)
+    assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+    assert.match(html, /Leave your number/)
+    assert.doesNotMatch(html, /private provider|Failed to fetch|Server down|deadline/)
+  }
+})
+
+test("assistant replies make only approved phone and email destinations clickable", () => {
+  const { AssistantReply } = widgetExports("1")
+  const text = "[Call](tel:+16157033296) [Email](mailto:Sales@musiccityspecialtywelding.com) [Other](mailto:other@example.com) [Wrong](tel:+16155550199) [Site](https://example.com)"
+  const html = renderToStaticMarkup(React.createElement(AssistantReply, { text, phoneHref: props.phoneHref }))
+  assert.match(html, /href="tel:\+16157033296"/)
+  assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+  assert.equal((html.match(/<a /g) ?? []).length, 2)
+})
