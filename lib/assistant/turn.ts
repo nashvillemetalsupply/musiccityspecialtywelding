@@ -21,6 +21,15 @@ export type AssistantFields = {
 export type AssistantTurn = {
   reply: string; fields: AssistantFields; handoff_reason?: AssistantHandoffReason; continue_intake?: boolean
   branch?: string; model_diagnostics?: ClaudeModelDiagnostics
+  decision_trace?: {
+    raw_model_handoff_reason: AssistantHandoffReason | null
+    customerHandoff: AssistantHandoffReason | null
+    unsupportedCapability: boolean
+    concern: "safety" | "scope" | "claim" | null
+    staleModelHandoff: boolean
+    currentRepairDetails: boolean
+    assistantHandoffReason: AssistantHandoffReason | null
+  }
 }
 
 export const ASSISTANT_SYSTEM_PROMPT = [
@@ -208,19 +217,25 @@ export async function handleAssistantTurn(
     .replace(/<[^>]*>/g, "")
   const customerHandoff = assistantHandoffReason(latest)
   const unsupportedCapability = unsupportedCapabilityQuestion(latest)
-  // A model can echo an earlier handoff flag even while answering the current
-  // supported job. Keep explicit customer requests and genuine uncertainty;
-  // stale model metadata alone must not turn every later detail into contact.
-  const staleModelHandoff = !firstReply && !customerHandoff && !unsupportedCapability && !concern
-    && !assistantHandoffReason(latest, reply) && currentRepairDetails(latest, fields)
-    && (output.handoff_reason === "human" || output.handoff_reason === "unknown")
-  const modelHandoff = staleModelHandoff ? undefined : output.handoff_reason
+  // Retain this probe for A4 comparison with earlier runs; it no longer decides
+  // whether a customer may continue intake.
+  const repairDetails = currentRepairDetails(latest, fields)
+  // Only a current customer request can carry a human transfer forward.
+  // Uncertainty about any job still belongs to the shop, but keeps intake open.
+  const staleModelHandoff = !firstReply && !customerHandoff && output.handoff_reason === "human"
+  const modelHandoff = staleModelHandoff ? "unknown" : output.handoff_reason
+  const decisionTrace: NonNullable<AssistantTurn["decision_trace"]> = {
+    raw_model_handoff_reason: output.handoff_reason === "human" || output.handoff_reason === "unknown"
+      || output.handoff_reason === "model-error" || output.handoff_reason === "rate-limit" ? output.handoff_reason : null,
+    customerHandoff, unsupportedCapability, concern, staleModelHandoff, currentRepairDetails: repairDetails,
+    assistantHandoffReason: assistantHandoffReason(latest, reply, modelHandoff),
+  }
   let handoff = !customerHandoff && unsupportedCapability && modelHandoff !== "model-error" && modelHandoff !== "rate-limit"
     ? "unknown" as AssistantHandoffReason
     : customerHandoff ?? assistantHandoffReason(latest, reply, modelHandoff)
-  // Only these application guards keep intake open; money, dates and requests
-  // for a person retain their existing contact reply and handoff behavior.
-  let continueIntake = handoff === "unknown" && !customerHandoff && unsupportedCapability
+  // Model metadata and cautious reply wording describe uncertainty, not a
+  // customer request to stop. Money, dates and human requests remain contact.
+  let continueIntake = handoff === "unknown" && !customerHandoff
   let branch = "model-answer"
   const intakeReply = () => `${spanish ? "Una persona del taller debe confirmar el trabajo." : "A person at the shop will confirm that job."} ${question()} ${callLink}.` + (options.voice
     ? "" : ` [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`)
@@ -237,7 +252,7 @@ export async function handleAssistantTurn(
         : outsideUsualArea ? "El taller debe confirmar el viaje según el trabajo y la ubicación." : "Una persona del taller debe confirmar el trabajo."
     reply = `${spanish ? spanishBoundary : boundary} ${question()} ${callLink}.` + (options.voice ? "" : ` [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`)
   } else if (handoff) {
-    branch = continueIntake ? "unknown-capability-intake" : "contact-handoff"
+    branch = continueIntake ? unsupportedCapability ? "unknown-capability-intake" : "expert-claim-intake" : "contact-handoff"
     reply = continueIntake ? intakeReply() : options.voice ? `${spanish ? "Una persona del taller puede ayudarte." : "A person at the shop can help."} ${callLink}.` : assistantContactReply(phone, customerText, fields.callback_phone ? nextQuestion(fields, conversation) : undefined)
   } else if (/\[owner-only money\]|\b(?:booked|scheduled|saved|sent|guarantee|guaranteed|available|24\/7)\b|\b(?:we|the shop|someone)\s+(?:will|can)\s+(?:call|text|come|arrive|finish)\b/i.test(reply)) {
     branch = "promise-guard-intake"
@@ -258,5 +273,5 @@ export async function handleAssistantTurn(
     continueIntake = false
   }
   if (firstReply && !/^I(?:'m| am) an automated assistant\b|^Soy un asistente automatizado\b/i.test(reply)) reply = `${spanish ? "Soy un asistente automatizado de Music City Specialty Welding." : DISCLOSURE} ${reply}`
-  return { reply, fields, branch, ...(modelDiagnostics ? { model_diagnostics: modelDiagnostics } : {}), ...(handoff ? { handoff_reason: handoff } : {}), ...(continueIntake ? { continue_intake: true } : {}) }
+  return { reply, fields, branch, decision_trace: decisionTrace, ...(modelDiagnostics ? { model_diagnostics: modelDiagnostics } : {}), ...(handoff ? { handoff_reason: handoff } : {}), ...(continueIntake ? { continue_intake: true } : {}) }
 }

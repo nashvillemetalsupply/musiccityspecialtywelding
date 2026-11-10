@@ -39,7 +39,7 @@ OWNER_CELL_PHONE: stubbed for A4; outbound blocked
 **Assistant**
 
 ```text
-I'm an automated assistant for Music City Specialty Welding. Hi, I'm Music City Specialty Welding's automated shop assistant. Thanks for reaching out, A4 Test Customer. What metal work do you need help with?
+I'm an automated assistant for Music City Specialty Welding. I'm Music City Specialty Welding's automated shop assistant, not a person. Thanks for reaching out. What metal work do you need help with?
 ```
 
 **Customer**
@@ -51,7 +51,7 @@ I'm an automated assistant for Music City Specialty Welding. Hi, I'm Music City 
 **Assistant**
 
 ```text
-Thanks, I have your callback number. What metal work do you need help with?
+Thanks, I have your name and callback number. What metal work do you need help with?
 ```
 
 **Customer**
@@ -63,7 +63,7 @@ Thanks, I have your callback number. What metal work do you need help with?
 **Assistant**
 
 ```text
-Thanks, I have the steel gate hinge repair and your callback number. What is the approximate size of the gate?
+Got it, a steel gate hinge repair. About how big is the gate, in feet or inches?
 ```
 
 Lead/handoff: 1 lead; 0 handoffs.
@@ -127,7 +127,7 @@ Lead/handoff: 0 leads; durable handoff reason: unknown.
 **Assistant**
 
 ```text
-I'm an automated assistant for Music City Specialty Welding. Hi, I'm Music City Specialty Welding's automated shop assistant, not a person. What metal welding or repair do you need help with?
+I'm an automated assistant for Music City Specialty Welding. I'm Music City Specialty Welding's automated shop assistant. What metal job can I help you with?
 ```
 
 Lead/handoff: 1 partial lead with test@example.com; durable handoff reason: idle.
@@ -143,7 +143,7 @@ Lead/handoff: 1 partial lead with test@example.com; durable handoff reason: idle
 **Assistant**
 
 ```text
-I'm an automated assistant for Music City Specialty Welding. Hi, I'm the automated shop assistant for Music City Specialty Welding, not a person. What metal work do you need help with?
+I'm an automated assistant for Music City Specialty Welding. Hi, I'm Music City Specialty Welding's automated shop assistant, not a person. Thanks, A4 Test Customer. What metal job do you need help with?
 ```
 
 **Customer**
@@ -155,7 +155,7 @@ I'm an automated assistant for Music City Specialty Welding. Hi, I'm the automat
 **Assistant**
 
 ```text
-I'm an automated shop assistant for Music City Specialty Welding, not a person. Thanks, I have your callback number. What metal work do you need help with?
+Thanks, A4 Test Customer. I have your callback number. What metal job do you need help with?
 ```
 
 **Customer**
@@ -167,7 +167,7 @@ I'm an automated shop assistant for Music City Specialty Welding, not a person. 
 **Assistant**
 
 ```text
-Thanks, I have the steel gate hinge repair and your callback number. What is the approximate size of the gate?
+Got it. A steel gate hinge is metal work we can look at. About how big is the gate?
 ```
 
 **Customer**
@@ -179,7 +179,7 @@ Thanks, I have the steel gate hinge repair and your callback number. What is the
 **Assistant**
 
 ```text
-I'm an automated assistant for Music City Specialty Welding. Hi, I'm the automated shop assistant for Music City Specialty Welding, not a person. What metal work do you need help with?
+I'm an automated assistant for Music City Specialty Welding. Hi, I'm Music City Specialty Welding's automated shop assistant, not a person. Thanks, A4 Test Customer. What metal job do you need help with?
 ```
 
 **Customer**
@@ -191,7 +191,7 @@ I'm an automated assistant for Music City Specialty Welding. Hi, I'm the automat
 **Assistant**
 
 ```text
-I'm an automated shop assistant for Music City Specialty Welding, not a person. Thanks, I have your callback number. What metal work do you need help with?
+Thanks, A4 Test Customer. I have your callback number. What metal job do you need help with?
 ```
 
 **Customer**
@@ -203,7 +203,7 @@ I'm an automated shop assistant for Music City Specialty Welding, not a person. 
 **Assistant**
 
 ```text
-Thanks, I have the steel gate hinge repair and your callback number. What is the approximate size of the gate?
+Got it. A steel gate hinge is metal work we can look at. About how big is the gate?
 ```
 
 Lead/handoff: 0 new leads, turns, journal entries or model calls; original lead retained.
@@ -271,7 +271,7 @@ I'll try the shop now.
 **Assistant**
 
 ```text
-I'm an automated assistant for Music City Specialty Welding. I'm an automated shop assistant for Music City Specialty Welding. May I have your name?
+I'm an automated assistant for Music City Specialty Welding. What name should we put on this gate hinge repair request?
 ```
 
 **Assistant (no-input fallback)**
@@ -289,7 +289,7 @@ I'll try the shop now.
 **Assistant**
 
 ```text
-Thanks, A4 Test Customer. About how big is the steel gate, and where is the hinge?
+Thanks, A4 Test Customer. What is the approximate size of the steel gate hinge?
 ```
 
 **Assistant (no-input fallback)**
@@ -303,3 +303,18 @@ Lead/handoff: 1 lead; verified caller number; call linked; assistant.voice recei
 Outbound attempts blocked: 0 (notify/SMS/email must each remain zero).
 Model HTTP requests: 12.
 Suppressed diagnostic messages: 0.
+
+## Handoff regression live checks — 2026-11-10
+
+The price-to-railing failure reproduced with `raw_model_handoff_reason=null`, `customerHandoff=null`, `unsupportedCapability=false`, `concern=null`, `currentRepairDetails=false`, and `assistantHandoffReason=unknown`: the reply guard selected `contact-handoff`. After the fix, the same decision trace selects `expert-claim-intake` with `continue_intake=true` and no price.
+
+| Live scenario | Verified result |
+| --- | --- |
+| Unsupported ladder, then gate repair | `unknown-capability-intake` → `model-answer` |
+| Person request, then cracked trailer | Human `contact-handoff` → `expert-safety-intake` |
+| Price request, then railing details | Unknown `contact-handoff` → `expert-claim-intake`; no price |
+| Trailer repair → Lebanon → Sam → reserved test phone | Four `expert-safety-intake` turns; final `lead_saved=true`; no price, work, or callback promises |
+
+All four requested live scenarios passed. Final full live A4 passed **8/8** using **12** Claude HTTP requests. Total real Claude requests: **32** (10 baseline + 10 final scenario turns + 12 full A4), below the 40-call limit. Outbound attempts: **0**.
+
+Full suite: **1,463 passed, 3 skipped, 0 failed**. TypeScript and ESLint passed; dry A4 passed **8/8**. Independent review found no remaining issues.

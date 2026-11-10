@@ -551,7 +551,7 @@ if (asks.length) {
   for (const { stage, name, code, model } of failures) console.log(JSON.stringify({ diagnostic: {
     stage, name, code, ...(model ? { model: safeModelDiagnostics(model) } : {}),
   } }))
-  console.log(`A4 ask ${dry ? "dry" : "live"}: ${passed}/1 PASS; ${asks.length} turns; outbound attempts blocked: ${outbound.length}`)
+  console.log(`A4 ask ${dry ? "dry" : "live"}: ${passed}/1 PASS; ${asks.length} turns; model ${dry ? "fixture calls" : "HTTP requests"}: ${dry ? fixture?.modelCalls() ?? 0 : modelRequests}; outbound attempts blocked: ${outbound.length}`)
 } else console.log(`A4 ${dry ? "dry" : "live"}: ${passed}/8 PASS; docs/ASSISTANT-A4-RUNS.md; .tmp/a4-diagnostic.json`)
 const expected = asks.length ? 1 : 8
 process.exitCode = results.length === expected && passed === expected && outbound.length === 0 && diagnostics.length === 0 && failures.length === 0 ? 0 : 1

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { parseA4Args, runAskConversation, safeModelDiagnostics } from "./assistant-a4-ask.mjs"
+import { parseA4Args, runAskConversation, safeDecisionTrace, safeModelDiagnostics } from "./assistant-a4-ask.mjs"
 
 test("A4 parses repeated asks and both environment file forms without treating message text as a path", () => {
   const asks = ["Do you weld aluminum boat ladders?", "My steel gate hinge broke off the post in Lebanon. Can you fix it?"]
@@ -31,7 +31,11 @@ test("A4 asks use one sequential conversation, retain internal markers and print
     },
     readTurn: async (id, index) => {
       assert.equal(id, "same-session")
-      return { branch: index ? "model-answer" : "unknown-capability-intake", model_diagnostics: {
+      return { branch: index ? "model-answer" : "unknown-capability-intake", decision_trace: {
+        raw_model_handoff_reason: "unknown", customerHandoff: null, unsupportedCapability: !index,
+        concern: null, staleModelHandoff: Boolean(index), currentRepairDetails: Boolean(index),
+        assistantHandoffReason: index ? null : "unknown", private: "private model response",
+      }, model_diagnostics: {
         stop_reason: "end_turn", content_block_types: ["text", "sk-ant-secret-key"],
         usage: { input_tokens: 12, output_tokens: 34, private: "sk-ant-key", cache_read_input_tokens: -1 },
         content: "private model response", api_key: "sk-ant-key",
@@ -45,6 +49,10 @@ test("A4 asks use one sequential conversation, retain internal markers and print
   assert.equal(turns[0].handoff_reason, "unknown")
   assert.equal(turns[1].handoff_reason, null)
   assert.equal(turns[1].branch, "model-answer")
+  assert.deepEqual(turns[1].decision_trace, {
+    raw_model_handoff_reason: "unknown", customerHandoff: null, unsupportedCapability: false,
+    concern: null, staleModelHandoff: true, currentRepairDetails: true, assistantHandoffReason: null,
+  })
   assert.deepEqual(turns[1].model_diagnostics, { stop_reason: "end_turn", content_block_types: ["text", "unknown"], usage: { input_tokens: 12, output_tokens: 34 } })
   assert.deepEqual(turns, emitted)
   assert.doesNotMatch(JSON.stringify(turns), /sk-ant-|private model response/)
@@ -57,5 +65,16 @@ test("A4 ask diagnostics label absent metadata and reject arbitrary provider str
   })
   const result = await runAskConversation({ messages: ["Question"], sessionId: "session", postTurn: async () => ({ ok: true, reply: "reply secret" }),
     readTurn: async () => ({ branch: "sk-ant-private-key" }), onTurn: async () => {}, redact: (text) => text.replace("secret", "[redacted]") })
-  assert.deepEqual(result, [{ turn: 1, reply: "reply [redacted]", handoff_reason: null, branch: null, model_diagnostics: null }])
+  assert.deepEqual(result, [{ turn: 1, reply: "reply [redacted]", lead_saved: false, continue_intake: false, handoff_reason: null, branch: null, decision_trace: null, model_diagnostics: null }])
+})
+
+test("A4 decision trace rejects every arbitrary provider string", () => {
+  assert.equal(safeDecisionTrace(undefined), null)
+  assert.deepEqual(safeDecisionTrace(Object.fromEntries([
+    "raw_model_handoff_reason", "customerHandoff", "unsupportedCapability", "concern", "staleModelHandoff",
+    "currentRepairDetails", "assistantHandoffReason", "reply",
+  ].map((key) => [key, "sk-ant-private-key"]))), {
+    raw_model_handoff_reason: null, customerHandoff: null, unsupportedCapability: null,
+    concern: null, staleModelHandoff: null, currentRepairDetails: null, assistantHandoffReason: null,
+  })
 })

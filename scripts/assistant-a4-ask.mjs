@@ -46,6 +46,22 @@ export function safeModelDiagnostics(value) {
   }
 }
 
+// Decision probes carry enums and booleans only; never copy model/customer text.
+export function safeDecisionTrace(value) {
+  if (!value || typeof value !== "object") return null
+  const reason = (entry) => handoffReasons.has(entry) ? entry : null
+  const flag = (entry) => typeof entry === "boolean" ? entry : null
+  return {
+    raw_model_handoff_reason: reason(value.raw_model_handoff_reason),
+    customerHandoff: reason(value.customerHandoff),
+    unsupportedCapability: flag(value.unsupportedCapability),
+    concern: ["safety", "scope", "claim"].includes(value.concern) ? value.concern : null,
+    staleModelHandoff: flag(value.staleModelHandoff),
+    currentRepairDetails: flag(value.currentRepairDetails),
+    assistantHandoffReason: reason(value.assistantHandoffReason),
+  }
+}
+
 export async function runAskConversation({ messages, sessionId, postTurn, readTurn, onTurn, redact = String }) {
   const turns = []
   for (const [index, text] of messages.entries()) {
@@ -57,8 +73,11 @@ export async function runAskConversation({ messages, sessionId, postTurn, readTu
     const result = {
       turn: index + 1,
       reply: redact(response.reply),
+      lead_saved: response.lead_saved === true,
+      continue_intake: response.continue_intake === true,
       handoff_reason: handoffReasons.has(response.handoff_reason) ? response.handoff_reason : null,
       branch: branches.has(stored?.branch) ? stored.branch : null,
+      decision_trace: safeDecisionTrace(stored?.decision_trace),
       model_diagnostics: safeModelDiagnostics(stored?.model_diagnostics),
     }
     turns.push(result)

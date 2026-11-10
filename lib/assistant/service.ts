@@ -68,6 +68,7 @@ function scrubTurn(turn: AssistantTurn): AssistantTurn {
   return {
     reply: stripAssistantMoney(turn.reply).slice(0, 1200),
     ...(turn.branch ? { branch: turn.branch } : {}),
+    ...(turn.decision_trace ? { decision_trace: turn.decision_trace } : {}),
     ...(turn.model_diagnostics ? { model_diagnostics: safeModelDiagnostics(turn.model_diagnostics) } : {}),
     ...(turn.handoff_reason ? { handoff_reason: turn.handoff_reason } : {}),
     ...(turn.handoff_reason === "unknown" && turn.continue_intake ? { continue_intake: true } : {}),
@@ -115,7 +116,11 @@ export async function processAssistantTurn(input: AssistantInput, ip: string, de
           },
         }
       }
-      const detectedReason = assistantHandoffReason(sanitized.message, result.reply, result.handoff_reason)
+      // handleAssistantTurn already resolves customer intent and safe intake.
+      // Re-reading its generated wording can resurrect an earlier handoff.
+      // Keep inference only for legacy/custom model adapters without routing.
+      const detectedReason = result.branch ? result.handoff_reason ?? null
+        : assistantHandoffReason(sanitized.message, result.reply, result.handoff_reason)
       const reason = result.fields.is_job === "no" && detectedReason !== "human" && !result.handoff_reason ? null : detectedReason
       if (reason) result = { ...result,
         ...(reason === "unknown" && result.continue_intake || result.handoff_reason ? {} : { branch: "service-handoff" as const }),

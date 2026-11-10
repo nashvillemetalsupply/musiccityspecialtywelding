@@ -137,7 +137,7 @@ function fixture() {
   return { store, leads, receipts, notifications, deps, counts: () => ({ modelCalls, leadCalls }) }
 }
 
-test("ladder then Lebanon gate resumes the model answer through persisted unknown intake", async () => {
+test("ladder then Lebanon gate keeps persisted model uncertainty in expert intake", async () => {
   const f = fixture(), handoffs = []
   f.deps.handoff = async (value) => { handoffs.push(copy(value)); return { leadId: null } }
   const ladder = "[INTERNAL TEST] Do you weld aluminum boat ladders?"
@@ -160,12 +160,24 @@ test("ladder then Lebanon gate resumes the model answer through persisted unknow
   assert.equal(first.continue_intake, true)
   assert.equal(f.store.turns.get(0).result.branch, "unknown-capability-intake")
   const second = await processAssistantTurn(input({ message: gate, turn_index: 1, is_test: true }), "ip", f.deps)
-  assert.equal(second.reply, gateReply)
-  assert.equal(second.handoff_reason, undefined)
-  assert.equal(f.store.turns.get(1).result.branch, "model-answer")
+  assert.match(second.reply, /What name should the shop use\?/)
+  assert.equal(second.handoff_reason, "unknown")
+  assert.equal(second.continue_intake, true)
+  assert.equal(f.store.turns.get(1).result.branch, "expert-claim-intake")
   assert.equal(f.store.session.next_turn, 2)
-  assert.equal(handoffs.length, 1)
+  assert.equal(handoffs.length, 2)
   assert.equal(f.notifications.size, 0)
+})
+
+test("service preserves finalized routing instead of inferring handoff again from answer wording", async () => {
+  const f = fixture()
+  const reply = "The shop needs to review the damage. What name should the shop use?"
+  f.deps.model = async () => ({ reply, fields: emptyFields(), branch: "model-answer" })
+  f.deps.handoff = async () => assert.fail("finalized model answer must not acquire a service handoff")
+  const result = await processAssistantTurn(input(), "ip", f.deps)
+  assert.match(result.reply, /The shop needs to review the damage\./)
+  assert.equal(result.handoff_reason, undefined)
+  assert.equal(f.store.turns.get(0).result.branch, "model-answer")
 })
 
 test("unknown capability intake survives service normalization and still hands off before later contact", async () => {
