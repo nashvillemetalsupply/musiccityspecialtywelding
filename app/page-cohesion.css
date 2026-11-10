@@ -235,10 +235,13 @@
 .ms-site .ms-location { color: var(--ms-muted); }
 .ms-site .ms-location svg { color: var(--ms-arc); }
 .ms-site .ms-city-list span, .ms-site .ms-city-list span:nth-child(n) { border: 1px solid var(--ms-rule); border-radius: 0; color: var(--ms-ink); background: var(--ms-paper-fill); box-shadow: none; transform: none; font-size: .8125rem; letter-spacing: .02em; }
-.ms-site .ms-faq-list { padding: 0; color: var(--ms-ink); background: var(--ms-paper-fill); border-radius: 0; box-shadow: none; transform: none; }
+.ms-site .ms-faq-list { padding: 1.5rem clamp(1.25rem, 3vw, 2.5rem); color: var(--ms-ink); background: var(--ms-paper-fill); border-radius: 0; box-shadow: none; transform: none; }
 .ms-site .ms-faq-list summary { min-height: 44px; color: var(--ms-ink); font: 700 1.0625rem/1.4 var(--font-ms-sans), Arial, sans-serif; text-transform: none; letter-spacing: 0; }
+.ms-site .ms-faq-list summary, .ms-site .ms-subfaq summary { padding: 1.5rem 0; text-wrap: wrap; }
+.ms-site .ms-faq-list details p, .ms-site .ms-subfaq details p { padding: .25rem 0 1.75rem; max-width: 72ch; text-wrap: wrap; }
 .ms-site .ms-faq-list summary i, .ms-site .ms-faq-list summary:hover { color: var(--ms-copper); }
 .ms-site .ms-faq-list details p { color: var(--ms-ink-muted); }
+.ms-site .ms-subfaq > div { padding-inline: clamp(1.25rem, 3vw, 2.5rem); max-width: 48rem; }
 .ms-site .ms-subfaq summary i, .ms-site .ms-subfaq summary:hover { color: var(--ms-arc); }
 .ms-site .ms-faq-list details { border-color: var(--ms-rule); }
 .ms-site .ms-subfaq details { border-color: var(--ms-line-bone); }
@@ -360,6 +363,7 @@ body:has(.ms-site) { background: var(--ms-carbon); }
 }
 @media (min-width: 980px) {
   .ms-site .ms-nav-call { display: inline-flex; }
+  .ms-site .ms-faq { grid-template-columns: minmax(14rem, 1fr) minmax(0, 48rem); }
 }
 @media (max-width: 979px) {
   body:has(.ms-mobile-cta) { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); background: var(--ms-carbon); }
