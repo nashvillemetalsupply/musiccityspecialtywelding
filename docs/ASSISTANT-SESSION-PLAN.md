@@ -11,7 +11,7 @@ Tests run under node 22 (`C:/Users/Owner/AppData/Local/hermes/node/node.exe --ex
 | A3 | Photos and callback: SMS upload link onto the lead, callback-window capture on the lead, tests | Codex gpt-6.1-sol | high | M | A1 | built 11-10, b539497, flag off |
 | A3b | Never leave the customer hanging: call/email/callback fallbacks, partial-contact intake, durable handoff and idle transcripts, missed voice handoff text, replay/test suppression | Codex gpt-6.1-sol | xhigh | M | A1-A3 | built 11-10, 66aa66d, flag off |
 | A4 | Preview deploy, scripted chat and voice runs on preview marked `[INTERNAL TEST]`, owner demo link, owner go-live docket row | Claude Opus 5.5 | medium | S | A1-A3b | done 11-10: live 8/8 PASS 74d8dcc (Claude Haiku, 0 outbound); preview https://music-city-speciality-welding-chty3sr1k.vercel.app chat flag on for that deploy only, preview chat read back; go-live waits on owner yes (Mirror docket) |
-| A5 | Exit check: flags state as the owner ruled, live readback, plan rows ticked | Sonnet 5.5 | low | S | A4 | open |
+| A5 | Exit check: flags state as the owner ruled, live readback, plan rows ticked | Sonnet 5.5 | low | S | A4 | done 2026-11-10: prod 935a452, NEXT_PUBLIC_ASSISTANT_CHAT on, ASSISTANT_VOICE unset (off), live 2-turn readback answered |
 
 Order: A1, then A2 and A3 (either order), then A3b, A4 and A5. Top-tier spend sits in A1 and A2 (Codex xhigh);
 the Claude work is the review and the merge.
