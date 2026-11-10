@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowUpRight, Phone } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -10,6 +10,7 @@ import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { createPublicMetadata } from "@/lib/public-metadata"
 import { buildServiceStructuredData, servicePageBySlug, servicePages } from "@/lib/service-pages"
 import { getShopPhone } from "@/lib/shop-contact"
+import { ShopActions } from "@/components/shop-actions"
 
 type PageProps = { params: Promise<{ slug: string }> }
 
@@ -61,10 +62,7 @@ export default async function ServicePage({ params }: PageProps) {
             <span className="ms-subhero-eyebrow">{service.eyebrow}</span>
             <h1 className="ms-display">{service.title}</h1>
             <p>{service.intro}</p>
-            <div className="ms-hero-actions">
-              <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" />Call</a>
-              <Link className="ms-text-link" href="#contact">Show us the job <ArrowUpRight aria-hidden="true" /></Link>
-            </div>
+            <ShopActions phoneHref={shopPhone.href} className="ms-hero-actions" />
           </div>
           <figure className="ms-subhero-media">
             <Image src={service.image} alt={service.imageAlt} fill priority fetchPriority="high" sizes="(max-width: 900px) 100vw, 46vw" />
@@ -82,20 +80,24 @@ export default async function ServicePage({ params }: PageProps) {
           </div>
         </section>
 
+        <div className="ms-subactions"><ShopActions phoneHref={shopPhone.href} /></div>
+
         <section className="ms-subplan">
           <div className="ms-subplan-lead">
             <h2 className="ms-display">Help us see the whole job.</h2>
-            <p>Clear information gets you a useful answer faster. Send what you have; we&apos;ll ask for what is missing.</p>
+            <p>Send photos, dimensions, and the location. We&apos;ll ask for what is missing.</p>
             <Link href="/service-areas">Check the service area <ArrowUpRight aria-hidden="true" /></Link>
           </div>
           <ul>{service.details.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
 
         <aside className="ms-subglass">
-          <div><span>Your private Customer Page</span><strong>No portal. No password. No chasing.</strong></div>
-          <p>Once the job is active, one private link carries the promise, live status, approved progress photos, and paperwork.</p>
+          <div><span>Your job</span><strong>One private link.</strong></div>
+          <p>Once the job is active, your customer page holds job updates, approved progress photos, and paperwork.</p>
           <Link href="/#job-glass">See how it works <ArrowUpRight aria-hidden="true" /></Link>
         </aside>
+
+        <div className="ms-subactions"><ShopActions phoneHref={shopPhone.href} /></div>
 
         <section className="ms-subfaq">
           <h2 className="ms-display">Straight answers.</h2>
@@ -119,9 +121,8 @@ export default async function ServicePage({ params }: PageProps) {
         <section className="ms-subclose">
           <h2 className="ms-display">Tell us what the metal is doing.</h2>
           <div>
-            <p>Photos. Location. Timing. The honest version of what happened.</p>
-            <a href={shopPhone.href}>{shopPhone.display}</a>
-            <Link href="#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
+            <p>Tell us what broke or what needs built. Start with the location and a few photos.</p>
+            <ShopActions phoneHref={shopPhone.href} />
           </div>
         </section>
 

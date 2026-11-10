@@ -2,6 +2,7 @@
 
 import { useRef, type KeyboardEvent } from "react"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
+import { AskShopButton } from "@/components/shop-actions"
 
 export function MainstreetMenu({ homeHref = "", phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY }: { homeHref?: string; phoneHref?: string; phoneDisplay?: string }) {
   const menuRef = useRef<HTMLDetailsElement>(null)
@@ -28,9 +29,9 @@ export function MainstreetMenu({ homeHref = "", phoneHref = FALLBACK_SHOP_PHONE_
       <div className="ms-menu-panel">
         <a href={`${homeHref}#work`} onClick={closeMenu}>The work</a>
         <a href={`${homeHref}#services`} onClick={closeMenu}>What we weld</a>
-        <a href={`${homeHref}#job-glass`} onClick={closeMenu}>Customer Page</a>
-        <a href={`${homeHref}#contact`} onClick={closeMenu}>Show us the job</a>
-        <a href={phoneHref} onClick={closeMenu}>Call {phoneDisplay}</a>
+        <a href={`${homeHref}#job-glass`} onClick={closeMenu}>Your job</a>
+        <a className="ms-button ms-button-primary" href={phoneHref} onClick={closeMenu} aria-label={`Call the shop at ${phoneDisplay}`}>Call the shop</a>
+        <AskShopButton onClick={closeMenu} />
       </div>
     </details>
   )

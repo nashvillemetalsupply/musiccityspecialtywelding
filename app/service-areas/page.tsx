@@ -1,10 +1,11 @@
 import Link from "next/link"
-import { ArrowUpRight, MapPin, Phone } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { createPublicMetadata } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
+import { ShopActions } from "@/components/shop-actions"
 
 export const metadata = createPublicMetadata({
   title: "Mobile Welding Service Area",
@@ -23,16 +24,13 @@ export default function ServiceAreasPage() {
         <section className="ms-area-hero">
           <h1 className="ms-display">Middle Tennessee is the shop floor.</h1>
           <div>
-            <p>We leave Lebanon for metal that is better fixed where it sits. Job size, access, urgency, travel, and safe working conditions decide the plan, not a neat circle on a map.</p>
-            <div className="ms-hero-actions">
-              <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" />Call</a>
-              <Link className="ms-text-link" href="/#contact">Send the address <ArrowUpRight aria-hidden="true" /></Link>
-            </div>
+            <p>Based in Lebanon. Serving Greater Nashville and Middle Tennessee. We bring the rig when the metal is better fixed where it sits. Call with the address and scope so we can plan the work.</p>
+            <ShopActions phoneHref={shopPhone.href} className="ms-hero-actions" />
           </div>
         </section>
 
         <section className="ms-area-cities" aria-label="Primary service areas">
-          <p><MapPin aria-hidden="true" />Based at 533 W Baddour Pkwy, Lebanon, Tennessee.</p>
+          <p><MapPin aria-hidden="true" />533 W Baddour Pkwy, Lebanon, TN 37087.</p>
           <div>
             {areas.map((area) => (
               <Link className="ms-display" href="/services/mobile-welding#service" key={area}>
@@ -40,8 +38,10 @@ export default function ServiceAreasPage() {
               </Link>
             ))}
           </div>
-          <span>Outside this list? Larger and specialized work can travel farther. Call with the exact address and scope.</span>
+          <span>Outside this list? Call with the exact address and scope to check the fit.</span>
         </section>
+
+        <div className="ms-subactions"><ShopActions phoneHref={shopPhone.href} /></div>
 
         <section className="ms-area-travel">
           <h2 className="ms-display">What makes a road call work.</h2>
@@ -54,11 +54,10 @@ export default function ServiceAreasPage() {
         </section>
 
         <section className="ms-subclose">
-          <h2 className="ms-display">Send the pin. Show the metal.</h2>
+          <h2 className="ms-display">Tell us where the job sits.</h2>
           <div>
-            <p>We&apos;ll tell you straight whether the job fits the route.</p>
-            <a href={shopPhone.href}>{shopPhone.display}</a>
-            <Link href="/#contact">Send the job <ArrowUpRight aria-hidden="true" /></Link>
+            <p>Share the location, access, and what needs welding. We&apos;ll work out whether it belongs on-site or in the shop.</p>
+            <ShopActions phoneHref={shopPhone.href} />
           </div>
         </section>
       </main>

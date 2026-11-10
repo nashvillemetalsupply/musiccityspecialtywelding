@@ -199,7 +199,7 @@ export function Gusset({ className, style }: ArtProps) {
       focusable="false"
     >
       <path d="M0 0 H26 L0 26 Z" fill="currentColor" />
-      <circle cx="8" cy="8" r="2.4" fill="var(--mx-coal, #12100d)" />
+      <circle cx="8" cy="8" r="2.4" fill="var(--mx-coal)" />
     </svg>
   )
 }

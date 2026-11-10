@@ -64,6 +64,7 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
   const sendingRef = useRef(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const launcherRef = useRef<HTMLButtonElement>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
@@ -79,6 +80,9 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
   useEffect(() => { endRef.current?.scrollIntoView({ block: "nearest" }) }, [session, busy, error])
 
   const openChat = useCallback(() => {
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      returnFocusRef.current = document.activeElement
+    }
     const current = sessionRef.current ?? readChatSession(browserStorage(), () => crypto.randomUUID())
     sessionRef.current = current
     setSession(current)
@@ -126,18 +130,22 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
   return (
     <>
       <aside className={styles.launcher} aria-label="Contact the welding shop">
-        <a className={styles.call} href={phoneHref}>Call the shop</a>
-        <button ref={launcherRef} type="button" onClick={openChat} aria-haspopup="dialog" aria-controls="shop-assistant" aria-expanded={open}>Ask the shop</button>
+        <a className={`${styles.call} ms-button ms-button-primary`} href={phoneHref}>Call the shop</a>
+        <button className="ms-button ms-button-secondary" ref={launcherRef} type="button" onClick={openChat} aria-haspopup="dialog" aria-controls="shop-assistant" aria-expanded={open}>Ask the shop</button>
       </aside>
       <dialog ref={dialogRef} id="shop-assistant" className={styles.dialog} aria-labelledby="shop-assistant-title"
         onCancel={() => setOpen(false)}
-        onClose={() => { setOpen(false); launcherRef.current?.focus() }}>
+        onClose={() => {
+          setOpen(false)
+          if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus()
+          else launcherRef.current?.focus()
+        }}>
         <div className={styles.panel}>
           <header className={styles.header}>
             <div><span>Music City Specialty Welding</span><h2 id="shop-assistant-title">Tell us the job.</h2></div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close shop assistant">×</button>
           </header>
-          <a className={styles.call} href={phoneHref}>Call a person · {phoneDisplay}</a>
+          <a className={`${styles.call} ms-button ms-button-primary`} href={phoneHref}>Call the shop · {phoneDisplay}</a>
           <div className={styles.messages} role="log" aria-live="polite" aria-relevant="additions" aria-label="Chat with the automated shop assistant">
             <p className={styles.assistant}>{GREETING}</p>
             {session?.messages.map((message, index) => (

@@ -11,7 +11,7 @@ html:has(.ms-home) {
 }
 
 /* Keep the homepage type as direct as the shop voice. The former marker face
- * read as cursive; Barlow Condensed keeps the hand-painted scale without the
+ * read as cursive; the display face keeps the scale without the
  * handwritten tone. This override is scoped so customer and Shop Brain pages
  * retain their own type systems. */
 .ms-home {
@@ -20,13 +20,10 @@ html:has(.ms-home) {
 
 .ms-home :where(
   .sw-paint,
-  .sw-plank small,
-  .sw-plank strong,
   .ms-hero-image::after,
   .ms-work-shot figcaption,
   .ms-get-it h2,
   .ms-problem-lines,
-  .ms-process-call strong,
   .ms-form-heading span,
   .ms-footer-mark p,
   .sw-proof-note
@@ -43,7 +40,31 @@ html:has(.ms-home) {
 
 .ms-home .ms-service-copy > strong {
   font-family: var(--font-ms-sans), sans-serif;
-  font-weight: 700;
+  font-weight: 600;
+}
+
+.ms-home .ms-hero-phone {
+  margin-top: 0.85rem;
+  font-family: var(--font-ms-mono), monospace;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.ms-home .ms-section-actions {
+  margin-top: 2rem;
+}
+
+.ms-home .ms-capability-actions {
+  grid-column: 1 / -1;
+}
+
+.ms-home .ms-closing-actions {
+  padding: 2rem clamp(1rem, 4vw, 2.75rem);
+}
+
+.ms-home .ms-closing-actions > * {
+  max-width: 68rem;
+  margin-inline: auto;
 }
 
 /* Keep every homepage anchor clear of the pinned shop navigation. */
@@ -175,7 +196,7 @@ html:has(.ms-home) {
 
 /* The order number is a small stamped detail, not a competing headline. */
 .ms-home .ms-form-heading .wm-order-no {
-  color: #625746;
+  color: var(--mx-steel-dark);
   font-family: var(--font-ms-mono), monospace;
   font-size: 0.62rem;
   font-weight: 600;
@@ -201,9 +222,9 @@ html:has(.ms-home) {
   height: 1rem;
 }
 
-/* Route labels are 10px text and need normal-text contrast on the paper. */
+/* Muted route labels need normal-text contrast on the paper. */
 .ms-home .ms-job-glass-route span:not(.is-done):not(.is-now) {
-  color: #5e5a4d;
+  color: var(--mx-steel-dark);
 }
 
 /* Preserve the sharp tagline phrase instead of orphaning "Get it" at 320px. */
@@ -227,19 +248,11 @@ html:has(.ms-home) {
     margin-top: 1.6rem;
   }
 
-  .ms-home .ms-hero-actions .sw-plank {
-    margin-top: 0;
-  }
 }
 
 @media (max-width: 360px) {
   .ms-home .ms-hero-deck {
     font-size: 1rem;
-  }
-
-  .ms-home .sw-plank small {
-    font-size: 0.56rem;
-    letter-spacing: 0.1em;
   }
 
   .ms-home .ms-brand {

@@ -4,6 +4,7 @@ import { Phone } from "lucide-react"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { PublicSkipLink } from "@/components/public-skip-link"
 import { getShopPhone } from "@/lib/shop-contact"
+import { AskShopButton } from "@/components/shop-actions"
 
 export function Navbar({ home = false }: { home?: boolean }) {
   const shopPhone = getShopPhone()
@@ -32,13 +33,13 @@ export function Navbar({ home = false }: { home?: boolean }) {
         <nav className="ms-nav-links" aria-label="Desktop navigation">
           <Link href={`${home ? "" : "/"}#work`}>The work</Link>
           <Link href={`${home ? "" : "/"}#services`}>What we weld</Link>
-          <Link href={`${home ? "" : "/"}#job-glass`}>Customer Page</Link>
-          <Link href={`${home ? "" : "/"}#contact`}>Show us the job</Link>
+          <Link href={`${home ? "" : "/"}#job-glass`}>Your job</Link>
+          <AskShopButton className="ms-nav-ask ms-button ms-button-secondary" />
         </nav>
 
-        <a className="ms-nav-call" href={shopPhone.href}>
+        <a className="ms-nav-call ms-button ms-button-primary" href={shopPhone.href} aria-label={`Call the shop at ${shopPhone.display}`}>
           <Phone aria-hidden="true" />
-          <span>{shopPhone.display}</span>
+          <span>Call the shop</span>
         </a>
 
         <MainstreetMenu homeHref={home ? "" : "/"} phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />

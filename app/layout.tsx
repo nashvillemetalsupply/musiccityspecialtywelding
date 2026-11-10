@@ -5,14 +5,16 @@ import { PublicAnalytics } from "@/components/public-analytics"
 import { AssistantChat } from "@/components/assistant-chat"
 import { publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
+import "../styles/public-color-tokens.css"
 import "./globals.css"
+import "./page-cohesion.css"
 import "../styles/reduced-motion.css"
 
 const _barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
   weight: "900",
   variable: "--font-ms-display",
-  display: "optional",
+  display: "swap",
 })
 
 const _marker = Permanent_Marker({

@@ -53,12 +53,17 @@ test("service-area city links own the full visual tile and keep their destinatio
   assert.match(servicePage, /<section className="ms-subhero" id="service">/)
 })
 
-test("service pages offer the existing quote form below their content", () => {
+test("service pages keep the local form and share the site-wide Call and Ask actions", () => {
   assert.match(servicePage, /import \{ MainstreetContact \} from "@\/components\/mainstreet-contact"/)
   assert.match(servicePage, /<MainstreetContact phoneHref=\{shopPhone\.href\} phoneDisplay=\{shopPhone\.display\} \/>/)
-  assert.match(servicePage, /href="#contact"/)
+  assert.match(servicePage, /import \{ ShopActions \} from "@\/components\/shop-actions"/)
+  assert.match(servicePage, /<ShopActions phoneHref=\{shopPhone\.href\}/)
+  const actions = readFileSync(new URL("../components/shop-actions.tsx", import.meta.url), "utf8")
+  assert.match(actions, /href="\/#contact"/)
+  assert.match(actions, /process\.env\.NEXT_PUBLIC_ASSISTANT_CHAT === "1"/)
+  assert.match(actions, /window\.dispatchEvent\(new Event\("ms:open-assistant"\)\)/)
   assert.match(servicePage, /<MobileQuickActions phoneHref=\{shopPhone\.href\} \/>/)
-  assert.doesNotMatch(servicePage, /href="\/#contact"|quoteHref=/)
+  assert.doesNotMatch(servicePage, /quoteHref=/)
 })
 
 test("home page uses the shared shell without changing its skip link or footer crest", () => {
@@ -69,7 +74,7 @@ test("home page uses the shared shell without changing its skip link or footer c
   assert.match(navbarComponent, /home \? "ms-nav" : "ms-site ms-nav"/)
   assert.match(navbarComponent, /href=\{home \? "#home" : "\/"\}/)
   assert.match(footerComponent, /home && <ShopCrest className="wm-art wm-crest" style=\{\{ width: "7\.5rem", top: "2\.6rem", right: "6%", opacity: 0\.35 \}\} \/>/)
-  assert.match(footerComponent, /mailto:sales@musiccityspecialtywelding\.com">sales@musiccityspecialtywelding\.com/)
+  assert.match(footerComponent, /mailto:Sales@musiccityspecialtywelding\.com">Sales@musiccityspecialtywelding\.com/)
 })
 
 test("service JSON-LD has FAQ and breadcrumb schema with absolute URLs", () => {

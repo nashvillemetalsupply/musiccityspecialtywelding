@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowDownRight, ArrowUpRight, MapPin, Phone } from "lucide-react"
+import { ArrowUpRight, MapPin } from "lucide-react"
 import {
   Gusset,
   PlateStamp,
@@ -12,6 +12,7 @@ import { Footer } from "@/components/footer"
 import { MainstreetContact } from "@/components/mainstreet-contact"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { Navbar } from "@/components/navbar"
+import { AskShopButton, ShopActions } from "@/components/shop-actions"
 import { createPublicMetadata, publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import "./homepage-polish.css"
@@ -35,7 +36,7 @@ const services = [
   {
     title: "Trailer welding & repair",
     mobileTitleLines: ["Trailer welding", "& repair"],
-    line: "Repair the failure, not just the crack.",
+    line: "Frames, ramps, and the steel carrying the load.",
     detail: "Frames, crossmembers, ramps, fenders, brackets, and attachment points evaluated around the load they still have to carry.",
     href: "/services/trailer-welding-repair",
     image: "/images/owner-work/trailer-repair.webp",
@@ -44,7 +45,7 @@ const services = [
   {
     title: "Equipment repair",
     mobileTitleLines: ["Equipment", "repair"],
-    line: "Downtime costs more than steel.",
+    line: "Get the working metal back in shape.",
     detail: "Failed brackets, machinery frames, guards, supports, and attachments repaired around how the equipment moves, mounts, and works.",
     href: "/services/equipment-repair",
     image: "/images/optimized/Service 04.webp",
@@ -53,7 +54,7 @@ const services = [
   {
     title: "Architectural metal",
     mobileTitleLines: ["Architectural", "metal"],
-    line: "Built to look right. Built to stay put.",
+    line: "Railings and stairs fitted to the space.",
     detail: "Railings, stairs, supports, and architectural steel with clean welds and a precise fit in the real space.",
     href: "/services/architectural-welding",
     image: "/images/optimized/Service 02.webp",
@@ -62,7 +63,7 @@ const services = [
   {
     title: "Specialty fabrication",
     mobileTitleLines: ["Specialty", "fabrication"],
-    line: "If the catalog had it, you would not be calling.",
+    line: "Built from the drawing or the job in front of us.",
     detail: "One-offs, manifolds, frames, brackets, signage, and built-to-spec work made for the job in front of us.",
     href: "/services/custom-fabrication",
     image: "/images/optimized/speciality_welding.webp",
@@ -71,7 +72,7 @@ const services = [
   {
     title: "Custom metalwork",
     mobileTitleLines: ["Custom", "metalwork"],
-    line: "Useful first. Good-looking for a long time.",
+    line: "Mailboxes and planters made for the property.",
     detail: "Mailboxes, cluster units, planters, and exterior steel sized for the property, not a retail shelf.",
     href: "/services/custom-metal-products",
     image: "/images/optimized/planter picture.webp",
@@ -93,27 +94,27 @@ const faqs = [
   {
     question: "How do I reach you?",
     answer:
-      "Call first so we can understand the job, location, access, and timing before we make the plan.",
+      "Call the shop. Tell us what needs work and where it is. You can also use Ask the shop to send the job details.",
   },
   {
     question: "Do you come to the job site?",
     answer:
-      "Yes. We handle mobile welding when the equipment or metalwork is better repaired where it sits. Location, access, material, and safe working conditions determine the plan.",
+      "Yes. We handle on-site welding and repair. Tell us the location, material, and access so we can work out the plan.",
   },
   {
     question: "What should I send for a quote?",
     answer:
-      "Send the location, a short description, rough dimensions, timing, and clear photos of the full item and the problem area. If you do not know the metal or process, that is fine.",
+      "Send the location, a short description, and clear photos of the full item and the problem area. Add dimensions or a drawing if you have them. You do not need to know the metal or welding process.",
   },
   {
     question: "Do you take both small and large work?",
     answer:
-      "Yes. The shop sees local repairs, commercial work, equipment, architectural metal, and defined fabrication projects. Call and tell us what is in front of you.",
+      "Yes. We handle local repairs and larger fabrication work. Call and tell us what is in front of you.",
   },
   {
     question: "Do you weld aluminum and repair boats?",
     answer:
-      "Yes. We handle aluminum welding, including cracked hulls and structural boat repairs. Send clear photos of the damage and the full boat so we can assess access, material, and the right repair plan.",
+      "Yes. We handle aluminum welding and boat repair. Send clear photos of the damage and the full boat so we can assess the job.",
   },
   {
     question: "How far do you travel?",
@@ -123,7 +124,7 @@ const faqs = [
   {
     question: "Why is pricing not listed?",
     answer:
-      "Because a crack, drawing, access point, and material can change the job. We quote the actual scope, not a number designed to get a click.",
+      "Material, damage, dimensions, and access change the work. We need the job details before we can quote it.",
   },
 ]
 
@@ -175,15 +176,8 @@ export default function Page() {
             <p className="ms-hero-deck">
               Nashville mobile welding, on-site repair, and custom fabrication across Middle Tennessee.
             </p>
-            <div className="ms-hero-actions">
-              <a className="sw-plank" href={shopPhone.href}>
-                <small>call the shop</small>
-                <strong>{shopPhone.display}</strong>
-              </a>
-              <a className="ms-text-link" href="#contact">
-                Show us the job <ArrowDownRight aria-hidden="true" />
-              </a>
-            </div>
+            <ShopActions phoneHref={shopPhone.href} className="ms-hero-actions" />
+            <p className="ms-hero-phone">{shopPhone.display}</p>
           </div>
 
           <div className="ms-hero-media" aria-label="Music City Specialty Welding at work">
@@ -207,22 +201,20 @@ export default function Page() {
         </section>
 
         <div className="ms-badge-strip" aria-label="Shop facts">
-          <span className="ms-sticker is-gold">Shop + road rig</span>
-          <span className="ms-sticker is-red">Call the shop</span>
+          <span className="ms-sticker">Shop + mobile welding</span>
           <span className="ms-sticker">Steel · Aluminum · Stainless</span>
-          <span className="ms-sticker is-blue">Middle Tennessee</span>
-          <a className="ms-sticker is-arc" href={shopPhone.href}>{shopPhone.display}</a>
+          <span className="ms-sticker">Middle Tennessee</span>
         </div>
 
         <WeldSeam id="wm-bead-proof" />
 
-        <section className="ms-work" id="work">
+        <section className="ms-work" id="work" aria-labelledby="work-title">
           <PlateStamp id="PLT-01" name="The work" className="is-ink" />
           <Torch className="wm-art" style={{ width: "9rem", top: "4.5rem", right: "4%", color: "var(--mx-ink)", opacity: 0.14 }} />
           <div className="ms-section-intro ms-reveal">
-            <h2 className="ms-display">Good welds don&apos;t need a sales pitch.</h2>
+            <h2 className="ms-display" id="work-title">Good welds don&apos;t need a sales pitch.</h2>
             <p>
-              Look close. The work tells you whether a shop understands fit, finish, load, access, and the part nobody planned for.
+              Trailer repairs, fitted steel, and custom metalwork. These are jobs we have done in the shop and on-site.
             </p>
           </div>
 
@@ -260,27 +252,27 @@ export default function Page() {
 
           <div className="sw-proof-row">
             <p className="sw-proof-note">
-              Every photo on this wall is our own work. Nothing staged, nothing stock.
+              Every photo on this wall is our own work.
             </p>
             <a
-              className="sw-tin"
+              className="ms-text-link"
               href="https://www.facebook.com/profile.php?id=939156675945316"
               target="_blank"
               rel="noreferrer"
             >
-              <small>More jobs · more photos</small>
-              <strong>Find us on Facebook</strong>
+              More work on Facebook <ArrowUpRight aria-hidden="true" />
             </a>
           </div>
+          <ShopActions phoneHref={shopPhone.href} className="ms-section-actions" />
         </section>
 
         <WeldSeam id="wm-bead-services" />
 
-        <section className="ms-services" id="services">
+        <section className="ms-services" id="services" aria-labelledby="services-title">
           <PlateStamp id="PLT-02" name="What we weld" />
           <div className="ms-services-heading ms-reveal">
-            <h2 className="ms-display">Almost anything metal.</h2>
-            <p>Homeowner fix. Commercial deadline. Equipment down. A drawing that needs to become steel.</p>
+            <h2 className="ms-display" id="services-title">What needs welded?</h2>
+            <p>Repairs and fabrication for homes, job sites, and working equipment.</p>
           </div>
 
           <div className="ms-service-list">
@@ -312,15 +304,13 @@ export default function Page() {
 
           <aside className="ms-capability-board ms-reveal" id="capabilities" aria-labelledby="capability-title">
             <div>
-              <h3 className="ms-display" id="capability-title">Your job isn&apos;t weird. It&apos;s just metal.</h3>
-              <p>These are in the shop&apos;s wheelhouse too. Call with the problem; we&apos;ll tell you straight if it fits.</p>
+              <h3 className="ms-display" id="capability-title">More from the shop.</h3>
+              <p>Need something else welded or built? Call with the details so we can see if it fits.</p>
             </div>
             <ul>
               {adVerifiedCapabilities.map((capability) => <li key={capability}>{capability}</li>)}
             </ul>
-            <a className="ms-button ms-button-primary" href={shopPhone.href}>
-              <Phone aria-hidden="true" /> Ask the shop
-            </a>
+            <ShopActions phoneHref={shopPhone.href} className="ms-capability-actions" />
           </aside>
         </section>
 
@@ -334,7 +324,7 @@ export default function Page() {
               <span>Drawing needs steel.</span>
             </div>
             <h2 className="ms-display">We get it.</h2>
-            <p>Tell us what broke or what needs built. We&apos;ll take it from there.</p>
+            <p>Tell us what broke or what needs built. We&apos;ll work out the next step with you.</p>
           </div>
         </section>
 
@@ -343,48 +333,44 @@ export default function Page() {
         <section className="ms-process" id="process" aria-labelledby="process-title">
           <PlateStamp id="PLT-03" name="The plan" />
           <div className="ms-process-lead ms-reveal">
-            <h2 className="ms-display" id="process-title">Call. Show. Get it done.</h2>
+            <h2 className="ms-display" id="process-title">Start with the job.</h2>
           </div>
           <ol className="ms-process-list">
             <li className="ms-reveal"><strong>Call the shop.</strong><p>Tell us what broke, what needs built, and where it sits.</p></li>
             <li className="ms-reveal"><strong>Show the job.</strong><p>Send photos, dimensions, location, timing, or the drawing.</p></li>
-            <li className="ms-reveal"><strong>Get a real plan.</strong><p>We quote the scope, not a number designed to get a click.</p></li>
+            <li className="ms-reveal"><strong>Work out the plan.</strong><p>We review the scope and talk through shop work or an on-site repair.</p></li>
           </ol>
-          <a className="ms-process-call" href={shopPhone.href}>
-            <span>Start with a call</span>
-            <strong>{shopPhone.display}</strong>
-            <ArrowUpRight aria-hidden="true" />
-          </a>
+          <ShopActions phoneHref={shopPhone.href} className="ms-section-actions" />
         </section>
 
         <WeldSeam id="wm-bead-customer-page" />
 
         <section className="ms-job-glass" id="job-glass" aria-labelledby="job-glass-title">
           <div className="ms-job-glass-copy ms-reveal">
-            <span className="ms-job-glass-kicker">Customer Page</span>
-            <h2 className="ms-display" id="job-glass-title">Know what&apos;s happening without chasing the shop.</h2>
-            <p className="ms-job-glass-lead">Once a job is active, one private link keeps the customer side current. No app. No password. No vague “we&apos;ll let you know.”</p>
+            <span className="ms-job-glass-kicker">Customer page</span>
+            <h2 className="ms-display" id="job-glass-title">Keep up with the work.</h2>
+            <p className="ms-job-glass-lead">Active jobs have a private customer page. Open the link to see updates and paperwork without an app or password.</p>
             <ul>
-              <li><strong>The promise</strong><span>The date we gave you, with honest changes left visible.</span></li>
+              <li><strong>The plan</strong><span>Job status and updates from the shop.</span></li>
               <li><strong>The work</strong><span>Status and approved progress photos from the crew doing it.</span></li>
               <li><strong>The paperwork</strong><span>Quote, invoice, and payment link in one clean place.</span></li>
             </ul>
-            <a className="ms-text-link" href="#contact">Show us the job <ArrowDownRight aria-hidden="true" /></a>
+            <AskShopButton className="ms-button ms-button-secondary" />
           </div>
 
           <figure className="ms-job-glass-demo" aria-label="Example private customer job page">
             <span className="ms-job-glass-clip" aria-hidden="true" />
-            <figcaption><strong>Your private Customer Page</strong><small>No app · no password</small></figcaption>
+            <figcaption><strong>Example customer page</strong><small>Private job link</small></figcaption>
             <div className="ms-job-glass-title"><small>Your job</small><strong>Driveway gate repair</strong><span>Lebanon · Tennessee</span></div>
-            <div className="ms-job-glass-promise"><small>Timing</small><strong>Ready Friday</strong><span>Promised date</span></div>
+            <div className="ms-job-glass-promise"><small>Job status</small><strong>In progress</strong><span>Updates from the shop</span></div>
             <div className="ms-job-glass-route" aria-label="Job progress">
-              <span className="is-done">Received</span><span className="is-done">Quoted</span><span className="is-now">Scheduled</span><span>In progress</span><span>Finished</span>
+              <span className="is-done">Received</span><span className="is-done">Quoted</span><span className="is-done">Scheduled</span><span className="is-now">In progress</span><span>Finished</span>
             </div>
             <div className="ms-job-glass-progress">
               <Image src="/images/owner-work/IMG_20250723_161108.webp" alt="Steel frame fitted square on the fabrication table" width={360} height={480} sizes="(max-width: 760px) 5.8rem, 7.5rem" />
-              <p><small>Progress from the shop</small><strong>Frame fitted square. Hinge stock is next.</strong><span>Cody · today, 2:14 PM</span></p>
+              <p><small>Example shop update</small><strong>Frame fitted square. Hinge stock is next.</strong></p>
             </div>
-            <div className="ms-job-glass-footer"><span>Something look wrong?</span><a href={shopPhone.href}>Call the shop</a></div>
+            <div className="ms-job-glass-footer"><span>Questions about the job?</span><a className="ms-button ms-button-primary" href={shopPhone.href}>Call the shop</a></div>
           </figure>
         </section>
 
@@ -396,11 +382,11 @@ export default function Page() {
             <TennesseeMap className="wm-tn" />
             <span className="wm-tn-star-label">★ Lebanon, the shop</span>
             <strong><span>Middle</span><span>Tennessee</span></strong>
-            <small>Shop work in Lebanon<br />Road rig everywhere else</small>
+            <small>Shop work in Lebanon<br />Mobile welding in Middle Tennessee</small>
           </div>
           <div className="ms-territory-copy ms-reveal">
-            <h2 className="ms-display" id="territory-title">Shop work or we come to you.</h2>
-            <p>Travel depends on the job. Call with the location and scope; we&apos;ll tell you if it fits.</p>
+            <h2 className="ms-display" id="territory-title">Lebanon shop. Middle Tennessee work.</h2>
+            <p>We serve Greater Nashville and surrounding Middle Tennessee communities. Travel depends on the job. Call with the location and scope.</p>
             <div className="ms-city-list" aria-label="Service areas">
               <span>Nashville</span><span>Lebanon</span><span>Franklin</span><span>Murfreesboro</span><span>Gallatin</span><span>Hendersonville</span><span>Clarksville</span>
             </div>
@@ -428,6 +414,9 @@ export default function Page() {
         <WeldSeam id="wm-bead-contact" />
 
         <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
+        <div className="ms-closing-actions" aria-label="Talk to the shop">
+          <ShopActions phoneHref={shopPhone.href} />
+        </div>
       </main>
 
       <WeldSeam id="wm-bead-footer" />

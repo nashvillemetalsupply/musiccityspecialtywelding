@@ -191,18 +191,17 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
     <section className="ms-contact" id="contact" aria-labelledby="contact-title">
       <div className="ms-contact-lead">
         <h2 className="ms-display" id="contact-title">Show us the job.</h2>
-        <p>Three things get this moving: your name, your number, and what the metal needs.</p>
-        <a className="ms-contact-call" href={phoneHref}>
+        <p>Call the shop or send the details below. Photos help us see what needs welding.</p>
+        <a className="ms-contact-call ms-button ms-button-primary" href={phoneHref}>
           <Phone aria-hidden="true" />
-          <span><strong>{phoneDisplay}</strong></span>
-          <ArrowUpRight aria-hidden="true" />
+          <span>Call the shop</span>
         </a>
+        <p className="ms-contact-number">{phoneDisplay}</p>
       </div>
 
       <form className="ms-quote-form" onSubmit={submit}>
         <div className="ms-form-heading">
-          <span>Work order</span>
-          <span className="wm-order-no">Nº assigned on receipt</span>
+          <span>Job details</span>
           <small>Required fields marked *</small>
         </div>
 
@@ -276,7 +275,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
           <p className="ms-form-status is-warning" role="status">{warning}</p>
         )}
 
-        <button className="ms-submit" type="submit" disabled={isSubmitting}>
+        <button className="ms-submit ms-button ms-button-secondary" type="submit" disabled={isSubmitting}>
           <span>{isSubmitting ? "Sending the job…" : "Send the job"}</span>
           <ArrowUpRight aria-hidden="true" />
         </button>

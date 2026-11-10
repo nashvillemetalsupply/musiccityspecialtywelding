@@ -187,12 +187,52 @@ function applyApprovedPublicCssReplacements(css) {
   return css
 }
 
-test("public CSS remains frozen except approved P01/P02, CRMACCEPT and Fable public polish", () => {
+function publicColorTokens() {
+  const tokens = new Map()
+  postcss.parse(read("styles/public-color-tokens.css")).walkDecls((declaration) => {
+    assert.match(declaration.prop, /^--public-[a-z0-9-]+$/)
+    assert.match(declaration.value, /^#[\da-fA-F]{3,8}$/)
+    assert.equal(tokens.has(declaration.prop), false, `duplicate public color token: ${declaration.prop}`)
+    tokens.set(declaration.prop, declaration.value)
+  })
+  return tokens
+}
+
+function resolvePublicColorTokens(css) {
+  const tokens = publicColorTokens()
+  return css.replace(/var\((--public-[a-z0-9-]+)\)/g, (_, token) => {
+    assert.ok(tokens.has(token), `unresolved public color token: ${token}`)
+    return tokens.get(token)
+  })
+}
+
+test("public colors live in tokens and every retained color reference resolves", () => {
+  const tokens = publicColorTokens()
+  const used = new Set()
+  postcss.parse(read("app/globals.css")).walkDecls((declaration) => {
+    if (!declaration.prop.startsWith("--")) {
+      assert.doesNotMatch(declaration.value, /#[\da-fA-F]{3,8}\b/, `literal color outside a token: ${declaration.prop}`)
+    }
+    for (const [, token] of declaration.value.matchAll(/var\((--public-[a-z0-9-]+)\)/g)) {
+      assert.ok(tokens.has(token), `unresolved public color token: ${token}`)
+      used.add(token)
+    }
+  })
+  assert.deepEqual([...used].sort(), [...tokens.keys()].sort(), "retained public color tokens must all have a declaration using them")
+  assert.match(read("app/layout.tsx"), /import "\.\.\/styles\/public-color-tokens\.css"[\r\n]+import "\.\/globals\.css"/)
+})
+
+test("public CSS remains frozen except approved polish and exact color token extraction", () => {
   const original = read("scripts/qa/baseline/pre-s11-public-css.css")
   const current = read("app/globals.css")
   const root = fileURLToPath(new URL("..", import.meta.url))
-  const expected = applyApprovedPublicCssReplacements(classify(original, scanClassUsage(root)).text.KEEP)
-  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01/P02, CRMACCEPT and Fable changes")
+  const usage = scanClassUsage(root)
+  // The cohesion pass replaced the old process phone treatment with ShopActions.
+  // Its historical rules remain preserved, so classify the baseline with this
+  // original public class as well. The complete byte comparison still applies.
+  usage.classes.add(".ms-process-call")
+  const expected = applyApprovedPublicCssReplacements(classify(original, usage).text.KEEP)
+  assert.equal(resolvePublicColorTokens(current), expected, "public CSS differs from the frozen baseline plus approved polish after resolving exact color tokens")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
   assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")
 })

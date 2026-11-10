@@ -39,7 +39,7 @@ test("knowledge loads once from the actual service pages, area page and approved
   assert.ok(names.includes("Trailer Welding & Repair"))
   assert.ok(assistantKnowledge.serviceAreas.includes("Lebanon"))
   assert.ok(assistantKnowledge.serviceAreas.includes("Murfreesboro"))
-  assert.match(ASSISTANT_KNOWLEDGE, /Job size, access, urgency, travel/)
+  assert.match(ASSISTANT_KNOWLEDGE, /Based in Lebanon\. Serving Greater Nashville and Middle Tennessee\./)
   assert.match(ASSISTANT_KNOWLEDGE, /aluminum boat repair/)
   assert.match(ASSISTANT_KNOWLEDGE, /Operating hours/)
   assert.doesNotMatch(ASSISTANT_KNOWLEDGE, /MCW General Fab-Ad|recorded conversions|Liquid Death|Proof pending owner/)

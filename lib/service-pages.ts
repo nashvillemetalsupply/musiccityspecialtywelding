@@ -58,9 +58,9 @@ export const servicePages: ServicePage[] = [
     seoTitle: "Mobile Welder Nashville & Middle Tennessee",
     metaDescription:
       "On-site mobile welding for equipment, trailers, facilities, and repair work across Nashville, Lebanon, and surrounding Middle Tennessee communities.",
-    eyebrow: "The welding equipment comes to you",
+    eyebrow: "We bring the rig",
     intro:
-      "When moving the damaged equipment or metalwork is impractical, we bring mobile welding capability to the job site. We review the failure, access, material, and working conditions before confirming the safest and most efficient repair plan.",
+      "When the metal is better repaired where it sits, we bring the rig. We check the damage, material, access, and working conditions before we plan the repair.",
     image: "/images/owner-work/IMG_20260225_135845.webp",
     imageAlt: "Installed steel balcony railing completed on-site by Music City Specialty Welding",
     commonJobs: [
@@ -106,7 +106,7 @@ export const servicePages: ServicePage[] = [
       "Trailer repair and frame welding for utility, work, equipment, and specialty trailers. Shop work in Lebanon. Road rig for the rest of Middle Tennessee. Send photos for a quote.",
     eyebrow: "Repair the failure, not just the crack",
     intro:
-      "Trailer damage can involve the frame, tongue, crossmembers, ramps, fenders, brackets, hangers, or the structure around the running gear. We inspect the damaged area and the surrounding load path before confirming what can be repaired and whether the work belongs on-site or in the shop.",
+      "Frames, tongues, crossmembers, ramps, and attachment points take the load. We check the damage and nearby structure before deciding what can be repaired and whether the work belongs on-site or in the shop.",
     image: "/images/owner-work/trailer-repair.webp",
     imageAlt: "Trailer frame with new steel crossmembers welded in by Music City Specialty Welding",
     commonJobs: [
@@ -153,7 +153,7 @@ export const servicePages: ServicePage[] = [
       "Welding repair for sagging, cracked, or broken steel and iron gates: frames, hinges, latches, posts, and brackets. Shop work in Lebanon, on-site repair across Middle Tennessee. Send photos for a quote.",
     eyebrow: "Fix the gate, not just the weld",
     intro:
-      "Swing gates, slide gates, and farm gates fail at the hinge, the latch, the post, or the frame corner. We look at why it failed before we weld it, so the repair holds. The work is the metal: frames, hinges, latches, posts, brackets, and the welds that carry the load.",
+      "We repair the metal on swing, slide, and farm gates. That includes frames, hinges, latches, posts, and brackets. We look at why it failed before we weld it.",
     image: "/images/owner-work/IMG_20250527_141244.webp",
     imageAlt: "Large custom steel gate fitted at a Middle Tennessee job site",
     commonJobs: [
@@ -198,9 +198,9 @@ export const servicePages: ServicePage[] = [
     seoTitle: "Equipment Welding Repair Nashville",
     metaDescription:
       "Welding repair and maintenance for industrial equipment, machinery, trailers, and working assets in Nashville and Middle Tennessee.",
-    eyebrow: "Reduce downtime with a repair plan built around the equipment",
+    eyebrow: "Equipment down? Start here",
     intro:
-      "We repair welded equipment and metal components with attention to how the part carries load, moves, mounts, and returns to service. The first step is understanding the failure, not simply covering a crack with another weld.",
+      "We repair machinery frames, brackets, guards, supports, and attachments. How the part carries load and moves matters. We check the cause of the failure before we plan the weld.",
     image: "/images/optimized/Service 04.webp",
     imageAlt: "Welding repair on industrial equipment",
     commonJobs: [
@@ -244,9 +244,9 @@ export const servicePages: ServicePage[] = [
     seoTitle: "Architectural Welding Nashville",
     metaDescription:
       "Architectural welding and custom metal fabrication for railings, stairs, structural details, and commercial projects across Middle Tennessee.",
-    eyebrow: "Metalwork that has to look right and perform correctly",
+    eyebrow: "Built to fit the space",
     intro:
-      "Architectural metalwork demands both clean execution and practical installation planning. We review dimensions, finish expectations, attachment points, drawings, and site conditions before fabrication begins.",
+      "Railings, stairs, and architectural steel need clean welds and a precise fit. We review the drawings, dimensions, finish, and attachment points before fabrication begins.",
     image: "/images/optimized/Service 02.webp",
     imageAlt: "Architectural welded steel staircase and railing",
     commonJobs: [
@@ -290,9 +290,9 @@ export const servicePages: ServicePage[] = [
     seoTitle: "Custom Metal Fabrication Nashville",
     metaDescription:
       "Custom metal fabrication for brackets, frames, manifolds, signage, streetscape components, and built-to-spec projects in Middle Tennessee.",
-    eyebrow: "Built from the requirement, not from a generic catalog",
+    eyebrow: "Built for this job",
     intro:
-      "Custom fabrication starts by defining what the part must do, how it fits, and how it will be installed. We work from drawings, sketches, dimensions, samples, or a well-documented field requirement.",
+      "Tell us what the part must do and where it has to fit. We work from drawings, sketches, measurements, or samples to build brackets, frames, manifolds, and other custom metalwork.",
     image: "/images/owner-work/stainless-worktable.webp",
     imageAlt: "Finished custom stainless steel worktable and sink fabricated for an existing room",
     commonJobs: [
@@ -337,7 +337,7 @@ export const servicePages: ServicePage[] = [
     seoTitle: "Custom Metal Products Nashville",
     metaDescription:
       "Custom steel mailboxes, mailbox clusters, brackets, and metal planter boxes fabricated for residential and commercial properties.",
-    eyebrow: "Durable exterior metalwork made for the property",
+    eyebrow: "Made for the property",
     intro:
       "We fabricate custom steel mailboxes, mailbox supports, cluster units, brackets, and planter boxes to fit the dimensions and look of a residential or commercial property.",
     image: "/images/mailbox.webp",

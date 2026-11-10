@@ -1,8 +1,8 @@
 .launcher, .dialog {
-  --chat-carbon: var(--mx-coal, #0b0a09);
-  --chat-bone: var(--mx-bone, #e8e1d4);
-  --chat-arc: var(--mx-arc, #ff4a1c);
-  --chat-rule: var(--mx-line-bone, #777872);
+  --chat-carbon: var(--mx-coal);
+  --chat-bone: var(--mx-bone);
+  --chat-arc: var(--mx-arc);
+  --chat-rule: var(--mx-line-bone);
   color: var(--chat-bone);
   background: var(--chat-carbon);
   font-family: var(--font-ms-sans), Arial, sans-serif;
@@ -14,33 +14,40 @@
   display: none;
 }
 
-.launcher a, .launcher button, .dialog button, .call {
+.launcher a, .launcher button, .dialog button[type="submit"], .dialog .call {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 3rem;
   align-items: center;
   justify-content: center;
-  padding: .65rem .9rem;
-  border: 0;
+  gap: .5rem;
+  padding: .8rem 1.25rem;
+  border: 1px solid currentColor;
   border-radius: 0;
-  font: 700 .875rem/1.25 var(--font-ms-sans), Arial, sans-serif;
+  background: transparent;
+  color: var(--chat-bone);
+  box-shadow: none;
+  font: 700 1rem/1.25 var(--font-ms-sans), Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
   text-decoration: none;
   cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
 }
 
-.launcher button {
-  color: var(--chat-bone);
-  background: var(--chat-carbon);
-  border-left: 1px solid var(--chat-bone);
-}
-
-.call, .dialog button[type="submit"] {
-  color: #0b0a09;
+.launcher .call, .dialog .call {
+  color: var(--mx-ink);
   background: var(--chat-arc);
+  border-color: var(--chat-arc);
 }
 
-.launcher a:hover, .call:hover, .dialog button[type="submit"]:hover { filter: brightness(1.12); }
-.launcher button:hover { background: #302b26; }
-.launcher :focus-visible, .dialog :focus-visible { outline: 3px solid var(--chat-bone); outline-offset: -5px; }
+.launcher a:hover, .launcher button:hover, .dialog .call:hover, .dialog button[type="submit"]:hover {
+  background: var(--chat-bone);
+  border-color: var(--chat-bone);
+  color: var(--chat-carbon);
+  filter: none;
+}
+.launcher a:active, .launcher button:active, .dialog .call:active, .dialog button[type="submit"]:active { transform: translateY(1px); }
+.launcher :focus-visible, .dialog :focus-visible { outline: 3px solid currentColor; outline-offset: -5px; }
 
 .dialog {
   position: fixed;
@@ -54,12 +61,12 @@
   border: 2px solid var(--chat-bone);
 }
 
-.dialog::backdrop { background: rgb(0 0 0 / 55%); }
+.dialog::backdrop { background: var(--ms-backdrop); }
 .panel { display: flex; flex-direction: column; max-height: inherit; min-height: 0; }
 .header { display: flex; gap: .75rem; align-items: center; justify-content: space-between; padding: .9rem 1rem; }
 .header span { display: block; font: 500 .65rem/1.4 var(--font-ms-mono), monospace; letter-spacing: .04em; }
 .header h2 { margin: .2rem 0 0; font: 900 clamp(1.8rem, 7vw, 2.3rem)/1 var(--font-ms-display), sans-serif; text-transform: uppercase; }
-.header button { flex: 0 0 44px; padding: 0; color: var(--chat-bone); background: transparent; font-size: 2rem; }
+.header button { flex: 0 0 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; color: var(--chat-bone); background: transparent; font-size: 2rem; cursor: pointer; }
 .messages { min-height: 4rem; overflow-y: auto; overscroll-behavior: contain; padding: .75rem 1rem; overflow-wrap: anywhere; }
 .assistant, .customer { margin: .4rem 0 1rem; font-size: .95rem; line-height: 1.5; white-space: pre-wrap; }
 .customer { padding-left: .8rem; border-left: 2px solid var(--chat-arc); }
@@ -69,7 +76,7 @@
 .error { border-left: 3px solid var(--chat-arc); padding-left: .65rem; }
 .form { flex-shrink: 0; padding: .75rem 1rem 1rem; border-top: 1px solid var(--chat-rule); }
 .form label { display: block; margin-bottom: .4rem; font-size: .8rem; font-weight: 700; }
-.form textarea { display: block; width: 100%; min-height: 44px; max-height: 7rem; resize: vertical; padding: .65rem; border: 1px solid var(--chat-bone); border-radius: 0; background: var(--chat-bone); color: #0b0a09; font: 400 1rem/1.4 var(--font-ms-sans), Arial, sans-serif; }
+.form textarea { display: block; width: 100%; min-height: 44px; max-height: 7rem; resize: vertical; padding: .65rem; border: 1px solid var(--chat-bone); border-radius: 0; background: var(--chat-bone); color: var(--mx-ink); font: 400 1rem/1.4 var(--font-ms-sans), Arial, sans-serif; }
 .form textarea:focus-visible { outline-color: var(--chat-arc); outline-offset: 2px; }
 .formActions { display: flex; align-items: flex-start; gap: .75rem; margin-top: .6rem; }
 .formActions p { flex: 1; margin: 0; font-size: .72rem; line-height: 1.45; }
@@ -83,7 +90,7 @@
     z-index: 135;
     display: flex;
     max-width: calc(100vw - 1.5rem);
-    border: 2px solid var(--chat-bone);
+    border: 0;
   }
   .dialog { right: 1.5rem; bottom: 1.5rem; max-height: min(42rem, calc(100dvh - 3rem)); }
 }
@@ -94,4 +101,8 @@
   .header h2 { font-size: 1.5rem; }
   .messages { padding: .5rem .75rem; }
   .form { padding: .5rem .75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launcher a, .launcher button, .dialog .call, .dialog button[type="submit"] { transition: none; }
 }

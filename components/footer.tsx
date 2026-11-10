@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShopCrest } from "@/components/weldment"
 import { getShopPhone } from "@/lib/shop-contact"
+import { ShopActions } from "@/components/shop-actions"
 
 export function Footer({ home = false }: { home?: boolean }) {
   const shopPhone = getShopPhone()
@@ -13,12 +14,14 @@ export function Footer({ home = false }: { home?: boolean }) {
         <p className="ms-display">Built here.<br />Fixed where it sits.</p>
       </div>
       <div className="ms-footer-contact">
+        <ShopActions phoneHref={shopPhone.href} />
         <div className="ms-footer-call">
-          <strong>Call the shop</strong>
+          <strong>Phone</strong>
           <a href={shopPhone.href}>{shopPhone.display}</a>
         </div>
-        <a href="mailto:sales@musiccityspecialtywelding.com">sales@musiccityspecialtywelding.com</a>
+        <a href="mailto:Sales@musiccityspecialtywelding.com">Sales@musiccityspecialtywelding.com</a>
         <span>533 W Baddour Pkwy<br />Lebanon, TN 37087</span>
+        <span>Serving Greater Nashville and Middle Tennessee.</span>
         <span>Music City Specialty Welding is operated by Neverlift Chassis Works, LLC.</span>
       </div>
       <div className="ms-footer-meta">

@@ -56,12 +56,13 @@ test("root layout only mounts the widget with the exact enabled flag", () => {
   for (const flag of [undefined, "0", "1"]) {
     let mounts = 0
     const layout = loadComponent("app/layout.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, {
+      "../styles/public-color-tokens.css": {},
       "next/font/google": { Barlow_Condensed: () => ({ variable: "display" }), Permanent_Marker: () => ({ variable: "marker" }) },
       "@/components/public-analytics": { PublicAnalytics: () => null },
       "@/components/assistant-chat": { AssistantChat: () => { mounts++; return React.createElement("aside", null, "Chat door") } },
       "@/lib/public-metadata": { publicDefaultTitle: "Welding", publicDefaultDescription: "Shop" },
       "@/lib/shop-contact": { getShopPhone: () => ({ e164: "+16157033296", href: props.phoneHref, display: props.phoneDisplay }) },
-      "./globals.css": {}, "../styles/reduced-motion.css": {},
+      "./globals.css": {}, "./page-cohesion.css": {}, "../styles/reduced-motion.css": {},
     }).default
     renderToStaticMarkup(React.createElement(layout, null, "Page"))
     assert.equal(mounts, flag === "1" ? 1 : 0)
@@ -89,24 +90,26 @@ test("enabled public widget includes disclosure, a persistent call action, and a
 })
 
 function quickActions(flag, fakes = {}, globals = {}) {
+  const actions = loadComponent("components/shop-actions.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, fakes, globals)
   return loadComponent("components/mobile-quick-actions.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, {
     "@/lib/shop-phone-shared": { FALLBACK_SHOP_PHONE_HREF: props.phoneHref },
+    "@/components/shop-actions": actions,
     ...fakes,
   }, globals).MobileQuickActions
 }
 
-test("mobile quick actions keep Call first and fall back to Quote unless chat is exactly enabled", () => {
+test("mobile quick actions keep Call the shop first and Ask the shop uses the exact chat flag", () => {
   for (const flag of [undefined, "", "0", "true", "1"]) {
     const html = renderToStaticMarkup(React.createElement(quickActions(flag), { phoneHref: props.phoneHref }))
     assert.match(html, /href="tel:\+16157033296"/)
     if (flag === "1") {
-      assert.match(html, /<button type="button" aria-haspopup="dialog" aria-controls="shop-assistant">Ask the shop<\/button>/)
-      assert.doesNotMatch(html, />Quote</)
+      assert.match(html, /<button[^>]*type="button" aria-haspopup="dialog" aria-controls="shop-assistant">Ask the shop<\/button>/)
+      assert.doesNotMatch(html, /href="\/#contact"/)
     } else {
-      assert.match(html, /<a href="\/#contact">Quote<\/a>/)
-      assert.doesNotMatch(html, />Ask the shop</)
+      assert.match(html, /<a[^>]*href="\/#contact">Ask the shop<\/a>/)
+      assert.doesNotMatch(html, /aria-controls="shop-assistant"/)
     }
-    assert.ok(html.indexOf("Call now") < html.indexOf(flag === "1" ? "Ask the shop" : "Quote"))
+    assert.ok(html.indexOf("Call the shop") < html.indexOf("Ask the shop"))
   }
 })
 
@@ -129,7 +132,8 @@ test("mobile Ask dispatch opens a chat session and the window listener is remove
   const cleanups = effects.map((effect) => effect()).filter((cleanup) => typeof cleanup === "function")
   const MobileQuickActions = quickActions("1", { react: { ...fakeReact, useEffect: () => {} } }, globals)
   const actions = MobileQuickActions({ phoneHref: props.phoneHref })
-  const ask = actions.props.children[1]
+  const askComponent = actions.props.children[1]
+  const ask = askComponent.type(askComponent.props)
   ask.props.onClick()
   assert.equal(updates.at(-1), true, "the mobile action opens the mounted chat")
   assert.equal(updates.at(-3).id, sessionId, "opening starts the normal chat session")
