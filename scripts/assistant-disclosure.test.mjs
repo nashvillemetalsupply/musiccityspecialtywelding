@@ -88,8 +88,14 @@ test("model self-disclosure removal preserves useful non-introduction sentences"
   assert.equal((await replyTo(reply)).reply, `${englishDisclosure} ${reply}`)
 })
 
-test("a disclosure-only model reply still gets the next useful question", async () => {
-  assert.equal((await replyTo("I'm an AI assistant.")).reply, `${englishDisclosure} What needs welding or repair?`)
+test("a disclosure-only model reply retains a useful question and a complete handoff", async () => {
+  const result = await replyTo("I'm an AI assistant.")
+  assert.ok(result.reply.startsWith(englishDisclosure))
+  assert.equal(result.reply.split(englishDisclosure).length - 1, 1)
+  assert.match(result.reply, /What needs welding or repair\?/)
+  assert.match(result.reply, /\(tel:\+16157033296\)/)
+  assert.match(result.reply, /\(\/#contact\)/)
+  assert.equal(result.handoff_reason, "unknown")
 })
 
 test("the model prompt gives self-disclosure ownership to the application", () => {

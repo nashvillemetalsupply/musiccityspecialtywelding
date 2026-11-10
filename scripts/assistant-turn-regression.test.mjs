@@ -188,9 +188,11 @@ test("a known repair noun cannot clear an unknown accessory handoff", async () =
   globalThis.__turnRegressionModel = async () => ({ reply: "What brand is the intercom?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
   const second = await handleAssistantTurn(conversation, { isTest: true })
   assert.equal(second.handoff_reason, "unknown")
-  assert.equal(second.branch, "expert-claim-intake")
+  assert.equal(second.branch, "expert-scope-intake")
   assert.equal(second.continue_intake, true)
-  assert.match(second.reply, /A person at the shop will confirm that job\./)
+  assert.match(second.reply, /We repair gate metal; motor and electrical work belongs with the installer\./)
+  assert.match(second.reply, /\(tel:\+16157033296\)/)
+  assert.match(second.reply, /\(\/#contact\)/)
 })
 
 test("contact details for an unsupported boat ladder do not clear its unknown handoff", async () => {
@@ -213,7 +215,10 @@ test("a steel gate intercom cannot reuse stale supported gate fields to clear un
     { role: "user", content: "I need a steel gate intercom repaired." },
   ], { isTest: true })
   assert.equal(result.handoff_reason, "unknown")
-  assert.equal(result.branch, "expert-claim-intake")
+  assert.equal(result.branch, "expert-scope-intake")
+  assert.match(result.reply, /We repair gate metal; motor and electrical work belongs with the installer\./)
+  assert.match(result.reply, /\(tel:\+16157033296\)/)
+  assert.match(result.reply, /\(\/#contact\)/)
   assert.equal(result.decision_trace.currentRepairDetails, false)
 })
 

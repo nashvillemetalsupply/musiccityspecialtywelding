@@ -420,6 +420,8 @@ test("chat and voice deployment bundles both include the repo knowledge sources"
     const files = loaded.exports.default.outputFileTracingIncludes[route] ?? []
     assert.ok(files.includes("./BRAND-BRIEF.md"), `${route} must package the brand source`)
     assert.ok(files.includes("./app/service-areas/page.tsx"), `${route} must package service areas`)
+    assert.ok(files.includes("./app/page.tsx"), `${route} must package homepage customer facts`)
+    assert.ok(files.includes("./components/mainstreet-contact.tsx"), `${route} must package quote form guidance`)
   }
 })
 

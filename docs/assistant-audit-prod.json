@@ -1,0 +1,138 @@
+﻿{
+    "mode":  "LIVE production HTTP, unchanged deployment",
+    "limitation":  "Production is unchanged by this branch; real model samples only, not the full bank.",
+    "assistantVoice":  "off; no voice route imported or called",
+    "counts":  {
+                   "ANSWERED":  3,
+                   "HANDOFF":  0,
+                   "WRONG":  0,
+                   "DEAD END":  7
+               },
+    "total":  10,
+    "results":  [
+                    {
+                        "id":  "P1",
+                        "category":  "mobile",
+                        "question":  "Do you offer on-site mobile welding in Nashville?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. A person at the shop will confirm that job. What needs welding or repair? [Call the shop at (615) 703-3296](tel:+16157033296). [Email Sales@musiccityspecialtywelding.com](mailto:Sales@musiccityspecialtywelding.com).",
+                        "handoff_reason":  "unknown",
+                        "grade":  "DEAD END",
+                        "reason":  "Unanswered/uncertain request lacks phone plus quote form"
+                    },
+                    {
+                        "id":  "P2",
+                        "category":  "trailer",
+                        "question":  "What pictures help you review a cracked trailer frame?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. I cannot assess safety remotely; the damaged part needs inspection before towing, loading or use. What name should the shop use? [Call the shop at (615) 703-3296](tel:+16157033296). [Email Sales@musiccityspecialtywelding.com](mailto:Sales@musiccityspecialtywelding.com).",
+                        "handoff_reason":  "unknown",
+                        "grade":  "DEAD END",
+                        "reason":  "Unanswered/uncertain request lacks phone plus quote form"
+                    },
+                    {
+                        "id":  "P3",
+                        "category":  "gate",
+                        "question":  "Do you repair gate motors or just gate metal?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. We repair gate metal; motor and electrical work belongs with the installer. What needs welding or repair? [Call the shop at (615) 703-3296](tel:+16157033296). [Email Sales@musiccityspecialtywelding.com](mailto:Sales@musiccityspecialtywelding.com).",
+                        "handoff_reason":  "unknown",
+                        "grade":  "DEAD END",
+                        "reason":  "Unanswered/uncertain request lacks phone plus quote form"
+                    },
+                    {
+                        "id":  "P4",
+                        "category":  "equipment",
+                        "question":  "What information should I send about a broken equipment bracket?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. A person at the shop will confirm that job. What name should the shop use? [Call the shop at (615) 703-3296](tel:+16157033296). [Email Sales@musiccityspecialtywelding.com](mailto:Sales@musiccityspecialtywelding.com).",
+                        "handoff_reason":  "unknown",
+                        "grade":  "DEAD END",
+                        "reason":  "Unanswered/uncertain request lacks phone plus quote form"
+                    },
+                    {
+                        "id":  "P5",
+                        "category":  "fabrication",
+                        "question":  "Can you work from a dimensioned sketch for a custom bracket?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. A person at the shop will confirm that job. What name should the shop use? [Call the shop at (615) 703-3296](tel:+16157033296). [Email Sales@musiccityspecialtywelding.com](mailto:Sales@musiccityspecialtywelding.com).",
+                        "handoff_reason":  "unknown",
+                        "grade":  "DEAD END",
+                        "reason":  "Unanswered/uncertain request lacks phone plus quote form"
+                    },
+                    {
+                        "id":  "P6",
+                        "category":  "products",
+                        "question":  "Do you make custom steel planter boxes?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. Yes, we fabricate custom metal planter boxes sized for the space. What size planter box are you thinking about?",
+                        "handoff_reason":  null,
+                        "grade":  "ANSWERED",
+                        "reason":  "Live answer manually reviewed against site facts",
+                        "source":  "lib/service-pages.ts custom-metal-products"
+                    },
+                    {
+                        "id":  "P7",
+                        "category":  "area",
+                        "question":  "Do you serve Lebanon and Franklin?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. Yes, Lebanon and Franklin are both on our usual coverage list. We don\u0027t set a fixed travel radius, so confirm the exact address and availability with the shop. What metal job do you have in mind?",
+                        "handoff_reason":  null,
+                        "grade":  "ANSWERED",
+                        "reason":  "Live answer manually reviewed against site facts",
+                        "source":  "app/service-areas/page.tsx"
+                    },
+                    {
+                        "id":  "P8",
+                        "category":  "materials",
+                        "question":  "Do you repair aluminum boats?",
+                        "expected":  "answer-or-handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. Yes, we do aluminum boat repair. What is damaged on the boat?",
+                        "handoff_reason":  null,
+                        "grade":  "ANSWERED",
+                        "reason":  "Live answer manually reviewed against site facts",
+                        "source":  "BRAND-BRIEF.md approved secondary capabilities"
+                    },
+                    {
+                        "id":  "P9",
+                        "category":  "human",
+                        "question":  "I want to talk directly to a person at the shop.",
+                        "expected":  "handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. A person at the shop can help. [Call the shop at (615) 703-3296](tel:+16157033296). What callback number should the shop use? [Email Sales@musiccityspecialtywelding.com](mailto:Sales@musiccityspecialtywelding.com).",
+                        "handoff_reason":  "human",
+                        "grade":  "DEAD END",
+                        "reason":  "Unanswered/uncertain request lacks phone plus quote form"
+                    },
+                    {
+                        "id":  "P10",
+                        "category":  "price",
+                        "question":  "What is your hourly welding rate and mobile callout charge?",
+                        "expected":  "handoff",
+                        "status":  200,
+                        "reply":  "I\u0027m an automated assistant for Music City Specialty Welding. A person at the shop can help. [Call the shop at (615) 703-3296](tel:+16157033296). What callback number should the shop use? [Email Sales@musiccityspecialtywelding.com](mailto:Sales@musiccityspecialtywelding.com).",
+                        "handoff_reason":  "unknown",
+                        "grade":  "DEAD END",
+                        "reason":  "Unanswered/uncertain request lacks phone plus quote form"
+                    }
+                ],
+    "recordedAt":  "2026-11-10T19:28:57Z",
+    "timestampNote":  "Report annotated after requests completed; request-level timestamps were not captured.",
+    "outboundVerification":  "Code suppression only; no production provider delivery or database readback.",
+    "safetyEvidence":  [
+                           "input.ts derives is_test from [INTERNAL TEST]",
+                           "store.ts preserves sticky session test state",
+                           "service.ts gates notify on !session.is_test",
+                           "handoff.ts returns for input/session/lead/person/transcript test markers before all senders",
+                           "followup.ts gates test leads"
+                       ],
+    "inputAttestation":  "All 10 actual inputs used fresh UUID sessions, turn_index 0, [INTERNAL TEST] prefix and is_test:true; no fabricated IP headers, no retries."
+}
