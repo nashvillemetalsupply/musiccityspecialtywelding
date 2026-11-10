@@ -1288,7 +1288,7 @@ html {
 
 @media (min-width: 980px) { .ms-mobile-cta { display: none; } }
 
-.ms-mobile-cta button { border: 0; cursor: pointer; font: inherit; }
+.ms-mobile-cta button { -webkit-appearance: none; appearance: none; cursor: pointer; }
 
 .ms-mobile-cta a, .ms-mobile-cta button {
   display: flex;
@@ -1301,6 +1301,7 @@ html {
   font-weight: 900;
   font-size: 1.15rem;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .ms-mobile-cta > :first-child { background: var(--mx-arc); color: #16100b; }

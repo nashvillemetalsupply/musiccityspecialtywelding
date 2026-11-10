@@ -128,10 +128,13 @@ test("every retained live selector arm and declaration block survives the move",
 // targets. Only these two exact rules join the approved replacements.
 // Fable adds the chat button to the existing mobile CTA styles, retaining its
 // typography, colors and grid while limiting action colors to direct children.
+// Normalize its native appearance so mobile browsers paint the shared CTA CSS;
+// leave font/border resets to the same preflight rules that style the Quote link.
+// Keep both labels on one line so adjusted fallback fonts preserve the bar height.
 const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
   [
     ".ms-mobile-cta a {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.55rem;\n  padding: 0.95rem 0.6rem;\n  text-decoration: none;\n  font-family: var(--font-ms-display), sans-serif;\n  font-weight: 900;\n  font-size: 1.15rem;\n  text-transform: uppercase;\n}",
-    ".ms-mobile-cta button { border: 0; cursor: pointer; font: inherit; }\n\n.ms-mobile-cta a, .ms-mobile-cta button {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.55rem;\n  padding: 0.95rem 0.6rem;\n  text-decoration: none;\n  font-family: var(--font-ms-display), sans-serif;\n  font-weight: 900;\n  font-size: 1.15rem;\n  text-transform: uppercase;\n}",
+    ".ms-mobile-cta button { -webkit-appearance: none; appearance: none; cursor: pointer; }\n\n.ms-mobile-cta a, .ms-mobile-cta button {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.55rem;\n  padding: 0.95rem 0.6rem;\n  text-decoration: none;\n  font-family: var(--font-ms-display), sans-serif;\n  font-weight: 900;\n  font-size: 1.15rem;\n  text-transform: uppercase;\n  white-space: nowrap;\n}",
   ],
   [
     ".ms-mobile-cta a:first-child { background: var(--mx-arc); color: #16100b; }",
