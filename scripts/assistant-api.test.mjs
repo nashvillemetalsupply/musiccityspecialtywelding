@@ -451,7 +451,7 @@ test("actual route assembly stays off without a flag and accepts an idempotent c
   modules.get("@/lib/assistant/input.ts").AssistantRequestError = AssistantRequestError
   const load = (env) => {
     const loaded = { exports: {} }
-    const context = vm.createContext({ Response, console: { error() {} }, process: { env } })
+    const context = vm.createContext({ Response, console: { error() {}, info() {} }, process: { env } })
     const run = vm.runInContext(`(function(require, module, exports) { ${compiled}\n})`, context)
     run((name) => {
       assert.ok(modules.has(name), `unmocked route import ${name}`)
@@ -534,7 +534,7 @@ test("real route 429, 409 and 503 replies always carry contact options and prese
         ["@/lib/shop-contact", { getShopPhone: () => phone }],
       ])
       const loaded = { exports: {} }
-      const context = vm.createContext({ Response, console: { error: (value) => logs.push(value) }, process: { env: { NEXT_PUBLIC_ASSISTANT_CHAT: "1" } } })
+      const context = vm.createContext({ Response, console: { error: (value) => logs.push(value), info: (...values) => logs.push(values) }, process: { env: { NEXT_PUBLIC_ASSISTANT_CHAT: "1" } } })
       vm.runInContext(`(function(require,module,exports){${compiled}\n})`, context)((name) => {
         assert.ok(modules.has(name), `unmocked route import ${name}`)
         return modules.get(name)
@@ -670,4 +670,30 @@ test("first test human reply discloses automation once and replay never repeats 
   assert.deepEqual(await processAssistantTurn(value, "ip", f.deps), response)
   assert.equal(handoffs.length, 1)
   assert.equal(f.notifications.size, 0)
+})
+
+test("service persists safe internal branch and model diagnostics without exposing them publicly", async () => {
+  const f = fixture()
+  f.deps.model = async () => ({
+    reply: "What material is it?", fields: emptyFields(), branch: "model-answer",
+    model_diagnostics: { stop_reason: "end_turn", content_block_types: ["text", "private fixture-secret-key"], usage: { input_tokens: 3, output_tokens: 8, private: "fixture-secret-key" }, private: "fixture-secret-key" },
+  })
+  const response = await processAssistantTurn(input(), "ip", f.deps)
+  assert.equal(f.store.turns.get(0).result.branch, "model-answer")
+  assert.deepEqual(f.store.turns.get(0).result.model_diagnostics, { stop_reason: "end_turn", content_block_types: ["text", "unknown"], usage: { input_tokens: 3, output_tokens: 8 } })
+  assert.equal(Object.hasOwn(response, "model_diagnostics"), false)
+  assert.equal(Object.hasOwn(response, "branch"), false)
+  assert.doesNotMatch(JSON.stringify([...f.store.turns.values()]), /private|fixture-secret-key/)
+})
+
+test("service model exceptions persist a model-error branch with sanitized metadata only", async () => {
+  const f = fixture()
+  f.deps.model = async () => { throw Object.assign(new Error("private fixture-secret-key"), {
+    modelDiagnostics: { stop_reason: "private fixture-secret-key", content_block_types: ["text", "fixture-secret-key"], usage: { input_tokens: -5, output_tokens: 8, private: "fixture-secret-key" }, private: "fixture-secret-key" },
+  }) }
+  const response = await processAssistantTurn(input(), "ip", f.deps)
+  assert.equal(response.handoff_reason, "model-error")
+  assert.equal(f.store.turns.get(0).result.branch, "model-error")
+  assert.deepEqual(f.store.turns.get(0).result.model_diagnostics, { stop_reason: null, content_block_types: ["text", "unknown"], usage: { output_tokens: 8 } })
+  assert.doesNotMatch(JSON.stringify([...f.store.turns.values()]), /private|fixture-secret-key/)
 })

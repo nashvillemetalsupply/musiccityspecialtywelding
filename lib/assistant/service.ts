@@ -1,5 +1,6 @@
 import type { AssistantFields, AssistantMessage, AssistantTurn } from "./turn.ts"
 import type { AssistantInput } from "./input.ts"
+import type { ClaudeModelDiagnostics } from "../ai.ts"
 import { AssistantRequestError } from "./input.ts"
 import { stripAssistantMoney } from "./money.ts"
 import { assistantContactReply, assistantHandoffReason, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
@@ -45,10 +46,29 @@ export type AssistantDependencies = {
   phone: { display: string; href: string }
 }
 
+function safeModelDiagnostics(value: unknown): ClaudeModelDiagnostics | undefined {
+  if (!value || typeof value !== "object") return undefined
+  const model = value as Record<string, unknown>
+  const stopReasons = ["end_turn", "max_tokens", "stop_sequence", "tool_use", "pause_turn", "refusal", "model_context_window_exceeded"]
+  const blockTypes = ["text", "thinking", "redacted_thinking", "tool_use", "server_tool_use", "tool_result", "web_search_tool_result", "web_fetch_tool_result", "code_execution_tool_result", "bash_code_execution_tool_result", "text_editor_code_execution_tool_result", "container_upload", "image", "document"]
+  const usage = model.usage && typeof model.usage === "object" ? model.usage as Record<string, unknown> : {}
+  const counts: Record<string, number> = {}
+  for (const name of ["input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"]) {
+    if (typeof usage[name] === "number" && Number.isFinite(usage[name]) && usage[name] >= 0) counts[name] = usage[name]
+  }
+  return {
+    stop_reason: typeof model.stop_reason === "string" && stopReasons.includes(model.stop_reason) ? model.stop_reason : null,
+    content_block_types: Array.isArray(model.content_block_types) ? model.content_block_types.map((type) => typeof type === "string" && blockTypes.includes(type) ? type : "unknown") : [],
+    usage: Object.keys(counts).length ? counts : null,
+  }
+}
+
 function scrubTurn(turn: AssistantTurn): AssistantTurn {
   const clean = (value: string | null, limit: number) => value ? stripAssistantMoney(value).slice(0, limit) || null : null
   return {
     reply: stripAssistantMoney(turn.reply).slice(0, 1200),
+    ...(turn.branch ? { branch: turn.branch } : {}),
+    ...(turn.model_diagnostics ? { model_diagnostics: safeModelDiagnostics(turn.model_diagnostics) } : {}),
     ...(turn.handoff_reason ? { handoff_reason: turn.handoff_reason } : {}),
     ...(turn.handoff_reason === "unknown" && turn.continue_intake ? { continue_intake: true } : {}),
     fields: {
@@ -81,12 +101,13 @@ export async function processAssistantTurn(input: AssistantInput, ip: string, de
       await deps.store.verifyLease(claim)
       try {
         result = scrubTurn(await deps.model(messages, { isTest: claim.session.is_test, phone: deps.phone }))
-      } catch {
+      } catch (error) {
         // The inbound is already durable. An unavailable model must leave both
         // a useful customer reply and enough customer evidence for a callback.
         const contact = extractAssistantContact(messages)
         result = {
-          reply: assistantContactReply(deps.phone, sanitized.message), handoff_reason: "model-error",
+          reply: assistantContactReply(deps.phone, sanitized.message), handoff_reason: "model-error", branch: "model-error",
+          ...(error && typeof error === "object" && "modelDiagnostics" in error ? { model_diagnostics: safeModelDiagnostics(error.modelDiagnostics) } : {}),
           fields: {
             name: null, callback_phone: contact.callback_phone, need: sanitized.message.slice(0, 400),
             material_size: null, location: null, timing: null, callback_window: null, is_job: "unsure",
@@ -97,6 +118,7 @@ export async function processAssistantTurn(input: AssistantInput, ip: string, de
       const detectedReason = assistantHandoffReason(sanitized.message, result.reply, result.handoff_reason)
       const reason = result.fields.is_job === "no" && detectedReason !== "human" && !result.handoff_reason ? null : detectedReason
       if (reason) result = { ...result,
+        ...(reason === "unknown" && result.continue_intake || result.handoff_reason ? {} : { branch: "service-handoff" as const }),
         reply: reason === "unknown" && result.continue_intake ? result.reply : assistantContactReply(deps.phone, customerText, result.fields.callback_phone ? nextAssistantQuestion(result.fields, messages) : undefined),
         handoff_reason: reason,
       }

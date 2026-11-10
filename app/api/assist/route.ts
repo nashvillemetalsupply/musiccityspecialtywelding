@@ -13,9 +13,16 @@ import { getShopPhone } from "@/lib/shop-contact"
 
 export const runtime = "nodejs"
 
+function logAssistantResponse(status: number, reason?: unknown) {
+  const handoffReason = reason === "human" || reason === "unknown" || reason === "model-error"
+    || reason === "rate-limit" || reason === "unavailable" ? reason : null
+  console.info("Assistant chat response.", { status, handoff_reason: handoffReason })
+}
+
 export async function POST(request: Request) {
   const headers = { "Cache-Control": "no-store" }
   if (process.env.NEXT_PUBLIC_ASSISTANT_CHAT !== "1") {
+    logAssistantResponse(404)
     return Response.json({ ok: false, error: "Chat is not available. Please call the shop." }, { status: 404, headers })
   }
   let input: AssistantInput | undefined
@@ -64,6 +71,7 @@ export async function POST(request: Request) {
           message: "", reason: "lead", isTest: false })
       },
     })
+    logAssistantResponse(200, response.handoff_reason)
     return Response.json(response, { headers })
   } catch (error) {
     // Include the rejected inbound even when throttling or an active lease
@@ -78,6 +86,7 @@ export async function POST(request: Request) {
       } catch { console.error("Assistant chat handoff could not be saved.") }
     }
     if (error instanceof AssistantRequestError) {
+      logAssistantResponse(error.status, input && [409, 429].includes(error.status) ? error.status === 429 ? "rate-limit" : "unavailable" : null)
       return Response.json({ ok: false, error: assistantContactReply(getShopPhone()) }, {
         status: error.status,
         headers: { ...headers, ...([409, 429].includes(error.status) ? { "Retry-After": error.status === 429 ? "600" : "5" } : {}) },
@@ -85,6 +94,7 @@ export async function POST(request: Request) {
     }
     // Provider bodies and customer text never reach public errors or logs.
     console.error("Assistant chat could not finish saving.")
+    logAssistantResponse(503, "unavailable")
     return Response.json({ ok: false, error: assistantContactReply(getShopPhone()) }, { status: 503, headers: { ...headers, "Retry-After": "15" } })
   }
 }

@@ -44,7 +44,7 @@ export function claudeConfigured() {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim())
 }
 
-type ClaudeInput = { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; isTest?: boolean; operation?: string }
+type ClaudeInput = { system: string; prompt: string; maxTokens?: number; signal?: AbortSignal; maxRetries?: number; isTest?: boolean; operation?: string; onModelDiagnostics?: (diagnostics: ClaudeModelDiagnostics) => void }
 
 export type ClaudeModelDiagnostics = {
   stop_reason: string | null
@@ -65,6 +65,8 @@ export class ClaudeResponseError extends Error {
 type ClaudeMessage = { content?: { type?: string; text?: unknown }[]; stop_reason?: string; usage?: unknown }
 
 function claudeModelDiagnostics(message: ClaudeMessage): ClaudeModelDiagnostics {
+  const stopReasons = ["end_turn", "max_tokens", "stop_sequence", "tool_use", "pause_turn", "refusal", "model_context_window_exceeded"]
+  const blockTypes = ["text", "thinking", "redacted_thinking", "tool_use", "server_tool_use", "tool_result", "web_search_tool_result", "web_fetch_tool_result", "code_execution_tool_result", "bash_code_execution_tool_result", "text_editor_code_execution_tool_result", "container_upload", "image", "document"]
   const usage: Record<string, number> = {}
   if (message.usage && typeof message.usage === "object") {
     for (const field of ["input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"]) {
@@ -73,8 +75,8 @@ function claudeModelDiagnostics(message: ClaudeMessage): ClaudeModelDiagnostics 
     }
   }
   return {
-    stop_reason: typeof message.stop_reason === "string" ? message.stop_reason : null,
-    content_block_types: Array.isArray(message.content) ? message.content.map((block) => typeof block?.type === "string" ? block.type : "unknown") : [],
+    stop_reason: typeof message.stop_reason === "string" && stopReasons.includes(message.stop_reason) ? message.stop_reason : null,
+    content_block_types: Array.isArray(message.content) ? message.content.map((block) => typeof block?.type === "string" && blockTypes.includes(block.type) ? block.type : "unknown") : [],
     usage: Object.keys(usage).length ? usage : null,
   }
 }
@@ -142,6 +144,7 @@ async function postClaude(input: ClaudeInput, responseFormat: "text" | "json") {
     // a complete object. Retry once with room for the full response instead.
     if (json.stop_reason === "max_tokens") json = await request(maxTokens * 2, claudeModelDiagnostics(json))
     const diagnostics = claudeModelDiagnostics(json)
+    input.onModelDiagnostics?.(diagnostics)
     if (json.stop_reason !== "end_turn" && json.stop_reason !== "stop_sequence") {
       throw new ClaudeResponseError("Claude did not finish its response.", diagnostics)
     }

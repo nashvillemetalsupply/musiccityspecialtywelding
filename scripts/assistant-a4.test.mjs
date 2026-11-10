@@ -10,7 +10,7 @@ import { A4_OPTIONAL_ENV, checkEnvironment, errorDiagnostic, installA4Stubs, run
 const root = fileURLToPath(new URL("../", import.meta.url))
 const runner = fileURLToPath(new URL("./assistant-a4-run.mjs", import.meta.url))
 
-function runDry(inject = "", { args = ["--dry"], setup = "", preload = "" } = {}) {
+function runDry(inject = "", { args = ["--dry"], setup = "", preload = "", expectReport = true } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "assistant-a4-"))
   const report = join(dir, "report.md"), diagnostic = join(dir, "diagnostic.json"), preloadPath = join(dir, "preload.mjs")
   try {
@@ -38,14 +38,69 @@ function runDry(inject = "", { args = ["--dry"], setup = "", preload = "" } = {}
       cwd: root, encoding: "utf8", timeout: 60_000,
     })
     assert.ifError(child.error)
-    assert.ok(existsSync(report), `${child.stdout}${child.stderr}`)
-    return { status: child.status, output: `${child.stdout}${child.stderr}`, report: readFileSync(report, "utf8"), diagnostic: existsSync(diagnostic) ? JSON.parse(readFileSync(diagnostic, "utf8")) : null }
+    assert.equal(existsSync(report), expectReport, `${child.stdout}${child.stderr}`)
+    return { status: child.status, output: `${child.stdout}${child.stderr}`, report: expectReport ? readFileSync(report, "utf8") : null, diagnostic: existsSync(diagnostic) ? JSON.parse(readFileSync(diagnostic, "utf8")) : null }
   } finally {
     assert.equal(dirname(resolve(dir)), resolve(tmpdir()))
     assert.ok(basename(dir).startsWith("assistant-a4-"))
     rmSync(dir, { recursive: true, force: true })
   }
 }
+
+test("A4 ask mode executes exact customer turns in one test conversation without report writes or network", () => {
+  const r = runDry(`
+    const conversation = JSON.parse(input.prompt).conversation;
+    const user = conversation.filter((message) => message.role === 'user');
+    input.onModelDiagnostics?.({ stop_reason: 'end_turn', content_block_types: ['text'], usage: { input_tokens: 17, output_tokens: 29 } });
+    if (user.at(-1).content.includes('steel gate hinge broke')) {
+      if (user.length !== 2 || !conversation.some((message) => message.role === 'assistant' && message.content.includes('confirm that job'))) throw new Error('Ask lost prior conversation');
+      return { reply: 'Steel gate hinges are a normal repair, and Lebanon is in our service area. Can you send a close photo of the hinge and post?', handoff_reason: null,
+        fields: { name: null, callback_phone: null, need: 'gate hinge broke off the post', material_size: 'steel', location: 'Lebanon', timing: null, callback_window: null, is_job: 'yes' } };
+    }
+  `, { args: ["--dry", "--ask", "[INTERNAL TEST] Do you weld aluminum boat ladders?", "--ask", "[INTERNAL TEST] My steel gate hinge broke off the post in Lebanon. Can you fix it?"], expectReport: false,
+    preload: "globalThis.fetch = () => { throw new Error('UNGUARDED_PROVIDER_NETWORK'); };" })
+  assert.equal(r.status, 0, r.output)
+  const turns = r.output.split(/\r?\n/).filter((line) => line.startsWith('{"turn":')).map((line) => JSON.parse(line))
+  assert.equal(turns.length, 2, r.output)
+  assert.match(turns[0].reply, /A person at the shop will confirm that job/)
+  assert.equal(turns[0].handoff_reason, "unknown")
+  assert.match(turns[1].reply, /Steel gate hinges are a normal repair/)
+  assert.equal(turns[1].handoff_reason, null)
+  assert.ok(turns.every((turn) => typeof turn.branch === "string"))
+  assert.deepEqual(turns[1].model_diagnostics, { stop_reason: "end_turn", content_block_types: ["text"], usage: { input_tokens: 17, output_tokens: 29 } })
+  assert.match(r.output, /A4 ask dry: 1\/1 PASS; 2 turns; outbound attempts blocked: 0/)
+  assert.doesNotMatch(r.output, /UNGUARDED_PROVIDER_NETWORK|sk-ant-/)
+  assert.equal(r.diagnostic, null)
+})
+
+test("A4 ask output redacts short configured keys and unconfigured key-shaped reply strings", () => {
+  const r = runDry(`
+    return { reply: 'Which part needs repair, tiny sk-ant-fixture-private-key?', handoff_reason: null,
+      fields: { name: null, callback_phone: null, need: 'repair a steel gate hinge', material_size: 'steel', location: null, timing: null, callback_window: null, is_job: 'yes' } };
+  `, { args: ["--dry", "--ask", "I need you to repair a steel gate hinge."], expectReport: false,
+    setup: "value.env.ANTHROPIC_API_KEY = 'tiny';" })
+  assert.equal(r.status, 0, r.output)
+  assert.doesNotMatch(r.output, /tiny|sk-ant-/)
+  assert.match(r.output, /\[redacted\]/)
+})
+
+test("A4 ask model failures print the fallback branch and safe protocol metadata without provider text", () => {
+  const r = runDry(`
+    const error = new Error('private provider reply sk-ant-fixture-key tiny');
+    error.name = 'ClaudeResponseError';
+    error.modelDiagnostics = { stop_reason: 'max_tokens', content_block_types: ['thinking', 'text'],
+      usage: { input_tokens: 17, output_tokens: 4000 }, api_key: 'sk-ant-fixture-key', content: 'private provider reply' };
+    throw error;
+  `, { args: ["--dry", "--ask", "I need you to repair a steel gate hinge."], expectReport: false,
+    setup: "value.env.ANTHROPIC_API_KEY = 'tiny';" })
+  assert.equal(r.status, 1, r.output)
+  const turn = JSON.parse(r.output.split(/\r?\n/).find((line) => line.startsWith('{"turn":')))
+  assert.equal(turn.handoff_reason, "model-error")
+  assert.equal(turn.branch, "model-error")
+  assert.deepEqual(turn.model_diagnostics, { stop_reason: "max_tokens", content_block_types: ["thinking", "text"], usage: { input_tokens: 17, output_tokens: 4000 } })
+  assert.doesNotMatch(r.output, /private provider reply|tiny|sk-ant-/)
+  assert.match(r.output, /outbound attempts blocked: 0/)
+})
 
 test("A4 dry runs all eight real-route scripts and reports only masked phone contacts", () => {
   const r = runDry()

@@ -61,6 +61,35 @@ test("Claude text accepts stop_sequence and ignores non-text blocks", async () =
   })
 })
 
+test("Claude success diagnostics callback exposes protocol metadata and numeric usage only", async () => {
+  const diagnostics = []
+  await withMessages([message('{"ok":true}', {
+    content: [{ type: "thinking", thinking: "private reasoning" }, { type: "text", text: '{"ok":true}' }],
+    usage: { input_tokens: 7, output_tokens: 13, cache_read_input_tokens: 2, private: "fixture-secret-key" },
+  })], async () => {
+    assert.deepEqual(await jsonWithClaude({ ...input, onModelDiagnostics: (value) => diagnostics.push(value) }), { ok: true })
+    assert.deepEqual(diagnostics, [{ stop_reason: "end_turn", content_block_types: ["thinking", "text"], usage: { input_tokens: 7, output_tokens: 13, cache_read_input_tokens: 2 } }])
+    assert.doesNotMatch(JSON.stringify(diagnostics), /private|fixture-secret-key|reasoning/)
+  })
+})
+
+test("Claude diagnostic protocol strings are allowlisted even when provider metadata contains secrets", async () => {
+  const diagnostics = []
+  await withMessages([message("private answer", {
+    stop_reason: "fixture-secret-key",
+    content: [{ type: "private block fixture-secret-key", text: "private answer" }],
+    usage: { input_tokens: -1, output_tokens: 5, private: "fixture-secret-key" },
+  })], async () => {
+    await assert.rejects(() => jsonWithClaude({ ...input, onModelDiagnostics: (value) => diagnostics.push(value) }), (error) => {
+      const expected = { stop_reason: null, content_block_types: ["unknown"], usage: { output_tokens: 5 } }
+      assert.deepEqual(error.modelDiagnostics, expected)
+      assert.deepEqual(diagnostics, [expected])
+      assert.doesNotMatch(`${JSON.stringify(diagnostics)}${JSON.stringify(error)}`, /private|fixture-secret-key/)
+      return true
+    })
+  })
+})
+
 test("Claude extracts the first balanced JSON object from prose and fences while respecting quoted braces", async () => {
   const object = { reply: 'Use a 2" bracket {like this}; escaped slash \\ and quote "', fields: { need: "repair" } }
   await withMessages([message(`Here is the result:\n\`\`\`json\n${JSON.stringify(object)}\n\`\`\`\nAnother object: {"wrong":true}`)], async () => {

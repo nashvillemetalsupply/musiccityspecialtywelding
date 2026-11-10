@@ -6,14 +6,18 @@ import { fileURLToPath } from "node:url"
 import { createDryFixture } from "./assistant-a4-fixture.mjs"
 import { createA4Safety } from "./assistant-a4-safety.mjs"
 import { checkEnvironment, errorDiagnostic, runPreflight, sanitizeDiagnostic } from "./assistant-a4-diagnostics.mjs"
+import { parseA4Args, runAskConversation, safeModelDiagnostics } from "./assistant-a4-ask.mjs"
 
 // Usage: node --experimental-strip-types scripts/assistant-a4-run.mjs <env-file> [--dry]
 // Or:    node --experimental-strip-types scripts/assistant-a4-run.mjs --dry
 // Check only: node --experimental-strip-types scripts/assistant-a4-run.mjs <env-file> --preflight
+// Ask: node --experimental-strip-types scripts/assistant-a4-run.mjs --env <env-file> --ask "<message>" [--ask "<message2>"]
 // No HTTP server or Twilio API is involved. Dial is inspected, never executed.
 const root = new URL("../", import.meta.url)
-const dry = process.argv.includes("--dry")
-const preflight = process.argv.includes("--preflight")
+let options, argumentFailure
+try { options = parseA4Args(process.argv.slice(2)) }
+catch (error) { argumentFailure = error }
+const { dry, preflight, asks } = options ?? { dry: process.argv.includes("--dry"), preflight: false, asks: [] }
 const reportPath = new URL("docs/ASSISTANT-A4-RUNS.md", root)
 const diagnosticPath = new URL(".tmp/a4-diagnostic.json", root)
 const results = [], outbound = [], background = [], diagnostics = [], failures = []
@@ -58,12 +62,8 @@ function wrapSql(query) {
 
 function loadEnv() {
   process.chdir(fileURLToPath(root))
-  const args = process.argv.slice(2)
-  const files = args.filter((arg) => !arg.startsWith("--"))
-  if (args.some((arg) => arg.startsWith("--") && !["--dry", "--preflight"].includes(arg)) || files.length > 1 || (dry && preflight)) {
-    throw new Error("Use one environment file and either --dry or --preflight")
-  }
-  if (files.length) process.loadEnvFile(files[0])
+  if (argumentFailure) throw argumentFailure
+  if (options.envFile) process.loadEnvFile(options.envFile)
   else if (!dry) throw new Error("Environment file path is required")
 }
 
@@ -73,10 +73,16 @@ function redact(value) {
   // provider error objects, request headers, credentials or environment dumps.
   const owner = env?.OWNER_CELL_PHONE?.trim()
   if (owner) text = text.split(owner).join("***")
+  for (const [name, value] of Object.entries({ ...process.env, ...env })) {
+    if (!/(?:KEY|TOKEN|SECRET|PASSWORD|DATABASE_URL|AUTH)/i.test(name) || typeof value !== "string" || !value.trim()) continue
+    const secret = value.trim()
+    for (const candidate of new Set([secret, encodeURIComponent(secret)])) text = text.split(candidate).join("[redacted]")
+  }
   for (const secret of Object.values({ ...process.env, ...env }).filter((v) => v && v.length >= 6).sort((a, b) => b.length - a.length)) {
     text = text.split(secret).join("[redacted]")
   }
-  return text.replace(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g,
+  return text.replace(/\b(?:sk-ant-|sk[-_]|gh[pousr]_|xox[baprs]-)[A-Z\d_-]+/gi, "[redacted]")
+    .replace(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g,
     (number) => number.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "") === "6155550100" ? number : "***")
 }
 
@@ -404,6 +410,36 @@ try {
 }
 
 try {
+  if (asks.length) {
+    await script("Ask conversation", async (record) => {
+      const id = randomUUID()
+      record.id = id
+      await runAskConversation({
+        messages: asks, sessionId: id, redact,
+        postTurn: async (input) => {
+          stage = "route"
+          record.transcript.push({ role: "Customer", text: input.message })
+          const response = await assist(new Request("https://example.test/api/assist", {
+            method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "192.0.2.4" },
+            body: JSON.stringify(input),
+          }))
+          const value = await response.json()
+          record.transcript.push({ role: "Assistant", text: value.reply ?? "[no reply]" })
+          assert.equal(response.status, 200, "ask route must succeed")
+          return value
+        },
+        readTurn: async (sessionId, turnIndex) => {
+          stage = "readback"
+          const rows = await sql`/* a4:turns */ SELECT turn_index, result FROM assistant_turns
+            WHERE session_id = ${sessionId}::uuid ORDER BY turn_index`
+          return rows.find((row) => Number(row.turn_index) === turnIndex)?.result ?? null
+        },
+        onTurn: (turn) => console.log(JSON.stringify(turn)),
+      })
+      await drain()
+      verifyPartition(await snapshot(id))
+    })
+  } else {
   const fullMessages = ["My name is A4 Test Customer.", "My callback phone is 615-555-0100.", "I need you to repair a steel gate hinge."]
   await script("1. Chat full lead", async (r) => {
     const fullId = randomUUID()
@@ -498,15 +534,24 @@ try {
     assert.equal(s.events.filter((e) => e.kind === "assistant.handoff").length, 0, "normal intake has no handoff")
     r.detail = "1 lead; verified caller number; call linked; assistant.voice receipt; no handoff."
   })
+  }
 } finally {
   hooks?.deregister()
   safety?.restore()
   globalThis.fetch = originalFetch; console.error = originalError; console.warn = originalWarn
-  writeReport()
+  if (!asks.length) writeReport()
 }
 const passed = results.filter((r) => r.pass).length
-console.log(`A4 ${dry ? "dry" : "live"}: ${passed}/8 PASS; docs/ASSISTANT-A4-RUNS.md; .tmp/a4-diagnostic.json`)
-process.exitCode = results.length === 8 && passed === 8 && outbound.length === 0 && diagnostics.length === 0 && failures.length === 0 ? 0 : 1
+if (asks.length) {
+  // No transcript/report files or extra database writes are needed in ask mode.
+  // Failure details retain A4's existing credential/PII sanitizer.
+  for (const { stage, name, code, model } of failures) console.log(JSON.stringify({ diagnostic: {
+    stage, name, code, ...(model ? { model: safeModelDiagnostics(model) } : {}),
+  } }))
+  console.log(`A4 ask ${dry ? "dry" : "live"}: ${passed}/1 PASS; ${asks.length} turns; outbound attempts blocked: ${outbound.length}`)
+} else console.log(`A4 ${dry ? "dry" : "live"}: ${passed}/8 PASS; docs/ASSISTANT-A4-RUNS.md; .tmp/a4-diagnostic.json`)
+const expected = asks.length ? 1 : 8
+process.exitCode = results.length === expected && passed === expected && outbound.length === 0 && diagnostics.length === 0 && failures.length === 0 ? 0 : 1
 }
 
 await main()
