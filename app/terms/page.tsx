@@ -180,7 +180,7 @@ export default function TermsPage() {
         </div>
       </main>
       <Footer />
-      <MobileQuickActions quoteHref="/#contact" phoneHref={shopPhone.href} />
+      <MobileQuickActions phoneHref={shopPhone.href} />
     </>
   )
 }

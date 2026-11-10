@@ -128,7 +128,7 @@ export default async function ServicePage({ params }: PageProps) {
         <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
       </main>
       <Footer />
-      <MobileQuickActions quoteHref="#contact" phoneHref={shopPhone.href} />
+      <MobileQuickActions phoneHref={shopPhone.href} />
     </>
   )
 }

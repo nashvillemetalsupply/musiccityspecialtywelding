@@ -6,6 +6,7 @@ import vm from "node:vm"
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import ts from "typescript"
+import postcss from "postcss"
 import {
   acceptChatReply, CHAT_STORAGE_KEY, CHAT_TURN_LIMIT,
   newChatSession, prepareChatRequest, readChatSession, writeChatSession,
@@ -16,7 +17,7 @@ const sessionId = "f25a71b1-34a5-4f89-a7b2-e1930b812ef8"
 const props = { phoneHref: "tel:+16157033296", phoneDisplay: "(615) 703-3296" }
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 
-function loadComponent(path, env, fakes) {
+function loadComponent(path, env, fakes, globals = {}) {
   const output = ts.transpileModule(source(path), {
     fileName: path,
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
@@ -25,6 +26,7 @@ function loadComponent(path, env, fakes) {
   const context = vm.createContext({
     URL,
     AbortSignal,
+    ...globals,
     process: { env },
     require: (name) => Object.hasOwn(fakes, name) ? fakes[name] : nativeRequire(name),
   })
@@ -32,13 +34,14 @@ function loadComponent(path, env, fakes) {
   return loaded.exports
 }
 
-function widgetExports(flag, pathname = "/") {
+function widgetExports(flag, pathname = "/", fakes = {}, globals = {}) {
   return loadComponent("components/assistant-chat.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, {
     "next/navigation": { usePathname: () => pathname },
     "@/lib/assistant/chat-client.ts": nativeRequire("../lib/assistant/chat-client.ts"),
     "@/lib/assistant/contact.ts": nativeRequire("../lib/assistant/contact.ts"),
     "./assistant-chat.module.css": { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) },
-  })
+    ...fakes,
+  }, globals)
 }
 
 function widget(flag, pathname = "/") { return widgetExports(flag, pathname).AssistantChat }
@@ -75,7 +78,7 @@ test("enabled public widget includes disclosure, a persistent call action, and a
   const html = renderToStaticMarkup(React.createElement(widget("1", "/services/mobile-welding"), props))
   assert.match(html, /automated shop assistant/)
   assert.match(html, /<aside[\s\S]*href="tel:\+16157033296"[\s\S]*Call the shop/)
-  assert.match(html, /<dialog[^>]*aria-labelledby="shop-assistant-title"/)
+  assert.match(html, /<dialog[^>]*id="shop-assistant"[^>]*aria-labelledby="shop-assistant-title"/)
   assert.match(html, /role="log" aria-live="polite"/)
   assert.match(html, /<label for="shop-assistant-message"/)
   assert.match(html, /maxLength="2000"/)
@@ -83,6 +86,75 @@ test("enabled public widget includes disclosure, a persistent call action, and a
   assert.match(code, /\.showModal\(\)/)
   assert.match(code, /onCancel=/)
   assert.match(code, /launcherRef\.current\?\.focus\(\)/)
+})
+
+function quickActions(flag, fakes = {}, globals = {}) {
+  return loadComponent("components/mobile-quick-actions.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, {
+    "@/lib/shop-phone-shared": { FALLBACK_SHOP_PHONE_HREF: props.phoneHref },
+    ...fakes,
+  }, globals).MobileQuickActions
+}
+
+test("mobile quick actions keep Call first and fall back to Quote unless chat is exactly enabled", () => {
+  for (const flag of [undefined, "", "0", "true", "1"]) {
+    const html = renderToStaticMarkup(React.createElement(quickActions(flag), { phoneHref: props.phoneHref }))
+    assert.match(html, /href="tel:\+16157033296"/)
+    if (flag === "1") {
+      assert.match(html, /<button type="button" aria-haspopup="dialog" aria-controls="shop-assistant">Ask the shop<\/button>/)
+      assert.doesNotMatch(html, />Quote</)
+    } else {
+      assert.match(html, /<a href="\/#contact">Quote<\/a>/)
+      assert.doesNotMatch(html, />Ask the shop</)
+    }
+    assert.ok(html.indexOf("Call now") < html.indexOf(flag === "1" ? "Ask the shop" : "Quote"))
+  }
+})
+
+test("mobile Ask dispatch opens a chat session and the window listener is removed on unmount", () => {
+  const browser = new EventTarget()
+  browser.sessionStorage = { getItem: () => null }
+  const effects = []
+  const updates = []
+  const fakeReact = {
+    useCallback: (callback) => callback,
+    useEffect: (effect) => effects.push(effect),
+    useRef: (value) => ({ current: value }),
+    useState: (value) => [value, (next) => updates.push(next)],
+  }
+  const globals = { window: browser, Event, crypto: { randomUUID: () => sessionId } }
+  const { AssistantChat } = widgetExports("1", "/", { react: fakeReact }, globals)
+  const publicChat = AssistantChat(props)
+  const chatDoor = publicChat.type(publicChat.props)
+  chatDoor.type(chatDoor.props)
+  const cleanups = effects.map((effect) => effect()).filter((cleanup) => typeof cleanup === "function")
+  const MobileQuickActions = quickActions("1", { react: { ...fakeReact, useEffect: () => {} } }, globals)
+  const actions = MobileQuickActions({ phoneHref: props.phoneHref })
+  const ask = actions.props.children[1]
+  ask.props.onClick()
+  assert.equal(updates.at(-1), true, "the mobile action opens the mounted chat")
+  assert.equal(updates.at(-3).id, sessionId, "opening starts the normal chat session")
+  const updateCount = updates.length
+  cleanups.forEach((cleanup) => cleanup())
+  browser.dispatchEvent(new Event("ms:open-assistant"))
+  assert.equal(updates.length, updateCount, "unmounted chat no longer handles window events")
+})
+
+test("launcher is hidden below 980px and its fixed positioning is desktop only", () => {
+  const css = postcss.parse(source("components/assistant-chat.module.css"))
+  const rules = []
+  css.walkRules(".launcher", (rule) => rules.push(rule))
+  assert.equal(rules.length, 2)
+  assert.equal(rules[0].parent.type, "root")
+  assert.deepEqual(rules[0].nodes.map(({ prop, value }) => [prop, value]), [["display", "none"]])
+  assert.equal(rules[1].parent.name, "media")
+  assert.equal(rules[1].parent.params, "(min-width: 980px)")
+  const desktop = Object.fromEntries(rules[1].nodes.map(({ prop, value }) => [prop, value]))
+  assert.equal(desktop.position, "fixed")
+  assert.equal(desktop.display, "flex")
+  assert.equal(desktop.right, "1.5rem")
+  assert.equal(desktop.bottom, "1.5rem")
+  assert.match(source("app/globals.css"), /grid-template-columns: 1\.35fr 0\.65fr/)
+  assert.match(source("app/homepage-polish.css"), /\.ms-home \.ms-mobile-cta a, \.ms-home \.ms-mobile-cta button \{\s*padding-bottom: calc\(0\.95rem \+ env\(safe-area-inset-bottom\)\)/)
 })
 
 test("retry after a timeout and reload preserves one session, index, and message", () => {

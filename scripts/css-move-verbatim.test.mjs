@@ -126,14 +126,28 @@ test("every retained live selector arm and declaration block survives the move",
 // CSS byte remains frozen, and each old rule must appear once in the baseline.
 // CRMACCEPT gives the process phone link and both consent links 44px touch
 // targets. Only these two exact rules join the approved replacements.
+// Fable adds the chat button to the existing mobile CTA styles, retaining its
+// typography, colors and grid while limiting action colors to direct children.
 const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
   [
+    ".ms-mobile-cta a {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.55rem;\n  padding: 0.95rem 0.6rem;\n  text-decoration: none;\n  font-family: var(--font-ms-display), sans-serif;\n  font-weight: 900;\n  font-size: 1.15rem;\n  text-transform: uppercase;\n}",
+    ".ms-mobile-cta button { border: 0; cursor: pointer; font: inherit; }\n\n.ms-mobile-cta a, .ms-mobile-cta button {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.55rem;\n  padding: 0.95rem 0.6rem;\n  text-decoration: none;\n  font-family: var(--font-ms-display), sans-serif;\n  font-weight: 900;\n  font-size: 1.15rem;\n  text-transform: uppercase;\n}",
+  ],
+  [
+    ".ms-mobile-cta a:first-child { background: var(--mx-arc); color: #16100b; }",
+    ".ms-mobile-cta > :first-child { background: var(--mx-arc); color: #16100b; }",
+  ],
+  [
+    ".ms-mobile-cta a:last-child { background: var(--mx-ink); color: var(--mx-bone); border-left: 2px solid var(--mx-bone); }",
+    ".ms-mobile-cta > :last-child { background: var(--mx-ink); color: var(--mx-bone); border-left: 2px solid var(--mx-bone); }",
+  ],
+  [
     ".ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon), var(--sw-fire) 60%); color: #1b0f02; }",
-    ".ms-mobile-cta a:first-child { background: linear-gradient(180deg, var(--sw-neon, #ffb46b), var(--sw-fire, #ff8a2a) 60%); color: #1b0f02; }",
+    ".ms-mobile-cta > :first-child { background: linear-gradient(180deg, var(--sw-neon, #ffb46b), var(--sw-fire, #ff8a2a) 60%); color: #1b0f02; }",
   ],
   [
     ".ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk); border-left-color: #000; }",
-    ".ms-mobile-cta a:last-child { background: #241d12; color: var(--sw-chalk, #f3ead8); border-left-color: #000; }",
+    ".ms-mobile-cta > :last-child { background: #241d12; color: var(--sw-chalk, #f3ead8); border-left-color: #000; }",
   ],
   [
     ".ms-area-cities > div strong { display: inline-flex; min-height: 3.2rem; align-items: center; padding: .5rem 1rem; border: 2px solid #252620; color: #252620; background: #e8ddc4; box-shadow: .18rem .22rem 0 rgba(0,0,0,.38); font-size: clamp(1.15rem,2.6vw,1.75rem); transform: rotate(-.35deg); }",
@@ -170,12 +184,12 @@ function applyApprovedPublicCssReplacements(css) {
   return css
 }
 
-test("public CSS remains frozen except approved P01/P02 and CRMACCEPT public polish", () => {
+test("public CSS remains frozen except approved P01/P02, CRMACCEPT and Fable public polish", () => {
   const original = read("scripts/qa/baseline/pre-s11-public-css.css")
   const current = read("app/globals.css")
   const root = fileURLToPath(new URL("..", import.meta.url))
   const expected = applyApprovedPublicCssReplacements(classify(original, scanClassUsage(root)).text.KEEP)
-  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01/P02 and CRMACCEPT changes")
+  assert.equal(current, expected, "public CSS differs from the frozen baseline plus approved P01/P02, CRMACCEPT and Fable changes")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
   assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")
 })

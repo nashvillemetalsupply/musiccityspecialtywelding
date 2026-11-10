@@ -11,13 +11,7 @@
 .launcher, .launcher *, .dialog, .dialog * { box-sizing: border-box; }
 
 .launcher {
-  position: fixed;
-  right: max(.75rem, env(safe-area-inset-right));
-  bottom: calc(4.75rem + env(safe-area-inset-bottom));
-  z-index: 135;
-  display: flex;
-  max-width: calc(100vw - 1.5rem);
-  border: 2px solid var(--chat-bone);
+  display: none;
 }
 
 .launcher a, .launcher button, .dialog button, .call {
@@ -82,7 +76,15 @@
 .dialog button:disabled { cursor: default; opacity: .65; }
 
 @media (min-width: 980px) {
-  .launcher { right: 1.5rem; bottom: 1.5rem; }
+  .launcher {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 135;
+    display: flex;
+    max-width: calc(100vw - 1.5rem);
+    border: 2px solid var(--chat-bone);
+  }
   .dialog { right: 1.5rem; bottom: 1.5rem; max-height: min(42rem, calc(100dvh - 3rem)); }
 }
 

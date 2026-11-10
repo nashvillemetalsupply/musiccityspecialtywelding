@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import {
@@ -78,13 +78,18 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
 
   useEffect(() => { endRef.current?.scrollIntoView({ block: "nearest" }) }, [session, busy, error])
 
-  function openChat() {
+  const openChat = useCallback(() => {
     const current = sessionRef.current ?? readChatSession(browserStorage(), () => crypto.randomUUID())
     sessionRef.current = current
     setSession(current)
     setDraft(current.pending ?? "")
     setOpen(true)
-  }
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener("ms:open-assistant", openChat)
+    return () => window.removeEventListener("ms:open-assistant", openChat)
+  }, [openChat])
 
   function saveSession(value: ChatSession) {
     sessionRef.current = value

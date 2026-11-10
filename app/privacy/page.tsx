@@ -235,7 +235,7 @@ export default function PrivacyPage() {
         </div>
       </main>
       <Footer />
-      <MobileQuickActions quoteHref="/#contact" phoneHref={shopPhone.href} />
+      <MobileQuickActions phoneHref={shopPhone.href} />
     </>
   )
 }

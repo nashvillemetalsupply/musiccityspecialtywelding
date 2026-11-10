@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Phone } from "lucide-react"
 import { FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 
-export function MobileQuickActions({ quoteHref = "#contact", phoneHref = FALLBACK_SHOP_PHONE_HREF }: { quoteHref?: string; phoneHref?: string }) {
+export function MobileQuickActions({ phoneHref = FALLBACK_SHOP_PHONE_HREF }: { phoneHref?: string }) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
@@ -47,7 +48,11 @@ export function MobileQuickActions({ quoteHref = "#contact", phoneHref = FALLBAC
         <Phone aria-hidden="true" />
         <span>Call now</span>
       </a>
-      <a href={quoteHref}>Quote</a>
+      {process.env.NEXT_PUBLIC_ASSISTANT_CHAT === "1" ? (
+        <button type="button" aria-haspopup="dialog" aria-controls="shop-assistant" onClick={() => window.dispatchEvent(new Event("ms:open-assistant"))}>Ask the shop</button>
+      ) : (
+        <Link href="/#contact">Quote</Link>
+      )}
     </div>
   )
 }

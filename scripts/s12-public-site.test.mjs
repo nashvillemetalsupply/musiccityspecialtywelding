@@ -57,8 +57,8 @@ test("service pages offer the existing quote form below their content", () => {
   assert.match(servicePage, /import \{ MainstreetContact \} from "@\/components\/mainstreet-contact"/)
   assert.match(servicePage, /<MainstreetContact phoneHref=\{shopPhone\.href\} phoneDisplay=\{shopPhone\.display\} \/>/)
   assert.match(servicePage, /href="#contact"/)
-  assert.match(servicePage, /<MobileQuickActions quoteHref="#contact" phoneHref=\{shopPhone\.href\} \/>/)
-  assert.doesNotMatch(servicePage, /href="\/#contact"|quoteHref="\/#contact"/)
+  assert.match(servicePage, /<MobileQuickActions phoneHref=\{shopPhone\.href\} \/>/)
+  assert.doesNotMatch(servicePage, /href="\/#contact"|quoteHref=/)
 })
 
 test("home page uses the shared shell without changing its skip link or footer crest", () => {

@@ -63,7 +63,7 @@ export default function ServiceAreasPage() {
         </section>
       </main>
       <Footer />
-      <MobileQuickActions quoteHref="/#contact" phoneHref={shopPhone.href} />
+      <MobileQuickActions phoneHref={shopPhone.href} />
     </>
   )
 }

@@ -252,7 +252,7 @@ html:has(.ms-home) {
 }
 
 @media (max-width: 979px) {
-  .ms-home .ms-mobile-cta a {
+  .ms-home .ms-mobile-cta a, .ms-home .ms-mobile-cta button {
     padding-bottom: calc(0.95rem + env(safe-area-inset-bottom));
   }
 }
