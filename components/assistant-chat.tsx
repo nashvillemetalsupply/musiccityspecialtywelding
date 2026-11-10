@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { usePathname } from "next/navigation"
-import Link from "next/link"
 import {
   acceptChatReply, CHAT_MESSAGE_LIMIT, CHAT_TURN_LIMIT,
   prepareChatRequest, readChatSession, writeChatSession, type ChatSession,
@@ -19,7 +18,7 @@ export function AssistantContactFallback({ phoneHref, phoneDisplay, onCallback }
   return <div role="alert" className={styles.error}>
     <p>{REPLY_UNCONFIRMED}</p>
     <p><a className={styles.call} href={phoneHref}>Call the shop · {phoneDisplay}</a></p>
-    <p className={styles.assistant}><Link href="/#contact" prefetch={false} onClick={onCallback}>Leave your number for a callback request.</Link></p>
+    <p className={styles.assistant}><a href={ASSISTANT_QUOTE_FORM} onClick={onCallback}>Leave your number for a callback request.</a></p>
     <p className={styles.assistant}><a href={`mailto:${ASSISTANT_SHOP_EMAIL}`}>{ASSISTANT_SHOP_EMAIL}</a></p>
   </div>
 }
@@ -65,6 +64,7 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const launcherRef = useRef<HTMLButtonElement>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
+  const restoreFocusRef = useRef(true)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
@@ -80,6 +80,7 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
   useEffect(() => { endRef.current?.scrollIntoView({ block: "nearest" }) }, [session, busy, error])
 
   const openChat = useCallback(() => {
+    restoreFocusRef.current = true
     if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
       returnFocusRef.current = document.activeElement
     }
@@ -99,6 +100,11 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
     sessionRef.current = value
     writeChatSession(browserStorage(), value)
     setSession(value)
+  }
+
+  function closeForQuote() {
+    restoreFocusRef.current = false
+    setOpen(false)
   }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -130,15 +136,15 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
   return (
     <>
       <aside className={styles.launcher} aria-label="Contact the welding shop">
-        <a className={`${styles.call} ms-button ms-button-primary`} href={phoneHref}>Call the shop</a>
         <button className="ms-button ms-button-secondary" ref={launcherRef} type="button" onClick={openChat} aria-haspopup="dialog" aria-controls="shop-assistant" aria-expanded={open}>Ask the shop</button>
       </aside>
       <dialog ref={dialogRef} id="shop-assistant" className={styles.dialog} aria-labelledby="shop-assistant-title"
         onCancel={() => setOpen(false)}
         onClose={() => {
           setOpen(false)
-          if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus()
-          else launcherRef.current?.focus()
+          if (!restoreFocusRef.current) return
+          if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus({ preventScroll: true })
+          else launcherRef.current?.focus({ preventScroll: true })
         }}>
         <div className={styles.panel}>
           <header className={styles.header}>
@@ -151,14 +157,14 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
             {session?.messages.map((message, index) => (
               <p key={index} className={message.role === "user" ? styles.customer : styles.assistant}>
                 <span className={styles.byline}>{message.role === "user" ? "You" : "Automated assistant"}</span>
-                <AssistantReply text={message.content} phoneHref={phoneHref} onCallback={() => setOpen(false)} />
+                <AssistantReply text={message.content} phoneHref={phoneHref} onCallback={closeForQuote} />
               </p>
             ))}
             {session?.pending && <p className={styles.customer}><span className={styles.byline}>You · awaiting reply</span>{session.pending}</p>}
             {busy && <p role="status" className={styles.status}>Reading your message…</p>}
             {session?.leadSaved && <p className={styles.status}>Your callback request is saved for the shop.</p>}
-            {error && <AssistantContactFallback phoneHref={phoneHref} phoneDisplay={phoneDisplay} onCallback={() => setOpen(false)} />}
-            {atLimit && !error && <AssistantContactFallback phoneHref={phoneHref} phoneDisplay={phoneDisplay} onCallback={() => setOpen(false)} />}
+            {error && <AssistantContactFallback phoneHref={phoneHref} phoneDisplay={phoneDisplay} onCallback={closeForQuote} />}
+            {atLimit && !error && <AssistantContactFallback phoneHref={phoneHref} phoneDisplay={phoneDisplay} onCallback={closeForQuote} />}
             <div ref={endRef} />
           </div>
           <form onSubmit={sendMessage} className={styles.form} aria-busy={busy}>

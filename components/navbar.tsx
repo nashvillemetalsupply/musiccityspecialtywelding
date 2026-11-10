@@ -4,7 +4,6 @@ import { Phone } from "lucide-react"
 import { MainstreetMenu } from "@/components/mainstreet-menu"
 import { PublicSkipLink } from "@/components/public-skip-link"
 import { getShopPhone } from "@/lib/shop-contact"
-import { AskShopButton } from "@/components/shop-actions"
 
 export function Navbar({ home = false }: { home?: boolean }) {
   const shopPhone = getShopPhone()
@@ -34,7 +33,6 @@ export function Navbar({ home = false }: { home?: boolean }) {
           <Link href={`${home ? "" : "/"}#work`}>The work</Link>
           <Link href={`${home ? "" : "/"}#services`}>What we weld</Link>
           <Link href={`${home ? "" : "/"}#job-glass`}>Your job</Link>
-          <AskShopButton className="ms-nav-ask ms-button ms-button-secondary" />
         </nav>
 
         <a className="ms-nav-call ms-button ms-button-primary" href={shopPhone.href} aria-label={`Call the shop at ${shopPhone.display}`}>

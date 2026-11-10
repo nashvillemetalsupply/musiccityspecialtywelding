@@ -363,11 +363,11 @@ body:has(.ms-site) { background: var(--ms-carbon); }
 }
 @media (max-width: 979px) {
   body:has(.ms-mobile-cta) { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); background: var(--ms-carbon); }
-  .ms-site .ms-nav-ask { display: none; }
 }
 @media (max-width: 600px) {
   .ms-site .ms-actions { align-items: stretch; }
   .ms-site .ms-actions > .ms-button { flex: 1 1 9rem; }
+  .ms-site .ms-subclose .ms-actions { width: 100%; }
   .ms-site .ms-work-shot { border-bottom-width: 4rem; }
   .ms-site .sw-sign .sw-line-lg { font-size: clamp(3.25rem, 16vw, 5.25rem); }
 }

@@ -75,6 +75,16 @@ function content(html) {
 }
 
 for (const chatFlag of [undefined, "1"]) {
+  test(`desktop header offers only the phone CTA (chat ${chatFlag ?? "off"})`, () => {
+    const { load, render } = publicPages(chatFlag)
+    for (const home of [false, true]) {
+      const html = render(React.createElement(load("components/navbar.tsx").Navbar, { home }))
+      const desktop = html.replace(/<details\b[\s\S]*?<\/details>/g, "")
+      assert.deepEqual(counts(desktop), { tel: 1, callButtons: 1, ask: 0 })
+      assert.match(desktop, /aria-label="Desktop navigation"/)
+    }
+  })
+
   test(`home has only hero, post-process, and quote-form CTA pairs (chat ${chatFlag ?? "off"})`, () => {
     const { load, render } = publicPages(chatFlag)
     const html = render(React.createElement(load("app/page.tsx").default))

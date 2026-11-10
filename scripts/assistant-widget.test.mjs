@@ -75,10 +75,17 @@ test("enabled widget stays off internal operations and customer bearer pages", (
   }
 })
 
-test("enabled public widget includes disclosure, a persistent call action, and accessible chat controls", () => {
+test("enabled public widget has one chat launcher and preserves the dialog's human call route", () => {
   const html = renderToStaticMarkup(React.createElement(widget("1", "/services/mobile-welding"), props))
   assert.match(html, /automated shop assistant/)
-  assert.match(html, /<aside[\s\S]*href="tel:\+16157033296"[\s\S]*Call the shop/)
+  const launcher = html.match(/<aside\b[\s\S]*?<\/aside>/)?.[0]
+  assert.ok(launcher)
+  assert.equal((launcher.match(/<button\b/g) ?? []).length, 1)
+  assert.match(launcher, /aria-haspopup="dialog"[^>]*>Ask the shop<\/button>/)
+  assert.doesNotMatch(launcher, /<a\b|Call the shop/)
+  const dialog = html.match(/<dialog\b[\s\S]*?<\/dialog>/)?.[0]
+  assert.ok(dialog)
+  assert.match(dialog, /href="tel:\+16157033296"[^>]*>Call the shop/)
   assert.match(html, /<dialog[^>]*id="shop-assistant"[^>]*aria-labelledby="shop-assistant-title"/)
   assert.match(html, /role="log" aria-live="polite"/)
   assert.match(html, /<label for="shop-assistant-message"/)
@@ -86,7 +93,7 @@ test("enabled public widget includes disclosure, a persistent call action, and a
   const code = source("components/assistant-chat.tsx")
   assert.match(code, /\.showModal\(\)/)
   assert.match(code, /onCancel=/)
-  assert.match(code, /launcherRef\.current\?\.focus\(\)/)
+  assert.match(code, /launcherRef\.current\?\.focus\(\{ preventScroll: true \}\)/)
 })
 
 function quickActions(flag, fakes = {}, globals = {}) {
@@ -266,7 +273,7 @@ test("assistant replies make only approved phone, email and quote form destinati
   assert.match(html, /href="\/#contact"/)
   assert.doesNotMatch(html, /href="\/other#contact"/)
   assert.equal((html.match(/<a /g) ?? []).length, 3)
-  assert.match(source("components/assistant-chat.tsx"), /<AssistantReply[^>]+onCallback=\{\(\) => setOpen\(false\)\}/)
+  assert.match(source("components/assistant-chat.tsx"), /<AssistantReply[^>]+onCallback=\{closeForQuote\}/)
 })
 
 test("quote form reply link closes the chat so the contact form is usable", () => {
@@ -278,4 +285,85 @@ test("quote form reply link closes the chat so the contact form is usable", () =
   quote.props.onClick()
   assert.equal(closed, true)
   assert.equal(nodes.find((node) => node.props.href === props.phoneHref).props.onClick, undefined)
+})
+
+for (const requestFailed of [false, true]) test(`closing chat preserves quote navigation with ${requestFailed ? "error" : "turn-limit"} fallback`, () => {
+  const focusCalls = []
+  class FocusTarget {
+    isConnected = true
+    focus(options) { focusCalls.push({ target: this, preventScroll: options?.preventScroll }) }
+  }
+  const invokingButton = new FocusTarget()
+  const launcherButton = new FocusTarget()
+  const fakeReact = {
+    useCallback: (callback) => callback,
+    useEffect: () => {},
+    useRef: (value) => ({ current: value }),
+    useState: (value) => [value === null ? { messages: [{ role: "assistant", content: "[Quote form](/#contact)" }], nextTurn: CHAT_TURN_LIMIT } : value === "" && requestFailed ? "A failed request" : value, () => {}],
+  }
+  const { AssistantChat } = widgetExports("1", "/", { react: fakeReact }, {
+    document: { activeElement: invokingButton }, HTMLElement: FocusTarget,
+    window: { sessionStorage: { getItem: () => null } },
+    crypto: { randomUUID: () => sessionId },
+  })
+  const publicChat = AssistantChat(props)
+  const chatDoor = publicChat.type(publicChat.props)
+  const tree = chatDoor.type(chatDoor.props)
+  const [launcher, dialog] = tree.props.children
+  const button = launcher.props.children
+  button.props.ref.current = launcherButton
+  button.props.onClick()
+  dialog.props.onClose()
+  assert.deepEqual(focusCalls, [{ target: invokingButton, preventScroll: true }])
+  invokingButton.isConnected = false
+  dialog.props.onClose()
+  assert.deepEqual(focusCalls[1], { target: launcherButton, preventScroll: true })
+  const findQuoteReply = (node) => {
+    if (!node || typeof node !== "object") return null
+    if (node.props?.text === "[Quote form](/#contact)") return node
+    for (const child of [node.props?.children].flat(Infinity)) {
+      const found = findQuoteReply(child)
+      if (found) return found
+    }
+    return null
+  }
+  const quoteReply = findQuoteReply(dialog)
+  assert.ok(quoteReply)
+  quoteReply.props.onCallback()
+  dialog.props.onClose()
+  assert.equal(focusCalls.length, 2, "quote navigation keeps focus at its destination")
+  invokingButton.isConnected = true
+  button.props.onClick()
+  dialog.props.onClose()
+  assert.deepEqual(focusCalls[2], { target: invokingButton, preventScroll: true }, "a later ordinary dismissal restores focus")
+  const fallbacks = []
+  const collectFallbacks = (node) => {
+    if (!node || typeof node !== "object") return
+    if (node.type?.name === "AssistantContactFallback") fallbacks.push(node)
+    for (const child of [node.props?.children].flat(Infinity)) collectFallbacks(child)
+  }
+  collectFallbacks(dialog)
+  assert.equal(fallbacks.length, 1)
+  button.props.onClick()
+  fallbacks[0].props.onCallback()
+  dialog.props.onClose()
+  assert.equal(focusCalls.length, 3, "fallback quote navigation keeps focus at its destination")
+})
+
+test("handoff phone links render for both configured and fallback shop phone routing", () => {
+  const { AssistantReply } = widgetExports("1")
+  const { assistantContactReply } = nativeRequire("../lib/assistant/contact.ts")
+  for (const phone of [
+    { href: "tel:+16157033296", display: "(615) 703-3296" },
+    { href: "tel:+16158104910", display: "(615) 810-4910" },
+  ]) {
+    const text = assistantContactReply(phone)
+    const nodes = AssistantReply({ text, phoneHref: phone.href })
+    const call = nodes.find((node) => node.props.href === phone.href)
+    assert.ok(call, `handoff must use the selected ${phone.href} route`)
+    assert.equal(call.props.children, `Call the shop at ${phone.display}`)
+    assert.equal(nodes.filter((node) => node.type === "a").length, 3)
+    const other = phone.href === "tel:+16157033296" ? "tel:+16158104910" : "tel:+16157033296"
+    assert.equal(AssistantReply({ text: `[Other](${other})`, phoneHref: phone.href }).filter((node) => node.type === "a").length, 0)
+  }
 })

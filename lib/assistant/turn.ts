@@ -243,16 +243,19 @@ export async function handleAssistantTurn(
   const question = () => spanish ? assistantQuestionInSpanish(nextQuestion(fields, conversation)) : nextQuestion(fields, conversation)
   const callLink = options.voice ? (spanish ? "Di persona o pulsa cero para hablar con el taller" : "Say person or press zero to reach the shop") : `[${spanish ? "Llama al taller al" : "Call the shop at"} ${phone.display}](${phone.href})`
   const outsideUsualArea = Boolean(fields.location && !assistantKnowledge.serviceAreas.some((area) => fields.location!.toLowerCase().includes(area.toLowerCase())))
-  const replyPhones = String(output.reply).match(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g) ?? []
-  const foreignPhone = replyPhones.some((value) => value.replace(/\D/g, "").slice(-10) !== phone.display.replace(/\D/g, "").slice(-10))
   let reply = stripAssistantMoney(output.reply)
     // The model cannot choose a different phone, destination or HTML surface.
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
     // Block tags delimit sentences; inline tags can split a word.
     .replace(/<\/?(?:address|article|aside|blockquote|br|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi, " ")
     .replace(/<[^>]*>/g, "")
-  reply = stripAssistantSelfDisclosure(reply)
-  const concern = assistantExpertConcern(customerText, String(output.reply)) ?? (outsideUsualArea || foreignPhone || unsupportedCapabilityAssertion(reply) ? "claim" : null)
+  // Removing inline markup can assemble a price, phone number or unsafe claim.
+  // Guard the actual visible text as well as raw destinations before replying.
+  reply = stripAssistantSelfDisclosure(stripAssistantMoney(reply))
+  const replyPhones = `${output.reply}\n${reply}`.match(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g) ?? []
+  const foreignPhone = replyPhones.some((value) => value.replace(/\D/g, "").slice(-10) !== phone.display.replace(/\D/g, "").slice(-10))
+  const concern = assistantExpertConcern(customerText, String(output.reply)) ?? assistantExpertConcern(customerText, reply)
+    ?? (outsideUsualArea || foreignPhone || unsupportedCapabilityAssertion(reply) ? "claim" : null)
   const customerHandoff = assistantHandoffReason(latest)
   const unsupportedCapability = unsupportedCapabilityQuestion(latest)
   const repairDetails = currentRepairDetails(latest, fields)
