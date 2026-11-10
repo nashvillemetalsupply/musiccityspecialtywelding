@@ -31,17 +31,18 @@
 }
 
 .launcher .call, .dialog .call, .dialog button[type="submit"] {
-  color: var(--ms-carbon);
+  color: var(--ms-button-ink);
   background: var(--ms-arc);
   border-color: var(--ms-arc);
 }
 
-.launcher a:hover, .launcher button:hover, .dialog .call:hover, .dialog button[type="submit"]:hover {
-  background: var(--ms-bone);
-  border-color: var(--ms-bone);
-  color: var(--ms-carbon);
+.launcher a:hover, .dialog .call:hover, .dialog button[type="submit"]:hover {
+  background: var(--ms-neon);
+  border-color: var(--ms-neon);
+  color: var(--ms-button-ink);
   filter: none;
 }
+.launcher button:hover { background: var(--ms-chalk); border-color: var(--ms-chalk); color: var(--ms-button-ink); filter: none; }
 .launcher a:active, .launcher button:active, .dialog .call:active, .dialog button[type="submit"]:active { transform: translateY(1px); }
 .launcher :focus-visible, .dialog :focus-visible { outline: 3px solid currentColor; outline-offset: -5px; }
 
@@ -63,22 +64,23 @@
 .header span { display: block; font: 500 .65rem/1.4 var(--font-ms-mono), monospace; letter-spacing: .04em; }
 .header h2 { margin: .2rem 0 0; font: 900 clamp(1.8rem, 7vw, 2.3rem)/1 var(--font-ms-display), sans-serif; text-transform: uppercase; }
 .header button { flex: 0 0 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; color: var(--ms-bone); background: transparent; font-size: 2rem; cursor: pointer; }
-.messages { min-height: 4rem; overflow-y: auto; overscroll-behavior: contain; padding: .75rem 1rem; overflow-wrap: anywhere; color: var(--ms-carbon); background: var(--ms-bone); }
+.messages { min-height: 4rem; overflow-y: auto; overscroll-behavior: contain; padding: .75rem 1rem; overflow-wrap: anywhere; color: var(--ms-ink); background: var(--ms-paper-fill); }
 .assistant, .customer { margin: .4rem 0 1rem; font-size: .95rem; line-height: 1.5; white-space: pre-wrap; }
-.assistant { color: var(--ms-carbon); background: var(--ms-bone); }
-.customer { padding-left: .8rem; border-left: 2px solid var(--ms-copper); color: var(--ms-carbon); background: var(--ms-arc); }
+.assistant { color: var(--ms-ink); background: var(--ms-paper-fill); }
+.customer { padding-left: .8rem; border-left: 2px solid var(--ms-ink); color: var(--ms-ink); background: var(--ms-arc); }
 .byline { display: block; padding-bottom: .25rem; font: 600 .65rem/1.5 var(--font-ms-mono), monospace; text-transform: uppercase; }
 .assistant a { color: var(--ms-copper); text-decoration: underline; text-underline-offset: .2em; }
-.customer a { color: var(--ms-carbon); text-decoration: underline; text-underline-offset: .2em; }
+.customer a { color: var(--ms-ink); text-decoration: underline; text-underline-offset: .2em; }
 .status, .error { margin: .75rem 0; font-size: .875rem; line-height: 1.45; }
 .error { border-left: 3px solid var(--ms-copper); padding-left: .65rem; }
-.form { flex-shrink: 0; padding: .75rem 1rem 1rem; border-top: 1px solid var(--ms-rule); color: var(--ms-bone); background: var(--ms-surface); }
+.form { flex-shrink: 0; padding: .75rem 1rem 1rem; border-top: 1px solid var(--ms-line-bone); color: var(--ms-bone); background: var(--ms-surface); }
 .form label { display: block; margin-bottom: .4rem; font-size: .8rem; font-weight: 700; }
-.form textarea { display: block; width: 100%; min-height: 44px; max-height: 7rem; resize: vertical; padding: .65rem; border: 1px solid var(--ms-arc); border-radius: 0; background: var(--ms-bone); color: var(--ms-carbon); font: 400 1rem/1.4 var(--font-ms-sans), Arial, sans-serif; }
-.form textarea:focus-visible { outline-color: var(--ms-arc); outline-offset: 2px; }
+.form textarea { display: block; width: 100%; min-height: 44px; max-height: 7rem; resize: vertical; padding: .65rem; border: 1px solid var(--ms-rule); border-radius: 0; background: var(--ms-paper-fill); color: var(--ms-ink); font: 400 1rem/1.4 var(--font-ms-sans), Arial, sans-serif; }
+.form textarea::placeholder { color: var(--ms-ink-muted); opacity: 1; }
+.form textarea:focus-visible { outline-color: currentColor; outline-offset: 2px; }
 .formActions { display: flex; align-items: flex-start; gap: .75rem; margin-top: .6rem; }
 .formActions p { color: var(--ms-muted); flex: 1; margin: 0; font-size: .72rem; line-height: 1.45; }
-.dialog button:disabled { cursor: default; opacity: 1; color: var(--ms-carbon); background: var(--ms-muted); border-color: var(--ms-muted); }
+.dialog button:disabled { cursor: default; opacity: 1; color: var(--ms-button-ink); background: var(--ms-arc); border-color: var(--ms-arc); }
 
 @media (min-width: 980px) {
   .launcher {

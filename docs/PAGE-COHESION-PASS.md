@@ -157,82 +157,129 @@ home, and service areas with the assistant both enabled and disabled.
 
 ## Palette
 
-November 10, 2026, `cta-trim`: restore the owner's warm Southern direction with
-espresso, cream paper, saddle tan and copper. This pass changes color treatments
-only. It preserves CTA counts, layout, typography, place names and all public
-copy. The existing logo image and its blue/red colors remain unchanged.
+November 10, 2026, `palette-final`: the owner-approved Fable ruling supersedes
+both the rejected brief palette and the espresso/tan interpretation above.
+`BRAND-BRIEF.md` §Palette now records the complete approved role/hex/usage table.
+This pass preserves today's typography, spacing, flat 1px button geometry,
+44px action targets, copy and CTA trim.
 
-`git show 51d0ea0^:app/globals.css` is the historical source. The requested
-`#16100b` appeared there as button-label ink; it now supplies the shared espresso
-canvas. `#241d12` was the sticky bar's brown secondary action and now supplies
-raised dark surfaces. Cream `#f3ead8`, muted cream `#e3d9c0`, ink `#4f4433`, rule
-`#7a6a4d` and copper `#7d3a0c` also retain exact historical values. Saddle tan is
-the restrained new accent, following the brief's “Southern without costume” rule.
+`app/page-cohesion.css :root` is the single active public palette. Existing
+`--mx-*` and `--sw-*` roles alias it; the historical preservation stylesheet and
+its tokens remain intact. Night is `#100c08`; work, get-it, territory, contact,
+subscope and subfaq use brown plank `#241809`. Hero/services use the approved
+wall stripes; brown sections use the approved plank stripes. Every main section
+has the top radial lamp pool, `rgba(255,180,107,.08)`. Dark body text is enamel,
+headlines chalk, secondary text enamel-dark, and dark rules line-bone.
 
-| Token | Old | New |
+Fire `#ff8a2a` restores call actions, accent words and seams; neon `#ffb46b`
+restores the hero sign, footer phone and primary hover. Buttons use flat fire
+with button ink `#1b0f02`, without the historical gradient foot. Paper surfaces
+use `#fdf9ec` through `#f4ecd8`, ink/ink-muted text, red `#b3402a` accents and
+paper-rule borders. Red text is confined to those paper endpoints; fire is not
+paper text. Focus rings retain `currentColor`.
+
+Chat uses night/enamel for launcher, header and frame; paper/ink for the
+messages pane; fire/ink for customer bubbles; fire/button ink for send/call;
+and surface brown for the composer. The old chat orange is not restored.
+
+The legacy wrapper noise overlay is disabled so it cannot introduce grayscale
+over the approved paper/text pairs; the wall/plank stripes and section lamp
+pseudos remain. The optional consent label explicitly uses ink-muted rather
+than inheriting a border token. The existing aria-hidden 404 numeral retains
+its decorative rule tone; the fire kicker has the ticket's surface behind it
+to prevent the numeral from reducing its text contrast. Dark ticket rules use
+line-bone. These corrections do not change dimensions or content.
+
+### Historical comparison
+
+Recovery snapshot: `.scratch/palette-final/before-69c9fc5.zip`.
+The unmodified historical render is `51d0ea0^` (`ce2a6f5`). Its `globals.css`
+contains later “walls go steel” and “FINAL PUBLIC UNIT” overrides after SHOP
+WALL. Consequently the owner's explicit brown/night table and that commit's
+effective rendered palette are not identical. The explicit ruling wins;
+historical differences are recorded rather than reported as an exact match.
+
+The strict comparison requires the section background/grain, `::before` glow
+and sampled accents all to match the unmodified historical render. At both
+requested widths, every section below differs in at least one of those fields.
+The historical lamp pseudo uses alpha `.10`; the approved ruling uses `.08`.
+Historical work/get-it/territory use steel-panel colors, contact has another
+steel-panel set, services has pegboard, and the customer example uses gray steel.
+Today's typography, spacing and CTA counts intentionally remain in the result.
+
+| Section | Approved final layer | Exact pre-today render match |
 | --- | --- | --- |
-| `--ms-carbon` | `#0b0a09` | `#16100b` espresso canvas, header, footer and sticky bar |
-| `--ms-bone` | `#e8e1d4` | `#f3ead8` cream paper and light text |
-| `--ms-surface` | `#1c1b18` | `#241d12` raised brown surfaces |
-| `--ms-muted` | `#bcb8ad` | `#e3d9c0` secondary text on dark surfaces |
-| `--ms-ink-muted` | `#514e47` | `#4f4433` secondary ink on cream |
-| `--ms-arc` | `#ff4a1c` | `#c79b65` saddle tan actions and dark-surface accents |
-| `--ms-copper` | New shared role | `#7d3a0c` cream-surface links and focus |
-| `--ms-rule` | `#5b5952` | `#7a6a4d` warm rules and control borders |
-| `--ms-rule-light` | `#a9a398` | Alias of `--ms-rule` |
-| `--ms-steel` | `#777872` | Alias of `--ms-rule` |
-| `--ms-backdrop` | `rgb(11 10 9 / 65%)` | `rgb(22 16 11 / 65%)` |
-| `--ms-shadow` | Separate black shadows | `rgb(22 16 11 / 34%)` shared espresso shadow |
+| Header | night | no |
+| Hero | night + wall grain + glow | no |
+| Work | plank + plank grain + glow | no |
+| Services | night + wall grain + glow | no |
+| Get-it | plank + plank grain + glow | no |
+| Process | night + glow; paper cards | no |
+| Customer example | night + glow; paper example | no |
+| Territory | plank + plank grain + glow; paper map | no |
+| FAQ | night + glow; paper disclosures | no |
+| Contact | plank + plank grain + glow; paper form | no |
+| Service hero | night + glow | no |
+| Service scope | plank + plank grain + glow | no |
+| Service plan | night + glow; raised dark cards | no |
+| Service FAQ | plank + plank grain + glow | no |
+| Service closing | night + glow | no |
+| Area hero | night + glow | no |
+| Area cities | plank + plank grain + glow; paper city links | no |
+| Area travel | night + glow | no |
+| Footer | night; neon phone | no |
+| Sticky bar | night; fire primary, surface secondary | no |
+| Assistant | night/enamel shell, paper/ink pane, fire actions/customer bubble | no |
 
-`app/page-cohesion.css` remains the single active public token set. Existing
-`--mx-*` and `--sw-*` roles alias those tokens. Historical CSS and its exact
-preservation tokens remain intact. Palette overrides also bring privacy, terms,
-the missing-page ticket, form feedback and preview surfaces into the same system.
-Warm rules replace inherited orange or gray details without changing dimensions.
+### Verification
 
-The whole assistant uses the shared tokens in
-`components/assistant-chat.module.css`: espresso launcher/header, cream assistant
-messages and input, tan customer messages and send/call buttons, brown input
-footer, copper links, and contrasting focus rings. The launcher has espresso and
-cream perimeter rings so its button boundary remains visible over either canvas.
-Mobile keeps its existing sticky-bar entry point and dialog placement.
-
-Calculated WCAG ratios: cream/espresso **15.79:1**; cream/brown **13.95:1**;
-muted cream/brown **11.87:1**; espresso/tan **7.46:1**; secondary ink/cream
-**7.96:1**; copper/cream **7.08:1**. Warm rules reach **3.17:1** on brown,
-**3.59:1** on espresso and **4.40:1** on cream. The historical rule color serves
-borders and the large 404 numeral; small cream-surface text uses the darker ink
-because **4.40:1** falls below the **4.5:1** normal-text requirement.
-
-Palette verification:
-
-- Recovery snapshot: `.scratch/southern-palette/before-21bf535.zip` exists and
-  was verified before the palette change.
 - Full suite: **1,492 passed, 3 skipped, 0 failed** (1,495 total), Node
-  **24.22.1**.
-- `npx tsc --noEmit`: passed (exit 0). Full `npx eslint .`: passed (exit 0),
-  with no errors and one pre-existing unused-`phones` warning in the ignored
-  scratch helper `.scratch/cta-trim/count-built.mjs`.
-- `npm run build` reproduced the documented Turbopack external-dependency-junction
-  limitation. `node node_modules/next/dist/bin/next build --webpack`: passed.
-  Bundle budgets: home **622,536 / 648,316 bytes**, board
-  **725,353 / 817,538 bytes**.
-- **26 production viewport checks:** home at 320, 390, 768 and 1440px; all seven
-  service pages, service areas, privacy, terms and the missing page at 390 and
-  1440px. Every section was scrolled into view. No horizontal overflow or heading
-  clipping; CTA counts, shell counts, action groups and 44px action targets match
-  the CTA-trim baseline.
-- Assistant checks at 390 and 1440px passed: cream/tan message and input contrast,
-  send button, links, keyboard focus, Escape dismissal, turn-limit fallback and
-  automated WCAG A/AA checks. Real keyboard Tab verified the Send button's solid
-  espresso focus ring at both widths; input tan and launcher cream focus rings
-  were also verified. The desktop launcher was checked over cream and espresso.
-- The initial automated page checks found only the translucent 404 numeral, at **1.14:1**.
-  Its color now uses `--ms-rule`, reaching **3.17:1** on the brown ticket and
-  exceeding the **3:1** large-text threshold. Both 404 viewports and the assistant
-  checks passed again against the final production rebuild. Combined with the
-  24 unchanged page checks, the final **26-page-viewport** report has zero
-  automated WCAG A/AA violations, geometry or CTA failures, browser errors or
-  POST attempts. Aggregated results are in
-  `.scratch/southern-palette/browser-results.json` and `browser.log`; the initial
-  findings are retained separately in the same evidence directory.
+  **22.23.2**. The final public CSS/chat/CTA regression run passed **40/40**.
+- `tsc --noEmit`: passed. Full-source ESLint: passed, excluding only the
+  temporary `.scratch` historical checkout from this verification run.
+- Default `npm run build` reproduced the pre-existing Turbopack external
+  `node_modules` junction limitation. The final `next build --webpack` passed,
+  including TypeScript and static generation. Exact bundle check passed: home
+  **622,536 / 648,316 bytes**; board **725,353 / 817,538 bytes**.
+- Approved-role contrast calculations include enamel/night **15.69:1**,
+  enamel/plank **13.99:1**, muted/surface **10.59:1**, chalk/plank **14.53:1**,
+  button ink/fire **7.99:1**, button ink/neon **10.75:1**, customer ink/fire
+  **7.25:1**, red/paper **4.84–5.41:1**, and muted ink/paper **8.08:1** minimum.
+
+Historical production captures are complete for all nine routes at 390px and
+1440px, plus home at 320px and 768px. Every section was visited before capture.
+Those 20 viewports have zero automated WCAG A/AA violations, overflow,
+undersized action targets or browser errors. Screenshots and computed-color
+reports are under `os.tmpdir()/mcsw-palette-final/pre-today/`; comparison contact
+sheets are in the sibling `sheets/` directory. Local command logs are in
+`.scratch/palette-final/`.
+
+The final production rebuild was captured again after all source corrections:
+
+- **20 final page viewports:** every requested route at 390px and 1440px, plus
+  home at 320px and 768px. Zero automated WCAG A/AA violations, horizontal
+  overflow, action targets below 44px or browser errors. All sections were
+  visited before full-page capture; real images and headings were inspected.
+- **45 distinct effective text pairs:** zero contrast failures, colors outside
+  the approved palette or unresolved image-backed text pairs. The audit includes
+  open FAQ/menu text, placeholders, generated content, hover states, gradient
+  endpoints and the maximum section glow. Red remains on approved paper;
+  minimum normal-text contrast is **4.842:1**. Focus remains `currentColor`.
+- Assistant normal and turn-limit states at 390px and 1440px: zero automated
+  A/AA violations; nine effective chat text pairs pass. Customer bubble, send,
+  call, paper links, composer and keyboard focus were checked; Escape closes
+  the dialog. No quote or assistant POSTs were made.
+- Additional 404 captures at 390px and 1440px pass automated AA and overflow
+  checks. Visual overlap was checked explicitly: the kicker's surface mask
+  preserves normal-text contrast, and chalk over the decorative rule-tone
+  numeral is **4.397:1**, above the **3:1** large-headline requirement.
+- The unmodified historical render and the final ruling are compared across
+  **182 section/viewport entries** at the 18 requested viewports. **0/182**
+  match all three strict background/glow/accent fields. The per-section table
+  above records those results; the approved ruling is implemented directly.
+- Fresh final screenshots/data: `os.tmpdir()/mcsw-palette-final/final/`.
+  Chat and 404 captures are in sibling `chat/` and `notfound/` directories;
+  the complete contrast/comparison report is `analysis.json` in their parent.
+  Prior captures remain under `final-before-role-fix/` for traceability.
+
+No push or deployment is authorized or performed.

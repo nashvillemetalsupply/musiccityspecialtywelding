@@ -36,12 +36,40 @@ Sample headlines:
 Banned words and phrases: “quality you can trust,” “complete solutions,” “your one-stop shop,” “customer satisfaction is our priority,” “cutting-edge,” “exceptional service,” “premier provider,” “no job too big or too small,” “dependable workmanship,” “professional solutions,” “industry-leading,” and any sentence that says “we are committed to.”
 
 ## Palette
-- **72% Carbon — `#0B0A09`:** primary canvas, navigation, large brand fields.
-- **20% Bone — `#E8E1D4`:** primary light text, warm paper sections, form surfaces.
-- **6% Steel — `#777872`:** rules, secondary text, stamped metadata, disabled states.
-- **2% Arc — `#FF4A1C`:** the single hot accent for call actions, focus, active states, and rare visual sparks.
+Owner-approved Fable ruling, November 10, 2026. This supersedes the rejected
+Carbon/Bone/Steel/Arc palette and the later flat espresso/tan pass. Restore the
+SHOP WALL's brown/orange Southern character while retaining today's typography,
+spacing, flat 1px buttons, 44px targets and trimmed CTA counts.
 
-The existing logo’s blue and red remain inside the mark for recognition; they do not become competing page accents. Verified text pairs: Bone on Carbon and Carbon on Bone exceed normal-text contrast; Carbon on Arc is the preferred button-label pair. Steel is not used for small text on Carbon without a lighter token.
+| Role | Hex | Where |
+| --- | --- | --- |
+| night (canvas) | `#100c08` | body, hero, services, process, FAQ, header, footer, sticky bar, chat launcher/header/frame |
+| wall grain | `#191309` / `#221a0e` | 90deg stripe over night; hero/services only |
+| plank (brown sections) | `#241809` | work, get-it, territory, contact, subscope/subfaq |
+| plank grain | `#2a1d10` / `#3a2916` | stripe over plank |
+| surface | `#241d12` | raised dark cards, sticky-bar secondary, chat composer |
+| glow | `rgba(255,180,107,.08)` | radial top of every section (`::before`) |
+| enamel (text on dark) | `#efe6d2` | body text on night/plank |
+| chalk (headlines) | `#f3ead8` | h1–h3 on dark, button hover fill |
+| enamel-dark (muted on dark) | `#d9cdb4` | secondary text on dark |
+| line-bone | `rgba(243,234,216,.15)` | rules on dark |
+| neon | `#ffb46b` | hero sign text, footer phone, primary button hover |
+| fire (accent) | `#ff8a2a` | primary button fill, nav call, sticky Call, chat send/call, accent words, seams |
+| button ink | `#1b0f02` | label on fire/neon |
+| paper | `#fdf9ec` → `#f4ecd8` | cards, quote form, FAQ, territory map, chat messages pane |
+| ink / ink-muted | `#241a10` / `#4f4433` | text on paper |
+| red (paper accent) | `#b3402a` | links, icons, labels on paper; text only on `#fdf9ec` / `#f4ecd8` |
+| rule (paper) | `#7a6a4d` | borders on paper |
+
+`app/page-cohesion.css :root` owns one active public token set. Buttons are flat
+fire, with button ink labels and neon primary hover; omit the old gradient foot.
+Use red accents on paper, never fire text on paper or red text on enamel or the
+old darker paper. Keep focus rings `currentColor`. The logo's existing blue/red
+remain confined to the recognizable mark.
+
+Chat uses night/enamel for launcher, header and frame; paper/ink for the messages
+pane; fire/ink for customer bubbles; fire/button ink for send/call; and surface
+for the composer. Do not restore the old chat orange.
 
 ## Typography
 **Display:** Archivo variable, `700–900`, width tightened for large all-caps statements. It is industrial and forceful without collapsing into a generic stencil or western costume.
