@@ -1,0 +1,441 @@
+[
+  {
+    "route": "/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "overflow": false,
+    "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+    "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
+    "labelSize": "12px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [
+      "Lebanon",
+      "Nashville",
+      "Franklin",
+      "Murfreesboro",
+      "Gallatin",
+      "Hendersonville",
+      "Clarksville",
+      "Antioch"
+    ],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-section-intro": 16,
+      ".ms-services-heading": 16,
+      ".ms-process-lead": 16,
+      ".ms-job-glass-copy": 16,
+      ".ms-territory-map": 16,
+      ".ms-faq-heading": 16,
+      ".ms-contact-lead": 16,
+      ".ms-footer-mark": 16
+    },
+    "form": {
+      "checkbox": 20,
+      "consentTarget": 272.078125,
+      "inlineConsent": "inline",
+      "inlineFallback": "inline",
+      "submitWidth": 308,
+      "formWidth": 358,
+      "selectAppearance": "none"
+    },
+    "menu": {
+      "x": 0,
+      "y": 73,
+      "width": 390,
+      "height": 319.265625
+    },
+    "menuClosesOnEscape": true,
+    "errors": []
+  },
+  {
+    "route": "/services/mobile-welding",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "overflow": false,
+    "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+    "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
+    "labelSize": "12px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-contact-lead": 16,
+      ".ms-footer-mark": 16
+    },
+    "form": {
+      "checkbox": 20,
+      "consentTarget": 272.078125,
+      "inlineConsent": "inline",
+      "inlineFallback": "inline",
+      "submitWidth": 308,
+      "formWidth": 358,
+      "selectAppearance": "none"
+    },
+    "errors": []
+  },
+  {
+    "route": "/service-areas",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "overflow": false,
+    "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+    "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
+    "labelSize": "12px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [
+      "Lebanon",
+      "Nashville",
+      "Franklin",
+      "Murfreesboro",
+      "Gallatin",
+      "Hendersonville",
+      "Clarksville",
+      "Antioch"
+    ],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-footer-mark": 16
+    },
+    "form": {},
+    "errors": []
+  },
+  {
+    "route": "/",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "overflow": false,
+    "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+    "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
+    "labelSize": "12px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [
+      "Lebanon",
+      "Nashville",
+      "Franklin",
+      "Murfreesboro",
+      "Gallatin",
+      "Hendersonville",
+      "Clarksville",
+      "Antioch"
+    ],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-section-intro": 112,
+      ".ms-services-heading": 112,
+      ".ms-process-lead": 112,
+      ".ms-job-glass-copy": 112,
+      ".ms-territory-map": 112,
+      ".ms-faq-heading": 112,
+      ".ms-contact-lead": 112,
+      ".ms-footer-mark": 112
+    },
+    "form": {
+      "checkbox": 20,
+      "consentTarget": 167.078125,
+      "inlineConsent": "inline",
+      "inlineFallback": "inline",
+      "submitWidth": 596.515625,
+      "formWidth": 675.296875,
+      "selectAppearance": "none"
+    },
+    "errors": []
+  },
+  {
+    "route": "/services/mobile-welding",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "overflow": false,
+    "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+    "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
+    "labelSize": "12px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-contact-lead": 112,
+      ".ms-footer-mark": 112
+    },
+    "form": {
+      "checkbox": 20,
+      "consentTarget": 167.078125,
+      "inlineConsent": "inline",
+      "inlineFallback": "inline",
+      "submitWidth": 596.515625,
+      "formWidth": 675.296875,
+      "selectAppearance": "none"
+    },
+    "errors": []
+  },
+  {
+    "route": "/service-areas",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "overflow": false,
+    "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+    "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
+    "labelSize": "12px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [
+      "Lebanon",
+      "Nashville",
+      "Franklin",
+      "Murfreesboro",
+      "Gallatin",
+      "Hendersonville",
+      "Clarksville",
+      "Antioch"
+    ],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-footer-mark": 112
+    },
+    "form": {},
+    "errors": []
+  },
+  {
+    "quoteFixture": {
+      "submissionsIntercepted": 2,
+      "missingInputsBlocked": true,
+      "consentLabelToggles": true,
+      "retryIdentityPreserved": true,
+      "successVisible": true,
+      "serverRequests": 0
+    }
+  },
+  {
+    "chatDraft": {
+      "navigationAndReloadPreserved": true,
+      "sentMessages": 0
+    }
+  },
+  {
+    "viewport": {
+      "width": 320,
+      "height": 844
+    },
+    "collisions": [],
+    "overflow": false
+  },
+  {
+    "viewport": {
+      "width": 768,
+      "height": 1024
+    },
+    "collisions": [],
+    "overflow": false
+  },
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "collisions": [],
+    "overflow": false
+  },
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "collisions": [],
+    "overflow": false
+  },
+  {
+    "route": "/services/trailer-welding-repair",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/gate-repair",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/equipment-repair",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/architectural-welding",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/custom-fabrication",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/custom-metal-products",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/privacy",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/terms",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/fable-local-missing-page",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "status": 404,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/trailer-welding-repair",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/gate-repair",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/equipment-repair",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/architectural-welding",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/custom-fabrication",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/services/custom-metal-products",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/privacy",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/terms",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 200,
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "route": "/fable-local-missing-page",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "status": 404,
+    "overflow": false,
+    "errors": []
+  }
+]

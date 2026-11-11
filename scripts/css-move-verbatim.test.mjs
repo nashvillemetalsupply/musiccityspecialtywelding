@@ -187,6 +187,39 @@ function applyApprovedPublicCssReplacements(css) {
   return css
 }
 
+// Fable 2026-11-10 #1/#3/#4/#6/#17 explicitly replace the two font
+// fallbacks, unify public small type, widen the shared container, reserve
+// footer clearance, and retire the two bespoke 404 action rules. Keep the
+// historical comparison for every other byte and all operations CSS.
+function applyFablePublicCssRuling(css) {
+  assert.equal((css.match(/^  --font-ms-(?:sans|mono): .+\r?\n/gm) ?? []).length, 2)
+  css = css.replace(/^  --font-ms-(?:sans|mono): .+\r?\n/gm, "")
+  css = css.replace("minmax(0, 0.8fr); padding-bottom: 4rem;", "minmax(0, 0.8fr); padding-bottom: 6.5rem;")
+  css = css.replace("max-width: 68rem;", "max-width: var(--ms-container);")
+  assert.equal((css.match(/^\.ms-lost-actions a[^\r\n]+\r?\n/gm) ?? []).length, 2)
+  css = css.replace(/^\.ms-lost-actions a[^\r\n]+\r?\n/gm, "")
+  const approvedTypeSizes = new Map([
+    ...[.5, .52, .56, .58, .6, .62, .64, .65, .66, .68, .7, .72, .74, .75, .76, .78, .8].map((size) => [size, .75]),
+    ...[.85, .875, .9, .92, .9375].map((size) => [size, .875]),
+    ...[.95, .96, 1, 1.02, 1.03, 1.04, 1.05, 1.06, 1.0625].map((size) => [size, 1]),
+    ...[1.08, 1.1, 1.12, 1.15].map((size) => [size, 1.125]),
+    ...[1.2, 1.25, 1.3, 1.35, 1.4].map((size) => [size, 1.25]),
+  ])
+  const sheet = postcss.parse(css)
+  sheet.walkRules((rule) => {
+    if (!/\.(?:ms|sw|wm)-/.test(rule.selector)) return
+    const mono = rule.nodes.some((decl) => /^(font-family|font)$/.test(decl.prop) && decl.value.includes("--font-ms-mono"))
+    rule.walkDecls("font-size", (decl) => {
+      if (mono) decl.value = "var(--ms-label)"
+      else if (/^[\d.]+rem$/.test(decl.value) && approvedTypeSizes.has(parseFloat(decl.value))) decl.value = `${approvedTypeSizes.get(parseFloat(decl.value))}rem`
+    })
+    rule.walkDecls("font", (decl) => {
+      decl.value = decl.value.replace(/([\d.]+)rem(?=\/)/, (value, size) => mono ? "var(--ms-label)" : approvedTypeSizes.has(+size) ? `${approvedTypeSizes.get(+size)}rem` : value)
+    })
+  })
+  return sheet.toString()
+}
+
 function publicColorTokens() {
   const tokens = new Map()
   postcss.parse(read("styles/public-color-tokens.css")).walkDecls((declaration) => {
@@ -219,7 +252,8 @@ test("public colors live in tokens and every retained color reference resolves",
     }
   })
   assert.deepEqual([...used].sort(), [...tokens.keys()].sort(), "retained public color tokens must all have a declaration using them")
-  assert.match(read("app/layout.tsx"), /import "\.\.\/styles\/public-color-tokens\.css"[\r\n]+import "\.\/globals\.css"/)
+  assert.match(read("app/layout.tsx"), /import "\.\/public-site\.css"/)
+  assert.match(read("app/public-site.css"), /@import "\.\.\/styles\/public-color-tokens\.css";[\r\n]+@import "\.\/globals\.css";[\r\n]+@import "\.\/page-cohesion\.css";[\r\n]+@import "\.\.\/styles\/reduced-motion\.css";[\r\n]+@import "\.\/homepage-polish\.css";/)
 })
 
 test("public CSS remains frozen except approved polish and exact color token extraction", () => {
@@ -231,7 +265,7 @@ test("public CSS remains frozen except approved polish and exact color token ext
   // Its historical rules remain preserved, so classify the baseline with this
   // original public class as well. The complete byte comparison still applies.
   usage.classes.add(".ms-process-call")
-  const expected = applyApprovedPublicCssReplacements(classify(original, usage).text.KEEP)
+  const expected = applyFablePublicCssRuling(applyApprovedPublicCssReplacements(classify(original, usage).text.KEEP))
   assert.equal(resolvePublicColorTokens(current), expected, "public CSS differs from the frozen baseline plus approved polish after resolving exact color tokens")
   const imports = (css) => postcss.parse(css).nodes.filter((node) => node.type === "atrule" && !node.nodes).map((node) => css.slice(node.source.start.offset, node.source.end.offset))
   assert.deepEqual(imports(current), imports(original), "global imports and leaf at-rules must remain byte-identical")

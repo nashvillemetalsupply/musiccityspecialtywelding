@@ -23,12 +23,20 @@ let hooks, safety, active, sql, knowledge
 
 function writeReport(mode) {
   const counts = Object.fromEntries(["ANSWERED", "HANDOFF", "WRONG", "DEAD END"].map((grade) => [grade, results.filter((r) => r.grade === grade).length]))
+  const handoffs = results.filter((entry) => entry.handoff_reason)
+  const handoffOpenings = Object.entries(handoffs.reduce((openings, entry) => {
+    const reply = entry.reply.replace(/^I'm an automated assistant for Music City Specialty Welding\.\s*|^Soy un asistente automatizado de Music City Specialty Welding\.\s*/, "")
+    const opening = reply.split(/(?<=[.!?])\s/)[0]
+    openings[opening] = (openings[opening] ?? 0) + 1
+    return openings
+  }, {})).map(([opening, count]) => ({ opening, count, share: count / handoffs.length })).sort((a, b) => b.count - a.count)
   const report = { mode, recordedAt: new Date().toISOString(), ...(baseline ? { baselineRef } : {}), limitation: prod ? "Production is unchanged by this branch; real model samples only, not the full bank." : "Scripted provider candidates and in-memory SQL, using the repository's A4 fixture. This proves application boundaries for these candidates; it does not establish live model expertise or exhaustive factual correctness.",
-    assistantVoice: "off; no voice route imported or called", counts, total: results.length,
+    assistantVoice: "off; no voice route imported or called", counts, total: results.length, handoffOpenings,
     ...(prod ? { outboundVerification: "Code suppression only; no production provider delivery or database readback.", safetyEvidence: ["input.ts derives is_test from [INTERNAL TEST]", "store.ts preserves sticky session test state", "service.ts gates notify on !session.is_test", "handoff.ts returns for input/session/lead/person/transcript test markers before all senders", "followup.ts gates test leads"], inputAttestation: "All 10 actual inputs used fresh UUID sessions, turn_index 0, [INTERNAL TEST] prefix and is_test:true; no fabricated IP headers, no retries." } : { outboundAttempts: outbound }),
     ...(safety ? { safety: safety.summary() } : {}), results }
   writeFileSync(new URL(output, root), `${JSON.stringify(report, null, 2)}\n`)
   console.log(JSON.stringify({ output, mode, counts, total: results.length, outboundAttempts: outbound.length }))
+  if (!prod && !baseline) assert.ok(handoffOpenings.every((entry) => entry.share <= .2), "No handoff opening may exceed 20% of handoffs")
   return counts
 }
 

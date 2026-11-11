@@ -133,7 +133,7 @@ test("production ladder then Lebanon gate keeps unknown intake and resumes exper
   globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
   conversation.push({ role: "user", content: ladder })
   const first = await handleAssistantTurn(conversation, { isTest: true })
-  assert.match(first.reply, /A person at the shop will confirm that job\./)
+  assert.match(first.reply, /The shop needs a closer look at that particular job\./)
   assert.equal(first.continue_intake, true)
   assert.equal(first.handoff_reason, "unknown")
   assert.equal(first.branch, "unknown-capability-intake")
@@ -165,7 +165,7 @@ test("production ladder then Lebanon gate clears model handoff even with stale j
   const conversation = [{ role: "user", content: ladder }]
   globalThis.__turnRegressionModel = async () => ({ reply: "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
   const first = await handleAssistantTurn(conversation, { isTest: true })
-  assert.match(first.reply, /A person at the shop will confirm that job\./)
+  assert.match(first.reply, /The shop needs a closer look at that particular job\./)
   assert.equal(first.handoff_reason, "unknown")
   assert.equal(first.continue_intake, true)
   assert.equal(first.branch, "unknown-capability-intake")
@@ -226,7 +226,7 @@ test("unsupported boat ladders keep intake even when the model mistakes confirma
   for (const handoff_reason of [null, "unknown", "human"]) {
     globalThis.__turnRegressionModel = async () => ({ reply: "The shop needs to confirm that job. What name should the shop use?", handoff_reason, fields: fields({ need: "aluminum boat ladders", material_size: "aluminum" }) })
     const result = await handleAssistantTurn([{ role: "user", content: ladder }], { isTest: true })
-    assert.match(result.reply, /A person at the shop will confirm that job\./)
+    assert.match(result.reply, /The shop needs a closer look at that particular job\./)
     assert.doesNotMatch(result.reply, /A person at the shop can help/)
     assert.equal(result.continue_intake, true)
     assert.equal(result.handoff_reason, "unknown")

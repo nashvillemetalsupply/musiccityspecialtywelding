@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { MapPin } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -6,14 +5,13 @@ import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { createPublicMetadata } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
 import { ShopActions } from "@/components/shop-actions"
+import { ServiceAreaChips } from "@/components/service-area-chips"
 
 export const metadata = createPublicMetadata({
   title: "Mobile Welding Service Area",
   description: "Mobile welding service from Lebanon across Nashville and surrounding Middle Tennessee communities. Project scope and travel determine availability.",
   canonical: "/service-areas",
 })
-
-const areas = ["Lebanon", "Nashville", "Franklin", "Murfreesboro", "Gallatin", "Hendersonville", "Clarksville", "Antioch"]
 
 export default function ServiceAreasPage() {
   const shopPhone = getShopPhone()
@@ -31,13 +29,7 @@ export default function ServiceAreasPage() {
 
         <section className="ms-area-cities" aria-label="Primary service areas">
           <p><MapPin aria-hidden="true" />533 W Baddour Pkwy, Lebanon, TN 37087.</p>
-          <div>
-            {areas.map((area) => (
-              <Link className="ms-display" href="/services/mobile-welding#service" key={area}>
-                {area}
-              </Link>
-            ))}
-          </div>
+          <ServiceAreaChips />
           <span>Outside this list? Call with the exact address and scope to check the fit.</span>
         </section>
 

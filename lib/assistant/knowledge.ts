@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { servicePages } from "../service-pages.ts"
+import { serviceAreas } from "../service-areas.ts"
+import { assistantAnswers } from "./answers.ts"
 
 function briefSection(brief: string, title: string): string {
   const heading = `## ${title}\n`
@@ -33,18 +35,11 @@ const customerProcess = [...processSource.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/
 const customerPage = [...customerPageSource.matchAll(/<(?:p|li)\b[^>]*>([\s\S]*?)<\/(?:p|li)>/g)].map((match) => visibleText(match[1]))
 const photoLimit = contactForm.match(/<small>(Up to \d+ \/ \d+ MB total)<\/small>/)?.[1]
 const photoValidation = [...contactForm.matchAll(/validation = "((?:Use |Each photo |Photos must )[^"\n]+)"/g)].map((match) => match[1])
-const requiredFields = [...contactForm.matchAll(/<label htmlFor="(quote-[^"]+)">([^<]+)<\/label>\s*<(?:input|select)\b([^>]+)>/g)]
+const requiredFields = [...contactForm.matchAll(/<label htmlFor="(quote-[^"]+)">([^<]+)<\/label>\s*(?:<div className="ms-select-wrap">\s*)?<(?:input|select)\b([^>]+)>/g)]
   .filter((match) => /\brequired\b/.test(match[3])).map((match) => visibleText(match[2]).replace(/\s*\*$/, ""))
 if (!customerProcess.length || !customerPage.length || !photoLimit || photoValidation.length !== 3 || requiredFields.length !== 3) {
   throw new Error("Assistant knowledge could not read the customer process or quote form requirements.")
 }
-const areaList = areaPage.match(/const areas = (\[[^\n]+\])/)?.[1]
-if (!areaList) throw new Error("Assistant knowledge could not read the service-area list.")
-const areas: unknown = JSON.parse(areaList)
-if (!Array.isArray(areas) || !areas.every((area) => typeof area === "string")) {
-  throw new Error("Assistant knowledge has an invalid service-area list.")
-}
-
 const areaContent = [...areaPage.matchAll(/<(?:h[12]|p|span|strong)\b[^>]*>([\s\S]*?)<\/(?:h[12]|p|span|strong)>/g)]
   .map((match) => match[1].replace(/<[^>]+>/g, "").replace(/\{[^}]+\}/g, "").replace(/&apos;/g, "'").replace(/\s+/g, " ").trim())
   .filter(Boolean)
@@ -67,11 +62,12 @@ export const ASSISTANT_SHOP_PHONE = Object.freeze({
 })
 
 export const assistantKnowledge = Object.freeze({
-  sources: ["lib/service-pages.ts (app/services/[slug]/page.tsx)", "app/service-areas/page.tsx", "BRAND-BRIEF.md", "app/page.tsx", "components/mainstreet-contact.tsx"],
+  sources: ["lib/service-pages.ts (app/services/[slug]/page.tsx)", "lib/service-areas.ts", "lib/assistant/answers.ts", "app/service-areas/page.tsx", "BRAND-BRIEF.md", "app/page.tsx", "components/mainstreet-contact.tsx"],
+  answers: assistantAnswers,
   services: servicePages.map(({ slug, title, shortTitle, intro, commonJobs, goodFit, details, faqs }) => ({
     slug, title, shortTitle, intro, commonJobs, goodFit, details, faqs,
   })),
-  serviceAreas: areas as string[],
+  serviceAreas,
   travel: areaContent,
   homepage: { faqs: homepageFaqs, process: customerProcess, customerPage },
   quoteForm: { href: "/#contact", requiredFields, photos: { optional: /Photos <i>optional<\/i>/.test(contactForm), limit: photoLimit, validation: photoValidation } },

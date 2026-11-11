@@ -465,7 +465,7 @@ try {
     const id = randomUUID(); r.id = id; const replies = await chat(r, id, [text], reason)
     if (name === "3. Chat unknown") {
       assert.equal(replies[0].continue_intake, true, "unknown capability must keep intake open")
-      assert.match(replies[0].reply, /(?:confirm that job|needs inspection)[\s\S]+\?/, "unknown capability asks the next intake question")
+      assert.match(replies[0].reply, /(?:confirm the credentials|checked by the shop|closer look|needs inspection|Have it looked at)[\s\S]+\?/, "unknown capability asks the next intake question")
       assert.equal((replies[0].reply.match(/\?/g) ?? []).length, 1, "unknown capability asks one intake question")
       assert.doesNotMatch(replies[0].reply, /\byes\b|we can|we will|we'll|booked|scheduled|guarantee|available/i, "unknown capability makes no work or callback promise")
     }

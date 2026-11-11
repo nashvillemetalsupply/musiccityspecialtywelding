@@ -59,8 +59,9 @@ test("public subpages share a skip link, a matching target, and compact 44px con
 })
 
 test("structured service coverage matches the visible Antioch service area", () => {
-  assert.match(read("app/layout.tsx"), /"Antioch, Tennessee"/)
-  assert.match(read("app/service-areas/page.tsx"), /"Antioch"/)
+  assert.match(read("app/layout.tsx"), /areaServed: serviceAreas\.map\(\(area\) => `\$\{area\}, Tennessee`\)/)
+  assert.match(read("lib/service-areas.ts"), /"Antioch"/)
+  assert.match(read("app/service-areas/page.tsx"), /<ServiceAreaChips \/>/)
 })
 
 test("public phone taps are measured as intent without firing the quote conversion", () => {

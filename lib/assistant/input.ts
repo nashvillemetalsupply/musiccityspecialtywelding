@@ -27,7 +27,7 @@ export function validateAssistantInput(value: unknown): AssistantInput {
     throw new AssistantRequestError("This chat has reached its limit. Please call the shop.")
   }
   if (typeof input.message !== "string" || !input.message.trim()) throw new AssistantRequestError("Type a message first.")
-  if (input.message.length > ASSISTANT_MAX_MESSAGE) throw new AssistantRequestError("Keep each message under 2,001 characters.", 413)
+  if (input.message.length > ASSISTANT_MAX_MESSAGE) throw new AssistantRequestError("Keep each message to 2,000 characters or less.", 413)
   if (input.is_test !== undefined && typeof input.is_test !== "boolean") throw new AssistantRequestError("Invalid test flag.")
   return {
     session_id: input.session_id.toLowerCase(),

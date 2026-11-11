@@ -68,6 +68,20 @@ test("A4 ask diagnostics label absent metadata and reject arbitrary provider str
   assert.deepEqual(result, [{ turn: 1, reply: "reply [redacted]", lead_saved: false, continue_intake: false, handoff_reason: null, branch: null, decision_trace: null, model_diagnostics: null }])
 })
 
+test("A4 asks preserve the sourced-answer branch without inventing provider diagnostics", async () => {
+  const [turn] = await runAskConversation({
+    messages: ["Do you offer mobile welding?"], sessionId: "sourced-session",
+    postTurn: async (input) => {
+      assert.equal(input.message, "[INTERNAL TEST] Do you offer mobile welding?")
+      return { ok: true, reply: "We bring the rig when the metal is better repaired where it sits." }
+    },
+    readTurn: async () => ({ branch: "sourced-answer" }), onTurn: async () => {},
+  })
+  assert.equal(turn.branch, "sourced-answer")
+  assert.equal(turn.handoff_reason, null)
+  assert.equal(turn.model_diagnostics, null)
+})
+
 test("A4 decision trace rejects every arbitrary provider string", () => {
   assert.equal(safeDecisionTrace(undefined), null)
   assert.deepEqual(safeDecisionTrace(Object.fromEntries([

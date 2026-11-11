@@ -5,8 +5,6 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-ms-sans: Arial, Helvetica, sans-serif;
-  --font-ms-mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
   --font-ms-slab: Georgia, "Times New Roman", serif;
   --background: oklch(0.99 0.002 90);
   --foreground: oklch(0.12 0.01 90);
@@ -205,7 +203,7 @@ html {
   color: var(--mx-bone);
   background: transparent;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.64rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -228,7 +226,7 @@ html {
   background: transparent;
   color: var(--mx-bone);
   font-family: var(--font-ms-display), sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.125rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -254,7 +252,7 @@ html {
   gap: 0.4rem;
   color: inherit;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.76rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -336,7 +334,7 @@ html {
 
 .ms-brand-words span {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.56rem;
+  font-size: var(--ms-label);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--mx-arc);
@@ -352,7 +350,7 @@ html {
   color: var(--mx-bone);
   text-decoration: none;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.68rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -377,7 +375,7 @@ html {
 .ms-nav-call:hover { background: var(--mx-arc-deep); border-color: var(--mx-arc-deep); color: var(--mx-bone); }
 .ms-nav-call svg { width: 1.1rem; height: 1.1rem; }
 .ms-nav-call span { display: flex; flex-direction: column; line-height: 1.05; font-weight: 800; font-family: var(--font-ms-display), sans-serif; font-size: 1rem; letter-spacing: 0.04em; }
-.ms-nav-call small { font-family: var(--font-ms-mono), monospace; font-size: 0.52rem; font-weight: 600; letter-spacing: 0.2em; }
+.ms-nav-call small { font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 600; letter-spacing: 0.2em; }
 
 @media (min-width: 980px) {
   .ms-nav-links { display: flex; }
@@ -423,7 +421,7 @@ html {
   text-decoration: none;
   font-family: var(--font-ms-display), sans-serif;
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 1.125rem;
   text-transform: uppercase;
   border-bottom: 1px solid var(--mx-line-bone);
 }
@@ -450,7 +448,7 @@ html {
 .ms-hero-deck {
   max-width: 33rem;
   margin-top: 1.5rem;
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.65;
   color: var(--mx-steel);
 }
@@ -499,7 +497,7 @@ html {
   background: var(--mx-bone);
   color: var(--mx-ink);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.58rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.18em;
   white-space: nowrap;
@@ -540,7 +538,7 @@ html {
 
 .ms-section-intro p {
   margin-top: 1.1rem;
-  font-size: 1.03rem;
+  font-size: 1rem;
   line-height: 1.65;
   max-width: 36rem;
   color: var(--mx-steel-dark);
@@ -579,7 +577,7 @@ html {
   background: var(--mx-ink);
   color: var(--mx-bone);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.62rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -609,7 +607,7 @@ html {
 }
 
 .ms-services-heading { max-width: 44rem; }
-.ms-services-heading p { margin-top: 1rem; color: var(--mx-steel); font-size: 1.02rem; line-height: 1.65; }
+.ms-services-heading p { margin-top: 1rem; color: var(--mx-steel); font-size: 1rem; line-height: 1.65; }
 
 .ms-service-list {
   margin-top: 2.6rem;
@@ -638,7 +636,7 @@ html {
   display: block;
   margin-bottom: 0.8rem;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.72rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.22em;
   color: var(--mx-arc);
@@ -660,7 +658,7 @@ html {
   margin-top: 0.9rem;
   font-family: var(--font-ms-mono), monospace;
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: var(--ms-label);
   letter-spacing: 0.14em;
   color: var(--mx-arc);
   text-transform: uppercase;
@@ -681,7 +679,7 @@ html {
   color: var(--mx-bone);
   text-decoration: none;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.72rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -733,7 +731,7 @@ html {
   padding: 0.45rem 0.9rem;
   border: 2px solid var(--mx-line-bone);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.64rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -768,7 +766,7 @@ html {
   color: var(--mx-arc-deep);
 }
 
-.ms-get-it p { margin-top: 1rem; font-size: 1.06rem; color: var(--mx-steel-dark); }
+.ms-get-it p { margin-top: 1rem; font-size: 1rem; color: var(--mx-steel-dark); }
 
 /* ---- process ---- */
 
@@ -804,7 +802,7 @@ html {
   display: block;
   margin-bottom: 1rem;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.72rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.22em;
   color: var(--mx-arc);
@@ -819,7 +817,7 @@ html {
   line-height: 0.95;
 }
 
-.ms-process-list p { margin-top: 0.7rem; line-height: 1.6; font-size: 0.95rem; color: var(--mx-steel); }
+.ms-process-list p { margin-top: 0.7rem; line-height: 1.6; font-size: 1rem; color: var(--mx-steel); }
 
 .ms-process-call {
   margin-top: 2.8rem;
@@ -836,7 +834,7 @@ html {
 }
 
 .ms-process-call:hover { border-color: var(--mx-arc); color: var(--mx-arc); }
-.ms-process-call span { font-family: var(--font-ms-mono), monospace; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+.ms-process-call span { font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
 .ms-process-call strong { font-family: var(--font-ms-display), sans-serif; font-weight: 900; font-size: clamp(1.7rem, 5vw, 2.6rem); }
 .ms-process-call svg { width: 1.3rem; height: 1.3rem; }
 
@@ -888,7 +886,7 @@ html {
 
 .ms-territory-map small {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.64rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -910,7 +908,7 @@ html {
   padding: 0.45rem 0.95rem;
   border: 2px solid var(--mx-line-ink);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.66rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -922,7 +920,7 @@ html {
   align-items: center;
   gap: 0.5rem;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.76rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.06em;
 }
@@ -960,7 +958,7 @@ html {
   padding: 1.15rem 0.2rem;
   font-family: var(--font-ms-display), sans-serif;
   font-weight: 800;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
@@ -971,7 +969,7 @@ html {
 .ms-faq-list summary i {
   font-style: normal;
   color: var(--mx-arc);
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   flex-shrink: 0;
   transition: transform 140ms ease;
 }
@@ -1002,7 +1000,7 @@ html {
 
 .ms-contact-lead { position: relative; z-index: 2; }
 .ms-contact-lead h2 { font-size: clamp(2.7rem, 7.5vw, 5.2rem); }
-.ms-contact-lead > p { margin-top: 1rem; font-size: 1.04rem; line-height: 1.65; max-width: 30rem; color: var(--mx-steel-dark); }
+.ms-contact-lead > p { margin-top: 1rem; font-size: 1rem; line-height: 1.65; max-width: 30rem; color: var(--mx-steel-dark); }
 
 .ms-contact-call {
   margin-top: 1.9rem;
@@ -1022,7 +1020,7 @@ html {
 .ms-contact-call svg { width: 1.4rem; height: 1.4rem; color: var(--mx-arc); flex-shrink: 0; }
 .ms-contact-call:hover svg { color: var(--mx-bone); }
 .ms-contact-call span { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
-.ms-contact-call small { font-family: var(--font-ms-mono), monospace; font-size: 0.58rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.75; }
+.ms-contact-call small { font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.75; }
 .ms-contact-call strong { font-family: var(--font-ms-display), sans-serif; font-weight: 900; font-size: clamp(1.5rem, 5vw, 2.1rem); }
 
 .ms-quote-form {
@@ -1051,13 +1049,13 @@ html {
 
 .ms-form-heading span {
   font-family: var(--font-ms-slab), serif;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   text-transform: uppercase;
 }
 
 .ms-form-heading small {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.6rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1070,7 +1068,7 @@ html {
 .ms-field label,
 .ms-upload-label {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.62rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1110,7 +1108,7 @@ html {
 .ms-upload:hover { background: var(--public-legacy-f3e9d2); }
 .ms-upload svg { width: 1.4rem; height: 1.4rem; flex-shrink: 0; }
 .ms-upload span { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-.ms-upload strong { font-weight: 700; font-size: 0.95rem; }
+.ms-upload strong { font-weight: 700; font-size: 1rem; }
 .ms-upload small { font-size: 0.75rem; color: var(--mx-steel-dark); }
 
 .ms-upload-field input[type="file"] {
@@ -1196,7 +1194,7 @@ html {
 .ms-submit:hover { background: var(--mx-arc-deep); border-color: var(--mx-arc-deep); }
 .ms-submit:disabled { opacity: 0.6; }
 
-.ms-form-fallback { grid-column: 1 / -1; font-size: 0.85rem; color: var(--mx-steel-dark); }
+.ms-form-fallback { grid-column: 1 / -1; font-size: 0.875rem; color: var(--mx-steel-dark); }
 .ms-form-fallback a { color: var(--mx-ink); font-weight: 700; }
 
 /* ---- footer ---- */
@@ -1210,7 +1208,7 @@ html {
   overflow: clip;
 }
 
-@media (min-width: 900px) { .ms-footer { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); padding-bottom: 4rem; } }
+@media (min-width: 900px) { .ms-footer { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); padding-bottom: 6.5rem; } }
 
 .ms-footer-mark { display: flex; flex-direction: column; gap: 1.3rem; min-width: 0; }
 .ms-footer-mark img { width: 5.5rem; height: auto; }
@@ -1220,7 +1218,7 @@ html {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
   min-width: 0;
 }
 
@@ -1229,12 +1227,12 @@ html {
 .ms-footer-call > strong {
   color: var(--mx-arc);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.62rem;
+  font-size: var(--ms-label);
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
-.ms-footer-call a { color: var(--mx-bone); font-size: 0.9rem; font-weight: 600; }
+.ms-footer-call a { color: var(--mx-bone); font-size: 0.875rem; font-weight: 600; }
 .ms-footer-contact a {
   display: inline-flex;
   align-items: center;
@@ -1253,7 +1251,7 @@ html {
   border-top: 1px solid var(--mx-line-bone);
   padding-top: 1.2rem;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.64rem;
+  font-size: var(--ms-label);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--mx-steel);
@@ -1299,7 +1297,7 @@ html {
   text-decoration: none;
   font-family: var(--font-ms-display), sans-serif;
   font-weight: 900;
-  font-size: 1.15rem;
+  font-size: 1.125rem;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1308,7 +1306,7 @@ html {
 .ms-mobile-cta > :last-child { background: var(--mx-ink); color: var(--mx-bone); border-left: 2px solid var(--mx-bone); }
 .ms-mobile-cta svg { width: 1.1rem; height: 1.1rem; }
 .ms-mobile-cta span { display: flex; flex-direction: column; line-height: 1; align-items: flex-start; }
-.ms-mobile-cta small { font-family: var(--font-ms-mono), monospace; font-size: 0.5rem; font-weight: 600; letter-spacing: 0.18em; }
+.ms-mobile-cta small { font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 600; letter-spacing: 0.18em; }
 
 /* ---- subpages ---- */
 
@@ -1322,7 +1320,7 @@ html {
   padding: 1rem clamp(1rem, 4vw, 4.5rem) 0;
   color: var(--mx-steel);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.78rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -1349,7 +1347,7 @@ html {
 @media (min-width: 900px) { .ms-subhero { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); align-items: center; } }
 
 .ms-subhero-copy h1 { font-size: clamp(2.5rem, 8.5vw, 5.4rem); }
-.ms-subhero-copy > p { margin-top: 1.1rem; max-width: 34rem; line-height: 1.65; color: var(--mx-steel); font-size: 1.04rem; }
+.ms-subhero-copy > p { margin-top: 1.1rem; max-width: 34rem; line-height: 1.65; color: var(--mx-steel); font-size: 1rem; }
 
 .ms-subhero-media {
   position: relative;
@@ -1390,7 +1388,7 @@ html {
   position: relative;
   padding: 0.7rem 0.2rem 0.7rem 1.6rem;
   border-top: 1px solid var(--mx-line-ink);
-  font-size: 0.96rem;
+  font-size: 1rem;
   line-height: 1.5;
 }
 
@@ -1425,7 +1423,7 @@ html {
   color: var(--mx-bone);
   text-decoration: none;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.7rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1444,7 +1442,7 @@ html {
   border-left: 4px solid var(--mx-arc);
   background: var(--mx-coal-soft);
   line-height: 1.55;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--mx-bone);
 }
 
@@ -1471,7 +1469,7 @@ html {
   padding: 1.05rem 0.2rem;
   font-family: var(--font-ms-display), sans-serif;
   font-weight: 800;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   text-transform: uppercase;
 }
 
@@ -1517,7 +1515,7 @@ html {
 }
 
 .ms-subclose a[href^="tel:"]:hover { background: var(--mx-arc-deep); border-color: var(--mx-arc-deep); color: var(--mx-bone); }
-.ms-subclose a[href^="tel:"] small { font-family: var(--font-ms-mono), monospace; font-size: 0.58rem; font-weight: 600; letter-spacing: 0.2em; }
+.ms-subclose a[href^="tel:"] small { font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 600; letter-spacing: 0.2em; }
 
 .ms-subclose a:not([href^="tel:"]) {
   display: inline-flex;
@@ -1527,7 +1525,7 @@ html {
   color: var(--mx-bone);
   text-decoration: none;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.72rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1565,7 +1563,7 @@ html {
   padding: 0.5rem 1rem;
   border: 2px solid var(--mx-line-ink);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.68rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1640,7 +1638,7 @@ html {
   flex-direction: column;
   gap: 0.15rem;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.58rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -1665,7 +1663,7 @@ html {
   align-items: baseline;
   gap: 0.55rem;
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.58rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -1761,7 +1759,7 @@ html {
 
 .wm-tn-star-label {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.6rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -1772,7 +1770,7 @@ html {
 
 .wm-order-no {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.6rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2014,13 +2012,13 @@ html {
 .sw-tin strong {
   font-family: var(--font-ms-slab), serif;
   font-weight: 400;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   letter-spacing: 0.04em;
 }
 
 .sw-tin small {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.56rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.26em;
   text-transform: uppercase;
@@ -2053,7 +2051,7 @@ html {
 
 .sw-plank small {
   font-family: var(--font-ms-marker), cursive;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--sw-neon);
 }
 
@@ -2080,7 +2078,7 @@ html {
 
 .sw-plate small {
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.5rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   letter-spacing: 0.3em;
   text-transform: uppercase;
@@ -2150,7 +2148,7 @@ html {
   background: transparent;
   color: var(--public-legacy-4a4033);
   font-family: var(--font-ms-marker), cursive;
-  font-size: 0.95rem;
+  font-size: 1rem;
   letter-spacing: 0.04em;
   text-align: center;
   white-space: nowrap;
@@ -2221,7 +2219,7 @@ html {
 }
 
 .ms-service-copy h3 { color: var(--sw-chalk); text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6); }
-.ms-service-copy strong { color: var(--sw-neon); font-family: var(--font-ms-marker), cursive; font-size: 1.05rem; letter-spacing: 0.02em; text-transform: none; }
+.ms-service-copy strong { color: var(--sw-neon); font-family: var(--font-ms-marker), cursive; font-size: 1rem; letter-spacing: 0.02em; text-transform: none; }
 .ms-service-copy p { color: var(--sw-enamel-dark); }
 .ms-service-copy a { color: var(--sw-chalk); border-bottom-color: var(--sw-fire); }
 
@@ -2296,7 +2294,7 @@ html {
   background: transparent;
   color: var(--public-legacy-3f3524);
   font-family: var(--font-ms-marker), cursive;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   font-weight: 400;
   letter-spacing: 0.03em;
   text-transform: none;
@@ -2365,7 +2363,7 @@ html {
   color: var(--public-legacy-1b0f02);
   border: 2px solid rgba(0, 0, 0, 0.75);
   font-family: var(--font-ms-slab), serif;
-  font-size: 1.15rem;
+  font-size: 1.125rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.55);
   margin-bottom: 0;
   letter-spacing: 0;
@@ -2516,7 +2514,7 @@ html {
 }
 
 .ms-form-heading { border-bottom-color: rgba(36, 26, 16, 0.5); }
-.ms-form-heading span { color: var(--sw-form-ink); font-family: var(--font-ms-marker), cursive; font-size: 1.35rem; line-height: 1.2; }
+.ms-form-heading span { color: var(--sw-form-ink); font-family: var(--font-ms-marker), cursive; font-size: 1.25rem; line-height: 1.2; }
 .wm-order-no { border-color: rgba(36, 26, 16, 0.45); color: var(--public-legacy-6d5f47); }
 .ms-form-heading small { color: var(--sw-red); }
 
@@ -2628,7 +2626,7 @@ html {
 .ms-services-heading,
 .ms-service-list,
 .ms-capability-board {
-  max-width: 68rem;
+  max-width: var(--ms-container);
   margin-left: auto;
   margin-right: auto;
 }
@@ -2643,26 +2641,26 @@ html {
 }
 
 /* bigger, clearer text everywhere */
-.ms-hero-deck { font-size: 1.15rem; line-height: 1.7; color: var(--sw-enamel-dark); max-width: 36rem; }
-.ms-service-copy p { font-size: 1.08rem; line-height: 1.7; color: var(--sw-enamel-dark); }
-.ms-service-copy strong { font-size: 1.2rem; }
-.ms-services-heading p { font-size: 1.15rem; color: var(--sw-enamel-dark); }
-.ms-section-intro p { font-size: 1.15rem; }
-.ms-capability-board p { font-size: 1.05rem; }
-.ms-capability-board li { font-size: 0.74rem; }
-.ms-process-list p { font-size: 1.02rem; color: var(--public-legacy-43392a); }
-.ms-faq-list details p { font-size: 1.02rem; color: var(--public-legacy-43392a); }
-.ms-territory-copy > p, .ms-contact-lead > p { font-size: 1.12rem; }
-.ms-city-list span { font-size: 0.74rem; }
-.ms-text-link { font-size: 0.85rem; }
-.ms-footer-contact { font-size: 1.02rem; }
+.ms-hero-deck { font-size: 1.125rem; line-height: 1.7; color: var(--sw-enamel-dark); max-width: 36rem; }
+.ms-service-copy p { font-size: 1.125rem; line-height: 1.7; color: var(--sw-enamel-dark); }
+.ms-service-copy strong { font-size: 1.25rem; }
+.ms-services-heading p { font-size: 1.125rem; color: var(--sw-enamel-dark); }
+.ms-section-intro p { font-size: 1.125rem; }
+.ms-capability-board p { font-size: 1rem; }
+.ms-capability-board li { font-size: 0.75rem; }
+.ms-process-list p { font-size: 1rem; color: var(--public-legacy-43392a); }
+.ms-faq-list details p { font-size: 1rem; color: var(--public-legacy-43392a); }
+.ms-territory-copy > p, .ms-contact-lead > p { font-size: 1.125rem; }
+.ms-city-list span { font-size: 0.75rem; }
+.ms-text-link { font-size: 0.875rem; }
+.ms-footer-contact { font-size: 1rem; }
 .ms-footer-contact span { color: var(--sw-enamel-dark); }
 .ms-work-shot figcaption { font-size: 1rem; color: var(--public-legacy-35291a); }
-.ms-sticker { font-size: 0.72rem; }
-.ms-subscope li, .ms-subplan ul li { font-size: 1.02rem; }
-.ms-subhero-copy > p, .ms-area-hero p, .ms-area-travel p { font-size: 1.1rem; color: var(--sw-enamel-dark); }
-.ms-form-fallback { font-size: 0.95rem; color: var(--public-legacy-43392a); }
-.ms-upload small { font-size: 0.85rem; }
+.ms-sticker { font-size: 0.75rem; }
+.ms-subscope li, .ms-subplan ul li { font-size: 1rem; }
+.ms-subhero-copy > p, .ms-area-hero p, .ms-area-travel p { font-size: 1.125rem; color: var(--sw-enamel-dark); }
+.ms-form-fallback { font-size: 1rem; color: var(--public-legacy-43392a); }
+.ms-upload small { font-size: 0.875rem; }
 
 /* work-order paper: labels must read like stamped ink, not ghost text */
 .ms-quote-form .ms-field label,
@@ -2670,13 +2668,13 @@ html {
 .ms-quote-form .ms-field label span,
 .ms-quote-form .ms-upload-label i {
   color: var(--public-legacy-241a10);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .ms-quote-form .ms-field label span,
 .ms-quote-form .ms-upload-label i { color: var(--public-legacy-7a6a4d); }
 
-.ms-field input, .ms-field select, .ms-field textarea { font-size: 1.05rem; }
+.ms-field input, .ms-field select, .ms-field textarea { font-size: 1rem; }
 
 /* ---- walls go steel: brushed panels with seams (owner call) ---- */
 
@@ -2922,16 +2920,16 @@ body { overflow-x: clip; }
   border: 1px solid var(--public-legacy-8a8f8c);
   color: var(--public-legacy-ffad65);
   font-family: var(--font-ms-mono), monospace;
-  font-size: .7rem;
+  font-size: var(--ms-label);
   font-weight: 800;
   letter-spacing: .15em;
   text-transform: uppercase;
 }
 .ms-job-glass-copy h2 { max-width: 12ch; margin-top: 1.25rem; font-size: clamp(2.65rem, 7.5vw, 5.4rem); }
-.ms-job-glass-lead { max-width: 35rem; margin-top: 1.4rem; color: var(--public-legacy-d8d2c4); font-size: 1.08rem; line-height: 1.68; }
+.ms-job-glass-lead { max-width: 35rem; margin-top: 1.4rem; color: var(--public-legacy-d8d2c4); font-size: 1.125rem; line-height: 1.68; }
 .ms-job-glass-copy ul { display: grid; gap: 0; max-width: 36rem; margin: 2rem 0; padding: 0; list-style: none; border-top: 1px solid var(--public-legacy-555a58); }
 .ms-job-glass-copy li { display: grid; grid-template-columns: minmax(7rem,.35fr) minmax(0,1fr); gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--public-legacy-555a58); }
-.ms-job-glass-copy li strong { color: var(--public-legacy-ffad65); font-family: var(--font-ms-display), sans-serif; font-size: 1.15rem; text-transform: uppercase; }
+.ms-job-glass-copy li strong { color: var(--public-legacy-ffad65); font-family: var(--font-ms-display), sans-serif; font-size: 1.125rem; text-transform: uppercase; }
 .ms-job-glass-copy li span { color: var(--public-legacy-d8d2c4); line-height: 1.45; }
 
 .ms-job-glass-demo {
@@ -2953,7 +2951,7 @@ body { overflow-x: clip; }
 .ms-job-glass-demo figcaption strong { font-family: var(--font-ms-display), sans-serif; font-size: 1.25rem; text-transform: uppercase; }
 .ms-job-glass-demo figcaption small,
 .ms-job-glass-demo small,
-.ms-job-glass-demo span { font-family: var(--font-ms-mono), monospace; font-size: .65rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.ms-job-glass-demo span { font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .ms-job-glass-title { display: grid; gap: .25rem; padding: 1.4rem 0 1rem; }
 .ms-job-glass-title strong { font-family: var(--font-ms-display), sans-serif; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: .95; text-transform: uppercase; }
 .ms-job-glass-title span { color: var(--public-legacy-686557); }
@@ -2976,8 +2974,8 @@ body { overflow-x: clip; }
 .ms-legal > div { max-width: 68rem; margin: 0 auto; padding: 0; }
 .ms-legal .prose { max-width: none; padding: clamp(1.4rem,5vw,4rem); border: .55rem solid var(--public-legacy-aeb3b0); color: var(--public-legacy-272820); background: repeating-linear-gradient(0deg,rgba(40,38,31,.03) 0 1px,transparent 1px 7px),var(--public-legacy-eee5cf); box-shadow: 1rem 1.15rem 0 rgba(0,0,0,.32); }
 .ms-legal h1 { margin: 0; color: var(--public-legacy-1b1c1a); font-family: var(--font-ms-display), sans-serif; font-size: clamp(2.7rem,8vw,5.2rem); font-weight: 900; line-height: .9; text-transform: uppercase; }
-.ms-legal h1 + p { margin: .8rem 0 2rem; color: var(--public-legacy-6a675b); font-family: var(--font-ms-mono), monospace; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.ms-legal .space-y-8 > p:first-child { max-width: 48rem; font-size: 1.1rem; line-height: 1.65; }
+.ms-legal h1 + p { margin: .8rem 0 2rem; color: var(--public-legacy-6a675b); font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.ms-legal .space-y-8 > p:first-child { max-width: 48rem; font-size: 1.125rem; line-height: 1.65; }
 .ms-legal section { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 2px solid var(--public-legacy-2b2c29); }
 .ms-legal section h2 { margin: 0 0 1rem; color: var(--public-legacy-1b1c1a); font-family: var(--font-ms-display), sans-serif; font-size: clamp(1.55rem,4vw,2.25rem); font-weight: 900; line-height: 1; text-transform: uppercase; }
 .ms-legal section p,
@@ -2994,27 +2992,25 @@ body { overflow-x: clip; }
 .ms-area-cities > span { display: block; max-width: 54rem; margin-top: 1.4rem; color: var(--public-legacy-ded5c2); line-height: 1.6; }
 .ms-area-travel ul { display: grid; gap: 0; max-width: 68rem; margin: 1.8rem 0 0; padding: 0; border-top: 1px solid rgba(243,234,216,.24); list-style: none; }
 .ms-area-travel li { display: grid; grid-template-columns: minmax(12rem,.38fr) minmax(0,1fr); gap: 1.25rem; padding: 1.15rem 0; border-bottom: 1px solid rgba(243,234,216,.24); }
-.ms-area-travel li strong { color: var(--public-legacy-ffad65); font-family: var(--font-ms-display), sans-serif; font-size: 1.2rem; text-transform: uppercase; }
+.ms-area-travel li strong { color: var(--public-legacy-ffad65); font-family: var(--font-ms-display), sans-serif; font-size: 1.25rem; text-transform: uppercase; }
 .ms-area-travel li span { color: var(--public-legacy-ded5c2); line-height: 1.55; }
 
-.ms-subhero-eyebrow { display: inline-block; max-width: 34rem; margin-bottom: 1rem; color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono), monospace; font-size: .72rem; font-weight: 800; letter-spacing: .13em; line-height: 1.45; text-transform: uppercase; }
+.ms-subhero-eyebrow { display: inline-block; max-width: 34rem; margin-bottom: 1rem; color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .13em; line-height: 1.45; text-transform: uppercase; }
 .ms-subglass { display: grid; gap: 1.25rem; align-items: center; padding: clamp(1.5rem,4vw,2.5rem) clamp(1rem,5vw,3rem); border-block: 1px solid rgba(243,234,216,.2); color: var(--public-legacy-f3ead8); background: linear-gradient(90deg,var(--public-legacy-17191a),var(--public-legacy-252927) 55%,var(--public-legacy-17191a)); }
 .ms-subglass > div { display: grid; gap: .35rem; }
-.ms-subglass > div span { color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono), monospace; font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.ms-subglass > div span { color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .ms-subglass > div strong { font-family: var(--font-ms-display), sans-serif; font-size: clamp(1.6rem,3.2vw,2.4rem); line-height: 1; text-transform: uppercase; }
 .ms-subglass p { max-width: 42rem; margin: 0; color: var(--public-legacy-d8d2c4); line-height: 1.6; }
-.ms-subglass a { display: inline-flex; width: fit-content; min-height: 2.8rem; align-items: center; gap: .4rem; color: var(--public-legacy-f3ead8); border-bottom: 2px solid var(--public-legacy-ff8a2a); font-family: var(--font-ms-mono), monospace; font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-decoration: none; text-transform: uppercase; }
+.ms-subglass a { display: inline-flex; width: fit-content; min-height: 2.8rem; align-items: center; gap: .4rem; color: var(--public-legacy-f3ead8); border-bottom: 2px solid var(--public-legacy-ff8a2a); font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .1em; text-decoration: none; text-transform: uppercase; }
 
 .ms-lost { display: grid; min-height: min(78vh,52rem); place-items: center; padding: clamp(5rem,12vw,9rem) clamp(1rem,5vw,4rem); background: radial-gradient(circle at 50% 0,rgba(255,138,42,.11),transparent 34rem),linear-gradient(115deg,var(--public-legacy-171715),var(--public-legacy-26241e) 48%,var(--public-legacy-111)); }
 .ms-lost-ticket { position: relative; width: min(100%,58rem); padding: clamp(2rem,7vw,5rem); border: 1px solid var(--public-legacy-6b6557); color: var(--public-legacy-f3ead8); background: linear-gradient(160deg,rgba(43,42,37,.96),rgba(21,22,20,.99)); box-shadow: .7rem .8rem 0 rgba(0,0,0,.34); overflow: hidden; }
 .ms-lost-ticket::after { position: absolute; inset: .7rem; border: 1px solid rgba(243,234,216,.14); content: ""; pointer-events: none; }
-.ms-lost-kicker { position: relative; z-index: 1; color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono),monospace; font-size: .7rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.ms-lost-kicker { position: relative; z-index: 1; color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono),monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .ms-lost-code { position: absolute; top: -.22em; right: -.02em; margin: 0; color: rgba(243,234,216,.055); font-family: var(--font-ms-display),sans-serif; font-size: clamp(10rem,28vw,22rem); font-weight: 900; line-height: 1; }
 .ms-lost-ticket h1 { position: relative; z-index: 1; max-width: 10ch; margin: 1.2rem 0 1rem; font-family: var(--font-ms-display),sans-serif; font-size: clamp(3rem,8vw,6.4rem); line-height: .88; text-transform: uppercase; }
-.ms-lost-ticket > p:not(.ms-lost-code) { position: relative; z-index: 1; max-width: 34rem; color: var(--public-legacy-d8d2c4); font-size: 1.08rem; line-height: 1.65; }
+.ms-lost-ticket > p:not(.ms-lost-code) { position: relative; z-index: 1; max-width: 34rem; color: var(--public-legacy-d8d2c4); font-size: 1.125rem; line-height: 1.65; }
 .ms-lost-actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
-.ms-lost-actions a { display: inline-flex; min-height: 3.5rem; align-items: center; gap: .55rem; padding: .75rem 1.1rem; border: 2px solid var(--public-legacy-ff8a2a); color: var(--public-legacy-171715); background: var(--public-legacy-ff9a47); font-family: var(--font-ms-display),sans-serif; font-weight: 900; text-decoration: none; text-transform: uppercase; box-shadow: .2rem .25rem 0 var(--public-legacy-7d3a0c); }
-.ms-lost-actions a:first-child { color: var(--public-legacy-f3ead8); background: transparent; border-color: var(--public-legacy-837d70); box-shadow: none; }
 .ms-lost-actions svg { width: 1.05rem; height: 1.05rem; }
 .glass-review form button { min-height: 3rem; padding: var(--space-xs) var(--space-sm); border: var(--rule-fine) solid var(--color-ink); color: var(--color-paper); background: var(--color-ink); font-family: var(--font-outlier); font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
@@ -3031,7 +3027,7 @@ body { overflow-x: clip; }
   .ms-legal { padding: 1rem 0; }
   .ms-legal .prose { border-width: .25rem; box-shadow: none; }
   .ms-area-cities > div { gap: .5rem; }
-  .ms-area-cities > div > a { min-height: 2.8rem; font-size: 1.05rem; }
+  .ms-area-cities > div > a { min-height: 2.8rem; font-size: 1rem; }
   .ms-area-travel li { grid-template-columns: 1fr; gap: .35rem; }
 }
 

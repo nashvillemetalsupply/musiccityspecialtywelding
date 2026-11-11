@@ -2,13 +2,18 @@ import { jsonWithClaude, type ClaudeModelDiagnostics } from "../ai.ts"
 import { recordClaudeRequestDiagnostics, type ClaudeRequestDiagnostics } from "../claude-diagnostics.ts"
 import { ASSISTANT_KNOWLEDGE, ASSISTANT_SHOP_PHONE, assistantKnowledge } from "./knowledge.ts"
 import { stripAssistantMoney } from "./money.ts"
-import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM, assistantContactReply, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
+import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM, assistantContactReply, assistantHandoffOpening, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
 import { nextAssistantQuestion as nextQuestion } from "./intake.ts"
 import { stripAssistantSelfDisclosure } from "./disclosure.ts"
+import { findAssistantAnswer, isSourcedAssistantAnswer } from "./answers.ts"
 
 export { stripAssistantMoney } from "./money.ts"
 
-export type AssistantMessage = { role: "user" | "assistant"; content: string }
+export type AssistantMessage = {
+  role: "user" | "assistant"; content: string
+  /** Server-only snapshot of previously grounded fields, never customer input. */
+  fields?: AssistantFields
+}
 export type AssistantFields = {
   name: string | null
   callback_phone: string | null
@@ -87,8 +92,8 @@ export function assistantExpertConcern(message: string, reply: string): "safety"
 const capabilityWords = (text: string) => (text.toLowerCase().match(/[a-z]+/g) ?? [])
   .map((word) => word.replace(/(?:ing|ed|s)$/, ""))
 const knownCapabilityWords = new Set(capabilityWords(ASSISTANT_KNOWLEDGE))
-const capabilityQuestion = /\b(?:can|could|do|does|would|will|are)\s+(?:you|we|the shop)\b/i
-const questionWords = new Set(capabilityWords("a an the can could do does would will are you we your our shop i my me it this that these those is be to of for with on in at and or but please tell whether if what which kind kinds type types"))
+const capabilityQuestion = /\b(?:can|could|do|does|would|will|are)\s+(?:you|y['’]?all|we|the shop)\b/i
+const questionWords = new Set(capabilityWords("a an the can could do does would will are you y all yall we your our shop i my me it this that these those is be to of for with on in at and or but please tell whether if what which kind kinds type types"))
 // Failure descriptions qualify an existing job; they do not introduce a new
 // capability or accessory. Keep this separate from the repository's objects.
 const failureWords = new Set(capabilityWords("broke off fell fallen came tore torn apart stopped quit snapped detached damaged failed"))
@@ -146,6 +151,35 @@ function currentRepairDetails(latest: string, fields: AssistantFields): boolean 
   if (fields.callback_phone && latest.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").includes(fields.callback_phone.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""))) return true
   return [fields.need, ...(fields.material_size?.split(";").map((part) => part.trim()) ?? []), fields.location, fields.timing, fields.callback_window, fields.name, fields.callback_phone]
     .some((value) => value && latest.toLowerCase().includes(value.toLowerCase()))
+}
+
+function priorSafetyApplies(priorCustomers: AssistantMessage[], latest: string): boolean {
+  const topicPatterns = [
+    /\b(?:trailers?|hitch|tongue|crossmembers?)\b/i,
+    /\b(?:equipment|machinery|forklift|forks?|tractor|loader|bucket|lifting)\b/i,
+    /\b(?:gates?|hinges?|latches?|gate posts?)\b/i,
+    /\b(?:railings?|guardrails?|stairs?|architectural)\b/i,
+    /\b(?:structural|beams?|columns?)\b/i,
+    /\b(?:tanks?|propane|pressure vessels?|gas meter manifolds?)\b/i,
+    /\b(?:boats?|marine)\b/i,
+    /\b(?:countertops?|worktables?|food surfaces?)\b/i,
+  ]
+  const topics = (text: string) => topicPatterns.flatMap((pattern, index) => pattern.test(text) ? [index] : [])
+  const safetyQuestion = /\b(?:safe to (?:tow|use|drive|lift|keep)|is (?:it|this|that|a).{0,40}safe|can I (?:tow|use|drive|lift)|keep using|continue hauling|double.{0,30}capacity|load rating|rated load|how to (?:weld|repair)|DIY|step.by.step|weld.{0,30}myself|what welding rod|seguro remolcar)\b/i
+  let activeTopics: number[] = []
+  const safetyTopics: number[][] = []
+  for (const message of priorCustomers) {
+    const named = topics(message.content)
+    if (named.length) activeTopics = named
+    if (safetyQuestion.test(message.content)) safetyTopics.push([...activeTopics])
+  }
+  let currentTopics = topics(latest)
+  // "What photos?" refers to the most recent job. A named gate or countertop
+  // inquiry starts its own topic instead of inheriting an old trailer hazard.
+  const contextual = /\b(?:photos?|pictures?|pics|drawings?|dimensions?|measurements?|that|this|it)\b/i.test(latest)
+  if (!currentTopics.length && contextual) currentTopics = activeTopics
+  if (!currentTopics.length) return contextual && safetyTopics.some((topic) => !topic.length)
+  return safetyTopics.some((prior) => prior.some((topic) => currentTopics.includes(topic)))
 }
 
 function excerpt(value: unknown, evidence: string, max: number): string | null {
@@ -214,13 +248,35 @@ export async function handleAssistantTurn(
 ): Promise<AssistantTurn> {
   if (!conversation.length || conversation.at(-1)?.role !== "user") throw new Error("Assistant needs a customer turn.")
   const phone = options.phone ?? ASSISTANT_SHOP_PHONE
+  const firstReply = !conversation.some((message) => message.role === "assistant")
+  const latest = conversation.at(-1)!.content
+  const customerText = conversation.filter((message) => message.role === "user").map((message) => message.content).join("\n")
+  // Exact whole-question matches have a reviewed answer. Additional safety,
+  // price, date or instruction clauses do not match, so every refusal remains.
+  // Keep the voice path unchanged. Reuse the last persisted field snapshot for
+  // sourced intake replies, after checking every field against customer words.
+  const sourcedAnswer = !options.voice && !assistantSpanish(customerText) ? findAssistantAnswer(latest) : undefined
+  const priorCustomers = conversation.slice(0, -1).filter((message) => message.role === "user")
+  const priorSnapshot = conversation.slice().reverse().find((message) => message.role === "assistant" && message.fields)?.fields
+  let groundedSnapshot: AssistantFields | undefined
+  if (priorSnapshot) {
+    try { groundedSnapshot = parseFields(priorSnapshot, conversation) } catch { /* Invalid snapshots are not evidence. */ }
+  }
+  const activeJobEvidence = priorCustomers.some((message) => !findAssistantAnswer(message.content) && /\b(?:need|broke|broken|failed|repair|build|fabricat\w*|weld\w*)\b/i.test(message.content))
+  const priorNeed = priorCustomers.slice().reverse().find((message) => !findAssistantAnswer(message.content)
+    && /\b(?:need|broke|broken|failed|repair|build|fabricat\w*|weld\w*)\b/i.test(message.content))?.content.replace(/\[INTERNAL TEST\]\s*/gi, "").slice(0, 400) ?? ""
+  const safeSourceFields = groundedSnapshot ?? {
+    name: null, callback_phone: extractAssistantContact(conversation).callback_phone, need: priorNeed,
+    material_size: null, location: null, timing: null, callback_window: null, is_job: "unsure" as const,
+  }
+  const sourceResult = () => ({ reply: sourcedAnswer!.answer, handoff_reason: null, fields: safeSourceFields })
   let modelDiagnostics: ClaudeModelDiagnostics | undefined
   let requestDiagnostics: ClaudeRequestDiagnostics | undefined
-  const result = await jsonWithClaude({
+  const requestModel = () => jsonWithClaude({
     system: `${ASSISTANT_SYSTEM_PROMPT}\nRepository knowledge:\n${ASSISTANT_KNOWLEDGE}\nShop phone: ${JSON.stringify(phone)}` + (options.voice
       ? `\nThis is a phone conversation. Use at most two short sentences, no links or phone digits. To reach a person, say person or press zero. Ask for the need and name; do not infer either from caller ID. The application uses the verified caller number ${JSON.stringify(options.voice.callbackPhone || "unavailable")} for callbacks; do not ask for another number. Never say an audio recording is running. Answers are saved as job notes.`
       : ""),
-    prompt: JSON.stringify({ conversation }),
+    prompt: JSON.stringify({ conversation: conversation.map(({ role, content }) => ({ role, content })) }),
     isTest: options.isTest,
     operation: "shop-assistant-turn",
     maxTokens: 2000,
@@ -229,16 +285,31 @@ export async function handleAssistantTurn(
     onModelDiagnostics: (diagnostics) => { modelDiagnostics = diagnostics },
     onRequestDiagnostics: (diagnostics) => { requestDiagnostics = diagnostics },
   })
+  let result: unknown
+  if (sourcedAnswer && (firstReply || groundedSnapshot || !activeJobEvidence)) result = sourceResult()
+  else {
+    try {
+      result = await requestModel()
+      if (sourcedAnswer) parseTurnOutput(result, conversation, modelDiagnostics, requestDiagnostics)
+    } catch (error) {
+      if (!sourcedAnswer) throw error
+      // Legacy adapters may lack snapshots. A provider failure still leaves
+      // the sourced answer, verbatim prior intent and customer contact intact.
+      result = sourceResult()
+    }
+  }
   const { output, fields } = parseTurnOutput(result, conversation, modelDiagnostics, requestDiagnostics)
+  if (sourcedAnswer) { output.reply = sourcedAnswer.answer; output.handoff_reason = null }
+  // A service FAQ is not permission to tow/use damaged equipment or perform a
+  // DIY repair mentioned earlier. Keep that explicit safety boundary in force.
+  const priorSafetyRequest = priorSafetyApplies(priorCustomers, latest)
+  const sourcedReply = !priorSafetyRequest && isSourcedAssistantAnswer(output.reply, sourcedAnswer)
   const contact = extractAssistantContact(conversation)
   if (contact.email) fields.email = contact.email
   // A corrected number in a later customer turn overrides a stale model choice.
   const latestContact = extractAssistantContact([conversation.at(-1)!])
   if (conversation.filter((message) => message.role === "user").length > 1 && latestContact.callback_phone) fields.callback_phone = latestContact.callback_phone
   if (options.voice) fields.callback_phone = options.voice.callbackPhone || null
-  const firstReply = !conversation.some((message) => message.role === "assistant")
-  const latest = conversation.at(-1)!.content
-  const customerText = conversation.filter((message) => message.role === "user").map((message) => message.content).join("\n")
   const spanish = assistantSpanish(customerText)
   const question = () => spanish ? assistantQuestionInSpanish(nextQuestion(fields, conversation)) : nextQuestion(fields, conversation)
   const callLink = options.voice ? (spanish ? "Di persona o pulsa cero para hablar con el taller" : "Say person or press zero to reach the shop") : `[${spanish ? "Llama al taller al" : "Call the shop at"} ${phone.display}](${phone.href})`
@@ -254,10 +325,21 @@ export async function handleAssistantTurn(
   reply = stripAssistantSelfDisclosure(stripAssistantMoney(reply))
   const replyPhones = `${output.reply}\n${reply}`.match(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g) ?? []
   const foreignPhone = replyPhones.some((value) => value.replace(/\D/g, "").slice(-10) !== phone.display.replace(/\D/g, "").slice(-10))
-  const concern = assistantExpertConcern(customerText, String(output.reply)) ?? assistantExpertConcern(customerText, reply)
+  const concern = sourcedReply ? null : assistantExpertConcern(customerText, String(output.reply)) ?? assistantExpertConcern(customerText, reply)
     ?? (outsideUsualArea || foreignPhone || unsupportedCapabilityAssertion(reply) ? "claim" : null)
-  const customerHandoff = assistantHandoffReason(latest)
-  const unsupportedCapability = unsupportedCapabilityQuestion(latest)
+  const customerHandoff = sourcedReply ? null : assistantHandoffReason(latest)
+  // A bare follow-up such as "Can you do that?" keeps its last job object.
+  // A newly described supported repair still replaces an earlier unknown one.
+  const bareCapabilityFollowup = /^(?:\[INTERNAL TEST\]\s*)?(?:(?:can|could|would|will|do) (?:you|y['’]?all) (?:do|repair|weld|handle|build|fabricate|fix) (?:it|this|that|these|those)(?: for me)?|is (?:that|this) something you (?:can |could )?do)[.!?\s]*$/i.test(latest)
+  let priorUnsupportedCapability = false
+  if (bareCapabilityFollowup) {
+    for (const message of conversation.slice(0, -1).reverse()) {
+      if (message.role !== "user") continue
+      if (currentRepairDetails(message.content, fields)) break
+      if (unsupportedCapabilityQuestion(message.content)) { priorUnsupportedCapability = true; break }
+    }
+  }
+  const unsupportedCapability = !sourcedReply && (unsupportedCapabilityQuestion(latest) || priorUnsupportedCapability)
   const repairDetails = currentRepairDetails(latest, fields)
   // A supported current repair replaces an earlier capability question. Model
   // metadata and cautious inspection wording can lag behind that change;
@@ -265,7 +347,7 @@ export async function handleAssistantTurn(
   const resumeSupportedRepair = !firstReply && !customerHandoff && !unsupportedCapability && !concern && repairDetails
   const staleHumanHandoff = !firstReply && !customerHandoff && output.handoff_reason === "human"
   const modelHandoff = staleHumanHandoff ? "unknown" : output.handoff_reason
-  const inferredHandoff = assistantHandoffReason(latest, reply, modelHandoff)
+  const inferredHandoff = sourcedReply ? null : assistantHandoffReason(latest, reply, modelHandoff)
   const staleModelHandoff = staleHumanHandoff || (resumeSupportedRepair && inferredHandoff === "unknown")
   const currentHandoff = resumeSupportedRepair && inferredHandoff === "unknown" ? null : inferredHandoff
   const decisionTrace: NonNullable<AssistantTurn["decision_trace"]> = {
@@ -280,18 +362,18 @@ export async function handleAssistantTurn(
   // Model metadata and cautious reply wording describe uncertainty, not a
   // customer request to stop. Money, dates and human requests remain contact.
   let continueIntake = handoff === "unknown" && !customerHandoff
-  let branch = "model-answer"
+  let branch = sourcedReply ? "sourced-answer" : "model-answer"
   const writtenContacts = options.voice ? "" : ` [${spanish ? "Formulario de presupuesto" : "Quote form"}](${ASSISTANT_QUOTE_FORM}) ${spanish ? "o" : "or"} [${spanish ? "Correo" : "Email"} ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
-  const intakeReply = () => `${spanish ? "Una persona del taller debe confirmar el trabajo." : "A person at the shop will confirm that job."} ${question()} ${callLink}.` + (options.voice
+  const intakeReply = () => `${spanish ? "Una persona del taller debe confirmar el trabajo." : options.voice ? "A person at the shop will confirm that job." : assistantHandoffOpening(latest)} ${question()} ${callLink}.` + (options.voice
     ? "" : writtenContacts)
   if (concern && handoff !== "human" && handoff !== "model-error" && handoff !== "rate-limit" && !customerHandoff) {
     branch = `expert-${concern}-intake`
     handoff = "unknown"
     continueIntake = true
     const boundary = concern === "scope" ? "We repair gate metal; motor and electrical work belongs with the installer."
-      : concern === "safety" ? "I cannot assess safety remotely; the damaged part needs inspection before towing, loading or use."
+      : concern === "safety" ? "Nobody can call that safe from a chat. Have it looked at before you tow it, load it or use it."
         : outsideUsualArea ? "Travel to that location depends on the job; the shop must confirm the trip."
-          : "A person at the shop will confirm that job."
+          : options.voice ? "A person at the shop will confirm that job." : assistantHandoffOpening(latest)
     const spanishBoundary = concern === "scope" ? "Reparamos el metal de puertas; el motor y la electricidad corresponden al instalador."
       : concern === "safety" ? "No puedo evaluar la seguridad a distancia; la pieza dañada necesita inspección antes de remolcarla, cargarla o usarla."
         : outsideUsualArea ? "El taller debe confirmar el viaje según el trabajo y la ubicación." : "Una persona del taller debe confirmar el trabajo."
@@ -299,7 +381,7 @@ export async function handleAssistantTurn(
   } else if (handoff) {
     branch = continueIntake ? unsupportedCapability ? "unknown-capability-intake" : "expert-claim-intake" : "contact-handoff"
     reply = continueIntake ? intakeReply() : options.voice ? `${spanish ? "Una persona del taller puede ayudarte." : "A person at the shop can help."} ${callLink}.` : assistantContactReply(phone, customerText, fields.callback_phone ? nextQuestion(fields, conversation) : undefined)
-  } else if (/\[owner-only money\]|\b(?:booked|scheduled|saved|sent|guarantee|guaranteed|available|24\/7)\b|\b(?:we|the shop|someone)\s+(?:will|can)\s+(?:call|text|come|arrive|finish)\b/i.test(reply)) {
+  } else if (!sourcedReply && /\[owner-only money\]|\b(?:booked|scheduled|saved|sent|guarantee|guaranteed|available|24\/7)\b|\b(?:we|the shop|someone)\s+(?:will|can)\s+(?:call|text|come|arrive|finish)\b/i.test(reply)) {
     branch = "promise-guard-intake"
     handoff = "unknown"
     continueIntake = true
@@ -314,7 +396,7 @@ export async function handleAssistantTurn(
       continueIntake = true
       reply = intakeReply()
     }
-    if (!reply.includes("?") && fields.is_job !== "no") reply = `${reply} ${question()}`
+    if (!sourcedReply && !reply.includes("?") && fields.is_job !== "no") reply = `${reply} ${question()}`
   }
   // A non-job classification cannot discard an unanswered customer question.
   // Only explicit solicitation, wrong-number or goodbye evidence closes it.
@@ -330,7 +412,7 @@ export async function handleAssistantTurn(
     reply = spanish ? "Este es Music City Specialty Welding. Gracias." : "This is Music City Specialty Welding. Take care."
     handoff = null
     continueIntake = false
-  } else if ((fields.is_job === "no" && !handoff) || !reply.trim()) {
+  } else if ((!sourcedReply && fields.is_job === "no" && !handoff) || !reply.trim()) {
     branch = "non-job-handoff"
     handoff = "unknown"
     continueIntake = false

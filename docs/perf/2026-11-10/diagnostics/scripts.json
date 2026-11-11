@@ -1,0 +1,11 @@
+{
+  "diagnosticOnly": true,
+  "build": "CSS inline experiment",
+  "blocked": [
+    "*.js"
+  ],
+  "score": 95,
+  "lcpMs": 2568.9547000000002,
+  "fcpMs": 1968.9547000000002,
+  "tbtMs": 0
+}

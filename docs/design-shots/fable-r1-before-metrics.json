@@ -1,0 +1,173 @@
+[
+  {
+    "route": "/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "overflow": false,
+    "bodyFont": "Arial, Helvetica, sans-serif, sans-serif",
+    "labelFont": "\"Cascadia Mono\", SFMono-Regular, Consolas, monospace, monospace",
+    "labelSize": "8.96px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-section-intro": 16,
+      ".ms-services-heading": 16,
+      ".ms-process-lead": 16,
+      ".ms-job-glass-copy": 16,
+      ".ms-territory-map": 16,
+      ".ms-faq-heading": 16,
+      ".ms-contact-lead": 16,
+      ".ms-footer-mark": 16
+    },
+    "form": {
+      "checkbox": 44,
+      "consentTarget": 336.78125,
+      "inlineConsent": "inline-flex",
+      "submitWidth": 163.59375,
+      "formWidth": 358,
+      "selectAppearance": "auto"
+    },
+    "menu": {
+      "x": 134,
+      "y": 67.59375,
+      "width": 240,
+      "height": 263.265625
+    },
+    "menuClosesOnEscape": true,
+    "errors": []
+  },
+  {
+    "route": "/services/mobile-welding",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "overflow": false,
+    "bodyFont": "Arial, Helvetica, sans-serif, sans-serif",
+    "labelFont": "\"Cascadia Mono\", SFMono-Regular, Consolas, monospace, monospace",
+    "labelSize": "8.96px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-contact-lead": 16,
+      ".ms-footer-mark": 16
+    },
+    "form": {
+      "checkbox": 44,
+      "consentTarget": 336.78125,
+      "inlineConsent": "inline-flex",
+      "submitWidth": 163.59375,
+      "formWidth": 358,
+      "selectAppearance": "auto"
+    },
+    "errors": []
+  },
+  {
+    "route": "/service-areas",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "overflow": false,
+    "bodyFont": "Arial, Helvetica, sans-serif, sans-serif",
+    "labelFont": "\"Cascadia Mono\", SFMono-Regular, Consolas, monospace, monospace",
+    "labelSize": "8.96px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-footer-mark": 16
+    },
+    "form": {},
+    "errors": []
+  },
+  {
+    "route": "/",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "overflow": false,
+    "bodyFont": "Arial, Helvetica, sans-serif, sans-serif",
+    "labelFont": "\"Cascadia Mono\", SFMono-Regular, Consolas, monospace, monospace",
+    "labelSize": "8.96px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-section-intro": 48,
+      ".ms-services-heading": 176,
+      ".ms-process-lead": 48,
+      ".ms-job-glass-copy": 48,
+      ".ms-territory-map": 48,
+      ".ms-faq-heading": 48,
+      ".ms-contact-lead": 48,
+      ".ms-footer-mark": 44
+    },
+    "form": {
+      "checkbox": 44,
+      "consentTarget": 168.1875,
+      "inlineConsent": "inline-flex",
+      "submitWidth": 163.59375,
+      "formWidth": 748.890625,
+      "selectAppearance": "auto"
+    },
+    "errors": []
+  },
+  {
+    "route": "/services/mobile-welding",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "overflow": false,
+    "bodyFont": "Arial, Helvetica, sans-serif, sans-serif",
+    "labelFont": "\"Cascadia Mono\", SFMono-Regular, Consolas, monospace, monospace",
+    "labelSize": "8.96px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-contact-lead": 48,
+      ".ms-footer-mark": 44
+    },
+    "form": {
+      "checkbox": 44,
+      "consentTarget": 168.1875,
+      "inlineConsent": "inline-flex",
+      "submitWidth": 163.59375,
+      "formWidth": 748.890625,
+      "selectAppearance": "auto"
+    },
+    "errors": []
+  },
+  {
+    "route": "/service-areas",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "overflow": false,
+    "bodyFont": "Arial, Helvetica, sans-serif, sans-serif",
+    "labelFont": "\"Cascadia Mono\", SFMono-Regular, Consolas, monospace, monospace",
+    "labelSize": "8.96px",
+    "carbon": "#100c08",
+    "missingImages": [],
+    "cityChips": [],
+    "undersizedMono": [],
+    "edges": {
+      ".ms-footer-mark": 44
+    },
+    "form": {},
+    "errors": []
+  }
+]

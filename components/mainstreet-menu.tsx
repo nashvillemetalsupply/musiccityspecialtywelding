@@ -26,6 +26,7 @@ export function MainstreetMenu({ homeHref = "", phoneHref = FALLBACK_SHOP_PHONE_
   return (
     <details className="ms-menu" ref={menuRef} onKeyDown={handleKeyDown}>
       <summary ref={summaryRef} aria-label="Open navigation"><span></span><span></span></summary>
+      <button className="ms-menu-backdrop" type="button" tabIndex={-1} aria-label="Close navigation" onClick={closeMenuAndRestoreFocus} />
       <div className="ms-menu-panel">
         <a href={`${homeHref}#work`} onClick={closeMenu}>The work</a>
         <a href={`${homeHref}#services`} onClick={closeMenu}>What we weld</a>

@@ -1,0 +1,11 @@
+{
+  "diagnosticOnly": true,
+  "build": "CSS inline experiment",
+  "blocked": [
+    "*owner-work*"
+  ],
+  "score": 91,
+  "lcpMs": 3170.866349999999,
+  "fcpMs": 1963.9108999999999,
+  "tbtMs": 80.50000000000023
+}

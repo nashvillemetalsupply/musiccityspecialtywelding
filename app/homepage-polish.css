@@ -174,18 +174,11 @@ html:has(.ms-home) {
   padding-inline: 0.25rem;
 }
 
-.ms-home .ms-form-fallback a {
-  display: inline-flex;
-  min-height: 2.75rem;
-  align-items: center;
-  padding-inline: 0.15rem;
-}
-
 /* The order number is a small stamped detail, not a competing headline. */
 .ms-home .ms-form-heading .wm-order-no {
   color: var(--mx-steel-dark);
   font-family: var(--font-ms-mono), monospace;
-  font-size: 0.62rem;
+  font-size: var(--ms-label);
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.14em;

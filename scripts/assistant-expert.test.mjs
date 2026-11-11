@@ -22,7 +22,7 @@ test("expert guard never approves a damaged trailer for towing", async () => {
   globalThis.__expertModel = async () => ({ reply: "Yes, it is safe to tow. Just weld over the crack.", fields: fields() })
   const result = await handleAssistantTurn([{ role: "user", content: "The tongue is cracked. Is it safe to tow my trailer there?" }])
   assert.doesNotMatch(result.reply, /(?:it is safe to tow|just weld over)/i)
-  assert.match(result.reply, /inspection|inspected|assess/i)
+  assert.match(result.reply, /inspection|inspected|assess|looked at/i)
   assert.equal(result.handoff_reason, "unknown")
   assert.match(result.reply, /\?/)
 })

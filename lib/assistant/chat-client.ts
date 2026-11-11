@@ -1,6 +1,7 @@
 import { stripAssistantMoney } from "./money.ts"
 
 export const CHAT_STORAGE_KEY = "mcsw-assistant-chat-v1"
+export const CHAT_DRAFT_STORAGE_KEY = "mcsw-assistant-draft-v1"
 export const CHAT_MESSAGE_LIMIT = 2000
 export const CHAT_TURN_LIMIT = 30
 
@@ -16,6 +17,30 @@ export type ChatSession = {
 type ChatStorage = Pick<Storage, "getItem" | "setItem">
 // Match the public API's v4 session identity, including after browser restore.
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+export function readChatDraft(storage: ChatStorage | null): string {
+  try {
+    const raw = storage?.getItem(CHAT_DRAFT_STORAGE_KEY)
+    if (!raw || raw.length > 14_000) return ""
+    const value = JSON.parse(raw) as { draft?: unknown } | null
+    if (typeof value?.draft === "string" && value.draft.length <= CHAT_MESSAGE_LIMIT) {
+      return stripAssistantMoney(value.draft).slice(0, CHAT_MESSAGE_LIMIT)
+    }
+  } catch {
+    // Disabled storage and malformed drafts leave the in-memory field usable.
+  }
+  return ""
+}
+
+export function writeChatDraft(storage: ChatStorage | null, draft: string): void {
+  try {
+    storage?.setItem(CHAT_DRAFT_STORAGE_KEY, JSON.stringify({
+      draft: stripAssistantMoney(draft.slice(0, CHAT_MESSAGE_LIMIT)).slice(0, CHAT_MESSAGE_LIMIT),
+    }))
+  } catch {
+    // The field itself remains the source of truth when storage is unavailable.
+  }
+}
 
 export function newChatSession(id: string): ChatSession {
   return { id, nextTurn: 0, messages: [], pending: null, leadSaved: false }

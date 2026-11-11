@@ -3,9 +3,29 @@ export const ASSISTANT_SHOP_EMAIL = "Sales@musiccityspecialtywelding.com"
 export const ASSISTANT_QUOTE_FORM = "/#contact"
 export type AssistantHandoffReason = "human" | "unknown" | "model-error" | "rate-limit"
 
+// Explain the missing fact rather than making every concern sound like the
+// same failed answer. These sentences promise no policy, capability or date.
+export function assistantHandoffOpening(customerText = ""): string {
+  const message = customerText.split("\n").at(-1) ?? customerText
+  if (/\b(?:payment|pay|deposit|cash|credit|debit|financ|net 30|installment)\w*/i.test(message)) return "The shop needs to confirm payment terms for the job."
+  if (/\b(?:price|pricing|cost|quote|estimate|rate|charge|how much|mileage)\w*\b|\[owner-only money\]/i.test(message)) return "The shop needs the job details before it can price the work."
+  if (/\b(?:warrant\w*|guarantee\w*)\b/i.test(message)) return "The shop needs to explain the terms for that repair."
+  if (/\b(?:licens\w*|insur\w*|bonded|AWS|CWI|certif\w*)\b/i.test(message)) return "The shop needs to confirm the credentials your project calls for."
+  if (/\b(?:hours?|Sunday|Saturday|weekend|tonight|tomorrow|today|lead time|after.hours|emergency|arrive|book|appointment|Friday|available|availability)\b/i.test(message)) return "The shop needs to check the calendar before giving you a date."
+  if (/\b(?:travel|radius|Bowling Green|Knoxville|Chattanooga|Louisville|anywhere in|all of Tennessee)\b/i.test(message)) return "The shop needs the location and job scope to confirm the trip."
+  if (/\b(?:cast iron|cast aluminum|titanium|magnesium|dissimilar|alloy)\b/i.test(message)) return "That material needs a closer review before the shop confirms the work."
+  if (/\b(?:ASME|pressure|propane|fuel|underwater|aerospace|food.safe|food.grade)\b/i.test(message)) return "That work needs specialist requirements checked by the shop."
+  if (/\b(?:powder|coat\w*|CNC|machining|laser|plating|waterjet)\b/i.test(message)) return "The shop needs to confirm that process before taking the work."
+  if (/\b(?:owner|person|someone|somebody|connect|representative|human)\b/i.test(message)) return "You can take the job straight to a person at the shop."
+  if (/\b(?:unavailable|empty answer|assistant returns)\b/i.test(message)) return "The shop can pick up where this chat leaves off."
+  if (/\b(?:intercom|engine|welding gas|welding wire|apply|classes|gold|pizza|sponsor|poem|unsubscribe|sellers)\b/i.test(message)) return "That question falls outside the welding details published here."
+  if (/\b(?:trailer|hitch|tongue|fork|forklift|structural|beam|safety|safe|tow|capacity|load rating|DIY|myself)\b/i.test(message)) return "The damage and intended use need an inspection before a repair decision."
+  return "The shop needs a closer look at that particular job."
+}
+
 export function assistantContactReply(phone: { display: string; href: string }, customerText = "", question = "What callback number should the shop use?"): string {
   if (assistantSpanish(customerText)) return `Una persona del taller debe confirmar el trabajo. [Llama al taller al ${phone.display}](${phone.href}). ${assistantQuestionInSpanish(question)} [Formulario de presupuesto](${ASSISTANT_QUOTE_FORM}) o [Correo ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
-  return `A person at the shop can help. [Call the shop at ${phone.display}](${phone.href}). ${question} [Quote form](${ASSISTANT_QUOTE_FORM}) or [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
+  return `${assistantHandoffOpening(customerText)} [Call the shop at ${phone.display}](${phone.href}). ${question} [Quote form](${ASSISTANT_QUOTE_FORM}) or [Email ${ASSISTANT_SHOP_EMAIL}](mailto:${ASSISTANT_SHOP_EMAIL}).`
 }
 
 export function assistantQuestionInSpanish(question: string): string {

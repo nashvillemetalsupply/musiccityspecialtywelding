@@ -16,11 +16,14 @@ const phone = { href: "tel:+16157033296", display: "(615) 703-3296" }
 
 // Render the actual route and shared action components. Only Next's media/link
 // adapters and unrelated metadata/measurement dependencies are replaced.
-function publicPages(chatFlag) {
+function publicPages(chatFlag, suspense = React.Suspense) {
   const cache = new Map()
+  const nextLinks = []
   const fakes = {
-    "next/link": ({ children, ...props }) => React.createElement("a", props, children),
-    "next/image": ({ src, alt }) => React.createElement("img", { src, alt }),
+    react: { ...React, Suspense: suspense },
+    "next/link": ({ children, ...props }) => { nextLinks.push(props.href); return React.createElement("a", props, children) },
+    "next/image": Object.assign(({ src, alt }) => React.createElement("img", { src, alt }), { getImageProps: ({ src, alt }) => ({ props: { src, alt } }) }),
+    "@/public/images/optimized/critical-image-provenance.json": nativeRequire("../public/images/optimized/critical-image-provenance.json"),
     "next/navigation": { notFound: () => { throw new Error("not found") } },
     "@/lib/shop-contact": { getShopPhone: () => phone },
     "@/lib/public-metadata": { createPublicMetadata: () => ({}) },
@@ -52,8 +55,25 @@ function publicPages(chatFlag) {
     vm.runInContext(`(function(exports, require, module) { ${compiled.get(file)}\n})`, context)(compiledModule.exports, require, compiledModule)
     return compiledModule.exports
   }
-  return { load, render: (element) => renderToStaticMarkup(element) }
+  return { load, render: (element) => renderToStaticMarkup(element), nextLinks }
 }
+
+test("yielding below-fold hydration preserves the complete server-rendered public HTML", async () => {
+  const bounded = publicPages("1")
+  const transparent = publicPages("1", React.Fragment)
+  assert.equal(
+    bounded.render(React.createElement(bounded.load("app/page.tsx").default)),
+    transparent.render(React.createElement(transparent.load("app/page.tsx").default)),
+  )
+  for (const { slug } of bounded.load("lib/service-pages.ts").servicePages) {
+    const params = { params: Promise.resolve({ slug }) }
+    assert.equal(
+      bounded.render(await bounded.load("app/services/[slug]/page.tsx").default(params)),
+      transparent.render(await transparent.load("app/services/[slug]/page.tsx").default(params)),
+      `${slug}: hydration boundaries must retain every server-rendered element and attribute`,
+    )
+  }
+})
 
 const counts = (html) => ({
   tel: (html.match(/<a\b[^>]*href="tel:/g) ?? []).length,
@@ -103,11 +123,11 @@ for (const chatFlag of [undefined, "1"]) {
     for (const { slug } of load("lib/service-pages.ts").servicePages) {
       const html = render(await ServicePage({ params: Promise.resolve({ slug }) }))
       assert.deepEqual(counts(content(html)), { tel: 4, callButtons: 2, ask: 2 }, slug)
-      for (const name of ["ms-subhero", "ms-subclose"]) {
+      for (const name of ["ms-subhero", "ms-contact"]) {
         assert.equal(counts(section(html, name)).callButtons, 1, `${slug} ${name} call`)
         assert.equal(counts(section(html, name)).ask, 1, `${slug} ${name} ask`)
       }
-      assert.equal(counts(section(html, "ms-contact")).callButtons, 0, `${slug} form has no extra call CTA`)
+      assert.doesNotMatch(html, /<section[^>]*class="ms-subclose"/, `${slug} has one closing section`)
     }
   })
 
@@ -121,3 +141,15 @@ for (const chatFlag of [undefined, "1"]) {
     }
   })
 }
+
+test("public navigation renders the correct service, section, city and legal destinations", async () => {
+  const { load, render, nextLinks } = publicPages("1")
+  const home = render(React.createElement(load("app/page.tsx").default))
+  for (const href of ["#home", "#work", "#services", "#job-glass", "/privacy", "/terms", "/services/mobile-welding#service"]) assert.ok(home.includes(`href="${href}"`), href)
+  for (const { slug } of load("lib/service-pages.ts").servicePages) assert.ok(home.includes(`href="/services/${slug}"`) || slug === "gate-repair", slug)
+  const ServicePage = load("app/services/[slug]/page.tsx").default
+  const service = render(await ServicePage({ params: Promise.resolve({ slug: "mobile-welding" }) }))
+  for (const href of ["/", "/#services", "/#job-glass", "/service-areas", "/privacy", "/terms"]) assert.ok(service.includes(`href="${href}"`), href)
+  assert.equal((home.match(/href="\/services\/mobile-welding#service"/g) ?? []).length, 8)
+  for (const href of ["#home", "#work", "#services", "#job-glass", "/privacy", "/terms", "/services/mobile-welding#service", "/service-areas"]) assert.ok(nextLinks.includes(href), `Link destination ${href}`)
+})

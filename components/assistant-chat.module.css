@@ -10,7 +10,7 @@
   display: none;
 }
 
-.launcher button, .dialog button[type="submit"], .dialog .call {
+.launcher button, .dialog button[type="submit"], .dialog .call, .dialog .retry {
   display: inline-flex;
   min-height: 3rem;
   align-items: center;
@@ -42,8 +42,8 @@
   color: var(--ms-button-ink);
   filter: none;
 }
-.launcher button:hover { background: var(--ms-chalk); border-color: var(--ms-chalk); color: var(--ms-button-ink); filter: none; }
-.launcher button:active, .dialog .call:active, .dialog button[type="submit"]:active { transform: translateY(1px); }
+.launcher button:hover, .dialog .retry:hover { background: var(--ms-chalk); border-color: var(--ms-chalk); color: var(--ms-button-ink); filter: none; }
+.launcher button:active, .dialog .call:active, .dialog button[type="submit"]:active, .dialog .retry:active { transform: translateY(1px); }
 .launcher :focus-visible, .dialog :focus-visible { outline: 3px solid currentColor; outline-offset: -5px; }
 
 .dialog {
@@ -61,25 +61,25 @@
 .dialog::backdrop { background: var(--ms-backdrop); }
 .panel { display: flex; flex-direction: column; max-height: inherit; min-height: 0; }
 .header { display: flex; gap: .75rem; align-items: center; justify-content: space-between; padding: .9rem 1rem; color: var(--ms-bone); background: var(--ms-carbon); }
-.header span { display: block; font: 500 .65rem/1.4 var(--font-ms-mono), monospace; letter-spacing: .04em; }
+.header span { display: block; font: 500 var(--ms-label)/1.4 var(--font-ms-mono), monospace; letter-spacing: .04em; }
 .header h2 { margin: .2rem 0 0; font: 900 clamp(1.8rem, 7vw, 2.3rem)/1 var(--font-ms-display), sans-serif; text-transform: uppercase; }
 .header button { flex: 0 0 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; color: var(--ms-bone); background: transparent; font-size: 2rem; cursor: pointer; }
 .messages { min-height: 4rem; overflow-y: auto; overscroll-behavior: contain; padding: .75rem 1rem; overflow-wrap: anywhere; color: var(--ms-ink); background: var(--ms-paper-fill); }
-.assistant, .customer { margin: .4rem 0 1rem; font-size: .95rem; line-height: 1.5; white-space: pre-wrap; }
+.assistant, .customer { margin: .4rem 0 1rem; font-size: 1rem; line-height: 1.5; white-space: pre-wrap; }
 .assistant { color: var(--ms-ink); background: var(--ms-paper-fill); }
 .customer { padding-left: .8rem; border-left: 2px solid var(--ms-ink); color: var(--ms-ink); background: var(--ms-arc); }
-.byline { display: block; padding-bottom: .25rem; font: 600 .65rem/1.5 var(--font-ms-mono), monospace; text-transform: uppercase; }
+.byline { display: block; padding-bottom: .25rem; font: 600 var(--ms-label)/1.5 var(--font-ms-mono), monospace; text-transform: uppercase; }
 .assistant a { color: var(--ms-copper); text-decoration: underline; text-underline-offset: .2em; }
 .customer a { color: var(--ms-ink); text-decoration: underline; text-underline-offset: .2em; }
 .status, .error { margin: .75rem 0; font-size: .875rem; line-height: 1.45; }
 .error { border-left: 3px solid var(--ms-copper); padding-left: .65rem; }
 .form { flex-shrink: 0; padding: .75rem 1rem 1rem; border-top: 1px solid var(--ms-line-bone); color: var(--ms-bone); background: var(--ms-surface); }
-.form label { display: block; margin-bottom: .4rem; font-size: .8rem; font-weight: 700; }
+.form label { display: block; margin-bottom: .4rem; font-size: .8125rem; font-weight: 700; }
 .form textarea { display: block; width: 100%; min-height: 44px; max-height: 7rem; resize: vertical; padding: .65rem; border: 1px solid var(--ms-rule); border-radius: 0; background: var(--ms-paper-fill); color: var(--ms-ink); font: 400 1rem/1.4 var(--font-ms-sans), Arial, sans-serif; }
 .form textarea::placeholder { color: var(--ms-ink-muted); opacity: 1; }
 .form textarea:focus-visible { outline-color: currentColor; outline-offset: -5px; }
 .formActions { display: flex; align-items: flex-start; gap: .75rem; margin-top: .6rem; }
-.formActions p { color: var(--ms-muted); flex: 1; margin: 0; font-size: .72rem; line-height: 1.45; }
+.formActions p { color: var(--ms-muted); flex: 1; margin: 0; font-size: var(--ms-label); line-height: 1.45; }
 .dialog button:disabled { cursor: default; opacity: 1; color: var(--ms-button-ink); background: var(--ms-arc); border-color: var(--ms-arc); }
 
 @media (min-width: 980px) {

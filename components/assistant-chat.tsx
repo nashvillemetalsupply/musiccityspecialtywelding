@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { usePathname } from "next/navigation"
 import {
   acceptChatReply, CHAT_MESSAGE_LIMIT, CHAT_TURN_LIMIT,
-  prepareChatRequest, readChatSession, writeChatSession, type ChatSession,
+  prepareChatRequest, readChatDraft, readChatSession, writeChatDraft, writeChatSession, type ChatSession,
 } from "@/lib/assistant/chat-client.ts"
 import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM } from "@/lib/assistant/contact.ts"
 import styles from "./assistant-chat.module.css"
 
-type Props = { phoneHref: string; phoneDisplay: string }
+type Props = { phoneHref: string; phoneDisplay: string; initialOpen?: boolean; initialFocus?: HTMLElement | null }
 const GREETING = "I'm the automated shop assistant. What needs welding?"
 const REPLY_UNCONFIRMED = "The reply couldn't be confirmed. You can reach the shop directly."
 
@@ -53,17 +53,18 @@ export function AssistantReply({ text, phoneHref, onCallback }: { text: string; 
   })
 }
 
-function ChatDoor({ phoneHref, phoneDisplay }: Props) {
+function ChatDoor({ phoneHref, phoneDisplay, initialOpen = false, initialFocus = null }: Props) {
   const [open, setOpen] = useState(false)
   const [session, setSession] = useState<ChatSession | null>(null)
   const [draft, setDraft] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const sessionRef = useRef<ChatSession | null>(null)
+  const draftRef = useRef("")
   const sendingRef = useRef(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const launcherRef = useRef<HTMLButtonElement>(null)
-  const returnFocusRef = useRef<HTMLElement | null>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(initialFocus)
   const restoreFocusRef = useRef(true)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -81,13 +82,16 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
 
   const openChat = useCallback(() => {
     restoreFocusRef.current = true
-    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
       returnFocusRef.current = document.activeElement
     }
-    const current = sessionRef.current ?? readChatSession(browserStorage(), () => crypto.randomUUID())
+    const remembered = sessionRef.current
+    const current = remembered ?? readChatSession(browserStorage(), () => crypto.randomUUID())
+    const restoredDraft = current.pending ?? (remembered ? draftRef.current : readChatDraft(browserStorage()))
     sessionRef.current = current
     setSession(current)
-    setDraft(current.pending ?? "")
+    draftRef.current = restoredDraft
+    setDraft(restoredDraft)
     setOpen(true)
   }, [])
 
@@ -95,6 +99,8 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
     window.addEventListener("ms:open-assistant", openChat)
     return () => window.removeEventListener("ms:open-assistant", openChat)
   }, [openChat])
+
+  useEffect(() => { if (initialOpen) openChat() }, [initialOpen, openChat])
 
   function saveSession(value: ChatSession) {
     sessionRef.current = value
@@ -115,14 +121,17 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
     catch (failure) { setError((failure as Error).message); return }
     // Save retry identity before fetch. A timeout or reload reuses this turn.
     saveSession(request.session)
-    setDraft(request.session.pending ?? "")
+    draftRef.current = request.session.pending ?? ""
+    setDraft(draftRef.current)
     sendingRef.current = true
     setBusy(true)
     setError("")
     try {
       const result = await requestAssistantReply(request.payload)
       saveSession(acceptChatReply(request.session, result.reply, result.lead_saved === true))
+      draftRef.current = ""
       setDraft("")
+      writeChatDraft(browserStorage(), "")
     } catch {
       setError(REPLY_UNCONFIRMED)
     } finally {
@@ -169,11 +178,16 @@ function ChatDoor({ phoneHref, phoneDisplay }: Props) {
           </div>
           <form onSubmit={sendMessage} className={styles.form} aria-busy={busy}>
             <label htmlFor="shop-assistant-message">{session?.pending ? "Message awaiting reply" : "Your message"}</label>
-            <textarea ref={inputRef} id="shop-assistant-message" value={draft} onChange={(event) => setDraft(event.target.value)}
+            <textarea ref={inputRef} id="shop-assistant-message" value={draft} onChange={(event) => {
+              const value = event.target.value.slice(0, CHAT_MESSAGE_LIMIT)
+              draftRef.current = value
+              setDraft(value)
+              writeChatDraft(browserStorage(), value)
+            }}
               maxLength={CHAT_MESSAGE_LIMIT} rows={2} required readOnly={busy || session?.pending != null} disabled={atLimit}
               aria-describedby="shop-assistant-help" />
             <div className={styles.formActions}>
-              <p id="shop-assistant-help">{atLimit ? "Please call the shop to keep going." : session?.pending ? "Retry sends this same message." : "No prices or scheduling promises. Share job details and a callback number."}</p>
+              <p id="shop-assistant-help">{atLimit ? "Please call the shop to keep going." : session?.pending ? "Retry sends this same message." : "Tell us the job and a number to call. The shop gives prices and dates."}</p>
               <button type="submit" disabled={busy || atLimit || !draft.trim()}>{busy ? "Sending…" : session?.pending ? "Retry" : "Send"}</button>
             </div>
           </form>

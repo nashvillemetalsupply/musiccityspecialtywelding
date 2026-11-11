@@ -85,6 +85,16 @@ class MemoryStore {
   async release(claim) { if (this.token === claim.token) this.active = false }
 }
 
+test("durable history carries the already grounded field snapshot for provider-free sourced followups", async () => {
+  const prior = completeFields()
+  globalThis.__assistantSql = async () => [{ inbound: completeMessage, response: { reply: "What photos can you send?", fields: prior } }]
+  const history = await new PostgresAssistantStore().history(sessionId, 1)
+  assert.deepEqual(history, [
+    { role: "user", content: completeMessage },
+    { role: "assistant", content: "What photos can you send?", fields: prior },
+  ])
+})
+
 function fixture() {
   const store = new MemoryStore()
   const leads = new Map()
@@ -149,7 +159,7 @@ test("ladder then Lebanon gate clears persisted model uncertainty and resumes th
     if (users.length === 2) {
       assert.deepEqual(users.map((message) => message.content), [ladder, gate])
       assert.equal(conversation[1].content, f.store.turns.get(0).response.reply)
-      assert.match(conversation[1].content, /A person at the shop will confirm that job\./)
+      assert.match(conversation[1].content, /The shop needs a closer look at that particular job\./)
     }
     // The model answers the new job but carries the earlier unknown metadata.
     return { reply: users.length === 1 ? "The shop must confirm whether we weld aluminum boat ladders. What name should the shop use?" : gateReply,
@@ -194,7 +204,7 @@ test("unknown capability intake survives service normalization and still hands o
   }
   const firstInput = input({ message: "Do you weld aluminum boat ladders?" })
   const first = await processAssistantTurn(firstInput, "1.2.3.4", f.deps)
-  assert.match(first.reply, /A person at the shop will confirm that job\. What name should the shop use\?/)
+  assert.match(first.reply, /The shop needs a closer look at that particular job\. What name should the shop use\?/)
   assert.match(first.reply, /tel:\+16157033296/)
   assert.match(first.reply, /mailto:Sales@musiccityspecialtywelding.com/)
   assert.doesNotMatch(first.reply, /\byes\b|we can|we'll|booked|scheduled|guarantee|available/i)
@@ -218,7 +228,7 @@ test("model promise guard intake survives service normalization with its unknown
   f.deps.handoff = async (value) => { handoffs.push(copy(value)); return { leadId: null } }
   globalThis.__assistantApiModel = async () => ({ reply: "Booked. We will come tomorrow.", fields: emptyFields() })
   const result = await processAssistantTurn(input(), "1.2.3.4", f.deps)
-  assert.match(result.reply, /A person at the shop will confirm that job\. What name should the shop use\?/)
+  assert.match(result.reply, /The shop needs a closer look at that particular job\. What name should the shop use\?/)
   assert.doesNotMatch(result.reply, /booked|we will|tomorrow|we'll/i)
   assert.equal(result.continue_intake, true)
   assert.equal(handoffs.length, 1)

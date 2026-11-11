@@ -42,8 +42,10 @@ test("forced colors keep job actions, status chips, buttons and focus visible", 
 
 test("reduced motion limits every app animation and transition", () => {
   const rootLayout = read("app/layout.tsx")
-  assert.match(rootLayout, /import "\.\/globals\.css"/)
-  assert.match(rootLayout, /import "\.\.\/styles\/reduced-motion\.css"/)
+  assert.match(rootLayout, /import "\.\/public-site\.css"/)
+  const publicStyles = read("app/public-site.css")
+  assert.match(publicStyles, /@import "\.\/globals\.css"/)
+  assert.match(publicStyles, /@import "\.\.\/styles\/reduced-motion\.css"/)
   assert.match(REDUCED_MOTION, /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*\*,\s*\*::before,\s*\*::after\s*\{[^}]*transition-duration:[^}]*!important[^}]*animation-duration:[^}]*!important[^}]*animation-iteration-count:\s*1\s*!important/s)
 })
 

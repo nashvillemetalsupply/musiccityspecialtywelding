@@ -1,0 +1,11 @@
+{
+  "diagnosticOnly": true,
+  "build": "CSS inline experiment",
+  "blocked": [
+    "*.woff2"
+  ],
+  "score": 82,
+  "lcpMs": 4453.720399999999,
+  "fcpMs": 2299.6303500000004,
+  "tbtMs": 73.49999999999955
+}

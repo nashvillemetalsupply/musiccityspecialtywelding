@@ -146,12 +146,12 @@ test("unsupported capability questions fail closed even when the model claims ye
     assert.equal(result.handoff_reason, "unknown", content)
     assert.match(result.reply, /\(tel:\+16157033296\)/)
     assert.match(result.reply, /\(mailto:Sales@musiccityspecialtywelding.com\)/)
-    assert.match(result.reply, /(?:A person at the shop will confirm that job\.|needs inspection before towing, loading or use\.) What needs welding or repair\?/)
+    assert.match(result.reply, /(?:confirms the work\.|checked by the shop\.|load it or use it\.) What needs welding or repair\?/)
     assert.doesNotMatch(result.reply, /Yes, we do/)
   }
   const known = await handleAssistantTurn([{ role: "user", content: "Do you weld aluminum boats?" }])
   assert.equal(known.handoff_reason, undefined)
-  assert.match(known.reply, /Yes, we do that work/)
+  assert.match(known.reply, /We handle aluminum boat repair/)
   const markedKnown = await handleAssistantTurn([{ role: "user", content: "[INTERNAL TEST] Do you weld aluminum boats?" }])
   assert.equal(markedKnown.handoff_reason, undefined)
 })
@@ -162,7 +162,7 @@ test("unknown capability keeps the next intake question and contact links withou
     const result = await handleAssistantTurn([{ role: "user", content: "[INTERNAL TEST] Do you weld aluminum boat ladders?" }])
     assert.equal(result.handoff_reason, "unknown")
     assert.equal(result.continue_intake, true)
-    assert.match(result.reply, /A person at the shop will confirm that job\. What needs welding or repair\?/)
+    assert.match(result.reply, /The shop needs a closer look at that particular job\. What needs welding or repair\?/)
     assert.match(result.reply, /\[Call the shop at .*\]\(tel:\+16157033296\)/)
     assert.match(result.reply, /\[Email .*\]\(mailto:Sales@musiccityspecialtywelding.com\)/)
     assert.doesNotMatch(result.reply, /\byes\b|we can|we'll|booked|scheduled|guarantee|available/i)
@@ -191,14 +191,14 @@ test("model promise guard continues intake while customer money, date and human 
     const result = await handleAssistantTurn([{ role: "user", content: "Need a repair." }], { voice })
     assert.equal(result.handoff_reason, "unknown")
     assert.equal(result.continue_intake, true)
-    assert.match(result.reply, /A person at the shop will confirm that job\. What needs welding or repair\?/)
+    assert.match(result.reply, /(?:A person at the shop will confirm that job|The shop needs a closer look at that particular job)\. What needs welding or repair\?/)
     assert.doesNotMatch(result.reply, /Booked|we will|tomorrow|we'll/i)
   }
   for (const [content, reason] of [["Can you weld titanium for $200?"], ["Can you weld titanium tomorrow?"], ["I want a person"], ["I am angry about this emergency", "human"], ["Do you weld titanium?", "model-error"]]) {
     globalThis.__assistantBrainModel = async () => ({ reply: "Booked. We will come tomorrow.", fields: fields(), handoff_reason: reason })
     const result = await handleAssistantTurn([{ role: "user", content }])
     assert.equal(result.continue_intake, undefined)
-    assert.equal(result.reply, `I'm an automated assistant for Music City Specialty Welding. ${assistantContactReply(ASSISTANT_SHOP_PHONE)}`)
+    assert.equal(result.reply, `I'm an automated assistant for Music City Specialty Welding. ${assistantContactReply(ASSISTANT_SHOP_PHONE, content)}`)
   }
 })
 

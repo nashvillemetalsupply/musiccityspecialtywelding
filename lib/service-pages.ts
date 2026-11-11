@@ -61,8 +61,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "We bring the rig",
     intro:
       "When the metal is better repaired where it sits, we bring the rig. We check the damage, material, access, and working conditions before we plan the repair.",
-    image: "/images/owner-work/IMG_20260225_135845.webp",
-    imageAlt: "Installed steel balcony railing completed on-site by Music City Specialty Welding",
+    image: "/images/owner-work/IMG_3994.webp",
+    imageAlt: "Music City Specialty Welding working on a commercial gas manifold on-site",
     commonJobs: [
       "Equipment and trailer component repairs",
       "Broken brackets, frames, supports, and attachments",
@@ -202,7 +202,7 @@ export const servicePages: ServicePage[] = [
     intro:
       "We repair machinery frames, brackets, guards, supports, and attachments. How the part carries load and moves matters. We check the cause of the failure before we plan the weld.",
     image: "/images/optimized/Service 04.webp",
-    imageAlt: "Welding repair on industrial equipment",
+    imageAlt: "Fabricated steel assemblies staged on a trailer at the shop",
     commonJobs: [
       "Cracked or failed welded components",
       "Frames, brackets, guards, supports, and attachments",

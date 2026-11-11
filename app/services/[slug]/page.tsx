@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
+import { Suspense } from "react"
 import { ArrowUpRight } from "lucide-react"
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { MainstreetContact } from "@/components/mainstreet-contact"
+import { CriticalImage } from "@/components/critical-image"
+import { MainstreetContact } from "@/components/mainstreet-contact-section"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { createPublicMetadata } from "@/lib/public-metadata"
 import { buildServiceStructuredData, servicePageBySlug, servicePages } from "@/lib/service-pages"
@@ -65,10 +66,11 @@ export default async function ServicePage({ params }: PageProps) {
             <ShopActions phoneHref={shopPhone.href} className="ms-hero-actions" />
           </div>
           <figure className="ms-subhero-media">
-            <Image src={service.image} alt={service.imageAlt} fill priority fetchPriority="high" sizes="(max-width: 900px) 100vw, 46vw" />
+            <CriticalImage src={service.image} alt={service.imageAlt} fill priority fetchPriority="high" sizes="(max-width: 900px) 100vw, 46vw" />
           </figure>
         </section>
 
+        <Suspense fallback={null}>
         <section className="ms-subscope">
           <div>
             <h2 className="ms-display">What we handle.</h2>
@@ -83,7 +85,7 @@ export default async function ServicePage({ params }: PageProps) {
         <section className="ms-subplan">
           <div className="ms-subplan-lead">
             <h2 className="ms-display">Help us see the whole job.</h2>
-            <p>Send photos, dimensions, and the location. We&apos;ll ask for what is missing.</p>
+            <p>Send photos, dimensions, and the location. We&apos;ll ask for what&apos;s missing.</p>
             <Link href="/service-areas">Check the service area <ArrowUpRight aria-hidden="true" /></Link>
           </div>
           <ul>{service.details.map((item) => <li key={item}>{item}</li>)}</ul>
@@ -114,15 +116,8 @@ export default async function ServicePage({ params }: PageProps) {
           ))}
         </nav>
 
-        <section className="ms-subclose">
-          <h2 className="ms-display">Tell us what the metal is doing.</h2>
-          <div>
-            <p>Tell us what broke or what needs built. Start with the location and a few photos.</p>
-            <ShopActions phoneHref={shopPhone.href} />
-          </div>
-        </section>
-
-        <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} showActions={false} />
+        <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
+        </Suspense>
       </main>
       <Footer />
       <MobileQuickActions phoneHref={shopPhone.href} />

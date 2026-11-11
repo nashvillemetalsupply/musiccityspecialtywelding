@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-10",
+  "origin": "http://localhost:3100",
+  "server": "next start (production build)",
+  "method": "Lighthouse 13.6.0 default simulated mobile throttling; fresh Chrome per run; storage reset; sequential runs; no request blocking",
+  "target": {
+    "performance": 98,
+    "lcpMsBelow": 2500
+  },
+  "runs": [
+    {
+      "path": "/",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/deferred-ui/home-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 92,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3334.6603749999995,
+      "fcpMs": 1215.2345,
+      "cls": 0.001477801074916096,
+      "tbtMs": 91.49999999999977,
+      "runtimeError": null
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/deferred-ui/mobile-welding-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 92,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3291.96,
+      "fcpMs": 1062.98,
+      "cls": 0,
+      "tbtMs": 70.5,
+      "runtimeError": null
+    }
+  ]
+}

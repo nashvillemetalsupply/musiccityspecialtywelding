@@ -72,7 +72,7 @@ pane; fire/ink for customer bubbles; fire/button ink for send/call; and surface
 for the composer. Do not restore the old chat orange.
 
 ## Typography
-**Display:** Archivo variable, `700–900`, width tightened for large all-caps statements. It is industrial and forceful without collapsing into a generic stencil or western costume.
+**Display:** Barlow Condensed, `900`, for large all-caps statements. It is industrial and forceful without collapsing into a generic stencil or western costume. Fable 2026-11-10 #2.
 
 **Body:** IBM Plex Sans, `400–600`, sentence case, open spacing, tuned for one-handed reading. Small labels use IBM Plex Mono `500–600` where a stamped job-ticket tone is useful.
 

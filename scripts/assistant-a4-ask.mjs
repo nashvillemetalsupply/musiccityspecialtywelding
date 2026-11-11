@@ -4,7 +4,7 @@ const usageFields = ["input_tokens", "output_tokens", "cache_creation_input_toke
 const stopReasons = new Set(["end_turn", "max_tokens", "stop_sequence", "tool_use", "pause_turn", "refusal", "model_context_window_exceeded"])
 const blockTypes = new Set(["text", "thinking", "redacted_thinking", "tool_use", "server_tool_use", "web_search_tool_result", "web_fetch_tool_result", "code_execution_tool_result", "mcp_tool_use", "mcp_tool_result", "container_upload", "unknown"])
 const handoffReasons = new Set(["human", "unknown", "model-error", "rate-limit"])
-const branches = new Set(["model-answer", "unknown-capability-intake", "contact-handoff", "promise-guard-intake", "non-job-close",
+const branches = new Set(["model-answer", "sourced-answer", "unknown-capability-intake", "contact-handoff", "promise-guard-intake", "non-job-close",
   "expert-scope-intake", "expert-safety-intake", "expert-claim-intake", "model-error", "service-handoff"])
 
 export function parseA4Args(args) {

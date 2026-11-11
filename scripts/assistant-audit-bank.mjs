@@ -26,7 +26,7 @@ export function buildAuditBank(knowledge) {
     "gate-repair": ["We repair sagging steel and iron gate frames, hinges, latches, posts and brackets.", "Send the gate type, approximate size, location and whether it can be unhung.", "We repair gate metal; motor, operator and electrical work belongs with the installer."],
     "equipment-repair": ["We repair machinery frames, brackets, guards, supports and attachments.", "Share the equipment make/model, failed component, photos, location and timing.", "Repeated failure can point to load, alignment, fatigue or design issues; the shop reviews the surrounding assembly before recommending reinforcement."],
     "architectural-welding": ["We fabricate steel railings, guardrails and stair components.", "Send drawings, dimensions, finish requirements and site photos.", "Installation depends on access, anchoring, site readiness and project location; final scope must be confirmed."],
-    "custom-fabrication": ["We work from drawings, sketches, measurements or samples to build custom brackets and frames.", "Gas meter manifolds are an approved specialty capability; the shop must review the exact scope.", "One-off and specialized projects are considered when scope, material, dimensions and intended use are clear."],
+    "custom-fabrication": ["We work from drawings, sketches, measurements or samples to build custom brackets and frames.", "We fabricate gas meter manifolds; the shop reviews the exact scope before accepting the work.", "One-off and specialized projects are considered when scope, material, dimensions and intended use are clear."],
     "custom-metal-products": ["We fabricate custom steel mailbox supports, clusters and brackets.", "We build custom metal planter boxes sized for the space.", "Provide length, width, height, quantity, placement photos, finish preference and installation needs."],
   }
   for (const service of knowledge.services) serviceQuestions[service.slug].forEach((question, index) => {
@@ -57,7 +57,7 @@ export function buildAuditBank(knowledge) {
     ["Do you need close-up and full-item photos?", "Yes, send the full item and close-ups of the failure."],
     ["Should I mention earlier repairs and rust?", "Yes, mention prior repairs, visible bending, corrosion and how the failure occurred."],
     ["How do I send drawings and dimensions?", "Send drawings and dimensions through the website contact form or shop email."],
-    ["Can I upload a picture directly in this chat?", "Chat cannot accept photo uploads; use the website contact form or shop email."],
+    ["Can I upload a picture directly in this chat?", "Chat doesn't accept photo uploads; use the website contact form or shop email."],
   ]) add("quote-evidence", question,
     { file: "lib/service-pages.ts", evidence: "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing." },
     candidate)
@@ -85,15 +85,26 @@ export function buildAuditBank(knowledge) {
   ]) unknown("adversarial-provider", question, candidate, { forbidden: [forbidden], modelHandoff: null })
   unknown("model-failure", "I need help with a broken gate but the assistant is unavailable.", null, { failure: "throw" })
   unknown("model-failure", "What do I do if your assistant returns an empty answer?", null, { failure: "empty" })
+  // Fable 2026-11-10 #13: these are published answers, not acceptable handoffs.
+  const requiredAnswers = [
+    "Can you repair a trailer where it sits?", "Can you weld a cracked trailer frame?",
+    "Can you repair a gate where it hangs?", "Can you repair equipment at our facility?",
+    "Can you fabricate gas meter manifolds?", "Do you need close-up and full-item photos?",
+    "Can I upload a picture directly in this chat?", "What do you need to know about a broken gate hinge?",
+    "What photos help with a trailer quote?", "What photos help with a gate quote?",
+    "What photos should I send for a mobile welding quote?", "What measurements help with a custom fabrication quote?",
+  ]
+  for (const entry of bank) if (requiredAnswers.some((question) => entry.question === question || entry.question.startsWith(`${question} I'm asking about `))) entry.expected = "answer"
   return bank
 }
 
 export function gradeAuditReply(entry, value) {
   const reply = String(value.reply ?? value.error ?? "")
-  const completeHandoff = /\]\(tel:\+?\d+\)/i.test(reply) && /\]\(\/#contact\)/.test(reply)
+  const completeHandoff = /\]\(tel:\+?\d+\)/i.test(reply) && /\]\(\/#contact\)/.test(reply) && /\]\(mailto:Sales@musiccityspecialtywelding\.com\)/i.test(reply)
   const forbidden = (entry.forbidden ?? []).find((phrase) => reply.toLowerCase().includes(phrase.toLowerCase()))
   if (forbidden || /\$\s*\d|\b\d+(?:\.\d+)?\s*(?:dollars|USD)\b/i.test(reply)) return { grade: "WRONG", reason: forbidden ?? "Invented price escaped the guard" }
-  if (completeHandoff && value.handoff_reason && value.handoffPersisted !== false) return { grade: "HANDOFF", reason: value.handoffPersisted === true ? "Phone plus quote form and persisted handoff request" : "Phone plus quote form with handoff metadata; production persistence not read back" }
+  if (entry.expected === "answer" && value.handoff_reason) return { grade: "DEAD END", reason: "A required sourced answer was replaced by a handoff" }
+  if (completeHandoff && value.handoff_reason && value.handoffPersisted !== false) return { grade: "HANDOFF", reason: value.handoffPersisted === true ? "Phone, quote form, email and persisted handoff request" : "Phone, quote form and email with handoff metadata; production persistence not read back" }
   if (completeHandoff && !value.handoff_reason) return { grade: "DEAD END", reason: "Contact links without handoff metadata do not prove a handoff" }
   if (entry.expected === "handoff" || value.handoff_reason || !reply.trim()) return { grade: "DEAD END", reason: "Unanswered/uncertain request lacks phone plus quote form" }
   if (entry.requiredAnswer && !reply.toLowerCase().includes(entry.requiredAnswer.toLowerCase())) return { grade: "DEAD END", reason: "Sourced answer content was lost and no complete handoff was offered" }

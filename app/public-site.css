@@ -1,0 +1,6 @@
+/* One stylesheet pipeline preserves the public cascade without CSS waterfalls. */
+@import "../styles/public-color-tokens.css";
+@import "./globals.css";
+@import "./page-cohesion.css";
+@import "../styles/reduced-motion.css";
+@import "./homepage-polish.css";

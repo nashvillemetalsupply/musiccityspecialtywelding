@@ -1,14 +1,12 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Barlow_Condensed, Permanent_Marker } from "next/font/google"
+import { Barlow_Condensed, IBM_Plex_Sans, IBM_Plex_Mono, Permanent_Marker } from "next/font/google"
 import { PublicAnalytics } from "@/components/public-analytics"
-import { AssistantChat } from "@/components/assistant-chat"
+import { AssistantChatLoader as AssistantChat } from "@/components/assistant-chat-loader"
 import { publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
-import "../styles/public-color-tokens.css"
-import "./globals.css"
-import "./page-cohesion.css"
-import "../styles/reduced-motion.css"
+import { serviceAreas } from "@/lib/service-areas"
+import "./public-site.css"
 
 const _barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
@@ -22,6 +20,23 @@ const _marker = Permanent_Marker({
   weight: "400",
   variable: "--font-ms-marker",
   display: "optional",
+  preload: false,
+})
+
+const _plexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  // One variable face supplies the required 400/500/600 weights without
+  // separate weight requests. The default width remains unchanged.
+  weight: "variable",
+  variable: "--font-ms-sans",
+  display: "swap",
+})
+
+const _plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-ms-mono",
+  display: "swap",
   preload: false,
 })
 
@@ -69,16 +84,7 @@ const localBusinessSchema = {
     postalCode: "37087",
     addressCountry: "US",
   },
-  areaServed: [
-    "Lebanon, Tennessee",
-    "Nashville, Tennessee",
-    "Franklin, Tennessee",
-    "Murfreesboro, Tennessee",
-    "Gallatin, Tennessee",
-    "Hendersonville, Tennessee",
-    "Clarksville, Tennessee",
-    "Antioch, Tennessee",
-  ],
+  areaServed: serviceAreas.map((area) => `${area}, Tennessee`),
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "Welding and fabrication services",
@@ -107,8 +113,8 @@ export default function RootLayout({
     // ThemeBoot sets only the saved theme attribute before hydration. This
     // one-level suppression covers that intentional root attribute difference;
     // mismatches inside the page still surface normally.
-    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
-      <body className={`${_barlowCondensed.variable} ${_marker.variable} font-sans antialiased`}>
+    <html lang="en" className={`${_barlowCondensed.variable} ${_marker.variable} ${_plexSans.variable} ${_plexMono.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className="font-sans antialiased">
         <script
           id="local-business-schema"
           type="application/ld+json"

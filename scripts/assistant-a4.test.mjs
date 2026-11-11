@@ -53,7 +53,7 @@ test("A4 ask mode executes exact customer turns in one test conversation without
     const user = conversation.filter((message) => message.role === 'user');
     input.onModelDiagnostics?.({ stop_reason: 'end_turn', content_block_types: ['text'], usage: { input_tokens: 17, output_tokens: 29 } });
     if (user.at(-1).content.includes('steel gate hinge broke')) {
-      if (user.length !== 2 || !conversation.some((message) => message.role === 'assistant' && message.content.includes('confirm that job'))) throw new Error('Ask lost prior conversation');
+      if (user.length !== 2 || !conversation.some((message) => message.role === 'assistant' && message.content.includes('closer look at that particular job'))) throw new Error('Ask lost prior conversation');
       return { reply: 'Steel gate hinges are a normal repair, and Lebanon is in our service area. Can you send a close photo of the hinge and post?', handoff_reason: null,
         fields: { name: null, callback_phone: null, need: 'gate hinge broke off the post', material_size: 'steel', location: 'Lebanon', timing: null, callback_window: null, is_job: 'yes' } };
     }
@@ -62,7 +62,7 @@ test("A4 ask mode executes exact customer turns in one test conversation without
   assert.equal(r.status, 0, r.output)
   const turns = r.output.split(/\r?\n/).filter((line) => line.startsWith('{"turn":')).map((line) => JSON.parse(line))
   assert.equal(turns.length, 2, r.output)
-  assert.match(turns[0].reply, /A person at the shop will confirm that job/)
+  assert.match(turns[0].reply, /The shop needs a closer look at that particular job/)
   assert.equal(turns[0].handoff_reason, "unknown")
   assert.match(turns[1].reply, /Steel gate hinges are a normal repair/)
   assert.equal(turns[1].handoff_reason, null)

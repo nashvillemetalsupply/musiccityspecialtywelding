@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-10",
+  "method": "Byte-for-byte copies of existing Next.js AVIF cache variants derived from the existing public source photos; no encoding, cropping, generation, or fetching.",
+  "assets": [
+    {
+      "source": "/images/optimized/welder-1600.webp",
+      "sourceSha256": "1c5cc09f0a61ca84eeac3cdcdd20e1e53f05cd860bd186b21a6b726facdb2311",
+      "width": 640,
+      "quality": 75,
+      "mimeType": "image/avif",
+      "publicPath": "/images/optimized/welder-1600-640-q75.avif",
+      "bytes": 18889,
+      "sha256": "67655ba9e7f94e1b626aca21fc5c4ba759b088ffad6f613b6179a07bca1177b3",
+      "cacheKey": "Phrizu1G6Bmco4TNiLgpJU2eHtao4IHIKUJCZyvTixw"
+    },
+    {
+      "source": "/images/optimized/welder-1600.webp",
+      "sourceSha256": "1c5cc09f0a61ca84eeac3cdcdd20e1e53f05cd860bd186b21a6b726facdb2311",
+      "width": 768,
+      "quality": 75,
+      "mimeType": "image/avif",
+      "publicPath": "/images/optimized/welder-1600-768-q75.avif",
+      "bytes": 24782,
+      "sha256": "b997a4df6b3d6edb8b041b4d1aa83d559863f1302c3db5c2b094a6193af052a2",
+      "cacheKey": "syowwTbf-0xgMfZ2ZazGWNN4-M_yP8ctQULCh1PNmXc"
+    },
+    {
+      "source": "/images/owner-work/IMG_3994.webp",
+      "sourceSha256": "fae64e0711b4ca76b285022051859fa10cdc4948ab15a4abdbd8178eb535ead8",
+      "width": 640,
+      "quality": 75,
+      "mimeType": "image/avif",
+      "publicPath": "/images/optimized/IMG_3994-640-q75.avif",
+      "bytes": 35275,
+      "sha256": "02dbc76c3d27d5dc370e097b736293c9e46bb6fa9299896b06d90ee542201721",
+      "cacheKey": "9KNuKyOSf3CNoF4gdimNn2jmgpZ8kVM5CHArE2EUdAk"
+    },
+    {
+      "source": "/images/owner-work/IMG_3994.webp",
+      "sourceSha256": "fae64e0711b4ca76b285022051859fa10cdc4948ab15a4abdbd8178eb535ead8",
+      "width": 768,
+      "quality": 75,
+      "mimeType": "image/avif",
+      "publicPath": "/images/optimized/IMG_3994-768-q75.avif",
+      "bytes": 47180,
+      "sha256": "4ee52c9c0b1f699590219c2ba2f767c6c78bed26b3b79818640642129afd4c57",
+      "cacheKey": "pQa-zGHHMCuDzc7YfGRRWHshmphl7LmLKnXycMS_oPQ"
+    }
+  ]
+}

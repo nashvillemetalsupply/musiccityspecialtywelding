@@ -13,7 +13,7 @@ const root = fileURLToPath(new URL("../..", import.meta.url))
 
 test("the home hero uses the 1600px source through Next image optimization", async () => {
   const page = readFileSync(join(root, "app", "page.tsx"), "utf8")
-  const heroImage = /<Image\s+src="\/images\/optimized\/welder-1600\.webp"[\s\S]*?\/>/.exec(page)?.[0]
+  const heroImage = /<CriticalImage\s+src="\/images\/optimized\/welder-1600\.webp"[\s\S]*?\/>/.exec(page)?.[0]
   assert.ok(heroImage, "home hero must point to the 1600px welder source")
   assert.match(heroImage, /\bsizes=/)
   assert.match(heroImage, /\bpriority\b/)

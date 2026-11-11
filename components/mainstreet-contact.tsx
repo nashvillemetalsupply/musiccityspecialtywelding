@@ -2,8 +2,8 @@
 
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
-import { ArrowUpRight, Camera, Phone, X } from "lucide-react"
-import { AskShopButton } from "@/components/shop-actions"
+import { ArrowUpRight, Camera, ChevronDown, X } from "lucide-react"
+import { ContactLead } from "@/components/contact-lead"
 import { captureAttribution } from "@/lib/attribution"
 import { ADS_CONVERSION_SEND_TO, GA_MEASUREMENT_ID, queueMeasurementEvent, reportMetaLead } from "@/lib/measurement"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
@@ -20,7 +20,7 @@ const maxPhotoCount = 5
 const maxPhotoSize = 3 * 1024 * 1024
 const maxTotalPhotoSize = 4 * 1024 * 1024
 
-type QuoteForm = {
+type QuoteFields = {
   firstName: string
   phone: string
   service: string
@@ -30,7 +30,7 @@ type QuoteForm = {
   textConsent: boolean
 }
 
-const emptyForm: QuoteForm = {
+const emptyForm: QuoteFields = {
   firstName: "",
   phone: "",
   service: "",
@@ -41,7 +41,14 @@ const emptyForm: QuoteForm = {
 }
 
 export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY, showActions = true }: { phoneHref?: string; phoneDisplay?: string; showActions?: boolean }) {
-  const [formData, setFormData] = useState<QuoteForm>(emptyForm)
+  return <section className="ms-contact" id="contact" aria-labelledby="contact-title">
+    <ContactLead phoneHref={phoneHref} phoneDisplay={phoneDisplay} showActions={showActions} />
+    <QuoteForm phoneHref={phoneHref} phoneDisplay={phoneDisplay} />
+  </section>
+}
+
+export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY }: { phoneHref?: string; phoneDisplay?: string }) {
+  const [formData, setFormData] = useState<QuoteFields>(emptyForm)
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -179,7 +186,7 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
       setFormData(emptyForm)
       intakeKeyRef.current = ""
       setStatus("success")
-      setMessage("Got it. We’ll review the job and call you back. If it cannot wait, call now.")
+      setMessage("Got it. We’ll review the job and call you back. If it can't wait, call now.")
     } catch (error) {
       setStatus("error")
       setMessage(error instanceof Error ? error.message : "The request did not go through. Call the shop instead.")
@@ -189,20 +196,6 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
   }
 
   return (
-    <section className="ms-contact" id="contact" aria-labelledby="contact-title">
-      <div className="ms-contact-lead">
-        <h2 className="ms-display" id="contact-title">Show us the job.</h2>
-        <p>Call the shop or send the details below. Photos help us see what needs welding.</p>
-        {showActions && <div className="ms-actions">
-          <a className="ms-contact-call ms-button ms-button-primary" href={phoneHref}>
-            <Phone aria-hidden="true" />
-            <span>Call the shop</span>
-          </a>
-          <AskShopButton />
-        </div>}
-        <p className="ms-contact-number">{phoneDisplay}</p>
-      </div>
-
       <form className="ms-quote-form" onSubmit={submit}>
         <div className="ms-form-heading">
           <span>Job details</span>
@@ -221,10 +214,13 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
 
         <div className="ms-field">
           <label htmlFor="quote-service">What kind of job? *</label>
-          <select id="quote-service" name="service" value={formData.service} onChange={updateField} required>
-            <option value="">Pick the closest fit</option>
-            {QUOTE_SERVICE_OPTIONS.map((service) => <option key={service}>{service}</option>)}
-          </select>
+          <div className="ms-select-wrap">
+            <select id="quote-service" name="service" value={formData.service} onChange={updateField} required>
+              <option value="">Pick the closest fit</option>
+              {QUOTE_SERVICE_OPTIONS.map((service) => <option key={service}>{service}</option>)}
+            </select>
+            <ChevronDown aria-hidden="true" />
+          </div>
         </div>
 
         <div className="ms-field ms-field-wide">
@@ -279,12 +275,11 @@ export function MainstreetContact({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneD
           <p className="ms-form-status is-warning" role="status">{warning}</p>
         )}
 
-        <button className="ms-submit ms-button ms-button-secondary" type="submit" disabled={isSubmitting}>
+        <button className="ms-submit ms-button ms-button-primary" type="submit" disabled={isSubmitting}>
           <span>{isSubmitting ? "Sending the job…" : "Send the job"}</span>
           <ArrowUpRight aria-hidden="true" />
         </button>
         <p className="ms-form-fallback">If the form fights you, call <a href={phoneHref}>{phoneDisplay}</a>.</p>
       </form>
-    </section>
   )
 }

@@ -5,6 +5,7 @@ import ts from "typescript"
 import nextConfigModule from "../next.config.ts"
 import { isQuoteHoneypotFilled, QUOTE_HONEYPOT_FIELD, quoteSubmissionOutcome } from "../lib/public-quote.ts"
 import { enforceShopPhoneFallbackPolicy } from "../lib/shop-contact-policy.ts"
+import { serviceAreas } from "../lib/service-areas.ts"
 
 const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8")
 const serviceAreasPage = readFileSync(new URL("../app/service-areas/page.tsx", import.meta.url), "utf8")
@@ -48,14 +49,19 @@ test("home sign keeps its visual text and names the service and city accessibly"
 })
 
 test("service-area city links own the full visual tile and keep their destination", () => {
-  assert.match(serviceAreasPage, /const areas = \["Lebanon", "Nashville", "Franklin", "Murfreesboro", "Gallatin", "Hendersonville", "Clarksville", "Antioch"\]/)
-  assert.match(serviceAreasPage, /areas\.map\(\(area\) => \(\s*<Link className="ms-display" href="\/services\/mobile-welding#service" key=\{area\}>\s*\{area\}\s*<\/Link>\s*\)\)/)
+  assert.deepEqual(serviceAreas, ["Lebanon", "Nashville", "Franklin", "Murfreesboro", "Gallatin", "Hendersonville", "Clarksville", "Antioch"])
+  const chips = readFileSync(new URL("../components/service-area-chips.tsx", import.meta.url), "utf8")
+  assert.match(chips, /serviceAreas\.map\(\(area\)/)
+  assert.match(chips, /<Link href="\/services\/mobile-welding#service" key=\{area\}>\{area\}<\/Link>/)
+  assert.match(serviceAreasPage, /<ServiceAreaChips \/>/)
+  assert.match(homePage, /<ServiceAreaChips \/>/)
   assert.match(servicePage, /<section className="ms-subhero" id="service">/)
 })
 
 test("service pages keep the local form and share the site-wide Call and Ask actions", () => {
-  assert.match(servicePage, /import \{ MainstreetContact \} from "@\/components\/mainstreet-contact"/)
-  assert.match(servicePage, /<MainstreetContact phoneHref=\{shopPhone\.href\} phoneDisplay=\{shopPhone\.display\} showActions=\{false\} \/>/)
+  assert.match(servicePage, /import \{ MainstreetContact \} from "@\/components\/mainstreet-contact-section"/)
+  assert.match(servicePage, /<MainstreetContact phoneHref=\{shopPhone\.href\} phoneDisplay=\{shopPhone\.display\} \/>/)
+  assert.doesNotMatch(servicePage, /className="ms-subclose"/)
   assert.match(servicePage, /import \{ ShopActions \} from "@\/components\/shop-actions"/)
   assert.match(servicePage, /<ShopActions phoneHref=\{shopPhone\.href\}/)
   const actions = readFileSync(new URL("../components/shop-actions.tsx", import.meta.url), "utf8")
@@ -66,15 +72,27 @@ test("service pages keep the local form and share the site-wide Call and Ask act
   assert.doesNotMatch(servicePage, /quoteHref=/)
 })
 
-test("home page uses the shared shell without changing its skip link or footer crest", () => {
+test("home page uses the shared shell and keeps its skip link and contact paths", () => {
   assert.match(homePage, /<Navbar home \/>/)
   assert.match(homePage, /<Footer home \/>/)
   assert.doesNotMatch(homePage, /<header className="ms-nav"|<footer className="ms-footer"/)
   assert.match(navbarComponent, /home && <PublicSkipLink label="Skip to the work" \/>/)
   assert.match(navbarComponent, /home \? "ms-nav" : "ms-site ms-nav"/)
   assert.match(navbarComponent, /href=\{home \? "#home" : "\/"\}/)
-  assert.match(footerComponent, /home && <ShopCrest className="wm-art wm-crest" style=\{\{ width: "7\.5rem", top: "2\.6rem", right: "6%", opacity: 0\.35 \}\} \/>/)
+  assert.doesNotMatch(footerComponent, /ShopCrest|className="wm-art/)
   assert.match(footerComponent, /mailto:Sales@musiccityspecialtywelding\.com">Sales@musiccityspecialtywelding\.com/)
+})
+
+test("home markup omits permanently hidden decoration while preserving visible seams, map and photos", () => {
+  const globalCss = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8")
+  const cohesion = readFileSync(new URL("../app/page-cohesion.css", import.meta.url), "utf8")
+  assert.match(globalCss, /\.wm-frame \.wm-gusset\s*\{\s*display:\s*none;\s*\}/)
+  assert.match(globalCss, /\.wm-stamp, \.wm-callout, \.wm-chain\s*\{\s*display:\s*none !important;\s*\}/)
+  assert.match(cohesion, /\.ms-site \.wm-art,[^{]*\{\s*display:\s*none;\s*\}/)
+  assert.doesNotMatch(homePage, /FrameGussets|\bGusset\b|\bPlateStamp\b|\bTorch\b/)
+  assert.equal((homePage.match(/<WeldSeam id="wm-bead-/g) ?? []).length, 9)
+  assert.match(homePage, /<TennesseeMap className="wm-tn" \/>/)
+  assert.equal((homePage.match(/<DeferredWorkImage\b/g) ?? []).length, 6)
 })
 
 test("service JSON-LD has FAQ and breadcrumb schema with absolute URLs", () => {
@@ -143,11 +161,11 @@ test("sitemap carries the source files' Git dates as lastmod values", () => {
   assert.ok(entries.length > 0)
   assert.ok(entries.every((entry) => entry.lastModified instanceof Date))
   assert.deepEqual(entries.map((entry) => entry.lastModified.toISOString().slice(0, 10)), [
-    "2026-09-27",
-    "2026-09-27",
+    "2026-11-10",
+    "2026-11-10",
     "2026-09-17",
-    "2026-08-29",
-    "2026-09-27",
+    "2026-08-11",
+    "2026-11-10",
   ])
 })
 

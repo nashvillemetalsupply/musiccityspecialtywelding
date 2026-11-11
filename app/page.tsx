@@ -1,21 +1,21 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Suspense } from "react"
 import { ArrowUpRight, MapPin } from "lucide-react"
 import {
-  Gusset,
-  PlateStamp,
   TennesseeMap,
-  Torch,
   WeldSeam,
 } from "@/components/weldment"
 import { Footer } from "@/components/footer"
-import { MainstreetContact } from "@/components/mainstreet-contact"
+import { CriticalImage } from "@/components/critical-image"
+import { DeferredWorkImage } from "@/components/deferred-work-image"
+import { MainstreetContact } from "@/components/mainstreet-contact-section"
 import { MobileQuickActions } from "@/components/mobile-quick-actions"
 import { Navbar } from "@/components/navbar"
 import { ShopActions } from "@/components/shop-actions"
+import { ServiceAreaChips } from "@/components/service-area-chips"
 import { createPublicMetadata, publicDefaultDescription, publicDefaultTitle } from "@/lib/public-metadata"
 import { getShopPhone } from "@/lib/shop-contact"
-import "./homepage-polish.css"
 
 export const metadata = createPublicMetadata({
   title: publicDefaultTitle,
@@ -30,8 +30,8 @@ const services = [
     line: "The metal stays put. We bring the rig.",
     detail: "On-site welding and repair for trucks, trailers, equipment, aluminum, structures, and working metal across Middle Tennessee. No towing required.",
     href: "/services/mobile-welding",
-    image: "/images/owner-work/IMG_20260225_135845.webp",
-    alt: "Installed steel balcony railing completed on-site by Music City Specialty Welding",
+    image: "/images/owner-work/IMG_3994.webp",
+    alt: "Music City Specialty Welding working on a commercial gas manifold on-site",
   },
   {
     title: "Trailer welding & repair",
@@ -49,7 +49,7 @@ const services = [
     detail: "Failed brackets, machinery frames, guards, supports, and attachments repaired around how the equipment moves, mounts, and works.",
     href: "/services/equipment-repair",
     image: "/images/optimized/Service 04.webp",
-    alt: "Welding repair on working industrial equipment",
+    alt: "Fabricated steel assemblies staged on a trailer at the shop",
   },
   {
     title: "Architectural metal",
@@ -128,17 +128,6 @@ const faqs = [
   },
 ]
 
-function FrameGussets() {
-  return (
-    <>
-      <Gusset className="wm-gusset tl" />
-      <Gusset className="wm-gusset tr" />
-      <Gusset className="wm-gusset br" />
-      <Gusset className="wm-gusset bl" />
-    </>
-  )
-}
-
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -188,7 +177,7 @@ export default function Page() {
             <figure className="ms-hero-image ms-hero-image-main wm-frame">
               <span className="sw-tape-tl" aria-hidden="true" />
               <span className="sw-tape-tr" aria-hidden="true" />
-              <Image
+              <CriticalImage
                 src="/images/optimized/welder-1600.webp"
                 alt="Music City Specialty Welding fabricating a steel frame in the shop"
                 fill
@@ -208,9 +197,8 @@ export default function Page() {
 
         <WeldSeam id="wm-bead-proof" />
 
+        <Suspense fallback={null}>
         <section className="ms-work" id="work" aria-labelledby="work-title">
-          <PlateStamp id="PLT-01" name="The work" className="is-ink" />
-          <Torch className="wm-art" style={{ width: "9rem", top: "4.5rem", right: "4%", color: "var(--mx-ink)", opacity: 0.14 }} />
           <div className="ms-section-intro ms-reveal">
             <h2 className="ms-display" id="work-title">Good welds don&apos;t need a sales pitch.</h2>
             <p>
@@ -219,28 +207,28 @@ export default function Page() {
           </div>
 
           <div className="ms-work-grid">
-            <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20260625_160502986_HDR.webp" alt="Mobile trailer undergoing repairs and custom modifications" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+            <figure className="ms-work-shot ms-work-shot-a ms-reveal wm-frame">
+              <DeferredWorkImage src="/images/owner-work/IMG_20260625_160502986_HDR.webp" alt="Mobile trailer undergoing repairs and custom modifications" sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Mobile trailer repairs and customizations.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/stainless-worktable.webp" alt="Finished custom stainless steel worktable and sink installed in a Middle Tennessee workspace" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+            <figure className="ms-work-shot ms-work-shot-b ms-reveal wm-frame">
+              <DeferredWorkImage src="/images/owner-work/stainless-worktable.webp" alt="Finished custom stainless steel worktable and sink installed in a Middle Tennessee workspace" sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Stainless worktable and sink, fitted to the room.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/steel-frame-onsite.webp" alt="Steel canopy frame being fitted and welded on-site" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+            <figure className="ms-work-shot ms-work-shot-c ms-reveal wm-frame">
+              <DeferredWorkImage src="/images/owner-work/steel-frame-onsite.webp" alt="Steel canopy frame being fitted and welded on-site" sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel frame, fitted and welded on-site.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/staircase-onsite.webp" alt="On-site aluminum staircase TIG welding repair" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+            <figure className="ms-work-shot ms-work-shot-d ms-reveal wm-frame">
+              <DeferredWorkImage src="/images/owner-work/staircase-onsite.webp" alt="On-site aluminum staircase TIG welding repair" sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>On-site aluminum TIG welding repair.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/IMG_20250527_141244.webp" alt="Large custom steel gate fitted at a Middle Tennessee job site" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+            <figure className="ms-work-shot ms-work-shot-e ms-reveal wm-frame">
+              <DeferredWorkImage src="/images/owner-work/IMG_20250527_141244.webp" alt="Large custom steel gate fitted at a Middle Tennessee job site" sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Steel gate, hung level where it sits.</strong></figcaption>
             </figure>
-            <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame"><FrameGussets />
-              <Image src="/images/owner-work/little-brick-church.webp" alt="Custom-made metal signage installed on a brick church" fill quality={60} sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
+            <figure className="ms-work-shot ms-work-shot-f ms-reveal wm-frame">
+              <DeferredWorkImage src="/images/owner-work/little-brick-church.webp" alt="Custom-made metal signage installed on a brick church" sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 1023px) 46vw, 31vw" />
               <figcaption><strong>Custom-made signage, built to fit.</strong></figcaption>
             </figure>
           </div>
@@ -265,10 +253,11 @@ export default function Page() {
           </div>
         </section>
 
+        </Suspense>
         <WeldSeam id="wm-bead-services" />
 
+        <Suspense fallback={null}>
         <section className="ms-services" id="services" aria-labelledby="services-title">
-          <PlateStamp id="PLT-02" name="What we weld" />
           <div className="ms-services-heading ms-reveal">
             <h2 className="ms-display" id="services-title">What needs welded?</h2>
             <p>Repairs and fabrication for homes, job sites, and working equipment.</p>
@@ -312,8 +301,10 @@ export default function Page() {
           </aside>
         </section>
 
+        </Suspense>
         <WeldSeam id="wm-bead-capabilities" />
 
+        <Suspense fallback={null}>
         <section className="ms-get-it" id="approach" aria-label="We understand the job">
           <div className="ms-get-it-pin">
             <div className="ms-problem-lines ms-display" aria-hidden="true">
@@ -326,10 +317,11 @@ export default function Page() {
           </div>
         </section>
 
+        </Suspense>
         <WeldSeam id="wm-bead-process" />
 
+        <Suspense fallback={null}>
         <section className="ms-process" id="process" aria-labelledby="process-title">
-          <PlateStamp id="PLT-03" name="The plan" />
           <div className="ms-process-lead ms-reveal">
             <h2 className="ms-display" id="process-title">Start with the job.</h2>
           </div>
@@ -341,8 +333,10 @@ export default function Page() {
           <ShopActions phoneHref={shopPhone.href} className="ms-section-actions" />
         </section>
 
+        </Suspense>
         <WeldSeam id="wm-bead-customer-page" />
 
+        <Suspense fallback={null}>
         <section className="ms-job-glass" id="job-glass" aria-labelledby="job-glass-title">
           <div className="ms-job-glass-copy ms-reveal">
             <span className="ms-job-glass-kicker">Customer page</span>
@@ -371,10 +365,11 @@ export default function Page() {
           </figure>
         </section>
 
+        </Suspense>
         <WeldSeam id="wm-bead-area" />
 
+        <Suspense fallback={null}>
         <section className="ms-territory" id="service-area" aria-labelledby="territory-title">
-          <PlateStamp id="PLT-04" name="Territory" className="is-ink" />
           <div className="ms-territory-map" aria-hidden="true">
             <TennesseeMap className="wm-tn" />
             <span className="wm-tn-star-label">★ Lebanon, the shop</span>
@@ -384,17 +379,16 @@ export default function Page() {
           <div className="ms-territory-copy ms-reveal">
             <h2 className="ms-display" id="territory-title">Lebanon shop. Middle Tennessee work.</h2>
             <p>We serve Greater Nashville and surrounding Middle Tennessee communities. Travel depends on the job. Call with the location and scope.</p>
-            <div className="ms-city-list" aria-label="Service areas">
-              <span>Nashville</span><span>Lebanon</span><span>Franklin</span><span>Murfreesboro</span><span>Gallatin</span><span>Hendersonville</span><span>Clarksville</span>
-            </div>
+            <ServiceAreaChips />
             <p className="ms-location"><MapPin aria-hidden="true" /> 533 W Baddour Pkwy, Lebanon, TN 37087</p>
           </div>
         </section>
 
+        </Suspense>
         <WeldSeam id="wm-bead-faq" />
 
+        <Suspense fallback={null}>
         <section className="ms-faq" id="faq" aria-labelledby="faq-title">
-          <PlateStamp id="PLT-05" name="Straight answers" />
           <div className="ms-faq-heading ms-reveal">
             <h2 className="ms-display" id="faq-title">Straight answers.</h2>
           </div>
@@ -408,9 +402,12 @@ export default function Page() {
           </div>
         </section>
 
+        </Suspense>
         <WeldSeam id="wm-bead-contact" />
 
+        <Suspense fallback={null}>
         <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />
+        </Suspense>
       </main>
 
       <WeldSeam id="wm-bead-footer" />

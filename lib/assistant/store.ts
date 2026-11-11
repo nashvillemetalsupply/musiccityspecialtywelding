@@ -79,7 +79,7 @@ export class PostgresAssistantStore implements AssistantStore {
       ORDER BY turn_index ASC LIMIT 30`) as Array<{ inbound: string; response: AssistantResponse | null }>
     return rows.flatMap((row): AssistantMessage[] => [
       { role: "user", content: row.inbound },
-      ...(row.response ? [{ role: "assistant" as const, content: row.response.reply }] : []),
+      ...(row.response ? [{ role: "assistant" as const, content: row.response.reply, fields: row.response.fields }] : []),
     ])
   }
 

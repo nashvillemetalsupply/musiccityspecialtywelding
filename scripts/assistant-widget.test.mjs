@@ -56,13 +56,13 @@ test("root layout only mounts the widget with the exact enabled flag", () => {
   for (const flag of [undefined, "0", "1"]) {
     let mounts = 0
     const layout = loadComponent("app/layout.tsx", { NEXT_PUBLIC_ASSISTANT_CHAT: flag }, {
-      "../styles/public-color-tokens.css": {},
-      "next/font/google": { Barlow_Condensed: () => ({ variable: "display" }), Permanent_Marker: () => ({ variable: "marker" }) },
+      "./public-site.css": {},
+      "next/font/google": { Barlow_Condensed: () => ({ variable: "display" }), Permanent_Marker: () => ({ variable: "marker" }), IBM_Plex_Sans: () => ({ variable: "sans" }), IBM_Plex_Mono: () => ({ variable: "mono" }) },
       "@/components/public-analytics": { PublicAnalytics: () => null },
-      "@/components/assistant-chat": { AssistantChat: () => { mounts++; return React.createElement("aside", null, "Chat door") } },
+      "@/components/assistant-chat-loader": { AssistantChatLoader: () => { mounts++; return React.createElement("aside", null, "Chat door") } },
       "@/lib/public-metadata": { publicDefaultTitle: "Welding", publicDefaultDescription: "Shop" },
       "@/lib/shop-contact": { getShopPhone: () => ({ e164: "+16157033296", href: props.phoneHref, display: props.phoneDisplay }) },
-      "./globals.css": {}, "./page-cohesion.css": {}, "../styles/reduced-motion.css": {},
+      "@/lib/service-areas": nativeRequire("../lib/service-areas.ts"),
     }).default
     renderToStaticMarkup(React.createElement(layout, null, "Page"))
     assert.equal(mounts, flag === "1" ? 1 : 0)
