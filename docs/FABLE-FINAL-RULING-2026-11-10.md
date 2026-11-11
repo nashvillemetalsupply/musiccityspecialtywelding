@@ -1298,3 +1298,70 @@ Local evidence: `.tmp/fable-r6-handoff-red.log`,
 `.tmp/fable-r6-version.log`. Full checks used `.tmp/start-safe-r6.ps1` and its
 literal-environment wrapper; tests ran the package's Node 22
 `--experimental-strip-types --test "scripts/**/*.test.mjs"` command.
+
+## Fable round 6
+
+**VERDICT R6: PASS**
+
+Merge `fix/fable-r4-followups` to main and deploy. Both round 5 fixes are in
+as written, and nothing in `1a97ab6..709b946` changes production behaviour:
+every new runtime condition needs `VERCEL_ENV` set and not `production`, so
+with `production` or unset the code runs exactly as it did at `1a97ab6`.
+`main` is still `24ff9c3`; the branch is three commits ahead and none behind.
+
+Method: read `git diff 1a97ab6..709b946` and "Codex round 6", plus the code
+around it (`lib/events.ts`, `mcsw_is_test_row` in `scripts/migrate.mjs`,
+`lib/assistant/service.ts`, `voice.ts`, `voice-store.ts`, `lib/ai.ts`, the two
+callers of `recoverAssistantHandoffs`). Ran
+`scripts/assistant-handoff.test.mjs`, `assistant-audit-run.test.mjs`,
+`assistant-email.test.mjs`, `assistant-followup.test.mjs` and
+`assistant-api.test.mjs` under Node 22: 100 pass, 0 fail. The build, lint and
+the 1,584-test full suite are Codex's results, not rerun here. No request to
+any deployment, no `.env*` read, no code edited, nothing committed or pushed.
+
+### R5-1: PASS
+
+- `validateAssistantInput` in `lib/assistant/input.ts` now sets `is_test`
+  when `VERCEL_ENV` is set and is not `production`. It is the only door for
+  chat turns (`app/api/assist/route.ts`), so every preview chat turn is test
+  from the first write.
+- `deliverAssistantHandoff` is unchanged, as required. The two sender guards
+  from `1a97ab6` are still there.
+- The optional guard was taken: `recoverAssistantHandoffs` returns zeros on a
+  non-production `VERCEL_ENV` before any feature check or database access. It
+  skips; it does not classify. A preview board load can no longer drain
+  production's outbox or relabel a real session.
+- The test proves the claim. It runs the real input reader and the real
+  handoff code under `preview`, finds one request row with none non-test,
+  then runs recovery under `production` and gets nothing selected and nothing
+  sent. The fixture marks an event test from `detail.isTest`, which matches
+  the database: `recordEvent` computes `is_test` through `mcsw_is_test_row`,
+  and that helper reads `p_detail->>'isTest'`. A second test shows preview
+  recovery touches nothing and production then recovers the same row.
+
+Two limits, neither blocking:
+
+- Voice does not pass through `validateAssistantInput`; its test flag comes
+  from the call row. A real phone call routed to a preview host would still
+  write a non-test handoff that production's sweep delivers. That needs
+  Twilio pointed at a preview, which is not how the number is set up.
+- Every chat turn on a preview is now test. Hand QA on a preview still gets
+  real model answers (the flag only labels usage), but never sees a live
+  alert, email or SMS. Delivery can only be exercised in production.
+
+### R5-2: PASS
+
+`auditOrigin` refuses `musiccityspecialtywelding.com` and any hostname ending
+in `.musiccityspecialtywelding.com`, before any request. `URL.hostname` is
+already lower-cased, so case cannot slip past. The origin test covers the
+apex, `www` and a subdomain. The limit from round 5 stands: a `*.vercel.app`
+alias of production is not recognised.
+
+### Eval conditions, updated
+
+Round 5 set two operator conditions for the live eval on a preview. Condition
+2 (no unmarked hand-typed turn) is lifted by R5-1. Condition 1 shrinks to one
+case: do not pass a `*.vercel.app` URL that is the production deployment.
+
+No code was edited, nothing was committed or pushed, and this section is left
+uncommitted.
