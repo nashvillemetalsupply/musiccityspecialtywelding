@@ -1389,3 +1389,64 @@ Source: owner 2026-11-11. Facts needed items 1-9 are answered:
 10. **Still open:** cast iron and other uncertain metal capabilities. Keep the current graceful handoff; do not claim the shop takes or refuses a specific metal.
 11. **Still open:** on-site rig / weld-in-progress, equipment repair and finished trailer repair photos.
 12. **Still open:** named projects, years in business, reviews and crew proof.
+## Owner photos 2026-11-11
+
+Reviewed all 297 owner-supplied still images, including all 41 HEIC/HEIF files
+decoded with pillow-heif. Two MOV files and one DXF were skipped. The table
+records source basenames only; new public files are under
+`public/images/owner-work/`.
+
+| Slot | Previous file | Chosen source basename | New file | Reason |
+| --- | --- | --- | --- | --- |
+| Custom metal products hero | `a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.webp` | `IMG_20260718_200501797.jpg` | `black-metal-mailbox.webp` | An installed black metal mailbox directly matches the service. The lower crop excludes interior paperwork. The previous hero was already the interim cut-letter shop photo, rather than `mailbox.webp`. |
+| Equipment repair hero and home row | `optimized/Service 04.webp` | `IMG_20250610_164718.jpg` | `welded-aluminum-housing.webp` | Visible welds on an aluminum equipment component are a closer match than fabricated assemblies stacked on a trailer. Alt text describes the housing and workbench without asserting an exact component type or repair outcome. |
+| Trailer repair hero and home row | `trailer-repair.webp` | `IMG_20260205_204518.heic` | `trailer-tongue-and-coupler.webp` | The assembled trailer tongue, coupler, jack and safety chains show a finished assembly instead of the bare deck/frame from above. |
+| Gate repair hero | `IMG_20250527_141244.webp` | `IMG_20250531_145347.jpg` | `finished-steel-gate.webp` | A clearer view of the finished double gate removes the welding leads and worksite clutter. |
+| Architectural welding hero and home row | `optimized/Service 02.webp` | `IMG_20260919_152543.heic` | `porch-ring-railing.webp` | A sharp installed railing with circular details replaces the deck view containing straps and tools. |
+
+Mobile-welding hero and home row retain `IMG_3994.webp`: no clearly better
+permitted on-site photo was found. The strongest welding-in-progress
+alternative has an unsafe-looking ladder stance. The custom-fabrication
+hero (`stainless-worktable.webp`) and home specialty-fabrication manifold
+remain: their existing views are clearer than the alternatives reviewed.
+Home custom metalwork retains `optimized/planter picture.webp`: a 700px
+mailbox variant still exceeded the row's 28,100-byte budget at quality 60,
+so this optional swap was withdrawn. Every service hero and home row was
+considered.
+
+**R2-15 DONE:** a matching owner mailbox photo replaces the interim cut-letter
+hero, and the catalog cutout remains unused. **Defect 16 PARTIAL** and
+**Facts needed item 11 PARTIAL:** the equipment and finished-trailer photo
+gaps are addressed; a stronger permitted dedicated rig or on-site
+welding-in-progress photo remains an owner asset gap.
+
+Rejected identifiable faces, readable plates, house numbers and street/address
+details because they identify people or customer locations. Customer names,
+screens and paperwork expose client information. Unsafe-looking setups should
+not represent shop practice. Promotional/generated graphics and tiny icons
+are not authentic job photography. Blurred, poorly lit and duplicate views
+do not clearly show the work or improve the current image. No rejected
+personal details are reproduced here. New images use 4:3 crops, rotation where needed,
+and WebP encoding within each replaced image's byte budget. Metadata is
+stripped, with source and output SHA-256 provenance recorded in
+`owner-photo-provenance-2026-11-11.json`; alt text describes visible content.
+Old images are retained, and the owner-rejected axle remains unused. Source
+files and review artifacts stay in gitignored `.tmp/`.
+
+Validation under Node 22.23.2: `npm ci` PASS;
+`node --experimental-strip-types --test scripts/*.test.mjs` PASS
+(1,584 total, 1,581 passed, zero failed, three skipped); recursive `npm test`
+PASS (1,594 total, 1,591 passed, zero failed, three skipped). The skips are
+the opt-in AI eval and two `DATABASE_URL` persistence tests. `npm run lint`
+and `npm run build` PASS, including TypeScript, static generation and bundle
+budgets: home 537,465/648,316 bytes; board 632,210/817,538 bytes. The new
+regression verifies recorded provenance, output hashes, stripped metadata,
+4:3 crops and fixed byte ceilings. Independent review also matched
+original-file hashes and found no defects. Mobile `IMG_3994.webp` and its
+critical AVIF variants are unchanged; `git diff --check` PASS.
+
+Verification used a clean literal/essential environment and a task-local
+preloaded wrapper rejecting `.env*` file access and external network access.
+No environment file was read and nothing was pushed. Logs:
+`.tmp/photo-review/suite.log`, `test.log`, `lint.log` and `build.log`.
+Lighthouse was not rerun.

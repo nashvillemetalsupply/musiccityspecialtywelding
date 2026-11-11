@@ -107,8 +107,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Repair the failure, not just the crack",
     intro:
       "Frames, tongues, crossmembers, ramps, and attachment points take the load. We check the damage and nearby structure before deciding what can be repaired and whether the work belongs on-site or in the shop.",
-    image: "/images/owner-work/trailer-repair.webp",
-    imageAlt: "Trailer frame with new steel crossmembers welded in by Music City Specialty Welding",
+    image: "/images/owner-work/trailer-tongue-and-coupler.webp",
+    imageAlt: "Black trailer tongue with a coupler, jack and safety chains",
     commonJobs: [
       "Cracked trailer frames, crossmembers, and support steel",
       "Ramps, fenders, brackets, hangers, and attachment points",
@@ -154,8 +154,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Fix the gate, not just the weld",
     intro:
       "We repair the metal on swing, slide, and farm gates. That includes frames, hinges, latches, posts, and brackets. We look at why it failed before we weld it.",
-    image: "/images/owner-work/IMG_20250527_141244.webp",
-    imageAlt: "Large custom steel gate fitted at a Middle Tennessee job site",
+    image: "/images/owner-work/finished-steel-gate.webp",
+    imageAlt: "Black steel double gate in front of a wood fence",
     commonJobs: [
       "Cracked or sagging gate frames and corners",
       "Broken hinges, hinge pins, latches, and strike plates",
@@ -201,8 +201,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Equipment down? Start here",
     intro:
       "We repair machinery frames, brackets, guards, supports, and attachments. How the part carries load and moves matters. We check the cause of the failure before we plan the weld.",
-    image: "/images/optimized/Service 04.webp",
-    imageAlt: "Fabricated steel assemblies staged on a trailer at the shop",
+    image: "/images/owner-work/welded-aluminum-housing.webp",
+    imageAlt: "Welded aluminum housing on a perforated shop workbench",
     commonJobs: [
       "Cracked or failed welded components",
       "Frames, brackets, guards, supports, and attachments",
@@ -247,8 +247,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Built to fit the space",
     intro:
       "Railings, stairs, and architectural steel need clean welds and a precise fit. We review the drawings, dimensions, finish, and attachment points before fabrication begins.",
-    image: "/images/optimized/Service 02.webp",
-    imageAlt: "Architectural welded steel staircase and railing",
+    image: "/images/owner-work/porch-ring-railing.webp",
+    imageAlt: "Black porch railing with circular details above a brick wall",
     commonJobs: [
       "Steel railings, guardrails, and stair components",
       "Frames, supports, brackets, and architectural details",
@@ -340,8 +340,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Made for the property",
     intro:
       "We fabricate custom steel mailboxes, mailbox supports, cluster units, brackets, and planter boxes to fit the dimensions and look of a residential or commercial property.",
-    image: "/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.webp",
-    imageAlt: "Custom metal letters with mounting studs on the shop fabrication table",
+    image: "/images/owner-work/black-metal-mailbox.webp",
+    imageAlt: "Black metal mailbox on a square post beside a concrete walkway",
     commonJobs: [
       "Individual residential mailbox structures",
       "Mailbox clusters for multi-unit or commercial properties",

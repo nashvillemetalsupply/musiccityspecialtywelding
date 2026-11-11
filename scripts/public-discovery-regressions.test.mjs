@@ -85,12 +85,22 @@ test("high-intent trailer repair has a proven landing page and every service sho
   const page = read("app/services/[slug]/page.tsx")
   const home = read("app/page.tsx")
   assert.match(services, /slug: "trailer-welding-repair"/)
-  assert.match(services, /trailer-repair\.webp/)
+  assert.match(services, /trailer-tongue-and-coupler\.webp/)
   // Owner 2026-10-27: the axle photo shows nothing; never use it again.
   assert.doesNotMatch(services, /IMG_20250809_180018/)
+  assert.doesNotMatch(home, /IMG_20250809_180018/)
   assert.match(home, /href: "\/services\/trailer-welding-repair"/)
   assert.match(services, /"@type": "BreadcrumbList"/)
   assert.match(services, /https:\/\/musiccityspecialtywelding\.com\/#services/)
   assert.match(page, /structuredData\.breadcrumbList/)
   assert.match(page, /aria-label="Breadcrumb"/)
+})
+
+test("custom metal products uses the owner's mailbox photo instead of the catalog cutout", () => {
+  const services = read("lib/service-pages.ts")
+  const product = services.match(/slug: "custom-metal-products"([\s\S]*?)commonJobs:/)?.[1]
+  assert.ok(product, "the custom-metal-products service must exist")
+  assert.doesNotMatch(product, /\/images\/mailbox\.webp/)
+  assert.match(product, /image: "\/images\/owner-work\/black-metal-mailbox\.webp"/)
+  assert.match(product, /imageAlt: "Black metal mailbox on a square post beside a concrete walkway"/)
 })

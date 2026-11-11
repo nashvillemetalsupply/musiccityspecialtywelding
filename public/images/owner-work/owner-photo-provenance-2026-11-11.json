@@ -1,0 +1,187 @@
+{
+  "date": "2026-11-11",
+  "method": "Owner-supplied original files; EXIF orientation applied before recorded crop/rotation, resized with LANCZOS, encoded as WebP from fresh RGB pixel buffers. Source filenames are basenames only. Source and output hashes are SHA-256. No generation or fetching.",
+  "coordinateSystem": "Crop coordinates are [left, top, right, bottom] in EXIF-oriented source pixels, after any recorded rotation.",
+  "assets": [
+    {
+      "source": "IMG_20260718_200501797.jpg",
+      "sourceSha256": "192a42376a40c38d9e3c5fe8783ed8d917771ef71c4d5ad72a8a80c722f670a8",
+      "sourceWidth": 3072,
+      "sourceHeight": 4096,
+      "publicPath": "/images/owner-work/black-metal-mailbox.webp",
+      "width": 1500,
+      "height": 1125,
+      "crop": [
+        512,
+        1382,
+        2560,
+        2918
+      ],
+      "rotationCounterclockwiseDegrees": 0,
+      "quality": 82,
+      "mimeType": "image/webp",
+      "encoding": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "format": "WebP",
+        "method": 6,
+        "resampling": "LANCZOS"
+      },
+      "previousBytes": 288022,
+      "bytes": 264570,
+      "sha256": "88278597270250871c62979cea4dcc9217c81eb028092d8b790f8d1be59f44a2",
+      "alt": "Black metal mailbox on a square post beside a concrete walkway",
+      "metadataCheck": {
+        "exif": false,
+        "gps": false,
+        "icc": false,
+        "xmp": false,
+        "riffChunks": [
+          "VP8 "
+        ]
+      }
+    },
+    {
+      "source": "IMG_20250610_164718.jpg",
+      "sourceSha256": "21635b974790f6b3ac9a6cf637a42213aa34e007f252f6b3cd14952ec9fd5240",
+      "sourceWidth": 3072,
+      "sourceHeight": 4096,
+      "publicPath": "/images/owner-work/welded-aluminum-housing.webp",
+      "width": 700,
+      "height": 525,
+      "crop": [
+        0,
+        1536,
+        3072,
+        3840
+      ],
+      "rotationCounterclockwiseDegrees": 0,
+      "quality": 82,
+      "mimeType": "image/webp",
+      "encoding": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "format": "WebP",
+        "method": 6,
+        "resampling": "LANCZOS"
+      },
+      "previousBytes": 105196,
+      "bytes": 40218,
+      "sha256": "ce0d7b9794892fb81a358af904ec2aaa19b5626bddd5e9855e1f9f168a1c2095",
+      "alt": "Welded aluminum housing on a perforated shop workbench",
+      "metadataCheck": {
+        "exif": false,
+        "gps": false,
+        "icc": false,
+        "xmp": false,
+        "riffChunks": [
+          "VP8 "
+        ]
+      }
+    },
+    {
+      "source": "IMG_20260205_204518.heic",
+      "sourceSha256": "786ee9f9bad5dafd00a90f4906a30124e4a99e4d559bef8b89d0d8d37519f35e",
+      "sourceWidth": 3024,
+      "sourceHeight": 4032,
+      "publicPath": "/images/owner-work/trailer-tongue-and-coupler.webp",
+      "width": 1440,
+      "height": 1080,
+      "crop": null,
+      "rotationCounterclockwiseDegrees": 90,
+      "quality": 82,
+      "mimeType": "image/webp",
+      "encoding": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "format": "WebP",
+        "method": 6,
+        "resampling": "LANCZOS"
+      },
+      "previousBytes": 643214,
+      "bytes": 471234,
+      "sha256": "1bb802c31f346278b2e73e7fa9f7ccb1eaf7917ee0887adc908fe6bd581af793",
+      "alt": "Black trailer tongue with a coupler, jack and safety chains",
+      "metadataCheck": {
+        "exif": false,
+        "gps": false,
+        "icc": false,
+        "xmp": false,
+        "riffChunks": [
+          "VP8 "
+        ]
+      }
+    },
+    {
+      "source": "IMG_20250531_145347.jpg",
+      "sourceSha256": "193ffaf74d5fd950dc16bda0e19b54317301130ee72947a6f6a12e8d7925769b",
+      "sourceWidth": 4096,
+      "sourceHeight": 3072,
+      "publicPath": "/images/owner-work/finished-steel-gate.webp",
+      "width": 2000,
+      "height": 1500,
+      "crop": null,
+      "rotationCounterclockwiseDegrees": 0,
+      "quality": 82,
+      "mimeType": "image/webp",
+      "encoding": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "format": "WebP",
+        "method": 6,
+        "resampling": "LANCZOS"
+      },
+      "previousBytes": 302358,
+      "bytes": 168708,
+      "sha256": "9aa9eb3523d7d1cc3ca16e3b905419844fd5181f9384815cbd2a2649c2d7b2f0",
+      "alt": "Black steel double gate in front of a wood fence",
+      "metadataCheck": {
+        "exif": false,
+        "gps": false,
+        "icc": false,
+        "xmp": false,
+        "riffChunks": [
+          "VP8 "
+        ]
+      }
+    },
+    {
+      "source": "IMG_20260919_152543.heic",
+      "sourceSha256": "e8f84bec312c9f4aa272bf537811af0a4da714b31b1f7c1c8122ae87bf1a9cb2",
+      "sourceWidth": 5712,
+      "sourceHeight": 4284,
+      "publicPath": "/images/owner-work/porch-ring-railing.webp",
+      "width": 700,
+      "height": 525,
+      "crop": [
+        400,
+        300,
+        5200,
+        3900
+      ],
+      "rotationCounterclockwiseDegrees": 0,
+      "quality": 82,
+      "mimeType": "image/webp",
+      "encoding": {
+        "tool": "Pillow",
+        "version": "12.3.0",
+        "format": "WebP",
+        "method": 6,
+        "resampling": "LANCZOS"
+      },
+      "previousBytes": 108252,
+      "bytes": 61148,
+      "sha256": "105e3c6c09dba8851f6c8d659ebf301ca421f1a20f0fe00352a25d201d671f2a",
+      "alt": "Black porch railing with circular details above a brick wall",
+      "metadataCheck": {
+        "exif": false,
+        "gps": false,
+        "icc": false,
+        "xmp": false,
+        "riffChunks": [
+          "VP8 "
+        ]
+      }
+    }
+  ]
+}

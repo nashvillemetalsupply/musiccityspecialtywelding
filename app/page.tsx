@@ -39,8 +39,8 @@ const services = [
     line: "Frames, ramps, and the steel carrying the load.",
     detail: "Frames, crossmembers, ramps, fenders, brackets, and attachment points evaluated around the load they still have to carry.",
     href: "/services/trailer-welding-repair",
-    image: "/images/owner-work/trailer-repair.webp",
-    alt: "Trailer undergoing structural welding repair",
+    image: "/images/owner-work/trailer-tongue-and-coupler.webp",
+    alt: "Black trailer tongue with a coupler, jack and safety chains",
   },
   {
     title: "Equipment repair",
@@ -48,8 +48,8 @@ const services = [
     line: "Get the working metal back in shape.",
     detail: "Failed brackets, machinery frames, guards, supports, and attachments repaired around how the equipment moves, mounts, and works.",
     href: "/services/equipment-repair",
-    image: "/images/optimized/Service 04.webp",
-    alt: "Fabricated steel assemblies staged on a trailer at the shop",
+    image: "/images/owner-work/welded-aluminum-housing.webp",
+    alt: "Welded aluminum housing on a perforated shop workbench",
   },
   {
     title: "Architectural metal",
@@ -57,8 +57,8 @@ const services = [
     line: "Railings and stairs fitted to the space.",
     detail: "Railings, stairs, supports, and architectural steel with clean welds and a precise fit in the real space.",
     href: "/services/architectural-welding",
-    image: "/images/optimized/Service 02.webp",
-    alt: "Finished black steel railing on a Tennessee property",
+    image: "/images/owner-work/porch-ring-railing.webp",
+    alt: "Black porch railing with circular details above a brick wall",
   },
   {
     title: "Specialty fabrication",
