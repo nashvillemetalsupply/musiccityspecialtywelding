@@ -1365,3 +1365,10 @@ case: do not pass a `*.vercel.app` URL that is the production deployment.
 
 No code was edited, nothing was committed or pushed, and this section is left
 uncommitted.
+
+## Round 7 (2026-11-11): post-deploy items
+
+- Production render check (Codex, Playwright, read-only, no sends): 11 routes x 390/1440, all HTTP 200, 0px overflow, 0 broken images, 0 console errors; menu and chat checks pass. Two nits (home h1 computed font, menu aria-label while open) fixed on fix/perf93.
+- Fable R7 ruling on fix/perf93: merge PASS, no required fix; optional hydration sync applied (7a08ecb). Main 7a08ecb pushed and live (`<summary aria-label="Open navigation" aria-expanded="false">` read back on production).
+- Perf: local 3-run medians 92/93 with an unchanged-source control also 92/93 (score tracks machine benchmark index). Post-deploy read on production, Lighthouse 13.6 mobile simulate, 3 runs: /services/mobile-welding 93, 96, 97 (median 96); / 88, 93, 97 (median 93). Raw: docs/lighthouse-prod-2026-11-11.json. PageSpeed Insights API was over its daily quota, so this is a lab read of the live site, not CrUX field data. Perf item closed.
+- Still open: R2-1 live chat eval (owner yes needed; Mirror docket row 2026-11-12).
