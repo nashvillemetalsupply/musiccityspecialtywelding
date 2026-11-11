@@ -1088,3 +1088,160 @@ interval. This command was not executed:
 ```powershell
 & 'C:/Users/Owner/AppData/Local/hermes/node/node.exe' --experimental-strip-types scripts/assistant-audit-run.mjs --prod --base-url 'https://YOUR-PREVIEW-HOST' --test-suppression-confirmed --audit-file docs/assistant-audit-fable-r4-dry.json --paraphrases-file scripts/fixtures/assistant-audit-paraphrases.json --output docs/assistant-audit-live-r3.json
 ```
+
+## Fable round 5
+
+**VERDICT R5: FAIL**
+
+Two defects, both small and both exact. F-1, the paraphrases and the runner's
+markers and pacing pass. Nothing here touches what is deployed at `24ff9c3`.
+
+Method: short diff review of `24ff9c3..1a97ab6` on `fix/fable-r4-followups`,
+plus a read of the delivery code the diff sits in (`lib/assistant/handoff.ts`,
+`followup.ts`, `service.ts`, `input.ts`, `lib/notify.ts`, `lib/leads.ts`,
+`lib/job-intake.ts`, `lib/recovery-sweep.ts`, `app/api/assist/route.ts`). Ran
+`scripts/assistant-audit-run.test.mjs`, `assistant-email.test.mjs` and
+`assistant-followup.test.mjs` under Node 22.23.2: 44 pass, 0 fail. No
+screenshot sweep, no request to any deployment, no `.env*` read, no code
+edited, nothing committed or pushed.
+
+### 1. F-1 CSS: PASS
+
+`app/page-cohesion.css` gains exactly the rule from round 4, character for
+character, scoped to 980 to 1279 px and to `.ms-site.ms-legal > div`. It can
+only affect `/privacy` and `/terms`. I did not re-render it; Codex's 1,968
+sample sweep is its evidence, not mine.
+
+### 2. Preview suppression: FAIL (R5-1)
+
+What holds. On `VERCEL_ENV` of `preview` or `development`,
+`emailAssistantTranscript` returns `"suppressed"` before any send claim, and
+`followUpAssistantLead` returns before the SMS intent and the upload link.
+Production is untouched: the guard needs a truthy value that is not
+`production`. The tests cover preview, development, production, unset and
+empty.
+
+**R5-1. The transcript email is deferred to production, not suppressed.** A
+preview shares the production database. An unmarked preview turn that reaches
+a handoff writes an `assistant.handoff-request` event with `is_test = false`,
+then skips the email, so no `email.out` row exists. `recoverAssistantHandoffs`
+selects every non-test request where
+`NOT EXISTS (... sent.kind = 'email.out' ...)`. The production recovery sweep
+(`/api/ops/reminders` cron, every Twilio SMS and voice-status webhook, the
+owner board load) then picks the row up with `VERCEL_ENV=production` and
+sends the transcript to Sales@. The new email test asserts `events.size === 0`
+after a suppressed send, which is exactly the state the sweep reads as "not
+yet sent". Traced in code, not reproduced against a database.
+
+Exact fix: classify the turn as test at the door instead of only gagging two
+senders.
+
+- `lib/assistant/input.ts`, the `is_test` line in `readAssistantInput`:
+  also true when `process.env.VERCEL_ENV` is set and is not `production`.
+- Do not put the same condition inside `deliverAssistantHandoff`. Its test
+  branch runs `UPDATE assistant_sessions SET is_test = true`, and a sweep
+  started on a preview works production's rows, so it would relabel real
+  customer sessions as test.
+- Keep the two guards from this commit as the belt.
+- One test: an unmarked handoff turn under `VERCEL_ENV=preview` leaves no
+  `assistant.handoff-request` row with `is_test = false`, and
+  `recoverAssistantHandoffs` run under `VERCEL_ENV=production` selects nothing
+  for that session.
+
+This also closes the two paths below that the commit leaves open.
+
+Two premises here are assumed, not read: that the preview shares the
+production database (round 3's ruling), and that production has
+`NEXT_PUBLIC_ASSISTANT_CHAT=1`, without which its sweep skips assistant
+recovery. Both live in environment settings I did not open.
+
+Related, not blocking, and older than this commit: an owner loading `/board`
+on a preview starts `runRecoverySweep` there, and that sweep delivers
+production's pending handoffs under preview rules. The alerts are filed as
+test under the real dedupe keys, so production's later attempt is a
+duplicate and the owner SMS never goes. One line closes it:
+`recoverAssistantHandoffs` returns `{ recovered: 0, idle: 0, failed: 0 }`
+when `VERCEL_ENV` is set and is not `production`. It can ride with R5-1.
+
+Delivery paths on a preview, unmarked turn, at `1a97ab6`:
+
+| Path | State |
+| --- | --- |
+| Transcript email (Resend) | Skipped in the preview process; sent later by the production sweep (R5-1) |
+| Follow-up photo SMS | Suppressed. No message intent is written, so nothing recovers it |
+| Owner cell SMS and operator alerts (`notify`, `notifyAll`, `notifyOwnerCellSms`) | Already suppressed before this commit: `notify()` files the row as `[INTERNAL TEST]` whenever `VERCEL_ENV !== "production"`. Exception: with `MCSW_TEST_SMS_FAIL=1` the owner-SMS row goes `pending` and `sendSms` throws a simulated failure; production's `retryPendingInterrupts` then files it as test (`action_detail.isTest`), so no real SMS |
+| Database writes | Unguarded. A non-test session, turns, events, and (when the customer gives a phone or email) a real non-test lead and person land in the production database and show on the ops board |
+
+**`VERCEL_ENV` unset.** Accepted as written, with one correction to Codex's
+note. The new guards treat unset as production and send; `notify()` treats
+unset as preview and suppresses. They do not match. Unset sent before this
+commit too, so nothing regressed, and treating unset as production keeps the
+existing delivery tests honest. A plain `next dev` with real keys and the
+production database can still email Sales@ and text a customer on an unmarked
+turn. Not blocking; the R5-1 fix does not change it.
+
+### 3. Runner: FAIL on one limb (R5-2)
+
+- `--base-url` required, origin only, no credentials, path, query or
+  fragment: PASS. Checked before any network call.
+- `is_test: true` and the `[INTERNAL TEST] ` prefix on all 118 turns, fresh
+  session each, `turn_index` 0, `redirect: "error"`: PASS.
+- Pacing: PASS. At least 12 s between request starts on a monotonic clock,
+  so at most 51 starts in any 10 minutes against the server's 60 per IP. No
+  flag shortens it. A 429, a 5xx or a transport error stops the run with no
+  retry.
+- Output opens exclusively and the report cannot infer PASS: PASS.
+
+**R5-2. The runner does not refuse the production host.** `auditOrigin`
+checks the shape of the URL and nothing else. The flag is still named
+`--prod` and the command in Codex round 5 carries a placeholder host.
+
+Exact fix, in `auditOrigin` in `scripts/assistant-audit-live.mjs`: throw when
+`target.hostname` is `musiccityspecialtywelding.com` or ends with
+`.musiccityspecialtywelding.com`. Add one case to the existing origin test.
+Stated limit: a hostname check cannot recognise a `*.vercel.app` alias that
+points at production, so the operator still reads the URL before running.
+
+### 4. Paraphrases: PASS
+
+36 questions, three for each of the twelve named rows. They read like
+customers: a parked trailer behind a barn, no paperclip in the chat, a gate
+still on its posts. None repeats its canonical wording, all 118 questions are
+distinct, and the test runs every paraphrase through the real
+`findAssistantAnswer` with the marker prefix and gets no bank match. So each
+one reaches the model.
+
+### Is the live eval on a Vercel preview of this branch safe?
+
+**Yes, at `1a97ab6`, for the runner's own traffic.** It does not wait on
+either fix. This supersedes the ordering in round 4, post-deploy item 1,
+which put suppression (item 3) ahead of the eval. Item 3 protects unmarked
+turns; the runner sends none, and the guards that protect marked turns were
+in place at `24ff9c3`. Why:
+
+- Every turn carries both markers. `input.ts` sets `is_test`, the session is
+  sticky test, `deliverAssistantHandoff` returns before all senders,
+  `followUpAssistantLead` returns on test, and the recovery sweep filters
+  `e.is_test = false`. R5-1 is a hole for unmarked turns only.
+- None of the 118 questions contains a phone number or an email address
+  (scanned for any run of seven or more digits and for `@`: 0 hits), so no
+  lead or person is filed.
+  `createLead` has no sender of its own in any case.
+- 51 requests per 10 minutes stays under the 60 per IP limit, provided no
+  one else uses that preview's chat from the same address during the run.
+
+What it does write: test-partitioned sessions, turns, events and rate-limit
+rows in the shared production database, about 118 of each.
+
+Two conditions on the operator until the fixes land:
+
+1. Read the `--base-url` before pressing enter. Nothing in the runner stops
+   the production host (R5-2).
+2. No hand-typed turn on that preview without `[INTERNAL TEST]` (R5-1).
+
+One practical note: the runner refuses credentials and query strings, so a
+preview behind Vercel deployment protection answers with a login page and the
+run stops at the first request.
+
+No code was edited, nothing was committed or pushed, and this section is left
+uncommitted.
