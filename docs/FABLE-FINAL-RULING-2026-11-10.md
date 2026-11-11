@@ -32,7 +32,7 @@ Viewports: M = 390x844, D = 1440x900.
 
 5. **Mobile menu looks broken when open.** All routes, M. HIGH. CONFIRMED (code) and OBSERVED (render).
    `.ms-menu-panel` is `position: absolute; right: 0; min-width: 15rem` with no backdrop. Open, it is a 240px box hanging off the right that covers part of the hero headline and leaves fragments showing beside it ("MUSIC CI", "SPEC", "WELI"). First tap on the site and it looks unfinished.
-   Fix in `app/page-cohesion.css`: `@media (max-width: 979px) { .ms-site .ms-menu { position: static; } .ms-site .ms-menu-panel { position: fixed; left: 0; right: 0; top: var(--ms-header-height, 72px); min-width: 0; padding: 0.5rem var(--ms-gutter) 1rem; border-width: 1px 0; } .ms-site .ms-menu[open]::before { content: ""; position: fixed; inset: 0; top: var(--ms-header-height, 72px); background: rgb(22 16 11 / 0.72); } }`. The call button inside becomes full width.
+   Fix in `app/page-cohesion.css`: `@media (max-width: 979px) { .ms-site .ms-menu { position: static; } .ms-site .ms-menu-panel { position: fixed; left: 0; right: 0; top: var(--ms-header-height, 72px); min-width: 0; padding: 0.5rem var(--ms-gutter) 1rem; border-width: 1px 0; } .ms-site .ms-menu[open]::before { content: ""; position: fixed; inset: 0; top: var(--ms-header-height, 72px); background: rgb(16 12 8 / 0.72); } }`. The call button inside becomes full width.
 
 6. **Desktop chat launcher sits on content.** All routes, D. MEDIUM. CONFIRMED by Codex's own measurement (launcher intersects the bottom 7.95px of two footer link boxes at 1440x1000); OBSERVED at 1440x900: it crowds the Privacy / Terms / Facebook row and sits on the third FAQ row's "+" toggle on home. Codex accepted it; I do not. A fixed control must never touch content.
    Fix: in `app/globals.css` change the desktop `.ms-footer` rule from `padding-bottom: 4rem` to `padding-bottom: 6.5rem` so the footer meta row ends above the launcher. In `app/page-cohesion.css` at `min-width: 980px` cap the FAQ list inside `.ms-site .ms-faq` at `max-width: calc(100vw - var(--ms-gutter) - 13rem)` so no toggle can reach the launcher's column. Re-measure with bounding boxes: zero intersection with any link or toggle at 1440x900 and 1280x720.
@@ -142,7 +142,7 @@ Defect count: 20 (3 high, 9 medium, 8 low).
 
 ## Owner confirmation (not counted as a defect)
 
-**Does the base color read brown enough?** The owner said on 11-10: "I liked the old brownish color that looked more southern rather than straight black." The brief's palette ruling is marked owner-approved, was committed the same day (`67e71fa`, 14:14 Central), and names night canvas `#16100b` for body, hero, header and footer. I cannot prove which of the two came last. The live site matches the brief exactly: `body` computes to `rgb(22, 16, 11)` on all 12 routes, and the plank sections are properly brown. So the code is right by the written ruling. My read: on a phone `#16100b` is black, and the first screen (header and hero) is the black one with a bright orange button on it. If the owner looks at the live hero on his phone and says "still black", the change is one token, `--ms-carbon: #16100b` in `app/page-cohesion.css` `:root`, plus the matching brief row and palette test value. If he says it is right, nothing changes.
+**Does the base color read brown enough?** The owner said on 11-10: "I liked the old brownish color that looked more southern rather than straight black." The brief's palette ruling is marked owner-approved, was committed the same day (`67e71fa`, 14:14 Central), and names night canvas `#100c08` for body, hero, header and footer. I cannot prove which of the two came last. The live site matches the brief exactly: `body` computes to `rgb(16, 12, 8)` on all 12 routes, and the plank sections are properly brown. So the code is right by the written ruling. My read: on a phone `#100c08` is black, and the first screen (header and hero) is the black one with a bright orange button on it. If the owner looks at the live hero on his phone and says "still black", the change is one token, `--ms-carbon: #16100b` in `app/page-cohesion.css` `:root`, plus the matching brief row and palette test value. If he says it is right, nothing changes.
 
 ## Facts needed
 
@@ -187,7 +187,7 @@ Implemented locally on `fix/fable-final-r1`, November 10, 2026. This records
 remediation evidence, not a replacement Fable verdict. No push, deployment,
 merge, production message, live model request, or provider delivery test was made.
 `ASSISTANT_VOICE` stayed off. Business facts and the legal entity are unchanged.
-The active palette from `67e71fa`, including `--ms-carbon: #16100b`, is unchanged.
+The active palette from `67e71fa`, including `--ms-carbon: #100c08`, is unchanged.
 
 | # | Status | Change and evidence |
 | --- | --- | --- |
@@ -484,7 +484,7 @@ are under `round2-final` and `round2-final-devtools`.
   forms, footer and layout match approved round 1. All four cases have no
   horizontal overflow, missing images, browser/console errors or API submissions.
 - `design-shots/fable-r2-visual-comparison.json` records exact matches to the
-  committed round-1 font families, 12px labels, `#16100b`, section edges, checkbox,
+  committed round-1 font families, 12px labels, `#100c08`, section edges, checkbox,
   consent targets, inline links, submit/form widths and select appearance.
   Seven of eight PNGs are pixel-identical. The mobile-home full-page image has
   one 390-pixel raster row difference at y=906, identical 14,358px height, and
@@ -532,7 +532,7 @@ Close, not there. Round 1's 20 are nearly all closed and the home page is the st
 | 2 | CLOSED | Barlow Condensed stays; brief edit accepted. |
 | 3 | FIXED | Zero text nodes under 12px on all 24 route/viewport captures. Form labels 13px. |
 | 4 | FIXED on home sections, NOT on the service template | Home sections and footer all start at x=112 at 1440. See R2-5 and R2-8. |
-| 5 | FIXED | Panel [0,73,390,319] solid `rgb(22,16,11)`, backdrop [0,73,390,771] at 65%, five full-width rows 50-54px tall, Esc and backdrop both close. See R2-12 for one leftover. |
+| 5 | FIXED | Panel [0,73,390,319] solid `rgb(16,12,8)`, backdrop [0,73,390,771] at 65%, five full-width rows 50-54px tall, Esc and backdrop both close. See R2-12 for one leftover. |
 | 6 | FIXED at rest, one leftover in transit | Launcher [1277,828,139,48] at 1440x900 and [1117,648,139,48] at 1280x720. At page end, zero intersections with any link, button or text on `/`, `/services/mobile-welding`, `/service-areas`. The FAQ "+" overlap round 1 named is gone. While scrolling it still crosses two controls; see R2-14. |
 | 7 | FIXED | Last footer text ends 95px above document end at 390: the 57px sticky bar plus the stated clearance. |
 | 8 | FIXED | `.ms-subclose` count is 0 on all seven service pages; one "Show us the job." close each. |

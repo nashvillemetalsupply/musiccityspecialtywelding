@@ -165,7 +165,7 @@ This pass preserves today's typography, spacing, flat 1px button geometry,
 
 `app/page-cohesion.css :root` is the single active public palette. Existing
 `--mx-*` and `--sw-*` roles alias it; the historical preservation stylesheet and
-its tokens remain intact. Night is `#16100b`; work, get-it, territory, contact,
+its tokens remain intact. Night is `#100c08`; work, get-it, territory, contact,
 subscope and subfaq use brown plank `#241809`. Hero/services use the approved
 wall stripes; brown sections use the approved plank stripes. Every main section
 has the top radial lamp pool, `rgba(255,180,107,.08)`. Dark body text is enamel,

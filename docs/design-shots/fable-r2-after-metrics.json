@@ -16,7 +16,7 @@
       "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
       "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
       "labelSize": "12px",
-      "carbon": "#16100b",
+      "carbon": "#100c08",
       "fonts": [
         {
           "family": "Barlow Condensed",
@@ -934,7 +934,7 @@
       "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
       "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
       "labelSize": "12px",
-      "carbon": "#16100b",
+      "carbon": "#100c08",
       "fonts": [
         {
           "family": "Barlow Condensed",
@@ -1152,7 +1152,7 @@
       "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
       "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
       "labelSize": "12px",
-      "carbon": "#16100b",
+      "carbon": "#100c08",
       "fonts": [
         {
           "family": "Barlow Condensed",
@@ -2070,7 +2070,7 @@
       "bodyFont": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
       "labelFont": "\"IBM Plex Mono\", \"IBM Plex Mono Fallback\", monospace",
       "labelSize": "12px",
-      "carbon": "#16100b",
+      "carbon": "#100c08",
       "fonts": [
         {
           "family": "Barlow Condensed",
