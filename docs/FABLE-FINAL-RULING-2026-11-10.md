@@ -314,3 +314,204 @@ For a fresh local audit, install isolated tooling with
 `node scripts/qa/fable-r1-lighthouse.mjs final all 13.6.0` against the local
 production server with chat enabled. `docs/fable-r1-verification.json` records
 the checked source hashes, matched test files and evidence paths.
+
+## Codex round 2 (perf)
+
+Defect 14 remains **UNRESOLVED / measured FAIL**. The production-build measurements
+below include a detached build of main before any round-2 experiment. Main already
+misses the target; the evidence does not establish IBM Plex or round 1 as the cause
+of the overall failure. No behavior-preserving performance change showed a reliable
+gain, so no experimental product change was retained. The approved appearance,
+fonts, photographs, interactions and integrations remain unchanged.
+
+The actual deliverable is reproducible audit tooling and the measured evidence for
+the remaining cost. No push, deployment, merge, production form/chat submission,
+live model request, provider send, or database migration was performed. Public chat
+was enabled in every acceptance build; voice stayed off.
+
+### Matching baseline and acceptance measurements
+
+All matching batches use Lighthouse 13.6.0 mobile defaults with explicit
+`--throttling-method=simulate`, fresh Chrome/profile and browser storage reset per
+run, no request blocking, sequential runs, and a real production build served by
+`next start`. Before each page's three runs, the page and all image-optimizer URLs
+in its initial HTML are warmed with Chrome's image Accept header including AVIF,
+and response bodies are consumed. The sources use Node 22, with
+`NEXT_PUBLIC_ASSISTANT_CHAT=1` and `ASSISTANT_VOICE=0`; no credentials or `.env`
+files were copied into the main worktree.
+
+| Build / page | Run 1 performance / LCP | Run 2 performance / LCP | Run 3 performance / LCP | Median performance / LCP |
+| --- | --- | --- | --- | --- |
+| Main `c7827bc` / home | 90 / 3,511ms | 91 / 3,403ms | 98 / 2,135ms | 91 / 3,403ms |
+| Main `c7827bc` / mobile welding | 95 / 2,871ms | 94 / 2,908ms | 95 / 2,876ms | 95 / 2,876ms |
+| Round 1 `ca3d856`, fresh / home | 91 / 3,369ms | 92 / 3,326ms | 87 / 3,457ms | 91 / 3,369ms |
+| Round 1 `ca3d856`, fresh / mobile welding | 91 / 3,333ms | 91 / 3,339ms | 92 / 3,326ms | 91 / 3,333ms |
+| Round 2 final / home | 91 / 3,387ms | 91 / 3,352ms | 91 / 3,381ms | 91 / 3,381ms |
+| Round 2 final / mobile welding | 91 / 3,341ms | 85 / 3,420ms | 84 / 3,470ms | 85 / 3,420ms |
+
+The historical round-1 six (home 90/91/91, mobile welding 92/91/91) remain in
+`docs/lighthouse-2026-11-10.json`; they were not overwritten or relabeled as fresh
+measurements. That file links every matching raw report and records exact metrics,
+CPU benchmark indices, observed LCP subparts, and final acceptance. The target is
+performance >=98 and LCP <2,500ms on all three runs of each page.
+
+The freshly measured round-1 median is 34ms faster than main on home and 457ms
+slower on mobile welding. The service difference is reported rather than hidden;
+the preload experiments below do not establish its cause. The overall performance
+failure existed before round 1.
+
+Laptop variation is visible even with simulated throttling: main home spans
+90-98 and 2.14-3.51s; one isolated passing run is not a passing batch. Browser
+benchmark indices and all runs are retained, with no selection of favorable runs.
+The first main batch warmed optimizer URLs with the default `*/*` Accept header,
+which can leave AVIF encoding cold. Those six are preserved separately as
+`round2-main-cold-optimizer`, excluded from the matching comparison, and followed
+by the corrected complete main batch above.
+
+### Diagnosis and rejected experiments
+
+`docs/perf/2026-11-10/round2-diagnostic-analysis.json` records the complete
+investigation. Both LCP elements are the hero image: home
+`div.ms-hero-media > figure.ms-hero-image > picture > img` and the service page
+`section#service > figure.ms-subhero-media > picture > img`. They are already
+eager, high priority, preloaded, responsive, and served as existing AVIF assets;
+the image itself needs about 14-17ms observed transfer in the representative
+round-1 reports. Native trace image decoding takes 15-23ms off the main thread.
+
+Representative observed LCP subparts are TTFB / load delay / load time / render
+delay = **18.8 / 69.9 / 16.6 / 192.2ms** on home and
+**8.4 / 89.2 / 14.4 / 185.4ms** on mobile welding. These are measured localhost
+trace durations, not simulated mobile subparts. The separate simulated model
+allocates approximately 463 / 551 / 178 / 2,177ms on home and
+457 / 645 / 152 / 2,079ms on the service page; the render remainder is arithmetic
+from rounded model timings, not a directly measured callback.
+
+The initial two stylesheet responses transfer 35,631 bytes and decode to
+163,648 bytes. The public CSS accounts for 149,504 decoded bytes; font CSS and
+chat styles account for the rest. Coverage estimates about 17.6KB/19.4KB of
+compressed transfer savings from unused CSS for the two routes. The initial
+layout/style portion is only about
+63ms/71ms in the native trace. The tested CSS reduction below improves FCP without
+fixing the later LCP presentation.
+
+Four Latin WOFF2 faces actually download, totaling 74,360 font-resource bytes:
+Barlow Condensed 900, one variable IBM Plex Sans face for body weights, and IBM
+Plex Mono 500/600. Display and body preload, Mono loads when used, and the active
+faces use swap. The marker face is optional and does not download in these audits.
+Extra language declarations in the 7,444-byte generated font stylesheet do not
+cause extra language font downloads; removing them would save only a fraction of
+1KB compressed. Removing only the Sans preload, while retaining the display
+preload, repeats at median
+3,338ms/3,331ms versus 3,369ms/3,333ms for the fresh real-server baseline, without
+a reliable gain; the original fonts and preload behavior were retained.
+
+Audited script transfer is about 181KB/198KB, including modules loaded after LCP.
+Lighthouse identifies roughly
+27KB of unused code in the 71KB compressed framework chunk, not a standalone
+unused app feature. Next/React startup dominates script work; no large avoidable
+app callback was found before LCP. The full quote
+form import occurs after observed LCP, and the full chat module loads on first
+open. Source inspection confirms `PublicAnalytics` runs only the small inline
+queue/configuration bootstrap at `afterInteractive`; external Google loading
+waits for pointer, keyboard, touch or scroll interaction, or an eight-second
+fallback. Meta waits for that same insertion via its observer. Production-host
+gating suppresses those provider requests on localhost, so these local audits
+cannot measure live-provider transfer cost. The early conversion queue, DNI and
+listeners remain intact. No analytics change was retained because the expensive
+requests are already deferred, while moving configuration later can race early
+conversions.
+
+The external-script-blocked probe measures simulated LCP of 2.34s on home and
+2.26s on mobile welding, with TBT zero, versus 3.36s/3.35s in the unmodified
+response-proxy control. Blocking `*.js` requests is applied to the actual local
+server origin; inline scripts still execute. The roughly 1.02s/1.10s difference
+estimates the aggregate startup-script/network effect in this diagnostic comparison;
+it is not an exact removable cost. The probe removes behavior and is diagnostic
+evidence only. It is not a shippable fix or an acceptance result. Measured trace
+subparts are reported separately from simulated scored LCP: adding TTFB, resource
+delay, transfer time and render delay does not reproduce Lighthouse's simulated
+metric.
+
+Critical CSS inlining reduces FCP to about 947ms/925ms, but worsens LCP to
+3,836ms/3,468ms and performance to 84/90. The repeated Sans-preload-removal and
+critical-CSS variants do not establish a reliable gain. These probes, including
+the delayed-critical variant, are preserved with their actual settings, excluded
+from acceptance, and rejected without product source changes.
+
+The final retained build measures **3,352-3,387ms / performance 91** on home
+and **3,341-3,470ms / performance 84-91** on mobile welding. Its median LCPs are
+3,381ms and 3,420ms: reaching strictly below 2,500ms still needs more than
+881ms/920ms reduction at those medians. This is the measured current-build
+range/median, not a universal floor or proof that a future architecture cannot
+meet the target. Lighthouse's estimated 150ms LCP saving for unused framework JS
+would be insufficient alone even if it were safely recoverable.
+
+The final service batch's TBT rises from 106.5ms to 297.0ms/336.0ms while its CPU
+benchmark index falls into 823.5-1,063.5, so runtime/load drift is visible. The
+unchanged product source rules out a retained round-2 implementation regression;
+it does not prove every LCP difference is CPU alone. Even the first service run,
+with 106.5ms TBT, still has 3,341ms LCP and fails. No favorable rerun replaces the
+recorded batch.
+
+The same final production build was also run three times per page with
+`--throttling-method=devtools`. These apply throttling in Chrome rather than using
+the default simulation and are **alternate diagnostics only**; they do not replace
+or improve the acceptance batch above.
+
+| Devtools diagnostic / page | Run 1 performance / LCP | Run 2 performance / LCP | Run 3 performance / LCP | Median performance / LCP |
+| --- | --- | --- | --- | --- |
+| Home | 83 / 2,396ms | 83 / 2,519ms | 85 / 2,468ms | 83 / 2,468ms |
+| Mobile welding | 82 / 2,503ms | 83 / 2,575ms | 85 / 2,394ms | 83 / 2,503ms |
+
+Devtools TBT is 375-473ms on home and 417-470ms on mobile welding. All twelve
+final runs across both throttling methods have no runtime error; neither batch
+meets the combined performance/LCP target. Complete reports and exact settings
+are under `round2-final` and `round2-final-devtools`.
+
+### Verification and cleanup
+
+- Node 22.23.2 `npm test`: **1,558 passed, 0 failed, 3 skipped** in
+  54.7 seconds (1,561 total). Skips remain the opt-in live AI extraction evaluation
+  and two live database persistence checks without `DATABASE_URL`.
+- The final Node 22 `npm run build` passes TypeScript, static generation and
+  bundle budgets: home 535,990 / 648,316 bytes; board 631,042 / 817,538 bytes.
+  The public pages remain static. The rebuilt output was served by real
+  `next start` for all twelve final Lighthouse runs and all final screenshots.
+- Both new QA scripts pass ESLint with `--max-warnings=0` and zero warnings.
+- The four requested full-page captures and four fold captures are in
+  `docs/design-shots/` as `fable-r2-after-{home,mobile-welding}-{390x844,1440x900}*.png`.
+  The root agent opened and inspected all eight: typography, palette, photographs,
+  forms, footer and layout match approved round 1. All four cases have no
+  horizontal overflow, missing images, browser/console errors or API submissions.
+- `design-shots/fable-r2-visual-comparison.json` records exact matches to the
+  committed round-1 font families, 12px labels, `#100c08`, section edges, checkbox,
+  consent targets, inline links, submit/form widths and select appearance.
+  Seven of eight PNGs are pixel-identical. The mobile-home full-page image has
+  one 390-pixel raster row difference at y=906, identical 14,358px height, and
+  mean absolute channel difference 0.000197/255; its fold is pixel-identical.
+  No layout or content difference was observed.
+- Full-page capture first scrolls the real deferred content and decodes images,
+  then makes those sections visible only for screenshot rasterization. Lighthouse
+  uses normal production CSS. Form/chat submissions and remote requests are
+  blocked only in visual QA, never in acceptance Lighthouse.
+- The owned final `next start` process (PID 6336) was stopped, and all owned
+  headless Chrome processes were closed. User applications were left alone.
+
+The new `scripts/qa/fable-r2-lighthouse.mjs` requires loopback HTTP and public
+chat in initial HTML, preserves method/configuration/provenance and every raw
+report, and exits 1 if any run misses either target. It keeps alternate throttling
+diagnostic-only. With the isolated Lighthouse 13.6.0 tooling installed as above
+and the production server running, reproduce the default audit with:
+
+```powershell
+& "C:/Users/Owner/AppData/Local/hermes/node/node.exe" scripts/qa/fable-r2-lighthouse.mjs --label=round2-recheck --origin=http://localhost:3100 --runs=3 --throttling-method=simulate
+```
+
+The new `scripts/qa/fable-r2-visual.mjs` captures the requested two routes and
+viewports, waits for the real deferred form, and intercepts form/chat submissions.
+
+The detached main baseline used isolated `npm ci` dependencies in
+`C:/Users/Owner/Desktop/Shepherd/mcsw-fable-r2-main`, with no dependency junction
+and no changes to main. Its recorded `next start :3101` process was verified and
+stopped. `git -c core.longpaths=true worktree remove --force` succeeded; the path
+is absent and the worktree is unregistered. Main remains `c7827bc`.

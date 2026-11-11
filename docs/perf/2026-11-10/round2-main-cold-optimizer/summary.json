@@ -1,0 +1,124 @@
+{
+  "date": "2026-11-10",
+  "commit": "c7827bcef7ca902500d1780c0d67cb072ba5d140",
+  "branch": "main (detached worktree)",
+  "origin": "http://localhost:3101",
+  "server": "next start (production build)",
+  "publicChat": "NEXT_PUBLIC_ASSISTANT_CHAT=1; verified server HTML",
+  "method": "Lighthouse 13.6.0 default simulated mobile throttling; fresh Chrome per run; storage reset; sequential runs; no request blocking",
+  "target": {
+    "performance": 98,
+    "lcpMsBelow": 2500
+  },
+  "runs": [
+    {
+      "path": "/",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/round2-main-cold-optimizer/home-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 87,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3546.6696500000003,
+      "fcpMs": 1379.1131,
+      "cls": 0,
+      "tbtMs": 198,
+      "runtimeError": null
+    },
+    {
+      "path": "/",
+      "run": 2,
+      "report": "docs/perf/2026-11-10/round2-main-cold-optimizer/home-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 95,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 2666.2802250000004,
+      "fcpMs": 1373.5887000000002,
+      "cls": 0,
+      "tbtMs": 112,
+      "runtimeError": null
+    },
+    {
+      "path": "/",
+      "run": 3,
+      "report": "docs/perf/2026-11-10/round2-main-cold-optimizer/home-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 88,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3480.4286250000005,
+      "fcpMs": 1369.6735,
+      "cls": 0,
+      "tbtMs": 182.66324999999983,
+      "runtimeError": null
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/round2-main-cold-optimizer/mobile-welding-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 83,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3352.996,
+      "fcpMs": 1216.999,
+      "cls": 0,
+      "tbtMs": 391.00000000000045,
+      "runtimeError": null
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 2,
+      "report": "docs/perf/2026-11-10/round2-main-cold-optimizer/mobile-welding-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 82,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 2982.5640000000003,
+      "fcpMs": 1070.376,
+      "cls": 0,
+      "tbtMs": 496.3120000000001,
+      "runtimeError": null
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 3,
+      "report": "docs/perf/2026-11-10/round2-main-cold-optimizer/mobile-welding-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 75,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3001.8185,
+      "fcpMs": 1305.9395,
+      "cls": 0,
+      "tbtMs": 782.0605,
+      "runtimeError": null
+    }
+  ],
+  "serverState": "Diagnostic: source/srcset URLs prewarmed with default */* Accept only; AVIF optimizer may be cold on first Chrome navigation. Canonical matched AVIF-warm baseline is round2-main."
+}

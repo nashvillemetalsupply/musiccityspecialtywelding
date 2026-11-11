@@ -1,0 +1,62 @@
+{
+  "diagnosticOnly": true,
+  "mode": "scripts-blocked",
+  "target": "http://localhost:3100",
+  "proxy": "http://localhost:3102",
+  "throttlingMethod": "simulate",
+  "note": "Response transformations or blocked requests; never acceptance.",
+  "runs": [
+    {
+      "slug": "home",
+      "run": 1,
+      "score": 98,
+      "lcpMs": 2339.081,
+      "fcpMs": 1214.081,
+      "tbtMs": 0,
+      "observedLcpMs": 207,
+      "lcpElement": {
+        "type": "node",
+        "lhId": "page-0-IMG",
+        "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+        "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+        "boundingRect": {
+          "top": 607,
+          "bottom": 889,
+          "left": 17,
+          "right": 395,
+          "width": 377,
+          "height": 282
+        },
+        "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+        "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+      },
+      "runtimeError": null
+    },
+    {
+      "slug": "mobile-welding",
+      "run": 1,
+      "score": 99,
+      "lcpMs": 2257.6783,
+      "fcpMs": 1057.6783,
+      "tbtMs": 0,
+      "observedLcpMs": 201,
+      "lcpElement": {
+        "type": "node",
+        "lhId": "page-0-IMG",
+        "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+        "selector": "section#service > figure.ms-subhero-media > picture > img",
+        "boundingRect": {
+          "top": 568,
+          "bottom": 850,
+          "left": 17,
+          "right": 395,
+          "width": 377,
+          "height": 282
+        },
+        "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+        "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+      },
+      "runtimeError": null
+    }
+  ]
+}

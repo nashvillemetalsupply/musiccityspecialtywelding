@@ -1,0 +1,124 @@
+{
+  "date": "2026-11-10",
+  "commit": "c7827bcef7ca902500d1780c0d67cb072ba5d140",
+  "branch": "main (detached worktree)",
+  "origin": "http://localhost:3101",
+  "server": "next start (production build)",
+  "publicChat": "NEXT_PUBLIC_ASSISTANT_CHAT=1; verified server HTML",
+  "serverState": "Warm page and all optimizer src/srcset/imagesrcset URLs with Chrome image Accept including AVIF; consume each response body; browser storage reset per run",
+  "method": "Lighthouse 13.6.0 default simulated mobile throttling; fresh Chrome per run; storage reset; sequential runs; no request blocking",
+  "target": {
+    "performance": 98,
+    "lcpMsBelow": 2500
+  },
+  "runs": [
+    {
+      "path": "/",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/round2-main/home-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 90,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3511.4734,
+      "fcpMs": 1367.9848,
+      "cls": 0,
+      "tbtMs": 122.00000000000023,
+      "runtimeError": null
+    },
+    {
+      "path": "/",
+      "run": 2,
+      "report": "docs/perf/2026-11-10/round2-main/home-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 91,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3403.2321,
+      "fcpMs": 1369.5612,
+      "cls": 0,
+      "tbtMs": 116,
+      "runtimeError": null
+    },
+    {
+      "path": "/",
+      "run": 3,
+      "report": "docs/perf/2026-11-10/round2-main/home-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 98,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 2135.258,
+      "fcpMs": 1367.629,
+      "cls": 0,
+      "tbtMs": 74,
+      "runtimeError": null
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/round2-main/mobile-welding-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 95,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 2871.1451500000003,
+      "fcpMs": 1063.4301,
+      "cls": 0,
+      "tbtMs": 101.00000000000045,
+      "runtimeError": null
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 2,
+      "report": "docs/perf/2026-11-10/round2-main/mobile-welding-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 94,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 2908.41175,
+      "fcpMs": 1064.2745,
+      "cls": 0,
+      "tbtMs": 141.00000000000045,
+      "runtimeError": null
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 3,
+      "report": "docs/perf/2026-11-10/round2-main/mobile-welding-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 95,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 2876.2198,
+      "fcpMs": 1064.8132,
+      "cls": 0,
+      "tbtMs": 103.99999999999977,
+      "runtimeError": null
+    }
+  ]
+}

@@ -1,0 +1,676 @@
+{
+  "date": "2026-11-10",
+  "sourceCommit": "ca3d856",
+  "scope": "Local diagnostic investigation only. No source changes made by this agent; no diagnostic counts toward acceptance.",
+  "pageCosts": {
+    "home": {
+      "representativeReport": "docs/perf/2026-11-10/round2-round1/home-mobile-1.json",
+      "performance": 91,
+      "simulatedLcpMs": 3369.2816,
+      "observedLcpMs": 297,
+      "observedBreakdown": {
+        "type": "list",
+        "items": [
+          {
+            "type": "table",
+            "headings": [
+              {
+                "key": "label",
+                "valueType": "text",
+                "label": "Subpart"
+              },
+              {
+                "key": "duration",
+                "valueType": "ms",
+                "label": "Duration"
+              }
+            ],
+            "items": [
+              {
+                "subpart": "timeToFirstByte",
+                "label": "Time to first byte",
+                "duration": 18.76
+              },
+              {
+                "subpart": "resourceLoadDelay",
+                "label": "Resource load delay",
+                "duration": 69.86
+              },
+              {
+                "subpart": "resourceLoadDuration",
+                "label": "Resource load duration",
+                "duration": 16.561
+              },
+              {
+                "subpart": "elementRenderDelay",
+                "label": "Element render delay",
+                "duration": 192.236
+              }
+            ]
+          },
+          {
+            "type": "node",
+            "lhId": "page-0-IMG",
+            "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+            "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+            "boundingRect": {
+              "top": 607,
+              "bottom": 889,
+              "left": 17,
+              "right": 395,
+              "width": 377,
+              "height": 282
+            },
+            "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+            "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+          }
+        ]
+      },
+      "modeledSubparts": {
+        "ttfbMs": 463,
+        "loadDelayMs": 551,
+        "loadDurationMs": 178,
+        "renderRemainderMs": 2177,
+        "note": "Remainder arithmetic from rounded simulated metrics; distinct from observed insight breakdown."
+      },
+      "resources": {
+        "fontCount": 4,
+        "fontTransferBytes": 83672,
+        "fontResourceBytes": 74360,
+        "cssCount": 2,
+        "cssTransferBytes": 35631,
+        "cssResourceBytes": 163648,
+        "scriptTransferBytes": 180673
+      },
+      "mainThread": [
+        {
+          "group": "scriptEvaluation",
+          "groupLabel": "Script Evaluation",
+          "duration": 577.0159999999986
+        },
+        {
+          "group": "other",
+          "groupLabel": "Other",
+          "duration": 476.5120000000009
+        },
+        {
+          "group": "styleLayout",
+          "groupLabel": "Style & Layout",
+          "duration": 355.14799999999997
+        },
+        {
+          "group": "scriptParseCompile",
+          "groupLabel": "Script Parsing & Compilation",
+          "duration": 116.32000000000001
+        },
+        {
+          "group": "parseHTML",
+          "groupLabel": "Parse HTML & CSS",
+          "duration": 57.608
+        },
+        {
+          "group": "paintCompositeRender",
+          "groupLabel": "Rendering",
+          "duration": 16.771999999999984
+        }
+      ],
+      "bootup": [
+        {
+          "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "total": 500.7160000000001,
+          "scripting": 460.6920000000001,
+          "scriptParseCompile": 31.823999999999998
+        },
+        {
+          "url": "http://localhost:3100/",
+          "total": 494.8879999999999,
+          "scripting": 19.823999999999987,
+          "scriptParseCompile": 27.44
+        },
+        {
+          "url": "Unattributable",
+          "total": 421.58800000000093,
+          "scripting": 12.219999999999999,
+          "scriptParseCompile": 0
+        },
+        {
+          "url": "http://localhost:3100/_next/static/chunks/1zvywf9tt6bb3.js",
+          "total": 90.52399999999999,
+          "scripting": 51.67199999999999,
+          "scriptParseCompile": 29.628
+        }
+      ],
+      "unusedJs": [
+        {
+          "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "totalBytes": 71394,
+          "wastedBytes": 27489,
+          "wastedPercent": 38.50361681500946
+        }
+      ],
+      "unusedCss": [
+        {
+          "url": "http://localhost:3100/_next/static/chunks/3c6948azijgtf.css",
+          "wastedBytes": 17580,
+          "wastedPercent": 63.15895089599262,
+          "totalBytes": 27834
+        }
+      ]
+    },
+    "mobile-welding": {
+      "representativeReport": "docs/perf/2026-11-10/round2-round1/mobile-welding-mobile-1.json",
+      "performance": 91,
+      "simulatedLcpMs": 3333.174575,
+      "observedLcpMs": 297,
+      "observedBreakdown": {
+        "type": "list",
+        "items": [
+          {
+            "type": "table",
+            "headings": [
+              {
+                "key": "label",
+                "valueType": "text",
+                "label": "Subpart"
+              },
+              {
+                "key": "duration",
+                "valueType": "ms",
+                "label": "Duration"
+              }
+            ],
+            "items": [
+              {
+                "subpart": "timeToFirstByte",
+                "label": "Time to first byte",
+                "duration": 8.373
+              },
+              {
+                "subpart": "resourceLoadDelay",
+                "label": "Resource load delay",
+                "duration": 89.182
+              },
+              {
+                "subpart": "resourceLoadDuration",
+                "label": "Resource load duration",
+                "duration": 14.407
+              },
+              {
+                "subpart": "elementRenderDelay",
+                "label": "Element render delay",
+                "duration": 185.399
+              }
+            ]
+          },
+          {
+            "type": "node",
+            "lhId": "page-0-IMG",
+            "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+            "selector": "section#service > figure.ms-subhero-media > picture > img",
+            "boundingRect": {
+              "top": 568,
+              "bottom": 850,
+              "left": 17,
+              "right": 395,
+              "width": 377,
+              "height": 282
+            },
+            "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+            "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+          }
+        ]
+      },
+      "modeledSubparts": {
+        "ttfbMs": 457,
+        "loadDelayMs": 645,
+        "loadDurationMs": 152,
+        "renderRemainderMs": 2079,
+        "note": "Remainder arithmetic from rounded simulated metrics; distinct from observed insight breakdown."
+      },
+      "resources": {
+        "fontCount": 4,
+        "fontTransferBytes": 83672,
+        "fontResourceBytes": 74360,
+        "cssCount": 2,
+        "cssTransferBytes": 35631,
+        "cssResourceBytes": 163648,
+        "scriptTransferBytes": 197513
+      },
+      "mainThread": [
+        {
+          "group": "other",
+          "groupLabel": "Other",
+          "duration": 578.1640000000001
+        },
+        {
+          "group": "scriptEvaluation",
+          "groupLabel": "Script Evaluation",
+          "duration": 537.5919999999976
+        },
+        {
+          "group": "styleLayout",
+          "groupLabel": "Style & Layout",
+          "duration": 397.4559999999999
+        },
+        {
+          "group": "scriptParseCompile",
+          "groupLabel": "Script Parsing & Compilation",
+          "duration": 113.79600000000002
+        },
+        {
+          "group": "parseHTML",
+          "groupLabel": "Parse HTML & CSS",
+          "duration": 36.284
+        },
+        {
+          "group": "paintCompositeRender",
+          "groupLabel": "Rendering",
+          "duration": 23.11199999999999
+        },
+        {
+          "group": "garbageCollection",
+          "groupLabel": "Garbage Collection",
+          "duration": 3.9200000000000004
+        }
+      ],
+      "bootup": [
+        {
+          "url": "Unattributable",
+          "total": 521.1880000000009,
+          "scripting": 9.748,
+          "scriptParseCompile": 0
+        },
+        {
+          "url": "http://localhost:3100/services/mobile-welding",
+          "total": 500.23599999999993,
+          "scripting": 12.815999999999995,
+          "scriptParseCompile": 11.751999999999999
+        },
+        {
+          "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "total": 458.5559999999997,
+          "scripting": 414.8919999999997,
+          "scriptParseCompile": 34.656
+        },
+        {
+          "url": "http://localhost:3100/_next/static/chunks/1zvywf9tt6bb3.js",
+          "total": 99.82000000000008,
+          "scripting": 61.60800000000007,
+          "scriptParseCompile": 25.916000000000004
+        }
+      ],
+      "unusedJs": [
+        {
+          "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "totalBytes": 71394,
+          "wastedBytes": 27257,
+          "wastedPercent": 38.17768672986406
+        }
+      ],
+      "unusedCss": [
+        {
+          "url": "http://localhost:3100/_next/static/chunks/3c6948azijgtf.css",
+          "wastedBytes": 19434,
+          "wastedPercent": 69.8198650158195,
+          "totalBytes": 27834
+        }
+      ]
+    }
+  },
+  "experiments": {
+    "baseline-proxy": {
+      "summary": "docs/perf/2026-11-10/round2-diagnostic-baseline-proxy/summary.json",
+      "diagnosticOnly": true,
+      "runs": [
+        {
+          "slug": "home",
+          "run": 1,
+          "score": 92,
+          "lcpMs": 3360.1055000000006,
+          "fcpMs": 1230.346,
+          "tbtMs": 91.00000000000023,
+          "observedLcpMs": 258,
+          "lcpSelector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+          "lcpRect": {
+            "top": 607,
+            "bottom": 889,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "mobile-welding",
+          "run": 1,
+          "score": 92,
+          "lcpMs": 3353.250425,
+          "fcpMs": 1074.1431,
+          "tbtMs": 70.5,
+          "observedLcpMs": 261,
+          "lcpSelector": "section#service > figure.ms-subhero-media > picture > img",
+          "lcpRect": {
+            "top": 568,
+            "bottom": 850,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        }
+      ]
+    },
+    "sans-preload": {
+      "summary": "docs/perf/2026-11-10/round2-diagnostic-sans-preload/summary.json",
+      "diagnosticOnly": true,
+      "runs": [
+        {
+          "slug": "home",
+          "run": 1,
+          "score": 91,
+          "lcpMs": 3446.1568000000007,
+          "fcpMs": 1234.5784,
+          "tbtMs": 104,
+          "observedLcpMs": 223,
+          "lcpSelector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+          "lcpRect": {
+            "top": 607,
+            "bottom": 889,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "home",
+          "run": 2,
+          "score": 92,
+          "lcpMs": 3336.1886,
+          "fcpMs": 1220.6792,
+          "tbtMs": 87.5,
+          "observedLcpMs": 262,
+          "lcpSelector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+          "lcpRect": {
+            "top": 607,
+            "bottom": 889,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "home",
+          "run": 3,
+          "score": 88,
+          "lcpMs": 3337.9732,
+          "fcpMs": 1234.2704,
+          "tbtMs": 228.8648000000003,
+          "observedLcpMs": 386,
+          "lcpSelector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+          "lcpRect": {
+            "top": 607,
+            "bottom": 889,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "mobile-welding",
+          "run": 1,
+          "score": 92,
+          "lcpMs": 3319.0776,
+          "fcpMs": 1065.5388,
+          "tbtMs": 56.5,
+          "observedLcpMs": 208,
+          "lcpSelector": "section#service > figure.ms-subhero-media > picture > img",
+          "lcpRect": {
+            "top": 568,
+            "bottom": 850,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "mobile-welding",
+          "run": 2,
+          "score": 92,
+          "lcpMs": 3357.96955,
+          "fcpMs": 1065.9826,
+          "tbtMs": 82.0043499999997,
+          "observedLcpMs": 243,
+          "lcpSelector": "section#service > figure.ms-subhero-media > picture > img",
+          "lcpRect": {
+            "top": 568,
+            "bottom": 850,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "mobile-welding",
+          "run": 3,
+          "score": 92,
+          "lcpMs": 3331.4023,
+          "fcpMs": 1068.5156,
+          "tbtMs": 87.00000000000023,
+          "observedLcpMs": 208,
+          "lcpSelector": "section#service > figure.ms-subhero-media > picture > img",
+          "lcpRect": {
+            "top": 568,
+            "bottom": 850,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        }
+      ],
+      "medians": {
+        "home": {
+          "performance": 91,
+          "lcpMs": 3337.9732
+        },
+        "mobile-welding": {
+          "performance": 92,
+          "lcpMs": 3331.4023
+        }
+      }
+    },
+    "scripts-blocked": {
+      "summary": "docs/perf/2026-11-10/round2-diagnostic-scripts-blocked/summary.json",
+      "diagnosticOnly": true,
+      "runs": [
+        {
+          "slug": "home",
+          "run": 1,
+          "score": 98,
+          "lcpMs": 2339.081,
+          "fcpMs": 1214.081,
+          "tbtMs": 0,
+          "observedLcpMs": 207,
+          "lcpSelector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+          "lcpRect": {
+            "top": 607,
+            "bottom": 889,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "mobile-welding",
+          "run": 1,
+          "score": 99,
+          "lcpMs": 2257.6783,
+          "fcpMs": 1057.6783,
+          "tbtMs": 0,
+          "observedLcpMs": 201,
+          "lcpSelector": "section#service > figure.ms-subhero-media > picture > img",
+          "lcpRect": {
+            "top": 568,
+            "bottom": 850,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        }
+      ]
+    },
+    "critical": {
+      "summary": "docs/perf/2026-11-10/round2-diagnostic-critical/summary.json",
+      "diagnosticOnly": true,
+      "runs": [
+        {
+          "slug": "home",
+          "run": 1,
+          "score": 84,
+          "lcpMs": 3835.594475,
+          "fcpMs": 947.16985,
+          "tbtMs": 195.99999999999955,
+          "observedLcpMs": 279,
+          "lcpSelector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+          "lcpRect": {
+            "top": 607,
+            "bottom": 889,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "mobile-welding",
+          "run": 1,
+          "score": 90,
+          "lcpMs": 3468.4551250000004,
+          "fcpMs": 924.8315,
+          "tbtMs": 108.58425000000011,
+          "observedLcpMs": 205,
+          "lcpSelector": "section#service > figure.ms-subhero-media > picture > img",
+          "lcpRect": {
+            "top": 568,
+            "bottom": 850,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        }
+      ]
+    },
+    "critical-delayed": {
+      "summary": "docs/perf/2026-11-10/round2-diagnostic-critical-delayed/summary.json",
+      "diagnosticOnly": true,
+      "runs": [
+        {
+          "slug": "home",
+          "run": 1,
+          "score": 85,
+          "lcpMs": 3940.278075,
+          "fcpMs": 936.1588999999999,
+          "tbtMs": 183.5,
+          "observedLcpMs": 278,
+          "lcpSelector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+          "lcpRect": {
+            "top": 607,
+            "bottom": 889,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        },
+        {
+          "slug": "mobile-welding",
+          "run": 1,
+          "score": 90,
+          "lcpMs": 3503.021125,
+          "fcpMs": 920.5835,
+          "tbtMs": 99.99999999999977,
+          "observedLcpMs": 225,
+          "lcpSelector": "section#service > figure.ms-subhero-media > picture > img",
+          "lcpRect": {
+            "top": 568,
+            "bottom": 850,
+            "left": 17,
+            "right": 395,
+            "width": 377,
+            "height": 282
+          }
+        }
+      ]
+    }
+  },
+  "conclusions": [
+    "Main already misses the median performance/LCP target without IBM Plex; round 1 typography is not the sole cause.",
+    "Both LCP elements are the unchanged eager, high-priority, preloaded hero images, not text or font elements.",
+    "Sans-preload-only repeats show no material gain: median home 3338ms versus real round 1 3369ms; service 3331ms versus 3333ms. Keep the original source preload.",
+    "Blocking all JS requests yields home 98 / 2339ms and service 99 / 2258ms, relative to proxy control home 92 / 3360ms and service 92 / 3353ms. The 1021/1095ms difference bounds modeled initial JS/network cost; this is not a behavior-preserving fix or an accepted production floor.",
+    "Critical-only inline CSS improves FCP but worsens LCP. A second probe holds full CSS until 2.24s; initial hero presentation still follows framework evaluation, so the proposed scheduling mechanism does not help.",
+    "No large avoidable app callback was found before LCP. Core Next/React modules dominate; the full quote-form import occurs after observed LCP and chat code loads on first open.",
+    "Localhost reports contain no third-party analytics requests because of production-host gating; they cannot measure production third-party transfer cost.",
+    "The remaining gap is measured for the tested build/settings, not a mathematical proof that 98 is impossible under every future architecture."
+  ],
+  "nativeTraceEvidence": {
+    "controlHome": {
+      "firstStyleStartMs": 123.4,
+      "firstStyleMs": 17.7,
+      "firstLayoutMs": 34.6,
+      "nextLayoutMs": 8.1,
+      "firstPaintMs": 186.4,
+      "frameworkCoreStartMs": 212.3,
+      "frameworkCoreDurationMs": 56.7,
+      "lcpPresentationMs": 258.211
+    },
+    "controlService": {
+      "styleAndLayoutMs": 71,
+      "frameworkCoreStartMs": 119.9,
+      "frameworkRuntimeStartMs": 198.6,
+      "lcpPresentationMs": 260.847,
+      "mobileCtaLayoutMs": 5.5
+    },
+    "criticalDelayedHome": {
+      "initialStyleStartMs": 136.435,
+      "initialStyleDurationMs": 14.061,
+      "initialLayoutStartMs": 156.084,
+      "initialLayoutDurationMs": 38.926,
+      "paintMs": [
+        201.791,
+        230.024
+      ],
+      "frameworkStartsMs": [
+        234.555,
+        253.067
+      ],
+      "lcpPresentationMs": 278,
+      "fullCssStyleStartMs": 2242.296,
+      "fullCssLayoutStartMs": 2257.204
+    }
+  },
+  "fontCss": {
+    "rawBytes": 7444,
+    "gzipBytes": 1455,
+    "chatCssRawBytes": 6700,
+    "chatCssGzipBytes": 1570,
+    "note": "Removing unused language CSS would save only a fraction of 1KB compressed; actual downloaded fonts are already Latin only."
+  },
+  "reproduction": {
+    "diagnosticRunner": ".tmp/fable-r2-response-probe.mjs (ignored local throwaway)",
+    "lighthouseVersion": "13.6.0",
+    "throttlingMethod": "simulate",
+    "runsSequential": true,
+    "chromeProfile": "fresh per run",
+    "blockedRequestAcceptance": false,
+    "proxyControl": "Preserves headers, requests identity from Next then recompresses textual bodies with gzip; buffers the response, hence explicit unmodified control."
+  }
+}

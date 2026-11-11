@@ -1,0 +1,181 @@
+{
+  "baseline": "docs/design-shots/fable-r1-after-metrics.json",
+  "final": "docs/design-shots/fable-r2-after-metrics.json",
+  "fieldsCompared": [
+    "bodyFont",
+    "labelFont",
+    "labelSize",
+    "carbon",
+    "overflow",
+    "undersizedMono",
+    "missingImages",
+    "edges",
+    "form"
+  ],
+  "results": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "differences": {},
+      "imageComparisons": [
+        {
+          "baseline": "docs/design-shots/fable-r1-after-home-390x844.png",
+          "final": "docs/design-shots/fable-r2-after-home-390x844.png",
+          "beforeDimensions": {
+            "width": 390,
+            "height": 14358
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 14358
+          },
+          "differentPixels": 390,
+          "meanAbsoluteChannelDifference": 0.00019715623560170154
+        },
+        {
+          "baseline": "docs/design-shots/fable-r1-after-home-390x844-fold.png",
+          "final": "docs/design-shots/fable-r2-after-home-390x844-fold.png",
+          "beforeDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "differentPixels": 0,
+          "meanAbsoluteChannelDifference": 0
+        }
+      ],
+      "pageErrors": [],
+      "consoleErrors": [],
+      "blockedSubmissions": []
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "differences": {},
+      "imageComparisons": [
+        {
+          "baseline": "docs/design-shots/fable-r1-after-mobile-welding-390x844.png",
+          "final": "docs/design-shots/fable-r2-after-mobile-welding-390x844.png",
+          "beforeDimensions": {
+            "width": 390,
+            "height": 5416
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 5416
+          },
+          "differentPixels": 0,
+          "meanAbsoluteChannelDifference": 0
+        },
+        {
+          "baseline": "docs/design-shots/fable-r1-after-mobile-welding-390x844-fold.png",
+          "final": "docs/design-shots/fable-r2-after-mobile-welding-390x844-fold.png",
+          "beforeDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "differentPixels": 0,
+          "meanAbsoluteChannelDifference": 0
+        }
+      ],
+      "pageErrors": [],
+      "consoleErrors": [],
+      "blockedSubmissions": []
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "differences": {},
+      "imageComparisons": [
+        {
+          "baseline": "docs/design-shots/fable-r1-after-home-1440x900.png",
+          "final": "docs/design-shots/fable-r2-after-home-1440x900.png",
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 10068
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 10068
+          },
+          "differentPixels": 0,
+          "meanAbsoluteChannelDifference": 0
+        },
+        {
+          "baseline": "docs/design-shots/fable-r1-after-home-1440x900-fold.png",
+          "final": "docs/design-shots/fable-r2-after-home-1440x900-fold.png",
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "differentPixels": 0,
+          "meanAbsoluteChannelDifference": 0
+        }
+      ],
+      "pageErrors": [],
+      "consoleErrors": [],
+      "blockedSubmissions": []
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "differences": {},
+      "imageComparisons": [
+        {
+          "baseline": "docs/design-shots/fable-r1-after-mobile-welding-1440x900.png",
+          "final": "docs/design-shots/fable-r2-after-mobile-welding-1440x900.png",
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 4004
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 4004
+          },
+          "differentPixels": 0,
+          "meanAbsoluteChannelDifference": 0
+        },
+        {
+          "baseline": "docs/design-shots/fable-r1-after-mobile-welding-1440x900-fold.png",
+          "final": "docs/design-shots/fable-r2-after-mobile-welding-1440x900-fold.png",
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "differentPixels": 0,
+          "meanAbsoluteChannelDifference": 0
+        }
+      ],
+      "pageErrors": [],
+      "consoleErrors": [],
+      "blockedSubmissions": []
+    }
+  ]
+}
