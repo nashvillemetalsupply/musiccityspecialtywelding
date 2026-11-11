@@ -1,0 +1,844 @@
+{
+  "mode": "offline lookup; public fallback shop-phone fixture, no provider imports, inherited values or dotenv reads",
+  "entries": 69,
+  "patterns": 139,
+  "whQuestions": 43,
+  "whYesNoOpenings": 0,
+  "passed": true,
+  "results": [
+    {
+      "id": "mobile-welding-faq-1",
+      "question": "How far will you travel?",
+      "answer": "Travel depends on the job size, location, and schedule. We routinely serve Lebanon, Nashville, and surrounding Middle Tennessee communities; call for an exact availability check.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-welding-faq-2",
+      "question": "Can every repair be completed on-site?",
+      "answer": "No. Access, material condition, weather, fire risk, power, and the required repair method can make shop work the better option. We will tell you when an on-site repair is not the right fit.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-welding-faq-3",
+      "question": "Do you handle emergency work?",
+      "answer": "Yes. Urgent work is accepted when scheduling and travel allow. Call (615) 703-3296 to confirm availability.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-1",
+      "question": "Can you repair a trailer where it sits?",
+      "answer": "Yes. Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-1",
+      "question": "Do you repair trailers on site?",
+      "answer": "Yes. Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-1",
+      "question": "Can you repair my trailer on-site?",
+      "answer": "Yes. Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-2",
+      "question": "Can you weld a cracked trailer frame?",
+      "answer": "Yes. A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter. We review those conditions before recommending a repair.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-2",
+      "question": "Do you repair cracked trailer frames?",
+      "answer": "Yes. A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter. We review those conditions before recommending a repair.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-3",
+      "question": "What photos help with a trailer quote?",
+      "answer": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-3",
+      "question": "What photos should I send for a trailer quote?",
+      "answer": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-welding-repair-faq-3",
+      "question": "What photos should I send of my trailer?",
+      "answer": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "gate-repair-faq-1",
+      "question": "Do you repair gate motors or openers?",
+      "answer": "No. We repair the metal: the frame, hinges, latches, posts, and brackets. Motor, operator, and electrical work are outside what we do, so call the installer for those.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-repair-faq-2",
+      "question": "Can you repair a gate where it hangs?",
+      "answer": "Yes. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-repair-faq-2",
+      "question": "Do you repair gates on site?",
+      "answer": "Yes. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-repair-faq-2",
+      "question": "Can you repair my gate on-site?",
+      "answer": "Yes. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-repair-faq-3",
+      "question": "What photos help with a gate quote?",
+      "answer": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-repair-faq-3",
+      "question": "What photos should I send for a gate quote?",
+      "answer": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-repair-faq-3",
+      "question": "What photos should I send of my gate?",
+      "answer": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "equipment-repair-faq-1",
+      "question": "Can you repair equipment at our facility?",
+      "answer": "Yes. Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "equipment-repair-faq-1",
+      "question": "Do you repair equipment on site?",
+      "answer": "Yes. Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "equipment-repair-faq-1",
+      "question": "Can you repair equipment at my facility?",
+      "answer": "Yes. Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "equipment-repair-faq-2",
+      "question": "Can you reinforce a repeatedly cracked area?",
+      "answer": "Yes. Reinforcement is something we can review, but repeated failure often points to load, alignment, fatigue, or design issues. We review the surrounding assembly before recommending it.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "equipment-repair-faq-3",
+      "question": "What information speeds up the quote?",
+      "answer": "Send the equipment make and model, location, several photos, approximate dimensions, and the timing required.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "architectural-welding-faq-1",
+      "question": "Can you work from architectural drawings?",
+      "answer": "Yes. Provide the relevant sheets, dimensions, material notes, finishes, and installation requirements for review.",
+      "source": "lib/service-pages.ts (architectural-welding)"
+    },
+    {
+      "id": "architectural-welding-faq-2",
+      "question": "Do you install the metalwork you fabricate?",
+      "answer": "Yes. Installation can be discussed as part of the project. Access, anchoring, site readiness, and project location determine the final scope.",
+      "source": "lib/service-pages.ts (architectural-welding)"
+    },
+    {
+      "id": "architectural-welding-faq-3",
+      "question": "Who handles engineering and permits?",
+      "answer": "That depends on the project contract. Engineering, permitting, and inspection responsibilities should be confirmed before fabrication begins.",
+      "source": "lib/service-pages.ts (architectural-welding)"
+    },
+    {
+      "id": "custom-fabrication-faq-1",
+      "question": "Do I need a finished CAD drawing?",
+      "answer": "No. Not every job needs a finished CAD drawing. A clear sketch, dimensions, photos, and an explanation of the application may be enough to begin reviewing the project.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "custom-fabrication-faq-2",
+      "question": "Can you duplicate an existing part?",
+      "answer": "Yes. Some parts can be recreated from a sample or complete measurements. Safety-critical or protected designs may require additional documentation or engineering.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "custom-fabrication-faq-3",
+      "question": "Do you handle one-off projects?",
+      "answer": "Yes. One-off and specialized projects are considered when the scope, material, dimensions, and intended use are clear.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "custom-metal-products-faq-1",
+      "question": "Can the size and design be customized?",
+      "answer": "Yes. Dimensions, layout, decorative details, finish, and mounting can be reviewed for the property.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "custom-metal-products-faq-2",
+      "question": "Do you build mailbox clusters?",
+      "answer": "Yes. Residential and commercial-style clusters can be reviewed based on quantity, access, mounting, and delivery or installation needs.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "custom-metal-products-faq-3",
+      "question": "What is needed to quote a planter box?",
+      "answer": "Provide length, width, height, quantity, placement photos, finish preference, and whether installation is part of the request.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "mobile-service",
+      "question": "Do you offer mobile welding?",
+      "answer": "Yes. We bring the rig when the metal is better repaired where it sits.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-service",
+      "question": "Do you do mobile welding?",
+      "answer": "Yes. We bring the rig when the metal is better repaired where it sits.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-service",
+      "question": "Do you offer on-site welding?",
+      "answer": "Yes. We bring the rig when the metal is better repaired where it sits.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-service",
+      "question": "Do you come to the job site?",
+      "answer": "Yes. We bring the rig when the metal is better repaired where it sits.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-service",
+      "question": "Do you come out to the job?",
+      "answer": "Yes. We bring the rig when the metal is better repaired where it sits.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-service",
+      "question": "Do you bring welding equipment to my job site?",
+      "answer": "Yes. We bring the rig when the metal is better repaired where it sits.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-shop-fit",
+      "question": "Should I bring my part to the shop or use mobile welding?",
+      "answer": "Access, material condition, weather, fire risk, power and repair method determine whether mobile or shop work fits.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-shop-conditions",
+      "question": "What could make a mobile repair better suited to the shop?",
+      "answer": "Access, material condition, weather, fire risk, power and repair method can make shop work the better option.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-access",
+      "question": "What access information do you need before a road call?",
+      "answer": "Include the job-site address, access restrictions and desired timing.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-photos",
+      "question": "What photos should I send for a mobile welding quote?",
+      "answer": "Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "mobile-photos",
+      "question": "What pictures should I send for mobile welding?",
+      "answer": "Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "trailer-parts",
+      "question": "Do you work on utility trailer ramps and fenders?",
+      "answer": "Yes. We repair trailer ramps, fenders, brackets, hangers and attachment points.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-parts",
+      "question": "Do you repair trailers?",
+      "answer": "Yes. We repair trailer ramps, fenders, brackets, hangers and attachment points.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "trailer-details",
+      "question": "What trailer details should I send before repair?",
+      "answer": "Include the trailer type, approximate capacity, location, prior repairs and whether it can be moved.",
+      "source": "lib/service-pages.ts (trailer-welding-repair)"
+    },
+    {
+      "id": "gate-parts",
+      "question": "Do you repair sagging steel driveway gates?",
+      "answer": "Yes. We repair sagging steel and iron gate frames, hinges, latches, posts and brackets.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-parts",
+      "question": "Do you repair gates?",
+      "answer": "Yes. We repair sagging steel and iron gate frames, hinges, latches, posts and brackets.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-electrical-boundary",
+      "question": "Do you repair gate motors and electrical openers?",
+      "answer": "No. We repair gate metal; motor, operator and electrical work belongs with the installer.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "gate-hinge-details",
+      "question": "What do you need to know about a broken gate hinge?",
+      "answer": "Send the gate type, approximate size, location and whether it can be unhung.",
+      "source": "lib/service-pages.ts (gate-repair)"
+    },
+    {
+      "id": "equipment-parts",
+      "question": "Do you repair machinery frames and brackets?",
+      "answer": "Yes. We repair machinery frames, brackets, guards, supports and attachments.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "equipment-parts",
+      "question": "Do you repair equipment?",
+      "answer": "Yes. We repair machinery frames, brackets, guards, supports and attachments.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "equipment-details",
+      "question": "What information do you need about a failed equipment attachment?",
+      "answer": "Share the equipment make and model, failed component, photos, location and timing.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "equipment-repeat-failure",
+      "question": "Why does the same equipment bracket keep cracking?",
+      "answer": "Repeated failure can point to load, alignment, fatigue or design issues; we review the surrounding assembly before recommending reinforcement.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "architectural-parts",
+      "question": "Do you fabricate steel railings and stair components?",
+      "answer": "Yes. We fabricate steel railings, guardrails and stair components.",
+      "source": "lib/service-pages.ts (architectural-welding)"
+    },
+    {
+      "id": "architectural-parts",
+      "question": "Do you do architectural welding?",
+      "answer": "Yes. We fabricate steel railings, guardrails and stair components.",
+      "source": "lib/service-pages.ts (architectural-welding)"
+    },
+    {
+      "id": "architectural-drawings",
+      "question": "Can I send architectural drawings and finish requirements?",
+      "answer": "Yes. Send drawings, dimensions, finish requirements and site photos.",
+      "source": "lib/service-pages.ts (architectural-welding)"
+    },
+    {
+      "id": "architectural-installation",
+      "question": "Is installation automatically included with architectural metalwork?",
+      "answer": "No. Installation depends on access, anchoring, site readiness and project location; we confirm the final scope with you.",
+      "source": "lib/service-pages.ts (architectural-welding)"
+    },
+    {
+      "id": "fabrication-sketches",
+      "question": "Do you make custom brackets and frames from sketches?",
+      "answer": "Yes. We work from drawings, sketches, measurements or samples to build custom brackets and frames.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "fabrication-sketches",
+      "question": "Can you work from a dimensioned sketch for a custom bracket?",
+      "answer": "Yes. We work from drawings, sketches, measurements or samples to build custom brackets and frames.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "fabrication-sketches",
+      "question": "Do you do custom fabrication?",
+      "answer": "Yes. We work from drawings, sketches, measurements or samples to build custom brackets and frames.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "gas-meter-manifolds",
+      "question": "Can you fabricate gas meter manifolds?",
+      "answer": "Yes. We fabricate gas meter manifolds; we review the exact scope before accepting the work.",
+      "source": "BRAND-BRIEF.md (Approved secondary capabilities); lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "fabrication-one-off",
+      "question": "Do you consider one-off or short-run fabrication?",
+      "answer": "Yes. One-off and specialized projects are considered when scope, material, dimensions and intended use are clear.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "fabrication-measurements",
+      "question": "What measurements help with a custom fabrication quote?",
+      "answer": "Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "fabrication-measurements",
+      "question": "What dimensions do you need for custom fabrication?",
+      "answer": "Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs.",
+      "source": "lib/service-pages.ts (custom-fabrication)"
+    },
+    {
+      "id": "mailboxes",
+      "question": "Do you build custom steel mailbox supports?",
+      "answer": "Yes. We fabricate custom steel mailbox supports, clusters and brackets.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "mailboxes",
+      "question": "Do you make custom mailboxes?",
+      "answer": "Yes. We fabricate custom steel mailbox supports, clusters and brackets.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "planters",
+      "question": "Do you make metal planter boxes to fit a space?",
+      "answer": "Yes. We build custom metal planter boxes sized for the space.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "planters",
+      "question": "Do you make custom steel planter boxes?",
+      "answer": "Yes. We build custom metal planter boxes sized for the space.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "planter-measurements",
+      "question": "What measurements should I send for a planter box?",
+      "answer": "Provide length, width, height, quantity, placement photos, finish preference and installation needs.",
+      "source": "lib/service-pages.ts (custom-metal-products)"
+    },
+    {
+      "id": "boats",
+      "question": "Do you work on aluminum boats?",
+      "answer": "Yes. We handle aluminum boat repair; we review the exact scope before accepting the work.",
+      "source": "BRAND-BRIEF.md (Approved secondary capabilities); app/page.tsx (FAQs)"
+    },
+    {
+      "id": "boats",
+      "question": "Do you repair aluminum boats?",
+      "answer": "Yes. We handle aluminum boat repair; we review the exact scope before accepting the work.",
+      "source": "BRAND-BRIEF.md (Approved secondary capabilities); app/page.tsx (FAQs)"
+    },
+    {
+      "id": "boats",
+      "question": "Do you weld aluminum boats?",
+      "answer": "Yes. We handle aluminum boat repair; we review the exact scope before accepting the work.",
+      "source": "BRAND-BRIEF.md (Approved secondary capabilities); app/page.tsx (FAQs)"
+    },
+    {
+      "id": "boats",
+      "question": "Do you weld aluminum and repair boats?",
+      "answer": "Yes. We handle aluminum boat repair; we review the exact scope before accepting the work.",
+      "source": "BRAND-BRIEF.md (Approved secondary capabilities); app/page.tsx (FAQs)"
+    },
+    {
+      "id": "stainless-countertops",
+      "question": "Do you fabricate stainless countertops?",
+      "answer": "Yes. We handle stainless countertops; we review the exact scope before accepting the work.",
+      "source": "BRAND-BRIEF.md (Approved secondary capabilities)"
+    },
+    {
+      "id": "steel-aluminum-planters",
+      "question": "Can you build large steel and aluminum planters?",
+      "answer": "Yes. We handle large steel or aluminum planters; we review the exact scope before accepting the work.",
+      "source": "BRAND-BRIEF.md (Approved secondary capabilities)"
+    },
+    {
+      "id": "supported-metals",
+      "question": "What metals do you work with?",
+      "answer": "We work on steel and iron gates, weld aluminum and repair aluminum boats, and fabricate stainless countertops.",
+      "source": "lib/service-pages.ts (gate-repair); app/page.tsx (FAQs); BRAND-BRIEF.md (Approved secondary capabilities)"
+    },
+    {
+      "id": "supported-metals",
+      "question": "Do you weld steel aluminum and stainless?",
+      "answer": "Yes. We work on steel and iron gates, weld aluminum and repair aluminum boats, and fabricate stainless countertops.",
+      "source": "lib/service-pages.ts (gate-repair); app/page.tsx (FAQs); BRAND-BRIEF.md (Approved secondary capabilities)"
+    },
+    {
+      "id": "quote-equipment-model",
+      "question": "Should I include the equipment make and model?",
+      "answer": "Yes. Send the equipment make and model and the failed component if known.",
+      "source": "lib/service-pages.ts (equipment-repair)"
+    },
+    {
+      "id": "quote-full-closeup",
+      "question": "Do you need close-up and full-item photos?",
+      "answer": "Yes. Send the full item and close-ups of the failure.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "quote-full-closeup",
+      "question": "What photos do you need?",
+      "answer": "Send the full item and close-ups of the failure.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "quote-full-closeup",
+      "question": "What photos should I send?",
+      "answer": "Send the full item and close-ups of the failure.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "quote-full-closeup",
+      "question": "What photos?",
+      "answer": "Send the full item and close-ups of the failure.",
+      "source": "lib/service-pages.ts (mobile-welding)"
+    },
+    {
+      "id": "quote-prior-repairs",
+      "question": "Should I mention earlier repairs and rust?",
+      "answer": "Yes. Mention prior repairs, visible bending, corrosion and how the failure occurred.",
+      "source": "lib/service-pages.ts (trailer-welding-repair; equipment-repair)"
+    },
+    {
+      "id": "quote-drawings",
+      "question": "How do I send drawings and dimensions?",
+      "answer": "Send drawings and dimensions through the website contact form or shop email.",
+      "source": "lib/service-pages.ts (custom-fabrication); components/mainstreet-contact.tsx; lib/assistant/turn.ts (photo and drawing channels)"
+    },
+    {
+      "id": "chat-photos",
+      "question": "Can I upload a picture directly in this chat?",
+      "answer": "No. Chat doesn't accept photo uploads; use the website contact form or shop email.",
+      "source": "lib/assistant/turn.ts (photo and drawing channels); components/mainstreet-contact.tsx (Photos)"
+    },
+    {
+      "id": "chat-photos",
+      "question": "Can I send photos in chat?",
+      "answer": "No. Chat doesn't accept photo uploads; use the website contact form or shop email.",
+      "source": "lib/assistant/turn.ts (photo and drawing channels); components/mainstreet-contact.tsx (Photos)"
+    },
+    {
+      "id": "chat-photos",
+      "question": "Can I upload photos here?",
+      "answer": "No. Chat doesn't accept photo uploads; use the website contact form or shop email.",
+      "source": "lib/assistant/turn.ts (photo and drawing channels); components/mainstreet-contact.tsx (Photos)"
+    },
+    {
+      "id": "quote-start",
+      "question": "How do I get a quote?",
+      "answer": "Send the location, a short description, and clear photos of the full item and the problem area. Add dimensions or a drawing if you have them.",
+      "source": "app/page.tsx (FAQs); components/mainstreet-contact.tsx"
+    },
+    {
+      "id": "quote-start",
+      "question": "What should I send for a quote?",
+      "answer": "Send the location, a short description, and clear photos of the full item and the problem area. Add dimensions or a drawing if you have them.",
+      "source": "app/page.tsx (FAQs); components/mainstreet-contact.tsx"
+    },
+    {
+      "id": "quote-photo-limits",
+      "question": "What photo files can I upload?",
+      "answer": "The quote form takes up to 5 optional JPG, PNG, WebP, GIF, HEIC or HEIF photos. Keep each photo at 3 MB or less and the total at 4 MB or less.",
+      "source": "components/mainstreet-contact.tsx (photo validation)"
+    },
+    {
+      "id": "quote-photo-limits",
+      "question": "How many photos can I upload?",
+      "answer": "The quote form takes up to 5 optional JPG, PNG, WebP, GIF, HEIC or HEIF photos. Keep each photo at 3 MB or less and the total at 4 MB or less.",
+      "source": "components/mainstreet-contact.tsx (photo validation)"
+    },
+    {
+      "id": "shop-location",
+      "question": "Where is your welding shop?",
+      "answer": "We're at 533 W Baddour Pkwy, Lebanon, TN 37087.",
+      "source": "app/service-areas/page.tsx; BRAND-BRIEF.md (Existing business details)"
+    },
+    {
+      "id": "shop-location",
+      "question": "What is your address?",
+      "answer": "We're at 533 W Baddour Pkwy, Lebanon, TN 37087.",
+      "source": "app/service-areas/page.tsx; BRAND-BRIEF.md (Existing business details)"
+    },
+    {
+      "id": "shop-location",
+      "question": "Where are you located?",
+      "answer": "We're at 533 W Baddour Pkwy, Lebanon, TN 37087.",
+      "source": "app/service-areas/page.tsx; BRAND-BRIEF.md (Existing business details)"
+    },
+    {
+      "id": "shop-contact",
+      "question": "How do I reach you?",
+      "answer": "Call (615) 703-3296, use the [website quote form](/#contact), or email sales@musiccityspecialtywelding.com.",
+      "source": "lib/shop-contact.ts; lib/shop-phone-shared.ts; lib/assistant/contact.ts; components/mainstreet-contact.tsx"
+    },
+    {
+      "id": "shop-contact",
+      "question": "How can I contact the shop?",
+      "answer": "Call (615) 703-3296, use the [website quote form](/#contact), or email sales@musiccityspecialtywelding.com.",
+      "source": "lib/shop-contact.ts; lib/shop-phone-shared.ts; lib/assistant/contact.ts; components/mainstreet-contact.tsx"
+    },
+    {
+      "id": "shop-contact",
+      "question": "What is your phone number?",
+      "answer": "Call (615) 703-3296, use the [website quote form](/#contact), or email sales@musiccityspecialtywelding.com.",
+      "source": "lib/shop-contact.ts; lib/shop-phone-shared.ts; lib/assistant/contact.ts; components/mainstreet-contact.tsx"
+    },
+    {
+      "id": "shop-contact",
+      "question": "What is your email?",
+      "answer": "Call (615) 703-3296, use the [website quote form](/#contact), or email sales@musiccityspecialtywelding.com.",
+      "source": "lib/shop-contact.ts; lib/shop-phone-shared.ts; lib/assistant/contact.ts; components/mainstreet-contact.tsx"
+    },
+    {
+      "id": "service-list",
+      "question": "What services do you offer?",
+      "answer": "We do mobile welding, trailer and equipment repair, gate repair, architectural metal, custom fabrication, mailboxes and planters. We also repair aluminum boats and fabricate stainless countertops.",
+      "source": "lib/service-pages.ts; BRAND-BRIEF.md (Approved secondary capabilities)"
+    },
+    {
+      "id": "service-list",
+      "question": "What do you do?",
+      "answer": "We do mobile welding, trailer and equipment repair, gate repair, architectural metal, custom fabrication, mailboxes and planters. We also repair aluminum boats and fabricate stainless countertops.",
+      "source": "lib/service-pages.ts; BRAND-BRIEF.md (Approved secondary capabilities)"
+    },
+    {
+      "id": "small-large-jobs",
+      "question": "Do you take both small and large work?",
+      "answer": "Yes. We handle local repairs and larger fabrication work.",
+      "source": "app/page.tsx (FAQs)"
+    },
+    {
+      "id": "small-large-jobs",
+      "question": "Do you take small jobs?",
+      "answer": "Yes. We handle local repairs and larger fabrication work.",
+      "source": "app/page.tsx (FAQs)"
+    },
+    {
+      "id": "customer-page",
+      "question": "How do I follow my job?",
+      "answer": "Active jobs have a private customer page with job notes, photos, documents and the quote, invoice and payment link.",
+      "source": "app/page.tsx (ms-job-glass-copy)"
+    },
+    {
+      "id": "customer-page",
+      "question": "What is the private customer page?",
+      "answer": "Active jobs have a private customer page with job notes, photos, documents and the quote, invoice and payment link.",
+      "source": "app/page.tsx (ms-job-glass-copy)"
+    },
+    {
+      "id": "area-lebanon",
+      "question": "Do you provide mobile welding in Lebanon?",
+      "answer": "Yes. We work in Lebanon; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-lebanon",
+      "question": "Do you offer on-site mobile welding in Lebanon?",
+      "answer": "Yes. We work in Lebanon; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-lebanon",
+      "question": "Do you serve Lebanon?",
+      "answer": "Yes. We work in Lebanon; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-lebanon",
+      "question": "Do you do mobile welding in Lebanon?",
+      "answer": "Yes. We work in Lebanon; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-nashville",
+      "question": "Do you provide mobile welding in Nashville?",
+      "answer": "Yes. We work in Nashville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-nashville",
+      "question": "Do you offer on-site mobile welding in Nashville?",
+      "answer": "Yes. We work in Nashville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-nashville",
+      "question": "Do you serve Nashville?",
+      "answer": "Yes. We work in Nashville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-nashville",
+      "question": "Do you do mobile welding in Nashville?",
+      "answer": "Yes. We work in Nashville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-franklin",
+      "question": "Do you provide mobile welding in Franklin?",
+      "answer": "Yes. We work in Franklin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-franklin",
+      "question": "Do you offer on-site mobile welding in Franklin?",
+      "answer": "Yes. We work in Franklin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-franklin",
+      "question": "Do you serve Franklin?",
+      "answer": "Yes. We work in Franklin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-franklin",
+      "question": "Do you do mobile welding in Franklin?",
+      "answer": "Yes. We work in Franklin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-murfreesboro",
+      "question": "Do you provide mobile welding in Murfreesboro?",
+      "answer": "Yes. We work in Murfreesboro; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-murfreesboro",
+      "question": "Do you offer on-site mobile welding in Murfreesboro?",
+      "answer": "Yes. We work in Murfreesboro; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-murfreesboro",
+      "question": "Do you serve Murfreesboro?",
+      "answer": "Yes. We work in Murfreesboro; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-murfreesboro",
+      "question": "Do you do mobile welding in Murfreesboro?",
+      "answer": "Yes. We work in Murfreesboro; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-gallatin",
+      "question": "Do you provide mobile welding in Gallatin?",
+      "answer": "Yes. We work in Gallatin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-gallatin",
+      "question": "Do you offer on-site mobile welding in Gallatin?",
+      "answer": "Yes. We work in Gallatin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-gallatin",
+      "question": "Do you serve Gallatin?",
+      "answer": "Yes. We work in Gallatin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-gallatin",
+      "question": "Do you do mobile welding in Gallatin?",
+      "answer": "Yes. We work in Gallatin; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-hendersonville",
+      "question": "Do you provide mobile welding in Hendersonville?",
+      "answer": "Yes. We work in Hendersonville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-hendersonville",
+      "question": "Do you offer on-site mobile welding in Hendersonville?",
+      "answer": "Yes. We work in Hendersonville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-hendersonville",
+      "question": "Do you serve Hendersonville?",
+      "answer": "Yes. We work in Hendersonville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-hendersonville",
+      "question": "Do you do mobile welding in Hendersonville?",
+      "answer": "Yes. We work in Hendersonville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-clarksville",
+      "question": "Do you provide mobile welding in Clarksville?",
+      "answer": "Yes. We work in Clarksville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-clarksville",
+      "question": "Do you offer on-site mobile welding in Clarksville?",
+      "answer": "Yes. We work in Clarksville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-clarksville",
+      "question": "Do you serve Clarksville?",
+      "answer": "Yes. We work in Clarksville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-clarksville",
+      "question": "Do you do mobile welding in Clarksville?",
+      "answer": "Yes. We work in Clarksville; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-antioch",
+      "question": "Do you provide mobile welding in Antioch?",
+      "answer": "Yes. We work in Antioch; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-antioch",
+      "question": "Do you offer on-site mobile welding in Antioch?",
+      "answer": "Yes. We work in Antioch; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-antioch",
+      "question": "Do you serve Antioch?",
+      "answer": "Yes. We work in Antioch; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "area-antioch",
+      "question": "Do you do mobile welding in Antioch?",
+      "answer": "Yes. We work in Antioch; the job scope, location and schedule determine the trip.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "listed-areas",
+      "question": "What areas do you serve?",
+      "answer": "We work in Lebanon, Nashville, Franklin, Murfreesboro, Gallatin, Hendersonville, Clarksville and Antioch. Travel depends on the location and scope; call us to confirm the fit.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    },
+    {
+      "id": "listed-areas",
+      "question": "What cities do you serve?",
+      "answer": "We work in Lebanon, Nashville, Franklin, Murfreesboro, Gallatin, Hendersonville, Clarksville and Antioch. Travel depends on the location and scope; call us to confirm the fit.",
+      "source": "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"
+    }
+  ]
+}

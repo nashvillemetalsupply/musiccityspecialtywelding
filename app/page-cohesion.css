@@ -388,10 +388,14 @@ body:has(.ms-site) { background: var(--ms-carbon); }
 }
 @media (min-width: 980px) {
   .ms-site .ms-nav-call { display: inline-flex; }
-  .ms-site .ms-faq { grid-template-columns: minmax(14rem, 1fr) minmax(0, 48rem); padding-right: max(13rem, calc((100% - var(--ms-container)) / 2)); }
+  .ms-site .ms-faq { grid-template-columns: minmax(18rem, 1fr) minmax(0, 48rem); padding-right: max(13rem, calc((100% - var(--ms-container)) / 2)); }
+  .ms-site .ms-faq-heading h2 { overflow-wrap: normal; }
   .ms-site .ms-faq-list { max-width: calc(100vw - var(--ms-gutter) - 13rem); }
   .ms-site.ms-footer, .ms-site .ms-footer { padding-right: max(13rem, calc((100% - var(--ms-container)) / 2)); }
   .ms-site .ms-area-travel ul { max-width: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2.5rem; }
+}
+@media (min-width: 980px) and (max-width: 1439px) {
+  .ms-site .ms-city-list { padding-right: 7.5rem; }
 }
 @media (max-width: 979px) {
   body:has(.ms-mobile-cta) { padding-bottom: 0; background: var(--ms-carbon); }
@@ -401,7 +405,6 @@ body:has(.ms-site) { background: var(--ms-carbon); }
   .ms-site .ms-menu-backdrop { position: fixed; inset: var(--ms-header-height) 0 0; width: 100%; height: calc(100dvh - var(--ms-header-height)); border: 0; background: var(--ms-backdrop); cursor: pointer; }
   .ms-site .ms-menu-panel { position: fixed; inset: var(--ms-header-height) 0 auto; min-width: 0; padding: .5rem var(--ms-gutter) 1rem; border-width: 1px 0; gap: .5rem; }
   .ms-site .ms-menu-panel .ms-button { width: 100%; }
-  body:has(.ms-menu[open]) { overflow: hidden; }
   html:has(.ms-menu[open]) { overflow: hidden; }
 }
 @media (max-width: 479px) {

@@ -14,8 +14,7 @@ export type AssistantAnswer = {
 
 const yesNoQuestion = /^(?:do|does|can|could|should|is|are|will|would)\b/i
 const entry = (id: string, patterns: string[], answer: string, source: string): AssistantAnswer => ({
-  id, patterns, source,
-  answer: id !== "mobile-shop-fit" && patterns.some((pattern) => yesNoQuestion.test(pattern)) && !/^(?:Yes|No)\./.test(answer) ? `Yes. ${answer}` : answer,
+  id, patterns, answer, source,
 })
 export const ASSISTANT_SHOP_PHONE = assistantShopPhone(getShopPhone())
 const serviceSource = (slug: string) => `lib/service-pages.ts (${slug})`
@@ -146,7 +145,21 @@ export function normalizeAssistantAnswer(text: string): string {
 
 export function findAssistantAnswer(message: string): AssistantAnswer | undefined {
   const question = normalizeAssistantAnswer(message)
-  return assistantAnswers.find((answer) => answer.patterns.some((pattern) => normalizeAssistantAnswer(pattern) === question))
+  for (const answer of assistantAnswers) {
+    const pattern = answer.patterns.find((pattern) => normalizeAssistantAnswer(pattern) === question)
+    if (!pattern) continue
+    // One entry can answer both "Do you ...?" and "What ...?". Its matched
+    // question determines the opening; the bank stays unchanged between turns.
+    const yesNo = answer.id !== "mobile-shop-fit" && yesNoQuestion.test(pattern)
+    const opening = /^(?:Yes|No)\.\s*/
+    return {
+      ...answer,
+      answer: yesNo
+        ? opening.test(answer.answer) ? answer.answer : `Yes. ${answer.answer}`
+        : answer.answer.replace(opening, ""),
+    }
+  }
+  return undefined
 }
 
 // Sourced exceptions apply only to the complete approved answer, never to a

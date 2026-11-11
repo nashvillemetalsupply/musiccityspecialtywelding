@@ -809,3 +809,64 @@ Follow-up, not a gate: give `emailAssistantTranscript` and the `followup.ts` cus
 R3-1, R3-2, R3-3 and R3-4 fixed, with the four new checks named above. Then I look at: the mobile menu opened mid-page on two routes, the FAQ heading at 1100, 1180 and 1280 on home and one service page, the city chips against the launcher at 1280, and the bank dump for the wh- questions. Nothing else is open. R2-1 does not hold the merge.
 
 Still owner asset, not blocking: a real mailbox or planter photo for `/services/custom-metal-products` (R2-15, defect 16).
+
+## Codex round 4
+
+Verified 2026-11-10 on `fix/fable-final-r1`, starting at `d1132a9`.
+Applied Fable's four exact fixes and hardened the live audit runner. No push,
+deployment, merge, live chat turn, form submission, or provider delivery occurred.
+Verification children received a fresh literal configuration, without inherited
+environment values; a filesystem preload blocked all dotenv reads. Public chat
+was enabled and voice disabled using literal test settings. Node was 22.23.2.
+
+| Item | Result | Evidence |
+| --- | --- | --- |
+| R3-1 | **PASS** | Removed only the body's menu overflow lock, retaining the html lock. At 390x844 on home, mobile welding and privacy, nav top stays 0 and the summary/close control stays fully visible at scrollY 900 before opening, after opening, after a native wheel, after a CDP touch drag, and after closing. All 15 measured states retain scrollY 900. |
+| R3-2 | **PASS** | Desktop FAQ column minimum is 18rem and the heading uses normal word wrapping. Character-range measurements produce exactly `Straight` / `answers.` on home and mobile welding at 980, 1024, 1040, 1100, 1120, 1180, 1280, 1340, 1366 and 1440px. All 20 states have no horizontal overflow and the cream card ends before the launcher column. |
+| R3-3 | **PASS** | The matched pattern determines the Yes/No opening. All 69 entries and 139 patterns were checked; none of the 43 wh-question patterns returns a Yes/No opening. Mixed metals/photo entries, explicit No answers and the intentional mobile/shop choice are covered by tests. |
+| R3-4 | **PASS** | Added exactly the 7.5rem city-list right padding at 980–1439px. Native-layout sweeps on home and service areas at 1024x768, 1280x720, 1366x768 and 1440x900 check every visible `a`, `button`, `summary`, `input`, `select` and `textarea` against the visible launcher. Zero intersections across 1,769 scroll samples, spaced 24px apart. |
+| Live audit runner | **PASS** | Live mode requires `--base-url` and has no production default. All ten mock HTTP requests carry both `is_test: true` and the `[INTERNAL TEST]` prefix, with fresh test sessions. Missing-target and report-overwrite tests fail before any request; reports use new files. The default offline mode remains available. |
+
+The browser runner is [scripts/qa/fable-r4-visual.mjs](../scripts/qa/fable-r4-visual.mjs).
+It allows only local GET/HEAD requests and preserves production layout; only
+smooth scrolling is disabled for deterministic sampling. No attempted
+submissions or browser exceptions were observed. The checks ran against the
+local production server at `http://127.0.0.1:3314`.
+
+Evidence committed with this round:
+
+- [Menu, FAQ and launcher bounding boxes](design-shots/fable-r4-metrics.json),
+  with per-state screenshot paths and native wheel/touch measurements.
+- 26 screenshots under `docs/design-shots/fable-r4-*.png`, including all twenty
+  FAQ widths, three menus opened mid-page, and city/launcher states at 1280.
+  Every screenshot was opened and visually inspected.
+- [Complete matched-pattern bank dump](assistant-answer-bank-fable-r4.json),
+  including every wh-question answer.
+- [143-row offline audit transcript](assistant-audit-fable-r4-dry.json):
+  61 answered, 82 handoffs, zero wrong answers, zero dead ends and zero outbound
+  attempts. This is fixture evidence, not live-model quality evidence.
+
+Validation: **build PASS**, including TypeScript/static generation and bundle
+budgets (home 536,801/648,316 bytes; board 631,853/817,538 bytes). Node 22
+**`npm test` PASS: 1,573 total, 1,570 passed, zero failed, three skipped**
+(the opt-in model evaluation and two database persistence tests). ESLint on
+all touched TypeScript/JavaScript files and `git diff --check` pass. Logs:
+`.tmp/fable-r4-build.log`, `.tmp/fable-r4-npm-test-final.log` and
+`.tmp/fable-r4-visual.log`.
+
+One additional test issue was found and fixed: the offline audit retained
+22 obsolete substring expectations from before Fable's shop-voice rewrites.
+Only those expected phrases were updated; provider candidates and refusal,
+handoff and safety grading remain unchanged. New tests still reject omitted
+scope caveats, photo instructions and travel conditions.
+
+New nonblocking visual observation: at 1280x720, the home launcher can overlap
+the final `e.` in `scope.` in the ordinary service-area paragraph at scrollY
+6552. [Screenshot](design-shots/fable-r4-home-1280x720-paragraph-overlap.png)
+and glyph-range measurements in `newIssues` in the metrics record preserve it.
+The city links and all other controls pass the requested intersection checks. No
+additional layout change is included beyond Fable's exact fixes. R2-1 remains
+the post-deploy live-model check described above; it was not run in this round.
+
+The owned local verification server was stopped and its port confirmed free.
+All QA browser contexts were closed; user browser sessions were untouched.

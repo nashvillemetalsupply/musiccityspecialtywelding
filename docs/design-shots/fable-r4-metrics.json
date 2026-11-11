@@ -1,0 +1,1416 @@
+{
+  "origin": "http://127.0.0.1:3314",
+  "safety": "Only local GET/HEAD requests allowed; no chat or form submitted.",
+  "menu": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-390x844-menu-scroll900.png",
+      "stages": [
+        {
+          "stage": "before-open",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 328.40625,
+            "right": 374,
+            "width": 45.59375,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": false
+        },
+        {
+          "stage": "after-open",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 328.40625,
+            "right": 374,
+            "width": 45.59375,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-wheel",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 328.40625,
+            "right": 374,
+            "width": 45.59375,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-touch",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 328.40625,
+            "right": 374,
+            "width": 45.59375,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-close",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 328.40625,
+            "right": 374,
+            "width": 45.59375,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": false
+        }
+      ]
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-390x844-menu-scroll900.png",
+      "stages": [
+        {
+          "stage": "before-open",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": false
+        },
+        {
+          "stage": "after-open",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-wheel",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-touch",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-close",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": false
+        }
+      ]
+    },
+    {
+      "route": "/privacy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r4-privacy-390x844-menu-scroll900.png",
+      "stages": [
+        {
+          "stage": "before-open",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": false
+        },
+        {
+          "stage": "after-open",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-wheel",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-touch",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": true
+        },
+        {
+          "stage": "after-close",
+          "scrollY": 900,
+          "nav": {
+            "top": 0,
+            "bottom": 73,
+            "left": 0,
+            "right": 390,
+            "width": 390,
+            "height": 73
+          },
+          "summary": {
+            "top": 14,
+            "bottom": 58,
+            "left": 326.8125,
+            "right": 374,
+            "width": 47.1875,
+            "height": 44
+          },
+          "summaryVisible": true,
+          "open": false
+        }
+      ]
+    }
+  ],
+  "faq": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 980,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-980x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 397.484375,
+        "right": 327.1875,
+        "bottom": 503.140625,
+        "left": 39.1875,
+        "width": 288,
+        "height": 105.65625
+      },
+      "card": {
+        "top": 397.484375,
+        "right": 772,
+        "bottom": 985.484375,
+        "left": 359.1875,
+        "width": 412.8125,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 956,
+        "bottom": 876,
+        "left": 817.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1024x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 394.53125,
+        "right": 328.953125,
+        "bottom": 504.875,
+        "left": 40.953125,
+        "width": 288,
+        "height": 110.34375
+      },
+      "card": {
+        "top": 394.53125,
+        "right": 816,
+        "bottom": 982.53125,
+        "left": 360.953125,
+        "width": 455.046875,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1000,
+        "bottom": 876,
+        "left": 861.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1040,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1040x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 393.46875,
+        "right": 329.59375,
+        "bottom": 505.5625,
+        "left": 41.59375,
+        "width": 288,
+        "height": 112.09375
+      },
+      "card": {
+        "top": 393.46875,
+        "right": 832,
+        "bottom": 981.46875,
+        "left": 361.59375,
+        "width": 470.40625,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1016,
+        "bottom": 876,
+        "left": 877.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1100x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 390.515625,
+        "right": 332,
+        "bottom": 509.078125,
+        "left": 44,
+        "width": 288,
+        "height": 118.5625
+      },
+      "card": {
+        "top": 390.515625,
+        "right": 892,
+        "bottom": 978.515625,
+        "left": 364,
+        "width": 528,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1076,
+        "bottom": 876,
+        "left": 937.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1120,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1120x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 389.8125,
+        "right": 332.796875,
+        "bottom": 510.53125,
+        "left": 44.796875,
+        "width": 288,
+        "height": 120.71875
+      },
+      "card": {
+        "top": 389.8125,
+        "right": 912,
+        "bottom": 977.8125,
+        "left": 364.796875,
+        "width": 547.203125,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1096,
+        "bottom": 876,
+        "left": 957.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1180x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 386.734375,
+        "right": 335.1875,
+        "bottom": 513.921875,
+        "left": 47.1875,
+        "width": 288,
+        "height": 127.1875
+      },
+      "card": {
+        "top": 386.734375,
+        "right": 972,
+        "bottom": 974.734375,
+        "left": 367.1875,
+        "width": 604.8125,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1156,
+        "bottom": 876,
+        "left": 1017.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1280x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 381.359375,
+        "right": 336,
+        "bottom": 519.328125,
+        "left": 48,
+        "width": 288,
+        "height": 137.96875
+      },
+      "card": {
+        "top": 381.359375,
+        "right": 1072,
+        "bottom": 969.359375,
+        "left": 368,
+        "width": 704,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1256,
+        "bottom": 876,
+        "left": 1117.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1340,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1340x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 379.859375,
+        "right": 350,
+        "bottom": 520.953125,
+        "left": 62,
+        "width": 288,
+        "height": 141.09375
+      },
+      "card": {
+        "top": 379.859375,
+        "right": 1132,
+        "bottom": 967.859375,
+        "left": 382,
+        "width": 750,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1316,
+        "bottom": 876,
+        "left": 1177.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1366,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1366x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 379.421875,
+        "right": 363,
+        "bottom": 520.515625,
+        "left": 75,
+        "width": 288,
+        "height": 141.09375
+      },
+      "card": {
+        "top": 379.421875,
+        "right": 1158,
+        "bottom": 967.421875,
+        "left": 395,
+        "width": 763,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1342,
+        "bottom": 876,
+        "left": 1203.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1440x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 379.5,
+        "right": 432,
+        "bottom": 520.59375,
+        "left": 112,
+        "width": 320,
+        "height": 141.09375
+      },
+      "card": {
+        "top": 379.5,
+        "right": 1232,
+        "bottom": 967.5,
+        "left": 464,
+        "width": 768,
+        "height": 588
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1416,
+        "bottom": 876,
+        "left": 1277.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 980,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-980x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 396.859375,
+        "right": 327.1875,
+        "bottom": 502.515625,
+        "left": 39.1875,
+        "width": 288,
+        "height": 105.65625
+      },
+      "card": {
+        "top": 396.859375,
+        "right": 772,
+        "bottom": 676.859375,
+        "left": 359.1875,
+        "width": 412.8125,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 956,
+        "bottom": 876,
+        "left": 817.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1024x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 394.796875,
+        "right": 328.953125,
+        "bottom": 505.140625,
+        "left": 40.953125,
+        "width": 288,
+        "height": 110.34375
+      },
+      "card": {
+        "top": 394.796875,
+        "right": 816,
+        "bottom": 674.796875,
+        "left": 360.953125,
+        "width": 455.046875,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1000,
+        "bottom": 876,
+        "left": 861.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1040,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1040x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 393.84375,
+        "right": 329.59375,
+        "bottom": 505.9375,
+        "left": 41.59375,
+        "width": 288,
+        "height": 112.09375
+      },
+      "card": {
+        "top": 393.84375,
+        "right": 832,
+        "bottom": 673.84375,
+        "left": 361.59375,
+        "width": 470.40625,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1016,
+        "bottom": 876,
+        "left": 877.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1100,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1100x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 390.265625,
+        "right": 332,
+        "bottom": 508.828125,
+        "left": 44,
+        "width": 288,
+        "height": 118.5625
+      },
+      "card": {
+        "top": 390.265625,
+        "right": 892,
+        "bottom": 670.265625,
+        "left": 364,
+        "width": 528,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1076,
+        "bottom": 876,
+        "left": 937.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1120,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1120x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 390,
+        "right": 332.796875,
+        "bottom": 510.71875,
+        "left": 44.796875,
+        "width": 288,
+        "height": 120.71875
+      },
+      "card": {
+        "top": 390,
+        "right": 912,
+        "bottom": 670,
+        "left": 364.796875,
+        "width": 547.203125,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1096,
+        "bottom": 876,
+        "left": 957.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1180,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1180x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 386.65625,
+        "right": 335.1875,
+        "bottom": 513.84375,
+        "left": 47.1875,
+        "width": 288,
+        "height": 127.1875
+      },
+      "card": {
+        "top": 386.65625,
+        "right": 972,
+        "bottom": 666.65625,
+        "left": 367.1875,
+        "width": 604.8125,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1156,
+        "bottom": 876,
+        "left": 1017.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1280x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 380.65625,
+        "right": 336,
+        "bottom": 518.625,
+        "left": 48,
+        "width": 288,
+        "height": 137.96875
+      },
+      "card": {
+        "top": 380.65625,
+        "right": 1072,
+        "bottom": 660.65625,
+        "left": 368,
+        "width": 704,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1256,
+        "bottom": 876,
+        "left": 1117.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1340,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1340x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 379.453125,
+        "right": 350,
+        "bottom": 520.546875,
+        "left": 62,
+        "width": 288,
+        "height": 141.09375
+      },
+      "card": {
+        "top": 379.453125,
+        "right": 1132,
+        "bottom": 659.453125,
+        "left": 382,
+        "width": 750,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1316,
+        "bottom": 876,
+        "left": 1177.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1366,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1366x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 379.140625,
+        "right": 363,
+        "bottom": 520.234375,
+        "left": 75,
+        "width": 288,
+        "height": 141.09375
+      },
+      "card": {
+        "top": 379.140625,
+        "right": 1158,
+        "bottom": 659.140625,
+        "left": 395,
+        "width": 763,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1342,
+        "bottom": 876,
+        "left": 1203.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r4-mobile-welding-1440x900-faq.png",
+      "lines": [
+        "Straight",
+        "answers."
+      ],
+      "heading": {
+        "top": 379.875,
+        "right": 432,
+        "bottom": 520.96875,
+        "left": 112,
+        "width": 320,
+        "height": 141.09375
+      },
+      "card": {
+        "top": 379.875,
+        "right": 1232,
+        "bottom": 659.875,
+        "left": 464,
+        "width": 768,
+        "height": 280
+      },
+      "launcher": {
+        "top": 828,
+        "right": 1416,
+        "bottom": 876,
+        "left": 1277.171875,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overflow": false
+    }
+  ],
+  "launcher": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "step": 24,
+      "samples": 366,
+      "visibleSamples": 297,
+      "collisions": [],
+      "closestCity": {
+        "y": 6120,
+        "gap": 47.671875,
+        "city": {
+          "text": "Hendersonville",
+          "box": {
+            "top": 743,
+            "right": 813.5,
+            "bottom": 787,
+            "left": 690.859375,
+            "width": 122.640625,
+            "height": 44
+          }
+        },
+        "launcher": {
+          "top": 696,
+          "right": 1000,
+          "bottom": 744,
+          "left": 861.171875,
+          "width": 138.828125,
+          "height": 48
+        }
+      },
+      "screenshot": null
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "step": 24,
+      "samples": 59,
+      "visibleSamples": 59,
+      "collisions": [],
+      "closestCity": {
+        "y": 0,
+        "gap": 40.4375,
+        "city": {
+          "text": "Antioch",
+          "box": {
+            "top": 654.9375,
+            "right": 820.734375,
+            "bottom": 698.9375,
+            "left": 745.4375,
+            "width": 75.296875,
+            "height": 44
+          }
+        },
+        "launcher": {
+          "top": 696,
+          "right": 1000,
+          "bottom": 744,
+          "left": 861.171875,
+          "width": 138.828125,
+          "height": 48
+        }
+      },
+      "screenshot": null
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "step": 24,
+      "samples": 384,
+      "visibleSamples": 319,
+      "collisions": [],
+      "closestCity": {
+        "y": 6597,
+        "gap": 50.15625,
+        "centerDistance": 0.46875,
+        "city": {
+          "text": "Gallatin",
+          "box": {
+            "top": 650.46875,
+            "bottom": 694.46875,
+            "left": 990.96875,
+            "right": 1067.015625,
+            "width": 76.046875,
+            "height": 44
+          }
+        },
+        "launcher": {
+          "top": 648,
+          "bottom": 696,
+          "left": 1117.171875,
+          "right": 1256,
+          "width": 138.828125,
+          "height": 48
+        }
+      },
+      "screenshot": "docs/design-shots/fable-r4-home-1280x720-city-launcher.png"
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "step": 24,
+      "samples": 65,
+      "visibleSamples": 65,
+      "collisions": [],
+      "closestCity": {
+        "y": 59,
+        "gap": 289.390625,
+        "centerDistance": 0.296875,
+        "city": {
+          "text": "Antioch",
+          "box": {
+            "top": 649.703125,
+            "bottom": 693.703125,
+            "left": 752.484375,
+            "right": 827.78125,
+            "width": 75.296875,
+            "height": 44
+          }
+        },
+        "launcher": {
+          "top": 648,
+          "bottom": 696,
+          "left": 1117.171875,
+          "right": 1256,
+          "width": 138.828125,
+          "height": 48
+        }
+      },
+      "screenshot": "docs/design-shots/fable-r4-service-areas-1280x720-city-launcher-visible.png",
+      "launcherRasterCheck": {
+        "brightPixels": 803,
+        "region": {
+          "left": 1117,
+          "top": 648,
+          "width": 139,
+          "height": 48
+        },
+        "nativeHoverRepaint": true
+      }
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "step": 24,
+      "samples": 388,
+      "visibleSamples": 322,
+      "collisions": [],
+      "closestCity": {
+        "y": 6624,
+        "gap": 94.75,
+        "city": {
+          "text": "Gallatin",
+          "box": {
+            "top": 726.0625,
+            "right": 1108.421875,
+            "bottom": 770.0625,
+            "left": 1032.375,
+            "width": 76.046875,
+            "height": 44
+          }
+        },
+        "launcher": {
+          "top": 696,
+          "right": 1342,
+          "bottom": 744,
+          "left": 1203.171875,
+          "width": 138.828125,
+          "height": 48
+        }
+      },
+      "screenshot": null
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "step": 24,
+      "samples": 65,
+      "visibleSamples": 65,
+      "collisions": [],
+      "closestCity": {
+        "y": 0,
+        "gap": 348.390625,
+        "city": {
+          "text": "Antioch",
+          "box": {
+            "top": 726.75,
+            "right": 854.78125,
+            "bottom": 770.75,
+            "left": 779.484375,
+            "width": 75.296875,
+            "height": 44
+          }
+        },
+        "launcher": {
+          "top": 696,
+          "right": 1342,
+          "bottom": 744,
+          "left": 1203.171875,
+          "width": 138.828125,
+          "height": 48
+        }
+      },
+      "screenshot": null
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "step": 24,
+      "samples": 382,
+      "visibleSamples": 317,
+      "collisions": [],
+      "closestCity": {
+        "y": 6480,
+        "gap": 1.109375,
+        "city": {
+          "text": "Hendersonville",
+          "box": {
+            "top": 874.359375,
+            "right": 1276.0625,
+            "bottom": 918.359375,
+            "left": 1153.421875,
+            "width": 122.640625,
+            "height": 44
+          }
+        },
+        "launcher": {
+          "top": 828,
+          "right": 1416,
+          "bottom": 876,
+          "left": 1277.171875,
+          "width": 138.828125,
+          "height": 48
+        }
+      },
+      "screenshot": null
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "step": 24,
+      "samples": 60,
+      "visibleSamples": 60,
+      "collisions": [],
+      "closestCity": null,
+      "screenshot": null
+    }
+  ],
+  "passed": true,
+  "newIssues": [
+    {
+      "id": "R4-observed-paragraph-overlap",
+      "scope": "Ordinary territory paragraph; all controls remain clear",
+      "route": "/",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "y": 6552,
+      "launcher": {
+        "top": 648,
+        "bottom": 696,
+        "left": 1117.171875,
+        "right": 1256,
+        "width": 138.828125,
+        "height": 48
+      },
+      "overlaps": [
+        {
+          "text": "We serve Greater Nashville and surrounding Middle Tennessee communities. Travel depends on the job. Call with the location and scope.",
+          "obscuredCharacters": "e.",
+          "paragraph": {
+            "top": 618.6875,
+            "bottom": 671.46875,
+            "left": 601.90625,
+            "right": 1145.90625,
+            "width": 544,
+            "height": 52.78125
+          }
+        }
+      ],
+      "screenshot": "docs/design-shots/fable-r4-home-1280x720-paragraph-overlap.png"
+    }
+  ]
+}

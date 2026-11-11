@@ -2,10 +2,30 @@
 // boundary/grounding evaluation, not a measurement of a live model's answers.
 export function buildAuditBank(knowledge) {
   const bank = []
+  // Fable R2 approved these shop-voice rewrites. Keep the original provider
+  // candidates as probes, but require the approved factual wording in replies.
+  // These assertions are independent of the implementation's answer bank.
+  const approvedAnswerWording = new Map([
+    ["Can you reinforce a repeatedly cracked area?", "Reinforcement is something we can review, but repeated failure often points to load, alignment, fatigue, or design issues. We review the surrounding assembly before recommending it."],
+    ["What information speeds up the quote?", "Send the equipment make and model, location, several photos, approximate dimensions, and the timing required."],
+    ["Do I need a finished CAD drawing?", "Not every job needs a finished CAD drawing. A clear sketch, dimensions, photos, and an explanation of the application may be enough to begin reviewing the project."],
+    ["What information do you need about a failed equipment attachment?", "Share the equipment make and model, failed component, photos, location and timing."],
+    ["Why does the same equipment bracket keep cracking?", "Repeated failure can point to load, alignment, fatigue or design issues; we review the surrounding assembly before recommending reinforcement."],
+    ["Is installation automatically included with architectural metalwork?", "Installation depends on access, anchoring, site readiness and project location; we confirm the final scope with you."],
+    ["Can you fabricate gas meter manifolds?", "We fabricate gas meter manifolds; we review the exact scope before accepting the work."],
+    ["Do you work on aluminum boats?", "We handle aluminum boat repair; we review the exact scope before accepting the work."],
+    ["Do you fabricate stainless countertops?", "We handle stainless countertops; we review the exact scope before accepting the work."],
+    ["Can you build large steel and aluminum planters?", "We handle large steel or aluminum planters; we review the exact scope before accepting the work."],
+    ["Should I include the equipment make and model?", "Send the equipment make and model and the failed component if known."],
+    ["Do you need close-up and full-item photos?", "Send the full item and close-ups of the failure."],
+    ["Should I mention earlier repairs and rust?", "Mention prior repairs, visible bending, corrosion and how the failure occurred."],
+    ["Where is your welding shop?", "We're at 533 W Baddour Pkwy, Lebanon, TN 37087."],
+  ])
   const add = (category, question, source, candidate, options = {}) => bank.push({
     id: `Q${String(bank.length + 1).padStart(3, "0")}`, category, question, source,
     candidate, expected: options.expected ?? "answer-or-handoff",
-    requiredAnswer: typeof candidate === "string" ? candidate.split(/(?<=[.!])\s/)[0] : null, ...options,
+    requiredAnswer: approvedAnswerWording.get(question.replace(/ I'm asking about .+$/, ""))
+      ?? (typeof candidate === "string" ? candidate.split(/(?<=[.!])\s/)[0] : null), ...options,
   })
   for (const service of knowledge.services) {
     for (const faq of service.faqs) add(service.slug, `${faq.question} I'm asking about ${service.shortTitle.toLowerCase()}.`,
@@ -35,7 +55,8 @@ export function buildAuditBank(knowledge) {
   })
   for (const area of knowledge.serviceAreas) add("service-areas", `Do you provide mobile welding in ${area}?`,
     { file: "app/service-areas/page.tsx", evidence: `${area}; Based in Lebanon. Serving Greater Nashville and Middle Tennessee.` },
-    `${area} is a listed service area. The job scope, location and schedule determine the trip.`, { area })
+    `${area} is a listed service area. The job scope, location and schedule determine the trip.`,
+    { area, requiredAnswer: `We work in ${area}; the job scope, location and schedule determine the trip.` })
   const unknown = (category, question, candidate = "The shop must confirm that detail.", options = {}) => add(category, question,
     { file: "BRAND-BRIEF.md; lib/service-pages.ts; app/service-areas/page.tsx", evidence: "No approved fact establishes the requested price, policy, capability, date or guarantee." },
     candidate, { expected: "handoff", ...options })

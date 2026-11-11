@@ -3,6 +3,9 @@ import { randomUUID } from "node:crypto"
 import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { registerHooks } from "node:module"
+import { resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import { parseArgs } from "node:util"
 import { buildAuditBank, gradeAuditReply } from "./assistant-audit-bank.mjs"
 import { createDryFixture } from "./assistant-a4-fixture.mjs"
 import { createA4Safety } from "./assistant-a4-safety.mjs"
@@ -10,12 +13,28 @@ import { createA4Safety } from "./assistant-a4-safety.mjs"
 // No credentials: reuse the existing A4 SQL fixture and deterministic provider
 // boundary. All application route, turn, store, journal and handoff code is real.
 // --baseline reads the pre-fix source snapshot made before audit changes.
-// --prod is separate, real production HTTP; requires explicit safety attestation.
-const args = process.argv.slice(2)
-const prod = args.includes("--prod"), baseline = args.includes("--baseline")
+// --prod is the legacy live-HTTP switch. It requires an explicit --base-url;
+// neither the target nor credentials are read from the environment.
+const { values: options } = parseArgs({ options: {
+  prod: { type: "boolean" }, baseline: { type: "boolean" },
+  output: { type: "string" }, "base-url": { type: "string" },
+  "test-suppression-confirmed": { type: "boolean" },
+} })
+const prod = options.prod ?? false, baseline = options.baseline ?? false
 const baselineRef = "69c9fc5e05a1d98c642ccef1eb3a2bf8a6dcd59f"
-const output = args.includes("--output") ? args[args.indexOf("--output") + 1] : `docs/assistant-audit-${prod ? "prod" : baseline ? "before" : "after"}.json`
 const root = new URL("../", import.meta.url)
+let baseUrl
+if (prod) {
+  assert.ok(options["base-url"], "Live HTTP audit requires --base-url; there is no default target")
+  const target = new URL(options["base-url"])
+  assert.ok(["http:", "https:"].includes(target.protocol) && !target.username && !target.password && !target.search && !target.hash && target.pathname === "/", "--base-url must be an HTTP(S) origin without credentials, path, query or fragment")
+  baseUrl = target.origin
+}
+const output = options.output ?? (prod
+  ? `docs/assistant-audit-live-${new Date().toISOString().replaceAll(":", "-")}-${randomUUID()}.json`
+  : `docs/assistant-audit-${baseline ? "before" : "after"}.json`)
+const outputPath = resolve(fileURLToPath(root), output)
+if (prod) assert.ok(!existsSync(outputPath), "Live audit report already exists; choose a new --output file")
 const results = [], outbound = [], background = []
 const originalFetch = globalThis.fetch, originalInfo = console.info, originalWarn = console.warn
 const stub = (source) => ({ url: `data:text/javascript,${encodeURIComponent(source)}`, shortCircuit: true })
@@ -30,18 +49,18 @@ function writeReport(mode) {
     openings[opening] = (openings[opening] ?? 0) + 1
     return openings
   }, {})).map(([opening, count]) => ({ opening, count, share: count / handoffs.length })).sort((a, b) => b.count - a.count)
-  const report = { mode, recordedAt: new Date().toISOString(), ...(baseline ? { baselineRef } : {}), limitation: prod ? "Production is unchanged by this branch; real model samples only, not the full bank." : "Scripted provider candidates and in-memory SQL, using the repository's A4 fixture. This proves application boundaries for these candidates; it does not establish live model expertise or exhaustive factual correctness.",
+  const report = { mode, recordedAt: new Date().toISOString(), ...(baseline ? { baselineRef } : {}), ...(prod ? { baseUrl } : {}), limitation: prod ? "Real HTTP samples from the explicit base URL only, not the full bank." : "Scripted provider candidates and in-memory SQL, using the repository's A4 fixture. This proves application boundaries for these candidates; it does not establish live model expertise or exhaustive factual correctness.",
     assistantVoice: "off; no voice route imported or called", counts, total: results.length, handoffOpenings,
-    ...(prod ? { outboundVerification: "Code suppression only; no production provider delivery or database readback.", safetyEvidence: ["input.ts derives is_test from [INTERNAL TEST]", "store.ts preserves sticky session test state", "service.ts gates notify on !session.is_test", "handoff.ts returns for input/session/lead/person/transcript test markers before all senders", "followup.ts gates test leads"], inputAttestation: "All 10 actual inputs used fresh UUID sessions, turn_index 0, [INTERNAL TEST] prefix and is_test:true; no fabricated IP headers, no retries." } : { outboundAttempts: outbound }),
+    ...(prod ? { outboundVerification: "Code suppression only; no provider delivery or database readback.", safetyEvidence: ["input.ts derives is_test from [INTERNAL TEST]", "store.ts preserves sticky session test state", "service.ts gates notify on !session.is_test", "handoff.ts returns for input/session/lead/person/transcript test markers before all senders", "followup.ts gates test leads"], inputAttestation: `All ${results.length} actual inputs used fresh UUID sessions, turn_index 0, [INTERNAL TEST] prefix and is_test:true; no fabricated IP headers, no retries.` } : { outboundAttempts: outbound }),
     ...(safety ? { safety: safety.summary() } : {}), results }
-  writeFileSync(new URL(output, root), `${JSON.stringify(report, null, 2)}\n`)
+  writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`, { flag: prod ? "wx" : "w" })
   console.log(JSON.stringify({ output, mode, counts, total: results.length, outboundAttempts: outbound.length }))
   if (!prod && !baseline) assert.ok(handoffOpenings.every((entry) => entry.share <= .2), "No handoff opening may exceed 20% of handoffs")
   return counts
 }
 
 async function runProd() {
-  assert.ok(args.includes("--test-suppression-confirmed"), "Read input/store/service/handoff/followup test guards before enabling production probes")
+  assert.ok(options["test-suppression-confirmed"], "Read input/store/service/handoff/followup test guards before enabling live HTTP probes")
   const questions = [
     ["mobile", "Do you offer on-site mobile welding in Nashville?"],
     ["trailer", "What pictures help you review a cracked trailer frame?"],
@@ -56,7 +75,7 @@ async function runProd() {
   ]
   for (const [category, question] of questions) {
     const input = { session_id: randomUUID(), turn_index: 0, message: `[INTERNAL TEST] ${question}`, is_test: true }
-    const response = await originalFetch("https://musiccityspecialtywelding.com/api/assist", {
+    const response = await originalFetch(`${baseUrl}/api/assist`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input), redirect: "error", signal: AbortSignal.timeout(65_000),
     })
     const value = await response.json()
@@ -64,9 +83,9 @@ async function runProd() {
     const grade = gradeAuditReply(entry, value)
     if (grade.grade === "ANSWERED") grade.reason = "Live answer reviewed against site facts; no scripted provider candidate"
     results.push({ ...entry, input, status: response.status, reply: value.reply ?? value.error ?? "", handoff_reason: value.handoff_reason ?? null, ...grade })
-    console.log(`Production ${entry.id}: HTTP ${response.status}`)
+    console.log(`Live ${entry.id}: HTTP ${response.status}`)
   }
-  writeReport("LIVE production HTTP, unchanged deployment")
+  writeReport("LIVE HTTP, explicit base URL")
 }
 
 async function runDry() {

@@ -34,11 +34,43 @@ test("curated answers cite existing versioned source files, remain concise, and 
     assert.ok(entry.answer.split(/(?<=[.!?])\s+/).length <= 4, entry.id)
     assert.doesNotMatch(entry.answer, /\b(the site|listed)\b/i, entry.id)
     assert.doesNotMatch(entry.answer, /\b\w+\/\w+\b/, entry.id)
-    if (entry.patterns.some((pattern) => /^(?:do|does|can|could|should|is|are|will|would)\b/i.test(pattern)) && entry.id !== "mobile-shop-fit") assert.match(entry.answer, /^(?:Yes|No)\./, entry.id)
+    for (const pattern of entry.patterns) {
+      if (/^(?:do|does|can|could|should|is|are|will|would)\b/i.test(pattern) && entry.id !== "mobile-shop-fit") assert.match(findAssistantAnswer(pattern).answer, /^(?:Yes|No)\./, pattern)
+    }
     assert.doesNotMatch(entry.answer, /\bcannot\b/i, entry.id)
     for (const file of entry.source.matchAll(/(?:lib|app|components)\/[\w/.[\]-]+\.tsx?\b|BRAND-BRIEF\.md/g)) assert.ok(existsSync(new URL(`../${file[0]}`, import.meta.url)), entry.source)
   }
   assert.deepEqual(assistantKnowledge.answers, assistantAnswers)
+})
+
+test("no wh-question pattern anywhere in the bank receives a Yes or No opening", () => {
+  let checked = 0
+  for (const entry of assistantAnswers) {
+    for (const pattern of entry.patterns) {
+      if (!/^(?:what|which|how|where|when|why|who)\b/i.test(pattern)) continue
+      const answer = findAssistantAnswer(pattern)
+      assert.ok(answer, pattern)
+      assert.equal(answer.id, entry.id, pattern)
+      assert.doesNotMatch(answer.answer, /^(?:Yes|No)\./i, pattern)
+      checked++
+    }
+  }
+  assert.ok(checked > 0, "the whole-bank regression must exercise wh-questions")
+})
+
+test("mixed question entries choose their opening from the matched pattern without changing the bank", () => {
+  for (const [id, yesNo, whQuestions, bare] of [
+    ["supported-metals", "Do you weld steel aluminum and stainless?", ["What metals do you work with?"], "We work on steel and iron gates, weld aluminum and repair aluminum boats, and fabricate stainless countertops."],
+    ["quote-full-closeup", "Do you need close-up and full-item photos?", ["What photos do you need?", "What photos should I send?", "What photos?"], "Send the full item and close-ups of the failure."],
+  ]) {
+    for (const question of [yesNo, ...whQuestions, yesNo]) {
+      const answer = findAssistantAnswer(`[INTERNAL TEST] ${question}`)
+      assert.equal(answer.id, id, question)
+      assert.equal(answer.answer, question === yesNo ? `Yes. ${bare}` : bare, question)
+      assert.equal(isSourcedAssistantAnswer(answer.answer, answer), true, question)
+    }
+  }
+  assert.match(findAssistantAnswer("Can I upload a picture directly in this chat?").answer, /^No\./)
 })
 
 test("all twelve Fable cases answer before calling a provider, including the trailer photo available wording", async () => {
