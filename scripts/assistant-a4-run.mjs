@@ -166,8 +166,8 @@ function verifyReply(reply, first = false, reason = null) {
   assert.doesNotMatch(reply, /\$|\b\d[\d,.]*\s*(?:dollars|USD)|\[owner-only money\]/i, "no money in reply")
   if (reason) {
     assert.match(reply, /\]\(tel:\+\d+\)/, "tap-to-call offered")
-    assert.ok(reply.includes("Sales@musiccityspecialtywelding.com"), "shop email offered")
-    assert.match(reply, /mailto:Sales@musiccityspecialtywelding\.com/, "email link offered")
+    assert.ok(reply.includes("sales@musiccityspecialtywelding.com"), "shop email offered")
+    assert.match(reply, /mailto:sales@musiccityspecialtywelding\.com/, "email link offered")
   }
 }
 

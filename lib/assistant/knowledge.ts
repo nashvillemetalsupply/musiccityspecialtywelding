@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { servicePages } from "../service-pages.ts"
 import { serviceAreas } from "../service-areas.ts"
-import { assistantAnswers } from "./answers.ts"
+import { assistantAnswers, ASSISTANT_SHOP_PHONE } from "./answers.ts"
+export { ASSISTANT_SHOP_PHONE } from "./answers.ts"
 
 function briefSection(brief: string, title: string): string {
   const heading = `## ${title}\n`
@@ -50,16 +51,11 @@ const approvedLines = briefSection(brand, "Google Ads Source of Truth")
 const businessDetailsSource = briefSection(brand, "Assets").split("\n")
   .find((line) => line.startsWith("- **Existing business details:**"))
 if (!businessDetailsSource) throw new Error("Assistant knowledge is missing the business contact details.")
-// The owner line is operational fallback configuration, not a public assistant
-// contact destination. Keep only the published tracking number in model facts.
+// Contact facts use the same configured public number as the page. The brief's
+// historic tracking and fallback values must not override current wiring.
 const businessDetails = businessDetailsSource.replace(/, fallback owner line `[^`]+`/, "")
-const publicNumber = businessDetails.match(/public tracking phone `([^`]+)`/)?.[1]
-if (!publicNumber) throw new Error("Assistant knowledge is missing the public shop phone.")
-
-export const ASSISTANT_SHOP_PHONE = Object.freeze({
-  display: publicNumber,
-  href: `tel:+1${publicNumber.replace(/\D/g, "")}`,
-})
+  .replace(/public tracking phone `[^`]+`/, `public shop phone \`${ASSISTANT_SHOP_PHONE.display}\``)
+  .replace(/Sales@/g, "sales@")
 
 export const assistantKnowledge = Object.freeze({
   sources: ["lib/service-pages.ts (app/services/[slug]/page.tsx)", "lib/service-areas.ts", "lib/assistant/answers.ts", "app/service-areas/page.tsx", "BRAND-BRIEF.md", "app/page.tsx", "components/mainstreet-contact.tsx"],

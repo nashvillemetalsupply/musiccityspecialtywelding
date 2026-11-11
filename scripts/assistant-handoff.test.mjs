@@ -249,7 +249,7 @@ test("unavailable, failed and ambiguous transcript email alerts the shop phone w
     assert.equal(f.phoneAlerts.size, 2, "normal handoff and one deduped delivery problem alert")
     const alert = f.phoneAlerts.get(`assistant-handoff:${id}:human:email-status`)
     assert.match(alert.body, new RegExp(status))
-    assert.match(alert.body, /Sales@musiccityspecialtywelding.com/)
+    assert.match(alert.body, /sales@musiccityspecialtywelding.com/)
     assert.match(alert.url, /\/ops\/leads\/41/)
   }
 })
@@ -393,7 +393,7 @@ test("voice no-answer sends full call and assistant transcript and one persisted
   assert.equal(sms.to, caller)
   assert.equal(sms.leadId, 41)
   assert.match(sms.body, /\(615\) 703-3296/)
-  assert.match(sms.body, /Sales@musiccityspecialtywelding\.com/)
+  assert.match(sms.body, /sales@musiccityspecialtywelding\.com/)
   assert.equal(f.emails.size, 1)
   assert.match([...f.emails.values()][0].transcript, /Ava needs gate repair/)
   assert.match([...f.emails.values()][0].transcript, /48 inches/)

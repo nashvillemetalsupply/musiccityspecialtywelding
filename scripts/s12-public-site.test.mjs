@@ -80,7 +80,7 @@ test("home page uses the shared shell and keeps its skip link and contact paths"
   assert.match(navbarComponent, /home \? "ms-nav" : "ms-site ms-nav"/)
   assert.match(navbarComponent, /href=\{home \? "#home" : "\/"\}/)
   assert.doesNotMatch(footerComponent, /ShopCrest|className="wm-art/)
-  assert.match(footerComponent, /mailto:Sales@musiccityspecialtywelding\.com">Sales@musiccityspecialtywelding\.com/)
+  assert.match(footerComponent, /mailto:sales@musiccityspecialtywelding\.com">sales@musiccityspecialtywelding\.com/)
 })
 
 test("home markup omits permanently hidden decoration while preserving visible seams, map and photos", () => {

@@ -10,6 +10,11 @@
   display: none;
 }
 
+.launcherHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .launcher button, .dialog button[type="submit"], .dialog .call, .dialog .retry {
   display: inline-flex;
   min-height: 3rem;

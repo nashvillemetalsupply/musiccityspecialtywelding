@@ -396,7 +396,7 @@ export async function handleAssistantTurn(
       continueIntake = true
       reply = intakeReply()
     }
-    if (!sourcedReply && !reply.includes("?") && fields.is_job !== "no") reply = `${reply} ${question()}`
+    if (!reply.includes("?") && fields.is_job !== "no") reply = `${reply} ${question()}`
   }
   // A non-job classification cannot discard an unanswered customer question.
   // Only explicit solicitation, wrong-number or goodbye evidence closes it.

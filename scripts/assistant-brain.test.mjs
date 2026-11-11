@@ -115,7 +115,7 @@ test("human and price requests always offer the supplied tap-to-call phone", asy
       phone: { display: "(615) 810-4910", href: "tel:+16158104910" },
     })
     assert.match(result.reply, /\[Call the shop at \(615\) 810-4910\]\(tel:\+16158104910\)/)
-    assert.match(result.reply, /\[Email Sales@musiccityspecialtywelding.com\]\(mailto:Sales@musiccityspecialtywelding.com\)/)
+    assert.match(result.reply, /\[Email sales@musiccityspecialtywelding.com\]\(mailto:sales@musiccityspecialtywelding.com\)/)
     assert.match(result.reply, /What callback number should the shop use\?/)
     assert.doesNotMatch(result.reply, /300|owner-only money/)
   }
@@ -135,7 +135,7 @@ test("unknown capability, date and model can't-answer replies always offer phone
     const result = await handleAssistantTurn([{ role: "user", content: scenario.message }])
     assert.equal(result.handoff_reason, "unknown", scenario.message)
     assert.match(result.reply, /\(tel:\+16157033296\)/)
-    assert.match(result.reply, /\(mailto:Sales@musiccityspecialtywelding.com\)/)
+    assert.match(result.reply, /\(mailto:sales@musiccityspecialtywelding.com\)/)
   }
 })
 
@@ -145,7 +145,7 @@ test("unsupported capability questions fail closed even when the model claims ye
     const result = await handleAssistantTurn([{ role: "user", content }])
     assert.equal(result.handoff_reason, "unknown", content)
     assert.match(result.reply, /\(tel:\+16157033296\)/)
-    assert.match(result.reply, /\(mailto:Sales@musiccityspecialtywelding.com\)/)
+    assert.match(result.reply, /\(mailto:sales@musiccityspecialtywelding.com\)/)
     assert.match(result.reply, /(?:confirms the work\.|checked by the shop\.|load it or use it\.) What needs welding or repair\?/)
     assert.doesNotMatch(result.reply, /Yes, we do/)
   }
@@ -164,7 +164,7 @@ test("unknown capability keeps the next intake question and contact links withou
     assert.equal(result.continue_intake, true)
     assert.match(result.reply, /The shop needs a closer look at that particular job\. What needs welding or repair\?/)
     assert.match(result.reply, /\[Call the shop at .*\]\(tel:\+16157033296\)/)
-    assert.match(result.reply, /\[Email .*\]\(mailto:Sales@musiccityspecialtywelding.com\)/)
+    assert.match(result.reply, /\[Email .*\]\(mailto:sales@musiccityspecialtywelding.com\)/)
     assert.doesNotMatch(result.reply, /\byes\b|we can|we'll|booked|scheduled|guarantee|available/i)
     assert.equal((result.reply.match(/\?/g) ?? []).length, 1)
   }
@@ -206,7 +206,7 @@ test("contact extraction uses customer evidence, latest values, and excludes the
   const messages = [
     { role: "user", content: "Call 615-555-0199 or reach me at Ava@example.com" },
     { role: "assistant", content: "Try invented@example.com or 615-555-0144" },
-    { role: "user", content: "Use 615.555.0188 and new@example.com instead. Sales@musiccityspecialtywelding.com is yours." },
+    { role: "user", content: "Use 615.555.0188 and new@example.com instead. sales@musiccityspecialtywelding.com is yours." },
   ]
   assert.deepEqual(extractAssistantContact(messages), { callback_phone: "+16155550188", email: "new@example.com" })
   assert.deepEqual(extractAssistantContact([{ role: "assistant", content: "615-555-0199 fake@example.com" }]), { callback_phone: null, email: null })
@@ -218,7 +218,7 @@ test("contact extraction uses customer evidence, latest values, and excludes the
 })
 
 test("browser-safe contact fallback and reason detection preserve failure identity", () => {
-  assert.equal(ASSISTANT_SHOP_EMAIL, "Sales@musiccityspecialtywelding.com")
+  assert.equal(ASSISTANT_SHOP_EMAIL, "sales@musiccityspecialtywelding.com")
   assert.match(assistantContactReply(ASSISTANT_SHOP_PHONE), /tel:\+16157033296/)
   assert.match(assistantContactReply(ASSISTANT_SHOP_PHONE), /\[Quote form\]\(\/#contact\)/)
   assert.match(assistantContactReply(ASSISTANT_SHOP_PHONE, "Hola"), /\[Formulario de presupuesto\]\(\/#contact\)/)
@@ -235,7 +235,7 @@ test("every unknown, safety, policy and human handoff includes both direct call 
     assert.ok(result.handoff_reason, content)
     assert.match(result.reply, /\(tel:\+16157033296\)/, content)
     assert.match(result.reply, /\(\/#contact\)/, content)
-    assert.match(result.reply, /\(mailto:Sales@musiccityspecialtywelding.com\)/, content)
+    assert.match(result.reply, /\(mailto:sales@musiccityspecialtywelding.com\)/, content)
   }
 })
 

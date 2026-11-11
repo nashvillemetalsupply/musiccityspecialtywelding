@@ -364,10 +364,10 @@ test("A4 sanitizer strips credentials, URLs, phones, and unapproved email addres
     "+44 20 7946 0958", "615/555/0100", "+1\u00a0615\u00a0555\u00a00100", "615\u2011555\u20110100", "user+tag@example.com",
     "data:text/plain;base64,c2hvcnQ=", "mailto:person@example.com", "tel:+16155550100",
   ]
-  const result = sanitizeDiagnostic(`failure: ${secrets.join(" ; ")} test@example.com Sales@musiccityspecialtywelding.com`, {})
+  const result = sanitizeDiagnostic(`failure: ${secrets.join(" ; ")} test@example.com sales@musiccityspecialtywelding.com`, {})
   for (const secret of secrets) assert.ok(!result.includes(secret), `${secret} survived: ${result}`)
   assert.ok(result.includes("test@example.com"))
-  assert.ok(result.includes("Sales@musiccityspecialtywelding.com"))
+  assert.ok(result.includes("sales@musiccityspecialtywelding.com"))
   assert.match(result, /failure/)
 })
 

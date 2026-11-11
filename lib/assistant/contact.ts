@@ -1,5 +1,12 @@
-// Browser-safe contact fallback. It must work without the model or an API.
-export const ASSISTANT_SHOP_EMAIL = "Sales@musiccityspecialtywelding.com"
+import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF, type ShopPhone } from "../shop-phone-shared.ts"
+
+// Browser-safe contact fallback. Server callers pass getShopPhone() so the
+// assistant follows the same configured tracking number as the public page.
+export function assistantShopPhone(phone?: Pick<ShopPhone, "display" | "href">): Readonly<Pick<ShopPhone, "display" | "href">> {
+  return Object.freeze({ display: phone?.display ?? FALLBACK_SHOP_PHONE_DISPLAY, href: phone?.href ?? FALLBACK_SHOP_PHONE_HREF })
+}
+
+export const ASSISTANT_SHOP_EMAIL = "sales@musiccityspecialtywelding.com"
 export const ASSISTANT_QUOTE_FORM = "/#contact"
 export type AssistantHandoffReason = "human" | "unknown" | "model-error" | "rate-limit"
 

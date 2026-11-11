@@ -53,8 +53,8 @@ export default async function ServicePage({ params }: PageProps) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData.faqPage) }} />
 
         <nav className="ms-breadcrumb" aria-label="Breadcrumb">
-          <Link href="/">Home</Link><span aria-hidden="true">/</span>
-          <Link href="/#services">Services</Link><span aria-hidden="true">/</span>
+          <Link href="/" prefetch={false}>Home</Link><span aria-hidden="true">/</span>
+          <Link href="/#services" prefetch={false}>Services</Link><span aria-hidden="true">/</span>
           <span aria-current="page">{service.shortTitle}</span>
         </nav>
 
@@ -94,14 +94,16 @@ export default async function ServicePage({ params }: PageProps) {
         <aside className="ms-subglass">
           <div><span>Your job</span><strong>One private link.</strong></div>
           <p>Once the job is active, your customer page holds job updates, approved progress photos, and paperwork.</p>
-          <Link href="/#job-glass">See how it works <ArrowUpRight aria-hidden="true" /></Link>
+          <Link href="/#job-glass" prefetch={false}>See how it works <ArrowUpRight aria-hidden="true" /></Link>
         </aside>
 
-        <section className="ms-subfaq">
-          <h2 className="ms-display">Straight answers.</h2>
-          <div>
+        <section className="ms-faq" aria-labelledby="faq-title">
+          <div className="ms-faq-heading ms-reveal">
+            <h2 className="ms-display" id="faq-title">Straight answers.</h2>
+          </div>
+          <div className="ms-faq-list">
             {service.faqs.map((faq) => (
-              <details key={faq.question}>
+              <details className="ms-reveal" key={faq.question}>
                 <summary>{faq.question}<i aria-hidden="true">+</i></summary>
                 <p>{faq.answer}</p>
               </details>
@@ -109,11 +111,13 @@ export default async function ServicePage({ params }: PageProps) {
           </div>
         </section>
 
-        <nav className="ms-breadcrumb" aria-label="Other services">
-          <span>Other work</span>
-          {servicePages.filter((other) => other.slug !== service.slug).map((other) => (
-            <Link key={other.slug} href={`/services/${other.slug}`}>{other.shortTitle}</Link>
-          ))}
+        <nav className="ms-otherwork" aria-label="Other services">
+          <span className="ms-otherwork-label">Other work</span>
+          <div className="ms-city-list">
+            {servicePages.filter((other) => other.slug !== service.slug).map((other) => (
+              <Link key={other.slug} href={`/services/${other.slug}`}>{other.shortTitle}</Link>
+            ))}
+          </div>
         </nav>
 
         <MainstreetContact phoneHref={shopPhone.href} phoneDisplay={shopPhone.display} />

@@ -212,7 +212,7 @@ export default function PrivacyPage() {
                 <p className="mb-4">
                   If you have questions about this Privacy Policy or how we handle your information, contact us at:
                 </p>
-                <div className="bg-muted/50 rounded-lg p-6 space-y-2">
+                <div className="ms-legal-contact bg-muted/50 rounded-lg p-6 space-y-2">
                   <p className="font-semibold text-secondary">Music City Specialty Welding</p>
                   <p className="text-muted-foreground">Operated by Neverlift Chassis Works, LLC</p>
                   <p>
@@ -221,8 +221,8 @@ export default function PrivacyPage() {
                     </a>
                   </p>
                   <p>
-                    <a href="mailto:sales@musiccityspecialtywelding.com" className="text-primary hover:text-primary/80 transition-colors break-all">
-                      Email: sales@musiccityspecialtywelding.com
+                    <a href="mailto:sales@musiccityspecialtywelding.com" className="text-primary hover:text-primary/80 transition-colors">
+                      Email: sales@<wbr />musiccityspecialtywelding.com
                     </a>
                   </p>
                   <p className="text-muted-foreground">

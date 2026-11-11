@@ -1,0 +1,794 @@
+{
+  "origin": "http://localhost:3100",
+  "delivery": "All non-GET/HEAD requests and all remote requests blocked; no chat messages sent.",
+  "captures": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-home-390x844.png",
+      "fold": "docs/design-shots/fable-r3-home-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-home-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-home-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-service-areas-390x844.png",
+      "fold": "docs/design-shots/fable-r3-service-areas-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-service-areas-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-service-areas-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-mobile-welding-390x844.png",
+      "fold": "docs/design-shots/fable-r3-mobile-welding-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-mobile-welding-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-mobile-welding-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/trailer-welding-repair",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-trailer-welding-repair-390x844.png",
+      "fold": "docs/design-shots/fable-r3-trailer-welding-repair-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-trailer-welding-repair-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-trailer-welding-repair-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/gate-repair",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-gate-repair-390x844.png",
+      "fold": "docs/design-shots/fable-r3-gate-repair-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-gate-repair-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-gate-repair-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/equipment-repair",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-equipment-repair-390x844.png",
+      "fold": "docs/design-shots/fable-r3-equipment-repair-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-equipment-repair-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-equipment-repair-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/architectural-welding",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-architectural-welding-390x844.png",
+      "fold": "docs/design-shots/fable-r3-architectural-welding-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-architectural-welding-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-architectural-welding-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/custom-fabrication",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-custom-fabrication-390x844.png",
+      "fold": "docs/design-shots/fable-r3-custom-fabrication-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-custom-fabrication-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-custom-fabrication-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/custom-metal-products",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-custom-metal-products-390x844.png",
+      "fold": "docs/design-shots/fable-r3-custom-metal-products-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-custom-metal-products-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-custom-metal-products-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/privacy",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-privacy-390x844.png",
+      "fold": "docs/design-shots/fable-r3-privacy-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-privacy-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-privacy-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/terms",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-terms-390x844.png",
+      "fold": "docs/design-shots/fable-r3-terms-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-terms-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-terms-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/fable-local-missing-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/design-shots/fable-r3-404-390x844.png",
+      "fold": "docs/design-shots/fable-r3-404-390x844-fold.png",
+      "menu": "docs/design-shots/fable-r3-404-390x844-menu.png",
+      "chat": "docs/design-shots/fable-r3-404-390x844-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-home-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-home-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-home-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-service-areas-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-service-areas-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-service-areas-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-mobile-welding-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-mobile-welding-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-mobile-welding-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/trailer-welding-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-trailer-welding-repair-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-trailer-welding-repair-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-trailer-welding-repair-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/gate-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-gate-repair-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-gate-repair-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-gate-repair-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/equipment-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-equipment-repair-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-equipment-repair-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-equipment-repair-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/architectural-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-architectural-welding-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-architectural-welding-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-architectural-welding-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/custom-fabrication",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-custom-fabrication-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-custom-fabrication-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-custom-fabrication-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/services/custom-metal-products",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-custom-metal-products-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-custom-metal-products-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-custom-metal-products-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/privacy",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-privacy-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-privacy-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-privacy-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/terms",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-terms-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-terms-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-terms-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    },
+    {
+      "route": "/fable-local-missing-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshot": "docs/design-shots/fable-r3-404-1440x900.png",
+      "fold": "docs/design-shots/fable-r3-404-1440x900-fold.png",
+      "menu": null,
+      "chat": "docs/design-shots/fable-r3-404-1440x900-chat.png",
+      "overflow": false,
+      "missingImages": [],
+      "undersizedMono": [],
+      "errors": [],
+      "blockedSubmissions": [],
+      "unwantedHomePrefetch": []
+    }
+  ],
+  "geometry": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-hero-copy": 112,
+        ".ms-services-heading": 112,
+        ".ms-job-glass-copy": 112,
+        ".ms-faq-heading": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-breadcrumb": 112,
+        ".ms-subhero-copy": 112,
+        ".ms-subscope > div": 112,
+        ".ms-subplan-lead": 112,
+        ".ms-subglass": 112,
+        ".ms-faq-heading": 112,
+        ".ms-otherwork": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    },
+    {
+      "route": "/services/trailer-welding-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-breadcrumb": 112,
+        ".ms-subhero-copy": 112,
+        ".ms-subscope > div": 112,
+        ".ms-subplan-lead": 112,
+        ".ms-subglass": 112,
+        ".ms-faq-heading": 112,
+        ".ms-otherwork": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    },
+    {
+      "route": "/services/gate-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-breadcrumb": 112,
+        ".ms-subhero-copy": 112,
+        ".ms-subscope > div": 112,
+        ".ms-subplan-lead": 112,
+        ".ms-subglass": 112,
+        ".ms-faq-heading": 112,
+        ".ms-otherwork": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    },
+    {
+      "route": "/services/equipment-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-breadcrumb": 112,
+        ".ms-subhero-copy": 112,
+        ".ms-subscope > div": 112,
+        ".ms-subplan-lead": 112,
+        ".ms-subglass": 112,
+        ".ms-faq-heading": 112,
+        ".ms-otherwork": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    },
+    {
+      "route": "/services/architectural-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-breadcrumb": 112,
+        ".ms-subhero-copy": 112,
+        ".ms-subscope > div": 112,
+        ".ms-subplan-lead": 112,
+        ".ms-subglass": 112,
+        ".ms-faq-heading": 112,
+        ".ms-otherwork": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    },
+    {
+      "route": "/services/custom-fabrication",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-breadcrumb": 112,
+        ".ms-subhero-copy": 112,
+        ".ms-subscope > div": 112,
+        ".ms-subplan-lead": 112,
+        ".ms-subglass": 112,
+        ".ms-faq-heading": 112,
+        ".ms-otherwork": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    },
+    {
+      "route": "/services/custom-metal-products",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "contentEdge": 112,
+      "edges": {
+        ".ms-brand": 112,
+        ".ms-breadcrumb": 112,
+        ".ms-subhero-copy": 112,
+        ".ms-subscope > div": 112,
+        ".ms-subplan-lead": 112,
+        ".ms-subglass": 112,
+        ".ms-faq-heading": 112,
+        ".ms-otherwork": 112,
+        ".ms-contact-lead": 112,
+        ".ms-footer-mark": 112
+      }
+    }
+  ],
+  "scrollChecks": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "loadedChat": false,
+      "samples": 83,
+      "formHiddenSamples": 19,
+      "collisions": []
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "loadedChat": true,
+      "samples": 35,
+      "formHiddenSamples": 19,
+      "collisions": []
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "loadedChat": false,
+      "samples": 19,
+      "formHiddenSamples": 0,
+      "collisions": []
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "loadedChat": false,
+      "samples": 84,
+      "formHiddenSamples": 20,
+      "collisions": []
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "loadedChat": true,
+      "samples": 35,
+      "formHiddenSamples": 20,
+      "collisions": []
+    },
+    {
+      "route": "/service-areas",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "loadedChat": false,
+      "samples": 20,
+      "formHiddenSamples": 0,
+      "collisions": []
+    }
+  ],
+  "responsive": [
+    {
+      "route": "/",
+      "width": 320,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": null
+    },
+    {
+      "route": "/services/mobile-welding",
+      "width": 320,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": null
+    },
+    {
+      "route": "/privacy",
+      "width": 320,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": {
+        "domain": "musiccityspecialtywelding.com",
+        "lines": 1,
+        "rectangles": [
+          {
+            "x": 36.390625,
+            "y": -18.0625,
+            "width": 236.375,
+            "height": 20
+          }
+        ]
+      }
+    },
+    {
+      "route": "/terms",
+      "width": 320,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": {
+        "domain": "musiccityspecialtywelding.com",
+        "lines": 1,
+        "rectangles": [
+          {
+            "x": 36.390625,
+            "y": -17.640625,
+            "width": 236.375,
+            "height": 20
+          }
+        ]
+      }
+    },
+    {
+      "route": "/",
+      "width": 768,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": null
+    },
+    {
+      "route": "/services/mobile-welding",
+      "width": 768,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": null
+    },
+    {
+      "route": "/privacy",
+      "width": 768,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": {
+        "domain": "musiccityspecialtywelding.com",
+        "lines": 1,
+        "rectangles": [
+          {
+            "x": 189.515625,
+            "y": 17.171875,
+            "width": 236.375,
+            "height": 20
+          }
+        ]
+      }
+    },
+    {
+      "route": "/terms",
+      "width": 768,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": {
+        "domain": "musiccityspecialtywelding.com",
+        "lines": 1,
+        "rectangles": [
+          {
+            "x": 189.515625,
+            "y": 16.90625,
+            "width": 236.375,
+            "height": 20
+          }
+        ]
+      }
+    },
+    {
+      "route": "/",
+      "width": 1024,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": null
+    },
+    {
+      "route": "/services/mobile-welding",
+      "width": 1024,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": null
+    },
+    {
+      "route": "/privacy",
+      "width": 1024,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": {
+        "domain": "musiccityspecialtywelding.com",
+        "lines": 1,
+        "rectangles": [
+          {
+            "x": 202.3125,
+            "y": 109.515625,
+            "width": 236.375,
+            "height": 20
+          }
+        ]
+      }
+    },
+    {
+      "route": "/terms",
+      "width": 1024,
+      "overflow": false,
+      "errors": [],
+      "emailDomain": {
+        "domain": "musiccityspecialtywelding.com",
+        "lines": 1,
+        "rectangles": [
+          {
+            "x": 202.3125,
+            "y": 109.203125,
+            "width": 236.375,
+            "height": 20
+          }
+        ]
+      }
+    }
+  ],
+  "passed": true
+}

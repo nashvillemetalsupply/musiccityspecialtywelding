@@ -1,5 +1,7 @@
 import { servicePages } from "../service-pages.ts"
 import { serviceAreas } from "../service-areas.ts"
+import { getShopPhone } from "@/lib/shop-contact"
+import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM, assistantShopPhone } from "./contact.ts"
 
 export type AssistantAnswer = {
   id: string
@@ -10,7 +12,12 @@ export type AssistantAnswer = {
   source: string
 }
 
-const entry = (id: string, patterns: string[], answer: string, source: string): AssistantAnswer => ({ id, patterns, answer, source })
+const yesNoQuestion = /^(?:do|does|can|could|should|is|are|will|would)\b/i
+const entry = (id: string, patterns: string[], answer: string, source: string): AssistantAnswer => ({
+  id, patterns, source,
+  answer: id !== "mobile-shop-fit" && patterns.some((pattern) => yesNoQuestion.test(pattern)) && !/^(?:Yes|No)\./.test(answer) ? `Yes. ${answer}` : answer,
+})
+export const ASSISTANT_SHOP_PHONE = assistantShopPhone(getShopPhone())
 const serviceSource = (slug: string) => `lib/service-pages.ts (${slug})`
 const faqParaphrases: Record<string, string[]> = {
   "trailer-welding-repair-1": ["Do you repair trailers on site?", "Can you repair my trailer on-site?"],
@@ -21,15 +28,20 @@ const faqParaphrases: Record<string, string[]> = {
   "equipment-repair-1": ["Do you repair equipment on site?", "Can you repair equipment at my facility?"],
 }
 
+function faqAnswer(question: string, answer: string): string {
+  if (question === "Do I need a finished CAD drawing?") return `No. Not every job needs a finished CAD drawing. ${answer.replace(/^Not always\.\s*/, "")}`
+  if (question === "Can you reinforce a repeatedly cracked area?") return "Yes. Reinforcement is something we can review, but repeated failure often points to load, alignment, fatigue, or design issues. We review the surrounding assembly before recommending it."
+  return answer.replaceAll("make/model", "make and model")
+}
+
 // This is deliberately a small, reviewable fact bank rather than a keyword
 // classifier. A recognized noun never licenses an unknown process, policy,
-// alloy, dispatch promise or safety approval. Each reply is at most two sentences.
+// alloy, dispatch promise or safety approval. FAQ caveats stay intact, including
+// a short leading Yes/No; the turn adds one next intake question.
 export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
   ...servicePages.flatMap((service) => service.faqs.map((faq, index) => entry(
     `${service.slug}-faq-${index + 1}`, [faq.question, ...(faqParaphrases[`${service.slug}-${index + 1}`] ?? [])],
-    // The mobile FAQ has a third sentence repeating its second; retain the
-    // substantive explanation without adding any fact or availability promise.
-    faq.answer.split(/(?<=[.!?])\s+/).slice(0, 2).join(" "), serviceSource(service.slug),
+    faqAnswer(faq.question, faq.answer), serviceSource(service.slug),
   ))),
   entry("mobile-service", ["Do you offer mobile welding?", "Do you do mobile welding?", "Do you offer on-site welding?", "Do you come to the job site?", "Do you come out to the job?", "Do you bring welding equipment to my job site?"],
     "We bring the rig when the metal is better repaired where it sits.", serviceSource("mobile-welding")),
@@ -48,25 +60,25 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
   entry("gate-parts", ["Do you repair sagging steel driveway gates?", "Do you repair gates?"],
     "We repair sagging steel and iron gate frames, hinges, latches, posts and brackets.", serviceSource("gate-repair")),
   entry("gate-electrical-boundary", ["Do you repair gate motors and electrical openers?"],
-    "We repair gate metal; motor, operator and electrical work belongs with the installer.", serviceSource("gate-repair")),
+    "No. We repair gate metal; motor, operator and electrical work belongs with the installer.", serviceSource("gate-repair")),
   entry("gate-hinge-details", ["What do you need to know about a broken gate hinge?"],
     "Send the gate type, approximate size, location and whether it can be unhung.", serviceSource("gate-repair")),
   entry("equipment-parts", ["Do you repair machinery frames and brackets?", "Do you repair equipment?"],
     "We repair machinery frames, brackets, guards, supports and attachments.", serviceSource("equipment-repair")),
   entry("equipment-details", ["What information do you need about a failed equipment attachment?"],
-    "Share the equipment make/model, failed component, photos, location and timing.", serviceSource("equipment-repair")),
+    "Share the equipment make and model, failed component, photos, location and timing.", serviceSource("equipment-repair")),
   entry("equipment-repeat-failure", ["Why does the same equipment bracket keep cracking?"],
-    "Repeated failure can point to load, alignment, fatigue or design issues; the shop reviews the surrounding assembly before recommending reinforcement.", serviceSource("equipment-repair")),
+    "Repeated failure can point to load, alignment, fatigue or design issues; we review the surrounding assembly before recommending reinforcement.", serviceSource("equipment-repair")),
   entry("architectural-parts", ["Do you fabricate steel railings and stair components?", "Do you do architectural welding?"],
     "We fabricate steel railings, guardrails and stair components.", serviceSource("architectural-welding")),
   entry("architectural-drawings", ["Can I send architectural drawings and finish requirements?"],
     "Send drawings, dimensions, finish requirements and site photos.", serviceSource("architectural-welding")),
   entry("architectural-installation", ["Is installation automatically included with architectural metalwork?"],
-    "Installation depends on access, anchoring, site readiness and project location; final scope must be confirmed.", serviceSource("architectural-welding")),
+    "No. Installation depends on access, anchoring, site readiness and project location; we confirm the final scope with you.", serviceSource("architectural-welding")),
   entry("fabrication-sketches", ["Do you make custom brackets and frames from sketches?", "Can you work from a dimensioned sketch for a custom bracket?", "Do you do custom fabrication?"],
     "We work from drawings, sketches, measurements or samples to build custom brackets and frames.", serviceSource("custom-fabrication")),
   entry("gas-meter-manifolds", ["Can you fabricate gas meter manifolds?"],
-    "We fabricate gas meter manifolds; the shop reviews the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities); lib/service-pages.ts (custom-fabrication)"),
+    "We fabricate gas meter manifolds; we review the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities); lib/service-pages.ts (custom-fabrication)"),
   entry("fabrication-one-off", ["Do you consider one-off or short-run fabrication?"],
     "One-off and specialized projects are considered when scope, material, dimensions and intended use are clear.", serviceSource("custom-fabrication")),
   entry("fabrication-measurements", ["What measurements help with a custom fabrication quote?", "What dimensions do you need for custom fabrication?"],
@@ -78,33 +90,33 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
   entry("planter-measurements", ["What measurements should I send for a planter box?"],
     "Provide length, width, height, quantity, placement photos, finish preference and installation needs.", serviceSource("custom-metal-products")),
   entry("boats", ["Do you work on aluminum boats?", "Do you repair aluminum boats?", "Do you weld aluminum boats?", "Do you weld aluminum and repair boats?"],
-    "We handle aluminum boat repair; the shop reviews the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities); app/page.tsx (FAQs)"),
+    "We handle aluminum boat repair; we review the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities); app/page.tsx (FAQs)"),
   entry("stainless-countertops", ["Do you fabricate stainless countertops?"],
-    "We handle stainless countertops; the shop reviews the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities)"),
+    "We handle stainless countertops; we review the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities)"),
   entry("steel-aluminum-planters", ["Can you build large steel and aluminum planters?"],
-    "We handle large steel/aluminum planters; the shop reviews the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities)"),
+    "We handle large steel or aluminum planters; we review the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities)"),
   entry("supported-metals", ["What metals do you work with?", "Do you weld steel aluminum and stainless?"],
-    "The site lists steel and iron gate work, aluminum welding and boat repair, and stainless countertops.", "lib/service-pages.ts (gate-repair); app/page.tsx (FAQs); BRAND-BRIEF.md (Approved secondary capabilities)"),
+    "We work on steel and iron gates, weld aluminum and repair aluminum boats, and fabricate stainless countertops.", "lib/service-pages.ts (gate-repair); app/page.tsx (FAQs); BRAND-BRIEF.md (Approved secondary capabilities)"),
   entry("quote-equipment-model", ["Should I include the equipment make and model?"],
-    "Yes, send the equipment make/model and the failed component if known.", serviceSource("equipment-repair")),
+    "Yes. Send the equipment make and model and the failed component if known.", serviceSource("equipment-repair")),
   entry("quote-full-closeup", ["Do you need close-up and full-item photos?", "What photos do you need?", "What photos should I send?", "What photos?"],
-    "Yes, send the full item and close-ups of the failure.", serviceSource("mobile-welding")),
+    "Yes. Send the full item and close-ups of the failure.", serviceSource("mobile-welding")),
   entry("quote-prior-repairs", ["Should I mention earlier repairs and rust?"],
-    "Yes, mention prior repairs, visible bending, corrosion and how the failure occurred.", "lib/service-pages.ts (trailer-welding-repair; equipment-repair)"),
+    "Yes. Mention prior repairs, visible bending, corrosion and how the failure occurred.", "lib/service-pages.ts (trailer-welding-repair; equipment-repair)"),
   entry("quote-drawings", ["How do I send drawings and dimensions?"],
     "Send drawings and dimensions through the website contact form or shop email.", "lib/service-pages.ts (custom-fabrication); components/mainstreet-contact.tsx; lib/assistant/turn.ts (photo and drawing channels)"),
   entry("chat-photos", ["Can I upload a picture directly in this chat?", "Can I send photos in chat?", "Can I upload photos here?"],
-    "Chat doesn't accept photo uploads; use the website contact form or shop email.", "lib/assistant/turn.ts (photo and drawing channels); components/mainstreet-contact.tsx (Photos)"),
+    "No. Chat doesn't accept photo uploads; use the website contact form or shop email.", "lib/assistant/turn.ts (photo and drawing channels); components/mainstreet-contact.tsx (Photos)"),
   entry("quote-start", ["How do I get a quote?", "What should I send for a quote?"],
     "Send the location, a short description, and clear photos of the full item and the problem area. Add dimensions or a drawing if you have them.", "app/page.tsx (FAQs); components/mainstreet-contact.tsx"),
   entry("quote-photo-limits", ["What photo files can I upload?", "How many photos can I upload?"],
     "The quote form takes up to 5 optional JPG, PNG, WebP, GIF, HEIC or HEIF photos. Keep each photo at 3 MB or less and the total at 4 MB or less.", "components/mainstreet-contact.tsx (photo validation)"),
   entry("shop-location", ["Where is your welding shop?", "What is your address?", "Where are you located?"],
-    "The shop is at 533 W Baddour Pkwy, Lebanon, TN 37087.", "app/service-areas/page.tsx; BRAND-BRIEF.md (Existing business details)"),
+    "We're at 533 W Baddour Pkwy, Lebanon, TN 37087.", "app/service-areas/page.tsx; BRAND-BRIEF.md (Existing business details)"),
   entry("shop-contact", ["How do I reach you?", "How can I contact the shop?", "What is your phone number?", "What is your email?"],
-    "Call (615) 703-3296, use the website quote form, or email Sales@musiccityspecialtywelding.com.", "BRAND-BRIEF.md (Conversion Priorities); components/mainstreet-contact.tsx"),
+    `Call ${ASSISTANT_SHOP_PHONE.display}, use the [website quote form](${ASSISTANT_QUOTE_FORM}), or email ${ASSISTANT_SHOP_EMAIL}.`, "lib/shop-contact.ts; lib/shop-phone-shared.ts; lib/assistant/contact.ts; components/mainstreet-contact.tsx"),
   entry("service-list", ["What services do you offer?", "What do you do?"],
-    "We do mobile welding, trailer and equipment repair, gate repair, architectural metal, custom fabrication, mailboxes and planters. Aluminum boat repair and stainless countertops are also listed shop capabilities.", "lib/service-pages.ts; BRAND-BRIEF.md (Approved secondary capabilities)"),
+    "We do mobile welding, trailer and equipment repair, gate repair, architectural metal, custom fabrication, mailboxes and planters. We also repair aluminum boats and fabricate stainless countertops.", "lib/service-pages.ts; BRAND-BRIEF.md (Approved secondary capabilities)"),
   entry("small-large-jobs", ["Do you take both small and large work?", "Do you take small jobs?"],
     "We handle local repairs and larger fabrication work.", "app/page.tsx (FAQs)"),
   entry("customer-page", ["How do I follow my job?", "What is the private customer page?"],
@@ -112,9 +124,9 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
   ...serviceAreas.map((area) => entry(`area-${area.toLowerCase()}`, [
     `Do you provide mobile welding in ${area}?`, `Do you offer on-site mobile welding in ${area}?`,
     `Do you serve ${area}?`, `Do you do mobile welding in ${area}?`,
-  ], `${area} is a listed service area. The job scope, location and schedule determine the trip.`, "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)")),
+  ], `Yes. We work in ${area}; the job scope, location and schedule determine the trip.`, "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)")),
   entry("listed-areas", ["What areas do you serve?", "What cities do you serve?"],
-    `We list ${serviceAreas.slice(0, -1).join(", ")} and ${serviceAreas.at(-1)}. Travel depends on the location and scope; call the shop to confirm the fit.`, "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"),
+    `We work in ${serviceAreas.slice(0, -1).join(", ")} and ${serviceAreas.at(-1)}. Travel depends on the location and scope; call us to confirm the fit.`, "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"),
 ])
 
 const serviceSuffix = new RegExp(`I'm asking about (?:${servicePages.map((service) => service.shortTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\.?$`, "i")

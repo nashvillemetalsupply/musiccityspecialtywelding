@@ -12,7 +12,7 @@ export function Navbar({ home = false }: { home?: boolean }) {
       {home && <PublicSkipLink label="Skip to the work" />}
       <header className={home ? "ms-nav" : "ms-site ms-nav"} aria-label="Main navigation">
         {!home && <PublicSkipLink />}
-        <Link className="ms-brand" href={home ? "#home" : "/"}>
+        <Link className="ms-brand" href={home ? "#home" : "/"} prefetch={home ? undefined : false}>
           <span className="ms-brand-badge">
             <Image
               src="/images/optimized/mcs_welding_logo.webp"
@@ -30,9 +30,9 @@ export function Navbar({ home = false }: { home?: boolean }) {
         </Link>
 
         <nav className="ms-nav-links" aria-label="Desktop navigation">
-          <Link href={`${home ? "" : "/"}#work`}>The work</Link>
-          <Link href={`${home ? "" : "/"}#services`}>What we weld</Link>
-          <Link href={`${home ? "" : "/"}#job-glass`}>Your job</Link>
+          <Link href={`${home ? "" : "/"}#work`} prefetch={home ? undefined : false}>The work</Link>
+          <Link href={`${home ? "" : "/"}#services`} prefetch={home ? undefined : false}>What we weld</Link>
+          <Link href={`${home ? "" : "/"}#job-glass`} prefetch={home ? undefined : false}>Your job</Link>
         </nav>
 
         <a className="ms-nav-call ms-button ms-button-primary" href={shopPhone.href} aria-label={`Call the shop at ${shopPhone.display}`}>

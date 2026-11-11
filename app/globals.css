@@ -1317,7 +1317,7 @@ html {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.55rem;
-  padding: 1rem clamp(1rem, 4vw, 4.5rem) 0;
+  padding: 1rem max(var(--ms-gutter), calc((100% - var(--ms-container)) / 2)) 0;
   color: var(--mx-steel);
   font-family: var(--font-ms-mono), monospace;
   font-size: var(--ms-label);
@@ -1445,39 +1445,6 @@ html {
   font-size: 1rem;
   color: var(--mx-bone);
 }
-
-.ms-subfaq {
-  background: var(--mx-bone);
-  color: var(--mx-ink);
-  padding: clamp(2.6rem, 6vw, 4.5rem) clamp(1rem, 4vw, 2.75rem);
-  border-top: 4px solid var(--mx-ink);
-}
-
-.ms-subfaq h2 { font-size: clamp(1.9rem, 4.8vw, 3rem); }
-.ms-subfaq > div { margin-top: 1.4rem; display: flex; flex-direction: column; max-width: 56rem; }
-
-.ms-subfaq details { border-top: 1px solid var(--mx-line-ink); }
-.ms-subfaq details:last-child { border-bottom: 1px solid var(--mx-line-ink); }
-
-.ms-subfaq summary {
-  list-style: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.05rem 0.2rem;
-  font-family: var(--font-ms-display), sans-serif;
-  font-weight: 800;
-  font-size: 1.25rem;
-  text-transform: uppercase;
-}
-
-.ms-subfaq summary:hover { color: var(--mx-arc-deep); }
-.ms-subfaq summary::-webkit-details-marker { display: none; }
-.ms-subfaq summary i { font-style: normal; color: var(--mx-arc-deep); flex-shrink: 0; transition: transform 140ms ease; }
-.ms-subfaq details[open] summary i { transform: rotate(45deg); }
-.ms-subfaq details p { padding: 0 0.2rem 1.2rem; line-height: 1.65; color: var(--mx-steel-dark); max-width: 44rem; }
 
 .ms-subclose {
   padding: clamp(3rem, 7vw, 5rem) clamp(1rem, 4vw, 2.75rem);
@@ -2565,7 +2532,7 @@ html {
 
 /* --------------------------------------------------------------- subpages */
 
-.ms-subscope, .ms-subfaq {
+.ms-subscope {
   color: var(--sw-enamel);
   background:
     repeating-linear-gradient(90deg,
@@ -2575,16 +2542,10 @@ html {
   box-shadow: inset 0 14px 30px rgba(0, 0, 0, 0.55);
 }
 
-.ms-subscope h2, .ms-subfaq h2 { color: var(--sw-chalk); }
+.ms-subscope h2 { color: var(--sw-chalk); }
 .ms-subscope li { border-top-color: rgba(243, 234, 216, 0.15); }
 .ms-subscope li:last-child { border-bottom-color: rgba(243, 234, 216, 0.15); }
 .ms-subscope li::before { color: var(--sw-fire); }
-
-.ms-subfaq details { border-top-color: rgba(243, 234, 216, 0.15); }
-.ms-subfaq details:last-child { border-bottom-color: rgba(243, 234, 216, 0.15); }
-.ms-subfaq summary { color: var(--sw-chalk); }
-.ms-subfaq summary:hover, .ms-subfaq summary i { color: var(--sw-neon); }
-.ms-subfaq details p { color: var(--sw-enamel-dark); }
 
 .ms-subhero-media { border: 8px solid var(--public-legacy-fdf9ef); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7); transform: rotate(1.4deg); }
 .ms-subhero-media::before { display: none; }
@@ -2716,7 +2677,7 @@ html {
     var(--public-legacy-272117);
 }
 
-.ms-subscope, .ms-subfaq, .ms-area-cities {
+.ms-subscope, .ms-area-cities {
   background:
     repeating-linear-gradient(90deg,
       rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
@@ -2996,7 +2957,7 @@ body { overflow-x: clip; }
 .ms-area-travel li span { color: var(--public-legacy-ded5c2); line-height: 1.55; }
 
 .ms-subhero-eyebrow { display: inline-block; max-width: 34rem; margin-bottom: 1rem; color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .13em; line-height: 1.45; text-transform: uppercase; }
-.ms-subglass { display: grid; gap: 1.25rem; align-items: center; padding: clamp(1.5rem,4vw,2.5rem) clamp(1rem,5vw,3rem); border-block: 1px solid rgba(243,234,216,.2); color: var(--public-legacy-f3ead8); background: linear-gradient(90deg,var(--public-legacy-17191a),var(--public-legacy-252927) 55%,var(--public-legacy-17191a)); }
+.ms-subglass { display: grid; gap: 1.25rem; align-items: start; padding: clamp(1.5rem,4vw,2.5rem) max(var(--ms-gutter), calc((100% - var(--ms-container)) / 2)); border-block: 1px solid rgba(243,234,216,.2); color: var(--public-legacy-f3ead8); background: linear-gradient(90deg,var(--public-legacy-17191a),var(--public-legacy-252927) 55%,var(--public-legacy-17191a)); }
 .ms-subglass > div { display: grid; gap: .35rem; }
 .ms-subglass > div span { color: var(--public-legacy-ffad65); font-family: var(--font-ms-mono), monospace; font-size: var(--ms-label); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .ms-subglass > div strong { font-family: var(--font-ms-display), sans-serif; font-size: clamp(1.6rem,3.2vw,2.4rem); line-height: 1; text-transform: uppercase; }
@@ -3015,10 +2976,14 @@ body { overflow-x: clip; }
 .glass-review form button { min-height: 3rem; padding: var(--space-xs) var(--space-sm); border: var(--rule-fine) solid var(--color-ink); color: var(--color-paper); background: var(--color-ink); font-family: var(--font-outlier); font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
 @media (min-width: 900px) { .ms-job-glass { grid-template-columns: minmax(0,.9fr) minmax(28rem,1.1fr); } }
-@media (min-width: 900px) { .ms-subglass { grid-template-columns: minmax(16rem,.75fr) minmax(0,1.25fr) auto; } }
+@media (min-width: 900px) {
+  .ms-subglass { grid-template-columns: minmax(16rem,.75fr) minmax(0,1.25fr); }
+  .ms-subglass > div { grid-row: 1 / span 2; }
+  .ms-subglass a { grid-column: 2; justify-self: start; }
+}
 @media (max-width: 760px) {
   .ms-job-glass-copy li { grid-template-columns: 1fr; gap: .3rem; }
-  .ms-job-glass-demo { border-width: .45rem; transform: none; }
+  .ms-job-glass-demo { margin-top: 0; border-width: .45rem; transform: none; }
   .ms-job-glass-demo figcaption { align-items: start; flex-direction: column; }
   .ms-job-glass-route { grid-template-columns: repeat(3,1fr); }
   .ms-job-glass-progress { grid-template-columns: 5.8rem minmax(0,1fr); }

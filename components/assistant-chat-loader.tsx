@@ -8,6 +8,34 @@ import styles from "./assistant-chat.module.css"
 type Props = { phoneHref: string; phoneDisplay: string }
 type ChatModule = typeof import("./assistant-chat")
 
+// The quote form is deferred, so it can arrive after the launcher mounts or
+// change on navigation. One intersection observer follows the current forms.
+export function watchQuoteFormVisibility(update: (visible: boolean) => void) {
+  if (typeof IntersectionObserver === "undefined" || typeof MutationObserver === "undefined") return () => {}
+  const forms = new Map<Element, boolean>()
+  const publish = () => update([...forms.values()].some(Boolean))
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) if (forms.has(entry.target)) forms.set(entry.target, entry.isIntersecting)
+    publish()
+  })
+  const discover = () => {
+    const current = new Set(document.querySelectorAll("form.ms-quote-form"))
+    for (const form of forms.keys()) if (!current.has(form)) {
+      observer.unobserve(form)
+      forms.delete(form)
+    }
+    for (const form of current) if (!forms.has(form)) {
+      forms.set(form, false)
+      observer.observe(form)
+    }
+    publish()
+  }
+  const mutations = new MutationObserver(discover)
+  mutations.observe(document.body, { childList: true, subtree: true })
+  discover()
+  return () => { mutations.disconnect(); observer.disconnect() }
+}
+
 // One user request owns one module load. A failed load can retry, and a route
 // change cancels its UI callbacks without changing the chat's durable session.
 export function createAssistantModuleGate<T,>(load: () => Promise<T>, ready: (module: T) => void, failed: () => void) {
@@ -34,6 +62,7 @@ function PublicChatLoader({ phoneHref, phoneDisplay }: Props) {
   const [requested, setRequested] = useState(false)
   const [failed, setFailed] = useState(false)
   const [openingFocus, setOpeningFocus] = useState<HTMLElement | null>(null)
+  const [quoteFormVisible, setQuoteFormVisible] = useState(false)
   const gateRef = useRef<ReturnType<typeof createAssistantModuleGate<ChatModule>> | null>(null)
   const openerRef = useRef<HTMLElement | null>(null)
   const launcherRef = useRef<HTMLButtonElement>(null)
@@ -78,11 +107,13 @@ function PublicChatLoader({ phoneHref, phoneDisplay }: Props) {
     else if ((!requested || Chat) && dialogRef.current?.open) dialogRef.current.close()
   }, [requested, Chat])
 
-  if (Chat) return <Chat phoneHref={phoneHref} phoneDisplay={phoneDisplay} initialOpen={requested} initialFocus={openingFocus} />
+  useEffect(() => watchQuoteFormVisibility(setQuoteFormVisible), [])
+
+  if (Chat) return <Chat phoneHref={phoneHref} phoneDisplay={phoneDisplay} initialOpen={requested} initialFocus={openingFocus} launcherHidden={quoteFormVisible} />
 
   return <>
-    <aside className={styles.launcher} aria-label="Contact the welding shop">
-      <button className="ms-button ms-button-secondary" ref={launcherRef} type="button" onClick={openChat} aria-haspopup="dialog" aria-controls="shop-assistant" aria-expanded={requested}>Ask the shop</button>
+    <aside className={`${styles.launcher}${quoteFormVisible ? ` ${styles.launcherHidden}` : ""}`} aria-label="Contact the welding shop" aria-hidden={quoteFormVisible || undefined}>
+      <button className="ms-button ms-button-secondary" ref={launcherRef} type="button" tabIndex={quoteFormVisible ? -1 : undefined} onClick={openChat} aria-haspopup="dialog" aria-controls="shop-assistant" aria-expanded={requested}>Ask the shop</button>
     </aside>
     {!requested && <span id="shop-assistant" hidden />}
     {requested && <dialog id="shop-assistant" className={styles.dialog} ref={dialogRef} aria-labelledby="shop-assistant-loading-title" onCancel={() => closeLoadingDialog()}>

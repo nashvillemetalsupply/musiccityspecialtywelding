@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto"
 
-const allowedEmails = ["test@example.com", "Sales@musiccityspecialtywelding.com"]
+const allowedEmails = ["test@example.com", "sales@musiccityspecialtywelding.com"]
 export const A4_OPTIONAL_ENV = Object.freeze(["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_PHONE_NUMBER", "OWNER_CELL_PHONE"])
 const stubbedEnvironments = new WeakMap()
 const present = (env, name) => typeof env[name] === "string" && Boolean(env[name].trim())

@@ -217,7 +217,41 @@ function applyFablePublicCssRuling(css) {
       decl.value = decl.value.replace(/([\d.]+)rem(?=\/)/, (value, size) => mono ? "var(--ms-label)" : approvedTypeSizes.has(+size) ? `${approvedTypeSizes.get(+size)}rem` : value)
     })
   })
-  return sheet.toString()
+  // Fable round 2 explicitly aligns the breadcrumb and private-link band,
+  // places its link below the paragraph, and removes the doubled mobile gap.
+  // Keep these complete approved rules exact; all remaining public bytes stay
+  // under the same frozen comparison, including unrelated service styling.
+  const lineEnding = css.match(/\r?\n/)?.[0] || "\n"
+  let approved = sheet.toString()
+  const round2 = [
+    [
+      ".ms-breadcrumb {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 0.55rem;\n  padding: 1rem clamp(1rem, 4vw, 4.5rem) 0;\n  color: var(--mx-steel);\n  font-family: var(--font-ms-mono), monospace;\n  font-size: var(--ms-label);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}",
+      ".ms-breadcrumb {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 0.55rem;\n  padding: 1rem max(var(--ms-gutter), calc((100% - var(--ms-container)) / 2)) 0;\n  color: var(--mx-steel);\n  font-family: var(--font-ms-mono), monospace;\n  font-size: var(--ms-label);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}",
+    ],
+    [
+      ".ms-subglass { display: grid; gap: 1.25rem; align-items: center; padding: clamp(1.5rem,4vw,2.5rem) clamp(1rem,5vw,3rem); border-block: 1px solid rgba(243,234,216,.2); color: #f3ead8; background: linear-gradient(90deg,#17191a,#252927 55%,#17191a); }",
+      ".ms-subglass { display: grid; gap: 1.25rem; align-items: start; padding: clamp(1.5rem,4vw,2.5rem) max(var(--ms-gutter), calc((100% - var(--ms-container)) / 2)); border-block: 1px solid rgba(243,234,216,.2); color: #f3ead8; background: linear-gradient(90deg,#17191a,#252927 55%,#17191a); }",
+    ],
+    [
+      "@media (min-width: 900px) { .ms-subglass { grid-template-columns: minmax(16rem,.75fr) minmax(0,1.25fr) auto; } }",
+      "@media (min-width: 900px) {\n  .ms-subglass { grid-template-columns: minmax(16rem,.75fr) minmax(0,1.25fr); }\n  .ms-subglass > div { grid-row: 1 / span 2; }\n  .ms-subglass a { grid-column: 2; justify-self: start; }\n}",
+    ],
+    [
+      "  .ms-job-glass-demo { border-width: .45rem; transform: none; }",
+      "  .ms-job-glass-demo { margin-top: 0; border-width: .45rem; transform: none; }",
+    ],
+  ]
+  for (const [before, after] of round2) {
+    const source = before.replaceAll("\n", lineEnding)
+    assert.equal(approved.split(source).length - 1, 1, `Fable round 2 source rule must occur once: ${before}`)
+    approved = approved.replace(source, after.replaceAll("\n", lineEnding))
+  }
+  // The conservative dead-rule classifier retains attribute selectors. This
+  // final unused toggle rule belongs to the service FAQ design retired by R2-7.
+  const retiredFaqToggle = ".ms-subfaq details[open] summary i { transform: rotate(45deg); }" + lineEnding
+  assert.equal(approved.split(retiredFaqToggle).length - 1, 1)
+  approved = approved.replace(retiredFaqToggle, "")
+  return approved
 }
 
 function publicColorTokens() {

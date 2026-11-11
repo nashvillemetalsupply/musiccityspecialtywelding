@@ -9,7 +9,7 @@ import {
 import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM } from "@/lib/assistant/contact.ts"
 import styles from "./assistant-chat.module.css"
 
-type Props = { phoneHref: string; phoneDisplay: string; initialOpen?: boolean; initialFocus?: HTMLElement | null }
+type Props = { phoneHref: string; phoneDisplay: string; initialOpen?: boolean; initialFocus?: HTMLElement | null; launcherHidden?: boolean }
 const GREETING = "I'm the automated shop assistant. What needs welding?"
 const REPLY_UNCONFIRMED = "The reply couldn't be confirmed. You can reach the shop directly."
 
@@ -53,7 +53,7 @@ export function AssistantReply({ text, phoneHref, onCallback }: { text: string; 
   })
 }
 
-function ChatDoor({ phoneHref, phoneDisplay, initialOpen = false, initialFocus = null }: Props) {
+function ChatDoor({ phoneHref, phoneDisplay, initialOpen = false, initialFocus = null, launcherHidden = false }: Props) {
   const [open, setOpen] = useState(false)
   const [session, setSession] = useState<ChatSession | null>(null)
   const [draft, setDraft] = useState("")
@@ -144,8 +144,8 @@ function ChatDoor({ phoneHref, phoneDisplay, initialOpen = false, initialFocus =
   const atLimit = (session?.nextTurn ?? 0) >= CHAT_TURN_LIMIT
   return (
     <>
-      <aside className={styles.launcher} aria-label="Contact the welding shop">
-        <button className="ms-button ms-button-secondary" ref={launcherRef} type="button" onClick={openChat} aria-haspopup="dialog" aria-controls="shop-assistant" aria-expanded={open}>Ask the shop</button>
+      <aside className={`${styles.launcher}${launcherHidden ? ` ${styles.launcherHidden}` : ""}`} aria-label="Contact the welding shop" aria-hidden={launcherHidden || undefined}>
+        <button className="ms-button ms-button-secondary" ref={launcherRef} type="button" tabIndex={launcherHidden ? -1 : undefined} onClick={openChat} aria-haspopup="dialog" aria-controls="shop-assistant" aria-expanded={open}>Ask the shop</button>
       </aside>
       <dialog ref={dialogRef} id="shop-assistant" className={styles.dialog} aria-labelledby="shop-assistant-title"
         onCancel={() => setOpen(false)}

@@ -618,3 +618,114 @@ Close-out bar for the follow-up: mobile-welding 3-run median 93 or higher and wi
 R2-1 through R2-7 and R2-15 fixed and shown. R2-8 through R2-14 fixed in the same pass; they are small. Then I look again at the service template on desktop and at the live chat transcript, and nothing else.
 
 Notes, not defects: the mobile menu has no link to `/service-areas`; fine for a one-page site. "Operated by Neverlift Chassis Works, LLC" is still Facts needed 1 and still the shop owner's call. The committed audit JSON shows the fallback owner number in one answer; that is a test-environment artifact because production throws on fallback.
+
+## Codex round 3
+
+R2-2 through R2-15 are fixed and locally verified. R2-1 remains open because no
+local model credential is available. The three named performance changes are
+implemented; the requested 90-point median condition passes on both pages, but
+the separate 93-point mobile-welding follow-up target does not. No push,
+deployment, merge, customer message, production database write, or delivery
+readback (13e) was performed. This records the implementation and evidence; it
+does not substitute a Codex verdict for Fable's next review.
+
+| Item | Status | Change and evidence |
+| --- | --- | --- |
+| R2-1 | **NOT RUN** | No nonempty `ANTHROPIC_API_KEY`, `AI_GATEWAY_API_KEY`, `VERCEL_OIDC_TOKEN`, or `OPENAI_API_KEY` in the process environment; no `.env*` files in the worktree or base-repository roots. No values printed, credentials fetched, or `vercel env pull`. [Live-eval note](chat-live-eval-2026-11-11.md) explains why no 25-question live transcript exists. Fixtures are not presented as live replies. The user's exclusion of 13e was honored. |
+| R2-2 | **FIXED** | `turn.ts` adds the next intake question to sourced replies. Yes/no bank answers begin with `Yes.` or `No.` and retain qualifications; the mobile-versus-shop alternative question remains explanatory. `assistant-answers.test.mjs` covers continuation and openings. |
+| R2-3 | **FIXED** | FAQ answers retain their full caveats. Regression tests require the gate electrical exclusion and the mobile repair/shop-fit sentence in the returned replies. |
+| R2-4 | **FIXED** | First-person shop voice, natural material names, and “make and model.” Tests reject `the site`, `listed`, and word/word shorthand in every curated answer. No business facts were invented. |
+| R2-5 | **FIXED** | Breadcrumb, service sections, private-link band, FAQ heading, Other work, contact, and footer share x=112 on all seven service routes at 1440. [Bounding boxes](design-shots/fable-r3-metrics.json). The shared cream FAQ card has its intentional interior padding. |
+| R2-6 | **FIXED** | `ms-otherwork` has its own label and six wrapping links using the existing `ms-city-list` chip treatment. All seven pages inspected at both requested sizes. |
+| R2-7 | **FIXED** | Services use the home `ms-faq`/`ms-faq-heading`/`ms-faq-list` structure: heading left, cream card right, sentence-case Plex Sans questions. Old `ms-subfaq` styling removed. |
+| R2-8 | **FIXED** | Hero and nav use the shared container inset. Home copy/section edges measure x=112; logo x=112 and call-button right x=1328 on home and all seven services. [Nav measurements](design-shots/fable-r3-nav-touch-metrics.json). |
+| R2-9 | **FIXED** | Breadcrumb links keep 44px height and lose their minimum width. The extra gap after Home is gone. |
+| R2-10 | **FIXED** | Legal emails break only after `@`, with narrower small-screen card padding; public email casing is lowercase. Range measurements verify the complete domain stays on one line at 320, 768, and 1024. Both legal pages also inspected at 390 and 1440. |
+| R2-11 | **FIXED** | Mobile `.ms-job-glass-demo` has `margin-top: 0`; the grid gap separates the list and example card. Mobile full page inspected. |
+| R2-12 | **FIXED** | Added the `html:has(.ms-menu[open])` scroll lock. Wheel tests pass on all 12 mobile routes. Native touch drags on home and mobile welding move 385px with the menu closed and 0px with it open; Escape closes the menu. [Touch evidence](design-shots/fable-r3-nav-touch-metrics.json). |
+| R2-13 | **FIXED** | Browser-safe contact phone helper consumes server `getShopPhone()`; both curated contact answers and model knowledge use the same configured number as the public page. Test supplies a number differing from both brief numbers and asserts that display number appears. Email/form use shared constants. |
+| R2-14 | **FIXED** | Private-link action is below its paragraph, left aligned. One persistent IntersectionObserver discovers deferred/replaced forms and hides both unloaded and loaded-chat launchers while the quote form intersects. Unit tests cover lifecycle/cleanup. Scroll sweeps on home, mobile welding, and service areas at 1280x720 and 1440x900 find zero checked control intersections. A measured service-area footer transit collision was also fixed with desktop right clearance. |
+| R2-15 | **FIXED** | Catalog cutout replaced with existing owner-work `a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.webp`; honest alt: “Custom metal letters with mounting studs on the shop fabrication table.” No generation or download. A matching owner mailbox/planter photo remains an asset gap, as allowed by Fable's interim-photo ruling. |
+
+The performance patch disables prefetch on off-home Next Links to `/` and
+`/#…`, including shared shop actions and the 404 return link. Mobile-menu
+anchors are native links. All fourteen service-page viewport captures recorded
+zero home RSC/hero prefetch requests. IBM Plex Mono loads weight 500 only; the
+12px label floor and legibility remain intact.
+
+`IMG_3994-768-q75.avif` is **35,643 bytes**, down from 47,180, with its existing
+768x1024 dimensions. It was encoded directly from the unchanged owner-work
+source with Sharp quality 43, effort 9, and 4:2:0 chroma. Before/after images were
+opened at native resolution; no material visible loss was observed at the
+rendered size. [Encoding evidence](perf/2026-11-10/round3-image-encoding.json)
+and the public provenance manifest record source/output hashes and actual
+settings. The legacy filename remains for compatibility; the image loader's
+requested-quality mapping preserves static AVIF delivery. Tests verify hashes,
+dimensions, the 40,000-byte cap, and optimized preload/source selection.
+
+Validation:
+
+- **Build PASS:** Node 22.23.2 `npm run build`, including TypeScript, static
+  generation, and bundle budgets. Home 536,801/648,316 bytes; board
+  631,853/817,538 bytes. Final log: `.tmp/fable-r3-build.log`.
+- **Tests PASS:** Node 22 `npm test`: 1,566 total, 1,563 passed, zero failed,
+  three skipped. Skips: opt-in AI model test and two persistence tests without
+  `DATABASE_URL`. Log: `.tmp/fable-r3-npm-test.log`. Chat-focused tests and the
+  31-test A4 dry harness also pass; their persistence and senders are stubbed.
+- **ESLint PASS:** touched implementation/tests and both new QA runners, zero
+  warnings. `git diff --check` passes.
+- **Visual/geometry PASS:** all 12 public routes at 390x844 and 1440x900,
+  full page/fold/chat, plus every mobile menu: **84 PNGs** under
+  `design-shots/fable-r3-*.png`, opened and inspected by the root agent and
+  delegated reviewers. No missing images, browser exceptions, overflow, or
+  attempted submissions. Additional complete scroll passes at 320, 768, and
+  1024 cover home, service template, and legal pages. Metrics above record
+  shared edges, prefetch, menu lock, email wrapping, and launcher clearance.
+- Screenshot preparation scrolls real deferred content and decodes photos.
+  Full-page rasterization reveals already-visited deferred sections and uses a
+  flow-preserving relative header to avoid Chromium's sticky compositor
+  artifact. Fold is captured first; the page reloads before native menu/chat
+  screenshots. Geometry and Lighthouse use normal production CSS. Visual QA
+  blocks remote requests and all non-GET/HEAD requests; it sends no chat/form.
+
+Lighthouse 13.6.0 ran sequentially against the final Node 22 `next start`, with
+public chat enabled, default simulated mobile throttling, fresh Chrome/profile
+and storage reset for every run, and no request blocking. HTML and optimizer
+responses were warmed before each page batch, matching the recorded baseline.
+Raw reports and settings: [round 3 reports](perf/2026-11-10/round3-final/summary.json).
+The [current performance record](lighthouse-2026-11-10.json) retains round 2
+history and the final source hashes.
+
+| Page | Three performance scores | Median | Median LCP | Median TBT |
+| --- | --- | --- | --- | --- |
+| Home | 92 / 92 / 92 | **92** | 3,247.7ms | 88.5ms |
+| Mobile welding | 86 / 91 / 90 | **90** | 3,275.5ms | 196.2ms |
+
+Both pages meet the requested 90-point median. The named follow-up's 93-point
+service target and within-two-points comparison to main's 95 are **NOT MET**;
+all six runs are retained, including the 86. No post-deployment field result is
+claimed because deployment is prohibited.
+
+Reproduce with the supplied Node 22 first on PATH, public chat enabled, and the
+production server running separately:
+
+```powershell
+$fableNode22 = "C:/Users/Owner/AppData/Local/hermes/node/node.exe"
+$env:PATH = "C:/Users/Owner/AppData/Local/hermes/node;" + $env:PATH
+$env:NEXT_PUBLIC_ASSISTANT_CHAT = "1"
+$env:ASSISTANT_VOICE = "0"
+npm run build
+& $fableNode22 --experimental-strip-types --test "scripts/**/*.test.mjs"
+& $fableNode22 node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3100
+& $fableNode22 scripts/qa/fable-r3-visual.mjs http://localhost:3100
+& $fableNode22 scripts/qa/fable-r3-lighthouse.mjs --label=round3-recheck --origin=http://localhost:3100 --runs=3
+```
+
+“Is this a 10/10 website for this business, on these devices, with this evidence?”
+The visual defects in this pass are closed; live-model quality remains
+unproven, so an unqualified claim is not supported. MAINSTREET's delivery check
+was expressly superseded by the user's prohibition of 13e. No delivery check
+or production provider health claim is included.
+
+The owned local `next start` process was stopped after verification. QA browser
+sessions were closed; user applications were left alone.

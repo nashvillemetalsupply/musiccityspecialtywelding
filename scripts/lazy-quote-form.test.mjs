@@ -51,7 +51,7 @@ test("SSR has no editable fields to replace, and always gives the phone and emai
   assert.match(html, /role="status">The job form is loading/)
   assert.match(html, /min-height:40rem/)
   assert.match(html, /href="tel:\+16157033296"/)
-  assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+  assert.match(html, /href="mailto:sales@musiccityspecialtywelding.com"/)
 })
 
 test("concurrent quote requests share one module load, and a failed load can retry", async () => {
@@ -162,7 +162,7 @@ test("a failed import shows a noneditable contact fallback and retry mounts the 
   assert.match(html, /role="alert">The job form didn&#x27;t load/)
   assert.match(html, /min-height:auto/)
   assert.match(html, /href="tel:\+16157033296"/)
-  assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+  assert.match(html, /href="mailto:sales@musiccityspecialtywelding.com"/)
   assert.doesNotMatch(html, /<(?:form|input|select|textarea)\b/)
   const retry = failed.props.children.find((child) => child?.type === "button")
   retry.props.onClick()

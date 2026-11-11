@@ -34,7 +34,7 @@ const _plexSans = IBM_Plex_Sans({
 
 const _plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["500", "600"],
+  weight: "500",
   variable: "--font-ms-mono",
   display: "swap",
   preload: false,

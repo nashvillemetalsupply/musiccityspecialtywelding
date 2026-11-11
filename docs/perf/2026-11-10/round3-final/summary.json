@@ -1,0 +1,2858 @@
+{
+  "date": "2026-11-10",
+  "label": "round3-final",
+  "origin": "http://localhost:3100",
+  "server": "Node 22.23.2 next start on loopback port3100 after final build; public chat enabled; voice disabled",
+  "sourceCommit": "44cfad6fecfd66abd468960c0337f00b19dcfa31",
+  "mainCommit": "c7827bcef7ca902500d1780c0d67cb072ba5d140",
+  "currentWorktreeChangedFiles": [
+    "app/globals.css",
+    "app/layout.tsx",
+    "app/not-found.tsx",
+    "app/page-cohesion.css",
+    "app/privacy/page.tsx",
+    "app/services/[slug]/page.tsx",
+    "app/terms/page.tsx",
+    "components/assistant-chat-loader.tsx",
+    "components/assistant-chat.module.css",
+    "components/assistant-chat.tsx",
+    "components/critical-image.tsx",
+    "components/footer.tsx",
+    "components/lazy-quote-form.tsx",
+    "components/navbar.tsx",
+    "components/shop-actions.tsx",
+    "lib/assistant/answers.ts",
+    "lib/assistant/contact.ts",
+    "lib/assistant/knowledge.ts",
+    "lib/assistant/turn.ts",
+    "lib/service-pages.ts",
+    "public/images/optimized/IMG_3994-768-q75.avif",
+    "public/images/optimized/critical-image-provenance.json",
+    "scripts/assistant-a4-diagnostics.mjs",
+    "scripts/assistant-a4-run.mjs",
+    "scripts/assistant-a4.test.mjs",
+    "scripts/assistant-answers.test.mjs",
+    "scripts/assistant-api.test.mjs",
+    "scripts/assistant-brain.test.mjs",
+    "scripts/assistant-chat-loader.test.mjs",
+    "scripts/assistant-handoff.test.mjs",
+    "scripts/assistant-widget.test.mjs",
+    "scripts/critical-image.test.mjs",
+    "scripts/css-move-verbatim.test.mjs",
+    "scripts/lazy-quote-form.test.mjs",
+    "scripts/s12-public-site.test.mjs"
+  ],
+  "publicChat": "enabled; verified in initial server HTML on both pages",
+  "serverState": "page HTML and all server image-optimizer src/srcset/imagesrcset URLs warmed before each page's batch using Chrome image Accept header; fresh browser/storage each measured run",
+  "method": "Lighthouse 13.6.0 mobile defaults, explicit simulate throttling; fresh Chrome/profile each run; storage reset; sequential; no request blocking",
+  "acceptance": true,
+  "target": {
+    "medianPerformance": 90,
+    "mobileWeldingFollowupMedian": 93
+  },
+  "runs": [
+    {
+      "path": "/",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/round3-final/home-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 92,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3255.4392,
+      "fcpMs": 1215.7196,
+      "cls": 0.001477801074916096,
+      "tbtMs": 86.99999999999977,
+      "speedIndexMs": 1215.7196,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 1326,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 8.27
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 21.762
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 25.833
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 188.093
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 270,
+        "displayValue": "Est savings of 270 ms",
+        "metricSavings": {
+          "FCP": 250,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "totalBytes": 30092,
+              "wastedMs": 458
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 158
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 22,
+              "transferSize": 364886
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180970
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35367
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 32150
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 22626
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 4,
+              "transferSize": 22549
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 1419.348,
+        "displayValue": "1.4 s",
+        "metricSavings": {
+          "TBT": 100
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 540.7319999999996
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 423.73199999999997
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 282.5200000000004
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 98.09999999999998
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 54.07599999999999
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 20.18799999999999
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 150,
+        "displayValue": "Est savings of 27 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27483,
+              "wastedPercent": 38.49484346143892
+            }
+          ],
+          "overallSavingsMs": 150,
+          "overallSavingsBytes": 27483,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 150
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 10,
+        "displayValue": "Est savings of 17 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "wastedBytes": 17409,
+              "wastedPercent": 62.853759302372524,
+              "totalBytes": 27698
+            }
+          ],
+          "overallSavingsMs": 10,
+          "overallSavingsBytes": 17409,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/",
+      "run": 2,
+      "report": "docs/perf/2026-11-10/round3-final/home-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 92,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3237.6553999999996,
+      "fcpMs": 1212.8277,
+      "cls": 0,
+      "tbtMs": 118.5,
+      "speedIndexMs": 1212.8277,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 1188.5,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 11.276
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 23.693
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 22.941
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 219.199
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 342,
+        "displayValue": "Est savings of 340 ms",
+        "metricSavings": {
+          "FCP": 350,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "totalBytes": 30092,
+              "wastedMs": 456
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 156
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 22,
+              "transferSize": 364886
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180970
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35367
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 32150
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 22626
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 4,
+              "transferSize": 22549
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 1539.795999999997,
+        "displayValue": "1.5 s",
+        "metricSavings": {
+          "TBT": 100
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 717.7239999999962
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 325.19200000000006
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 313.68000000000086
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 110.15199999999999
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 54.532000000000004
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 18.516000000000005
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 150,
+        "displayValue": "Est savings of 27 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27483,
+              "wastedPercent": 38.49484346143892
+            }
+          ],
+          "overallSavingsMs": 150,
+          "overallSavingsBytes": 27483,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 150
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 10,
+        "displayValue": "Est savings of 17 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "wastedBytes": 17409,
+              "wastedPercent": 62.853759302372524,
+              "totalBytes": 27698
+            }
+          ],
+          "overallSavingsMs": 10,
+          "overallSavingsBytes": 17409,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/",
+      "run": 3,
+      "report": "docs/perf/2026-11-10/round3-final/home-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 92,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3247.7388,
+      "fcpMs": 1210.3694,
+      "cls": 0.001477801074916096,
+      "tbtMs": 88.50000000000023,
+      "speedIndexMs": 1210.3694,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 1359.5,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 8.783
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 23.693
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 20.25
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 190.64
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3100/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 299,
+        "displayValue": "Est savings of 300 ms",
+        "metricSavings": {
+          "FCP": 300,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 155
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "totalBytes": 30092,
+              "wastedMs": 455
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 22,
+              "transferSize": 364886
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180970
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35367
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 32150
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 22626
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 4,
+              "transferSize": 22549
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 1337.164,
+        "displayValue": "1.3 s",
+        "metricSavings": {
+          "TBT": 100
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 529.9039999999997
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 364.5120000000001
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 276.52800000000025
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 98.14400000000005
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 47.88799999999999
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 20.187999999999985
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 150,
+        "displayValue": "Est savings of 27 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27483,
+              "wastedPercent": 38.49484346143892
+            }
+          ],
+          "overallSavingsMs": 150,
+          "overallSavingsBytes": 27483,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 150
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 10,
+        "displayValue": "Est savings of 17 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "wastedBytes": 17409,
+              "wastedPercent": 62.853759302372524,
+              "totalBytes": 27698
+            }
+          ],
+          "overallSavingsMs": 10,
+          "overallSavingsBytes": 17409,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 1,
+      "report": "docs/perf/2026-11-10/round3-final/mobile-welding-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 86,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3281.9034,
+      "fcpMs": 1071.4517,
+      "cls": 0.0003487203741905294,
+      "tbtMs": 287.27414999999974,
+      "speedIndexMs": 1237.6394283016912,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 955,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 12.204
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 103.067
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 30.151
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 222.746
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 241,
+        "displayValue": "Est savings of 240 ms",
+        "metricSavings": {
+          "FCP": 250,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "totalBytes": 30092,
+              "wastedMs": 461
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 161
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 19,
+              "transferSize": 346950
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180869
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 43011
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35367
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 12791
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 1,
+              "transferSize": 3688
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 1841.1559999999943,
+        "displayValue": "1.8 s",
+        "metricSavings": {
+          "TBT": 300
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 597.0879999999989
+            },
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 590.1239999999956
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 490.6199999999999
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 104.416
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 37.984
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 20.923999999999992
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 300,
+        "displayValue": "Est savings of 50 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 300
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27250,
+              "wastedPercent": 38.168913376293524
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1zvywf9tt6bb3.js",
+              "totalBytes": 42866,
+              "wastedBytes": 24116,
+              "wastedPercent": 56.25899280575539
+            }
+          ],
+          "overallSavingsMs": 300,
+          "overallSavingsBytes": 51366,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 300
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 10,
+        "displayValue": "Est savings of 19 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "wastedBytes": 19235,
+              "wastedPercent": 69.44582755790012,
+              "totalBytes": 27698
+            }
+          ],
+          "overallSavingsMs": 10,
+          "overallSavingsBytes": 19235,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 2,
+      "report": "docs/perf/2026-11-10/round3-final/mobile-welding-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 91,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3231.4894000000004,
+      "fcpMs": 1066.7447,
+      "cls": 0.0003487203741905294,
+      "tbtMs": 152.18617499999982,
+      "speedIndexMs": 1066.7447,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 1150.5,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 8.949
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 70.043
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 16.853
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 184.497
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 307,
+        "displayValue": "Est savings of 310 ms",
+        "metricSavings": {
+          "FCP": 300,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "totalBytes": 30092,
+              "wastedMs": 458
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 158
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 19,
+              "transferSize": 346950
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180869
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 43011
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35367
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 12791
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 1,
+              "transferSize": 3688
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 1592.2040000000004,
+        "displayValue": "1.6 s",
+        "metricSavings": {
+          "TBT": 150
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 543.8959999999988
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 463.6960000000015
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 418.5319999999998
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 108.01599999999999
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 37.19199999999999
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 20.872000000000003
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 300,
+        "displayValue": "Est savings of 50 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 300
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27250,
+              "wastedPercent": 38.168913376293524
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1zvywf9tt6bb3.js",
+              "totalBytes": 42866,
+              "wastedBytes": 24116,
+              "wastedPercent": 56.25899280575539
+            }
+          ],
+          "overallSavingsMs": 300,
+          "overallSavingsBytes": 51366,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 300
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 10,
+        "displayValue": "Est savings of 19 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "wastedBytes": 19235,
+              "wastedPercent": 69.44582755790012,
+              "totalBytes": 27698
+            }
+          ],
+          "overallSavingsMs": 10,
+          "overallSavingsBytes": 19235,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 3,
+      "report": "docs/perf/2026-11-10/round3-final/mobile-welding-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 90,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3275.5156,
+      "fcpMs": 1066.7578,
+      "cls": 0.0003487203741905294,
+      "tbtMs": 196.1894500000003,
+      "speedIndexMs": 1102.8009585818654,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 855,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 16.949
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 44.008
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 29.622
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 206.738
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3100/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 258,
+        "displayValue": "Est savings of 260 ms",
+        "metricSavings": {
+          "FCP": 250,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "totalBytes": 30092,
+              "wastedMs": 458
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 158
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 19,
+              "transferSize": 346950
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180869
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 43011
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35367
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 12791
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 1,
+              "transferSize": 3688
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 1574.7919999999988,
+        "displayValue": "1.6 s",
+        "metricSavings": {
+          "TBT": 200
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 573.9519999999981
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 439.048
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 381.93600000000066
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 109.77599999999998
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 48.080000000000005
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 21.999999999999993
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 300,
+        "displayValue": "Est savings of 50 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 300
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27250,
+              "wastedPercent": 38.168913376293524
+            },
+            {
+              "url": "http://localhost:3100/_next/static/chunks/1zvywf9tt6bb3.js",
+              "totalBytes": 42866,
+              "wastedBytes": 24116,
+              "wastedPercent": 56.25899280575539
+            }
+          ],
+          "overallSavingsMs": 300,
+          "overallSavingsBytes": 51366,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 300
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 10,
+        "displayValue": "Est savings of 19 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3100/_next/static/chunks/2ssm0vcgl__46.css",
+              "wastedBytes": 19235,
+              "wastedPercent": 69.44582755790012,
+              "totalBytes": 27698
+            }
+          ],
+          "overallSavingsMs": 10,
+          "overallSavingsBytes": 19235,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 10
+            }
+          }
+        }
+      }
+    }
+  ],
+  "configSettings": {
+    "output": "json",
+    "maxWaitForFcp": 30000,
+    "maxWaitForLoad": 45000,
+    "pauseAfterFcpMs": 1000,
+    "pauseAfterLoadMs": 1000,
+    "networkQuietThresholdMs": 1000,
+    "cpuQuietThresholdMs": 1000,
+    "formFactor": "mobile",
+    "throttling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.5600000000002,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    },
+    "throttlingMethod": "simulate",
+    "screenEmulation": {
+      "mobile": true,
+      "width": 412,
+      "height": 823,
+      "deviceScaleFactor": 1.75,
+      "disabled": false
+    },
+    "emulatedUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36",
+    "auditMode": false,
+    "gatherMode": false,
+    "clearStorageTypes": [
+      "file_systems",
+      "shader_cache",
+      "service_workers",
+      "cache_storage"
+    ],
+    "disableStorageReset": false,
+    "debugNavigation": false,
+    "channel": "node",
+    "usePassiveGathering": false,
+    "disableFullPageScreenshot": false,
+    "skipAboutBlank": false,
+    "blankPage": "about:blank",
+    "ignoreStatusCode": false,
+    "locale": "en-US",
+    "blockedUrlPatterns": null,
+    "additionalTraceCategories": null,
+    "extraHeaders": null,
+    "precomputedLanternData": null,
+    "onlyAudits": null,
+    "onlyCategories": null,
+    "skipAudits": null
+  },
+  "statistics": [
+    {
+      "path": "/",
+      "count": 3,
+      "performance": {
+        "min": 92,
+        "median": 92,
+        "max": 92
+      },
+      "lcpMs": {
+        "median": 3247.7388
+      },
+      "tbtMs": {
+        "median": 88.50000000000023
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "count": 3,
+      "performance": {
+        "min": 86,
+        "median": 90,
+        "max": 91
+      },
+      "lcpMs": {
+        "median": 3275.5156
+      },
+      "tbtMs": {
+        "median": 196.1894500000003
+      }
+    }
+  ],
+  "passed": true,
+  "followupPassed": false
+}

@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-10",
+  "source": "public/images/owner-work/IMG_3994.webp",
+  "sourceFile": {
+    "bytes": 281792,
+    "sha256": "fae64e0711b4ca76b285022051859fa10cdc4948ab15a4abdbd8178eb535ead8"
+  },
+  "target": "public/images/optimized/IMG_3994-768-q75.avif",
+  "previous": {
+    "bytes": 47180,
+    "sha256": "4ee52c9c0b1f699590219c2ba2f767c6c78bed26b3b79818640642129afd4c57"
+  },
+  "encoded": {
+    "bytes": 35643,
+    "sha256": "8a9836f356bb9c7251ec4cba921b3a25fa71a40df9b48b62486fd13e8a8365aa"
+  },
+  "encoder": {
+    "sharp": "0.35.5",
+    "libvips": "8.18.7",
+    "width": 768,
+    "height": 1024,
+    "quality": 43,
+    "effort": 9,
+    "chromaSubsampling": "4:2:0"
+  },
+  "visualReview": "Opened before and after at their native 768x1024 resolution. Faces, clothing, brick, pipework, labels and concrete retain detail; no visible quality loss at the rendered mobile hero size. Original owner-work WebP is unchanged.",
+  "filename": "Existing q75 path retained to avoid changing references; actual encoding settings are recorded here."
+}

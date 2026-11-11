@@ -71,6 +71,6 @@ export function LazyQuoteForm({ phoneHref, phoneDisplay }: QuoteFormProps) {
     <div className="ms-form-heading"><span>Job details</span><small>{failed ? "Try again or call the shop" : "Opening the form"}</small></div>
     <p className="ms-field-wide" role={failed ? "alert" : "status"}>{failed ? "The job form didn't load. Try again, call the shop, or email the details." : "The job form is loading."}</p>
     {failed && <button className="ms-button ms-button-secondary" type="button" onClick={mount}>Try again</button>}
-    <p className="ms-form-fallback ms-field-wide">You can also call <a href={phoneHref}>{phoneDisplay}</a> or <a href="mailto:Sales@musiccityspecialtywelding.com">email the shop</a>.</p>
+    <p className="ms-form-fallback ms-field-wide">You can also call <a href={phoneHref}>{phoneDisplay}</a> or <a href="mailto:sales@musiccityspecialtywelding.com">email the shop</a>.</p>
   </div>
 }

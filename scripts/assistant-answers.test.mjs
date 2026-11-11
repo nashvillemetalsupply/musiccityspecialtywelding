@@ -6,12 +6,12 @@ import test from "node:test"
 const aiUrl = new URL("../lib/ai.ts", import.meta.url).href
 const hooks = registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === "@/lib/shop-contact") return { url: `data:text/javascript,${encodeURIComponent('export const getShopPhone = () => ({display:"(615) 703-3296",href:"tel:+16157033296"});')}`, shortCircuit: true }
+    if (specifier === "@/lib/shop-contact") return { url: `data:text/javascript,${encodeURIComponent('export const getShopPhone = () => ({display:"(615) 555-0177",href:"tel:+16155550177"});')}`, shortCircuit: true }
     if (new URL(specifier, context.parentURL ?? import.meta.url).href === aiUrl) return { url: `data:text/javascript,${encodeURIComponent("export const jsonWithClaude = (input) => globalThis.__answersModel(input);")}`, shortCircuit: true }
     return nextResolve(specifier, context)
   },
 })
-const { assistantAnswers, findAssistantAnswer, isSourcedAssistantAnswer } = await import("../lib/assistant/answers.ts")
+const { assistantAnswers, findAssistantAnswer, isSourcedAssistantAnswer, ASSISTANT_SHOP_PHONE } = await import("../lib/assistant/answers.ts")
 const { assistantKnowledge } = await import("../lib/assistant/knowledge.ts")
 const { handleAssistantTurn } = await import("../lib/assistant/turn.ts")
 hooks.deregister()
@@ -31,7 +31,10 @@ test("curated answers cite existing versioned source files, remain concise, and 
   assert.equal(new Set(assistantAnswers.map((entry) => entry.id)).size, assistantAnswers.length)
   for (const entry of assistantAnswers) {
     assert.ok(entry.patterns.length && entry.answer && entry.source, entry.id)
-    assert.ok(entry.answer.split(/(?<=[.!?])\s+/).length <= 2, entry.id)
+    assert.ok(entry.answer.split(/(?<=[.!?])\s+/).length <= 4, entry.id)
+    assert.doesNotMatch(entry.answer, /\b(the site|listed)\b/i, entry.id)
+    assert.doesNotMatch(entry.answer, /\b\w+\/\w+\b/, entry.id)
+    if (entry.patterns.some((pattern) => /^(?:do|does|can|could|should|is|are|will|would)\b/i.test(pattern)) && entry.id !== "mobile-shop-fit") assert.match(entry.answer, /^(?:Yes|No)\./, entry.id)
     assert.doesNotMatch(entry.answer, /\bcannot\b/i, entry.id)
     for (const file of entry.source.matchAll(/(?:lib|app|components)\/[\w/.[\]-]+\.tsx?\b|BRAND-BRIEF\.md/g)) assert.ok(existsSync(new URL(`../${file[0]}`, import.meta.url)), entry.source)
   }
@@ -46,8 +49,43 @@ test("all twelve Fable cases answer before calling a provider, including the tra
     const result = await handleAssistantTurn([{ role: "user", content: `[INTERNAL TEST] ${question}` }], { isTest: true })
     assert.equal(result.branch, "sourced-answer", question)
     assert.equal(result.handoff_reason, undefined, question)
-    assert.equal(result.reply, `I'm an automated assistant for Music City Specialty Welding. ${answer.answer}`, question)
+    assert.ok(result.reply.startsWith(`I'm an automated assistant for Music City Specialty Welding. ${answer.answer} `), question)
+    assert.match(result.reply, /\?$/, `${question}: sourced answers continue intake`)
   }
+})
+
+test("full FAQ answers keep the gate electrical and on-site fit caveats", async () => {
+  globalThis.__answersModel = async () => assert.fail("reviewed caveats should not depend on the model")
+  for (const [question, caveat] of [
+    ["Do you repair gate motors or openers?", "Motor, operator, and electrical work are outside what we do, so call the installer for those."],
+    ["Can every repair be completed on-site?", "We will tell you when an on-site repair is not the right fit."],
+  ]) {
+    const result = await handleAssistantTurn([{ role: "user", content: question }])
+    assert.equal(result.branch, "sourced-answer")
+    assert.ok(result.reply.includes(caveat), question)
+    assert.match(result.reply, /\?$/)
+  }
+})
+
+test("contact answer uses the configured display number and shared email", () => {
+  const answer = findAssistantAnswer("What is your phone number?")
+  assert.ok(answer.answer.includes(ASSISTANT_SHOP_PHONE.display))
+  assert.ok(answer.answer.includes("(615) 555-0177"), "the configured number differs from both brief numbers")
+  assert.doesNotMatch(answer.answer, /703-3296|810-4910/)
+  assert.ok(answer.answer.includes("sales@musiccityspecialtywelding.com"))
+  assert.ok(answer.answer.includes("[website quote form](/#contact)"))
+  assert.doesNotMatch(answer.answer, /form at \/#contact/)
+  assert.equal(assistantKnowledge.brand.businessDetails.includes(ASSISTANT_SHOP_PHONE.display), true)
+})
+
+test("choice questions explain the fit and conditional work keeps its scope caveats", () => {
+  assert.doesNotMatch(findAssistantAnswer("Should I bring my part to the shop or use mobile welding?").answer, /^(?:Yes|No)\./)
+  const reinforcement = findAssistantAnswer("Can you reinforce a repeatedly cracked area?").answer
+  assert.doesNotMatch(reinforcement, /Yes\. Possibly/)
+  assert.match(reinforcement, /review.*load, alignment, fatigue, or design issues/)
+  const installation = findAssistantAnswer("Do you install the metalwork you fabricate?").answer
+  assert.match(installation, /Installation can be discussed/)
+  assert.match(installation, /Access, anchoring, site readiness, and project location determine the final scope/)
 })
 
 test("whole-question matching never licenses appended unsafe, price, date, alloy or injection requests", async () => {
@@ -209,7 +247,8 @@ test("unrelated sourced gate and countertop questions resume after a trailer saf
     const result = await handleAssistantTurn([...prior, { role: "user", content }])
     assert.equal(result.branch, "sourced-answer", content)
     assert.equal(result.handoff_reason, undefined, content)
-    assert.ok(result.reply.includes(findAssistantAnswer(content).answer), content)
+    const visibleAnswer = findAssistantAnswer(content).answer.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    assert.ok(result.reply.includes(visibleAnswer), content)
     assert.doesNotMatch(result.reply, /tow it|Nobody can call that safe/)
   }
   const result = await handleAssistantTurn([...prior,

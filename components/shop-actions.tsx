@@ -15,7 +15,7 @@ export function AskShopButton({ className = "ms-button ms-button-secondary", onC
     )
   }
 
-  return <Link className={className} href="/#contact" onClick={onClick}>Ask the shop</Link>
+  return <Link className={className} href="/#contact" prefetch={false} onClick={onClick}>Ask the shop</Link>
 }
 
 export function ShopActions({ phoneHref, className = "" }: { phoneHref: string; className?: string }) {

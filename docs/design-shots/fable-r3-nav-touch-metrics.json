@@ -1,0 +1,145 @@
+{
+  "origin": "http://localhost:3100",
+  "mode": "Local next start; all non-GET/HEAD and remote requests blocked; no submissions or messages.",
+  "navigation": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/trailer-welding-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/gate-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/equipment-repair",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/architectural-welding",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/custom-fabrication",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/custom-metal-products",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "brandX": 112,
+      "callRight": 1328,
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    }
+  ],
+  "touchLock": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "input": "Native CDP Input.dispatchTouchEvent with mobile viewport and touch enabled",
+      "closedMenuScrollY": 385,
+      "menuOpenScrollBefore": 0,
+      "menuOpenScrollAfter": 0,
+      "htmlOverflow": "hidden",
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    },
+    {
+      "route": "/services/mobile-welding",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "input": "Native CDP Input.dispatchTouchEvent with mobile viewport and touch enabled",
+      "closedMenuScrollY": 385,
+      "menuOpenScrollBefore": 0,
+      "menuOpenScrollAfter": 0,
+      "htmlOverflow": "hidden",
+      "blocked": {
+        "remote": 0,
+        "nonRead": 0
+      }
+    }
+  ],
+  "passed": true
+}

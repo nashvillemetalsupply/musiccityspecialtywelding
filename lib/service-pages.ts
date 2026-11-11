@@ -340,8 +340,8 @@ export const servicePages: ServicePage[] = [
     eyebrow: "Made for the property",
     intro:
       "We fabricate custom steel mailboxes, mailbox supports, cluster units, brackets, and planter boxes to fit the dimensions and look of a residential or commercial property.",
-    image: "/images/mailbox.webp",
-    imageAlt: "Custom wrought iron mailbox fabrication",
+    image: "/images/owner-work/a2b524d8-f0c3-41b7-b35b-da986fd8fe3c.webp",
+    imageAlt: "Custom metal letters with mounting studs on the shop fabrication table",
     commonJobs: [
       "Individual residential mailbox structures",
       "Mailbox clusters for multi-unit or commercial properties",

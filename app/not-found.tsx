@@ -25,7 +25,7 @@ export default function NotFound() {
           <p>The page may have moved. The shop has not.</p>
           <div className="ms-lost-actions">
             <a className="ms-button ms-button-primary" href={shopPhone.href}><Phone aria-hidden="true" /> Call {shopPhone.display}</a>
-            <Link className="ms-button ms-button-secondary" href="/"><ArrowLeft aria-hidden="true" /> Back to the shop</Link>
+            <Link className="ms-button ms-button-secondary" href="/" prefetch={false}><ArrowLeft aria-hidden="true" /> Back to the shop</Link>
           </div>
         </div>
       </main>

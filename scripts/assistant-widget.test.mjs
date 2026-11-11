@@ -236,7 +236,7 @@ test("static fallback renders call, existing callback fields and shop email with
   assert.match(html, /role="alert"/)
   assert.match(html, /href="tel:\+16157033296"/)
   assert.match(html, /\(615\) 703-3296/)
-  assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+  assert.match(html, /href="mailto:sales@musiccityspecialtywelding.com"/)
   assert.match(html, /href="\/#contact"/)
   assert.match(html, /Leave your number for a callback request/)
   assert.doesNotMatch(html, /we&#x27;ll call you back/)
@@ -258,7 +258,7 @@ test("network, timeout, 409, rate limit and server failures use the same static 
     await assert.rejects(requestAssistantReply({ session_id: sessionId, turn_index: 0, message: "Need a person" }, request), /The reply couldn't be confirmed/)
     const html = renderToStaticMarkup(React.createElement(AssistantContactFallback, props))
     assert.match(html, /href="tel:\+16157033296"/)
-    assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+    assert.match(html, /href="mailto:sales@musiccityspecialtywelding.com"/)
     assert.match(html, /Leave your number/)
     assert.doesNotMatch(html, /private provider|Failed to fetch|Server down|deadline/)
   }
@@ -266,10 +266,10 @@ test("network, timeout, 409, rate limit and server failures use the same static 
 
 test("assistant replies make only approved phone, email and quote form destinations clickable", () => {
   const { AssistantReply } = widgetExports("1")
-  const text = "[Call](tel:+16157033296) [Email](mailto:Sales@musiccityspecialtywelding.com) [Quote form](/#contact) [Other form](/other#contact) [Other](mailto:other@example.com) [Wrong](tel:+16155550199) [Site](https://example.com)"
+  const text = "[Call](tel:+16157033296) [Email](mailto:sales@musiccityspecialtywelding.com) [Quote form](/#contact) [Other form](/other#contact) [Other](mailto:other@example.com) [Wrong](tel:+16155550199) [Site](https://example.com)"
   const html = renderToStaticMarkup(React.createElement(AssistantReply, { text, phoneHref: props.phoneHref }))
   assert.match(html, /href="tel:\+16157033296"/)
-  assert.match(html, /href="mailto:Sales@musiccityspecialtywelding.com"/)
+  assert.match(html, /href="mailto:sales@musiccityspecialtywelding.com"/)
   assert.match(html, /href="\/#contact"/)
   assert.doesNotMatch(html, /href="\/other#contact"/)
   assert.equal((html.match(/<a /g) ?? []).length, 3)

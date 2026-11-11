@@ -1,6 +1,6 @@
 {
   "date": "2026-11-10",
-  "method": "Byte-for-byte copies of existing Next.js AVIF cache variants derived from the existing public source photos; no encoding, cropping, generation, or fetching.",
+  "method": "Three byte-for-byte copies of existing Next.js AVIF cache variants derived from existing public source photos; the IMG_3994 768px variant was re-encoded directly from its unchanged owner-work source as recorded below. No cropping, generation or fetching.",
   "assets": [
     {
       "source": "/images/optimized/welder-1600.webp",
@@ -39,12 +39,26 @@
       "source": "/images/owner-work/IMG_3994.webp",
       "sourceSha256": "fae64e0711b4ca76b285022051859fa10cdc4948ab15a4abdbd8178eb535ead8",
       "width": 768,
-      "quality": 75,
+      "quality": 43,
       "mimeType": "image/avif",
       "publicPath": "/images/optimized/IMG_3994-768-q75.avif",
-      "bytes": 47180,
-      "sha256": "4ee52c9c0b1f699590219c2ba2f767c6c78bed26b3b79818640642129afd4c57",
-      "cacheKey": "pQa-zGHHMCuDzc7YfGRRWHshmphl7LmLKnXycMS_oPQ"
+      "bytes": 35643,
+      "sha256": "8a9836f356bb9c7251ec4cba921b3a25fa71a40df9b48b62486fd13e8a8365aa",
+      "previous": {
+        "quality": 75,
+        "bytes": 47180,
+        "sha256": "4ee52c9c0b1f699590219c2ba2f767c6c78bed26b3b79818640642129afd4c57",
+        "cacheKey": "pQa-zGHHMCuDzc7YfGRRWHshmphl7LmLKnXycMS_oPQ"
+      },
+      "requestedQuality": 75,
+      "encoding": {
+        "tool": "sharp",
+        "version": "0.35.5",
+        "libvips": "8.18.7",
+        "effort": 9,
+        "chromaSubsampling": "4:2:0"
+      },
+      "method": "Re-encoded directly from the unchanged source at the existing 768x1024 dimensions; retained q75 public path and requested-quality mapping for compatibility. Actual AVIF encoder quality is 43."
     }
   ]
 }

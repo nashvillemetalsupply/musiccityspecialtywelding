@@ -81,7 +81,7 @@ function moduleExports(options = {}) {
     "@/lib/assistant/contact.ts": nativeRequire("../lib/assistant/contact.ts"),
     "./assistant-chat.module.css": { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) },
   }
-  const context = vm.createContext({ ...hooks?.globals, process: { env: { NEXT_PUBLIC_ASSISTANT_CHAT: flag } }, loadChatModule: load, require: (name) => Object.hasOwn(fakes, name) ? fakes[name] : nativeRequire(name) })
+  const context = vm.createContext({ ...hooks?.globals, ...options.globals, process: { env: { NEXT_PUBLIC_ASSISTANT_CHAT: flag } }, loadChatModule: load, require: (name) => Object.hasOwn(fakes, name) ? fakes[name] : nativeRequire(name) })
   vm.runInContext(`(function(exports, require, module) { ${code}\n})`, context)(loaded.exports, context.require, loaded)
   return loaded.exports
 }
@@ -104,12 +104,12 @@ test("initial SSR keeps the launcher without importing or rendering the unused f
   assert.doesNotMatch(html, /<dialog|<textarea|role="log"/)
   assert.equal(loads, 0)
   for (const flag of [undefined, "", "0", "true"]) {
-    const module = moduleExports({ flag })
-    assert.equal(renderToStaticMarkup(React.createElement(module.AssistantChatLoader, props)), "")
+    const loaded = moduleExports({ flag })
+    assert.equal(renderToStaticMarkup(React.createElement(loaded.AssistantChatLoader, props)), "")
   }
   for (const pathname of ["/ops", "/ops/leads/1", "/board", "/j/private", "/design-preview", null]) {
-    const module = moduleExports({ pathname })
-    assert.equal(renderToStaticMarkup(React.createElement(module.AssistantChatLoader, props)), "")
+    const loaded = moduleExports({ pathname })
+    assert.equal(renderToStaticMarkup(React.createElement(loaded.AssistantChatLoader, props)), "")
   }
 })
 
@@ -185,4 +185,47 @@ test("unmount removes the Ask listener and ignores an in-flight module completio
   await settle()
   hooks.browser.dispatchEvent(new Event("ms:open-assistant"))
   assert.equal(hooks.updates, updates)
+})
+
+test("one observer hides the launcher for deferred forms and resets after route replacement", () => {
+  let forms = [], intersectionCallback, mutationCallback, intersections = 0
+  const observed = new Set(), values = []
+  let intersectionDisconnected = false, mutationsDisconnected = false
+  const { watchQuoteFormVisibility } = moduleExports({ globals: {
+    document: { body: {}, querySelectorAll: () => forms },
+    IntersectionObserver: class {
+      constructor(callback) { intersectionCallback = callback; intersections++ }
+      observe(form) { observed.add(form) }
+      unobserve(form) { observed.delete(form) }
+      disconnect() { intersectionDisconnected = true }
+    },
+    MutationObserver: class {
+      constructor(callback) { mutationCallback = callback }
+      observe() {}
+      disconnect() { mutationsDisconnected = true }
+    },
+  } })
+  const stop = watchQuoteFormVisibility((visible) => values.push(visible))
+  assert.equal(values.at(-1), false, "a deferred form starts absent")
+  const first = {}, replacement = {}
+  forms = [first]
+  mutationCallback()
+  assert.ok(observed.has(first))
+  intersectionCallback([{ target: first, isIntersecting: true }])
+  assert.equal(values.at(-1), true)
+  intersectionCallback([{ target: first, isIntersecting: false }])
+  assert.equal(values.at(-1), false)
+  forms = [replacement]
+  mutationCallback()
+  assert.ok(!observed.has(first) && observed.has(replacement))
+  intersectionCallback([{ target: first, isIntersecting: true }])
+  assert.equal(values.at(-1), false, "a stale entry cannot hide a new route")
+  intersectionCallback([{ target: replacement, isIntersecting: true }])
+  assert.equal(values.at(-1), true)
+  forms = []
+  mutationCallback()
+  assert.equal(values.at(-1), false, "leaving a form route restores the launcher")
+  assert.equal(intersections, 1)
+  stop()
+  assert.ok(intersectionDisconnected && mutationsDisconnected)
 })
