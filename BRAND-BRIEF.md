@@ -117,24 +117,40 @@ Read-only campaign evidence captured August 2, 2026 from `MCW General Fab-Ad`:
 - **Approved architectural promise:** Nashville metal fabrication and custom architectural steel, including railings, stairs, and structural work built to code with clean welds and precise installation.
 - **Approved repair promise:** trailer frames, ramps, liftgates, equipment, and structural welding repair.
 - **Approved secondary capabilities:** aluminum boat repair, large steel/aluminum planters, wrought-iron mailboxes, stainless countertops, and gas meter manifolds.
-- **Operating hours:** not stated. No availability claim on any surface until a dated source exists (FABLE-BATCH-8 Q9).
+- **Operating hours:** 24/7. Calls are taken any time, every day, including nights and weekends (owner 2026-11-11; closes FABLE-BATCH-8 Q9). Publish hours as "24/7" only.
 - **Landing-page constraint:** active responsive Search ads currently resolve to the home page. The home page therefore must provide immediate message continuity for every enabled ad group even when a dedicated service path is unavailable.
 - **Measurement continuity:** the live primary website conversion action is `Submit lead form (FIXED)`, counted once per lead and last observed recording conversions in July 2026. Its owner-account event destination is `AW-17817632790/CZF4CMyQhPEbEJaAjrBC`; successful quote submissions must fire this event exactly once after API acceptance.
+
+## Owner facts 2026-11-11
+
+Source: owner 2026-11-11. These facts close the corresponding business-policy gaps.
+
+1. **Legal entity:** the brand is Music City Specialty Welding. The LLC is Neverlift Chassis Works, LLC. Keep the existing legal name everywhere.
+2. **Hours:** 24/7, including calls at night and on weekends. Do not publish another hour range.
+3. **Pricing:** estimates are free. The shop owner sets the price per job after seeing photos or the job on site. No minimum, call-out fee, mileage rate or hourly rate is published. Chat gives no price number: free estimate, price depends on the job, send photos or call for a quote.
+4. **Insurance:** insured. A certificate of insurance can be provided to businesses on request. Do not claim or list licenses or welder certifications.
+5. **Workmanship:** "We stand behind our work. If something we welded gives you trouble, call us." No warranty period or written-warranty claim.
+6. **Payment:** cash, card, check and Venmo accepted. Deposits are taken on larger jobs; no percentage stated. "Commercial terms can be arranged, talk to the shop." Do not promise net-30.
+7. **Travel:** no fixed limit beyond the listed cities; the shop travels further when the job makes sense. "We travel beyond these cities. Tell us where the job is and we'll let you know." No mileage number or travel-charge claim.
+8. **Lead time:** "We don't run a long wait list. Jobs are worked as they come in." No same-day or specific-time promise.
+9. **Drop-offs:** "Yes. Bring it by any time. Calling ahead helps us be ready for you." No appointment needed.
+
+Cast iron and other uncertain metal capabilities remain open and keep the existing graceful handoff. Do not add claims that the shop takes or refuses a specific metal. Photos and the remaining project, years-in-business, review and crew proof are still pending.
 
 ## Anti-references
 This brand must never resemble a Geocities page, an orange-and-black contractor template, a generic centered hero followed by three equal cards, a luxury architecture studio, or a fake-rugged theme pack. No orphaned headline words, overflowing type, awkward two-word wrap leftovers, low-contrast text, generic typography, faux-metal backgrounds, cluttered badge walls, or motion that blocks reading. The page must feel designed by people who understand both the shop and the job—not assembled from “welding website” search results.
 
 ## Conversion Priorities
-1. **Call — primary CTA:** `tel:6157033296`. Use a dominant above-fold call action (no availability claim; see Operating hours), and use a sticky thumb-zone call bar on mobile.
+1. **Call — primary CTA:** `tel:6157033296`. Use a dominant above-fold call action with the approved 24/7 hours, and use a sticky thumb-zone call bar on mobile.
 2. **Quote form — secondary:** keep it easy to reach, visually subordinate to calling, and reduce visible friction to the minimum viable fields: name, phone, and what the job is. Photo upload may remain optional because project images improve qualification.
 3. **Email — tertiary:** `Sales@musiccityspecialtywelding.com`, visible in contact details but never competing with the call action.
 4. **Visit the shop — last:** 533 W Baddour Pkwy, Lebanon, TN 37087, presented as location information rather than a primary CTA.
 
-The strongest currently approved proof is the work itself. Put real project imagery above the fold and throughout the page. Do not publish named-project claims, stadium references, certifications, review totals, guarantees, or response-time promises until the owner supplies and approves them.
+The strongest currently approved proof is the work itself. Put real project imagery above the fold and throughout the page. Use only the approved workmanship wording above. Do not claim or list licenses or welder certifications. Do not publish named-project claims, stadium references, review totals, additional guarantees, or response-time promises until the owner supplies and approves them.
 
 ## Assets
 - **Logo:** keep the existing logo recognizable because it is already used in proven Google Ads. A slight cleanup is allowed only when it preserves the mark’s silhouette, initials, and core color recognition. Improve legibility, internal spacing, edge quality, and navigation presentation; do not launch a wholly new logo.
 - **Photography:** retain the existing image inventory and audit the owner-authorized `Mcs welding pic vids` Drive folder in full. Available subjects include active welding, welder/shop portraits, mobile service, architectural welding and stairs, equipment and trailer repair, specialty fabrication, mailboxes, brackets, planters, stainless work, manifolds, gates, and installed railings. Import only the strongest authentic files, preserve originals, and optimize derivatives for the web.
 - **Existing business details:** public tracking phone `(615) 703-3296`, fallback owner line `(615) 810-4910`, email `Sales@musiccityspecialtywelding.com`, address `533 W Baddour Pkwy, Lebanon, TN 37087`, and Greater Nashville/Middle Tennessee coverage.
-- **Proof pending owner:** approved named projects, permission to reference Tennessee stadium work, certifications/licenses, years in operation, sourced review totals and quotes, crew information, and any guaranteed response language.
+- **Proof pending owner:** approved named projects, permission to reference Tennessee stadium work, years in operation, sourced review totals and quotes, crew information, and any guaranteed response language. Licenses and welder certifications are not to be claimed or listed.
 - **Rollback:** before implementation, create and verify a dated snapshot of the current project so the live/ad-proven version can be restored without reconstructing it.

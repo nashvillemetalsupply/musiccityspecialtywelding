@@ -460,7 +460,7 @@ try {
   for (const [name, text, reason] of [
     ["2. Chat human", "I want to talk to a person", "human"],
     ["3. Chat unknown", "Can you repair a hafnium reactor pressure vessel certified for lunar vacuum?", "unknown"],
-    ["4. Chat price", "How much does a gate repair cost?", "unknown"],
+    ["4. Chat price", "How much does a gate repair cost?", null],
   ]) await script(name, async (r) => {
     const id = randomUUID(); r.id = id; const replies = await chat(r, id, [text], reason)
     if (name === "3. Chat unknown") {
@@ -469,9 +469,16 @@ try {
       assert.equal((replies[0].reply.match(/\?/g) ?? []).length, 1, "unknown capability asks one intake question")
       assert.doesNotMatch(replies[0].reply, /\byes\b|we can|we will|we'll|booked|scheduled|guarantee|available/i, "unknown capability makes no work or callback promise")
     }
-    const s = await snapshot(id); verifyPartition(s); verifyHandoff(s, reason)
+    const s = await snapshot(id); verifyPartition(s)
+    if (reason) verifyHandoff(s, reason)
+    else {
+      assert.equal(replies[0].handoff_reason, undefined, "published price policy must answer without handoff")
+      assert.match(replies[0].reply, /Estimates are free.*Price depends on the job/)
+      assert.match(replies[0].reply, /Send photos or call for a quote/)
+      assert.ok(!s.events.some((event) => event.kind === "assistant.handoff-request" || event.kind === "assistant.handoff"), "price policy creates no handoff event")
+    }
     assert.equal(s.leads.length, 0, "no contact means no lead")
-    r.detail = `0 leads; durable handoff reason: ${reason}.`
+    r.detail = reason ? `0 leads; durable handoff reason: ${reason}.` : "0 leads; sourced owner price policy; no handoff."
   })
   await script("5. Chat email only then leaves", async (r) => {
     const id = randomUUID(); r.id = id; await chat(r, id, ["test@example.com"])

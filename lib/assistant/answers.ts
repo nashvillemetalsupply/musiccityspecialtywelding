@@ -8,7 +8,7 @@ export type AssistantAnswer = {
   /** Whole questions, matched after punctuation/case normalization. */
   patterns: readonly string[]
   answer: string
-  /** Versioned public copy that establishes every business claim. */
+  /** Versioned public copy or dated owner confirmation establishing the claim. */
   source: string
 }
 
@@ -18,7 +18,9 @@ const entry = (id: string, patterns: string[], answer: string, source: string): 
 })
 export const ASSISTANT_SHOP_PHONE = assistantShopPhone(getShopPhone())
 const serviceSource = (slug: string) => `lib/service-pages.ts (${slug})`
+const ownerSource = "owner 2026-11-11"
 const faqParaphrases: Record<string, string[]> = {
+  "mobile-welding-3": ["Do you offer 24/7 emergency welding?"],
   "trailer-welding-repair-1": ["Do you repair trailers on site?", "Can you repair my trailer on-site?"],
   "trailer-welding-repair-2": ["Do you repair cracked trailer frames?"],
   "trailer-welding-repair-3": ["What photos should I send for a trailer quote?", "What photos should I send of my trailer?"],
@@ -40,8 +42,44 @@ function faqAnswer(question: string, answer: string): string {
 export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
   ...servicePages.flatMap((service) => service.faqs.map((faq, index) => entry(
     `${service.slug}-faq-${index + 1}`, [faq.question, ...(faqParaphrases[`${service.slug}-${index + 1}`] ?? [])],
-    faqAnswer(faq.question, faq.answer), serviceSource(service.slug),
+    faqAnswer(faq.question, faq.answer), service.slug === "mobile-welding" && [0, 2].includes(index) ? ownerSource : serviceSource(service.slug),
   ))),
+  entry("legal-entity", ["What is your legal business name?", "What is the LLC name?", "What company operates Music City Specialty Welding?", "Who operates Music City Specialty Welding?"],
+    "Music City Specialty Welding is the brand. The LLC is Neverlift Chassis Works, LLC.", ownerSource),
+  entry("shop-hours", ["What are your hours?", "What are your business hours?", "What are your opening hours?", "What hours are you open?", "When are you open?", "What time do you open?", "What time do you close?", "Are you open 24/7?", "Are you open weekends?", "Are you open on weekends?", "Are you open at night?", "Are you open now?", "Are you open tonight?", "Are you open today?", "Do you work after hours?", "Do you take calls after hours?", "Can I call at night?", "Can I call any time?", "Can I call anytime?", "Do you take calls on weekends?", ...["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].flatMap((day) => [`Are you open ${day}?`, `Are you open on ${day}?`])],
+    "We're open 24/7. We take calls any time, every day, including nights and weekends.", ownerSource),
+  entry("free-estimates", ["Are estimates free?", "Do you offer free estimates?", "Do you give free estimates?", "Are quotes free?", "Can I get a free estimate?"],
+    "Estimates are free. Price depends on the job after the shop owner sees photos or the work on site. Send photos or call for a quote.", ownerSource),
+  entry("estimate-fee", ["Do you charge for estimates?", "Do you charge for a quote?"],
+    "No. Estimates are free. Send photos or call for a quote.", ownerSource),
+  entry("job-pricing", ["What is the price?", "What are your prices?", "How much?", "How much does it cost?", "How much does a gate repair cost?", "How much to fix a gate?", "What would it run?", "How much is your hourly welding rate?", "What is the minimum mobile callout charge?", "How do you price jobs?", "What do you charge?"],
+    "Estimates are free. Price depends on the job. The shop owner sets it after seeing photos or the work on site. Send photos or call for a quote.", ownerSource),
+  entry("shop-insurance", ["Are you insured?", "Is your company insured?", "Does the shop have insurance?", "Do you carry insurance?"],
+    "Yes. We're insured. Businesses can request a certificate of insurance.", ownerSource),
+  entry("insurance-certificate", ["Can you send a certificate of insurance?", "Can you provide a certificate of insurance?", "Can our business get a certificate of insurance?", "Can you provide a COI?"],
+    "Yes. We can provide a certificate of insurance to businesses on request.", ownerSource),
+  entry("work-warranty", ["What warranty do you offer?", "What is your warranty?", "What warranty comes with the repair?", "Do you warranty your work?", "Do you offer a warranty?", "Do you stand behind your work?", "Is there a warranty?"],
+    "We stand behind our work. If something we welded gives you trouble, call us.", ownerSource),
+  entry("payment-methods", ["What payment methods do you accept?", "How can I pay?", "Do you accept credit cards?", "Do you take credit cards?", "Can I pay by credit card?", "Can I pay by card?", "Do you accept cards?", "Do you take cards?", "Do you accept cash?", "Do you take cash?", "Can I pay cash?", "Do you accept checks?", "Do you take checks?", "Can I pay by check?", "Do you accept Venmo?", "Do you take Venmo?", "Can I pay with Venmo?", "Is cash or a credit card okay?"],
+    "We accept cash, card, check and Venmo.", ownerSource),
+  entry("job-deposits", ["What deposit do you require?", "Do you take deposits?", "Do you require a deposit?", "Is a deposit needed for larger jobs?", "How much is the deposit?"],
+    "We take deposits on larger jobs. Talk to the shop about your job.", ownerSource),
+  entry("commercial-payment-terms", ["What are your commercial payment terms?", "Can businesses get invoiced?", "Do you offer invoicing for businesses?", "Can commercial terms be arranged?"],
+    "Commercial terms can be arranged, talk to the shop.", ownerSource),
+  entry("net-30-not-promised", ["Do you offer net 30 terms for commercial customers?", "Do you promise net-30?", "Can you guarantee net-30 terms?"],
+    "No. We don't promise net-30. Commercial terms can be arranged, talk to the shop.", ownerSource),
+  entry("travel-beyond-cities", ["How far is your travel radius?", "How far do you travel?", "What is your travel limit?", "What is your service radius?", "Do you travel beyond these cities?", "Do you travel outside your service area?", "Can you travel further?"],
+    "We travel beyond these cities. Tell us where the job is and we'll let you know.", ownerSource),
+  entry("no-fixed-travel-limit", ["Do you have a fixed travel limit?", "Do you have a fixed service radius?", "Do you have a fixed 100-mile service radius?"],
+    "No. We travel beyond these cities. Tell us where the job is and we'll let you know.", ownerSource),
+  entry("job-lead-time", ["What is your lead time?", "What is your current lead time?", "How long is your wait list?", "How soon can you start?", "How long will I have to wait?"],
+    "We don't run a long wait list. Jobs are worked as they come in.", ownerSource),
+  entry("no-long-wait-list", ["Do you have a long wait list?", "Is there a wait list?"],
+    "No. We don't run a long wait list. Jobs are worked as they come in.", ownerSource),
+  entry("shop-drop-offs", ["Can I drop off without an appointment?", "Can I drop off a part without an appointment?", "Can I drop off work without an appointment?", "Can I bring work to the shop any time?", "Can I bring a part by?", "Do you take drop-offs?"],
+    "Yes. Bring it by any time. Calling ahead helps us be ready for you.", ownerSource),
+  entry("drop-off-appointment", ["Do I need an appointment to drop off work?", "Do I need an appointment to bring a part by?"],
+    "No. Bring it by any time. Calling ahead helps us be ready for you.", ownerSource),
   entry("mobile-service", ["Do you offer mobile welding?", "Do you do mobile welding?", "Do you offer on-site welding?", "Do you come to the job site?", "Do you come out to the job?", "Do you bring welding equipment to my job site?"],
     "We bring the rig when the metal is better repaired where it sits.", serviceSource("mobile-welding")),
   entry("mobile-shop-fit", ["Should I bring my part to the shop or use mobile welding?"],
@@ -125,7 +163,7 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
     `Do you serve ${area}?`, `Do you do mobile welding in ${area}?`,
   ], `Yes. We work in ${area}; the job scope, location and schedule determine the trip.`, "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)")),
   entry("listed-areas", ["What areas do you serve?", "What cities do you serve?"],
-    `We work in ${serviceAreas.slice(0, -1).join(", ")} and ${serviceAreas.at(-1)}. Travel depends on the location and scope; call us to confirm the fit.`, "lib/service-areas.ts; app/service-areas/page.tsx (travel scope)"),
+    `We work in ${serviceAreas.slice(0, -1).join(", ")} and ${serviceAreas.at(-1)}. We travel beyond these cities. Tell us where the job is and we'll let you know.`, ownerSource),
 ])
 
 const serviceSuffix = new RegExp(`I'm asking about (?:${servicePages.map((service) => service.shortTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\.?$`, "i")
@@ -158,6 +196,17 @@ export function findAssistantAnswer(message: string): AssistantAnswer | undefine
         ? opening.test(answer.answer) ? answer.answer : `Yes. ${answer.answer}`
         : answer.answer.replace(opening, ""),
     }
+  }
+  // A single ordinary price question gets the owner's estimate policy even
+  // when the job wording varies. Extra clauses, dates, unknown materials and
+  // requests for a person keep the existing review and safety boundaries.
+  const priceQuestion = message.replace(/\[INTERNAL TEST\]/gi, "").trim()
+  const priceWords = normalizeAssistantAnswer(priceQuestion).split(" ")
+  const knownPriceWord = /^(?:how|much|what|is|are|the|a|an|your|you|do|does|would|will|could|can|costs?|price|pricing|charges?|rates?|fees?|minimum|call|out|callout|mileage|travel|mobile|hourly|welding|weld|repairs?|fix|fabricate|fabrication|jobs?|work|for|to|it|this|my|our|of|on|at|per|shop|in|with|me|steel|aluminum|aluminium|stainless|iron|gates?|trailers?|equipment|frames?|hinges?|ramps?|fenders?|brackets?|railings?|countertops?|planters?|mailboxes?|boats?|manifolds?|custom|small|large|broken|cracked|damaged|welder|estimate|quote|get|need|about|average|typical|labor|labour|feet|foot|inches?|\d+)$/
+  if (/^(?:(?:hi|hello|hey)[,\s]+)?(?:how much\b|what\b.{0,55}\b(?:cost|price|pricing|rates?|charges?|fees?|minimum|call[ -]?out|mileage)\b)/i.test(priceQuestion)
+    && !/[.;!\n]|\?(?=\s*\S)/.test(priceQuestion)
+    && priceWords.every((word) => knownPriceWord.test(word))) {
+    return assistantAnswers.find((answer) => answer.id === "job-pricing")
   }
   return undefined
 }

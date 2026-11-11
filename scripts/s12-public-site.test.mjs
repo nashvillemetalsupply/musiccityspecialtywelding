@@ -119,9 +119,30 @@ test("service JSON-LD has FAQ and breadcrumb schema with absolute URLs", () => {
   assert.match(servicePage, /structuredData\.faqPage/)
 })
 
-test("LocalBusiness JSON-LD gives the address a geo point and existing pricing wording", () => {
-  assert.match(appLayout, /priceRange: "Pricing is not listed"/)
+test("LocalBusiness JSON-LD keeps the legal entity and publishes owner hours and payment facts", () => {
+  assert.match(appLayout, /legalName: "Neverlift Chassis Works, LLC"/)
+  assert.match(appLayout, /priceRange: "Free estimates; price depends on the job"/)
+  assert.match(appLayout, /paymentAccepted: "Cash, Card, Check, Venmo"/)
+  const hours = appLayout.match(/openingHoursSpecification: \{([\s\S]*?)\n  \}/)?.[1] ?? ""
+  const days = JSON.parse(hours.match(/dayOfWeek: (\[[^\n]+\])/)?.[1] ?? "[]")
+  assert.deepEqual(days, ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+  assert.match(hours, /"@type": "OpeningHoursSpecification"/)
+  assert.match(hours, /opens: "00:00",\s*closes: "23:59"/)
   assert.match(appLayout, /geo:\s*\{\s*"@type": "GeoCoordinates",\s*latitude: 36\.21646,\s*longitude: -86\.3035,/)
+})
+
+test("public shop facts give the owner's answers without prices or timing promises", () => {
+  assert.match(homePage, /24\/7\. Calls are taken any time, every day including nights and weekends\./)
+  assert.match(homePage, /Estimates are free\. Price depends on the job\. The shop owner sets the price after seeing photos or looking at it on site\./)
+  assert.match(homePage, /Yes\. A certificate of insurance can be provided to businesses on request\./)
+  assert.match(homePage, /Yes\. We stand behind our work\. If something we welded gives you trouble, call us\./)
+  assert.match(homePage, /We take cash, card, check and Venmo\. Deposits are taken on larger jobs\. Commercial terms can be arranged, talk to the shop\./)
+  assert.match(homePage, /We travel beyond these cities\. Tell us where the job is and we'll let you know\./)
+  assert.match(homePage, /We don't run a long wait list\. Jobs are worked as they come in\./)
+  assert.match(homePage, /Yes\. Bring it by any time\. Calling ahead helps us be ready for you\./)
+  assert.match(footerComponent, /<span>24\/7<\/span>/)
+  assert.match(serviceAreasPage, /We travel beyond these cities\./)
+  assert.doesNotMatch(homePage, /\$\s*\d|net[ -]?30|same[ -]?day|fully insured|certified welder|licensed welder/i)
 })
 
 test("quote honeypot ignores ordinary autofill and silently suppresses a filled trap", () => {

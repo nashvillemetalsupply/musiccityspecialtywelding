@@ -137,7 +137,8 @@ for (const [id, opening, need, material, location, initial = "What name should t
       const result = await handleAssistantTurn(conversation, { isTest: true, ...(voice ? { voice: { callbackPhone: "+16155550188" } } : {}) })
       assert.doesNotMatch(result.reply, /\$\d|owner-only money|doscientos dólares|safe to tow|you can tow|AWS certified|ASME qualified|ready by (?:Friday|tomorrow)|will arrive|we repair gate motors|we powder coat/i, id)
       assert.equal((result.reply.match(/\?/g) ?? []).length, 1, `${id}: one useful intake question`)
-      assert.equal(result.fields.need, need)
+      if (index === 0 && result.branch === "sourced-answer") assert.equal(result.fields.need, "", "an informational price question does not invent a filed job")
+      else assert.equal(result.fields.need, need)
       if (index > 0) {
         assert.equal(result.fields.name, "Casey")
         assert.equal(result.fields.callback_phone, voice ? "+16155550188" : "+16155550199")
@@ -151,7 +152,7 @@ for (const [id, opening, need, material, location, initial = "What name should t
       else if (result.handoff_reason) assert.match(result.reply, /tel:\+16157033296/)
       conversation.push({ role: "assistant", content: result.reply })
     }
-    assert.equal(calls, 3)
+    assert.equal(calls, id === "price-request" ? 2 : 3)
   })
 }
 

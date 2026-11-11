@@ -42,10 +42,10 @@ export type AssistantTurn = {
 export const ASSISTANT_SYSTEM_PROMPT = [
   "You are Music City Specialty Welding's automated shop assistant.",
   "Do not introduce yourself or write a self-disclosure sentence in any language. The application adds the automated-assistant disclosure to the first reply. Never pretend to be a person.",
-  "Never quote prices, rates, dollar amounts, deposits, estimates, or payment details. Quotes belong to a person at the shop.",
+  "Never quote prices, rates or dollar amounts. The shop owner sets each job's price after seeing photos or the work on site. Answer free-estimate and payment-policy questions only from the supplied owner facts; never invent a fee, deposit percentage or net-30 promise.",
   "Never invent capabilities, dates, hours, availability, certifications, guarantees, or response times. Answer shop questions only from the supplied repository knowledge. Unknown means the shop must confirm.",
   "If the customer wants a person or asks for a price, offer the supplied shop phone as a tap-to-call link. Calling is the primary action.",
-  "Set handoff_reason to human when the customer wants a person, unknown for a price, specific shop date/availability, or any question you cannot answer from repository knowledge. In particular, an unsupported capability must go to the shop; never guess. Otherwise set handoff_reason to null.",
+  "Set handoff_reason to human when the customer wants a person, unknown for a specific job quote, specific shop date/availability, or any question you cannot answer from repository knowledge. Supplied owner policies about free estimates, hours, payment, warranty, insurance, travel, lead time and drop-offs can be answered without a handoff. An unsupported capability must go to the shop; never guess. Otherwise set handoff_reason to null.",
   "Choose handoff_reason for the current customer turn. A previous handoff does not end intake or carry forward to a supported job question; keep answering from repository knowledge and gathering job details.",
   "Ask one question at a time, in a short reply of at most three short sentences. Do not bundle several requests into one question.",
   "Use plain words and the customer's nouns. Say we, never our team. No sales pitch.",
@@ -71,8 +71,8 @@ export function assistantExpertConcern(message: string, reply: string): "safety"
   if (/\b(?:trailer|hitch|tongue|lifting|guardrail|stairs?|structural)\b/i.test(message)
     && /\b(?:repair|crack\w*|broke\w*|damag\w*|failure|bent|rust\w*)\b/i.test(message)) return "safety"
   if (/\b(?:cast iron|titanium|magnesium|underwater|aerospace|ASME|AWS|CWI|certif\w*)\b/i.test(message)) return "claim"
-  // These policies are not published in the repository knowledge. Even a
-  // plausible model answer needs a person rather than a new business promise.
+  // Owner policies are permitted only through the complete sourced answer.
+  // A plausible model assertion still needs review rather than a new promise.
   if (/\b(?:licens\w*|insur\w*|bonded|warrant\w*|payments?|paying|pay|cash|credit cards?|debit cards?|financing|installments?|opening hours|business hours|after[ -]?hours|emergenc\w*)\b/i.test(message)) return "claim"
   if (/\b(?:shop|you|we|business)\b.{0,35}\b(?:open|closed?|opening|closing)\b|\b(?:opening|closing) (?:time|hours)\b/i.test(message)) return "claim"
   // Negative safety guidance is useful. Remove only explicit negative phrases
@@ -252,7 +252,7 @@ export async function handleAssistantTurn(
   const latest = conversation.at(-1)!.content
   const customerText = conversation.filter((message) => message.role === "user").map((message) => message.content).join("\n")
   // Exact whole-question matches have a reviewed answer. Additional safety,
-  // price, date or instruction clauses do not match, so every refusal remains.
+  // date or instruction clauses retain the existing boundaries.
   // Keep the voice path unchanged. Reuse the last persisted field snapshot for
   // sourced intake replies, after checking every field against customer words.
   const sourcedAnswer = !options.voice && !assistantSpanish(customerText) ? findAssistantAnswer(latest) : undefined
@@ -396,6 +396,7 @@ export async function handleAssistantTurn(
       continueIntake = true
       reply = intakeReply()
     }
+    if (sourcedReply && sourcedAnswer && ["job-pricing", "free-estimates", "estimate-fee"].includes(sourcedAnswer.id)) reply = `${reply} ${callLink}.`
     if (!reply.includes("?") && fields.is_job !== "no") reply = `${reply} ${question()}`
   }
   // A non-job classification cannot discard an unanswered customer question.

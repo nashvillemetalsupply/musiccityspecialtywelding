@@ -68,7 +68,14 @@ const localBusinessSchema = {
   ],
   description:
     "Mobile and shop welding, equipment repair, architectural metalwork, and custom fabrication across Greater Nashville and Middle Tennessee.",
-  priceRange: "Pricing is not listed",
+  priceRange: "Free estimates; price depends on the job",
+  paymentAccepted: "Cash, Card, Check, Venmo",
+  openingHoursSpecification: {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    opens: "00:00",
+    closes: "23:59",
+  },
   logo: "https://musiccityspecialtywelding.com/images/optimized/mcs_welding_logo.webp",
   image: "https://musiccityspecialtywelding.com/images/optimized/welder.webp",
   geo: {

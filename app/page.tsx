@@ -119,12 +119,42 @@ const faqs = [
   {
     question: "How far do you travel?",
     answer:
-      "We are based in Lebanon and serve Greater Nashville and surrounding Middle Tennessee communities. Travel depends on the location and scope, so call to confirm the fit.",
+      "We are based in Lebanon and serve Greater Nashville and surrounding Middle Tennessee communities. We travel beyond these cities. Tell us where the job is and we'll let you know.",
   },
   {
     question: "Why is pricing not listed?",
     answer:
-      "Material, damage, dimensions, and access change the work. We need the job details before we can quote it.",
+      "Estimates are free. Price depends on the job. The shop owner sets the price after seeing photos or looking at it on site. Send photos or call for a quote.",
+  },
+  {
+    question: "What are your hours?",
+    answer:
+      "24/7. Calls are taken any time, every day including nights and weekends.",
+  },
+  {
+    question: "Are you insured?",
+    answer:
+      "Yes. A certificate of insurance can be provided to businesses on request.",
+  },
+  {
+    question: "Do you stand behind your work?",
+    answer:
+      "Yes. We stand behind our work. If something we welded gives you trouble, call us.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer:
+      "We take cash, card, check and Venmo. Deposits are taken on larger jobs. Commercial terms can be arranged, talk to the shop.",
+  },
+  {
+    question: "What is your lead time?",
+    answer:
+      "We don't run a long wait list. Jobs are worked as they come in.",
+  },
+  {
+    question: "Can I drop off work without an appointment?",
+    answer:
+      "Yes. Bring it by any time. Calling ahead helps us be ready for you.",
   },
 ]
 
@@ -378,7 +408,7 @@ export default function Page() {
           </div>
           <div className="ms-territory-copy ms-reveal">
             <h2 className="ms-display" id="territory-title">Lebanon shop. Middle Tennessee work.</h2>
-            <p>We serve Greater Nashville and surrounding Middle Tennessee communities. Travel depends on the job. Call with the location and scope.</p>
+            <p>We serve Greater Nashville and surrounding Middle Tennessee communities. We travel beyond these cities. Tell us where the job is and we&apos;ll let you know.</p>
             <ServiceAreaChips />
             <p className="ms-location"><MapPin aria-hidden="true" /> 533 W Baddour Pkwy, Lebanon, TN 37087</p>
           </div>

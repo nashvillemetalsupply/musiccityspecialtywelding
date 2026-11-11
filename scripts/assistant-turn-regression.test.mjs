@@ -46,12 +46,14 @@ async function serviceConversation(inputs) {
   return { responses, stored, handoffs, filed }
 }
 
-test("live price then stair-railing detail keeps reply uncertainty in intake through the service", async () => {
+test("sourced price policy then stair-railing detail keeps uncertain scope in intake", async () => {
   const result = await serviceConversation([
     { message: "how much for a railing?", output: { reply: "A person at the shop must quote the job. What name should the shop use?", handoff_reason: "unknown", fields: fields({ need: "railing" }) } },
     { message: "12 ft steel stair railing, Nashville", output: { reply: "The shop needs to review the railing before quoting. What name should the shop use?", handoff_reason: null, fields: fields({ need: "stair railing", material_size: "12 ft; steel", location: "Nashville", is_job: "yes" }) } },
   ])
-  assert.equal(result.stored[0].branch, "contact-handoff")
+  assert.equal(result.stored[0].branch, "sourced-answer")
+  assert.equal(result.responses[0].handoff_reason, undefined)
+  assert.match(result.responses[0].reply, /Estimates are free.*Price depends on the job/)
   assert.equal(result.responses[1].continue_intake, true)
   assert.equal(result.stored[1].branch, "expert-claim-intake")
   assert.doesNotMatch(result.responses[1].reply, /A person at the shop can help|\$|\b\d+\s*dollars/i)

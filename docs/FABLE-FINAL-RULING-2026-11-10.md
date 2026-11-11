@@ -1372,3 +1372,20 @@ uncommitted.
 - Fable R7 ruling on fix/perf93: merge PASS, no required fix; optional hydration sync applied (7a08ecb). Main 7a08ecb pushed and live (`<summary aria-label="Open navigation" aria-expanded="false">` read back on production).
 - Perf: local 3-run medians 92/93 with an unchanged-source control also 92/93 (score tracks machine benchmark index). Post-deploy read on production, Lighthouse 13.6 mobile simulate, 3 runs: /services/mobile-welding 93, 96, 97 (median 96); / 88, 93, 97 (median 93). Raw: docs/lighthouse-prod-2026-11-11.json. PageSpeed Insights API was over its daily quota, so this is a lab read of the live site, not CrUX field data. Perf item closed.
 - Still open: R2-1 live chat eval (owner yes needed; Mirror docket row 2026-11-12).
+
+## Owner facts 2026-11-11
+
+Source: owner 2026-11-11. Facts needed items 1-9 are answered:
+
+1. **Legal entity: keep.** Music City Specialty Welding is the brand; Neverlift Chassis Works, LLC is the correct LLC. Keep the legal name unchanged.
+2. **Hours:** 24/7. Calls are taken any time, every day, including nights and weekends. Publish no other hour range.
+3. **Pricing:** free estimates. The shop owner prices each job after seeing photos or the job on site. No published minimum, call-out fee, mileage rate or hourly rate; chat gives no price number. Send photos or call for a quote.
+4. **Insurance:** insured; businesses can request a certificate of insurance. No licenses or welder certifications are to be claimed or listed.
+5. **Warranty:** "We stand behind our work. If something we welded gives you trouble, call us." No time period or written-warranty claim.
+6. **Payment:** cash, card, check and Venmo. Deposits on larger jobs, with no percentage stated. "Commercial terms can be arranged, talk to the shop." Do not promise net-30.
+7. **Travel:** beyond the listed cities when the job makes sense, with no fixed limit or mileage number. "We travel beyond these cities. Tell us where the job is and we'll let you know." No travel-charge claim.
+8. **Lead time:** "We don't run a long wait list. Jobs are worked as they come in." No same-day or specific-time promise.
+9. **Drop-offs:** any time, no appointment needed. "Yes. Bring it by any time. Calling ahead helps us be ready for you."
+10. **Still open:** cast iron and other uncertain metal capabilities. Keep the current graceful handoff; do not claim the shop takes or refuses a specific metal.
+11. **Still open:** on-site rig / weld-in-progress, equipment repair and finished trailer repair photos.
+12. **Still open:** named projects, years in business, reviews and crew proof.

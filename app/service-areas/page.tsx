@@ -9,7 +9,7 @@ import { ServiceAreaChips } from "@/components/service-area-chips"
 
 export const metadata = createPublicMetadata({
   title: "Mobile Welding Service Area",
-  description: "Mobile welding service from Lebanon across Nashville and surrounding Middle Tennessee communities. Project scope and travel determine availability.",
+  description: "Mobile welding service from Lebanon across Nashville and surrounding Middle Tennessee communities. We travel beyond these cities when the job makes sense.",
   canonical: "/service-areas",
 })
 
@@ -30,7 +30,7 @@ export default function ServiceAreasPage() {
         <section className="ms-area-cities" aria-label="Primary service areas">
           <p><MapPin aria-hidden="true" />533 W Baddour Pkwy, Lebanon, TN 37087.</p>
           <ServiceAreaChips />
-          <span>Outside this list? Call with the exact address and scope to check the fit.</span>
+          <span>We travel beyond these cities. Tell us where the job is and we&apos;ll let you know.</span>
         </section>
 
         <section className="ms-area-travel">

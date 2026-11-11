@@ -108,15 +108,22 @@ test("voice brain forwards the caller deadline, trusts only the supplied callbac
   assert.doesNotMatch(result.reply, /300|owner-only money|\d|tel:|https?:|\]\(/)
 })
 
-test("human and price requests always offer the supplied tap-to-call phone", async () => {
+test("price policies and human requests offer the supplied tap-to-call phone", async () => {
   globalThis.__assistantBrainModel = async () => ({ reply: "It costs $300. What is your name?", fields: fields() })
   for (const content of ["How much to fix a gate?", "What would it run?", "I want a person", "Can I speak with someone?", "My budget is $200"]) {
     const result = await handleAssistantTurn([{ role: "user", content }], {
       phone: { display: "(615) 810-4910", href: "tel:+16158104910" },
     })
     assert.match(result.reply, /\[Call the shop at \(615\) 810-4910\]\(tel:\+16158104910\)/)
-    assert.match(result.reply, /\[Email sales@musiccityspecialtywelding.com\]\(mailto:sales@musiccityspecialtywelding.com\)/)
-    assert.match(result.reply, /What callback number should the shop use\?/)
+    if (["How much to fix a gate?", "What would it run?"].includes(content)) {
+      assert.equal(result.branch, "sourced-answer")
+      assert.equal(result.handoff_reason, undefined)
+      assert.match(result.reply, /Estimates are free.*Price depends on the job/)
+      assert.match(result.reply, /What needs welding or repair\?/)
+    } else {
+      assert.match(result.reply, /\[Email sales@musiccityspecialtywelding.com\]\(mailto:sales@musiccityspecialtywelding.com\)/)
+      assert.match(result.reply, /What callback number should the shop use\?/)
+    }
     assert.doesNotMatch(result.reply, /300|owner-only money/)
   }
 })
@@ -229,7 +236,7 @@ test("browser-safe contact fallback and reason detection preserve failure identi
 })
 
 test("every unknown, safety, policy and human handoff includes both direct call and quote form", async () => {
-  for (const content of ["I want a person", "What is the price?", "Can you weld titanium?", "My trailer frame is cracked", "Do you repair gate motors?", "Do you accept credit cards?", "Are you insured and licensed?", "What is your warranty?", "Do you work after hours?"]) {
+  for (const content of ["I want a person", "Can you weld titanium?", "My trailer frame is cracked", "Do you repair gate motors?", "Are you insured and licensed?", "Can you guarantee the weld for ten years?", "Can you come after hours tonight?"]) {
     globalThis.__assistantBrainModel = async () => ({ reply: "Yes, we do that.", fields: fields() })
     const result = await handleAssistantTurn([{ role: "user", content }])
     assert.ok(result.handoff_reason, content)

@@ -19,7 +19,7 @@ test("customer knowledge preserves every literal homepage FAQ without importing 
   const source = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8")
   const questions = [...source.matchAll(/question: "([^"]+)"/g)].map((match) => match[1])
   assert.deepEqual(assistantKnowledge.homepage.faqs.map((faq) => faq.question), questions)
-  assert.equal(questions.length, 7)
+  assert.equal(questions.length, 13)
   const quote = assistantKnowledge.homepage.faqs.find((faq) => faq.question === "What should I send for a quote?")
   assert.match(quote.answer, /full item and the problem area/)
   assert.match(quote.answer, /dimensions or a drawing/)
@@ -49,9 +49,9 @@ test("quote upload guidance comes from the current form and preserves optional p
   for (const fact of [form.photos.limit, ...form.photos.validation]) assert.ok(source.includes(fact))
 })
 
-test("model knowledge publishes only the public shop contact and retains unknown hours", () => {
+test("model knowledge publishes only the public shop contact and owner-confirmed hours", () => {
   assert.match(ASSISTANT_KNOWLEDGE, /\(615\) 703-3296/)
   assert.doesNotMatch(ASSISTANT_KNOWLEDGE, /810-4910|fallback owner line/)
-  assert.match(ASSISTANT_KNOWLEDGE, /Operating hours.*not stated/)
+  assert.match(ASSISTANT_KNOWLEDGE, /Operating hours.*24\/7/)
   for (const source of ["app/page.tsx", "components/mainstreet-contact.tsx"]) assert.ok(assistantKnowledge.sources.includes(source))
 })

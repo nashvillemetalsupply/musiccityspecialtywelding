@@ -84,7 +84,7 @@ export const servicePages: ServicePage[] = [
       {
         question: "How far will you travel?",
         answer:
-          "Travel depends on the job size, location, and schedule. We routinely serve Lebanon, Nashville, and surrounding Middle Tennessee communities; call for an exact availability check.",
+          "We travel beyond these cities. Tell us where the job is and we'll let you know.",
       },
       {
         question: "Can every repair be completed on-site?",
@@ -93,7 +93,7 @@ export const servicePages: ServicePage[] = [
       },
       {
         question: "Do you handle emergency work?",
-        answer: `Urgent work is accepted when scheduling and travel allow. Call ${getShopPhone().display} to confirm availability.`,
+        answer: `Yes. We're open 24/7 and take calls any time. Call ${getShopPhone().display} about the job so we can work out the next step.`,
       },
     ],
   },

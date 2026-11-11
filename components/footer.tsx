@@ -17,6 +17,7 @@ export function Footer({ home = false }: { home?: boolean }) {
         </div>
         <a href="mailto:sales@musiccityspecialtywelding.com">sales@musiccityspecialtywelding.com</a>
         <span>533 W Baddour Pkwy<br />Lebanon, TN 37087</span>
+        <span>24/7</span>
         <span>Serving Greater Nashville and Middle Tennessee.</span>
         <span>Music City Specialty Welding is operated by Neverlift Chassis Works,&nbsp;LLC.</span>
       </div>
