@@ -1016,3 +1016,75 @@ next routine change; it does not need its own round.
 The verification server on port 3313 was stopped (my PID only) and the port
 confirmed free. No code was edited, nothing was committed or pushed, and this
 section is left uncommitted.
+
+## Codex round 5 (post-PASS follow-ups)
+
+Verified 2026-11-10 (America/Chicago) on `fix/fable-r4-followups`, starting at
+`24ff9c3`. Applied only the requested F-1, sender suppression, and live-eval
+preparation. No push, deployment, merge, deployment request, live eval, chat
+submission, or provider delivery occurred. No `.env*` file or inherited
+environment value was read or used: verification children received fresh literal
+settings, with dotenv reads blocked and external application/provider traffic
+blocked. `npm ci` installed dependencies into the initially empty worktree.
+
+**F-1 PASS.** Added Fable's exact 980–1279px `.ms-site.ms-legal > div` rule with
+`padding-right: 7.5rem`. The local production build was served only at
+`http://127.0.0.1:3315`. [The QA runner](../scripts/qa/fable-r5-legal.mjs) sweeps
+every 8px, including the exact page bottom, and checks both native control
+bounding boxes and each wrapped-link fragment against the visible launcher.
+
+| Route | Viewport | Scroll samples | Launcher/control intersections |
+| --- | --- | --- | --- |
+| `/privacy` | 980x700 | 600 | 0 |
+| `/terms` | 980x700 | 399 | 0 |
+| `/privacy` | 1024x768 | 580 | 0 |
+| `/terms` | 1024x768 | 389 | 0 |
+
+All 1,968 samples had a visible launcher; 13,673 visible control measurements
+produced zero intersections. Horizontal overflow, page errors, and attempted
+submissions were zero. Browser routing allowed only same-origin GET/HEAD
+requests. [Bounding-box evidence](design-shots/fable-r5-legal-metrics.json) and
+four `fable-r5-*-launcher.png` screenshots are committed with this round; all
+four screenshots were opened and visually inspected. The owned server was
+stopped and port 3315 confirmed free; browser contexts were closed.
+
+**Sender suppression PASS.** `emailAssistantTranscript` and the assistant
+follow-up SMS return without sending whenever `VERCEL_ENV` is truthy and differs
+from `production`, matching the existing `notify()` guard. Follow-up receipt
+verification, partial contact projections, and callback-note updates still run.
+Behavioral tests exercise unmarked preview/development turns and prove no email,
+SMS intent, or upload link is created. Production, unset, and empty settings
+retain the persisted delivery paths; existing test-marker guards remain intact.
+Both live-eval markers remain mandatory because previews share the database.
+
+**Live-eval preparation PASS; live execution NOT RUN.** The runner now loads
+exactly 82 `HANDOFF` rows from `docs/assistant-audit-fable-r4-dry.json` plus
+[36 realistic paraphrases](../scripts/fixtures/assistant-audit-paraphrases.json),
+three for each of Fable's twelve named sourced questions. Tests pass all 36
+marked inputs through the actual answer-bank matcher and confirm no bank match.
+All 118 mocked requests use fresh sessions, `is_test: true`, and the
+`[INTERNAL TEST]` prefix. A monotonic clock enforces at least 12 seconds between
+request starts, at most 51 starts in any closed ten-minute window. No CLI flag
+can shorten that interval. `--base-url` remains required, redirects are refused,
+and the requested report uses exclusive creation to preserve existing evidence.
+Rate limits, server errors, and transport failures stop the run without retries.
+Reports explicitly require manual factual/safety review and cannot infer PASS.
+`docs/assistant-audit-live-r3.json` was deliberately not generated.
+
+Validation: **build PASS**, including TypeScript/static generation and unchanged
+bundle budgets (home 536,801/648,316 bytes; board 631,853/817,538 bytes).
+**Node 22.23.2 `npm test` PASS: 1,581 total, 1,578 passed, zero failed, three
+skipped** (the opt-in model eval and two database persistence tests).
+**Repository-wide `npm run lint` PASS** and `git diff --check` PASS. Independent
+Codex reviews of sender suppression and runner preparation found no defects.
+Local logs: `.tmp/fable-r5-build.log`, `.tmp/fable-r5-test.log`,
+`.tmp/fable-r5-lint.log`, and `.tmp/fable-r5-visual.log`.
+
+Run the eval later only after replacing the placeholder with the intended
+preview origin; the fixtures and output are explicit below. A normal 118-turn
+run takes at least 23 minutes 24 seconds, plus response time beyond the pacing
+interval. This command was not executed:
+
+```powershell
+& 'C:/Users/Owner/AppData/Local/hermes/node/node.exe' --experimental-strip-types scripts/assistant-audit-run.mjs --prod --base-url 'https://YOUR-PREVIEW-HOST' --test-suppression-confirmed --audit-file docs/assistant-audit-fable-r4-dry.json --paraphrases-file scripts/fixtures/assistant-audit-paraphrases.json --output docs/assistant-audit-live-r3.json
+```

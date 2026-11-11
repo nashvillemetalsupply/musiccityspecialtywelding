@@ -1,0 +1,299 @@
+{
+  "origin": "http://127.0.0.1:3315",
+  "safety": "Only local GET/HEAD requests allowed; no forms submitted or chat turns sent.",
+  "step": 8,
+  "pages": [
+    {
+      "route": "/privacy",
+      "viewport": {
+        "width": 980,
+        "height": 700
+      },
+      "maxY": 4788,
+      "samples": 600,
+      "visibleLauncherSamples": 600,
+      "controlsMeasured": 4062,
+      "collisions": [],
+      "boundingBoxCollisions": [],
+      "closestControl": {
+        "y": 4336,
+        "gap": 45.171875,
+        "launcher": {
+          "top": 628,
+          "right": 956,
+          "bottom": 676,
+          "left": 817.171875,
+          "width": 138.828125,
+          "height": 48
+        },
+        "tag": "A",
+        "text": "sales@musiccityspecialtywelding.com",
+        "href": "mailto:sales@musiccityspecialtywelding.com",
+        "box": {
+          "top": 675.78125,
+          "right": 772,
+          "bottom": 719.78125,
+          "left": 494.21875,
+          "width": 277.78125,
+          "height": 44
+        },
+        "rects": [
+          {
+            "top": 675.78125,
+            "right": 772,
+            "bottom": 719.78125,
+            "left": 494.21875,
+            "width": 277.78125,
+            "height": 44
+          }
+        ]
+      },
+      "screenshot": "docs/design-shots/fable-r5-privacy-980x700-launcher.png",
+      "subject": {
+        "y": 2485,
+        "text": "how Google uses information from sites that use its services",
+        "box": {
+          "top": 580.0625,
+          "right": 769.984375,
+          "bottom": 626.453125,
+          "left": 73,
+          "width": 696.984375,
+          "height": 46.390625
+        },
+        "rects": [
+          {
+            "top": 580.0625,
+            "right": 769.984375,
+            "bottom": 600.0625,
+            "left": 512.765625,
+            "width": 257.21875,
+            "height": 20
+          },
+          {
+            "top": 606.453125,
+            "right": 262.09375,
+            "bottom": 626.453125,
+            "left": 73,
+            "width": 189.09375,
+            "height": 20
+          }
+        ]
+      },
+      "errors": [],
+      "attemptedSubmissions": []
+    },
+    {
+      "route": "/terms",
+      "viewport": {
+        "width": 980,
+        "height": 700
+      },
+      "maxY": 3180,
+      "samples": 399,
+      "visibleLauncherSamples": 399,
+      "controlsMeasured": 2849,
+      "collisions": [],
+      "boundingBoxCollisions": [],
+      "closestControl": {
+        "y": 2736,
+        "gap": 45.171875,
+        "launcher": {
+          "top": 628,
+          "right": 956,
+          "bottom": 676,
+          "left": 817.171875,
+          "width": 138.828125,
+          "height": 48
+        },
+        "tag": "A",
+        "text": "sales@musiccityspecialtywelding.com",
+        "href": "mailto:sales@musiccityspecialtywelding.com",
+        "box": {
+          "top": 668.125,
+          "right": 772,
+          "bottom": 712.125,
+          "left": 494.21875,
+          "width": 277.78125,
+          "height": 44
+        },
+        "rects": [
+          {
+            "top": 668.125,
+            "right": 772,
+            "bottom": 712.125,
+            "left": 494.21875,
+            "width": 277.78125,
+            "height": 44
+          }
+        ]
+      },
+      "screenshot": "docs/design-shots/fable-r5-terms-980x700-launcher.png",
+      "subject": {
+        "y": 1812,
+        "text": "Privacy Policy",
+        "box": {
+          "top": 579.65625,
+          "right": 520.25,
+          "bottom": 599.65625,
+          "left": 415.265625,
+          "width": 104.984375,
+          "height": 20
+        },
+        "rects": [
+          {
+            "top": 579.65625,
+            "right": 520.25,
+            "bottom": 599.65625,
+            "left": 415.265625,
+            "width": 104.984375,
+            "height": 20
+          }
+        ]
+      },
+      "errors": [],
+      "attemptedSubmissions": []
+    },
+    {
+      "route": "/privacy",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "maxY": 4631,
+      "samples": 580,
+      "visibleLauncherSamples": 580,
+      "controlsMeasured": 3954,
+      "collisions": [],
+      "boundingBoxCollisions": [],
+      "closestControl": {
+        "y": 4208,
+        "gap": 45.171875,
+        "launcher": {
+          "top": 696,
+          "right": 1000,
+          "bottom": 744,
+          "left": 861.171875,
+          "width": 138.828125,
+          "height": 48
+        },
+        "tag": "A",
+        "text": "sales@musiccityspecialtywelding.com",
+        "href": "mailto:sales@musiccityspecialtywelding.com",
+        "box": {
+          "top": 741.375,
+          "right": 816,
+          "bottom": 785.375,
+          "left": 521.328125,
+          "width": 294.671875,
+          "height": 44
+        },
+        "rects": [
+          {
+            "top": 741.375,
+            "right": 816,
+            "bottom": 785.375,
+            "left": 521.328125,
+            "width": 294.671875,
+            "height": 44
+          }
+        ]
+      },
+      "screenshot": "docs/design-shots/fable-r5-privacy-1024x768-launcher.png",
+      "subject": {
+        "y": 2399,
+        "text": "how Google uses information from sites that use its services",
+        "box": {
+          "top": 648.09375,
+          "right": 705.78125,
+          "bottom": 668.09375,
+          "left": 255.6875,
+          "width": 450.09375,
+          "height": 20
+        },
+        "rects": [
+          {
+            "top": 648.09375,
+            "right": 705.78125,
+            "bottom": 668.09375,
+            "left": 255.6875,
+            "width": 450.09375,
+            "height": 20
+          }
+        ]
+      },
+      "errors": [],
+      "attemptedSubmissions": []
+    },
+    {
+      "route": "/terms",
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "maxY": 3103,
+      "samples": 389,
+      "visibleLauncherSamples": 389,
+      "controlsMeasured": 2808,
+      "collisions": [],
+      "boundingBoxCollisions": [],
+      "closestControl": {
+        "y": 2680,
+        "gap": 45.171875,
+        "launcher": {
+          "top": 696,
+          "right": 1000,
+          "bottom": 744,
+          "left": 861.171875,
+          "width": 138.828125,
+          "height": 48
+        },
+        "tag": "A",
+        "text": "sales@musiccityspecialtywelding.com",
+        "href": "mailto:sales@musiccityspecialtywelding.com",
+        "box": {
+          "top": 740.890625,
+          "right": 816,
+          "bottom": 784.890625,
+          "left": 521.328125,
+          "width": 294.671875,
+          "height": 44
+        },
+        "rects": [
+          {
+            "top": 740.890625,
+            "right": 816,
+            "bottom": 784.890625,
+            "left": 521.328125,
+            "width": 294.671875,
+            "height": 44
+          }
+        ]
+      },
+      "screenshot": "docs/design-shots/fable-r5-terms-1024x768-launcher.png",
+      "subject": {
+        "y": 1752,
+        "text": "Privacy Policy",
+        "box": {
+          "top": 648.078125,
+          "right": 522.4375,
+          "bottom": 668.078125,
+          "left": 417.453125,
+          "width": 104.984375,
+          "height": 20
+        },
+        "rects": [
+          {
+            "top": 648.078125,
+            "right": 522.4375,
+            "bottom": 668.078125,
+            "left": 417.453125,
+            "width": 104.984375,
+            "height": 20
+          }
+        ]
+      },
+      "errors": [],
+      "attemptedSubmissions": []
+    }
+  ]
+}

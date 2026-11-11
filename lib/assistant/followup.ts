@@ -80,6 +80,8 @@ export async function followUpAssistantLead(input: {
         updated_at = now()
       WHERE id = ${input.leadId}::bigint AND is_test = ${input.isTest}::boolean`
   }
+  // Preview turns retain receipt-backed projections, but never contact customers.
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production") return
   const phone = assistantCallbackPhone(input.fields.callback_phone)
   if (input.isTest || lead.is_test || lead.person_is_test || !twilioSmsConfigured()
     || !phone || phone !== normalizeUsPhone(lead.phone) || !await customerSmsAllowed(phone)) return

@@ -1,0 +1,98 @@
+[
+  {
+    "canonicalQuestion": "Can you repair a trailer where it sits?",
+    "questions": [
+      "My utility trailer is parked behind the barn and I can't move it right now. Is that something your welding truck could work on there?",
+      "The ramp hinge broke on our trailer at the jobsite. Would we have to haul the whole thing to Lebanon for welding?",
+      "I've got a trailer needing metal repair in my driveway. How do you decide whether to send the mobile rig or have me bring it in?"
+    ]
+  },
+  {
+    "canonicalQuestion": "Can you weld a cracked trailer frame?",
+    "questions": [
+      "There's a split along one of the frame rails on my landscape trailer. Is that the sort of damage you look at repairing?",
+      "We found a crack in the metal frame of our equipment trailer. Can your shop assess it for a welded repair?",
+      "The trailer chassis has started cracking near an old weld. What would you need to see before deciding if you can fix it?"
+    ]
+  },
+  {
+    "canonicalQuestion": "Can you repair a gate where it hangs?",
+    "questions": [
+      "Our driveway gate needs welding but it's still attached to the posts. Could your crew work on it here?",
+      "I've got a heavy iron gate with a broken weld. Does it have to come off first or can you work with it in place?",
+      "The metal on our entrance gate needs repair and we don't have a way to take it down. Is a site visit an option?"
+    ]
+  },
+  {
+    "canonicalQuestion": "Can you repair equipment at our facility?",
+    "questions": [
+      "One of our machine guards broke at the warehouse. Could a welder come to our facility instead of us shipping the machine?",
+      "We have a steel support on some equipment that needs repair. The machine stays on our floor; is that work you can look at here?",
+      "Can your mobile crew assess a broken machinery bracket at our plant, or does all equipment work go through your shop?"
+    ]
+  },
+  {
+    "canonicalQuestion": "Can you fabricate gas meter manifolds?",
+    "questions": [
+      "We're putting together a project that needs a fabricated manifold for gas meters. Is building that part within your shop's scope?",
+      "I have a drawing for a gas-meter manifold assembly. Is that something you could review for fabrication?",
+      "Do you take on custom metal fabrication for a group of gas meters connected through a manifold?"
+    ]
+  },
+  {
+    "canonicalQuestion": "Do you need close-up and full-item photos?",
+    "questions": [
+      "I took a tight picture of the broken weld. Should I back up and get the whole piece in another shot too?",
+      "Before I send these pictures, do you want the entire item as well as the damaged spot?",
+      "I've got one wide shot and a few pictures right up against the crack. Which ones would help your shop review it?"
+    ]
+  },
+  {
+    "canonicalQuestion": "Can I upload a picture directly in this chat?",
+    "questions": [
+      "I'm on my phone with a photo of the damage. Where can I attach it so you can see it?",
+      "I don't see a paperclip in this conversation. How am I supposed to get a picture over to the shop?",
+      "Can I drop an image into this message window, or is there another place I should send it?"
+    ]
+  },
+  {
+    "canonicalQuestion": "What do you need to know about a broken gate hinge?",
+    "questions": [
+      "The top hinge on our driveway gate has broken. What details should I have ready when I contact you?",
+      "I'm trying to get a gate hinge repair reviewed. Besides saying the hinge is broken, what information helps?",
+      "Our steel entrance gate is hanging crooked after a hinge failed. What should I tell the shop about the gate and where it is?"
+    ]
+  },
+  {
+    "canonicalQuestion": "What photos help with a trailer quote?",
+    "questions": [
+      "I'm walking around my trailer with my phone before asking for a repair quote. What parts should I photograph?",
+      "The trailer needs welding and I want to send useful pictures the first time. What views do you need?",
+      "I've photographed the broken bit on our utility trailer. Are there other angles or trailer details your estimator will want?"
+    ]
+  },
+  {
+    "canonicalQuestion": "What photos help with a gate quote?",
+    "questions": [
+      "I need a welding quote for our entrance gate. Where should I stand and what should I include in the pictures?",
+      "Before I email about the damaged gate, what pictures would give you enough context to review it?",
+      "I've got a close picture of our gate's broken weld. Should I also show the posts, hinges and the whole opening?"
+    ]
+  },
+  {
+    "canonicalQuestion": "What photos should I send for a mobile welding quote?",
+    "questions": [
+      "I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?",
+      "I'm getting information together for a welding truck visit. What should I photograph around the job before I send a request?",
+      "For a repair that can't leave our site, what do you want to see in the photos and know about getting your rig in?"
+    ]
+  },
+  {
+    "canonicalQuestion": "What measurements help with a custom fabrication quote?",
+    "questions": [
+      "I want a custom steel bracket made from my sketch. Which dimensions and other details should I put on it for a quote?",
+      "I'm drawing up a little frame for you to build. What sizes, material information and finish details do you need from me?",
+      "Before I ask you to price a made-to-order metal part, how much detail should I include about measurements, quantity and how it'll mount?"
+    ]
+  }
+]

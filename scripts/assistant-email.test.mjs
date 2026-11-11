@@ -104,6 +104,25 @@ test("handoff transcript goes to Sales once per session and reason, after a dura
   assert.equal(receipt.detail.providerEmailId, "resend-assistant-fixture-1")
 })
 
+test("preview and development suppress unmarked transcript email before any send claim", async () => {
+  for (const VERCEL_ENV of ["preview", "development"]) {
+    const h = harness({ env: { VERCEL_ENV } })
+    assert.equal(await h.send(), "suppressed")
+    assert.equal(h.sends.length, 0)
+    assert.equal(h.events.size, 0)
+    assert.equal(h.queries.length, 0)
+  }
+})
+
+test("production and unset Vercel environments preserve transcript delivery", async () => {
+  for (const VERCEL_ENV of ["production", undefined, ""]) {
+    const h = harness({ env: { VERCEL_ENV } })
+    assert.equal(await h.send(), "accepted")
+    assert.equal(h.sends.length, 1)
+    assert.deepEqual(h.order, ["email.out", "provider", "email.accepted"])
+  }
+})
+
 test("different handoff reasons have independent claims, while concurrent replay has one send", async () => {
   const h = harness()
   await Promise.all([h.send(), h.send()])

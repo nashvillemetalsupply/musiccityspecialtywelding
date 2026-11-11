@@ -26,7 +26,7 @@ function load(path, env, modules) {
 }
 
 function fixture(options = {}) {
-  const env = { GLASS_TOKEN_SECRET: "synthetic-secret-for-local-tests-only-123456", TWILIO_PHONE_NUMBER: "+16155550100", NEXT_PUBLIC_SITE_URL: "https://shop.example.test" }
+  const env = { GLASS_TOKEN_SECRET: "synthetic-secret-for-local-tests-only-123456", TWILIO_PHONE_NUMBER: "+16155550100", NEXT_PUBLIC_SITE_URL: "https://shop.example.test", ...options.env }
   if (options.noSecret) delete env.GLASS_TOKEN_SECRET
   const lead = { phone: "+16155550199", person_id: 9, is_test: false, person_is_test: false,
     first_name: "Ava", email: "", phone_is_placeholder: false, message: "gate repair", source: "website-chat",
@@ -161,6 +161,34 @@ test("photo invite uses the real persisted SMS path once per lead, including ret
   assert.match(h.provider[0].body, /https:\/\/shop\.example\.test\/j\/[a-f0-9]{64}$/)
   assert.equal([...h.messages.values()][0].lead_id, 41)
   assert.equal([...h.messages.values()][0].person_id, 9)
+})
+
+test("preview and development retain receipt projections without an unmarked photo SMS", async () => {
+  for (const VERCEL_ENV of ["preview", "development"]) {
+    const h = fixture({ env: { VERCEL_ENV }, lead: {
+      first_name: "Assistant callback (partial)", phone: "",
+      message: "Partial assistant request. Missing: name, callback phone.",
+    }, receiptFields: { name: "Ava", callback_phone: "+16155550199" } })
+    await h.followUpAssistantLead({ ...h.input, fields: {
+      callback_phone: "+16155550199", callback_window: "after 3",
+    } })
+    assert.equal(h.lead.first_name, "Ava")
+    assert.equal(h.lead.phone, "+16155550199")
+    assert.match(h.lead.notes, /Assistant callback requested: after 3/)
+    assert.equal(h.links.size, 0)
+    assert.equal(h.messages.size, 0)
+    assert.equal(h.provider.length, 0)
+  }
+})
+
+test("production and unset Vercel environments preserve the persisted photo SMS", async () => {
+  for (const VERCEL_ENV of ["production", undefined, ""]) {
+    const h = fixture({ env: { VERCEL_ENV } })
+    await h.followUpAssistantLead(h.input)
+    assert.equal(h.links.size, 1)
+    assert.equal(h.messages.size, 1)
+    assert.equal(h.provider.length, 1)
+  }
 })
 
 test("test leads, test people, missing callback, changed phone, disabled SMS and unknown consent never send", async () => {

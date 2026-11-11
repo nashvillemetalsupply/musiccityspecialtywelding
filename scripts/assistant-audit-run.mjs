@@ -9,6 +9,8 @@ import { parseArgs } from "node:util"
 import { buildAuditBank, gradeAuditReply } from "./assistant-audit-bank.mjs"
 import { createDryFixture } from "./assistant-a4-fixture.mjs"
 import { createA4Safety } from "./assistant-a4-safety.mjs"
+import { auditOrigin, loadLiveAuditCases, runLiveAudit, LIVE_AUDIT_INTERVAL_MS,
+  LIVE_AUDIT_OUTPUT, LIVE_AUDIT_SOURCE, LIVE_AUDIT_PARAPHRASES } from "./assistant-audit-live.mjs"
 
 // No credentials: reuse the existing A4 SQL fixture and deterministic provider
 // boundary. All application route, turn, store, journal and handoff code is real.
@@ -18,6 +20,7 @@ import { createA4Safety } from "./assistant-a4-safety.mjs"
 const { values: options } = parseArgs({ options: {
   prod: { type: "boolean" }, baseline: { type: "boolean" },
   output: { type: "string" }, "base-url": { type: "string" },
+  "audit-file": { type: "string" }, "paraphrases-file": { type: "string" },
   "test-suppression-confirmed": { type: "boolean" },
 } })
 const prod = options.prod ?? false, baseline = options.baseline ?? false
@@ -25,20 +28,17 @@ const baselineRef = "69c9fc5e05a1d98c642ccef1eb3a2bf8a6dcd59f"
 const root = new URL("../", import.meta.url)
 let baseUrl
 if (prod) {
-  assert.ok(options["base-url"], "Live HTTP audit requires --base-url; there is no default target")
-  const target = new URL(options["base-url"])
-  assert.ok(["http:", "https:"].includes(target.protocol) && !target.username && !target.password && !target.search && !target.hash && target.pathname === "/", "--base-url must be an HTTP(S) origin without credentials, path, query or fragment")
-  baseUrl = target.origin
+  baseUrl = auditOrigin(options["base-url"])
 }
 const output = options.output ?? (prod
-  ? `docs/assistant-audit-live-${new Date().toISOString().replaceAll(":", "-")}-${randomUUID()}.json`
+  ? LIVE_AUDIT_OUTPUT
   : `docs/assistant-audit-${baseline ? "before" : "after"}.json`)
 const outputPath = resolve(fileURLToPath(root), output)
 if (prod) assert.ok(!existsSync(outputPath), "Live audit report already exists; choose a new --output file")
 const results = [], outbound = [], background = []
 const originalFetch = globalThis.fetch, originalInfo = console.info, originalWarn = console.warn
 const stub = (source) => ({ url: `data:text/javascript,${encodeURIComponent(source)}`, shortCircuit: true })
-let hooks, safety, active, sql, knowledge
+let hooks, safety, active, sql, knowledge, liveAudit
 
 function writeReport(mode) {
   const counts = Object.fromEntries(["ANSWERED", "HANDOFF", "WRONG", "DEAD END"].map((grade) => [grade, results.filter((r) => r.grade === grade).length]))
@@ -49,7 +49,7 @@ function writeReport(mode) {
     openings[opening] = (openings[opening] ?? 0) + 1
     return openings
   }, {})).map(([opening, count]) => ({ opening, count, share: count / handoffs.length })).sort((a, b) => b.count - a.count)
-  const report = { mode, recordedAt: new Date().toISOString(), ...(baseline ? { baselineRef } : {}), ...(prod ? { baseUrl } : {}), limitation: prod ? "Real HTTP samples from the explicit base URL only, not the full bank." : "Scripted provider candidates and in-memory SQL, using the repository's A4 fixture. This proves application boundaries for these candidates; it does not establish live model expertise or exhaustive factual correctness.",
+  const report = { mode, recordedAt: new Date().toISOString(), ...(baseline ? { baselineRef } : {}), ...(prod ? { baseUrl, liveAudit } : {}), limitation: prod ? "118 planned HTTP cases: 82 offline handoffs plus 36 sourced-question paraphrases. Automated grades check routing and known forbidden text only. Every reply needs human review for invented business facts and missed safety refusals; no PASS is inferred from these grades." : "Scripted provider candidates and in-memory SQL, using the repository's A4 fixture. This proves application boundaries for these candidates; it does not establish live model expertise or exhaustive factual correctness.",
     assistantVoice: "off; no voice route imported or called", counts, total: results.length, handoffOpenings,
     ...(prod ? { outboundVerification: "Code suppression only; no provider delivery or database readback.", safetyEvidence: ["input.ts derives is_test from [INTERNAL TEST]", "store.ts preserves sticky session test state", "service.ts gates notify on !session.is_test", "handoff.ts returns for input/session/lead/person/transcript test markers before all senders", "followup.ts gates test leads"], inputAttestation: `All ${results.length} actual inputs used fresh UUID sessions, turn_index 0, [INTERNAL TEST] prefix and is_test:true; no fabricated IP headers, no retries.` } : { outboundAttempts: outbound }),
     ...(safety ? { safety: safety.summary() } : {}), results }
@@ -61,31 +61,20 @@ function writeReport(mode) {
 
 async function runProd() {
   assert.ok(options["test-suppression-confirmed"], "Read input/store/service/handoff/followup test guards before enabling live HTTP probes")
-  const questions = [
-    ["mobile", "Do you offer on-site mobile welding in Nashville?"],
-    ["trailer", "What pictures help you review a cracked trailer frame?"],
-    ["gate", "Do you repair gate motors or just gate metal?"],
-    ["equipment", "What information should I send about a broken equipment bracket?"],
-    ["fabrication", "Can you work from a dimensioned sketch for a custom bracket?"],
-    ["products", "Do you make custom steel planter boxes?"],
-    ["area", "Do you serve Lebanon and Franklin?"],
-    ["materials", "Do you repair aluminum boats?"],
-    ["human", "I want to talk directly to a person at the shop."],
-    ["price", "What is your hourly welding rate and mobile callout charge?"],
-  ]
-  for (const [category, question] of questions) {
-    const input = { session_id: randomUUID(), turn_index: 0, message: `[INTERNAL TEST] ${question}`, is_test: true }
-    const response = await originalFetch(`${baseUrl}/api/assist`, {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input), redirect: "error", signal: AbortSignal.timeout(65_000),
-    })
-    const value = await response.json()
-    const entry = { id: `P${results.length + 1}`, category, question, expected: ["human", "price"].includes(category) ? "handoff" : "answer-or-handoff" }
-    const grade = gradeAuditReply(entry, value)
-    if (grade.grade === "ANSWERED") grade.reason = "Live answer reviewed against site facts; no scripted provider candidate"
-    results.push({ ...entry, input, status: response.status, reply: value.reply ?? value.error ?? "", handoff_reason: value.handoff_reason ?? null, ...grade })
-    console.log(`Live ${entry.id}: HTTP ${response.status}`)
-  }
-  writeReport("LIVE HTTP, explicit base URL")
+  const auditFile = options["audit-file"] ?? LIVE_AUDIT_SOURCE
+  const paraphrasesFile = options["paraphrases-file"] ?? LIVE_AUDIT_PARAPHRASES
+  const cases = loadLiveAuditCases(resolve(fileURLToPath(root), auditFile), resolve(fileURLToPath(root), paraphrasesFile))
+  liveAudit = { auditFile, paraphrasesFile, plannedTotal: cases.length,
+    offlineHandoffs: 82, sourcedParaphrases: 36, minimumStartIntervalMs: LIVE_AUDIT_INTERVAL_MS,
+    maximumRequestsPerTenMinutes: 51, acceptance: "PENDING MANUAL REVIEW",
+    passCriteria: ["Zero invented business facts", "Zero missed safety refusals", "Zero sourced-question paraphrases handed off"] }
+  await runLiveAudit(cases, { baseUrl, fetch: originalFetch, onResult: (entry) => {
+    results.push(entry)
+    console.log(`Live ${entry.id}: HTTP ${entry.status ?? "failed"}`)
+  } })
+  liveAudit.completed = results.length === cases.length
+  const counts = writeReport("LIVE HTTP, explicit base URL")
+  if (!liveAudit.completed || counts.WRONG || counts["DEAD END"]) process.exitCode = 1
 }
 
 async function runDry() {

@@ -397,6 +397,9 @@ body:has(.ms-site) { background: var(--ms-carbon); }
 @media (min-width: 980px) and (max-width: 1439px) {
   .ms-site .ms-city-list { padding-right: 7.5rem; }
 }
+@media (min-width: 980px) and (max-width: 1279px) {
+  .ms-site.ms-legal > div { padding-right: 7.5rem; }
+}
 @media (max-width: 979px) {
   body:has(.ms-mobile-cta) { padding-bottom: 0; background: var(--ms-carbon); }
   .ms-site.ms-footer, .ms-site .ms-footer { padding-bottom: calc(var(--ms-mobile-cta-height, 56px) + 1.5rem + env(safe-area-inset-bottom)); }

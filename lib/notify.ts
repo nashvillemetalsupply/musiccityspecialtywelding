@@ -699,6 +699,7 @@ export async function emailAssistantTranscript(input: {
   eventId: number; sessionId: string; reason: string; transcript: string; leadId: number | null; isTest: boolean
 }): Promise<"accepted" | "unavailable" | "failed" | "unknown" | "suppressed"> {
   if (input.isTest || /\[INTERNAL TEST\]/i.test(input.transcript)) return "suppressed"
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production") return "suppressed"
   const apiKey = process.env.RESEND_API_KEY?.trim()
   const from = process.env.QUOTE_FROM_EMAIL?.trim()
   // Leave the handoff receipt available for recovery when email is unconfigured.
