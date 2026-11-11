@@ -729,3 +729,83 @@ or production provider health claim is included.
 
 The owned local `next start` process was stopped after verification. QA browser
 sessions were closed; user applications were left alone.
+
+
+## Fable round 3
+
+Reviewed 2026-11-10 at `6bc39b2` (branch `fix/fable-final-r1`), production build with `NEXT_PUBLIC_ASSISTANT_CHAT=1`, `ASSISTANT_VOICE=0`, Node 22, `next start` on 127.0.0.1:3312 (stopped after; port confirmed free). Read-only: every non-GET and off-origin request was aborted in the browser, no form submitted, no chat turn sent, no env value read or printed. Screenshots and measurements are in `C:\Users\Owner\.claude\jobs\5dfaa88c\tmp\fable-r3\` (`look.json`, `verify.json`, `bank-dump.txt`, 130+ PNGs).
+
+**VERDICT R3: FAIL**
+
+Four defects. Three are visible on the page, one is in the chat bank. All four are small and each has an exact fix below. Everything else in round 2 is closed. Three of the four are mine: R3-1 is caused by the fix I dictated for R2-12, and R3-2 and R3-4 were already there in round 2 and I missed them because I looked at home mostly at 1440.
+
+### Round 2 items
+
+| Item | Status | What I saw |
+|---|---|---|
+| R2-1 | NOT RUN, downgraded | See the R2-1 ruling below. No longer a merge gate. |
+| R2-2 | NOT CLOSED | Sourced answers now end with the next intake question and yes/no questions start "Yes."/"No.". But the prefix is applied per entry, not per question, so three "what" questions answer "Yes." See R3-3. |
+| R2-3 | FIXED | Both dropped caveat sentences are in the bank answers (`bank-dump.txt`). |
+| R2-4 | FIXED | No "the site", "listed", or slash pairs in the 69 answers. First person plural throughout. |
+| R2-5 | FIXED | 1440 (measured on custom-metal-products and gate-repair; mobile-welding at 1440 by screenshot only, the script returned empty boxes for its below-fold sections there): brand, breadcrumb, hero copy, scope, plan, private-link band, FAQ heading, Other work label, contact lead and footer all start at x=112 on mobile-welding, custom-metal-products and gate-repair. 1280: all at 48. 390: all at 16. |
+| R2-6 | FIXED | "Other work" is a mono label on its own line with six cream chips below, wrapping cleanly at 390. |
+| R2-7 | FIXED | Service FAQ is the home FAQ: heading left, cream card right (x 464 to 1232 at 1440 on both), Plex Sans sentence-case questions. But see R3-2 for the heading at laptop widths. |
+| R2-8 | FIXED | Home hero copy and nav brand at x=112, call button ends at 1328, on every route measured. |
+| R2-9 | FIXED | Breadcrumb gaps are even: 8.8px either side of each slash at 1440 and 390. |
+| R2-10 | FIXED | Privacy and terms cards at 320, 360 and 390 read "Email: sales@" / "musiccityspecialtywelding.com", no mid-word break. Footer, cards and chat all lowercase. |
+| R2-11 | FIXED | `#job-glass` at 390: the `margin-top: 0` is in. Copy block to example card is 32px; last line of text to card is 64px (was 97), because the last list row keeps its own bottom padding and rule. Looked at it: the rhythm matches the rows above. Accepted. |
+| R2-12 | FIXED, and it broke the header | The page no longer scrolls behind the open menu: a wheel and a touch drag both leave scrollY at 900 on `/` and `/services/mobile-welding`. The fix caused R3-1. |
+| R2-13 | FIXED | Chat header and contact answer use the configured number; chat `tel:` equals the page `tel:` on all five chat-open checks. |
+| R2-14 | FIXED | "See how it works" sits under the paragraph, left aligned, clear of the launcher column at 1440 and 1280. Launcher goes to opacity 0, `pointer-events: none`, `tabindex=-1`, `aria-hidden=true` while the quote form is in view at 1440x900 and 1280x720. On service pages the launcher still passes over the empty right end of list-row rules; no text or control is covered there. On home at 1280 it does cover a control, which round 2 missed: see R3-4. |
+| R2-15 | FIXED | White cutout is gone. Hero is a real shop photo (cut metal letters on the fabrication table) with an honest alt. It is a loose match for "mailboxes and planter boxes"; that is the defect 16 asset gap and still needs a real mailbox or planter photo from the owner. Does not block. |
+
+Perf: `docs/perf/2026-11-10/round3-final/summary.json` shows home 92/92/92 and mobile-welding 86/91/90, medians 92 and 90. The bar was 90 on a 3-run median. Met, with no margin on mobile-welding (the 86 run has TBT 287ms, the same machine-noise pattern as round 2). The named post-launch follow-up (prefetch, one mono weight, hero re-encode, target 93) stands. Note the perf runs were taken at `44cfad6` plus the uncommitted round 3 worktree, not at the `6bc39b2` commit hash. I compared the lists: every file `6bc39b2` adds beyond the measured worktree is under `docs/` or `scripts/qa/`, so the measured app is the committed app.
+
+No horizontal overflow at 360, 390, 768, 980, 1024, 1280, 1440 or 1920 on six routes. No page errors. Nav is 73px tall at every width.
+
+### Defects
+
+**R3-1. Opening the mobile menu mid-page removes the header and the close button. MEDIUM.** All routes, under 980px. Scroll to 900, tap the menu: the nav bar jumps to top = -900 (measured on `/`, `/services/mobile-welding`, `/privacy`). The fixed menu panel stays, but the logo, the bar and the X are gone and page content shows through the top 73px. At scrollY 0 it looks fine, which is why the at-rest check passed. Cause: `app/page-cohesion.css`, `max-width: 979px` block, now has both `body:has(.ms-menu[open]) { overflow: hidden; }` and `html:has(.ms-menu[open]) { overflow: hidden; }`. With `html` hidden, the body rule no longer propagates to the viewport; it makes `body` its own scroll container, and the `position: sticky` nav sticks to the body box instead of the viewport.
+Fix: delete the `body:has(.ms-menu[open]) { overflow: hidden; }` line. Keep the `html:has(...)` line. I simulated this in the browser by forcing body back to its normal overflow while the menu is open (an injected override, not the deleted line itself) on `/` and `/services/mobile-welding`, starting at scrollY 900: after open, after a wheel, after a touch drag and after close, scrollY is 900 and nav top is 0 every time, and the close button is at 14px (`verify.json`). The same run without the override gives nav top -900 at every step and no way to close. Add a browser check: at 390, scroll to 900, open the menu, assert `.ms-nav` top is 0 and the summary button is inside the viewport, and that scrollY is unchanged by opening, by a wheel, by a touch drag and by closing.
+
+**R3-2. "Straight answers." breaks mid-word at laptop widths. MEDIUM.** Home and all seven service pages. Measured line breaks of the FAQ `h2`: 1100 "Straigh / t / answers / .", 1180 "Straigh / t / answer / s.", 1280 "Straig / ht / answe / rs." Clean two lines at 980, 1024 and at 1366 and up. 1280 is a common laptop width. Cause: `app/page-cohesion.css`, `min-width: 980px` block, `.ms-site .ms-faq { grid-template-columns: minmax(14rem, 1fr) minmax(0, 48rem); padding-right: max(13rem, ...); }`. The 13rem launcher clearance added in round 1 leaves the heading column at its 224px minimum from about 1040 to 1340 wide while the `h2` grows to 70px, and `overflow-wrap: anywhere` lets it split inside the word.
+Fix, same rule: change `minmax(14rem, 1fr)` to `minmax(18rem, 1fr)` (288px holds "answers." at the 72px cap; it fits in 283px at 1366), and add `.ms-site .ms-faq-heading h2 { overflow-wrap: normal; }` so this heading can never split a word again. I injected both changes and re-measured on `/` and `/services/mobile-welding`: "Straight / answers." at 980, 1024, 1100, 1180, 1280, 1366 and 1440, no horizontal overflow, card right edge unchanged (1072 at 1280, so the launcher clearance holds). The cost is a narrower card under 1366: 413px at 980, 455 at 1024, 704 at 1280 (was 477, 519, 768). Accepted. Pass bar: on `/` and one service route the heading renders as exactly "Straight" / "answers." at 980, 1024, 1100, 1180, 1280, 1366 and 1440, the cream card still clears the launcher column, and no horizontal overflow. Add those widths to the bounding-box script; it only checked 1440.
+
+**R3-3. Chat answers "Yes." to questions that are not yes/no. LOW.** `lib/assistant/answers.ts`, `entry()`: the "Yes. " prefix is added when any pattern of the entry is a yes/no question, then served for every pattern of that entry. Offline dump of all 69 entries and 139 patterns:
+- `supported-metals`: "What metals do you work with?" returns "Yes. We work on steel and iron gates, weld aluminum and repair aluminum boats, and fabricate stainless countertops."
+- `quote-full-closeup`: "What photos do you need?", "What photos should I send?" and "What photos?" return "Yes. Send the full item and close-ups of the failure."
+Fix: decide the prefix per matched pattern, not per entry. In `findAssistantAnswer`, add "Yes. "/"No. " only when the pattern that matched begins with do/does/can/could/should/is/are/will/would; otherwise return the bare sourced sentence. (Splitting each of the two entries into a yes/no entry and a wh- entry is equally fine.) Add a test over the whole bank: no pattern that starts with what/which/how/where/when/why/who returns an answer starting "Yes." or "No.". The one intentional case, `mobile-shop-fit`, stays as is.
+
+**R3-4. Chat launcher covers a city link on home at 1280. LOW.** `/` at 1280x720, the "Lebanon shop. Middle Tennessee work." section. The `.ms-city-list` chips run to x=1232 and the launcher sits at 1117 to 1256, so as the first chip row scrolls through the bottom of the screen the "Hendersonville" link is 80x43px under the launcher: it reads "Hen" and cannot be clicked there (`verify2-launcher-link-1280.png`). Same class as R2-14 (a). Clear at 1440. This is the only control hit I found on `/` at 1280x720 and 1440x900 and on the three service routes; `/service-areas` was checked at 1440 only.
+Fix, `app/page-cohesion.css`: `@media (min-width: 980px) and (max-width: 1439px) { .ms-site .ms-city-list { padding-right: 7.5rem; } }` so chips wrap before the launcher column (list right edge 1112 against launcher left 1117 at 1280; both track the viewport edge, so the 5px holds across the range). This fix is arithmetic, not simulated. Pass bar: scrolling `/` and `/service-areas` top to bottom at 1024x768, 1280x720 and 1366x768, no `a`, `button`, `summary` or form control intersects the visible launcher. Add that sweep to the QA script.
+
+### R2-1 ruling
+
+**Is a live chat eval on a Vercel preview of this branch safe? (a) Yes, with every request marked as a test. No code change is needed first.**
+
+What I read: `app/api/assist/route.ts`, `lib/assistant/input.ts`, `service.ts`, `store.ts`, `turn.ts`, `handoff.ts`, `followup.ts`, `lib/notify.ts`, `lib/ai.ts`, `lib/db.ts`, `lib/recovery-sweep.ts`, `scripts/assistant-audit-run.mjs`.
+
+What a preview chat turn does:
+- **Database: it writes.** `lib/db.ts` has one `DATABASE_URL` and no environment switch, and the route always uses the Postgres store. Assume the preview shares the production database. Every turn writes session, turn and event rows, and a model-usage row.
+- **Owner phone and inbox, Resend, SMS: nothing is sent when the turn is marked.** The marker is `is_test: true` in the request body, or `[INTERNAL TEST]` in the message (`lib/assistant/input.ts`). The flag is sticky on the session. The guards that then hold: `service.ts` only notifies when `!claim.session.is_test`; `deliverAssistantHandoff` in `handoff.ts` returns at `if (isTest) return { leadId }` before any sender; `emailAssistantTranscript` returns "suppressed" for test turns; `followup.ts` skips the customer SMS on `isTest`, `lead.is_test` or `person_is_test`; `recoverAssistantHandoffs` filters `is_test = false`, so production's daily sweep will not pick the rows up later. `notify()` is also off whenever `VERCEL_ENV` is not `production`.
+- **An unmarked turn on a preview is not safe.** `notify()` is the only sender with a `VERCEL_ENV` guard. `emailAssistantTranscript` (Resend to the sales inbox) and the consented customer SMS in `followup.ts` have none, and an unmarked handoff row in a shared database is fair game for production's recovery sweep (`/api/ops/reminders`, 14:00 daily). So: nobody clicks around the preview chat by hand and completes a handoff. Script only, marked only.
+
+How to run it: `scripts/assistant-audit-run.mjs` already sends both markers, but its live URL is hardcoded to the production host; give it a base-URL argument and write the report to a new file, not over a tracked one. Stay under the route's rate limit (60 requests per 10 minutes per IP). The preview needs the chat flag and the model key in its own Vercel environment scope; if either is missing the route returns 404 or falls back, and that is a finding to report, not something to fix by pulling values. Deployment Protection on the preview needs the standard bypass.
+
+13e, one real handoff read back on the owner phone: **(c) needs the owner.** It cannot be done under `is_test` (delivery is suppressed by design) and an unmarked handoff is a real message to a real phone. One marked-off, owner-witnessed test after deploy, or it stays open by his choice.
+
+**Does R2-1 block merge to main? No. It is a post-deploy check.** Reasons: the live model path is already in production on main (`docs/assistant-audit-prod.json` is a 10-row `is_test` audit run against production today); the diff main...HEAD in `turn.ts` and `knowledge.ts` only narrows what reaches the model (sourced questions are answered from the bank and bypass it; the safety, promise and handoff checks still apply to every model reply); voice is off. Merging this branch makes the live chat safer than what is serving now, so holding the merge for the eval protects nothing. I withdraw the round 2 line "R2-1 through R2-7 and R2-15 fixed and shown" as far as R2-1 goes.
+
+Post-deploy bar, within one day of deploy, as a dated docket row: run the 82-row audit plus 36 paraphrases (three for each of the 12 named rows) against production with `is_test: true` and `[INTERNAL TEST]`, commit the output as `docs/assistant-audit-live-r3.json`. Pass: zero invented business facts, zero missed safety refusals, zero paraphrase of a sourced question handed off. A miss is a chat defect fixed in the bank, not a rollback.
+
+Follow-up, not a gate: give `emailAssistantTranscript` and the `followup.ts` customer SMS the same `VERCEL_ENV !== "production"` suppression `notify()` has, so a preview can never send for an unmarked turn.
+
+### Correction to the Codex record
+
+`docs/chat-live-eval-2026-11-11.md` says there are no local `.env*` files in the worktree root or the base repository root. The worktree root has none. The base repository root has two, both gitignored: `.env.local` (Vercel CLI header, dated Nov 10) and `.env.vercel.production` (Oct 12). I read key names only, no values; the names include a model key and `DATABASE_URL`. I did not run the eval with them: they are Vercel-pulled values, and loading that file would point local code at a real database. The "no key locally" reason for NOT RUN should be restated as "a pulled env file exists and was deliberately not used". Whether those files should exist at all under the "never pull Vercel env values" rule is the owner's call.
+
+### What a PASS needs
+
+R3-1, R3-2, R3-3 and R3-4 fixed, with the four new checks named above. Then I look at: the mobile menu opened mid-page on two routes, the FAQ heading at 1100, 1180 and 1280 on home and one service page, the city chips against the launcher at 1280, and the bank dump for the wh- questions. Nothing else is open. R2-1 does not hold the merge.
+
+Still owner asset, not blocking: a real mailbox or planter photo for `/services/custom-metal-products` (R2-15, defect 16).
