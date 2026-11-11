@@ -14,6 +14,8 @@ const caller = "+16155550199"
 const phone = { display: "(615) 703-3296", href: "tel:+16157033296" }
 const source = readFileSync(new URL("../lib/assistant/handoff.ts", import.meta.url), "utf8")
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
+const inputSource = readFileSync(new URL("../lib/assistant/input.ts", import.meta.url), "utf8")
+const compiledInput = ts.transpileModule(inputSource, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
 const copy = (value) => structuredClone(value)
 const fields = (overrides = {}) => ({ name: null, callback_phone: null, need: "", material_size: null,
   location: null, timing: null, callback_window: null, is_job: "unsure", ...overrides })
@@ -29,11 +31,13 @@ function fixture({ turns = [], isTest = false, leadId = null, voiceTest = false,
   const sms = new Map()
   const filed = []
   const queries = []
+  const selectedPending = []
   const log = []
   let fileFails = failFile
   let emailEnabled = emailConfigured
   let notifyFails = failNotify
   let lease = null
+  let sqlAccesses = 0
   const sql = async (strings, ...values) => {
     for (let i = 0; i < values.length; i++) assert.match(strings[i + 1], /^::\w+/, "explicit SQL casts")
     const query = strings.join(" ? ").replace(/\s+/g, " ").trim()
@@ -59,10 +63,13 @@ function fixture({ turns = [], isTest = false, leadId = null, voiceTest = false,
     }
     if (query.startsWith("SELECT e.detail FROM events")) {
       assert.match(query, /e.detail->>'sessionId' = \? ::text/)
-      return [...records.values()].filter((row) => row.kind === "assistant.handoff-request"
-        && (!row.detail.isTest || values[0] !== null) && (values[0] === null || row.detail.sessionId === values[0])
+      assert.match(query, /e.is_test = false OR \? ::uuid IS NOT NULL/)
+      const pending = [...records.values()].filter((row) => row.kind === "assistant.handoff-request"
+        && (!row.is_test || values[0] !== null) && (values[0] === null || row.detail.sessionId === values[0])
         && (!emails.has(`${id}:${row.detail.deliveryReason ?? row.detail.reason}`)
           || !records.has(`assistant.handoff-complete:${row.externalId}`))).map((row) => ({ detail: copy(row.detail) }))
+      selectedPending.push(...pending)
+      return pending
     }
     if (query.startsWith("SELECT id, next_turn, is_test FROM assistant_sessions")) {
       assert.match(query, /AND \(\s*\? ::uuid IS NULL OR id = \? ::uuid\)/)
@@ -88,11 +95,11 @@ function fixture({ turns = [], isTest = false, leadId = null, voiceTest = false,
     return { leadId: leadId ?? 41, isTest: value.isTest }
   }
   const modules = new Map([
-    ["@/lib/db", { getSql: () => sql }],
+    ["@/lib/db", { getSql: () => { sqlAccesses++; return sql } }],
     ["@/lib/events", { recordEvent: async (value) => {
       const key = `${value.kind}:${value.externalId}`
       if (records.has(key)) return null
-      const saved = { ...copy(value), id: records.size + 100 }
+      const saved = { ...copy(value), id: records.size + 100, is_test: value.detail?.isTest === true }
       records.set(key, saved)
       log.push(value.kind)
       return saved.id
@@ -128,14 +135,17 @@ function fixture({ turns = [], isTest = false, leadId = null, voiceTest = false,
     ["@/lib/messages", { sendSmsPersisted: async (value) => { sms.set(value.idempotencyKey, copy(value)) } }],
   ])
   const loaded = { exports: {} }
-  const context = vm.createContext({ process: { env } })
+  const context = vm.createContext({ process: { env }, TextDecoder })
   vm.runInContext(`(function(require,module,exports){${compiled}\n})`, context)((name) => {
     if (name.startsWith("node:")) return require(name)
     assert.ok(modules.has(name), `unmocked import ${name}`)
     return modules.get(name)
   }, loaded, loaded.exports)
-  return { ...loaded.exports, env, session, records, emails, notifications, phoneAlerts, sms, filed, queries, log,
-    setEmailConfigured: (value) => { emailEnabled = value }, lease: () => lease }
+  const input = { exports: {} }
+  vm.runInContext(`(function(module,exports){${compiledInput}\n})`, context)(input, input.exports)
+  return { ...loaded.exports, readAssistantInput: input.exports.readAssistantInput,
+    env, session, records, emails, notifications, phoneAlerts, sms, filed, queries, selectedPending, log,
+    setEmailConfigured: (value) => { emailEnabled = value }, lease: () => lease, sqlAccesses: () => sqlAccesses }
 }
 
 const request = (overrides = {}) => ({ sessionId: id, turnIndex: 0, message: "I want a person. Call 615-555-0199. Budget $300.",
@@ -273,6 +283,69 @@ test("input, transcript and sticky session/turn test markers persist test partia
     assert.equal(f.emails.size, 0)
     assert.equal(f.records.size, 2)
     for (const record of f.records.values()) assert.equal(record.detail.isTest, true)
+  }
+})
+
+test("unmarked preview handoff leaves nothing a production-run recoverAssistantHandoffs selects", async () => {
+  const f = fixture()
+  f.env.VERCEL_ENV = "preview"
+  const input = await f.readAssistantInput(new Request("http://localhost/api/assist", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: id, turn_index: 0, message: "A human please. Call 615-555-0199", is_test: false }),
+  }))
+  await f.deliverAssistantHandoff(request({ message: input.message, isTest: input.is_test }))
+  const requests = [...f.records.values()].filter((row) => row.kind === "assistant.handoff-request")
+  assert.equal(requests.length, 1, "the handoff retains its immutable evidence")
+  assert.equal(requests.filter((row) => row.is_test === false).length, 0)
+  assert.equal(requests[0].detail.isTest, true)
+  assert.equal(f.session.is_test, true)
+  assert.equal(f.filed[0].isTest, true)
+  f.env.VERCEL_ENV = "production"
+  assert.deepEqual(copy(await f.recoverAssistantHandoffs()), { recovered: 0, idle: 0, failed: 0 })
+  assert.deepEqual(f.selectedPending, [])
+  assert.equal(f.session.is_test, true)
+  assert.equal(f.emails.size, 0)
+  assert.equal(f.notifications.size, 0)
+  assert.equal(f.phoneAlerts.size, 0)
+  assert.equal(f.sms.size, 0)
+})
+
+test("input environment classification preserves production, unset, empty, and explicit test markers", async () => {
+  for (const VERCEL_ENV of ["preview", "development", "production", undefined, ""]) {
+    const f = fixture()
+    if (VERCEL_ENV !== undefined) f.env.VERCEL_ENV = VERCEL_ENV
+    for (const [message, is_test] of [["Need gate repair", false], ["Need gate repair", true], ["[INTERNAL TEST] Need gate repair", false]]) {
+      const input = await f.readAssistantInput(new Request("http://localhost/api/assist", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: id, turn_index: 0, message, is_test }),
+      }))
+      assert.equal(input.is_test, VERCEL_ENV === "preview" || VERCEL_ENV === "development" || is_test || message.includes("[INTERNAL TEST]"))
+    }
+  }
+})
+
+test("non-production recovery returns before querying or relabeling real production sessions", async () => {
+  for (const VERCEL_ENV of ["preview", "development"]) {
+    const f = fixture()
+    await f.deliverAssistantHandoff(request({ deferDelivery: true }))
+    const queries = f.queries.length
+    const sqlAccesses = f.sqlAccesses()
+    const records = copy([...f.records.values()])
+    f.env.VERCEL_ENV = VERCEL_ENV
+    assert.deepEqual(copy(await f.recoverAssistantHandoffs()), { recovered: 0, idle: 0, failed: 0 })
+    assert.deepEqual(copy(await f.recoverAssistantHandoffs(1, id)), { recovered: 0, idle: 0, failed: 0 })
+    assert.equal(f.queries.length, queries)
+    assert.equal(f.sqlAccesses(), sqlAccesses)
+    assert.equal(f.session.is_test, false)
+    assert.deepEqual([...f.records.values()], records)
+    assert.equal(f.filed.length, 0)
+    assert.equal(f.emails.size, 0)
+    assert.equal(f.notifications.size, 0)
+    assert.equal(f.phoneAlerts.size, 0)
+    f.env.VERCEL_ENV = "production"
+    assert.equal((await f.recoverAssistantHandoffs()).recovered, 1)
+    assert.equal(f.session.is_test, false)
+    assert.equal(f.emails.size, 1)
   }
 })
 

@@ -33,7 +33,7 @@ export function validateAssistantInput(value: unknown): AssistantInput {
     session_id: input.session_id.toLowerCase(),
     turn_index: Number(input.turn_index),
     message: input.message.trim(),
-    is_test: input.is_test === true || /\[INTERNAL TEST\]/i.test(input.message),
+    is_test: input.is_test === true || /\[INTERNAL TEST\]/i.test(input.message) || Boolean(process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production"),
   }
 }
 

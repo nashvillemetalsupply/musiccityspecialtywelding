@@ -16,6 +16,9 @@ export function auditOrigin(value) {
   assert.ok(["http:", "https:"].includes(target.protocol) && !target.username && !target.password
     && !target.search && !target.hash && target.pathname === "/",
   "--base-url must be an HTTP(S) origin without credentials, path, query or fragment")
+  assert.ok(target.hostname !== "musiccityspecialtywelding.com"
+    && !target.hostname.endsWith(".musiccityspecialtywelding.com"),
+  "Live HTTP audit refuses the production hostname and its subdomains")
   return target.origin
 }
 

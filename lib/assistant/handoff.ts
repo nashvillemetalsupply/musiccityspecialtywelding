@@ -179,6 +179,7 @@ export async function deliverAssistantHandoff(input: HandoffInput): Promise<{ le
 }
 
 export async function recoverAssistantHandoffs(limit = 30, sessionId: string | null = null) {
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production") return { recovered: 0, idle: 0, failed: 0 }
   const chat = process.env.NEXT_PUBLIC_ASSISTANT_CHAT === "1"
   const voice = process.env.ASSISTANT_VOICE === "1"
   if (!chat && !voice) return { recovered: 0, idle: 0, failed: 0 }

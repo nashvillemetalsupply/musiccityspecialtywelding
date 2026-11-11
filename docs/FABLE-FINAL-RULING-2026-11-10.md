@@ -1245,3 +1245,56 @@ run stops at the first request.
 
 No code was edited, nothing was committed or pushed, and this section is left
 uncommitted.
+
+## Codex round 6
+
+Verified 2026-11-10 (America/Chicago) on `fix/fable-r4-followups`, starting at
+`37a5ac0`. Applied only R5-1, its requested recovery guard, and R5-2. No push,
+deployment, merge, request to a deployment, live eval, or provider delivery
+occurred. No `.env*` file or inherited environment value was inspected or used
+for verification: children received fresh literal settings, with dotenv reads
+and external application/provider traffic blocked.
+
+**R5-1 PASS.** The existing `is_test` expression in `validateAssistantInput`,
+called by `readAssistantInput`, now also classifies a turn as test whenever
+`VERCEL_ENV` is truthy and differs from `production`. Both existing test-marker
+checks and both sender guards are preserved. `deliverAssistantHandoff` is
+unchanged. The first line of `recoverAssistantHandoffs` returns
+`{ recovered: 0, idle: 0, failed: 0 }` for the same non-production condition,
+before feature checks or `getSql()`.
+
+The regression named **"unmarked preview handoff leaves nothing a
+production-run recoverAssistantHandoffs selects"** exercises the actual input
+reader, handoff, and recovery code against the in-memory SQL fixture. It saves
+an unmarked preview handoff, checks that no request has `is_test = false`, then
+runs production recovery and verifies that nothing is selected or sent. The
+session and partial lead stay test. A second regression checks preview and
+development recovery, including a session-scoped invocation: no SQL access,
+query, mutation, or delivery occurs, the real session stays non-test, and a
+subsequent production sweep recovers its pending handoff. The classification
+matrix preserves production, unset, empty, explicit-flag, and marker behavior.
+Before the fix, the three new regressions failed (22 passed, 3 failed); after
+the fix, all 93 focused handoff/API/email/follow-up tests passed.
+
+**R5-2 PASS.** `auditOrigin` rejects `musiccityspecialtywelding.com` and every
+hostname ending in `.musiccityspecialtywelding.com` before request dispatch.
+The existing origin test now covers the apex, `www`, and a preview subdomain.
+It failed before the fix and the runner suite then passed all seven tests.
+Fable's stated limit remains: this hostname check cannot identify production
+aliases on unrelated domains such as `*.vercel.app`. No live runner was run.
+
+Validation under **Node 22.23.2**: `npm run build` PASS, including TypeScript,
+static generation, and unchanged bundle budgets (home 536,801/648,316 bytes;
+board 631,853/817,538 bytes). `npm test` PASS: **1,584 total, 1,581 passed,
+zero failed, three skipped** (the opt-in model eval and two database persistence
+tests). Repository-wide `npm run lint` PASS and `git diff --check` PASS.
+Independent Codex reviews found no defects in either fix. Build and test
+workers first encountered sandbox `EPERM`; the same guarded checks passed
+after scoped execution approval, without application changes.
+
+Local evidence: `.tmp/fable-r6-handoff-red.log`,
+`.tmp/fable-r6-handoff-green.log`, `.tmp/fable-r6-build.log`,
+`.tmp/fable-r6-test.log`, `.tmp/fable-r6-lint.log`, and
+`.tmp/fable-r6-version.log`. Full checks used `.tmp/start-safe-r6.ps1` and its
+literal-environment wrapper; tests ran the package's Node 22
+`--experimental-strip-types --test "scripts/**/*.test.mjs"` command.

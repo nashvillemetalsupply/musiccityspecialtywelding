@@ -130,6 +130,9 @@ test("live audit accepts only explicit HTTP origins without paths, secrets or re
   for (const value of ["https://preview.example.test/api/assist", "https://user:pass@preview.example.test", "https://preview.example.test?bypass=secret", "https://preview.example.test/#section", "file:///tmp/audit"]) {
     assert.throws(() => auditOrigin(value), /origin without credentials/)
   }
+  for (const hostname of ["musiccityspecialtywelding.com", "www.musiccityspecialtywelding.com", "preview.musiccityspecialtywelding.com"]) {
+    assert.throws(() => auditOrigin(`https://${hostname}`), /production hostname/)
+  }
   const result = await run(["--prod", "--base-url", "https://preview.example.test/api/assist", "--test-suppression-confirmed"])
   assert.notEqual(result.code, 0)
   assert.match(result.stderr, /origin without credentials/)
