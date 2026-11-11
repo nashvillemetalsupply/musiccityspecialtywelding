@@ -1,0 +1,1046 @@
+{
+ "schemaVersion": 1,
+ "date": "2026-11-11",
+ "dateBasis": "Requested UTC report date; raw Lighthouse reports retain actual fetchTime.",
+ "origin": "http://localhost:3193",
+ "outcome": {
+  "mobileWeldingTarget": 93,
+  "targetObserved": true,
+  "codeDrivenPerformanceLiftEstablished": false,
+  "performanceProductEditsRetained": [],
+  "conclusion": "Final mobile medians are home 92 and mobile-welding 93. Unmodified original-source control also measured 92/93. Large CPU/runtime variation confounds the lower initial 86/83 batch. Neither performance probe demonstrated a reliable score gain, so both were reverted. Only menu accessibility and homepage h1 computed-font corrections remain.",
+  "outlier": "Final service run 3 scored 87 and is retained in the median."
+ },
+ "method": {
+  "lighthouseVersion": "13.6.0",
+  "nodeVersion": "22.23.2",
+  "nextVersion": "16.3.8",
+  "server": "Final Node 22.23.2 next build and bundle budget then next start on loopback; clean environment, public chat enabled; only menu aria and home h1 changes retained",
+  "formFactor": "mobile",
+  "throttlingMethod": "simulate",
+  "cpuSlowdownMultiplier": 4,
+  "screenEmulation": {
+   "mobile": true,
+   "width": 412,
+   "height": 823,
+   "deviceScaleFactor": 1.75,
+   "disabled": false
+  },
+  "runsPerRoute": 3,
+  "statistic": "Median of all three sequential runs; no outlier removal.",
+  "browser": "Fresh headless Chrome/profile and storage reset per run.",
+  "warming": "page HTML and all server image-optimizer src/srcset/imagesrcset URLs warmed before each page's batch using Chrome image Accept header; fresh browser/storage each measured run",
+  "publicChat": "enabled; verified in initial server HTML on both pages",
+  "requestBlocking": "None for Lighthouse acceptance. Screenshot QA blocks remote requests and non-GET/HEAD submissions.",
+  "scope": "next build and next start on loopback only; no production or vercel.app deployment requests."
+ },
+ "beforeAfter": [
+  {
+   "path": "/",
+   "before": {
+    "batch": "before",
+    "scores": [
+     87,
+     86,
+     82
+    ],
+    "medians": {
+     "performance": 86,
+     "lcpMs": 3472.3418,
+     "fcpMs": 1222.9966,
+     "tbtMs": 243,
+     "cls": 0.001477801074916096,
+     "speedIndexMs": 1225.618330035144
+    }
+   },
+   "after": {
+    "batch": "final",
+    "scores": [
+     92,
+     92,
+     92
+    ],
+    "medians": {
+     "performance": 92,
+     "lcpMs": 3257.1624,
+     "fcpMs": 1216.7749,
+     "tbtMs": 89.00000000000023,
+     "cls": 0.001477801074916096,
+     "speedIndexMs": 1216.7749
+    }
+   },
+   "interpretation": "Observed difference is not a demonstrated causal code improvement; compare original-control."
+  },
+  {
+   "path": "/services/mobile-welding",
+   "before": {
+    "batch": "before",
+    "scores": [
+     80,
+     83,
+     86
+    ],
+    "medians": {
+     "performance": 83,
+     "lcpMs": 3349.2690000000002,
+     "fcpMs": 1074.2,
+     "tbtMs": 372.7885000000001,
+     "cls": 0,
+     "speedIndexMs": 1479.2207416051406
+    }
+   },
+   "after": {
+    "batch": "final",
+    "scores": [
+     93,
+     93,
+     87
+    ],
+    "medians": {
+     "performance": 93,
+     "lcpMs": 3150.8451999999997,
+     "fcpMs": 1066.4226,
+     "tbtMs": 105,
+     "cls": 0.0003487203741905294,
+     "speedIndexMs": 1066.4226
+    }
+   },
+   "interpretation": "Observed difference is not a demonstrated causal code improvement; compare original-control."
+  }
+ ],
+ "savedBaseline": {
+  "report": "docs/lighthouse-2026-11-10.json",
+  "routes": [
+   {
+    "path": "/",
+    "count": 3,
+    "performanceMedian": 92,
+    "lcpMsMedian": 3247.7388,
+    "tbtMsMedian": 88.50000000000023
+   },
+   {
+    "path": "/services/mobile-welding",
+    "count": 3,
+    "performanceMedian": 90,
+    "lcpMsMedian": 3275.5156,
+    "tbtMsMedian": 196.1894500000003
+   }
+  ],
+  "interpretation": "Historical saved 92/90 baseline is separate from this session's fresh before batch."
+ },
+ "originalSourceControl": {
+  "batch": "original-control",
+  "source": "Original product source at 0a4b04638060ac72c61ceb045ef6b41f83e3ddc9 restored and rebuilt locally.",
+  "routes": [
+   {
+    "path": "/",
+    "scores": [
+     92,
+     92,
+     90
+    ],
+    "medians": {
+     "performance": 92,
+     "lcpMs": 3269.2938,
+     "fcpMs": 1221.3723,
+     "tbtMs": 96,
+     "cls": 0.001477801074916096,
+     "speedIndexMs": 1221.3723
+    }
+   },
+   {
+    "path": "/services/mobile-welding",
+    "scores": [
+     91,
+     93,
+     93
+    ],
+    "medians": {
+     "performance": 93,
+     "lcpMs": 3173.6046000000006,
+     "fcpMs": 1064.3023,
+     "tbtMs": 98.57557500000053,
+     "cls": 0.0003487203741905294,
+     "speedIndexMs": 1064.3023
+    }
+   }
+  ],
+  "finding": "Original source achieved the same 92/93 medians as final; no causal performance lift from UI fixes or probes is established."
+ },
+ "probes": [
+  {
+   "name": "Contact-form intersection scheduling",
+   "batches": [
+    "after-quote",
+    "final-quote"
+   ],
+   "retained": false,
+   "change": "Delay offscreen quote-form import until its section approaches; idle fallback without IntersectionObserver.",
+   "measuredEffect": {
+    "requestsBefore": 10,
+    "requestsWithProbe": 9,
+    "transferBytesRemoved": {
+     "home": 6162,
+     "mobileWelding": 6164
+    },
+    "omittedChunk": "3o-dane4o4jva.js",
+    "omittedChunkTransferBytes": 6204,
+    "omittedChunkDecodedBytes": 9644
+   },
+   "reasonReverted": "Request/byte reduction was real, but neither batch established a reliable score gain over original-control. Final-quote medians were home 85/service 92 with substantial CPU variation. Reverted under the requirement to retain only changes that move the score."
+  },
+  {
+   "name": "Server-rendered static logo props",
+   "batches": [
+    "after-logos"
+   ],
+   "retained": false,
+   "change": "Replace two logo image hydration boundaries with getImageProps and native img while preserving rendered props.",
+   "measuredEffect": "92/93 medians matched original-control. Fetched script URLs, counts and bytes were identical to after-quote; no fetched chunk was pruned.",
+   "reasonReverted": "No reliable isolated score improvement established; original logo markup and behavior remain."
+  }
+ ],
+ "diagnosis": {
+  "lcp": "Heroes are eager, initially discoverable high-priority preloaded AVIF images. Every final discovery checklist passed with zero estimated savings. Remaining work includes framework startup and style/layout. Observed trace subparts below are not the sum of simulated scored LCP.",
+  "heroes": [
+   {
+    "path": "/",
+    "url": "/images/optimized/welder-1600-768-q75.avif",
+    "encodedBytes": 24782,
+    "transferBytes": 27092,
+    "format": "AVIF",
+    "candidateWidth": 768,
+    "displayedCssPixels": {
+     "width": 377,
+     "height": 282
+    },
+    "fetchPriority": "high",
+    "eager": true,
+    "initialDocumentDiscoverable": true
+   },
+   {
+    "path": "/services/mobile-welding",
+    "url": "/images/optimized/IMG_3994-768-q75.avif",
+    "encodedBytes": 35643,
+    "transferBytes": 37953,
+    "format": "AVIF",
+    "candidateWidth": 768,
+    "displayedCssPixels": {
+     "width": 377,
+     "height": 282
+    },
+    "fetchPriority": "high",
+    "eager": true,
+    "initialDocumentDiscoverable": true
+   }
+  ],
+  "heroSizing": "377 CSS px at DPR 1.75 needs about 660px; 768px is appropriate. Subtracting gutters from service sizes still selects 768px here. No speculative hero edit retained.",
+  "fonts": {
+   "preloads": 2,
+   "preloaded": [
+    "IBM Plex Sans variable",
+    "Barlow Condensed 900"
+   ],
+   "downloadsPerRoute": 3,
+   "transferBytes": 71224,
+   "decodedBytes": 64240,
+   "faces": [
+    {
+     "family": "IBM Plex Sans",
+     "weight": "variable",
+     "decodedBytes": 40240,
+     "transferBytes": 42568
+    },
+    {
+     "family": "Barlow Condensed",
+     "weight": "900",
+     "decodedBytes": 13940,
+     "transferBytes": 16268
+    },
+    {
+     "family": "IBM Plex Mono",
+     "weight": "500",
+     "decodedBytes": 10060,
+     "transferBytes": 12388
+    }
+   ],
+   "onDemand": "Mono is not preloaded; optional Permanent Marker is neither preloaded nor downloaded here.",
+   "changed": false
+  },
+  "javascript": "Final script count remains 10 per route. Relative to original-control, final transfer is +40 bytes per route (+106 decoded), consistent with menu state correction. No performance-related JS reduction retained. Unused-code flags on framework chunks do not prove those bytes can safely be removed.",
+  "resources": [
+   {
+    "path": "/",
+    "resourceMedians": {
+     "Script": {
+      "requests": 10,
+      "transferBytes": 181010,
+      "decodedBytes": 516509
+     },
+     "Font": {
+      "requests": 3,
+      "transferBytes": 71224,
+      "decodedBytes": 64240
+     },
+     "Image": {
+      "requests": 2,
+      "transferBytes": 32150,
+      "decodedBytes": 27381
+     },
+     "Stylesheet": {
+      "requests": 2,
+      "transferBytes": 35413,
+      "decodedBytes": 161734
+     }
+    },
+    "observedLcpSubpartsMedianMs": {
+     "timeToFirstByte": 11.672,
+     "resourceLoadDelay": 24.861,
+     "resourceLoadDuration": 20.676,
+     "elementRenderDelay": 168.303
+    },
+    "representativeReport": "docs/perf/2026-11-11/final/home-mobile-2.json",
+    "representativeUnusedJavascript": [
+     {
+      "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+      "totalBytes": 71394,
+      "wastedBytes": 27483
+     }
+    ]
+   },
+   {
+    "path": "/services/mobile-welding",
+    "resourceMedians": {
+     "Script": {
+      "requests": 10,
+      "transferBytes": 180909,
+      "decodedBytes": 514946
+     },
+     "Font": {
+      "requests": 3,
+      "transferBytes": 71224,
+      "decodedBytes": 64240
+     },
+     "Image": {
+      "requests": 2,
+      "transferBytes": 43011,
+      "decodedBytes": 38242
+     },
+     "Stylesheet": {
+      "requests": 2,
+      "transferBytes": 35413,
+      "decodedBytes": 161734
+     }
+    },
+    "observedLcpSubpartsMedianMs": {
+     "timeToFirstByte": 12.944,
+     "resourceLoadDelay": 60.449,
+     "resourceLoadDuration": 25.587,
+     "elementRenderDelay": 197.036
+    },
+    "representativeReport": "docs/perf/2026-11-11/final/mobile-welding-mobile-2.json",
+    "representativeUnusedJavascript": [
+     {
+      "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+      "totalBytes": 71394,
+      "wastedBytes": 27130
+     },
+     {
+      "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+      "totalBytes": 42866,
+      "wastedBytes": 24116
+     }
+    ]
+   }
+  ],
+  "cls": {
+   "homeBefore": 0.001477801074916096,
+   "homeFinal": 0.001477801074916096,
+   "serviceBefore": 0,
+   "serviceFinal": 0.0003487203741905294,
+   "finding": "Negligible Mono font-swap shifts affect decorative home sw-tin and service breadcrumb; no layout optimization justified."
+  },
+  "analytics": {
+   "externalRequestsAllBatches": 0,
+   "gate": "Production-host allowlist excludes localhost; only inline bootstrap and local tracking run.",
+   "deferral": "External Google waits for first pointer/keyboard/touch/scroll interaction or eight-second fallback; Meta follows that trigger.",
+   "changed": false,
+   "limitation": "Local audits cannot measure live provider transfer/CPU cost; no production requests made."
+  },
+  "causalLimit": "CPU indices vary substantially. Service medians: initial before 848, original-control 1461.5, final 1297.5. Original-control reproduces final 93, so the initial delta and favorable runs do not establish causal optimization."
+ },
+ "retainedChanges": {
+  "productCommit": "841be3d98bc662d1bf7cc34ec78cda30cd9d9e5a",
+  "files": [
+   "components/mainstreet-menu.tsx",
+   "app/globals.css"
+  ],
+  "behavior": [
+   "Menu summary label switches Open navigation/Close navigation and aria-expanded follows native details state, including close actions.",
+   "Homepage h1 itself uses existing display font token; visible Barlow Condensed spans and layout unchanged."
+  ],
+  "regressionTests": [
+   "scripts/mainstreet-menu.test.mjs",
+   "scripts/css-move-verbatim.test.mjs"
+  ],
+  "performanceProductEdits": []
+ },
+ "sourceProvenance": {
+  "productCommit": "841be3d98bc662d1bf7cc34ec78cda30cd9d9e5a",
+  "gitHeadRecordedAtAudit": "0a4b04638060ac72c61ceb045ef6b41f83e3ddc9",
+  "recordedHeadExplanation": "Final source audited before UI-fix commit. Recorded SHA256 hashes match exact current working-tree bytes, which may use CRLF. Direct git diff against 841be3d is empty for all five paths, establishing Git-normalized source equality rather than identical commit-blob bytes. Working-tree source bytes unchanged after audit.",
+  "filesSha256": {
+   "app/globals.css": "3b5a984452cf40ca59b9f39cc16d5768cdd3d3cb9cd65261527e3e432b27feb3",
+   "components/navbar.tsx": "f6d30f116e2493253dc753f965b849b12c153e295343a21f32f6a3a0cb038096",
+   "components/footer.tsx": "02ae7ab7e795a53a279f0635aa64c676caeeec0e74702f5e01dd97321450db65",
+   "components/lazy-quote-form.tsx": "46f704b96382c9712d8a34fd1e6cd1a4c6b0e7af741f88160a170fff51873b02",
+   "components/mainstreet-menu.tsx": "6fc36ecd2efc797eda7697a8a945d42a10baa8828a636b2f60cd747910b06a11"
+  },
+  "buildId": "P7hwavViJH1hL7R5Y1t7F",
+  "buildIdSha256": "c84c1903a74df020cf4d968f2f25983e670a2937f90ed5f9ec1da098e50071f3",
+  "currentSourceMatchesAudit": true,
+  "buildIdFileMatchesAudit": true,
+  "committedNormalizedSourceMatchesAudit": true,
+  "hashBasis": "Exact audited working-tree bytes; Git-normalized source content matches product commit."
+ },
+ "batches": {
+  "before": {
+   "summary": "docs/perf/2026-11-11/before/summary.json",
+   "routes": [
+    {
+     "path": "/",
+     "count": 3,
+     "scores": [
+      87,
+      86,
+      82
+     ],
+     "medians": {
+      "performance": 86,
+      "lcpMs": 3472.3418,
+      "fcpMs": 1222.9966,
+      "tbtMs": 243,
+      "cls": 0.001477801074916096,
+      "speedIndexMs": 1225.618330035144
+     },
+     "benchmarkIndices": [
+      1393,
+      872,
+      870.5
+     ],
+     "benchmarkMedian": 872,
+     "javascript": {
+      "requestsMedian": 10,
+      "transferBytesMedian": 180970,
+      "decodedBytesMedian": 516403
+     }
+    },
+    {
+     "path": "/services/mobile-welding",
+     "count": 3,
+     "scores": [
+      80,
+      83,
+      86
+     ],
+     "medians": {
+      "performance": 83,
+      "lcpMs": 3349.2690000000002,
+      "fcpMs": 1074.2,
+      "tbtMs": 372.7885000000001,
+      "cls": 0,
+      "speedIndexMs": 1479.2207416051406
+     },
+     "benchmarkIndices": [
+      854.5,
+      839.5,
+      848
+     ],
+     "benchmarkMedian": 848,
+     "javascript": {
+      "requestsMedian": 10,
+      "transferBytesMedian": 180869,
+      "decodedBytesMedian": 514840
+     }
+    }
+   ],
+   "rawReports": [
+    "docs/perf/2026-11-11/before/home-mobile-1.json",
+    "docs/perf/2026-11-11/before/home-mobile-2.json",
+    "docs/perf/2026-11-11/before/home-mobile-3.json",
+    "docs/perf/2026-11-11/before/mobile-welding-mobile-1.json",
+    "docs/perf/2026-11-11/before/mobile-welding-mobile-2.json",
+    "docs/perf/2026-11-11/before/mobile-welding-mobile-3.json"
+   ]
+  },
+  "after-quote": {
+   "summary": "docs/perf/2026-11-11/after-quote/summary.json",
+   "routes": [
+    {
+     "path": "/",
+     "count": 3,
+     "scores": [
+      92,
+      90,
+      86
+     ],
+     "medians": {
+      "performance": 90,
+      "lcpMs": 3386.8974,
+      "fcpMs": 1222.7061,
+      "tbtMs": 145,
+      "cls": 0.001477801074916096,
+      "speedIndexMs": 1222.7061
+     },
+     "benchmarkIndices": [
+      1564.5,
+      1547,
+      1359.5
+     ],
+     "benchmarkMedian": 1547,
+     "javascript": {
+      "requestsMedian": 9,
+      "transferBytesMedian": 174808,
+      "decodedBytesMedian": 506863
+     }
+    },
+    {
+     "path": "/services/mobile-welding",
+     "count": 3,
+     "scores": [
+      82,
+      84,
+      85
+     ],
+     "medians": {
+      "performance": 84,
+      "lcpMs": 3358.1439499999997,
+      "fcpMs": 1072.009,
+      "tbtMs": 351.14267500000005,
+      "cls": 0,
+      "speedIndexMs": 1223.2497480072832
+     },
+     "benchmarkIndices": [
+      857.5,
+      853.5,
+      863.5
+     ],
+     "benchmarkMedian": 857.5,
+     "javascript": {
+      "requestsMedian": 9,
+      "transferBytesMedian": 174705,
+      "decodedBytesMedian": 505300
+     }
+    }
+   ],
+   "rawReports": [
+    "docs/perf/2026-11-11/after-quote/home-mobile-1.json",
+    "docs/perf/2026-11-11/after-quote/home-mobile-2.json",
+    "docs/perf/2026-11-11/after-quote/home-mobile-3.json",
+    "docs/perf/2026-11-11/after-quote/mobile-welding-mobile-1.json",
+    "docs/perf/2026-11-11/after-quote/mobile-welding-mobile-2.json",
+    "docs/perf/2026-11-11/after-quote/mobile-welding-mobile-3.json"
+   ]
+  },
+  "after-logos": {
+   "summary": "docs/perf/2026-11-11/after-logos/summary.json",
+   "routes": [
+    {
+     "path": "/",
+     "count": 3,
+     "scores": [
+      92,
+      92,
+      93
+     ],
+     "medians": {
+      "performance": 92,
+      "lcpMs": 3265.0504,
+      "fcpMs": 1217.6012,
+      "tbtMs": 90,
+      "cls": 0.001477801074916096,
+      "speedIndexMs": 1217.6012
+     },
+     "benchmarkIndices": [
+      1201,
+      1363.5,
+      1500
+     ],
+     "benchmarkMedian": 1363.5,
+     "javascript": {
+      "requestsMedian": 9,
+      "transferBytesMedian": 174808,
+      "decodedBytesMedian": 506863
+     }
+    },
+    {
+     "path": "/services/mobile-welding",
+     "count": 3,
+     "scores": [
+      93,
+      93,
+      92
+     ],
+     "medians": {
+      "performance": 93,
+      "lcpMs": 3176.285,
+      "fcpMs": 1068.017,
+      "tbtMs": 90.16062499999998,
+      "cls": 0.0003487203741905294,
+      "speedIndexMs": 1070.6425
+     },
+     "benchmarkIndices": [
+      1466.5,
+      1206.5,
+      1512
+     ],
+     "benchmarkMedian": 1466.5,
+     "javascript": {
+      "requestsMedian": 9,
+      "transferBytesMedian": 174705,
+      "decodedBytesMedian": 505300
+     }
+    }
+   ],
+   "rawReports": [
+    "docs/perf/2026-11-11/after-logos/home-mobile-1.json",
+    "docs/perf/2026-11-11/after-logos/home-mobile-2.json",
+    "docs/perf/2026-11-11/after-logos/home-mobile-3.json",
+    "docs/perf/2026-11-11/after-logos/mobile-welding-mobile-1.json",
+    "docs/perf/2026-11-11/after-logos/mobile-welding-mobile-2.json",
+    "docs/perf/2026-11-11/after-logos/mobile-welding-mobile-3.json"
+   ]
+  },
+  "original-control": {
+   "summary": "docs/perf/2026-11-11/original-control/summary.json",
+   "routes": [
+    {
+     "path": "/",
+     "count": 3,
+     "scores": [
+      92,
+      92,
+      90
+     ],
+     "medians": {
+      "performance": 92,
+      "lcpMs": 3269.2938,
+      "fcpMs": 1221.3723,
+      "tbtMs": 96,
+      "cls": 0.001477801074916096,
+      "speedIndexMs": 1221.3723
+     },
+     "benchmarkIndices": [
+      1586.5,
+      1163.5,
+      1140.5
+     ],
+     "benchmarkMedian": 1163.5,
+     "javascript": {
+      "requestsMedian": 10,
+      "transferBytesMedian": 180970,
+      "decodedBytesMedian": 516403
+     }
+    },
+    {
+     "path": "/services/mobile-welding",
+     "count": 3,
+     "scores": [
+      91,
+      93,
+      93
+     ],
+     "medians": {
+      "performance": 93,
+      "lcpMs": 3173.6046000000006,
+      "fcpMs": 1064.3023,
+      "tbtMs": 98.57557500000053,
+      "cls": 0.0003487203741905294,
+      "speedIndexMs": 1064.3023
+     },
+     "benchmarkIndices": [
+      1132.5,
+      1505.5,
+      1461.5
+     ],
+     "benchmarkMedian": 1461.5,
+     "javascript": {
+      "requestsMedian": 10,
+      "transferBytesMedian": 180869,
+      "decodedBytesMedian": 514840
+     }
+    }
+   ],
+   "rawReports": [
+    "docs/perf/2026-11-11/original-control/home-mobile-1.json",
+    "docs/perf/2026-11-11/original-control/home-mobile-2.json",
+    "docs/perf/2026-11-11/original-control/home-mobile-3.json",
+    "docs/perf/2026-11-11/original-control/mobile-welding-mobile-1.json",
+    "docs/perf/2026-11-11/original-control/mobile-welding-mobile-2.json",
+    "docs/perf/2026-11-11/original-control/mobile-welding-mobile-3.json"
+   ]
+  },
+  "final-quote": {
+   "summary": "docs/perf/2026-11-11/final-quote/summary.json",
+   "routes": [
+    {
+     "path": "/",
+     "count": 3,
+     "scores": [
+      85,
+      84,
+      88
+     ],
+     "medians": {
+      "performance": 85,
+      "lcpMs": 3406.51425,
+      "fcpMs": 1219.851012259285,
+      "tbtMs": 313,
+      "cls": 0,
+      "speedIndexMs": 1375.5730413796518
+     },
+     "benchmarkIndices": [
+      860,
+      842.5,
+      857
+     ],
+     "benchmarkMedian": 857,
+     "javascript": {
+      "requestsMedian": 9,
+      "transferBytesMedian": 174808,
+      "decodedBytesMedian": 506863
+     }
+    },
+    {
+     "path": "/services/mobile-welding",
+     "count": 3,
+     "scores": [
+      90,
+      92,
+      93
+     ],
+     "medians": {
+      "performance": 92,
+      "lcpMs": 3211.7468,
+      "fcpMs": 1072.6224,
+      "tbtMs": 120.8433500000001,
+      "cls": 0.0003487203741905294,
+      "speedIndexMs": 1072.6224
+     },
+     "benchmarkIndices": [
+      1319,
+      1252,
+      1487.5
+     ],
+     "benchmarkMedian": 1319,
+     "javascript": {
+      "requestsMedian": 9,
+      "transferBytesMedian": 174705,
+      "decodedBytesMedian": 505300
+     }
+    }
+   ],
+   "rawReports": [
+    "docs/perf/2026-11-11/final-quote/home-mobile-1.json",
+    "docs/perf/2026-11-11/final-quote/home-mobile-2.json",
+    "docs/perf/2026-11-11/final-quote/home-mobile-3.json",
+    "docs/perf/2026-11-11/final-quote/mobile-welding-mobile-1.json",
+    "docs/perf/2026-11-11/final-quote/mobile-welding-mobile-2.json",
+    "docs/perf/2026-11-11/final-quote/mobile-welding-mobile-3.json"
+   ]
+  },
+  "final": {
+   "summary": "docs/perf/2026-11-11/final/summary.json",
+   "routes": [
+    {
+     "path": "/",
+     "count": 3,
+     "scores": [
+      92,
+      92,
+      92
+     ],
+     "medians": {
+      "performance": 92,
+      "lcpMs": 3257.1624,
+      "fcpMs": 1216.7749,
+      "tbtMs": 89.00000000000023,
+      "cls": 0.001477801074916096,
+      "speedIndexMs": 1216.7749
+     },
+     "benchmarkIndices": [
+      1589,
+      1516,
+      1483
+     ],
+     "benchmarkMedian": 1516,
+     "javascript": {
+      "requestsMedian": 10,
+      "transferBytesMedian": 181010,
+      "decodedBytesMedian": 516509
+     }
+    },
+    {
+     "path": "/services/mobile-welding",
+     "count": 3,
+     "scores": [
+      93,
+      93,
+      87
+     ],
+     "medians": {
+      "performance": 93,
+      "lcpMs": 3150.8451999999997,
+      "fcpMs": 1066.4226,
+      "tbtMs": 105,
+      "cls": 0.0003487203741905294,
+      "speedIndexMs": 1066.4226
+     },
+     "benchmarkIndices": [
+      1308.5,
+      1297.5,
+      866.5
+     ],
+     "benchmarkMedian": 1297.5,
+     "javascript": {
+      "requestsMedian": 10,
+      "transferBytesMedian": 180909,
+      "decodedBytesMedian": 514946
+     }
+    }
+   ],
+   "rawReports": [
+    "docs/perf/2026-11-11/final/home-mobile-1.json",
+    "docs/perf/2026-11-11/final/home-mobile-2.json",
+    "docs/perf/2026-11-11/final/home-mobile-3.json",
+    "docs/perf/2026-11-11/final/mobile-welding-mobile-1.json",
+    "docs/perf/2026-11-11/final/mobile-welding-mobile-2.json",
+    "docs/perf/2026-11-11/final/mobile-welding-mobile-3.json"
+   ]
+  }
+ },
+ "visualVerification": {
+  "comparison": "docs/perf/2026-11-11/visuals/comparison.json",
+  "beforeMetrics": "docs/perf/2026-11-11/visuals/before/metrics.json",
+  "finalMetrics": "docs/perf/2026-11-11/visuals/final/metrics.json",
+  "viewports": [
+   {
+    "width": 390,
+    "height": 844
+   },
+   {
+    "width": 1440,
+    "height": 900
+   }
+  ],
+  "cases": [
+   {
+    "case": "/@390x844",
+    "geometryChanges": 0,
+    "invariantChanges": 0,
+    "screenshots": [
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/home-390x844.png",
+      "after": "docs/perf/2026-11-11/visuals/final/home-390x844.png",
+      "identicalPngBytes": false,
+      "dimensionsMatch": true,
+      "differentPixels": 334561,
+      "totalPixels": 5587140,
+      "meanAbsoluteChannelDifference": 0.01682287359901488,
+      "maxChannelDifference": 13,
+      "dimensions": {
+       "width": 390,
+       "height": 14326
+      }
+     },
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/home-390x844-fold.png",
+      "after": "docs/perf/2026-11-11/visuals/final/home-390x844-fold.png",
+      "identicalPngBytes": true,
+      "dimensionsMatch": true,
+      "differentPixels": 0,
+      "totalPixels": 329160,
+      "meanAbsoluteChannelDifference": 0,
+      "maxChannelDifference": 0,
+      "dimensions": {
+       "width": 390,
+       "height": 844
+      }
+     }
+    ]
+   },
+   {
+    "case": "/services/mobile-welding@390x844",
+    "geometryChanges": 0,
+    "invariantChanges": 0,
+    "screenshots": [
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-390x844.png",
+      "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-390x844.png",
+      "identicalPngBytes": true,
+      "dimensionsMatch": true,
+      "differentPixels": 0,
+      "totalPixels": 2143830,
+      "meanAbsoluteChannelDifference": 0,
+      "maxChannelDifference": 0,
+      "dimensions": {
+       "width": 390,
+       "height": 5497
+      }
+     },
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-390x844-fold.png",
+      "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-390x844-fold.png",
+      "identicalPngBytes": true,
+      "dimensionsMatch": true,
+      "differentPixels": 0,
+      "totalPixels": 329160,
+      "meanAbsoluteChannelDifference": 0,
+      "maxChannelDifference": 0,
+      "dimensions": {
+       "width": 390,
+       "height": 844
+      }
+     }
+    ]
+   },
+   {
+    "case": "/@1440x900",
+    "geometryChanges": 0,
+    "invariantChanges": 0,
+    "screenshots": [
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/home-1440x900.png",
+      "after": "docs/perf/2026-11-11/visuals/final/home-1440x900.png",
+      "identicalPngBytes": false,
+      "dimensionsMatch": true,
+      "differentPixels": 691887,
+      "totalPixels": 14459040,
+      "meanAbsoluteChannelDifference": 0.01353500993150306,
+      "maxChannelDifference": 17,
+      "dimensions": {
+       "width": 1440,
+       "height": 10041
+      }
+     },
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/home-1440x900-fold.png",
+      "after": "docs/perf/2026-11-11/visuals/final/home-1440x900-fold.png",
+      "identicalPngBytes": true,
+      "dimensionsMatch": true,
+      "differentPixels": 0,
+      "totalPixels": 1296000,
+      "meanAbsoluteChannelDifference": 0,
+      "maxChannelDifference": 0,
+      "dimensions": {
+       "width": 1440,
+       "height": 900
+      }
+     }
+    ]
+   },
+   {
+    "case": "/services/mobile-welding@1440x900",
+    "geometryChanges": 0,
+    "invariantChanges": 0,
+    "screenshots": [
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-1440x900.png",
+      "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-1440x900.png",
+      "identicalPngBytes": false,
+      "dimensionsMatch": true,
+      "differentPixels": 180129,
+      "totalPixels": 5934240,
+      "meanAbsoluteChannelDifference": 0.00830969930437596,
+      "maxChannelDifference": 1,
+      "dimensions": {
+       "width": 1440,
+       "height": 4121
+      }
+     },
+     {
+      "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-1440x900-fold.png",
+      "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-1440x900-fold.png",
+      "identicalPngBytes": true,
+      "dimensionsMatch": true,
+      "differentPixels": 0,
+      "totalPixels": 1296000,
+      "meanAbsoluteChannelDifference": 0,
+      "maxChannelDifference": 0,
+      "dimensions": {
+       "width": 1440,
+       "height": 900
+      }
+     }
+    ]
+   }
+  ],
+  "passed": true,
+  "geometryChanges": 0,
+  "invariantChanges": 0,
+  "identicalImages": 5,
+  "totalImages": 8,
+  "foldImagesIdentical": 4,
+  "appearance": "Identical layout, text/image geometry, typography, forms, image bounds and document sizes. Four folds and service 390px full image byte-identical. Three full images have low-channel raster differences and are not claimed pixel-identical.",
+  "rootInspection": "Root inspected four final full PNGs, four before folds and amplified final difference maps. Differences are broad low-level gradient/compositor rasterization without shifted text/image edges; content and forms intact.",
+  "functionalChecks": {
+   "homeH1OwnFontMatchesRenderedSpans": true,
+   "mobileMenuClosedOpenClosedLabelsAndExpanded": true,
+   "browserExceptions": 0,
+   "consoleErrors": 0,
+   "apiSubmissions": 0
+  },
+  "preparation": "Visit real deferred sections and decode images before screenshot-only content-visibility override; Lighthouse retains normal production CSS."
+ },
+ "verification": {
+  "tests": {
+   "command": "C:/Users/Owner/AppData/Local/hermes/node/node.exe --experimental-strip-types --test scripts/**/*.test.mjs",
+   "nodeVersion": "22.23.2",
+   "total": 1591,
+   "passed": 1588,
+   "failed": 0,
+   "skipped": 3,
+   "durationMs": 53371.5537,
+   "skipReasons": [
+    "Opt-in live AI extraction evaluation",
+    "Two live database persistence checks without configured database access"
+   ],
+   "log": ".tmp/perf93-full-test-final.log"
+  },
+  "lint": {
+   "command": "Node 22 ESLint . via .tmp/safe-run.mjs",
+   "passed": true,
+   "warnings": 0,
+   "log": ".tmp/perf93-lint-final.log"
+  },
+  "build": {
+   "command": "Node 22 next build then bundle-budget via .tmp/safe-run.mjs",
+   "passed": true,
+   "typeScript": true,
+   "staticPages": 53,
+   "log": ".tmp/perf93-build-final.log",
+   "bundleBudget": {
+    "home": {
+     "actual": 537013,
+     "threshold": 648316
+    },
+    "board": {
+     "actual": 631959,
+     "threshold": 817538
+    },
+    "log": ".tmp/perf93-bundle-budget-final.log"
+   }
+  },
+  "localCleanup": {
+   "completed": true,
+   "ownedNextStartPidStopped": 24952,
+   "taskPort3193ServerStopped": true,
+   "ownedCaptureBrowsersClosed": true
+  },
+  "noPush": true,
+  "noDeployment": true,
+  "noMerge": true,
+  "noProductionOrVercelDeploymentRequests": true,
+  "noEnvironmentFileOrEnvironmentValueInspection": true
+ }
+}

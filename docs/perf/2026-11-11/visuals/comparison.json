@@ -1,0 +1,318 @@
+{
+  "before": "before",
+  "after": "final",
+  "origin": "http://localhost:3193",
+  "method": "Exact element geometry and unchanged rendered styles; PNG SHA-independent decoded RGBA pixel comparison. Pixel differences are reported, not silently treated as layout failures.",
+  "expectedChange": "Homepage h1 computed font-family matches its existing Barlow Condensed spans; menu accessible label and aria-expanded track native open state.",
+  "cases": [
+    {
+      "case": "/@390x844",
+      "geometryChanges": [],
+      "invariantChanges": [],
+      "screenshots": [
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/home-390x844.png",
+          "after": "docs/perf/2026-11-11/visuals/final/home-390x844.png",
+          "identicalPngBytes": false,
+          "beforeDimensions": {
+            "width": 390,
+            "height": 14326
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 14326
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 334561,
+          "totalPixels": 5587140,
+          "meanAbsoluteChannelDifference": 0.01682287359901488,
+          "maxChannelDifference": 13
+        },
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/home-390x844-fold.png",
+          "after": "docs/perf/2026-11-11/visuals/final/home-390x844-fold.png",
+          "identicalPngBytes": true,
+          "beforeDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 0,
+          "totalPixels": 329160,
+          "meanAbsoluteChannelDifference": 0,
+          "maxChannelDifference": 0
+        }
+      ],
+      "h1Font": {
+        "before": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+        "after": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif",
+        "renderedSpans": [
+          {
+            "className": "sw-line-sm",
+            "font": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif"
+          },
+          {
+            "className": "sw-line-lg",
+            "font": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif"
+          },
+          {
+            "className": "sw-line-lg",
+            "font": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif"
+          }
+        ]
+      },
+      "menu": {
+        "before": [
+          {
+            "stage": "closed",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": null
+          },
+          {
+            "stage": "open",
+            "open": true,
+            "label": "Open navigation",
+            "expanded": null
+          },
+          {
+            "stage": "closed-again",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": null
+          }
+        ],
+        "after": [
+          {
+            "stage": "closed",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": "false"
+          },
+          {
+            "stage": "open",
+            "open": true,
+            "label": "Close navigation",
+            "expanded": "true"
+          },
+          {
+            "stage": "closed-again",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": "false"
+          }
+        ]
+      }
+    },
+    {
+      "case": "/services/mobile-welding@390x844",
+      "geometryChanges": [],
+      "invariantChanges": [],
+      "screenshots": [
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-390x844.png",
+          "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-390x844.png",
+          "identicalPngBytes": true,
+          "beforeDimensions": {
+            "width": 390,
+            "height": 5497
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 5497
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 0,
+          "totalPixels": 2143830,
+          "meanAbsoluteChannelDifference": 0,
+          "maxChannelDifference": 0
+        },
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-390x844-fold.png",
+          "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-390x844-fold.png",
+          "identicalPngBytes": true,
+          "beforeDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "afterDimensions": {
+            "width": 390,
+            "height": 844
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 0,
+          "totalPixels": 329160,
+          "meanAbsoluteChannelDifference": 0,
+          "maxChannelDifference": 0
+        }
+      ],
+      "h1Font": {
+        "before": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif",
+        "after": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif",
+        "renderedSpans": []
+      },
+      "menu": {
+        "before": [
+          {
+            "stage": "closed",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": null
+          },
+          {
+            "stage": "open",
+            "open": true,
+            "label": "Open navigation",
+            "expanded": null
+          },
+          {
+            "stage": "closed-again",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": null
+          }
+        ],
+        "after": [
+          {
+            "stage": "closed",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": "false"
+          },
+          {
+            "stage": "open",
+            "open": true,
+            "label": "Close navigation",
+            "expanded": "true"
+          },
+          {
+            "stage": "closed-again",
+            "open": false,
+            "label": "Open navigation",
+            "expanded": "false"
+          }
+        ]
+      }
+    },
+    {
+      "case": "/@1440x900",
+      "geometryChanges": [],
+      "invariantChanges": [],
+      "screenshots": [
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/home-1440x900.png",
+          "after": "docs/perf/2026-11-11/visuals/final/home-1440x900.png",
+          "identicalPngBytes": false,
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 10041
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 10041
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 691887,
+          "totalPixels": 14459040,
+          "meanAbsoluteChannelDifference": 0.01353500993150306,
+          "maxChannelDifference": 17
+        },
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/home-1440x900-fold.png",
+          "after": "docs/perf/2026-11-11/visuals/final/home-1440x900-fold.png",
+          "identicalPngBytes": true,
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 0,
+          "totalPixels": 1296000,
+          "meanAbsoluteChannelDifference": 0,
+          "maxChannelDifference": 0
+        }
+      ],
+      "h1Font": {
+        "before": "\"IBM Plex Sans\", \"IBM Plex Sans Fallback\", sans-serif",
+        "after": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif",
+        "renderedSpans": [
+          {
+            "className": "sw-line-sm",
+            "font": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif"
+          },
+          {
+            "className": "sw-line-lg",
+            "font": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif"
+          },
+          {
+            "className": "sw-line-lg",
+            "font": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif"
+          }
+        ]
+      }
+    },
+    {
+      "case": "/services/mobile-welding@1440x900",
+      "geometryChanges": [],
+      "invariantChanges": [],
+      "screenshots": [
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-1440x900.png",
+          "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-1440x900.png",
+          "identicalPngBytes": false,
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 4121
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 4121
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 180129,
+          "totalPixels": 5934240,
+          "meanAbsoluteChannelDifference": 0.00830969930437596,
+          "maxChannelDifference": 1
+        },
+        {
+          "before": "docs/perf/2026-11-11/visuals/before/mobile-welding-1440x900-fold.png",
+          "after": "docs/perf/2026-11-11/visuals/final/mobile-welding-1440x900-fold.png",
+          "identicalPngBytes": true,
+          "beforeDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "afterDimensions": {
+            "width": 1440,
+            "height": 900
+          },
+          "dimensionsMatch": true,
+          "differentPixels": 0,
+          "totalPixels": 1296000,
+          "meanAbsoluteChannelDifference": 0,
+          "maxChannelDifference": 0
+        }
+      ],
+      "h1Font": {
+        "before": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif",
+        "after": "\"Barlow Condensed\", \"Barlow Condensed Fallback\", sans-serif",
+        "renderedSpans": []
+      }
+    }
+  ],
+  "failures": [],
+  "passed": true,
+  "pixelSummary": {
+    "count": 8,
+    "identicalPixels": 5,
+    "interpretation": "Inspect nonzero pixel differences; exact matching geometry is required independently of raster variation."
+  }
+}

@@ -1,0 +1,5163 @@
+{
+  "date": "2026-11-11",
+  "label": "before",
+  "origin": "http://localhost:3193",
+  "server": "Node 22.23.2 next build then next start on loopback; clean environment, chat enabled",
+  "sourceCommit": "0a4b04638060ac72c61ceb045ef6b41f83e3ddc9",
+  "mainCommit": "0a4b04638060ac72c61ceb045ef6b41f83e3ddc9",
+  "currentWorktreeChangedFiles": [],
+  "publicChat": "enabled; verified in initial server HTML on both pages",
+  "serverState": "page HTML and all server image-optimizer src/srcset/imagesrcset URLs warmed before each page's batch using Chrome image Accept header; fresh browser/storage each measured run",
+  "method": "Lighthouse 13.6.0 mobile defaults, explicit simulate throttling; fresh Chrome/profile each run; storage reset; sequential; no request blocking",
+  "acceptance": true,
+  "target": {
+    "medianPerformance": 90,
+    "mobileWeldingFollowupMedian": 93
+  },
+  "analyticsGate": {
+    "source": "lib/measurement.ts:isProductionHost",
+    "localOriginAllowed": false,
+    "externalRequestsExpected": 0
+  },
+  "runs": [
+    {
+      "path": "/",
+      "run": 1,
+      "report": "docs/perf/2026-11-11/before/home-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 87,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3472.3418,
+      "fcpMs": 1225.6709,
+      "cls": 0.001477801074916096,
+      "tbtMs": 221,
+      "speedIndexMs": 1225.6709,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 1393,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "externalRequests": [],
+      "network": [
+        {
+          "url": "http://localhost:3193/",
+          "resourceType": "Document",
+          "transferSize": 22621,
+          "resourceSize": 122165,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/03fc1b4a8d284b5e-s.p.0wiir8udbzjvx.woff2",
+          "resourceType": "Font",
+          "transferSize": 42568,
+          "resourceSize": 40240,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/ddf6ae3f623ba878-s.p.2zhff3cxreb6s.woff2",
+          "resourceType": "Font",
+          "transferSize": 16268,
+          "resourceSize": 13940,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/images/optimized/welder-1600-768-q75.avif",
+          "resourceType": "Image",
+          "transferSize": 27092,
+          "resourceSize": 24782,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/image?url=%2Fimages%2Foptimized%2Fmcs_welding_logo.webp&w=128&q=75",
+          "resourceType": "Image",
+          "transferSize": 5059,
+          "resourceSize": 2599,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 5275,
+          "resourceSize": 12832,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 30129,
+          "resourceSize": 148856,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/09sv0ysa07onq.js",
+          "resourceType": "Script",
+          "transferSize": 6343,
+          "resourceSize": 13848,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2_mtuqkjzyowr.js",
+          "resourceType": "Script",
+          "transferSize": 10927,
+          "resourceSize": 31919,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "resourceType": "Script",
+          "transferSize": 73802,
+          "resourceSize": 227963,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+          "resourceType": "Script",
+          "transferSize": 45274,
+          "resourceSize": 155680,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+          "resourceType": "Script",
+          "transferSize": 6727,
+          "resourceSize": 10946,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3te6lczakh2so.js",
+          "resourceType": "Script",
+          "transferSize": 8668,
+          "resourceSize": 18210,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3fntmmi971322.js",
+          "resourceType": "Script",
+          "transferSize": 6085,
+          "resourceSize": 14377,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3kib_psjvgot0.js",
+          "resourceType": "Script",
+          "transferSize": 2589,
+          "resourceSize": 215,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1_srahny3xdqw.js",
+          "resourceType": "Script",
+          "transferSize": 14351,
+          "resourceSize": 33601,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2",
+          "resourceType": "Font",
+          "transferSize": 12388,
+          "resourceSize": 10060,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/icon.svg?icon.19nrj9_kpwqvh.svg",
+          "resourceType": "Other",
+          "transferSize": 3688,
+          "resourceSize": 1329,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=5CB68i4pnAekjehf",
+          "resourceType": "Fetch",
+          "transferSize": 2990,
+          "resourceSize": 1416,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=yIp22O3xgPPxC28X",
+          "resourceType": "Fetch",
+          "transferSize": 5186,
+          "resourceSize": 8666,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=8nTjltbQWvg6NcbE",
+          "resourceType": "Fetch",
+          "transferSize": 10683,
+          "resourceSize": 45802,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3o-dane4o4jva.js",
+          "resourceType": "Script",
+          "transferSize": 6204,
+          "resourceSize": 9644,
+          "priority": "Low"
+        }
+      ],
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 12.325
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 37.508
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 36.582
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 173.717
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3193/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3193/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 334,
+        "displayValue": "Est savings of 330 ms",
+        "metricSavings": {
+          "FCP": 350,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "totalBytes": 30129,
+              "wastedMs": 463
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 163
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 22,
+              "transferSize": 364917
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180970
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35404
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 32151
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 22621
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 4,
+              "transferSize": 22547
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "longTasks": {
+        "numericValue": null,
+        "displayValue": "5 long tasks found",
+        "metricSavings": {
+          "TBT": 200
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "startTime",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Start Time"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "duration": 271,
+              "startTime": 3201.3418
+            },
+            {
+              "url": "http://localhost:3193/",
+              "duration": 110,
+              "startTime": 1030.83545
+            },
+            {
+              "url": "http://localhost:3193/",
+              "duration": 86,
+              "startTime": 944.83545
+            },
+            {
+              "url": "Unattributable",
+              "duration": 73,
+              "startTime": 825.83545
+            },
+            {
+              "url": "Unattributable",
+              "duration": 63,
+              "startTime": 762.83545
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ],
+          "skipSumming": [
+            "startTime"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "urls": [
+              "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "http://localhost:3193/",
+              "Unattributable"
+            ],
+            "tasks": [
+              {
+                "urlIndex": 0,
+                "startTime": 3201.3,
+                "duration": 271,
+                "other": 271,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 1030.8,
+                "duration": 110,
+                "other": 110,
+                "paintCompositeRender": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 944.8,
+                "duration": 86,
+                "other": 86,
+                "parseHTML": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 825.8,
+                "duration": 73,
+                "other": 73,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 762.8,
+                "duration": 63,
+                "other": 63
+              }
+            ]
+          }
+        }
+      },
+      "scriptBootup": {
+        "numericValue": 685.3679999999982,
+        "displayValue": "0.7 s",
+        "metricSavings": {
+          "TBT": 200
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "total",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Total CPU Time"
+            },
+            {
+              "key": "scripting",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Evaluation"
+            },
+            {
+              "key": "scriptParseCompile",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Parse"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "total": 572.2919999999983,
+              "scripting": 522.0519999999983,
+              "scriptParseCompile": 40.871999999999986
+            },
+            {
+              "url": "http://localhost:3193/",
+              "total": 548.3079999999999,
+              "scripting": 17.899999999999988,
+              "scriptParseCompile": 20.323999999999998
+            },
+            {
+              "url": "Unattributable",
+              "total": 314.28400000000016,
+              "scripting": 12.267999999999997,
+              "scriptParseCompile": 0
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "total": 81.82400000000001,
+              "scripting": 47.504000000000005,
+              "scriptParseCompile": 24.448000000000004
+            }
+          ],
+          "summary": {
+            "wastedMs": 685.3679999999982
+          },
+          "sortedBy": [
+            "total"
+          ]
+        }
+      },
+      "layoutShifts": {
+        "numericValue": null,
+        "displayValue": "1 layout shift found",
+        "metricSavings": {
+          "CLS": 0.001
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "node",
+              "valueType": "node",
+              "subItemsHeading": {
+                "key": "extra"
+              },
+              "label": "Element"
+            },
+            {
+              "key": "score",
+              "valueType": "numeric",
+              "subItemsHeading": {
+                "key": "cause",
+                "valueType": "text"
+              },
+              "granularity": 0.001,
+              "label": "Layout shift score"
+            }
+          ],
+          "items": [
+            {
+              "node": {
+                "type": "node",
+                "lhId": "page-1-DIV",
+                "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,0,DIV",
+                "selector": "main#main-content > section#home > div.ms-hero-media > div.sw-tin",
+                "boundingRect": {
+                  "top": 538,
+                  "bottom": 606,
+                  "left": 116,
+                  "right": 296,
+                  "width": 180,
+                  "height": 67
+                },
+                "snippet": "<div class=\"sw-tin\" aria-hidden=\"true\">",
+                "nodeLabel": "LEBANON · TENNESSEE\nWelding Shop"
+              },
+              "score": 0.001477801074916096,
+              "subItems": {
+                "type": "subitems",
+                "items": [
+                  {
+                    "extra": {
+                      "type": "url",
+                      "value": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2"
+                    },
+                    "cause": "Web font loaded"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 1604.6519999999969,
+        "displayValue": "1.6 s",
+        "metricSavings": {
+          "TBT": 200
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 634.3599999999959
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 416.82399999999996
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 373.6120000000006
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 110.26400000000001
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 49.788000000000004
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 19.803999999999984
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 300,
+        "displayValue": "Est savings of 27 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 300
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27483,
+              "wastedPercent": 38.49484346143892
+            }
+          ],
+          "overallSavingsMs": 300,
+          "overallSavingsBytes": 27483,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 300
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 160,
+        "displayValue": "Est savings of 17 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "wastedBytes": 17443,
+              "wastedPercent": 62.89242262396625,
+              "totalBytes": 27735
+            }
+          ],
+          "overallSavingsMs": 160,
+          "overallSavingsBytes": 17443,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 160
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/",
+      "run": 2,
+      "report": "docs/perf/2026-11-11/before/home-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 86,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3576.2440500000002,
+      "fcpMs": 1222.9966,
+      "cls": 0,
+      "tbtMs": 243,
+      "speedIndexMs": 1222.9966,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 872,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "externalRequests": [],
+      "network": [
+        {
+          "url": "http://localhost:3193/",
+          "resourceType": "Document",
+          "transferSize": 22621,
+          "resourceSize": 122165,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/03fc1b4a8d284b5e-s.p.0wiir8udbzjvx.woff2",
+          "resourceType": "Font",
+          "transferSize": 42568,
+          "resourceSize": 40240,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/ddf6ae3f623ba878-s.p.2zhff3cxreb6s.woff2",
+          "resourceType": "Font",
+          "transferSize": 16268,
+          "resourceSize": 13940,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/images/optimized/welder-1600-768-q75.avif",
+          "resourceType": "Image",
+          "transferSize": 27092,
+          "resourceSize": 24782,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/image?url=%2Fimages%2Foptimized%2Fmcs_welding_logo.webp&w=128&q=75",
+          "resourceType": "Image",
+          "transferSize": 5058,
+          "resourceSize": 2599,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 5275,
+          "resourceSize": 12832,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 30129,
+          "resourceSize": 148856,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/09sv0ysa07onq.js",
+          "resourceType": "Script",
+          "transferSize": 6343,
+          "resourceSize": 13848,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2_mtuqkjzyowr.js",
+          "resourceType": "Script",
+          "transferSize": 10927,
+          "resourceSize": 31919,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "resourceType": "Script",
+          "transferSize": 73802,
+          "resourceSize": 227963,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+          "resourceType": "Script",
+          "transferSize": 45274,
+          "resourceSize": 155680,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+          "resourceType": "Script",
+          "transferSize": 6727,
+          "resourceSize": 10946,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3te6lczakh2so.js",
+          "resourceType": "Script",
+          "transferSize": 8668,
+          "resourceSize": 18210,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3fntmmi971322.js",
+          "resourceType": "Script",
+          "transferSize": 6085,
+          "resourceSize": 14377,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3kib_psjvgot0.js",
+          "resourceType": "Script",
+          "transferSize": 2589,
+          "resourceSize": 215,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1_srahny3xdqw.js",
+          "resourceType": "Script",
+          "transferSize": 14351,
+          "resourceSize": 33601,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2",
+          "resourceType": "Font",
+          "transferSize": 12388,
+          "resourceSize": 10060,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/icon.svg?icon.19nrj9_kpwqvh.svg",
+          "resourceType": "Other",
+          "transferSize": 3688,
+          "resourceSize": 1329,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=5CB68i4pnAekjehf",
+          "resourceType": "Fetch",
+          "transferSize": 2990,
+          "resourceSize": 1416,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=yIp22O3xgPPxC28X",
+          "resourceType": "Fetch",
+          "transferSize": 5186,
+          "resourceSize": 8666,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=8nTjltbQWvg6NcbE",
+          "resourceType": "Fetch",
+          "transferSize": 10683,
+          "resourceSize": 45802,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3o-dane4o4jva.js",
+          "resourceType": "Script",
+          "transferSize": 6204,
+          "resourceSize": 9644,
+          "priority": "Low"
+        }
+      ],
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 17.299
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 25.15
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 28.864
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 387.131
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3193/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3193/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 440,
+        "displayValue": "Est savings of 440 ms",
+        "metricSavings": {
+          "FCP": 450,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "totalBytes": 30129,
+              "wastedMs": 461
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 161
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 22,
+              "transferSize": 364916
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180970
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35404
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 32150
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 22621
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 4,
+              "transferSize": 22547
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "longTasks": {
+        "numericValue": null,
+        "displayValue": "6 long tasks found",
+        "metricSavings": {
+          "TBT": 250
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "startTime",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Start Time"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+              "duration": 284,
+              "startTime": 3254.9932000000003
+            },
+            {
+              "url": "http://localhost:3193/",
+              "duration": 148,
+              "startTime": 1001.4983
+            },
+            {
+              "url": "http://localhost:3193/",
+              "duration": 124,
+              "startTime": 877.4983
+            },
+            {
+              "url": "Unattributable",
+              "duration": 67,
+              "startTime": 763.4983
+            },
+            {
+              "url": "http://localhost:3193/",
+              "duration": 66,
+              "startTime": 1149.4983
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "duration": 59,
+              "startTime": 3195.9932000000003
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ],
+          "skipSumming": [
+            "startTime"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "urls": [
+              "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+              "http://localhost:3193/",
+              "Unattributable",
+              "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js"
+            ],
+            "tasks": [
+              {
+                "urlIndex": 0,
+                "startTime": 3255,
+                "duration": 284,
+                "other": 284,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 1001.5,
+                "duration": 148,
+                "other": 148,
+                "paintCompositeRender": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 877.5,
+                "duration": 124,
+                "other": 124,
+                "parseHTML": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 763.5,
+                "duration": 67,
+                "other": 67,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 1149.5,
+                "duration": 66,
+                "other": 66,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 3,
+                "startTime": 3196,
+                "duration": 59,
+                "other": 59,
+                "scriptEvaluation": 0
+              }
+            ]
+          }
+        }
+      },
+      "scriptBootup": {
+        "numericValue": 830.868,
+        "displayValue": "0.8 s",
+        "metricSavings": {
+          "TBT": 250
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "total",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Total CPU Time"
+            },
+            {
+              "key": "scripting",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Evaluation"
+            },
+            {
+              "key": "scriptParseCompile",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Parse"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/",
+              "total": 666.2,
+              "scripting": 18.79999999999999,
+              "scriptParseCompile": 20.987999999999996
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "total": 416.0720000000002,
+              "scripting": 344.1080000000001,
+              "scriptParseCompile": 59.304
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+              "total": 285.30399999999986,
+              "scripting": 282.73999999999984,
+              "scriptParseCompile": 2.108
+            },
+            {
+              "url": "Unattributable",
+              "total": 253.2960000000006,
+              "scripting": 14.735999999999999,
+              "scriptParseCompile": 0
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "total": 103.32400000000001,
+              "scripting": 58.49200000000001,
+              "scriptParseCompile": 29.592000000000002
+            }
+          ],
+          "summary": {
+            "wastedMs": 830.868
+          },
+          "sortedBy": [
+            "total"
+          ]
+        }
+      },
+      "layoutShifts": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "CLS": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "node",
+              "valueType": "node",
+              "subItemsHeading": {
+                "key": "extra"
+              },
+              "label": "Element"
+            },
+            {
+              "key": "score",
+              "valueType": "numeric",
+              "subItemsHeading": {
+                "key": "cause",
+                "valueType": "text"
+              },
+              "granularity": 0.001,
+              "label": "Layout shift score"
+            }
+          ],
+          "items": []
+        }
+      },
+      "mainThread": {
+        "numericValue": 1841.4319999999946,
+        "displayValue": "1.8 s",
+        "metricSavings": {
+          "TBT": 250
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 781.1599999999942
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 518.9720000000001
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 335.5480000000003
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 135.68399999999997
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 51.06399999999999
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 19.004
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 120,
+        "displayValue": "Est savings of 27 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 100
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27483,
+              "wastedPercent": 38.49484346143892
+            }
+          ],
+          "overallSavingsMs": 120,
+          "overallSavingsBytes": 27483,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 120
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 140,
+        "displayValue": "Est savings of 17 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "wastedBytes": 17443,
+              "wastedPercent": 62.89242262396625,
+              "totalBytes": 27735
+            }
+          ],
+          "overallSavingsMs": 140,
+          "overallSavingsBytes": 17443,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 140
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/",
+      "run": 3,
+      "report": "docs/perf/2026-11-11/before/home-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 82,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3270.68,
+      "fcpMs": 1212.34,
+      "cls": 0.001477801074916096,
+      "tbtMs": 429.4150000000002,
+      "speedIndexMs": 1225.618330035144,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 870.5,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "externalRequests": [],
+      "network": [
+        {
+          "url": "http://localhost:3193/",
+          "resourceType": "Document",
+          "transferSize": 22621,
+          "resourceSize": 122165,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/03fc1b4a8d284b5e-s.p.0wiir8udbzjvx.woff2",
+          "resourceType": "Font",
+          "transferSize": 42568,
+          "resourceSize": 40240,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/ddf6ae3f623ba878-s.p.2zhff3cxreb6s.woff2",
+          "resourceType": "Font",
+          "transferSize": 16268,
+          "resourceSize": 13940,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/images/optimized/welder-1600-768-q75.avif",
+          "resourceType": "Image",
+          "transferSize": 27092,
+          "resourceSize": 24782,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/image?url=%2Fimages%2Foptimized%2Fmcs_welding_logo.webp&w=128&q=75",
+          "resourceType": "Image",
+          "transferSize": 5058,
+          "resourceSize": 2599,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 5275,
+          "resourceSize": 12832,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 30129,
+          "resourceSize": 148856,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/09sv0ysa07onq.js",
+          "resourceType": "Script",
+          "transferSize": 6343,
+          "resourceSize": 13848,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2_mtuqkjzyowr.js",
+          "resourceType": "Script",
+          "transferSize": 10927,
+          "resourceSize": 31919,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "resourceType": "Script",
+          "transferSize": 73802,
+          "resourceSize": 227963,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+          "resourceType": "Script",
+          "transferSize": 45274,
+          "resourceSize": 155680,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+          "resourceType": "Script",
+          "transferSize": 6727,
+          "resourceSize": 10946,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3te6lczakh2so.js",
+          "resourceType": "Script",
+          "transferSize": 8668,
+          "resourceSize": 18210,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3fntmmi971322.js",
+          "resourceType": "Script",
+          "transferSize": 6085,
+          "resourceSize": 14377,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3kib_psjvgot0.js",
+          "resourceType": "Script",
+          "transferSize": 2589,
+          "resourceSize": 215,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1_srahny3xdqw.js",
+          "resourceType": "Script",
+          "transferSize": 14351,
+          "resourceSize": 33601,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2",
+          "resourceType": "Font",
+          "transferSize": 12388,
+          "resourceSize": 10060,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/icon.svg?icon.19nrj9_kpwqvh.svg",
+          "resourceType": "Other",
+          "transferSize": 3688,
+          "resourceSize": 1329,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=5CB68i4pnAekjehf",
+          "resourceType": "Fetch",
+          "transferSize": 2990,
+          "resourceSize": 1416,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=yIp22O3xgPPxC28X",
+          "resourceType": "Fetch",
+          "transferSize": 5186,
+          "resourceSize": 8666,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/?_rsc=8nTjltbQWvg6NcbE",
+          "resourceType": "Fetch",
+          "transferSize": 10683,
+          "resourceSize": 45802,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3o-dane4o4jva.js",
+          "resourceType": "Script",
+          "transferSize": 6204,
+          "resourceSize": 9644,
+          "priority": "Low"
+        }
+      ],
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 15.775
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 123.045
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 30.08
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 256.647
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3193/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,1,FIGURE,2,PICTURE,1,IMG",
+              "selector": "div.ms-hero-media > figure.ms-hero-image > picture > img",
+              "boundingRect": {
+                "top": 607,
+                "bottom": 889,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding fabricating a steel frame in the shop\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 899px) min(calc(100vw - 2rem), 34rem), (min-width: 1280px) min…\" srcset=\"/_next/image?url=%2Fimages%2Foptimized%2Fwelder-1600.webp&amp;w=256&amp;q=75 256w,…\" src=\"http://localhost:3193/images/optimized/welder-1600-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding fabricating a steel frame in the shop"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 432,
+        "displayValue": "Est savings of 430 ms",
+        "metricSavings": {
+          "FCP": 450,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "totalBytes": 30129,
+              "wastedMs": 456
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 156
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 22,
+              "transferSize": 364916
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180970
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35404
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 32150
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 22621
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 4,
+              "transferSize": 22547
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "longTasks": {
+        "numericValue": null,
+        "displayValue": "6 long tasks found",
+        "metricSavings": {
+          "TBT": 450
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "startTime",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Start Time"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "Unattributable",
+              "duration": 326.9999999999999,
+              "startTime": 832.17
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "duration": 321,
+              "startTime": 3024.68
+            },
+            {
+              "url": "http://localhost:3193/",
+              "duration": 213,
+              "startTime": 1285.1699999999998
+            },
+            {
+              "url": "Unattributable",
+              "duration": 78,
+              "startTime": 1159.1699999999998
+            },
+            {
+              "url": "Unattributable",
+              "duration": 74,
+              "startTime": 758.17
+            },
+            {
+              "url": "http://localhost:3193/",
+              "duration": 71,
+              "startTime": 1521.1699999999996
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ],
+          "skipSumming": [
+            "startTime"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "urls": [
+              "Unattributable",
+              "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "http://localhost:3193/"
+            ],
+            "tasks": [
+              {
+                "urlIndex": 0,
+                "startTime": 832.2,
+                "duration": 327,
+                "other": 327
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 3024.7,
+                "duration": 321,
+                "other": 321,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1285.2,
+                "duration": 213,
+                "other": 213,
+                "paintCompositeRender": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 0,
+                "startTime": 1159.2,
+                "duration": 78,
+                "other": 78,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 0,
+                "startTime": 758.2,
+                "duration": 74,
+                "other": 74
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1521.2,
+                "duration": 71,
+                "other": 71,
+                "styleLayout": 0
+              }
+            ]
+          }
+        }
+      },
+      "scriptBootup": {
+        "numericValue": 841.9719999999968,
+        "displayValue": "0.8 s",
+        "metricSavings": {
+          "TBT": 250
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "total",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Total CPU Time"
+            },
+            {
+              "key": "scripting",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Evaluation"
+            },
+            {
+              "key": "scriptParseCompile",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Parse"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/",
+              "total": 735.548,
+              "scripting": 19.072,
+              "scriptParseCompile": 21.827999999999992
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "total": 713.3759999999968,
+              "scripting": 642.2239999999967,
+              "scriptParseCompile": 41.168
+            },
+            {
+              "url": "Unattributable",
+              "total": 639.235999999996,
+              "scripting": 13.867999999999999,
+              "scriptParseCompile": 0
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "total": 121.7,
+              "scripting": 77.952,
+              "scriptParseCompile": 25.86
+            }
+          ],
+          "summary": {
+            "wastedMs": 841.9719999999968
+          },
+          "sortedBy": [
+            "total"
+          ]
+        }
+      },
+      "layoutShifts": {
+        "numericValue": null,
+        "displayValue": "1 layout shift found",
+        "metricSavings": {
+          "CLS": 0.001
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "node",
+              "valueType": "node",
+              "subItemsHeading": {
+                "key": "extra"
+              },
+              "label": "Element"
+            },
+            {
+              "key": "score",
+              "valueType": "numeric",
+              "subItemsHeading": {
+                "key": "cause",
+                "valueType": "text"
+              },
+              "granularity": 0.001,
+              "label": "Layout shift score"
+            }
+          ],
+          "items": [
+            {
+              "node": {
+                "type": "node",
+                "lhId": "page-1-DIV",
+                "path": "1,HTML,1,BODY,2,DIV,3,MAIN,0,SECTION,1,DIV,0,DIV",
+                "selector": "main#main-content > section#home > div.ms-hero-media > div.sw-tin",
+                "boundingRect": {
+                  "top": 538,
+                  "bottom": 606,
+                  "left": 116,
+                  "right": 296,
+                  "width": 180,
+                  "height": 67
+                },
+                "snippet": "<div class=\"sw-tin\" aria-hidden=\"true\">",
+                "nodeLabel": "LEBANON · TENNESSEE\nWelding Shop"
+              },
+              "score": 0.001477801074916096,
+              "subItems": {
+                "type": "subitems",
+                "items": [
+                  {
+                    "extra": {
+                      "type": "url",
+                      "value": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2"
+                    },
+                    "cause": "Web font loaded"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 2306.44399999999,
+        "displayValue": "2.3 s",
+        "metricSavings": {
+          "TBT": 450
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 793.223999999995
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 744.7719999999954
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 574.04
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 115.85199999999999
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 53.224000000000004
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 25.33199999999999
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 150,
+        "displayValue": "Est savings of 27 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27483,
+              "wastedPercent": 38.49484346143892
+            }
+          ],
+          "overallSavingsMs": 150,
+          "overallSavingsBytes": 27483,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 150
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 10,
+        "displayValue": "Est savings of 17 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "wastedBytes": 17443,
+              "wastedPercent": 62.89242262396625,
+              "totalBytes": 27735
+            }
+          ],
+          "overallSavingsMs": 10,
+          "overallSavingsBytes": 17443,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 10
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 1,
+      "report": "docs/perf/2026-11-11/before/mobile-welding-mobile-1.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 80,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3411.4,
+      "fcpMs": 1074.2,
+      "cls": 0.0003487203741905294,
+      "tbtMs": 453.89999999999964,
+      "speedIndexMs": 1693.5868388854465,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 854.5,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "externalRequests": [],
+      "network": [
+        {
+          "url": "http://localhost:3193/services/mobile-welding",
+          "resourceType": "Document",
+          "transferSize": 12787,
+          "resourceSize": 57125,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/03fc1b4a8d284b5e-s.p.0wiir8udbzjvx.woff2",
+          "resourceType": "Font",
+          "transferSize": 42568,
+          "resourceSize": 40240,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/ddf6ae3f623ba878-s.p.2zhff3cxreb6s.woff2",
+          "resourceType": "Font",
+          "transferSize": 16268,
+          "resourceSize": 13940,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/images/optimized/IMG_3994-768-q75.avif",
+          "resourceType": "Image",
+          "transferSize": 37953,
+          "resourceSize": 35643,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 5275,
+          "resourceSize": 12832,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 30129,
+          "resourceSize": 148856,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/09sv0ysa07onq.js",
+          "resourceType": "Script",
+          "transferSize": 6343,
+          "resourceSize": 13848,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2_mtuqkjzyowr.js",
+          "resourceType": "Script",
+          "transferSize": 10927,
+          "resourceSize": 31919,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "resourceType": "Script",
+          "transferSize": 73802,
+          "resourceSize": 227963,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+          "resourceType": "Script",
+          "transferSize": 45274,
+          "resourceSize": 155680,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+          "resourceType": "Script",
+          "transferSize": 6727,
+          "resourceSize": 10946,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3te6lczakh2so.js",
+          "resourceType": "Script",
+          "transferSize": 8668,
+          "resourceSize": 18210,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3fntmmi971322.js",
+          "resourceType": "Script",
+          "transferSize": 6085,
+          "resourceSize": 14377,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/08uyzdq0clvq7.js",
+          "resourceType": "Script",
+          "transferSize": 3502,
+          "resourceSize": 2211,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/05keitxraz2x9.js",
+          "resourceType": "Script",
+          "transferSize": 13337,
+          "resourceSize": 30042,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2",
+          "resourceType": "Font",
+          "transferSize": 12388,
+          "resourceSize": 10060,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/image?url=%2Fimages%2Foptimized%2Fmcs_welding_logo.webp&w=128&q=75",
+          "resourceType": "Image",
+          "transferSize": 5058,
+          "resourceSize": 2599,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/icon.svg?icon.19nrj9_kpwqvh.svg",
+          "resourceType": "Other",
+          "transferSize": 3688,
+          "resourceSize": 1329,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3o-dane4o4jva.js",
+          "resourceType": "Script",
+          "transferSize": 6204,
+          "resourceSize": 9644,
+          "priority": "Low"
+        }
+      ],
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 17.499
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 158.236
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 64.733
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 319.726
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3193/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3193/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 262,
+        "displayValue": "Est savings of 260 ms",
+        "metricSavings": {
+          "FCP": 250,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 162
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "totalBytes": 30129,
+              "wastedMs": 462
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 19,
+              "transferSize": 346983
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180869
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 43011
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35404
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 12787
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 1,
+              "transferSize": 3688
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "longTasks": {
+        "numericValue": null,
+        "displayValue": "7 long tasks found",
+        "metricSavings": {
+          "TBT": 450
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "startTime",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Start Time"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "Unattributable",
+              "duration": 426.9999999999999,
+              "startTime": 705.1
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "duration": 341,
+              "startTime": 3048.399999999999
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 178.99999999999977,
+              "startTime": 1251.1
+            },
+            {
+              "url": "Unattributable",
+              "duration": 93,
+              "startTime": 612.1
+            },
+            {
+              "url": "Unattributable",
+              "duration": 66,
+              "startTime": 1132.1
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 58,
+              "startTime": 1430.0999999999997
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 52,
+              "startTime": 1199.1
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ],
+          "skipSumming": [
+            "startTime"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "urls": [
+              "Unattributable",
+              "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "http://localhost:3193/services/mobile-welding"
+            ],
+            "tasks": [
+              {
+                "urlIndex": 0,
+                "startTime": 705.1,
+                "duration": 427,
+                "other": 427
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 3048.4,
+                "duration": 341,
+                "other": 341,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1251.1,
+                "duration": 179,
+                "other": 179,
+                "paintCompositeRender": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 0,
+                "startTime": 612.1,
+                "duration": 93,
+                "other": 93
+              },
+              {
+                "urlIndex": 0,
+                "startTime": 1132.1,
+                "duration": 66,
+                "other": 66,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1430.1,
+                "duration": 58,
+                "other": 58,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1199.1,
+                "duration": 52,
+                "other": 52,
+                "parseHTML": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              }
+            ]
+          }
+        }
+      },
+      "scriptBootup": {
+        "numericValue": 758.3959999999968,
+        "displayValue": "0.8 s",
+        "metricSavings": {
+          "TBT": 300
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "total",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Total CPU Time"
+            },
+            {
+              "key": "scripting",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Evaluation"
+            },
+            {
+              "key": "scriptParseCompile",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Parse"
+            }
+          ],
+          "items": [
+            {
+              "url": "Unattributable",
+              "total": 744.8599999999971,
+              "scripting": 8.816,
+              "scriptParseCompile": 0
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "total": 740.0999999999966,
+              "scripting": 678.2319999999967,
+              "scriptParseCompile": 46.916
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "total": 652.3559999999999,
+              "scripting": 13.947999999999999,
+              "scriptParseCompile": 10.484000000000002
+            }
+          ],
+          "summary": {
+            "wastedMs": 758.3959999999968
+          },
+          "sortedBy": [
+            "total"
+          ]
+        }
+      },
+      "layoutShifts": {
+        "numericValue": null,
+        "displayValue": "1 layout shift found",
+        "metricSavings": {
+          "CLS": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "node",
+              "valueType": "node",
+              "subItemsHeading": {
+                "key": "extra"
+              },
+              "label": "Element"
+            },
+            {
+              "key": "score",
+              "valueType": "numeric",
+              "subItemsHeading": {
+                "key": "cause",
+                "valueType": "text"
+              },
+              "granularity": 0.001,
+              "label": "Layout shift score"
+            }
+          ],
+          "items": [
+            {
+              "node": {
+                "type": "node",
+                "lhId": "page-1-A",
+                "path": "1,HTML,1,BODY,3,MAIN,3,NAV,2,A",
+                "selector": "body.font-sans > main#main-content > nav.ms-breadcrumb > a",
+                "boundingRect": {
+                  "top": 89,
+                  "bottom": 133,
+                  "left": 72,
+                  "right": 134,
+                  "width": 61,
+                  "height": 44
+                },
+                "snippet": "<a href=\"/#services\">",
+                "nodeLabel": "Services"
+              },
+              "score": 0.0003487203741905294,
+              "subItems": {
+                "type": "subitems",
+                "items": [
+                  {
+                    "extra": {
+                      "type": "url",
+                      "value": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2"
+                    },
+                    "cause": "Web font loaded"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "mainThread": {
+        "numericValue": 2271.6639999999916,
+        "displayValue": "2.3 s",
+        "metricSavings": {
+          "TBT": 450
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 816.5079999999969
+            },
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 742.807999999995
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 530.276
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 116.37200000000001
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 37.928
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 23.879999999999995
+            },
+            {
+              "group": "garbageCollection",
+              "groupLabel": "Garbage Collection",
+              "duration": 3.892000000000001
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 450,
+        "displayValue": "Est savings of 50 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 450
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27106,
+              "wastedPercent": 37.9671262441712
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "totalBytes": 42866,
+              "wastedBytes": 24116,
+              "wastedPercent": 56.25899280575539
+            }
+          ],
+          "overallSavingsMs": 450,
+          "overallSavingsBytes": 51222,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 450
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 160,
+        "displayValue": "Est savings of 19 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "wastedBytes": 19269,
+              "wastedPercent": 69.47417215873591,
+              "totalBytes": 27735
+            }
+          ],
+          "overallSavingsMs": 160,
+          "overallSavingsBytes": 19269,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 160
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 2,
+      "report": "docs/perf/2026-11-11/before/mobile-welding-mobile-2.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 83,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3349.2690000000002,
+      "fcpMs": 1064.846,
+      "cls": 0,
+      "tbtMs": 372.7885000000001,
+      "speedIndexMs": 1479.2207416051406,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 839.5,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "externalRequests": [],
+      "network": [
+        {
+          "url": "http://localhost:3193/services/mobile-welding",
+          "resourceType": "Document",
+          "transferSize": 12787,
+          "resourceSize": 57125,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/03fc1b4a8d284b5e-s.p.0wiir8udbzjvx.woff2",
+          "resourceType": "Font",
+          "transferSize": 42568,
+          "resourceSize": 40240,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/ddf6ae3f623ba878-s.p.2zhff3cxreb6s.woff2",
+          "resourceType": "Font",
+          "transferSize": 16268,
+          "resourceSize": 13940,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/images/optimized/IMG_3994-768-q75.avif",
+          "resourceType": "Image",
+          "transferSize": 37953,
+          "resourceSize": 35643,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 5275,
+          "resourceSize": 12832,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 30129,
+          "resourceSize": 148856,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/09sv0ysa07onq.js",
+          "resourceType": "Script",
+          "transferSize": 6343,
+          "resourceSize": 13848,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2_mtuqkjzyowr.js",
+          "resourceType": "Script",
+          "transferSize": 10927,
+          "resourceSize": 31919,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "resourceType": "Script",
+          "transferSize": 73802,
+          "resourceSize": 227963,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+          "resourceType": "Script",
+          "transferSize": 45274,
+          "resourceSize": 155680,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+          "resourceType": "Script",
+          "transferSize": 6727,
+          "resourceSize": 10946,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3te6lczakh2so.js",
+          "resourceType": "Script",
+          "transferSize": 8668,
+          "resourceSize": 18210,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3fntmmi971322.js",
+          "resourceType": "Script",
+          "transferSize": 6085,
+          "resourceSize": 14377,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/08uyzdq0clvq7.js",
+          "resourceType": "Script",
+          "transferSize": 3502,
+          "resourceSize": 2211,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/05keitxraz2x9.js",
+          "resourceType": "Script",
+          "transferSize": 13337,
+          "resourceSize": 30042,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2",
+          "resourceType": "Font",
+          "transferSize": 12388,
+          "resourceSize": 10060,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/image?url=%2Fimages%2Foptimized%2Fmcs_welding_logo.webp&w=128&q=75",
+          "resourceType": "Image",
+          "transferSize": 5058,
+          "resourceSize": 2599,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/icon.svg?icon.19nrj9_kpwqvh.svg",
+          "resourceType": "Other",
+          "transferSize": 3688,
+          "resourceSize": 1329,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3o-dane4o4jva.js",
+          "resourceType": "Script",
+          "transferSize": 6204,
+          "resourceSize": 9644,
+          "priority": "Low"
+        }
+      ],
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 14.678
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 135.52
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 34.683
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 335.78
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3193/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3193/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 437,
+        "displayValue": "Est savings of 440 ms",
+        "metricSavings": {
+          "FCP": 450,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "totalBytes": 30129,
+              "wastedMs": 457
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 157
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 19,
+              "transferSize": 346983
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180869
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 43011
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35404
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 12787
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 1,
+              "transferSize": 3688
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "longTasks": {
+        "numericValue": null,
+        "displayValue": "8 long tasks found",
+        "metricSavings": {
+          "TBT": 350
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "startTime",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Start Time"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "Unattributable",
+              "duration": 378,
+              "startTime": 697.423
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "duration": 327,
+              "startTime": 3029.692
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "duration": 110,
+              "startTime": 2737.1150000000002
+            },
+            {
+              "url": "Unattributable",
+              "duration": 88,
+              "startTime": 609.423
+            },
+            {
+              "url": "Unattributable",
+              "duration": 70,
+              "startTime": 1075.423
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 66,
+              "startTime": 1236.423
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 53,
+              "startTime": 1146.423
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "duration": 51,
+              "startTime": 3356.692
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ],
+          "skipSumming": [
+            "startTime"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "urls": [
+              "Unattributable",
+              "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "http://localhost:3193/services/mobile-welding"
+            ],
+            "tasks": [
+              {
+                "urlIndex": 0,
+                "startTime": 697.4,
+                "duration": 378,
+                "other": 378
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 3029.7,
+                "duration": 327,
+                "other": 327,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 2737.1,
+                "duration": 110,
+                "other": 110,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 0,
+                "startTime": 609.4,
+                "duration": 88,
+                "other": 88
+              },
+              {
+                "urlIndex": 0,
+                "startTime": 1075.4,
+                "duration": 70,
+                "other": 70,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 3,
+                "startTime": 1236.4,
+                "duration": 66,
+                "other": 66,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 3,
+                "startTime": 1146.4,
+                "duration": 53,
+                "other": 53,
+                "parseHTML": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 3356.7,
+                "duration": 51,
+                "other": 51
+              }
+            ]
+          }
+        }
+      },
+      "scriptBootup": {
+        "numericValue": 683.6119999999969,
+        "displayValue": "0.7 s",
+        "metricSavings": {
+          "TBT": 300
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "total",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Total CPU Time"
+            },
+            {
+              "key": "scripting",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Evaluation"
+            },
+            {
+              "key": "scriptParseCompile",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Parse"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "total": 685.103999999997,
+              "scripting": 606.4479999999969,
+              "scriptParseCompile": 44.088
+            },
+            {
+              "url": "Unattributable",
+              "total": 665.3399999999974,
+              "scripting": 8.648000000000001,
+              "scriptParseCompile": 0
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "total": 551.204,
+              "scripting": 14.107999999999999,
+              "scriptParseCompile": 10.32
+            }
+          ],
+          "summary": {
+            "wastedMs": 683.6119999999969
+          },
+          "sortedBy": [
+            "total"
+          ]
+        }
+      },
+      "layoutShifts": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "CLS": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "node",
+              "valueType": "node",
+              "subItemsHeading": {
+                "key": "extra"
+              },
+              "label": "Element"
+            },
+            {
+              "key": "score",
+              "valueType": "numeric",
+              "subItemsHeading": {
+                "key": "cause",
+                "valueType": "text"
+              },
+              "granularity": 0.001,
+              "label": "Layout shift score"
+            }
+          ],
+          "items": []
+        }
+      },
+      "mainThread": {
+        "numericValue": 2027.9719999999932,
+        "displayValue": "2.0 s",
+        "metricSavings": {
+          "TBT": 350
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 749.2359999999967
+            },
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 669.9639999999964
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 442.08799999999997
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 106.39200000000005
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 37.208
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 17.912
+            },
+            {
+              "group": "garbageCollection",
+              "groupLabel": "Garbage Collection",
+              "duration": 5.171999999999998
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 450,
+        "displayValue": "Est savings of 50 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 450
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27250,
+              "wastedPercent": 38.168913376293524
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "totalBytes": 42866,
+              "wastedBytes": 24116,
+              "wastedPercent": 56.25899280575539
+            }
+          ],
+          "overallSavingsMs": 450,
+          "overallSavingsBytes": 51366,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 450
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 140,
+        "displayValue": "Est savings of 19 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 150
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "wastedBytes": 19269,
+              "wastedPercent": 69.47417215873591,
+              "totalBytes": 27735
+            }
+          ],
+          "overallSavingsMs": 140,
+          "overallSavingsBytes": 19269,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 140
+            }
+          }
+        }
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "run": 3,
+      "report": "docs/perf/2026-11-11/before/mobile-welding-mobile-3.json",
+      "lighthouseVersion": "13.6.0",
+      "scores": {
+        "performance": 86,
+        "accessibility": 100,
+        "best-practices": 100,
+        "seo": 100,
+        "agentic-browsing": 100
+      },
+      "lcpMs": 3285.552,
+      "fcpMs": 1091.776,
+      "cls": 0,
+      "tbtMs": 310.0000000000002,
+      "speedIndexMs": 1160.3097743307605,
+      "runtimeError": null,
+      "warnings": [],
+      "environment": {
+        "networkUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36",
+        "hostUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+        "benchmarkIndex": 848,
+        "credits": {
+          "axe-core": "4.14.0",
+          "ard": "0.91 (f073b1e)"
+        }
+      },
+      "externalRequests": [],
+      "network": [
+        {
+          "url": "http://localhost:3193/services/mobile-welding",
+          "resourceType": "Document",
+          "transferSize": 12787,
+          "resourceSize": 57125,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/03fc1b4a8d284b5e-s.p.0wiir8udbzjvx.woff2",
+          "resourceType": "Font",
+          "transferSize": 42568,
+          "resourceSize": 40240,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/ddf6ae3f623ba878-s.p.2zhff3cxreb6s.woff2",
+          "resourceType": "Font",
+          "transferSize": 16268,
+          "resourceSize": 13940,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/images/optimized/IMG_3994-768-q75.avif",
+          "resourceType": "Image",
+          "transferSize": 37953,
+          "resourceSize": 35643,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 5275,
+          "resourceSize": 12832,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+          "resourceType": "Stylesheet",
+          "transferSize": 30129,
+          "resourceSize": 148856,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/09sv0ysa07onq.js",
+          "resourceType": "Script",
+          "transferSize": 6343,
+          "resourceSize": 13848,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2_mtuqkjzyowr.js",
+          "resourceType": "Script",
+          "transferSize": 10927,
+          "resourceSize": 31919,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+          "resourceType": "Script",
+          "transferSize": 73802,
+          "resourceSize": 227963,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+          "resourceType": "Script",
+          "transferSize": 45274,
+          "resourceSize": 155680,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+          "resourceType": "Script",
+          "transferSize": 6727,
+          "resourceSize": 10946,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3te6lczakh2so.js",
+          "resourceType": "Script",
+          "transferSize": 8668,
+          "resourceSize": 18210,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3fntmmi971322.js",
+          "resourceType": "Script",
+          "transferSize": 6085,
+          "resourceSize": 14377,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/08uyzdq0clvq7.js",
+          "resourceType": "Script",
+          "transferSize": 3502,
+          "resourceSize": 2211,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/05keitxraz2x9.js",
+          "resourceType": "Script",
+          "transferSize": 13337,
+          "resourceSize": 30042,
+          "priority": "Low"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/media/effe91970fc4db64-s.0oace-s_gkfks.woff2",
+          "resourceType": "Font",
+          "transferSize": 12388,
+          "resourceSize": 10060,
+          "priority": "VeryHigh"
+        },
+        {
+          "url": "http://localhost:3193/_next/image?url=%2Fimages%2Foptimized%2Fmcs_welding_logo.webp&w=128&q=75",
+          "resourceType": "Image",
+          "transferSize": 5058,
+          "resourceSize": 2599,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/icon.svg?icon.19nrj9_kpwqvh.svg",
+          "resourceType": "Other",
+          "transferSize": 3688,
+          "resourceSize": 1329,
+          "priority": "High"
+        },
+        {
+          "url": "http://localhost:3193/_next/static/chunks/3o-dane4o4jva.js",
+          "resourceType": "Script",
+          "transferSize": 6204,
+          "resourceSize": 9644,
+          "priority": "Low"
+        }
+      ],
+      "observedLcpBreakdown": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "table",
+              "headings": [
+                {
+                  "key": "label",
+                  "valueType": "text",
+                  "label": "Subpart"
+                },
+                {
+                  "key": "duration",
+                  "valueType": "ms",
+                  "label": "Duration"
+                }
+              ],
+              "items": [
+                {
+                  "subpart": "timeToFirstByte",
+                  "label": "Time to first byte",
+                  "duration": 14.232
+                },
+                {
+                  "subpart": "resourceLoadDelay",
+                  "label": "Resource load delay",
+                  "duration": 104.205
+                },
+                {
+                  "subpart": "resourceLoadDuration",
+                  "label": "Resource load duration",
+                  "duration": 50.396
+                },
+                {
+                  "subpart": "elementRenderDelay",
+                  "label": "Element render delay",
+                  "duration": 268.575
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3193/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "lcpDiscovery": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "LCP": 0
+        },
+        "details": {
+          "type": "list",
+          "items": [
+            {
+              "type": "checklist",
+              "items": {
+                "priorityHinted": {
+                  "label": "fetchpriority=high applied",
+                  "value": true
+                },
+                "requestDiscoverable": {
+                  "label": "Request is discoverable in initial document",
+                  "value": true
+                },
+                "eagerlyLoaded": {
+                  "label": "LCP resources shouldn’t use loading=lazy",
+                  "value": true
+                }
+              }
+            },
+            {
+              "type": "node",
+              "lhId": "page-0-IMG",
+              "path": "1,HTML,1,BODY,3,MAIN,4,SECTION,1,FIGURE,0,PICTURE,1,IMG",
+              "selector": "section#service > figure.ms-subhero-media > picture > img",
+              "boundingRect": {
+                "top": 568,
+                "bottom": 850,
+                "left": 17,
+                "right": 395,
+                "width": 377,
+                "height": 282
+              },
+              "snippet": "<img alt=\"Music City Specialty Welding working on a commercial gas manifold on-site\" fetchpriority=\"high\" decoding=\"async\" style=\"position: absolute; height: 100%; width: 100%; inset: 0px;\" sizes=\"(max-width: 900px) 100vw, 46vw\" srcset=\"/_next/image?url=%2Fimages%2Fowner-work%2FIMG_3994.webp&amp;w=256&amp;q=75 256w, /…\" src=\"http://localhost:3193/images/optimized/IMG_3994-768-q75.avif\">",
+              "nodeLabel": "Music City Specialty Welding working on a commercial gas manifold on-site"
+            }
+          ]
+        }
+      },
+      "renderBlocking": {
+        "numericValue": 292,
+        "displayValue": "Est savings of 290 ms",
+        "metricSavings": {
+          "FCP": 300,
+          "LCP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "timespanMs",
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "totalBytes": 30129,
+              "wastedMs": 471
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1lf-biw6omaoa.css",
+              "totalBytes": 5275,
+              "wastedMs": 171
+            }
+          ]
+        }
+      },
+      "fonts": {
+        "numericValue": 0,
+        "displayValue": null,
+        "metricSavings": {
+          "INP": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "wastedMs",
+              "valueType": "ms",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [],
+          "skipSumming": [
+            "wastedMs"
+          ]
+        }
+      },
+      "resources": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": null,
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "label",
+              "valueType": "text",
+              "label": "Resource Type"
+            },
+            {
+              "key": "requestCount",
+              "valueType": "numeric",
+              "label": "Requests"
+            },
+            {
+              "key": "transferSize",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            }
+          ],
+          "items": [
+            {
+              "resourceType": "total",
+              "label": "Total",
+              "requestCount": 19,
+              "transferSize": 346983
+            },
+            {
+              "resourceType": "script",
+              "label": "Script",
+              "requestCount": 10,
+              "transferSize": 180869
+            },
+            {
+              "resourceType": "font",
+              "label": "Font",
+              "requestCount": 3,
+              "transferSize": 71224
+            },
+            {
+              "resourceType": "image",
+              "label": "Image",
+              "requestCount": 2,
+              "transferSize": 43011
+            },
+            {
+              "resourceType": "stylesheet",
+              "label": "Stylesheet",
+              "requestCount": 2,
+              "transferSize": 35404
+            },
+            {
+              "resourceType": "document",
+              "label": "Document",
+              "requestCount": 1,
+              "transferSize": 12787
+            },
+            {
+              "resourceType": "other",
+              "label": "Other",
+              "requestCount": 1,
+              "transferSize": 3688
+            },
+            {
+              "resourceType": "media",
+              "label": "Media",
+              "requestCount": 0,
+              "transferSize": 0
+            },
+            {
+              "resourceType": "third-party",
+              "label": "Third-party",
+              "requestCount": 0,
+              "transferSize": 0
+            }
+          ]
+        }
+      },
+      "longTasks": {
+        "numericValue": null,
+        "displayValue": "7 long tasks found",
+        "metricSavings": {
+          "TBT": 300
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "startTime",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Start Time"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Duration"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+              "duration": 309,
+              "startTime": 3126.5519999999997
+            },
+            {
+              "url": "Unattributable",
+              "duration": 259,
+              "startTime": 683.888
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 162,
+              "startTime": 1105.888
+            },
+            {
+              "url": "Unattributable",
+              "duration": 82.99999999999989,
+              "startTime": 942.888
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 79,
+              "startTime": 1026.888
+            },
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "duration": 64,
+              "startTime": 1267.888
+            },
+            {
+              "url": "Unattributable",
+              "duration": 63,
+              "startTime": 620.888
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ],
+          "skipSumming": [
+            "startTime"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "urls": [
+              "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+              "Unattributable",
+              "http://localhost:3193/services/mobile-welding"
+            ],
+            "tasks": [
+              {
+                "urlIndex": 0,
+                "startTime": 3126.6,
+                "duration": 309,
+                "other": 309,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 683.9,
+                "duration": 259,
+                "other": 259
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1105.9,
+                "duration": 162,
+                "other": 162,
+                "paintCompositeRender": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 942.9,
+                "duration": 83,
+                "other": 83,
+                "scriptEvaluation": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1026.9,
+                "duration": 79,
+                "other": 79,
+                "parseHTML": 0,
+                "scriptEvaluation": 0,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 2,
+                "startTime": 1267.9,
+                "duration": 64,
+                "other": 64,
+                "styleLayout": 0
+              },
+              {
+                "urlIndex": 1,
+                "startTime": 620.9,
+                "duration": 63,
+                "other": 63
+              }
+            ]
+          }
+        }
+      },
+      "scriptBootup": {
+        "numericValue": 701.8640000000005,
+        "displayValue": "0.7 s",
+        "metricSavings": {
+          "TBT": 250
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "total",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Total CPU Time"
+            },
+            {
+              "key": "scripting",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Evaluation"
+            },
+            {
+              "key": "scriptParseCompile",
+              "granularity": 1,
+              "valueType": "ms",
+              "label": "Script Parse"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/services/mobile-welding",
+              "total": 615.868,
+              "scripting": 16.171999999999997,
+              "scriptParseCompile": 11.62
+            },
+            {
+              "url": "Unattributable",
+              "total": 576.7439999999996,
+              "scripting": 8.848,
+              "scriptParseCompile": 0
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "total": 373.1400000000005,
+              "scripting": 319.1960000000005,
+              "scriptParseCompile": 42.624
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/turbopack-0jbwfo4cn6dsd.js",
+              "total": 303.96000000000004,
+              "scripting": 300.12800000000004,
+              "scriptParseCompile": 3.2760000000000002
+            }
+          ],
+          "summary": {
+            "wastedMs": 701.8640000000005
+          },
+          "sortedBy": [
+            "total"
+          ]
+        }
+      },
+      "layoutShifts": {
+        "numericValue": null,
+        "displayValue": null,
+        "metricSavings": {
+          "CLS": 0
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "node",
+              "valueType": "node",
+              "subItemsHeading": {
+                "key": "extra"
+              },
+              "label": "Element"
+            },
+            {
+              "key": "score",
+              "valueType": "numeric",
+              "subItemsHeading": {
+                "key": "cause",
+                "valueType": "text"
+              },
+              "granularity": 0.001,
+              "label": "Layout shift score"
+            }
+          ],
+          "items": []
+        }
+      },
+      "mainThread": {
+        "numericValue": 1981.2119999999934,
+        "displayValue": "2.0 s",
+        "metricSavings": {
+          "TBT": 300
+        },
+        "details": {
+          "type": "table",
+          "headings": [
+            {
+              "key": "groupLabel",
+              "valueType": "text",
+              "label": "Category"
+            },
+            {
+              "key": "duration",
+              "valueType": "ms",
+              "granularity": 1,
+              "label": "Time Spent"
+            }
+          ],
+          "items": [
+            {
+              "group": "scriptEvaluation",
+              "groupLabel": "Script Evaluation",
+              "duration": 673.0999999999959
+            },
+            {
+              "group": "other",
+              "groupLabel": "Other",
+              "duration": 647.6559999999974
+            },
+            {
+              "group": "styleLayout",
+              "groupLabel": "Style & Layout",
+              "duration": 492.96000000000004
+            },
+            {
+              "group": "scriptParseCompile",
+              "groupLabel": "Script Parsing & Compilation",
+              "duration": 107.04000000000005
+            },
+            {
+              "group": "parseHTML",
+              "groupLabel": "Parse HTML & CSS",
+              "duration": 36.903999999999996
+            },
+            {
+              "group": "paintCompositeRender",
+              "groupLabel": "Rendering",
+              "duration": 23.551999999999992
+            }
+          ],
+          "sortedBy": [
+            "duration"
+          ]
+        }
+      },
+      "unusedJs": {
+        "numericValue": 300,
+        "displayValue": "Est savings of 50 KiB",
+        "metricSavings": {
+          "FCP": 0,
+          "LCP": 300
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "subItemsHeading": {
+                "key": "source",
+                "valueType": "code"
+              },
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceBytes"
+              },
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "subItemsHeading": {
+                "key": "sourceWastedBytes"
+              },
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2lm6ee1ot3_cu.js",
+              "totalBytes": 71394,
+              "wastedBytes": 27106,
+              "wastedPercent": 37.9671262441712
+            },
+            {
+              "url": "http://localhost:3193/_next/static/chunks/1zvywf9tt6bb3.js",
+              "totalBytes": 42866,
+              "wastedBytes": 24116,
+              "wastedPercent": 56.25899280575539
+            }
+          ],
+          "overallSavingsMs": 300,
+          "overallSavingsBytes": 51222,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 0,
+              "LCP": 300
+            }
+          }
+        }
+      },
+      "unusedCss": {
+        "numericValue": 20,
+        "displayValue": "Est savings of 19 KiB",
+        "metricSavings": {
+          "FCP": 150,
+          "LCP": 0
+        },
+        "details": {
+          "type": "opportunity",
+          "headings": [
+            {
+              "key": "url",
+              "valueType": "url",
+              "label": "URL"
+            },
+            {
+              "key": "totalBytes",
+              "valueType": "bytes",
+              "label": "Transfer Size"
+            },
+            {
+              "key": "wastedBytes",
+              "valueType": "bytes",
+              "label": "Est Savings"
+            }
+          ],
+          "items": [
+            {
+              "url": "http://localhost:3193/_next/static/chunks/2oo0iochows1x.css",
+              "wastedBytes": 19269,
+              "wastedPercent": 69.47417215873591,
+              "totalBytes": 27735
+            }
+          ],
+          "overallSavingsMs": 20,
+          "overallSavingsBytes": 19269,
+          "sortedBy": [
+            "wastedBytes"
+          ],
+          "debugData": {
+            "type": "debugdata",
+            "metricSavings": {
+              "FCP": 150,
+              "LCP": 20
+            }
+          }
+        }
+      }
+    }
+  ],
+  "configSettings": {
+    "output": "json",
+    "maxWaitForFcp": 30000,
+    "maxWaitForLoad": 45000,
+    "pauseAfterFcpMs": 1000,
+    "pauseAfterLoadMs": 1000,
+    "networkQuietThresholdMs": 1000,
+    "cpuQuietThresholdMs": 1000,
+    "formFactor": "mobile",
+    "throttling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.5600000000002,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    },
+    "throttlingMethod": "simulate",
+    "screenEmulation": {
+      "mobile": true,
+      "width": 412,
+      "height": 823,
+      "deviceScaleFactor": 1.75,
+      "disabled": false
+    },
+    "emulatedUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36",
+    "auditMode": false,
+    "gatherMode": false,
+    "clearStorageTypes": [
+      "file_systems",
+      "shader_cache",
+      "service_workers",
+      "cache_storage"
+    ],
+    "disableStorageReset": false,
+    "debugNavigation": false,
+    "channel": "node",
+    "usePassiveGathering": false,
+    "disableFullPageScreenshot": false,
+    "skipAboutBlank": false,
+    "blankPage": "about:blank",
+    "ignoreStatusCode": false,
+    "locale": "en-US",
+    "blockedUrlPatterns": null,
+    "additionalTraceCategories": null,
+    "extraHeaders": null,
+    "precomputedLanternData": null,
+    "onlyAudits": null,
+    "onlyCategories": null,
+    "skipAudits": null
+  },
+  "statistics": [
+    {
+      "path": "/",
+      "count": 3,
+      "performance": {
+        "min": 82,
+        "median": 86,
+        "max": 87
+      },
+      "lcpMs": {
+        "median": 3472.3418
+      },
+      "tbtMs": {
+        "median": 243
+      },
+      "cls": {
+        "median": 0.001477801074916096
+      }
+    },
+    {
+      "path": "/services/mobile-welding",
+      "count": 3,
+      "performance": {
+        "min": 80,
+        "median": 83,
+        "max": 86
+      },
+      "lcpMs": {
+        "median": 3349.2690000000002
+      },
+      "tbtMs": {
+        "median": 372.7885000000001
+      },
+      "cls": {
+        "median": 0
+      }
+    }
+  ],
+  "passed": false,
+  "followupPassed": false
+}
