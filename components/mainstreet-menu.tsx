@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 import { AskShopButton } from "@/components/shop-actions"
 
@@ -8,6 +8,8 @@ export function MainstreetMenu({ homeHref = "", phoneHref = FALLBACK_SHOP_PHONE_
   const menuRef = useRef<HTMLDetailsElement>(null)
   const summaryRef = useRef<HTMLElement>(null)
   const [open, setOpen] = useState(false)
+
+  useEffect(() => setOpen(!!menuRef.current?.open), [])
 
   function closeMenu() {
     if (menuRef.current) menuRef.current.open = false

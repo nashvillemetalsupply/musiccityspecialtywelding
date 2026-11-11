@@ -12,11 +12,13 @@ const code = ts.transpileModule(source, {
   compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText
 
-function menuHarness() {
-  const states = [], refs = []
+function menuHarness({ initiallyOpen = false } = {}) {
+  const states = [], refs = [], mountEffects = []
   let stateIndex = 0, refIndex = 0, focusCount = 0
+  let mounted = false
   const fakes = {
     react: {
+      useEffect(effect) { if (!mounted) mountEffects.push(effect) },
       useState(initial) {
         const index = stateIndex++
         if (!(index in states)) states[index] = initial
@@ -30,7 +32,7 @@ function menuHarness() {
   const loaded = { exports: {} }
   const context = vm.createContext({ require: (name) => Object.hasOwn(fakes, name) ? fakes[name] : nativeRequire(name) })
   vm.runInContext(`(function(exports, require, module) { ${code}\n})`, context)(loaded.exports, context.require, loaded)
-  const details = { open: false }
+  const details = { open: initiallyOpen }
   const summary = { focus() { focusCount++ } }
   let tree
   function render() {
@@ -53,8 +55,18 @@ function menuHarness() {
     assert.equal(trigger.props["aria-label"], open ? "Close navigation" : "Open navigation")
   }
   render()
+  mounted = true
+  for (const effect of mountEffects) effect()
+  render()
   return { render, toggle, assertState, children, get tree() { return tree }, get focusCount() { return focusCount } }
 }
+
+test("navigation state syncs when details opened before hydration", () => {
+  const menu = menuHarness({ initiallyOpen: true })
+  menu.assertState(true)
+  menu.toggle(false)
+  menu.assertState(false)
+})
 
 test("navigation toggle names and exposes both native details states", () => {
   const menu = menuHarness()
