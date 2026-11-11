@@ -4,7 +4,7 @@
   --ms-container: 76rem;
   --ms-header-height: 73px;
   --ms-mobile-cta-height: 56px;
-  --ms-carbon: #100c08;
+  --ms-carbon: #16100b;
   --ms-wall-1: #191309;
   --ms-wall-2: #221a0e;
   --ms-plank: #241809;
@@ -27,8 +27,8 @@
   --ms-rule: #7a6a4d;
   --ms-rule-light: var(--ms-rule);
   --ms-steel: var(--ms-line-bone);
-  --ms-backdrop: rgb(16 12 8 / 65%);
-  --ms-shadow: rgb(16 12 8 / 34%);
+  --ms-backdrop: rgb(22 16 11 / 65%);
+  --ms-shadow: rgb(22 16 11 / 34%);
   --ms-paper-fill: linear-gradient(180deg, var(--ms-paper), var(--ms-paper-end));
   --ms-wall-grain: repeating-linear-gradient(90deg,
     var(--ms-wall-1) 0 26px, var(--ms-wall-2) 26px 34px, var(--ms-wall-1) 34px 60px);

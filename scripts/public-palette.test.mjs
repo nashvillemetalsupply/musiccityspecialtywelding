@@ -10,7 +10,7 @@ site.walkRules(":root", (rule) => rule.walkDecls((decl) => tokens.set(decl.prop,
 
 // Approved BRAND-BRIEF.md Palette ruling, not colors sampled from the CSS under test.
 const approved = {
-  "--ms-carbon": "#100c08", "--ms-wall-1": "#191309", "--ms-wall-2": "#221a0e",
+  "--ms-carbon": "#16100b", "--ms-wall-1": "#191309", "--ms-wall-2": "#221a0e",
   "--ms-plank": "#241809", "--ms-plank-1": "#2a1d10", "--ms-plank-2": "#3a2916",
   "--ms-surface": "#241d12", "--ms-bone": "#efe6d2", "--ms-chalk": "#f3ead8",
   "--ms-muted": "#d9cdb4", "--ms-neon": "#ffb46b", "--ms-arc": "#ff8a2a",

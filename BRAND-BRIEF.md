@@ -43,7 +43,7 @@ spacing, flat 1px buttons, 44px targets and trimmed CTA counts.
 
 | Role | Hex | Where |
 | --- | --- | --- |
-| night (canvas) | `#100c08` | body, hero, services, process, FAQ, header, footer, sticky bar, chat launcher/header/frame |
+| night (canvas) | `#16100b` | body, hero, services, process, FAQ, header, footer, sticky bar, chat launcher/header/frame |
 | wall grain | `#191309` / `#221a0e` | 90deg stripe over night; hero/services only |
 | plank (brown sections) | `#241809` | work, get-it, territory, contact, subscope/subfaq |
 | plank grain | `#2a1d10` / `#3a2916` | stripe over plank |
