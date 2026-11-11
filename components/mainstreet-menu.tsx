@@ -1,15 +1,17 @@
 "use client"
 
-import { useRef, type KeyboardEvent } from "react"
+import { useRef, useState, type KeyboardEvent } from "react"
 import { FALLBACK_SHOP_PHONE_DISPLAY, FALLBACK_SHOP_PHONE_HREF } from "@/lib/shop-phone-shared"
 import { AskShopButton } from "@/components/shop-actions"
 
 export function MainstreetMenu({ homeHref = "", phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay = FALLBACK_SHOP_PHONE_DISPLAY }: { homeHref?: string; phoneHref?: string; phoneDisplay?: string }) {
   const menuRef = useRef<HTMLDetailsElement>(null)
   const summaryRef = useRef<HTMLElement>(null)
+  const [open, setOpen] = useState(false)
 
   function closeMenu() {
     if (menuRef.current) menuRef.current.open = false
+    setOpen(false)
   }
 
   function closeMenuAndRestoreFocus() {
@@ -24,8 +26,8 @@ export function MainstreetMenu({ homeHref = "", phoneHref = FALLBACK_SHOP_PHONE_
   }
 
   return (
-    <details className="ms-menu" ref={menuRef} onKeyDown={handleKeyDown}>
-      <summary ref={summaryRef} aria-label="Open navigation"><span></span><span></span></summary>
+    <details className="ms-menu" ref={menuRef} onKeyDown={handleKeyDown} onToggle={(event) => setOpen(event.currentTarget.open)}>
+      <summary ref={summaryRef} aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open}><span></span><span></span></summary>
       <button className="ms-menu-backdrop" type="button" tabIndex={-1} aria-label="Close navigation" onClick={closeMenuAndRestoreFocus} />
       <div className="ms-menu-panel">
         <a href={`${homeHref}#work`} onClick={closeMenu}>The work</a>

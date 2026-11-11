@@ -1865,6 +1865,7 @@ html {
 
 .sw-sign {
   position: relative;
+  font-family: var(--font-ms-display), sans-serif;
   display: inline-flex;
   flex-direction: column;
   gap: 0.1em;

@@ -131,7 +131,26 @@ test("every retained live selector arm and declaration block survives the move",
 // Normalize its native appearance so mobile browsers paint the shared CTA CSS;
 // leave font/border resets to the same preflight rules that style the Quote link.
 // Keep both labels on one line so adjusted fallback fonts preserve the bar height.
+// Perf93 explicitly gives the home h1 the display font already used by its
+// visible spans. Permit only that declaration in this exact frozen sign rule.
+const HOME_SIGN_RULE = `.sw-sign {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1em;
+  padding: 1.6rem 1.9rem 1.7rem;
+  border: 3px solid rgba(0, 0, 0, 0.85);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.2)),
+    repeating-linear-gradient(90deg, #171208 0 22px, #1d1710 22px 28px, #171208 28px 50px);
+  box-shadow:
+    inset 0 0 40px rgba(0, 0, 0, 0.75),
+    0 6px 24px rgba(0, 0, 0, 0.6),
+    0 0 60px rgba(255, 138, 42, 0.12);
+}`
 const APPROVED_PUBLIC_CSS_REPLACEMENTS = [
+  [HOME_SIGN_RULE, HOME_SIGN_RULE.replace("  position: relative;", "  position: relative;\n  font-family: var(--font-ms-display), sans-serif;")],
   [
     ".ms-mobile-cta a {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.55rem;\n  padding: 0.95rem 0.6rem;\n  text-decoration: none;\n  font-family: var(--font-ms-display), sans-serif;\n  font-weight: 900;\n  font-size: 1.15rem;\n  text-transform: uppercase;\n}",
     ".ms-mobile-cta button { -webkit-appearance: none; appearance: none; cursor: pointer; }\n\n.ms-mobile-cta a, .ms-mobile-cta button {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 0.55rem;\n  padding: 0.95rem 0.6rem;\n  text-decoration: none;\n  font-family: var(--font-ms-display), sans-serif;\n  font-weight: 900;\n  font-size: 1.15rem;\n  text-transform: uppercase;\n  white-space: nowrap;\n}",
@@ -293,6 +312,8 @@ test("public colors live in tokens and every retained color reference resolves",
 test("public CSS remains frozen except approved polish and exact color token extraction", () => {
   const original = read("scripts/qa/baseline/pre-s11-public-css.css")
   const current = read("app/globals.css")
+  const sign = postcss.parse(current).nodes.find((node) => node.type === "rule" && node.selector === ".sw-sign")
+  assert.equal(sign?.nodes.find((node) => node.type === "decl" && node.prop === "font-family")?.value, "var(--font-ms-display), sans-serif", "home h1 must retain its display font token")
   const root = fileURLToPath(new URL("..", import.meta.url))
   const usage = scanClassUsage(root)
   // The cohesion pass replaced the old process phone treatment with ShopActions.
