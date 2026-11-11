@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { registerHooks } from "node:module"
 import path from "node:path"
 import test from "node:test"
@@ -23,11 +23,10 @@ let findAssistantAnswer
 try { ({ findAssistantAnswer } = await import("../lib/assistant/answers.ts")) }
 finally { hooks.deregister() }
 
-function run(args) {
-  const guard = `globalThis.fetch = () => { throw new Error("Unexpected network request"); };`
+function runNode(args, env = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ["--experimental-strip-types", "--import", `data:text/javascript,${encodeURIComponent(guard)}`, runner, ...args], {
-      cwd: root, env: {}, windowsHide: true,
+    const child = spawn(process.execPath, ["--experimental-strip-types", ...args], {
+      cwd: root, env, windowsHide: true,
     })
     let stdout = "", stderr = ""
     child.stdout.on("data", (chunk) => { stdout += chunk })
@@ -35,6 +34,10 @@ function run(args) {
     child.on("error", reject)
     child.on("close", (code) => resolve({ code, stdout, stderr }))
   })
+}
+
+function run(args, { env = {}, setup = `globalThis.fetch = () => { throw new Error("Unexpected network request"); };` } = {}) {
+  return runNode(["--import", `data:text/javascript,${encodeURIComponent(setup)}`, runner, ...args], env)
 }
 
 test("live audit refuses a missing base URL before any network request", async () => {
@@ -91,6 +94,127 @@ test("live audit marks all 118 mocked requests and stays strictly below 60 per t
   }
   assert.equal(new Set(requests.map((request) => request.input.session_id)).size, requests.length)
   assert.ok(results.every((entry) => entry.review === "PENDING"))
+})
+
+test("live audit sends the OIDC header on every request and redacts diagnostics and results", async () => {
+  const token = 'synthetic"oidc\\token'
+  const result = await runNode(["--input-type=module", "--eval", `
+    import assert from "node:assert/strict"
+    import { runLiveAudit } from "./scripts/assistant-audit-live.mjs"
+    const token = process.env.VERCEL_OIDC_TOKEN
+    const cases = [{ id: "T1", question: "First?" }, { id: "T2", question: "Second?" }]
+    const observed = [], requests = []
+    let clock = 0
+    const results = await runLiveAudit(cases, {
+      baseUrl: "https://preview.example.test", now: () => clock, wait: async (ms) => { clock += ms },
+      onResult: (result) => observed.push(result),
+      fetch: async (url, init) => {
+        assert.equal(new Headers(init.headers).get("x-vercel-trusted-oidc-idp-token"), token)
+        requests.push(JSON.stringify({ url, ...init }))
+        return new Response(JSON.stringify({ reply: token, handoff_reason: token }))
+      },
+    })
+    assert.equal(requests.length, 2)
+    assert.ok(requests.every((request) => request.includes("[REDACTED]")))
+    const failed = await runLiveAudit(cases, {
+      baseUrl: "https://preview.example.test",
+      fetch: async (url, init) => {
+        throw new Error(token + " " + JSON.stringify({ url, ...init, headers: Object.fromEntries(init.headers) }))
+      },
+    })
+    const escapedToken = JSON.stringify(token).slice(1, -1)
+    for (const result of results) {
+      assert.equal(result.status, 200)
+      assert.equal(result.reply, "[REDACTED]")
+      assert.equal(result.handoff_reason, "[REDACTED]")
+      assert.ok(!result.reply.includes(token) && !result.reply.includes(escapedToken))
+      assert.ok(!result.handoff_reason.includes(token) && !result.handoff_reason.includes(escapedToken))
+    }
+    assert.ok(!failed[0].reason.includes(token) && !failed[0].reason.includes(escapedToken))
+    const nested = await runLiveAudit(cases.slice(0, 1), {
+      baseUrl: "https://preview.example.test",
+      fetch: async () => new Response(JSON.stringify({ reply: { [token]: [{ [escapedToken]: token }] } })),
+    })
+    assert.deepEqual(nested[0].reply, { "[REDACTED]": [{ "[REDACTED]": "[REDACTED]" }] })
+    console.log(JSON.stringify({ results, observed, requests, failed, nested }))
+  `], { VERCEL_OIDC_TOKEN: token })
+  assert.equal(result.code, 0, result.stderr)
+  const output = JSON.parse(result.stdout)
+  assert.equal(output.results.length, 2)
+  assert.equal(output.failed[0].status, null)
+  assert.match(output.failed[0].reason, /\[REDACTED\]/)
+  assert.ok(!JSON.stringify(output).includes(token))
+  assert.ok(!result.stdout.includes(JSON.stringify(token).slice(1, -1)))
+  assert.ok(!result.stderr.includes(token))
+})
+
+test("live audit omits the OIDC header when the environment value is unset or empty", async () => {
+  for (const env of [{}, { VERCEL_OIDC_TOKEN: "" }]) {
+    const result = await runNode(["--input-type=module", "--eval", `
+      import assert from "node:assert/strict"
+      import { runLiveAudit } from "./scripts/assistant-audit-live.mjs"
+      let observed
+      const results = await runLiveAudit([{ id: "T1", question: "First?" }], {
+        baseUrl: "https://preview.example.test",
+        fetch: async (_url, init) => {
+          const headers = new Headers(init.headers)
+          observed = { hasOidc: headers.has("x-vercel-trusted-oidc-idp-token"), contentType: headers.get("content-type") }
+          return new Response(JSON.stringify({ reply: "Scope review required." }))
+        },
+      })
+      assert.deepEqual(observed, { hasOidc: false, contentType: "application/json" })
+      assert.equal(results.length, 1)
+      assert.equal(results[0].status, 200)
+    `], env)
+    assert.equal(result.code, 0, result.stderr)
+  }
+})
+
+test("live runner output JSON and console output never contain the OIDC token", async () => {
+  mkdirSync(path.join(root, ".tmp"), { recursive: true })
+  const temporary = mkdtempSync(path.join(root, ".tmp", "audit-runner-oidc-test-"))
+  const output = path.join(temporary, "report.json")
+  const token = "synthetic-runner-oidc-token"
+  try {
+    const result = await run(["--prod", "--base-url", "https://preview.example.test", "--test-suppression-confirmed", "--output", output], {
+      env: { VERCEL_OIDC_TOKEN: token },
+      setup: `globalThis.fetch = async (_url, init) => {
+        const token = process.env.VERCEL_OIDC_TOKEN
+        if (new Headers(init.headers).get("x-vercel-trusted-oidc-idp-token") !== token) throw new Error("Missing OIDC header")
+        return new Response(JSON.stringify({ reply: token, handoff_reason: token }), { status: 503 })
+      };`,
+    })
+    assert.equal(result.code, 1)
+    const report = readFileSync(output, "utf8")
+    assert.equal(JSON.parse(report).results[0].reply, "[REDACTED]")
+    assert.ok(!report.includes(token))
+    assert.ok(!result.stdout.includes(token))
+    assert.ok(!result.stderr.includes(token))
+  } finally {
+    rmSync(temporary, { recursive: true, force: true })
+  }
+})
+
+test("live runner rejects malformed OIDC tokens without exposing them or sending a request", async () => {
+  mkdirSync(path.join(root, ".tmp"), { recursive: true })
+  const temporary = mkdtempSync(path.join(root, ".tmp", "audit-runner-invalid-oidc-test-"))
+  const output = path.join(temporary, "report.json")
+  const token = "synthetic-invalid-oidc-token\nprivate-credential"
+  try {
+    const result = await run(["--prod", "--base-url", "https://preview.example.test", "--test-suppression-confirmed", "--output", output], {
+      env: { VERCEL_OIDC_TOKEN: token },
+    })
+    assert.notEqual(result.code, 0)
+    assert.match(result.stderr, /VERCEL_OIDC_TOKEN is not a valid HTTP header value/)
+    assert.doesNotMatch(result.stderr, /Unexpected network request/)
+    for (const secret of [token, JSON.stringify(token).slice(1, -1), ...token.split("\n")]) {
+      assert.ok(!result.stderr.includes(secret))
+      assert.ok(!result.stdout.includes(secret))
+    }
+    assert.equal(existsSync(output), false)
+  } finally {
+    rmSync(temporary, { recursive: true, force: true })
+  }
 })
 
 test("pacing accounts for slow responses and never retries rate limits or transport failures", async () => {

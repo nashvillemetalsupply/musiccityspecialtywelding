@@ -58,6 +58,26 @@ export function loadLiveAuditCases(auditPath, paraphrasePath) {
 export async function runLiveAudit(cases, { baseUrl, fetch: send = globalThis.fetch,
   now = () => performance.now(), wait = sleep, onResult = () => {} }) {
   const origin = auditOrigin(baseUrl)
+  const token = process.env.VERCEL_OIDC_TOKEN
+  const tokenHeader = "x-vercel-trusted-oidc-idp-token"
+  const headers = new Headers({ "content-type": "application/json" })
+  if (token) {
+    try { headers.set(tokenHeader, token) }
+    catch { throw new Error("VERCEL_OIDC_TOKEN is not a valid HTTP header value") }
+  }
+  // Fetch reads the real headers; diagnostic JSON must never contain credentials.
+  Object.defineProperty(headers, "toJSON", { value: () => ({
+    ...Object.fromEntries(headers), ...(token ? { [tokenHeader]: "[REDACTED]" } : {}),
+  }) })
+  const secrets = token ? [...new Set([token, JSON.stringify(token).slice(1, -1)])] : []
+  const redactText = (text) => secrets.reduce((value, secret) => value.replaceAll(secret, "[REDACTED]"), text)
+  const redact = (value) => {
+    if (typeof value === "string") return redactText(value)
+    if (Array.isArray(value)) return value.map(redact)
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value)
+      .map(([key, item]) => [redactText(key), redact(item)]))
+    return value
+  }
   const results = []
   let previousStart = null
   for (const entry of cases) {
@@ -74,7 +94,7 @@ export async function runLiveAudit(cases, { baseUrl, fetch: send = globalThis.fe
     let result
     try {
       const response = await send(`${origin}/api/assist`, {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input),
+        method: "POST", headers, body: JSON.stringify(input),
         redirect: "error", signal: AbortSignal.timeout(65_000),
       })
       const value = await response.json()
@@ -90,6 +110,7 @@ export async function runLiveAudit(cases, { baseUrl, fetch: send = globalThis.fe
       result = { ...entry, input, status: null, reply: "", handoff_reason: null,
         grade: "DEAD END", reason: `Request failed: ${error.message}`, review: "PENDING" }
     }
+    result = redact(result)
     results.push(result)
     onResult(result)
     // No retries or further traffic after rate limiting or a broken endpoint.

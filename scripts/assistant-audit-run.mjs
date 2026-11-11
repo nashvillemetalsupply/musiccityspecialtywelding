@@ -16,7 +16,8 @@ import { auditOrigin, loadLiveAuditCases, runLiveAudit, LIVE_AUDIT_INTERVAL_MS,
 // boundary. All application route, turn, store, journal and handoff code is real.
 // --baseline reads the pre-fix source snapshot made before audit changes.
 // --prod is the legacy live-HTTP switch. It requires an explicit --base-url;
-// neither the target nor credentials are read from the environment.
+// the target is never read from the environment. Live requests may use the
+// VERCEL_OIDC_TOKEN environment credential for protected previews.
 const { values: options } = parseArgs({ options: {
   prod: { type: "boolean" }, baseline: { type: "boolean" },
   output: { type: "string" }, "base-url": { type: "string" },
