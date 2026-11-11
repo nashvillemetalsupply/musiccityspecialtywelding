@@ -515,3 +515,106 @@ The detached main baseline used isolated `npm ci` dependencies in
 and no changes to main. Its recorded `next start :3101` process was verified and
 stopped. `git -c core.longpaths=true worktree remove --force` succeeded; the path
 is absent and the worktree is unregistered. Main remains `c7827bc`.
+
+## Fable round 2
+
+VERDICT R2: FAIL
+
+Reviewed `fix/fable-final-r1` at 83873da, built, served locally on port 3311. Looked at all 12 routes (home, service areas, seven services, privacy, terms, 404) at 390x844 and 1440x900, the mobile menu open (home and a service page), the chat open (390, 768, 1440), and spot widths 320, 768, 1024, 1280x720. Measured with bounding boxes, not by eye, wherever round 1 used a screenshot. Read `lib/assistant/answers.ts`, `lib/assistant/turn.ts` and `docs/assistant-audit-fable-r1-after.json`. Read the raw Lighthouse reports in `docs/perf/2026-11-10/`. No forms submitted, no production messages, no code edits.
+
+Close, not there. Round 1's 20 are nearly all closed and the home page is the strongest it has been. What is left sits mostly in the service template on desktop and in the chat, plus a handful of small misses elsewhere. 15 defects remain: 1 HIGH, 6 MEDIUM, 8 LOW.
+
+### Round 1 defects: status
+
+| # | R2 status | Evidence |
+|---|---|---|
+| 1 | FIXED | Every route computes IBM Plex Sans / IBM Plex Mono / Barlow Condensed only. No fallback family in any text node, M or D. |
+| 2 | CLOSED | Barlow Condensed stays; brief edit accepted. |
+| 3 | FIXED | Zero text nodes under 12px on all 24 route/viewport captures. Form labels 13px. |
+| 4 | FIXED on home sections, NOT on the service template | Home sections and footer all start at x=112 at 1440. See R2-5 and R2-8. |
+| 5 | FIXED | Panel [0,73,390,319] solid `rgb(16,12,8)`, backdrop [0,73,390,771] at 65%, five full-width rows 50-54px tall, Esc and backdrop both close. See R2-12 for one leftover. |
+| 6 | FIXED at rest, one leftover in transit | Launcher [1277,828,139,48] at 1440x900 and [1117,648,139,48] at 1280x720. At page end, zero intersections with any link, button or text on `/`, `/services/mobile-welding`, `/service-areas`. The FAQ "+" overlap round 1 named is gone. While scrolling it still crosses two controls; see R2-14. |
+| 7 | FIXED | Last footer text ends 95px above document end at 390: the 57px sticky bar plus the stated clearance. |
+| 8 | FIXED | `.ms-subclose` count is 0 on all seven service pages; one "Show us the job." close each. |
+| 9 | FIXED | Road-call list runs x=112 to 1311 in two columns. |
+| 10 | FIXED | Checkbox 20x20 at 320, 390, 768, 1024, 1440. |
+| 11 | FIXED | Consent and fallback links compute `display: inline`, `min-height: 0`; text has no stray spaces. |
+| 12 | FIXED | Submit is `ms-button-primary`, `rgb(255,138,42)`, full inner width (596.5px at 1440, 308px at 390). Select `appearance: none` with chevron. |
+| 13 | PARTIAL | 69 sourced entries, no invented facts, safety refusals intact, the 12 named rows answer, handoff openings vary (largest shared opening 10-11 of 82). Still open: R2-1 to R2-4 and R2-13. |
+| 14 | RULED | See perf ruling below. |
+| 15 | FIXED | Same eight chips, same component, on `/` and `/service-areas`. |
+| 16 | PARTIAL | Mobile-welding hero is now the on-site commercial photo. Trailer hero is still a bare deck from above and equipment repair still has no true match; that is an asset gap (Facts needed 11), not something Codex can fix, and does not carry the verdict. The mailbox hero is a different matter: R2-15. |
+| 17 | FIXED | 404 actions are `ms-button-primary` / `ms-button-secondary`, Plex Sans 16px. |
+| 18 | FIXED | Copy matches the round 1 wording. |
+| 19 | FIXED | No orphaned or awkward breaks seen at 390 or 1440. |
+| 20 | FIXED | Sitemap: home, service-areas and all seven services 2026-11-10; privacy 2026-09-17; terms 2026-08-11. |
+
+Also clean: zero horizontal overflow at 320, 390, 768, 1024, 1440; zero broken images; zero console errors on real routes; CLS 0 on home at 390; `/#contact` lands on the contact heading under the sticky header; chat opens in under 200ms, focus goes to the textarea, Esc closes and returns focus, close button 44x48.
+
+### Remaining and new defects
+
+**R2-1. Chat on the live model is still unproven. HIGH.** Round 1 items 13d (live eval) and 13e (delivery readback to the owner phone) were excluded, not done. The sourced table only answers complete-question matches; any paraphrase goes to the live model, and nobody has read what it says. The owner standard is "handles everything". I cannot sign that from an offline audit.
+Fix: on a preview deployment with the provider enabled and delivery pointed at a test number (never production), run the same 82-row audit that produced `docs/assistant-audit-fable-r1-after.json`, plus three paraphrases of each of the 12 named rows (36 rows), and commit the output as `docs/assistant-audit-live-r2.json`. Pass bar: zero invented business facts, zero safety refusals missed, zero paraphrase of a sourced question handed off. Then one real handoff to the owner phone, read back. If preview shares production delivery, this needs the owner's word first; name that in the hand-back instead of skipping it.
+
+**R2-2. Sourced answers dead-end, and yes/no questions do not start with yes or no. MEDIUM.** "Do you offer mobile welding?" returns "We bring the rig when the metal is better repaired where it sits." and stops. No yes, no next step, no way to reach the shop.
+Fix 1, `lib/assistant/turn.ts`: in the line `if (!sourcedReply && !reply.includes("?") && fields.is_job !== "no") reply = ...question()`, remove `!sourcedReply &&` so a sourced answer also ends with the next intake question.
+Fix 2, `lib/assistant/answers.ts`: every entry whose question is a yes/no question starts its answer with "Yes." or "No." followed by the sourced sentence.
+
+**R2-3. FAQ answers are cut to two sentences and lose the caveat. MEDIUM.** `gate-repair-faq-1` drops "Motor, operator, and electrical work are outside what we do, so call the installer for those." `mobile-welding-faq-2` drops "We will tell you when an on-site repair is not the right fit." Those are the sentences that stop a wasted call.
+Fix, `lib/assistant/answers.ts`: use the full FAQ answer for FAQ-derived entries (they are all short), or make the truncation not count a leading "Yes." / "No." as a sentence. Add a test asserting both dropped sentences appear in the replies.
+
+**R2-4. Chat voice reads like a database, not the shop. LOW.** "The site lists...", "Franklin is a listed service area.", "...are also listed shop capabilities.", "steel/aluminum", "make/model".
+Fix, `lib/assistant/answers.ts`: rewrite in first person plural. "We work in Franklin." "We also do X and Y." "steel or aluminum". "make and model". No reference to "the site" or "listed" in any answer; add a test that fails on `/\b(the site|listed)\b/i` and on a slash between two words in answer text.
+
+**R2-5. Service pages have four left edges on desktop. MEDIUM.** All seven `/services/<slug>`, 1440. Section content sits at x=112. The breadcrumb starts at x=58, the "One private link." band (`.ms-subglass`) at x=48, the "Other work" strip at x=58, and the FAQ rows at x=152 under a heading at x=112. This is round 1 defect 4 again, on the template it did not name.
+Fix: `.ms-breadcrumb` (`app/globals.css`) and `.ms-subglass` (`app/globals.css`, the rule with `padding: clamp(1.5rem,4vw,2.5rem) clamp(1rem,5vw,3rem)`) get the same inline inset the sections use, so the first glyph lands at x=112 at 1440 and on the section gutter at 390 and 1024. The FAQ indent is `app/page-cohesion.css`, `.ms-site .ms-subfaq > div { padding-inline: clamp(1.25rem, 3vw, 2.5rem); ... }`: set `padding-inline: 0` so each `summary` starts at x=112.
+
+**R2-6. "Other work" strip is unstyled. MEDIUM.** All seven service pages, M and D. `app/services/[slug]/page.tsx` renders it as a second `<nav className="ms-breadcrumb" aria-label="Other services">`. On desktop it is one run of 12px mono words with no separators ("Other work Trailer Welding & Repair Gate Repair Equipment Repair ..."); a reader cannot tell where one link ends. On mobile it wraps into four ragged rows.
+Fix: give it its own class, `ms-otherwork`, in `app/services/[slug]/page.tsx`. Label "Other work" in the existing mono label style on its own line; below it render the six links with the chip style `ServiceAreaChips` already uses (same border, padding, gap), wrapping, left edge on the container. No new colors.
+
+**R2-7. Two FAQ designs on one site. MEDIUM.** Home `#faq`: cream card, questions in IBM Plex Sans 16px sentence case, 688px column beside the heading. Service `.ms-subfaq`: dark, questions in Barlow Condensed 20px uppercase, stacked under the heading and stopping at x=840 with the right 40% of the row empty. Same heading ("Straight answers."), two looks.
+Fix: render the service FAQ with the home FAQ markup and classes (heading left, cream card right, Plex Sans sentence-case questions). Delete the `.ms-subfaq summary` Barlow/uppercase rules.
+
+**R2-8. Home hero copy starts at x=60, everything below it at x=112. LOW.** `/`, 1440. The first scroll still shows the left-margin jump round 1 was about.
+Fix: the hero is `app/page-cohesion.css`, `.ms-site .ms-hero { max-width: 88rem; margin-inline: auto; ... }`, with the home overrides in `app/homepage-polish.css` (`.ms-home .ms-hero`). Set the hero copy column's inline start so the eyebrow and h1 land at x=112 at 1440, using the same container inset as the sections. The nav bar is not exempt: its logo sits at x=44 and its call button ends at x=1396 on every route. Give the row inside `.ms-site .ms-nav` (`app/page-cohesion.css`) the same container, logo at 112 and button ending at 1328 at 1440, so there is one edge from the top of the page to the footer.
+
+**R2-9. Breadcrumb gap after "Home" is wider than the others. LOW.** Service pages. The "Home" link box is 44px wide for about 29px of text (tap-size min-width), so it reads "Home   / Services / Mobile Welding".
+Fix, `app/page-cohesion.css`, `.ms-site .ms-breadcrumb a, .ms-site .ms-subplan-lead a { min-width: 44px; min-height: 44px; }`: drop `min-width` for the breadcrumb links; keep `min-height`.
+
+**R2-10. Privacy and terms contact cards break the email mid-word on mobile, and the casing differs from the footer. LOW.** `/privacy` and `/terms` at 390: "sales@musiccityspecialtyweldi / ng.com". Footer says "Sales@...", the cards say "sales@...".
+Fix, `app/privacy/page.tsx` (mailto link near line 224) and `app/terms/page.tsx` (near line 169): remove `break-all`, put a `<wbr />` after the `@`, and trim the card's inline padding under 480px so "musiccityspecialtywelding.com" holds on one line at 320. One casing everywhere, lowercase: `components/footer.tsx`, `components/lazy-quote-form.tsx`, `lib/assistant/contact.ts` and the `answers.ts` entry that quotes it.
+
+**R2-11. Dead gap in the customer-page section on mobile. LOW.** `/` `#job-glass` at 390: 97px from the last line of list text to the example card. The 32px grid row gap and a 32px `margin-top` on `figure.ms-job-glass-demo` stack on top of the list's own bottom padding; the other blocks in the section sit 20 to 32px apart.
+Fix, `app/globals.css`, in the mobile block that already holds `.ms-job-glass-demo { border-width: .45rem; transform: none; }`: add `margin-top: 0` so the grid gap alone separates copy and card.
+
+**R2-12. Page scrolls behind the open mobile menu. LOW.** All routes at 390. Menu open at scrollY 0: a wheel moves the page to 600 and a touch drag to 945, menu still open. The existing lock, `body:has(.ms-menu[open]) { overflow: hidden; }` in the `max-width: 979px` block of `app/page-cohesion.css`, computes to `hidden` on body, but the document scrolls on `html`, so it does nothing.
+Fix: in that same block add `html:has(.ms-menu[open]) { overflow: hidden; }`.
+
+**R2-13. Chat hardcodes the phone number. LOW.** `lib/assistant/answers.ts`, the contact entry: "Call (615) 703-3296, use the website quote form, or email ...". The page renders its number from the shop-phone config, so chat and page can disagree (in this local build the page shows (615) 810-4910 and the chat says 703-3296). The number is the brief's, not invented; the wiring is the defect.
+Fix: `lib/assistant/contact.ts` holds the email and form constants but no phone. Add the phone there, sourced from the same shop-phone value the page components render (`lib/shop-phone-shared.ts` and its server counterpart), and build the contact answer from those constants. Add a test that the contact answer contains the configured display number.
+
+**R2-14. Desktop chat launcher crosses two controls while scrolling. LOW.** Not the at-rest overlap round 1 named, which is fixed. (a) Service pages at 1440: the "See how it works" link at the right end of `.ms-subglass` passes under the launcher (115x34px covered). (b) At 1280x720 the launcher covers the right 75px of the quote form, including the end of "Send the job", as the form comes up through the bottom of the screen.
+Fix: (a) in `.ms-subglass`, move the link under the paragraph, left-aligned, so nothing sits in the launcher column. (b) hide the launcher while `form.ms-quote-form` is in the viewport: one IntersectionObserver in the launcher component toggling a class with `opacity: 0; pointer-events: none`. The form has its own "Ask the shop".
+
+**R2-15. Mailbox page hero is a white-background catalog cutout. MEDIUM.** `/services/custom-metal-products`, M and D. Every other hero is a job photo on the dark page; this one is a white slab (560x420 at 1440) with a cut-out mailbox and a visible erased-object ghost in the middle. It reads as a stock listing, not this shop's work, and it is the brightest thing on the site.
+Fix, `lib/service-pages.ts`, the `custom-metal-products` entry (`image: "/images/mailbox.webp"`): replace it with a real photo of a mailbox or planter the shop built. That photo has to come from the owner, the same asset gap as defect 16, so ask for it in the hand-back. Until it arrives, use the closest `public/images/owner-work/` fabrication photo with an honest `imageAlt`. A loose match on a real job photo is the defect 16 kind of gap and does not block; a white stock cutout does. PASS needs the cutout gone, not the perfect photo.
+
+### Perf ruling (#14)
+
+Not a blocking regression. A floor of about 91 is acceptable for launch. The 98 bar from round 1 is withdrawn. Launch bar: every measured page 90 or higher on a 3-run median.
+
+What the raw reports say. Home: main `c7827bc` 90/91/98, round 1 `ca3d856` 91/92/87, round 2 final 91/91/91, LCP about 3.4s on all three. No regression. Mobile welding: main 95/94/95 (LCP about 2.9s), round 1 91/91/92 (LCP about 3.3s), round 2 final 91/85/84 (LCP 3.34 to 3.47s). The 3 to 4 point drop from main to 91 is real and is the cost described below. The 85 and 84 are not: LCP moved about 100ms while TBT went from about 107ms to 297 and 336ms on unchanged script, which is the machine, not the page. But that leaves the final build's mobile-welding median at 85 on paper, so one condition before deploy: re-run the three mobile-welding runs at HEAD on a quiet machine and record them in `docs/perf/2026-11-10/`. Median 90 or higher closes it. If it comes back under 90 with TBT over 250ms again, the launcher or chat script on the service route is the suspect and it becomes a defect.
+
+Why. Fonts went from 16 KB to 84 KB because round 1 defects 1 and 3 demanded the brief's faces; that cost is mine and it stays. The rest is avoidable. Named follow-up, first patch after launch, not a merge gate:
+
+1. Service pages fetch the home page and its hero. Loading `/services/mobile-welding` fires three `/?_rsc=` prefetches and one request for the home hero (`welder-1600`). Ten `Link`s on that page resolve to `/`: the nav logo, the three nav links and their three mobile-menu copies (`/#work`, `/#services`, `/#job-glass`), breadcrumb "Home" and "Services", and "See how it works". Set `prefetch={false}` on every `Link` to `/` or `/#...` rendered off the home page, including `components/shop-actions.tsx` (`/#contact`).
+2. `app/layout.tsx`: load IBM Plex Mono in one weight (500) and drop 600; one 12 KB face gone. Check labels still read.
+3. Re-encode `IMG_3994-768-q75.avif` (49 KB) to 40 KB or under.
+
+Close-out bar for the follow-up: mobile-welding 3-run median 93 or higher and within 2 points of main, plus one field read after deploy.
+
+### What a PASS needs
+
+R2-1 through R2-7 and R2-15 fixed and shown. R2-8 through R2-14 fixed in the same pass; they are small. Then I look again at the service template on desktop and at the live chat transcript, and nothing else.
+
+Notes, not defects: the mobile menu has no link to `/service-areas`; fine for a one-page site. "Operated by Neverlift Chassis Works, LLC" is still Facts needed 1 and still the shop owner's call. The committed audit JSON shows the fallback owner number in one answer; that is a test-environment artifact because production throws on fallback.
