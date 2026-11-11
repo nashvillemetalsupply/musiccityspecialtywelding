@@ -18,6 +18,105 @@ hooks.deregister()
 
 const fields = (overrides = {}) => ({ name: null, callback_phone: null, need: "", material_size: null, location: null, timing: null, callback_window: null, is_job: "unsure", ...overrides })
 
+test("a towing safety question does not repeat its boundary on payment or ordinary intake turns", async () => {
+  globalThis.__expertModel = async () => ({ reply: "What material is it?", fields: fields() })
+  const conversation = [{ role: "user", content: "is my cracked trailer safe to tow?" }]
+  const first = await handleAssistantTurn(conversation, { isTest: true })
+  assert.equal(first.branch, "expert-safety-intake")
+  assert.equal((first.reply.match(/Nobody can call that safe from a chat/g) ?? []).length, 1)
+  conversation.push({ role: "assistant", content: first.reply })
+  for (const content of ["what payment methods do you take?", "It's steel and 4 feet long."]) {
+    const result = await handleAssistantTurn([...conversation, { role: "user", content }], { isTest: true })
+    assert.doesNotMatch(result.reply, /Nobody can call that safe|Have it looked at before you tow/i, content)
+    assert.notEqual(result.branch, "expert-safety-intake", content)
+    if (content.startsWith("It's steel")) assert.equal(result.branch, "model-answer")
+  }
+})
+
+test("damaged trailer, stair and structural job requests remain normal intake", async () => {
+  globalThis.__expertModel = async () => ({ reply: "What material is it?", fields: fields() })
+  for (const content of [
+    "Can you repair my trailer tongue? It's cracked.",
+    "Can you repair my trailer?",
+    "My trailer frame is cracked",
+    "My stair railing is rusted.",
+    "I need a bent structural beam repaired.",
+    "I need a cracked forklift fork repaired.",
+    "Can I bring the trailer in for repair?",
+    "Can I send photos of the crack for you to weld?",
+    "Can I send a photo of the load bearing bracket?",
+    "Can I send photos of the trailer we use?",
+    "How do I send photos for a trailer repair?",
+    "How can I arrange for you to repair a trailer?",
+    "I need my trailer back in service by Friday.",
+    "I need a cracked trailer tongue repaired and back in service next week.",
+    "The trailer has a 7000 pound load capacity and a cracked tongue.",
+  ]) {
+    const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+    assert.equal(result.branch, "model-answer", content)
+    assert.doesNotMatch(result.reply, /Nobody can call that safe|Have it looked at before you tow/i, content)
+    assert.match(result.reply, /What material is it\?/, content)
+  }
+})
+
+test("explicit safety, return-to-service, capacity and DIY questions retain the safety boundary", async () => {
+  globalThis.__expertModel = async () => ({ reply: "What material is it?", fields: fields() })
+  for (const content of [
+    "Is it safe to tow my trailer with a cracked tongue?",
+    "how do I weld this myself",
+    "How should I properly weld a cracked hitch?",
+    "Can I keep using it?",
+    "Is my cracked forklift fork safe?",
+    "Is it OK to load the trailer?",
+    "Can I drive it with a cracked bracket?",
+    "Can it just be welded and put back in service?",
+    "Can a bent trailer tongue just be welded and put back in service?",
+    "Can you weld it and put it back in service?",
+    "Is it OK to put it back in service?",
+    "Can you double the capacity?",
+    "What is the load rating after repair?",
+    "Can you weld a propane tank?",
+    "Can you repair a pressure vessel?",
+    "Should I drill and weld the crack myself?",
+  ]) {
+    const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+    assert.equal(result.branch, "expert-safety-intake", content)
+    assert.equal((result.reply.match(/Nobody can call that safe from a chat/g) ?? []).length, 1, content)
+  }
+})
+
+test("prior customer scope and claim questions do not override a later normal intake turn", async () => {
+  globalThis.__expertModel = async () => ({ reply: "What material is it?", fields: fields() })
+  for (const previous of ["Do you repair gate motors?", "Can you weld cast iron?", "Do you take credit cards for this job?"]) {
+    const first = await handleAssistantTurn([{ role: "user", content: previous }], { isTest: true })
+    const result = await handleAssistantTurn([
+      { role: "user", content: previous }, { role: "assistant", content: first.reply },
+      { role: "user", content: "It's steel and 4 feet long." },
+    ], { isTest: true })
+    assert.equal(result.branch, "model-answer", previous)
+    assert.equal(result.decision_trace.concern, null, previous)
+    assert.equal(result.reply, "What material is it?", previous)
+  }
+})
+
+test("Spanish and voice safety boundaries clear on later ordinary intake turns", async () => {
+  for (const [opening, latest, modelReply, options, boundary] of [
+    ["¿Es seguro remolcar mi trailer?", "Es acero de 4 pies.", "¿La pieza ya tuvo una reparación?", {}, /necesita inspección antes/],
+    ["Is it safe to tow my cracked trailer?", "It's steel and four feet long.", "Has the damaged area been repaired before?", { voice: { callbackPhone: "+16155550188" } }, /Nobody can call that safe/],
+  ]) {
+    globalThis.__expertModel = async () => ({ reply: modelReply, fields: fields() })
+    const first = await handleAssistantTurn([{ role: "user", content: opening }], { isTest: true, ...options })
+    assert.match(first.reply, boundary)
+    const result = await handleAssistantTurn([
+      { role: "user", content: opening }, { role: "assistant", content: first.reply }, { role: "user", content: latest },
+    ], { isTest: true, ...options })
+    assert.equal(result.branch, "model-answer")
+    assert.doesNotMatch(result.reply, boundary)
+    assert.equal(result.reply, modelReply)
+    if (options.voice) assert.doesNotMatch(result.reply, /\d|tel:|mailto:|https?:/)
+  }
+})
+
 test("expert guard never approves a damaged trailer for towing", async () => {
   globalThis.__expertModel = async () => ({ reply: "Yes, it is safe to tow. Just weld over the crack.", fields: fields() })
   const result = await handleAssistantTurn([{ role: "user", content: "The tongue is cracked. Is it safe to tow my trailer there?" }])

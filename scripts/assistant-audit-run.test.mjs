@@ -7,6 +7,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { auditOrigin, loadLiveAuditCases, runLiveAudit, LIVE_AUDIT_INTERVAL_MS,
   LIVE_AUDIT_OUTPUT, LIVE_AUDIT_SOURCE, LIVE_AUDIT_PARAPHRASES } from "./assistant-audit-live.mjs"
+import { gradeAuditReply } from "./assistant-audit-bank.mjs"
 
 const root = fileURLToPath(new URL("../", import.meta.url))
 const runner = fileURLToPath(new URL("./assistant-audit-run.mjs", import.meta.url))
@@ -65,6 +66,34 @@ test("live case set has the exact 82 offline handoffs and three novel paraphrase
   // suffix and internal-test normalization, rather than comparing raw text.
   for (const entry of paraphrases) assert.equal(findAssistantAnswer(`[INTERNAL TEST] ${entry.question}`), undefined, entry.question)
   assert.equal(LIVE_AUDIT_OUTPUT, "docs/assistant-audit-live-r3.json")
+})
+
+test("live cases refresh stale owner-fact expectations without changing the historical question set", () => {
+  const cases = loadLiveAuditCases(path.join(root, LIVE_AUDIT_SOURCE), path.join(root, LIVE_AUDIT_PARAPHRASES))
+  const ownerIds = ["Q051", "Q052", "Q054", "Q056", "Q060", "Q062", "Q063", "Q064", "Q067", "Q069", "Q072", "Q075", "Q102", "Q130", "Q136"]
+  const contacts = "[Call](tel:+16157033296). [Quote form](/#contact). [Email](mailto:Sales@musiccityspecialtywelding.com)."
+  for (const id of ownerIds) {
+    const entry = cases.find((entry) => entry.id === id)
+    assert.equal(entry.expected, "answer", entry.question)
+    assert.equal(entry.source.file, "owner 2026-11-11", entry.question)
+    const answer = findAssistantAnswer(entry.question)
+    assert.ok(answer, entry.question)
+    assert.equal(gradeAuditReply(entry, { reply: answer.answer }).grade, "ANSWERED", entry.question)
+    assert.equal(gradeAuditReply(entry, { reply: "What needs welding?" }).grade, "DEAD END", entry.question)
+    assert.equal(gradeAuditReply(entry, { reply: contacts, handoff_reason: "unknown" }).grade, "DEAD END", entry.question)
+  }
+  assert.equal(gradeAuditReply(cases.find((entry) => entry.id === "Q051"), { reply: "$200 per hour." }).grade, "WRONG")
+  assert.equal(gradeAuditReply(cases.find((entry) => entry.id === "Q062"), { reply: "We guarantee net-30." }).grade, "DEAD END")
+  assert.equal(gradeAuditReply(cases.find((entry) => entry.id === "Q130"), { reply: "We carry full liability insurance." }).grade, "WRONG")
+  assert.equal(gradeAuditReply(cases.find((entry) => entry.id === "Q136"), { reply: "We accept cash and all major credit cards." }).grade, "WRONG")
+
+  const offline = JSON.parse(readFileSync(path.join(root, LIVE_AUDIT_SOURCE), "utf8"))
+  for (const original of offline.results.filter((entry) => entry.grade === "HANDOFF" && !ownerIds.includes(entry.id))) {
+    const entry = cases.find((entry) => entry.id === original.id)
+    assert.equal(entry.expected, original.expected, entry.question)
+    assert.deepEqual(entry.forbidden, original.forbidden, entry.question)
+    if (entry.expected === "handoff") assert.equal(gradeAuditReply(entry, { reply: "Yes, you can do that." }).grade, "DEAD END", entry.question)
+  }
 })
 
 test("live audit marks all 118 mocked requests and stays strictly below 60 per ten minutes", async () => {

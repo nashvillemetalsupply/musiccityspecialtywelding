@@ -75,7 +75,7 @@ test("live gate inspection caveat clears prior unknown intake through the servic
 test("stale human model metadata cannot bypass trailer safety intake after a human request", async () => {
   const result = await serviceConversation([
     { message: "I need a person", output: { reply: "Please call the shop.", handoff_reason: "human", fields: fields() } },
-    { message: "trailer tongue cracked, Mt Juliet", output: { reply: "The cracked tongue needs an inspection. What name should the shop use?", handoff_reason: "human", fields: fields({ need: "trailer tongue cracked", location: "Mt Juliet", is_job: "yes" }) } },
+    { message: "trailer tongue cracked, Mt Juliet. Is it safe to tow?", output: { reply: "The cracked tongue needs an inspection. What name should the shop use?", handoff_reason: "human", fields: fields({ need: "trailer tongue cracked", location: "Mt Juliet", is_job: "yes" }) } },
   ])
   assert.equal(result.stored[0].branch, "contact-handoff")
   assert.equal(result.responses[0].handoff_reason, "human")
@@ -114,7 +114,7 @@ test("requests to connect to somebody remain current human intent after prior in
   }
 })
 
-test("four customer turns save a trailer lead while model handoffs stay in intake", async () => {
+test("four customer turns save a trailer lead while stale handoffs clear for normal intake", async () => {
   const result = await serviceConversation([
     { message: "I need a trailer repair", output: { reply: "The shop needs to inspect the trailer. Where is the job?", handoff_reason: "unknown", fields: fields({ need: "trailer repair", is_job: "yes" }) } },
     { message: "Lebanon", output: { reply: "What name should the shop use?", handoff_reason: "human", fields: fields({ need: "trailer repair", location: "Lebanon", is_job: "yes" }) } },
@@ -123,8 +123,14 @@ test("four customer turns save a trailer lead while model handoffs stay in intak
   ])
   assert.equal(result.filed, 1)
   assert.equal(result.responses.at(-1).lead_saved, true)
-  for (const response of result.responses) {
-    assert.equal(response.continue_intake, true)
+  assert.equal(result.responses[0].continue_intake, true)
+  assert.equal(result.stored[0].branch, "expert-claim-intake")
+  for (const [index, response] of result.responses.entries()) {
+    if (index > 0) {
+      assert.equal(response.handoff_reason, undefined)
+      assert.equal(result.stored[index].branch, "model-answer")
+    }
+    assert.doesNotMatch(response.reply, /Nobody can call that safe|Have it looked at before you tow/)
     assert.doesNotMatch(response.reply, /\b(?:booked|scheduled|guarantee|guaranteed|available)\b|\b(?:we|the shop|someone)\s+(?:will|can)\s+(?:call|text|come|arrive|finish)\b/i)
   }
   assert.match(result.responses.at(-1).reply, /What time works for a callback\?/)

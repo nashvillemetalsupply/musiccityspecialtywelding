@@ -311,7 +311,7 @@ test("a bare capability followup keeps an unsupported object until a concrete su
   assert.equal(known.handoff_reason, undefined)
 })
 
-test("a sourced service FAQ does not erase an earlier explicit towing safety boundary", async () => {
+test("a sourced service FAQ retains prior safety context without repeating the safety boundary", async () => {
   globalThis.__answersModel = async () => assert.fail("the reviewed response can be checked without a provider")
   const result = await handleAssistantTurn([
     { role: "user", content: "Can I tow a trailer with a cracked tongue to your shop?" },
@@ -319,8 +319,9 @@ test("a sourced service FAQ does not erase an earlier explicit towing safety bou
     { role: "user", content: "Can you repair a trailer where it sits?" },
   ])
   assert.equal(result.handoff_reason, "unknown")
-  assert.match(result.reply, /Nobody can call that safe from a chat/)
-  assert.match(result.reply, /Have it looked at before you tow it/)
+  assert.equal(result.branch, "expert-claim-intake")
+  assert.match(result.reply, /inspection before a repair decision/)
+  assert.doesNotMatch(result.reply, /Nobody can call that safe|Have it looked at before you tow it/)
   assert.doesNotMatch(result.reply, /you can tow|roadworthy|rated capacity/)
 })
 

@@ -66,10 +66,13 @@ const DISCLOSURE = "I'm an automated assistant for Music City Specialty Welding.
 
 export function assistantExpertConcern(message: string, reply: string): "safety" | "scope" | "claim" | null {
   if (/\b(?:gate|gates)\b.{0,45}\b(?:motors?|openers?|operators?|electri\w*|controls?|intercoms?)\b|\b(?:motors?|openers?|controls?|intercoms?)\b.{0,30}\bgate\b|\b(?:motor|el[eé]ctrico)\b.{0,30}\bpuerta\b|\bpuerta\b.{0,30}\bmotor\b/i.test(message)) return "scope"
-  if (/\b(?:how to|how (?:do|can|should) I|DIY|step[ -]by[ -]step)\b.{0,70}\b(?:weld|repair|grind|braze)\b|\b(?:weld|repair)\b.{0,50}\bmyself\b|\b(?:what|which)\b.{0,30}\b(?:filler|rod|preheat|welding settings)\b/i.test(message)) return "safety"
-  if (/\b(?:safe to (?:tow|use|drive|lift)|roadworthy|tow (?:it|this|the trailer)|fuel tank|propane tank|pressure vessel|lifting fork|forklift fork|load capacity|rated load|doubl\w*.*capacity|seguro remolcar|tanque de (?:gas|propano))\b/i.test(message)) return "safety"
-  if (/\b(?:trailer|hitch|tongue|lifting|guardrail|stairs?|structural)\b/i.test(message)
-    && /\b(?:repair|crack\w*|broke\w*|damag\w*|failure|bent|rust\w*)\b/i.test(message)) return "safety"
+  if (/\b(?:how to|how (?:do|can|should) I) (?:(?:safely|properly|just|actually|best) )?(?:weld|repair|grind|braze|drill)\b|\b(?:DIY|step[ -]by[ -]step)\b.{0,70}\b(?:weld|repair|grind|braze|drill)\b|\b(?:can|could|should|may) I (?:just )?(?:weld|repair|grind|braze|drill)\b|\b(?:weld|repair)\b.{0,50}\bmyself\b|\b(?:what|which)\b.{0,30}\b(?:filler|rod|preheat|welding settings)\b/i.test(message)) return "safety"
+  // Damage describes the job. Only a request for use/safety approval, repair
+  // instructions or specialist tank work needs the explicit safety boundary.
+  if (/\b(?:safe|okay|ok)\b.{0,40}\b(?:tow|use|using|drive|driving|lift|lifting|load|loading|haul|hauling)\b|\b(?:is|are|would|will)\b.{0,60}\b(?:safe|roadworthy)\b|\b(?:can|could|should|may) (?:I|we) (?:(?:still|safely|just) )?(?:tow|use|drive|lift|load|haul)\b|\b(?:keep|continue) (?:using|towing|driving|lifting|loading|hauling)\b/i.test(message)) return "safety"
+  if (/\b(?:can|could|should|may|will|would) (?:it|this|that|a|an|the|my|our|your|you(?: just)?)\b.{0,70}\b(?:back in|return\w* to) service\b|\b(?:safe|okay|ok) to\b.{0,40}\b(?:back in|return\w* to) service\b/i.test(message)) return "safety"
+  if (/\b(?:what|which|how|can|could|should|will|would|does|do|is|are|determine|confirm|certif\w*|tell)\b.{0,70}\b(?:load capacity|load rating|rated (?:load|capacity))\b|^\s*(?:\[INTERNAL TEST\]\s*)?(?:load capacity|load rating|rated (?:load|capacity))\b|\bdoubl\w*.{0,50}capacity\b/i.test(message)) return "safety"
+  if (/\b(?:fuel tank|propane tank|pressure vessel|segur[oa] (?:para )?(?:remolcar|usar|conducir|levantar|cargar)|tanque de (?:gas|propano))\b/i.test(message)) return "safety"
   if (/\b(?:cast iron|titanium|magnesium|underwater|aerospace|ASME|AWS|CWI|certif\w*)\b/i.test(message)) return "claim"
   // Owner policies are permitted only through the complete sourced answer.
   // A plausible model assertion still needs review rather than a new promise.
@@ -81,7 +84,7 @@ export function assistantExpertConcern(message: string, reply: string): "safety"
   if (/\b(?:licens\w*|insur\w*|bonded|cash|credit cards?|debit cards?|financing|installments?)\b|\b(?:payments?|hours)\s+(?:are|is|accepted|include|from)\b/i.test(positive)) return "claim"
   if (/\b(?:grind (?:out|a|the)|weld with|clean the crack|preheat)\b/i.test(positive)) return "safety"
   if (/\b(?:safe to (?:tow|use|drive|lift)|safely (?:tow|use|drive|lift)|seguro (?:para )?remolcar|puedes remolcar|roadworthy|DOT approved|AWS|ASME|CWI|(?:certified|qualified) (?:welder|inspector)|will hold|stronger than (?:the )?original|restores? (?:the )?(?:rated )?capacity|(?:you can|you should|just|first|then) (?:tow|load|lift|drive|weld|grind|drill|braze)|(?:use|run) (?:a )?(?:7018|6011|nickel)|preheat.{0,25}\d)\b/i.test(positive)) return "safety"
-  if (/\b(?:you can|you should|it is okay to|it's okay to|go ahead and) (?:continue\s+)?(?:tow|drive|haul|load|lift|use)\b|(?:^|[.!?]\s*)(?:drive|tow|haul|load|lift|keep (?:using|hauling)|continue (?:using|hauling))\b|\b(?:food[ -]?safe|food[ -]?grade|approved for food)\b/i.test(positive)) return "safety"
+  if (/\b(?:you can|you should|it is okay to|it's okay to|go ahead and) (?:(?:continue|keep)\s+)?(?:tow(?:ing)?|driv(?:e|ing)|haul(?:ing)?|load(?:ing)?|lift(?:ing)?|us(?:e|ing))\b|(?:^|[.!?]\s*)(?:drive|tow|haul|load|lift|keep (?:using|hauling)|continue (?:using|hauling))\b|\b(?:food[ -]?safe|food[ -]?grade|approved for food)\b/i.test(positive)) return "safety"
   if (/\b(?:powder coat\w*|ceramic coat\w*|machining|CNC|laser cut\w*|waterjet|engine rebuild\w*|rebuild\w* (?:engines?|transmissions?)|intercoms?|automatic gate controls?)\b|\b(?:we|shop).{0,20}(?:open|close).{0,20}(?:\d|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|weekdays?|weekends?)|https?:\/\/|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(positive.replaceAll(ASSISTANT_SHOP_EMAIL, ""))) return "claim"
   if (/\b(?:costs?|price[ds]?|hourly rate|rates?|charges?|deposits?)\s+(?:is|are|would|will|you|of|about|around|approximately|starts?|\d)|\b(?:cuesta|cuestan|costar[aá]|tarifa|anticipo)\b/i.test(positive)) return "claim"
   if (/\b(?:we(?:'ll| will)|it(?:'ll| will))\b.{0,35}\b(?:ready|done|finished|arrive|there|dispatch)|\b(?:ready|done|finished|completed) (?:by|in|on|today|tomorrow)\b|\b(?:guaranteed|certifications?|certified|warrant(?:y|ied)|24[ -]?hour service|same[ -]?day service)\b/i.test(positive)) return "claim"
@@ -325,7 +328,9 @@ export async function handleAssistantTurn(
   reply = stripAssistantSelfDisclosure(stripAssistantMoney(reply))
   const replyPhones = `${output.reply}\n${reply}`.match(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g) ?? []
   const foreignPhone = replyPhones.some((value) => value.replace(/\D/g, "").slice(-10) !== phone.display.replace(/\D/g, "").slice(-10))
-  const concern = sourcedReply ? null : assistantExpertConcern(customerText, String(output.reply)) ?? assistantExpertConcern(customerText, reply)
+  // History grounds fields and contextual sourced-answer limits; message rules
+  // apply only to this turn. Always check raw and visible model claims too.
+  const concern = sourcedReply ? null : assistantExpertConcern(latest, String(output.reply)) ?? assistantExpertConcern(latest, reply)
     ?? (outsideUsualArea || foreignPhone || unsupportedCapabilityAssertion(reply) ? "claim" : null)
   const customerHandoff = sourcedReply ? null : assistantHandoffReason(latest)
   // A bare follow-up such as "Can you do that?" keeps its last job object.

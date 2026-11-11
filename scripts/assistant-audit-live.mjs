@@ -3,12 +3,19 @@ import { randomUUID } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { performance } from "node:perf_hooks"
 import { setTimeout as sleep } from "node:timers/promises"
-import { gradeAuditReply } from "./assistant-audit-bank.mjs"
+import { buildAuditBank, gradeAuditReply } from "./assistant-audit-bank.mjs"
 
 export const LIVE_AUDIT_INTERVAL_MS = 12_000
 export const LIVE_AUDIT_OUTPUT = "docs/assistant-audit-live-r3.json"
 export const LIVE_AUDIT_SOURCE = "docs/assistant-audit-fable-r4-dry.json"
 export const LIVE_AUDIT_PARAPHRASES = "scripts/fixtures/assistant-audit-paraphrases.json"
+
+// The historical dry report fixes the 118-question selection, not today's
+// approved facts. Owner rows need no service-page data and must come from the
+// current reviewed audit bank, keyed by question because its IDs can shift.
+const ownerFacts = new Map(buildAuditBank({ services: [], serviceAreas: [] })
+  .filter((entry) => ["owner-facts", "owner-facts-provider"].includes(entry.category))
+  .map((entry) => [entry.question, entry]))
 
 export function auditOrigin(value) {
   assert.ok(value, "Live HTTP audit requires --base-url; there is no default target")
@@ -31,10 +38,17 @@ export function loadLiveAuditCases(auditPath, paraphrasePath) {
   assert.equal(groups.length, 12, "Expected the twelve named sourced questions")
   const canonicalQuestions = new Set(groups.map((group) => group.canonicalQuestion))
   assert.equal(canonicalQuestions.size, 12, "Canonical sourced questions must be distinct")
-  const cases = handoffs.map(({ id, category, question, source, expected, requiredAnswer, forbidden }) => ({
-    id, category, question, source, expected, referenceAnswer: requiredAnswer,
-    ...(forbidden ? { forbidden } : {}), set: "offline-handoff",
-  }))
+  const cases = handoffs.map(({ id, category, question, source, expected, requiredAnswer, forbidden }) => {
+    const ownerFact = ownerFacts.get(question)
+    return { id, category, question,
+      source: ownerFact?.source ?? source, expected: ownerFact?.expected ?? expected,
+      referenceAnswer: ownerFact?.requiredAnswer ?? requiredAnswer,
+      // These are deterministic owner answers. Require the approved content,
+      // and replace obsolete forbidden facts with the current claim checks.
+      ...(ownerFact ? { requiredAnswer: ownerFact.requiredAnswer } : {}),
+      ...((ownerFact?.forbidden ?? forbidden) ? { forbidden: ownerFact?.forbidden ?? forbidden } : {}),
+      set: "offline-handoff" }
+  })
   for (const group of groups) {
     assert.equal(group.questions.length, 3, `Expected three paraphrases of ${group.canonicalQuestion}`)
     const canonical = audit.results.find((entry) => entry.expected === "answer"

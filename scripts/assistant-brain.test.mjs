@@ -236,7 +236,7 @@ test("browser-safe contact fallback and reason detection preserve failure identi
 })
 
 test("every unknown, safety, policy and human handoff includes both direct call and quote form", async () => {
-  for (const content of ["I want a person", "Can you weld titanium?", "My trailer frame is cracked", "Do you repair gate motors?", "Are you insured and licensed?", "Can you guarantee the weld for ten years?", "Can you come after hours tonight?"]) {
+  for (const content of ["I want a person", "Can you weld titanium?", "My trailer frame is cracked. Is it safe to tow?", "Do you repair gate motors?", "Are you insured and licensed?", "Can you guarantee the weld for ten years?", "Can you come after hours tonight?"]) {
     globalThis.__assistantBrainModel = async () => ({ reply: "Yes, we do that.", fields: fields() })
     const result = await handleAssistantTurn([{ role: "user", content }])
     assert.ok(result.handoff_reason, content)
