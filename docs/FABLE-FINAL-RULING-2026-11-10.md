@@ -870,3 +870,149 @@ the post-deploy live-model check described above; it was not run in this round.
 
 The owned local verification server was stopped and its port confirmed free.
 All QA browser contexts were closed; user browser sessions were untouched.
+
+## Fable round 4
+
+**VERDICT R4: PASS**
+
+Signed as ready to merge `fix/fable-final-r1` (HEAD `10b1c5d`) to `main` and
+deploy. No blocking defects. One named follow-up (F-1) and the post-deploy
+list below do not block the merge.
+
+Method: production build of `10b1c5d` served with `next start` on
+`127.0.0.1:3313` (`NEXT_PUBLIC_ASSISTANT_CHAT=1`, `ASSISTANT_VOICE=0`),
+headless Chrome through Playwright, read-only routing: any non-GET request
+would have been aborted and logged, and none was attempted; off-origin
+requests (analytics and the like) were aborted without being counted. No form was
+submitted and no chat turn was sent. Measurements are bounding boxes read from
+the rendered page, and every screenshot named below was opened and looked at.
+Evidence: `C:\Users\Owner\.claude\jobs\5dfaa88c\tmp\fable-r4\` (`r4a.json`
+R3 checks, `r4c.json` launcher sweep, `r4b.json` and `r4d.json` regression
+sweep, `bank-dump.txt` answer bank).
+
+### R3 fixes
+
+1. **R3-1 PASS (menu open no longer locks or jumps the page).** Menu opened at
+   390 on all 11 public routes from scrollY 600: nav stays at top 0, the
+   summary stays visible, panel spans 73 to 392, links are 54/54/54/50/50 px
+   tall, Escape closes it, scrollY is unchanged through open, wheel, touch and
+   close. Same at 360 and 768 on the routes sampled.
+2. **R3-2 PASS (FAQ heading).** The heading renders as exactly two lines,
+   "Straight" / "answers.", at 980, 1024, 1040, 1100, 1180, 1280, 1339, 1366,
+   1440 and 1920 on `/` and `/services/mobile-welding`, and at 1100 and 1280
+   on the other six service routes. Horizontal overflow 0. The FAQ card's
+   right edge sits 45 px left of the launcher at every width from 980 to 1440
+   (1280: card right 1072, launcher left 1117).
+3. **R3-3 PASS (Yes./No. prefixes).** 69 entries and 139 patterns dumped from
+   the answer bank; zero wh-question patterns answer with a leading "Yes." or
+   "No.". The one deliberate exception is `mobile-shop-fit`, which is correct.
+4. **R3-4 PASS (launcher over controls).** Zero intersections between the
+   launcher and any link, button or form control on `/` and `/service-areas`
+   at 1024x768, 1280x720, 1366x768 and 1440x900, sampled every 8 px through a
+   full-page scroll. Side effects of the added padding are clean: city chips wrap to
+   three rows on home at 1024, two at 1280, one row on `/service-areas`.
+
+### Runner (`scripts/assistant-audit-run.mjs`)
+
+PASS as described. `--prod` refuses to run without `--base-url`, asserts the
+URL is origin-only, sends `is_test: true` and prefixes `[INTERNAL TEST]`,
+opens its output with `wx` so it cannot overwrite a prior record, and sets
+`redirect: "error"`. `scripts/assistant-audit-run.test.mjs` and
+`scripts/assistant-answers.test.mjs`: 22 pass under Node 22. Limitation, not a
+defect in this round: the live mode still carries 10 hardcoded questions, so
+it cannot yet run the 82-row plus 36-paraphrase bar in R2-1 (see post-deploy
+item 1).
+
+### Ruling on the launcher over the final "e." at 1280
+
+**Accepted. Not a defect.** Confirmed as Codex reported: on home at 1280x720
+the launcher covers two glyphs of "scope." for about 56 px of scroll. It is
+not a one-off, and the record should say so plainly. A fixed launcher in the
+bottom-right corner passes over the right end of any full-width text line
+that scrolls beneath it:
+
+- home at 1024: up to 18 glyphs of one line;
+- `/service-areas` at 1024: up to 24;
+- service pages, list-item line ends: 2 to 16 glyphs at 1024 and 1280, 1 to 6
+  at 1366, none at 1440;
+- `/privacy` and `/terms` at 980 to 1220: up to 27 and 19 glyphs per line;
+  clear at 1280 and wider.
+
+Each pass lasts roughly 56 to 130 px of scroll and the reader clears it by
+scrolling. No text is left covered at page bottom, the one place a scroll
+cannot clear: across all 44 route-and-width sweeps (8 px steps) zero glyphs
+sit under the launcher within 16 px of maximum scroll. My bar in R3-4 was controls, not text, and
+that is the right bar: padding every text block to the launcher's width would
+narrow the reading column sitewide to fix something a scroll tick fixes. No
+change required.
+
+### Regression sweep
+
+PASS. All 11 public routes (`/`, `/service-areas`, `/privacy`, `/terms`, and
+the seven `/services/*` pages) at 390x844 and 1440x900: HTTP 200, horizontal
+overflow 0, zero broken images, exactly one `h1`, nav 73 px, zero page errors,
+zero console errors (aborted off-origin requests excluded). Home at 390 scrolled to its true bottom (height 14,326,
+20 screens, 16 images, none broken).
+
+- Menu open at 390: all 11 routes, as in R3-1.
+- Chat open at 1440: all 11 routes, dialog at [968, 488, 1416, 876], fully in
+  view, phone link matches the page's `tel:+16158104910`, no voice control,
+  Escape closes.
+- Chat open at 390: all 11 routes (hero "Ask the shop" on nine, the bottom
+  call bar on `/privacy`, `/terms`, and again on `/` and gate-repair after
+  scroll), dialog at [12, 364, 378, 768], focus lands in the message field,
+  no voice control, Escape closes.
+
+Contact sheets viewed: home 390 (three sheets) and 1440, service-areas 1440,
+privacy 390, custom-metal-products 1440, trailer-welding-repair 1440,
+gate-repair 390, menu 390, chat 390 and 1440. No visual regression seen.
+
+### Follow-up, not blocking
+
+**F-1. `/privacy`: one inline link passes partly under the launcher at 980 to
+1024 wide.** The link "how Google uses information from sites that use its
+services" is partly covered at 980x700 (81x44 px of overlap) and 1024x768
+(38x44 px) for one short scroll range mid-page. It is clear at 1100 and
+wider, the rest of the link stays clickable, a scroll tick clears it, and it
+is keyboard reachable throughout. This is outside R3-4's bar, which named `/`
+and `/service-areas`, and it is the only control hit found on any of the 11
+routes at 1024x768, 1280x720 and 1366x768. Exact fix, in
+`app/page-cohesion.css`:
+
+```css
+@media (min-width: 980px) and (max-width: 1279px) {
+  .ms-site.ms-legal > div { padding-right: 7.5rem; }
+}
+```
+
+Trialled by injecting it into the rendered page only (nothing written to the
+repo): all `/privacy` and `/terms` text clears the launcher at 980, 1024,
+1100, 1180 and 1220 (1024: text right edge 829 against launcher left 861;
+980: 786 against 817), overflow stays 0, and the pages grow 50 to 240 px.
+Both pages are already clear at 1280 and wider without it. It can ride the
+next routine change; it does not need its own round.
+
+### Post-deploy checks, not blocking
+
+1. **R2-1 live eval on a preview.** 82 audit rows plus 36 paraphrases against
+   the live model, `is_test: true` and `[INTERNAL TEST]` on every turn, under
+   60 requests per 10 minutes, output to `docs/assistant-audit-live-r3.json`.
+   The runner must first be extended past its 10 hardcoded questions and
+   paced. Round 3 already rules that the preview must be assumed to share the
+   production database and that only marked turns are safe, so item 3 below
+   lands before this runs at volume. File a dated docket row within one day
+   of deploy.
+2. **13e: one owner-witnessed real handoff** from the chat to the shop.
+3. **Suppress `emailAssistantTranscript` and the follow-up SMS outside
+   production** (`VERCEL_ENV` check), before item 1 runs at volume.
+4. **Owner photo for `/services/custom-metal-products`** (R2-15, defect 16):
+   the hero still shows a cut-letter piece, not a mailbox or planter.
+5. **Rendered-page check after deploy:** the live site at 390 and 1440, menu
+   open, chat open, on the production domain.
+6. **Performance follow-up** toward the 93 target.
+7. **`.env` files in the base repo root** are the owner's call; not read in
+   any round.
+
+The verification server on port 3313 was stopped (my PID only) and the port
+confirmed free. No code was edited, nothing was committed or pushed, and this
+section is left uncommitted.
