@@ -101,6 +101,15 @@ const questionWords = new Set(capabilityWords("a an the can could do does would 
 // capability or accessory. Keep this separate from the repository's objects.
 const failureWords = new Set(capabilityWords("broke off fell fallen came tore torn apart stopped quit snapped detached damaged failed"))
 
+function locationNeedsTravelConfirmation(location: string | null): boolean {
+  if (!location || assistantKnowledge.serviceAreas.some((area) => location.toLowerCase().includes(area.toLowerCase()))) return false
+  // A site/access description is still useful intake evidence, but says nothing
+  // about the city. Leave any named place/address for the shop to confirm.
+  const siteOnly = /\b(?:barn|driveway|job\s*site|warehouse|plant|(?:machine|factory|shop) floor|property|facility)\b/i.test(location)
+    && !location.replace(/\b(?:behind|beside|near|inside|outside|on|at|in|the|a|an|my|our|your|back|front|of|barn|driveway|job\s*site|warehouse|plant|machine|factory|shop|floor|property|facility)\b/gi, "").replace(/[\s,.'’-]/g, "")
+  return !siteOnly
+}
+
 function unsupportedCapabilityQuestion(message: string): boolean {
   message = message.replace(/\[INTERNAL TEST\]/gi, "")
   // Unknown object words cannot establish a shop capability. This deliberately
@@ -316,7 +325,7 @@ export async function handleAssistantTurn(
   const spanish = assistantSpanish(customerText)
   const question = () => spanish ? assistantQuestionInSpanish(nextQuestion(fields, conversation)) : nextQuestion(fields, conversation)
   const callLink = options.voice ? (spanish ? "Di persona o pulsa cero para hablar con el taller" : "Say person or press zero to reach the shop") : `[${spanish ? "Llama al taller al" : "Call the shop at"} ${phone.display}](${phone.href})`
-  const outsideUsualArea = Boolean(fields.location && !assistantKnowledge.serviceAreas.some((area) => fields.location!.toLowerCase().includes(area.toLowerCase())))
+  const outsideUsualArea = locationNeedsTravelConfirmation(fields.location)
   let reply = stripAssistantMoney(output.reply)
     // The model cannot choose a different phone, destination or HTML surface.
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")

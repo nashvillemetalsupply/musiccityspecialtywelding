@@ -20,6 +20,23 @@ const ladder = "[INTERNAL TEST] Do you weld aluminum boat ladders?"
 const gate = "[INTERNAL TEST] My steel gate hinge broke off the post in Lebanon. Can you fix it?"
 const gateReply = "We repair metal gate hinges and posts. Did the hinge break, or did it tear metal out of the post?"
 
+test("site descriptions are not unlisted cities, while named travel still needs confirmation", async () => {
+  for (const location of ["behind the barn", "the jobsite", "my driveway", "our warehouse", "our plant", "our machine floor", "the barn in Knoxville", "Knoxville"]) {
+    const content = `My trailer needs repair at ${location}.`
+    globalThis.__turnRegressionModel = async () => ({ reply: "What material is it?", handoff_reason: null, fields: fields({ need: "trailer needs repair", location, is_job: "yes" }) })
+    const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+    if (location.includes("Knoxville")) {
+      assert.equal(result.handoff_reason, "unknown", location)
+      assert.match(result.reply, /Travel to that location depends on the job/, location)
+    } else {
+      assert.equal(result.handoff_reason, undefined, location)
+      assert.equal(result.branch, "model-answer", location)
+      assert.equal(result.fields.location, location)
+      assert.doesNotMatch(result.reply, /Travel|confirm the trip|dispatch/i, location)
+    }
+  }
+})
+
 test("Q142 unavailable assistant always supplies configured contact routes and one question", async () => {
   const message = "I need help with a broken gate but the assistant is unavailable."
   const phone = { display: "(615) 810-4910", href: "tel:+16158104910" }
