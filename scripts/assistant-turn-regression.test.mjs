@@ -20,6 +20,16 @@ const ladder = "[INTERNAL TEST] Do you weld aluminum boat ladders?"
 const gate = "[INTERNAL TEST] My steel gate hinge broke off the post in Lebanon. Can you fix it?"
 const gateReply = "We repair metal gate hinges and posts. Did the hinge break, or did it tear metal out of the post?"
 
+test("Q106-P1 service-worker intent keeps the model photo answer even with human metadata", async () => {
+  const content = "I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?"
+  const reply = "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+  globalThis.__turnRegressionModel = async () => ({ reply, handoff_reason: "human", fields: fields({ need: "weld a part", is_job: "yes" }) })
+  const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+  assert.equal(result.handoff_reason, undefined)
+  assert.match(result.reply, /Send photos of the full item and close-ups of the failure/)
+  assert.equal(result.branch, "model-answer")
+})
+
 test("site descriptions are not unlisted cities, while named travel still needs confirmation", async () => {
   for (const location of ["behind the barn", "the jobsite", "my driveway", "our warehouse", "our plant", "our machine floor", "the barn in Knoxville", "Knoxville"]) {
     const content = `My trailer needs repair at ${location}.`

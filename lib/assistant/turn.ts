@@ -2,7 +2,7 @@ import { jsonWithClaude, type ClaudeModelDiagnostics } from "../ai.ts"
 import { recordClaudeRequestDiagnostics, type ClaudeRequestDiagnostics } from "../claude-diagnostics.ts"
 import { ASSISTANT_KNOWLEDGE, ASSISTANT_SHOP_PHONE, assistantKnowledge } from "./knowledge.ts"
 import { stripAssistantMoney } from "./money.ts"
-import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM, assistantContactReply, assistantHandoffOpening, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, type AssistantHandoffReason } from "./contact.ts"
+import { ASSISTANT_SHOP_EMAIL, ASSISTANT_QUOTE_FORM, assistantContactReply, assistantHandoffOpening, assistantHandoffReason, assistantQuestionInSpanish, assistantSpanish, extractAssistantContact, assistantServiceWorkerRequest, type AssistantHandoffReason } from "./contact.ts"
 import { nextAssistantQuestion as nextQuestion } from "./intake.ts"
 import { stripAssistantSelfDisclosure } from "./disclosure.ts"
 import { findAssistantAnswer, isSourcedAssistantAnswer } from "./answers.ts"
@@ -370,7 +370,7 @@ export async function handleAssistantTurn(
   // current customer requests, unsupported work and expert boundaries still win.
   const resumeSupportedRepair = !firstReply && !customerHandoff && !unsupportedCapability && !concern && repairDetails
   const staleHumanHandoff = !firstReply && !customerHandoff && output.handoff_reason === "human"
-  const modelHandoff = staleHumanHandoff ? "unknown" : output.handoff_reason
+  const modelHandoff = !customerHandoff && assistantServiceWorkerRequest(latest) && output.handoff_reason === "human" ? null : staleHumanHandoff ? "unknown" : output.handoff_reason
   const inferredHandoff = sourcedReply ? null : assistantHandoffReason(latest, reply, modelHandoff)
   const staleModelHandoff = staleHumanHandoff || (resumeSupportedRepair && inferredHandoff === "unknown")
   const currentHandoff = (resumeSupportedRepair || groundedAssessment && !customerHandoff && !unsupportedCapability && !concern) && inferredHandoff === "unknown" ? null : inferredHandoff

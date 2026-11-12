@@ -63,9 +63,16 @@ const DATE_QUESTION = /\b(?:when (?:can|could|will|would|are)|(?:can|could|will|
 const UNKNOWN_REPLY = /\b(?:can(?:not|'t|’t)|could(?:not|n't|n’t)|unable to|don(?:'t|’t) know|not sure|unsure|unknown|not (?:in|covered by) (?:our|the) (?:knowledge|information))\b|\b(?:shop|person|someone)\b.{0,60}\b(?:confirm|review|answer|check)\b/i
 const UNAVAILABLE_ASSISTANT = /\b(?:assistant|chat(?:bot)?|bot)\b.{0,35}\b(?:unavailable|offline|not (?:working|responding)|down)\b|\b(?:unavailable|offline)\b.{0,20}\b(?:assistant|chat(?:bot)?|bot)\b/i
 
+const SERVICE_WORKER = /\b(?:a person|someone|somebody)\s+(?:to|who (?:can|could|will))\s+(?:weld|repair|fix|fabricate|build|install)\b/gi
+export function assistantServiceWorkerRequest(message: string): boolean {
+  return message.replace(SERVICE_WORKER, "a welder") !== message
+}
+
 export function assistantHandoffReason(message: string, reply = "", modelHandoff?: unknown): AssistantHandoffReason | null {
   if (modelHandoff === "model-error" || modelHandoff === "rate-limit") return modelHandoff
-  if (HUMAN.test(message) || modelHandoff === "human") return "human"
+  // Remove only the worker noun phrase. Explicit talk/transfer intent elsewhere
+  // in the same message still takes priority over service intent.
+  if (HUMAN.test(message.replace(SERVICE_WORKER, "a welder")) || modelHandoff === "human" && !assistantServiceWorkerRequest(message)) return "human"
   if (UNAVAILABLE_ASSISTANT.test(message) || PRICE.test(message) || DATE_QUESTION.test(message) || UNKNOWN_REPLY.test(reply)
     || modelHandoff === "unknown") return "unknown"
   return null

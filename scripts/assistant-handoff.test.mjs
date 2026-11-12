@@ -20,6 +20,17 @@ const copy = (value) => structuredClone(value)
 const fields = (overrides = {}) => ({ name: null, callback_phone: null, need: "", material_size: null,
   location: null, timing: null, callback_window: null, is_job: "unsure", ...overrides })
 
+test("worker requests describe service while conversation and transfer requests reach a human", () => {
+  for (const message of [
+    "I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?",
+    "I want a person to repair my gate.", "We need somebody who can fabricate a bracket.",
+  ]) assert.equal(contact.assistantHandoffReason(message), null, message)
+  for (const message of [
+    "I need someone", "I want a person", "I want to talk to someone to weld my gate.",
+    "Transfer me to someone who can repair gates.", "Put somebody on the line.", "I need a human to weld this.",
+  ]) assert.equal(contact.assistantHandoffReason(message), "human", message)
+})
+
 function fixture({ turns = [], isTest = false, leadId = null, voiceTest = false, callback = caller,
   transcript = "", emailConfigured = true, emailStatus = "accepted", ownerConfigured = true, failFile = false, failNotify = false, busy = false } = {}) {
   const env = { NEXT_PUBLIC_ASSISTANT_CHAT: "1", ASSISTANT_VOICE: "1" }
