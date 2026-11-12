@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { registerHooks } from "node:module"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 
 const aiUrl = new URL("../lib/ai.ts", import.meta.url).href
@@ -13,12 +14,60 @@ const hooks = registerHooks({
 const { handleAssistantTurn } = await import("../lib/assistant/turn.ts")
 const { processAssistantTurn } = await import("../lib/assistant/service.ts")
 const { assistantHandoffReason } = await import("../lib/assistant/contact.ts")
+const { findAssistantAnswer } = await import("../lib/assistant/answers.ts")
 hooks.deregister()
 
 const fields = (overrides = {}) => ({ name: null, callback_phone: null, need: "", material_size: null, location: null, timing: null, callback_window: null, is_job: "unsure", ...overrides })
 const ladder = "[INTERNAL TEST] Do you weld aluminum boat ladders?"
 const gate = "[INTERNAL TEST] My steel gate hinge broke off the post in Lebanon. Can you fix it?"
 const gateReply = "We repair metal gate hinges and posts. Did the hinge break, or did it tear metal out of the post?"
+
+test("all 36 audit paraphrases retain complete repository answers through the model path", async () => {
+  const groups = JSON.parse(readFileSync(new URL("./fixtures/assistant-audit-paraphrases.json", import.meta.url), "utf8"))
+  let calls = 0, turns = 0
+  const failures = []
+  for (const group of groups) {
+    const approved = findAssistantAnswer(group.canonicalQuestion)
+    assert.ok(approved, group.canonicalQuestion)
+    for (const content of group.questions) {
+      assert.equal(findAssistantAnswer(content), undefined, `audit paraphrase must reach model: ${content}`)
+      for (const handoff_reason of [null, "unknown"]) {
+        const reply = approved.answer
+        globalThis.__turnRegressionModel = async () => { calls++; return { reply, handoff_reason, fields: fields({ need: content, is_job: "yes" }) } }
+        const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+        if (result.branch !== "model-answer" || result.handoff_reason || !result.reply.includes(reply) || (result.reply.match(/\?/g) ?? []).length !== 1) failures.push({ content, handoff_reason, branch: result.branch, trace: result.decision_trace })
+      }
+      turns++
+    }
+  }
+  assert.equal(turns, 36)
+  assert.equal(calls, 72)
+  assert.deepEqual(failures, [])
+})
+
+test("source text cannot override unknown work, prices, dates, safety or extra model claims", async () => {
+  const approved = findAssistantAnswer("Can you repair a gate where it hangs?").answer
+  for (const [content, reply] of [
+    ["Do you weld aluminum boat ladders?", approved],
+    ["Can you repair my gate tomorrow?", approved],
+    ["How much does this gate repair cost and what pictures do you need?", approved],
+    ["Is my cracked trailer safe to tow?", approved],
+    ["Can you repair my gate?", `${approved} We guarantee it will hold.`],
+    ["Can you repair my gate?", "We repair all gates on site without an inspection."],
+    ["Do you fabricate ASME certified gas manifolds?", findAssistantAnswer("Can you fabricate gas meter manifolds?").answer],
+  ]) {
+    globalThis.__turnRegressionModel = async () => ({ reply, handoff_reason: "unknown", fields: fields({ need: content, is_job: "yes" }) })
+    const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+    assert.equal(result.handoff_reason, "unknown", content)
+    assert.notEqual(result.branch, "model-answer", content)
+  }
+  const photoReply = findAssistantAnswer("Can I upload a picture directly in this chat?").answer
+  globalThis.__turnRegressionModel = async () => ({ reply: photoReply, handoff_reason: "unknown", fields: fields() })
+  const upload = await handleAssistantTurn([{ role: "user", content: "Where can I attach this image for your shop?" }], { isTest: true })
+  assert.match(upload.reply, /Chat doesn't accept photo uploads/)
+  assert.match(upload.reply, /\[Quote form\]\(\/#contact\)/)
+  assert.match(upload.reply, /mailto:sales@musiccityspecialtywelding.com/)
+})
 
 test("Q106-P1 service-worker intent keeps the model photo answer even with human metadata", async () => {
   const content = "I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?"

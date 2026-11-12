@@ -44,6 +44,7 @@ export const ASSISTANT_SYSTEM_PROMPT = [
   "Do not introduce yourself or write a self-disclosure sentence in any language. The application adds the automated-assistant disclosure to the first reply. Never pretend to be a person.",
   "Never quote prices, rates or dollar amounts. The shop owner sets each job's price after seeing photos or the work on site. Answer free-estimate and payment-policy questions only from the supplied owner facts; never invent a fee, deposit percentage or net-30 promise.",
   "Never invent capabilities, dates, hours, availability, certifications, guarantees, or response times. Answer shop questions only from the supplied repository knowledge. Unknown means the shop must confirm.",
+  "For a supported service or intake-information question, reuse complete relevant repository answer sentences, including all conditional limits. A published inspection/scope caveat alone is not an unanswered question; set handoff_reason null when those facts answer it. Do not turn photo or sketch preparation for a quote into a price request.",
   "If the customer wants a person or asks for a price, offer the supplied shop phone as a tap-to-call link. Calling is the primary action.",
   "Set handoff_reason to human when the customer wants a person, unknown for a specific job quote, specific shop date/availability, or any question you cannot answer from repository knowledge. Supplied owner policies about free estimates, hours, payment, warranty, insurance, travel, lead time and drop-offs can be answered without a handoff. An unsupported capability must go to the shop; never guess. Otherwise set handoff_reason to null.",
   "Choose handoff_reason for the current customer turn. A previous handoff does not end intake or carry forward to a supported job question; keep answering from repository knowledge and gathering job details.",
@@ -95,8 +96,8 @@ export function assistantExpertConcern(message: string, reply: string): "safety"
 const capabilityWords = (text: string) => (text.toLowerCase().replace(/\bchassis\b/g, "frame").match(/[a-z]+/g) ?? [])
   .map((word) => word.replace(/(?:ing|ed|s)$/, ""))
 const knownCapabilityWords = new Set(capabilityWords(ASSISTANT_KNOWLEDGE))
-const capabilityQuestion = /\b(?:can|could|do|does|would|will|are)\s+(?:you|y['’]?all|we|the shop)\b/i
-const questionWords = new Set(capabilityWords("a an the can could do does would will are you y all yall we your our shop i my me it this that these those is be to of for with on in at and or but please tell whether if what which kind kinds type types near old started before deciding see assess"))
+const capabilityQuestion = /\b(?:can|could|do|does|would|will|are)\s+(?:you|y['’]?all|the shop)\b/i
+const questionWords = new Set(capabilityWords("a an the can could do does would will are you y all yall we your our shop i my me it this that these those is be to of for with on in at and or but please tell whether if what which kind kinds type types near old started before deciding see assess ve got heavy light group connected"))
 // Failure descriptions qualify an existing job; they do not introduce a new
 // capability or accessory. Keep this separate from the repository's objects.
 const failureWords = new Set(capabilityWords("broke off fell fallen came tore torn apart stopped quit snapped detached damaged failed crack cracking split"))
@@ -112,7 +113,9 @@ function locationNeedsTravelConfirmation(location: string | null): boolean {
 
 function completeRepositoryReply(reply: string, answer: string, question: string): boolean {
   const normalize = (text: string) => text.toLowerCase().replace(/[’]/g, "'").replace(/\s+/g, " ").trim()
-  return [answer, `${answer} ${question}`].some((text) => normalize(reply) === normalize(text))
+  const variants = /^Yes\.\s*/.test(answer) ? [answer, answer.replace(/^Yes\.\s*/, "")]
+    : /^No\./.test(answer) ? [answer] : [answer, `Yes. ${answer}`]
+  return variants.some((text) => [text, `${text} ${question}`].some((value) => normalize(reply) === normalize(value)))
 }
 
 function unsupportedCapabilityQuestion(message: string): boolean {
@@ -125,6 +128,8 @@ function unsupportedCapabilityQuestion(message: string): boolean {
     const question = capabilityQuestion.exec(clause)
     if (!question) return false
     const capability = clause.slice(question.index)
+    // Asking how to prepare/decide is not claiming a new shop capability.
+    if (/^(?:do|does|can|could|would|will|are)\s+(?:you|y['’]?all|the shop)\s+(?:want|need|decide|recommend|prefer)\b/i.test(capability)) return false
     const evidence = /\b(?:it|this|that|these|those)\b/i.test(capability) ? message : capability
     return capabilityWords(evidence).some((word) => !questionWords.has(word) && !failureWords.has(word) && !knownCapabilityWords.has(word))
   })
@@ -340,13 +345,23 @@ export async function handleAssistantTurn(
   // Removing inline markup can assemble a price, phone number or unsafe claim.
   // Guard the actual visible text as well as raw destinations before replying.
   reply = stripAssistantSelfDisclosure(stripAssistantMoney(reply))
+  // Verify the model's actual answer, independently of canonical question
+  // matching. Complete source text keeps its limits; appended claims fail closed.
+  // Owner policies keep the stricter whole-question path above.
+  const repositoryModelAnswer = !priorSafetyRequest && !spanish && !options.voice && output.reply.trim() === reply.trim()
+    ? assistantKnowledge.answers.find((answer) => !answer.source.includes("owner ") && (answer.source.includes("lib/service-pages.ts") || answer.id === "chat-photos")
+      && completeRepositoryReply(reply, answer.answer, question())) : undefined
   const replyPhones = `${output.reply}\n${reply}`.match(/(?<!\d)(?:\+?1[ .-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[ .-]?[2-9]\d{2}[ .-]?\d{4}(?!\d)/g) ?? []
   const foreignPhone = replyPhones.some((value) => value.replace(/\D/g, "").slice(-10) !== phone.display.replace(/\D/g, "").slice(-10))
   // History grounds fields and contextual sourced-answer limits; message rules
   // apply only to this turn. Always check raw and visible model claims too.
-  const concern = sourcedReply ? null : assistantExpertConcern(latest, String(output.reply)) ?? assistantExpertConcern(latest, reply)
-    ?? (outsideUsualArea || foreignPhone || unsupportedCapabilityAssertion(reply) ? "claim" : null)
-  const customerHandoff = sourcedReply ? null : assistantHandoffReason(latest)
+  const concern = sourcedReply ? null : assistantExpertConcern(latest, repositoryModelAnswer ? "" : String(output.reply)) ?? assistantExpertConcern(latest, repositoryModelAnswer ? "" : reply)
+    ?? (outsideUsualArea || foreignPhone || !repositoryModelAnswer && unsupportedCapabilityAssertion(reply) ? "claim" : null)
+  // Quote preparation is an information request. A real price, date, human or
+  // unavailable-chat request remains a handoff even beside useful source facts.
+  const preparationQuestion = Boolean(repositoryModelAnswer && /\b(?:photos?|pictures?|photograph\w*|images?|sketch|drawing|dimensions?|measurements?|sizes?|details|information)\b/i.test(latest)
+    && !/\b(?:how much(?!\s+(?:detail|information))|costs?|rates?|charges?|price (?:is|for)|what.{0,20}price|available|availability|today|tomorrow|this week)\b/i.test(latest))
+  const customerHandoff = sourcedReply ? null : assistantHandoffReason(preparationQuestion ? latest.replace(/\b(?:quote|estimate|price)\b|\bhow much (?=detail|information)/gi, "") : latest)
   // A bare follow-up such as "Can you do that?" keeps its last job object.
   // A newly described supported repair still replaces an earlier unknown one.
   const bareCapabilityFollowup = /^(?:\[INTERNAL TEST\]\s*)?(?:(?:can|could|would|will|do) (?:you|y['’]?all) (?:do|repair|weld|handle|build|fabricate|fix) (?:it|this|that|these|those)(?: for me)?|is (?:that|this) something you (?:can |could )?do)[.!?\s]*$/i.test(latest)
@@ -373,7 +388,8 @@ export async function handleAssistantTurn(
   const modelHandoff = !customerHandoff && assistantServiceWorkerRequest(latest) && output.handoff_reason === "human" ? null : staleHumanHandoff ? "unknown" : output.handoff_reason
   const inferredHandoff = sourcedReply ? null : assistantHandoffReason(latest, reply, modelHandoff)
   const staleModelHandoff = staleHumanHandoff || (resumeSupportedRepair && inferredHandoff === "unknown")
-  const currentHandoff = (resumeSupportedRepair || groundedAssessment && !customerHandoff && !unsupportedCapability && !concern) && inferredHandoff === "unknown" ? null : inferredHandoff
+  const groundedModelReply = Boolean(repositoryModelAnswer || groundedAssessment) && !customerHandoff && !unsupportedCapability && !concern
+  const currentHandoff = (resumeSupportedRepair || groundedModelReply) && inferredHandoff === "unknown" ? null : inferredHandoff
   const decisionTrace: NonNullable<AssistantTurn["decision_trace"]> = {
     raw_model_handoff_reason: output.handoff_reason === "human" || output.handoff_reason === "unknown"
       || output.handoff_reason === "model-error" || output.handoff_reason === "rate-limit" ? output.handoff_reason : null,
@@ -405,7 +421,7 @@ export async function handleAssistantTurn(
   } else if (handoff) {
     branch = continueIntake ? unsupportedCapability ? "unknown-capability-intake" : "expert-claim-intake" : "contact-handoff"
     reply = continueIntake ? intakeReply() : options.voice ? `${spanish ? "Una persona del taller puede ayudarte." : "A person at the shop can help."} ${callLink}.` : assistantContactReply(phone, customerText, fields.callback_phone ? nextQuestion(fields, conversation) : undefined)
-  } else if (!sourcedReply && /\[owner-only money\]|\b(?:booked|scheduled|saved|sent|guarantee|guaranteed|available|24\/7)\b|\b(?:we|the shop|someone)\s+(?:will|can)\s+(?:call|text|come|arrive|finish)\b/i.test(reply)) {
+  } else if (!sourcedReply && !groundedModelReply && /\[owner-only money\]|\b(?:booked|scheduled|saved|sent|guarantee|guaranteed|available|24\/7)\b|\b(?:we|the shop|someone)\s+(?:will|can)\s+(?:call|text|come|arrive|finish)\b/i.test(reply)) {
     branch = "promise-guard-intake"
     handoff = "unknown"
     continueIntake = true
@@ -422,6 +438,7 @@ export async function handleAssistantTurn(
     }
     if (sourcedReply && sourcedAnswer && ["job-pricing", "free-estimates", "estimate-fee"].includes(sourcedAnswer.id)) reply = `${reply} ${callLink}.`
     if (!reply.includes("?") && fields.is_job !== "no") reply = `${reply} ${question()}`
+    if (!sourcedReply && groundedModelReply && /\b(?:photos?|sketch|drawings?)\b/i.test(reply)) reply += writtenContacts
   }
   // A non-job classification cannot discard an unanswered customer question.
   // Only explicit solicitation, wrong-number or goodbye evidence closes it.
@@ -437,7 +454,7 @@ export async function handleAssistantTurn(
     reply = spanish ? "Este es Music City Specialty Welding. Gracias." : "This is Music City Specialty Welding. Take care."
     handoff = null
     continueIntake = false
-  } else if ((!sourcedReply && fields.is_job === "no" && !handoff) || !reply.trim()) {
+  } else if ((!sourcedReply && !groundedModelReply && fields.is_job === "no" && !handoff) || !reply.trim()) {
     branch = "non-job-handoff"
     handoff = "unknown"
     continueIntake = false
