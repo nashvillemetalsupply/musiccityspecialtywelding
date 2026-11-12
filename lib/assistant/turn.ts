@@ -92,14 +92,14 @@ export function assistantExpertConcern(message: string, reply: string): "safety"
   return null
 }
 
-const capabilityWords = (text: string) => (text.toLowerCase().match(/[a-z]+/g) ?? [])
+const capabilityWords = (text: string) => (text.toLowerCase().replace(/\bchassis\b/g, "frame").match(/[a-z]+/g) ?? [])
   .map((word) => word.replace(/(?:ing|ed|s)$/, ""))
 const knownCapabilityWords = new Set(capabilityWords(ASSISTANT_KNOWLEDGE))
 const capabilityQuestion = /\b(?:can|could|do|does|would|will|are)\s+(?:you|y['’]?all|we|the shop)\b/i
-const questionWords = new Set(capabilityWords("a an the can could do does would will are you y all yall we your our shop i my me it this that these those is be to of for with on in at and or but please tell whether if what which kind kinds type types"))
+const questionWords = new Set(capabilityWords("a an the can could do does would will are you y all yall we your our shop i my me it this that these those is be to of for with on in at and or but please tell whether if what which kind kinds type types near old started before deciding see assess"))
 // Failure descriptions qualify an existing job; they do not introduce a new
 // capability or accessory. Keep this separate from the repository's objects.
-const failureWords = new Set(capabilityWords("broke off fell fallen came tore torn apart stopped quit snapped detached damaged failed"))
+const failureWords = new Set(capabilityWords("broke off fell fallen came tore torn apart stopped quit snapped detached damaged failed crack cracking split"))
 
 function locationNeedsTravelConfirmation(location: string | null): boolean {
   if (!location || assistantKnowledge.serviceAreas.some((area) => location.toLowerCase().includes(area.toLowerCase()))) return false
@@ -108,6 +108,11 @@ function locationNeedsTravelConfirmation(location: string | null): boolean {
   const siteOnly = /\b(?:barn|driveway|job\s*site|warehouse|plant|(?:machine|factory|shop) floor|property|facility)\b/i.test(location)
     && !location.replace(/\b(?:behind|beside|near|inside|outside|on|at|in|the|a|an|my|our|your|back|front|of|barn|driveway|job\s*site|warehouse|plant|machine|factory|shop|floor|property|facility)\b/gi, "").replace(/[\s,.'’-]/g, "")
   return !siteOnly
+}
+
+function completeRepositoryReply(reply: string, answer: string, question: string): boolean {
+  const normalize = (text: string) => text.toLowerCase().replace(/[’]/g, "'").replace(/\s+/g, " ").trim()
+  return [answer, `${answer} ${question}`].some((text) => normalize(reply) === normalize(text))
 }
 
 function unsupportedCapabilityQuestion(message: string): boolean {
@@ -354,6 +359,11 @@ export async function handleAssistantTurn(
     }
   }
   const unsupportedCapability = !sourcedReply && (unsupportedCapabilityQuestion(latest) || priorUnsupportedCapability)
+  // Model-path assessment keeps the complete published caveat. This is reply
+  // evidence, not a new question pattern; safety and unsupported-work gates win.
+  const assessmentAnswer = assistantKnowledge.services.find((service) => service.slug === "trailer-welding-repair")?.faqs.find((faq) => /cracked.*frame/i.test(faq.question))?.answer
+  const groundedAssessment = Boolean(assessmentAnswer && /\btrailer\b/i.test(latest) && /\b(?:crack\w*|split)\b/i.test(latest)
+    && completeRepositoryReply(reply, assessmentAnswer, question()))
   const repairDetails = currentRepairDetails(latest, fields)
   // A supported current repair replaces an earlier capability question. Model
   // metadata and cautious inspection wording can lag behind that change;
@@ -363,7 +373,7 @@ export async function handleAssistantTurn(
   const modelHandoff = staleHumanHandoff ? "unknown" : output.handoff_reason
   const inferredHandoff = sourcedReply ? null : assistantHandoffReason(latest, reply, modelHandoff)
   const staleModelHandoff = staleHumanHandoff || (resumeSupportedRepair && inferredHandoff === "unknown")
-  const currentHandoff = resumeSupportedRepair && inferredHandoff === "unknown" ? null : inferredHandoff
+  const currentHandoff = (resumeSupportedRepair || groundedAssessment && !customerHandoff && !unsupportedCapability && !concern) && inferredHandoff === "unknown" ? null : inferredHandoff
   const decisionTrace: NonNullable<AssistantTurn["decision_trace"]> = {
     raw_model_handoff_reason: output.handoff_reason === "human" || output.handoff_reason === "unknown"
       || output.handoff_reason === "model-error" || output.handoff_reason === "rate-limit" ? output.handoff_reason : null,

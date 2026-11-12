@@ -18,6 +18,26 @@ hooks.deregister()
 
 const fields = (overrides = {}) => ({ name: null, callback_phone: null, need: "", material_size: null, location: null, timing: null, callback_window: null, is_job: "unsure", ...overrides })
 
+test("conditional frame assessment survives cautious model routing without approving use", async () => {
+  const assessment = "A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter. We review those conditions before recommending a repair."
+  for (const content of [
+    "We found a crack in the metal frame of our equipment trailer. Can your shop assess it for a welded repair?",
+    "The trailer chassis has started cracking near an old weld. What would you need to see before deciding if you can fix it?",
+  ]) {
+    globalThis.__expertModel = async () => ({ reply: assessment, handoff_reason: "unknown", fields: fields({ need: content, is_job: "yes" }) })
+    const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+    assert.match(result.reply, /A crack may be repairable.*deformation, corrosion, prior work, material, and cause of failure/, JSON.stringify(result.decision_trace))
+    assert.equal(result.handoff_reason, undefined)
+    assert.equal(result.branch, "model-answer")
+  }
+  for (const content of ["Can I tow my cracked trailer?", "How do I weld the cracked frame myself?", "Can you guarantee it will hold?"]) {
+    globalThis.__expertModel = async () => ({ reply: assessment, handoff_reason: null, fields: fields({ need: content, is_job: "yes" }) })
+    const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+    assert.equal(result.handoff_reason, "unknown", content)
+    assert.notEqual(result.branch, "model-answer", content)
+  }
+})
+
 test("a towing safety question does not repeat its boundary on payment or ordinary intake turns", async () => {
   globalThis.__expertModel = async () => ({ reply: "What material is it?", fields: fields() })
   const conversation = [{ role: "user", content: "is my cracked trailer safe to tow?" }]
