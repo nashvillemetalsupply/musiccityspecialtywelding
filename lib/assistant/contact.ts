@@ -61,11 +61,12 @@ const HUMAN = /\b(?:human|a person|real person|owner|representative|real (?:man|
 const PRICE = /\b(?:price|prices|pricing|cost|costs|quote|estimate|rates?|charge|charges|how much|what (?:would|will|does) it run|precio|precios|cotizaci[oó]n|cu[aá]nto cuesta|presupuesto)\b|[$£€]|\[owner-only money\]/i
 const DATE_QUESTION = /\b(?:when (?:can|could|will|would|are)|(?:can|could|will|would) (?:you|we|the shop).*(?:today|tomorrow|this week|next week|by |finish|start|schedule)|availability|available|appointment|opening hours|what (?:time|days).*open)\b/i
 const UNKNOWN_REPLY = /\b(?:can(?:not|'t|’t)|could(?:not|n't|n’t)|unable to|don(?:'t|’t) know|not sure|unsure|unknown|not (?:in|covered by) (?:our|the) (?:knowledge|information))\b|\b(?:shop|person|someone)\b.{0,60}\b(?:confirm|review|answer|check)\b/i
+const UNAVAILABLE_ASSISTANT = /\b(?:assistant|chat(?:bot)?|bot)\b.{0,35}\b(?:unavailable|offline|not (?:working|responding)|down)\b|\b(?:unavailable|offline)\b.{0,20}\b(?:assistant|chat(?:bot)?|bot)\b/i
 
 export function assistantHandoffReason(message: string, reply = "", modelHandoff?: unknown): AssistantHandoffReason | null {
   if (modelHandoff === "model-error" || modelHandoff === "rate-limit") return modelHandoff
   if (HUMAN.test(message) || modelHandoff === "human") return "human"
-  if (PRICE.test(message) || DATE_QUESTION.test(message) || UNKNOWN_REPLY.test(reply)
+  if (UNAVAILABLE_ASSISTANT.test(message) || PRICE.test(message) || DATE_QUESTION.test(message) || UNKNOWN_REPLY.test(reply)
     || modelHandoff === "unknown") return "unknown"
   return null
 }

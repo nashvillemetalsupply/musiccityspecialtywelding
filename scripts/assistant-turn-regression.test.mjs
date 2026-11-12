@@ -20,6 +20,22 @@ const ladder = "[INTERNAL TEST] Do you weld aluminum boat ladders?"
 const gate = "[INTERNAL TEST] My steel gate hinge broke off the post in Lebanon. Can you fix it?"
 const gateReply = "We repair metal gate hinges and posts. Did the hinge break, or did it tear metal out of the post?"
 
+test("Q142 unavailable assistant always supplies configured contact routes and one question", async () => {
+  const message = "I need help with a broken gate but the assistant is unavailable."
+  const phone = { display: "(615) 810-4910", href: "tel:+16158104910" }
+  for (const reply of [
+    "Sorry your gate is giving you trouble. You can call (615) 810-4910 to talk to the shop now. What is your name?",
+    "What is your name?",
+  ]) {
+    globalThis.__turnRegressionModel = async () => ({ reply, handoff_reason: null, fields: fields({ need: "broken gate", is_job: "yes" }) })
+    const result = await handleAssistantTurn([{ role: "user", content: message }], { isTest: true, phone })
+    assert.equal(result.handoff_reason, "unknown")
+    assert.match(result.reply, /\[Call the shop at \(615\) 810-4910\]\(tel:\+16158104910\)/)
+    assert.match(result.reply, /\[Quote form\]\(\/#contact\)/)
+    assert.equal((result.reply.match(/\?/g) ?? []).length, 1)
+  }
+})
+
 async function serviceConversation(inputs) {
   const conversation = [], stored = [], responses = [], handoffs = []
   const session = { id: "turn-routing-test", next_turn: 0, is_test: true, lead_id: null }
