@@ -7,6 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "prebuild": "node scripts/public-asset-budget.mjs",
     "build": "next build && node scripts/bundle-budget.mjs",
     "dev": "next dev",
     "lint": "eslint .",
