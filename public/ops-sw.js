@@ -59,13 +59,15 @@ self.addEventListener("fetch", (event) => {
     return
   }
 
-  if (url.pathname.startsWith("/_next/static/")) {
-    const revalidate = updateStaticCache(request)
-    event.waitUntil(revalidate.then(() => undefined).catch(() => undefined))
-    event.respondWith((async () => {
+  if (BUILD_SHA !== "dev" && url.pathname.startsWith("/_next/static/")) {
+    // Next's static URLs are versioned. Reuse them for this build instead of
+    // starting another fetch each time an operations page needs the asset.
+    const response = (async () => {
       const cache = await caches.open(STATIC_CACHE)
-      return await cache.match(request) || revalidate
-    })())
+      return await cache.match(request) || updateStaticCache(request)
+    })()
+    event.waitUntil(response.then(() => undefined).catch(() => undefined))
+    event.respondWith(response)
   }
 })
 

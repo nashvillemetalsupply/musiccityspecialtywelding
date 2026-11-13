@@ -16,7 +16,7 @@ const GLASS_ACTIONS = readFileSync(new URL("../app/ops/leads/[id]/glass-actions.
 const BOARD_PAGE = readFileSync(new URL("../app/board/page.tsx", import.meta.url), "utf8")
 const PUSH_TOGGLE = readFileSync(new URL("../app/ops/push-toggle.tsx", import.meta.url), "utf8")
 
-function createHarness(fetchImpl = async () => new Response("network"), sessionImpl = async () => Response.json({ sessionId: SESSION_A })) {
+function createHarness(fetchImpl = async () => new Response("network"), sessionImpl = async () => Response.json({ sessionId: SESSION_A }), build = "test-sha") {
   const listeners = new Map()
   const buckets = new Map()
   const caches = {
@@ -40,7 +40,7 @@ function createHarness(fetchImpl = async () => new Response("network"), sessionI
     async delete(name) { return buckets.delete(name) },
   }
   const self = {
-    location: { origin: ORIGIN, href: `${ORIGIN}/ops-sw.js?build=test-sha` },
+    location: { origin: ORIGIN, href: `${ORIGIN}/ops-sw.js?build=${build}` },
     registration: { scope: `${ORIGIN}/`, async showNotification() {} },
     clients: { async matchAll() { return [] }, async openWindow() { return null }, async claim() {} },
     addEventListener(name, handler) { listeners.set(name, handler) },
@@ -165,7 +165,7 @@ test("successful private pages are cached only under the session marker they ren
   assert.equal(await activeSession(harness), SESSION_A)
 })
 
-test("/ops/leads navigations and versioned static assets are cached", async () => {
+test("/ops/leads navigations and versioned static assets are cached without repeat static fetches", async () => {
   const lead = new Response(`<div data-ops-session-cache-id="${SESSION_A}">lead</div>`)
   const leadHarness = createHarness(async () => lead)
   const leadResult = await leadHarness.fetchEvent(navRequest(`${ORIGIN}/ops/leads/42`))
@@ -179,10 +179,85 @@ test("/ops/leads navigations and versioned static assets are cached", async () =
   assert.equal(await first.response.text(), "asset-1")
   await first.waits
   const second = await staticHarness.fetchEvent(request)
+  assert.equal(await second.response.text(), "asset-1")
   await second.waits
   const staticCache = await staticHarness.caches.open("ops-static-test-sha")
-  assert.equal(assetVersion, 2, "the cached asset is revalidated in the background")
-  assert.equal(await (await staticCache.match(request)).text(), "asset-2")
+  assert.equal(assetVersion, 1, "the versioned asset must not be fetched again on a cache hit")
+  assert.equal(await (await staticCache.match(request)).text(), "asset-1")
+})
+
+test("cached static assets remain available offline without a background network attempt", async () => {
+  let networkCalls = 0
+  const harness = createHarness(async () => { networkCalls += 1; throw new Error("offline") })
+  const request = { url: `${ORIGIN}/_next/static/chunks/cached.js`, method: "GET", body: null, mode: "cors" }
+  const cache = await harness.caches.open("ops-static-test-sha")
+  await cache.put(request, new Response("cached asset"))
+  const result = await harness.fetchEvent(request)
+  assert.equal(await result.response.text(), "cached asset")
+  await result.waits
+  assert.equal(networkCalls, 0)
+})
+
+test("static cache misses do not cache error responses and retry the network", async () => {
+  let networkCalls = 0
+  const harness = createHarness(async () => ++networkCalls === 1
+    ? new Response("unavailable", { status: 503 })
+    : new Response("recovered asset"))
+  const request = { url: `${ORIGIN}/_next/static/chunks/recover.js`, method: "GET", body: null, mode: "cors" }
+  const failed = await harness.fetchEvent(request)
+  assert.equal(failed.response.status, 503)
+  await failed.waits
+  const cache = await harness.caches.open("ops-static-test-sha")
+  assert.equal(await cache.match(request), undefined)
+  const recovered = await harness.fetchEvent(request)
+  assert.equal(await recovered.response.text(), "recovered asset")
+  await recovered.waits
+  assert.equal(networkCalls, 2)
+  assert.equal(await (await cache.match(request)).text(), "recovered asset")
+})
+
+test("a static network rejection on a cache miss can recover on the next request", async () => {
+  let networkCalls = 0
+  const harness = createHarness(async () => {
+    if (++networkCalls === 1) throw new Error("offline")
+    return new Response("recovered asset")
+  })
+  const request = { url: `${ORIGIN}/_next/static/chunks/retry.js`, method: "GET", body: null, mode: "cors" }
+  await assert.rejects(harness.fetchEvent(request), /offline/)
+  const recovered = await harness.fetchEvent(request)
+  assert.equal(await recovered.response.text(), "recovered asset")
+  await recovered.waits
+  assert.equal(networkCalls, 2)
+})
+
+test("development static assets pass through to the browser because their URLs can change in place", async () => {
+  let networkCalls = 0
+  const harness = createHarness(async () => { networkCalls += 1; return new Response("unused") }, undefined, "dev")
+  const request = { url: `${ORIGIN}/_next/static/chunks/app.js`, method: "GET", body: null, mode: "cors" }
+  const result = await harness.fetchEvent(request)
+  assert.equal(result.response, null, "the browser must fetch mutable development assets")
+  await result.waits
+  assert.equal(networkCalls, 0)
+  assert.deepEqual(await harness.caches.keys(), [])
+})
+
+test("a new build fetches its own static asset and removes only older static caches", async () => {
+  let networkCalls = 0
+  const harness = createHarness(async () => { networkCalls += 1; return new Response("new build asset") }, undefined, "new-sha")
+  const request = { url: `${ORIGIN}/_next/static/chunks/shared.js`, method: "GET", body: null, mode: "cors" }
+  const old = await harness.caches.open("ops-static-old-sha")
+  await old.put(request, new Response("old build asset"))
+  await harness.seedSession(SESSION_A)
+  const result = await harness.fetchEvent(request)
+  assert.equal(await result.response.text(), "new build asset")
+  await result.waits
+  assert.equal(networkCalls, 1, "a prior build cache cannot satisfy this build")
+  let activated
+  harness.dispatch("activate", { waitUntil(value) { activated = value } })
+  await activated
+  assert.equal((await harness.caches.keys()).includes("ops-static-old-sha"), false)
+  assert.equal((await harness.caches.keys()).includes("ops-static-new-sha"), true)
+  assert.equal((await harness.caches.keys()).includes(`ops-auth-${SESSION_A}`), true)
 })
 
 test("calendar and Customer Page mutations revalidate their affected paths", () => {
