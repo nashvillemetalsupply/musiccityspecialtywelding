@@ -34,6 +34,12 @@ const nextConfig = {
   },
   async headers() {
     return [
+      // These public filenames can be replaced in place. Cache repeat visits for
+      // one day, then validate before reuse; immutable would hide later edits.
+      ...["/images/:path*", "/brand/:path*"].map((source) => ({
+        source,
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, must-revalidate" }],
+      })),
       {
         source: "/ops-sw.js",
         headers: [{ key: "Service-Worker-Allowed", value: "/" }],
