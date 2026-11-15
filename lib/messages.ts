@@ -3,7 +3,8 @@ import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { notify, notifyAll } from "@/lib/notify"
 import { isDefinitiveTwilioError, sendSms, twilioCallbackUrl, twilioSmsConfigured } from "@/lib/twilio"
-import { customerSmsAllowed } from "@/lib/messaging-consent"
+import { customerSmsAllowed, getMessagingConsentState } from "@/lib/messaging-consent"
+import { isMissedCallTextOnCall, missedCallTextConsentAllowed } from "@/lib/missed-call-consent"
 import { FALLBACK_SHOP_PHONE_E164 } from "@/lib/shop-phone-shared"
 import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { getDeferredSmsSendAt, isCentralQuietHours } from "@/lib/sms-quiet-hours.ts"
@@ -65,7 +66,10 @@ async function sendClaimedSms(intent: SmsIntentRow, deferred = false, sendAfter:
     if (blockedReason) throw new Error(blockedReason)
     if (!twilioSmsConfigured()) throw new Error("Shop texting is waiting for A2P approval.")
     if (!process.env.TWILIO_PHONE_NUMBER?.trim()) throw new Error("Twilio SMS is not configured.")
-    if (!(await customerSmsAllowed(to))) blockedReason = "Text canceled: this customer no longer has texting permission."
+    const smsAllowed = isMissedCallTextOnCall(process.env.MISSED_CALL_TEXT_ON_CALL, intent.idempotency_key)
+      ? missedCallTextConsentAllowed(process.env.MISSED_CALL_TEXT_ON_CALL, intent.idempotency_key, await getMessagingConsentState(to))
+      : await customerSmsAllowed(to)
+    if (!smsAllowed) blockedReason = "Text canceled: this customer no longer has texting permission."
     if (blockedReason) throw new Error(blockedReason)
     if (!sendAfter) eventId = await recordEvent({
       kind: "sms.out",
