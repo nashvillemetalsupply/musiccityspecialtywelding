@@ -166,6 +166,10 @@ export async function POST(req: Request) {
       leadId: call.lead_id,
       personId: call.person_id,
       idempotencyKey: `missed-call:${sid}:auto-reply`,
+      // Fable 11-17: this one reply to the caller own call is exempt from quiet hours (5-minute window).
+      ownerInitiated: true,
+      // Fable 11-17: this one reply to the caller own call is exempt from quiet hours (5-minute window).
+      ownerInitiated: true,
     }).catch(() => undefined)
   }
   return twiml("")
