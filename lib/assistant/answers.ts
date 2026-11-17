@@ -19,14 +19,78 @@ const entry = (id: string, patterns: string[], answer: string, source: string): 
 export const ASSISTANT_SHOP_PHONE = assistantShopPhone(getShopPhone())
 const serviceSource = (slug: string) => `lib/service-pages.ts (${slug})`
 const ownerSource = "owner 2026-11-11"
+// Reviewed whole-question alternatives use the sourced answer without Yes/No.
+// Keep these literal patterns in the bank; extra clauses still miss exactly.
+const reviewedParaphrases: Record<string, string[]> = {
+  "trailer-welding-repair-faq-1": [
+    "My utility trailer is parked behind the barn and I can't move it right now. Is that something your welding truck could work on there?",
+    "The ramp hinge broke on our trailer at the jobsite. Would we have to haul the whole thing to Lebanon for welding?",
+    "I've got a trailer needing metal repair in my driveway. How do you decide whether to send the mobile rig or have me bring it in?",
+  ],
+  "trailer-welding-repair-faq-2": [
+    "There's a split along one of the frame rails on my landscape trailer. Is that the sort of damage you look at repairing?",
+    "We found a crack in the metal frame of our equipment trailer. Can your shop assess it for a welded repair?",
+    "The trailer chassis has started cracking near an old weld. What would you need to see before deciding if you can fix it?",
+  ],
+  "gate-repair-faq-2": [
+    "Our driveway gate needs welding but it's still attached to the posts. Could your crew work on it here?",
+    "I've got a heavy iron gate with a broken weld. Does it have to come off first or can you work with it in place?",
+    "The metal on our entrance gate needs repair and we don't have a way to take it down. Is a site visit an option?",
+  ],
+  "equipment-repair-faq-1": [
+    "One of our machine guards broke at the warehouse. Could a welder come to our facility instead of us shipping the machine?",
+    "We have a steel support on some equipment that needs repair. The machine stays on our floor; is that work you can look at here?",
+    "Can your mobile crew assess a broken machinery bracket at our plant, or does all equipment work go through your shop?",
+  ],
+  "gas-meter-manifolds": [
+    "We're putting together a project that needs a fabricated manifold for gas meters. Is building that part within your shop's scope?",
+    "I have a drawing for a gas-meter manifold assembly. Is that something you could review for fabrication?",
+    "Do you take on custom metal fabrication for a group of gas meters connected through a manifold?",
+  ],
+  "quote-full-closeup": [
+    "I took a tight picture of the broken weld. Should I back up and get the whole piece in another shot too?",
+    "Before I send these pictures, do you want the entire item as well as the damaged spot?",
+    "I've got one wide shot and a few pictures right up against the crack. Which ones would help your shop review it?",
+  ],
+  "chat-photos": [
+    "I'm on my phone with a photo of the damage. Where can I attach it so you can see it?",
+    "I don't see a paperclip in this conversation. How am I supposed to get a picture over to the shop?",
+    "Can I drop an image into this message window, or is there another place I should send it?",
+  ],
+  "gate-hinge-details": [
+    "The top hinge on our driveway gate has broken. What details should I have ready when I contact you?",
+    "I'm trying to get a gate hinge repair reviewed. Besides saying the hinge is broken, what information helps?",
+    "Our steel entrance gate is hanging crooked after a hinge failed. What should I tell the shop about the gate and where it is?",
+  ],
+  "trailer-welding-repair-faq-3": [
+    "I'm walking around my trailer with my phone before asking for a repair quote. What parts should I photograph?",
+    "The trailer needs welding and I want to send useful pictures the first time. What views do you need?",
+    "I've photographed the broken bit on our utility trailer. Are there other angles or trailer details your estimator will want?",
+  ],
+  "gate-repair-faq-3": [
+    "I need a welding quote for our entrance gate. Where should I stand and what should I include in the pictures?",
+    "Before I email about the damaged gate, what pictures would give you enough context to review it?",
+    "I've got a close picture of our gate's broken weld. Should I also show the posts, hinges and the whole opening?",
+  ],
+  "mobile-photos": [
+    "I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?",
+    "I'm getting information together for a welding truck visit. What should I photograph around the job before I send a request?",
+    "For a repair that can't leave our site, what do you want to see in the photos and know about getting your rig in?",
+  ],
+  "fabrication-measurements": [
+    "I want a custom steel bracket made from my sketch. Which dimensions and other details should I put on it for a quote?",
+    "I'm drawing up a little frame for you to build. What sizes, material information and finish details do you need from me?",
+    "Before I ask you to price a made-to-order metal part, how much detail should I include about measurements, quantity and how it'll mount?",
+  ],
+}
 const faqParaphrases: Record<string, string[]> = {
   "mobile-welding-3": ["Do you offer 24/7 emergency welding?"],
-  "trailer-welding-repair-1": ["Do you repair trailers on site?", "Can you repair my trailer on-site?"],
-  "trailer-welding-repair-2": ["Do you repair cracked trailer frames?"],
-  "trailer-welding-repair-3": ["What photos should I send for a trailer quote?", "What photos should I send of my trailer?"],
-  "gate-repair-2": ["Do you repair gates on site?", "Can you repair my gate on-site?"],
-  "gate-repair-3": ["What photos should I send for a gate quote?", "What photos should I send of my gate?"],
-  "equipment-repair-1": ["Do you repair equipment on site?", "Can you repair equipment at my facility?"],
+  "trailer-welding-repair-1": ["Do you repair trailers on site?", "Can you repair my trailer on-site?", ...reviewedParaphrases["trailer-welding-repair-faq-1"]],
+  "trailer-welding-repair-2": ["Do you repair cracked trailer frames?", ...reviewedParaphrases["trailer-welding-repair-faq-2"]],
+  "trailer-welding-repair-3": ["What photos should I send for a trailer quote?", "What photos should I send of my trailer?", ...reviewedParaphrases["trailer-welding-repair-faq-3"]],
+  "gate-repair-2": ["Do you repair gates on site?", "Can you repair my gate on-site?", ...reviewedParaphrases["gate-repair-faq-2"]],
+  "gate-repair-3": ["What photos should I send for a gate quote?", "What photos should I send of my gate?", ...reviewedParaphrases["gate-repair-faq-3"]],
+  "equipment-repair-1": ["Do you repair equipment on site?", "Can you repair equipment at my facility?", ...reviewedParaphrases["equipment-repair-faq-1"]],
 }
 
 function faqAnswer(question: string, answer: string): string {
@@ -88,7 +152,7 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
     "Access, material condition, weather, fire risk, power and repair method can make shop work the better option.", serviceSource("mobile-welding")),
   entry("mobile-access", ["What access information do you need before a road call?"],
     "Include the job-site address, access restrictions and desired timing.", serviceSource("mobile-welding")),
-  entry("mobile-photos", ["What photos should I send for a mobile welding quote?", "What pictures should I send for mobile welding?"],
+  entry("mobile-photos", ["What photos should I send for a mobile welding quote?", "What pictures should I send for mobile welding?", ...reviewedParaphrases["mobile-photos"]],
     "Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email.", serviceSource("mobile-welding")),
   entry("trailer-parts", ["Do you work on utility trailer ramps and fenders?", "Do you repair trailers?"],
     "We repair trailer ramps, fenders, brackets, hangers and attachment points.", serviceSource("trailer-welding-repair")),
@@ -98,7 +162,7 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
     "We repair sagging steel and iron gate frames, hinges, latches, posts and brackets.", serviceSource("gate-repair")),
   entry("gate-electrical-boundary", ["Do you repair gate motors and electrical openers?"],
     "No. We repair gate metal; motor, operator and electrical work belongs with the installer.", serviceSource("gate-repair")),
-  entry("gate-hinge-details", ["What do you need to know about a broken gate hinge?"],
+  entry("gate-hinge-details", ["What do you need to know about a broken gate hinge?", ...reviewedParaphrases["gate-hinge-details"]],
     "Send the gate type, approximate size, location and whether it can be unhung.", serviceSource("gate-repair")),
   entry("equipment-parts", ["Do you repair machinery frames and brackets?", "Do you repair equipment?"],
     "We repair machinery frames, brackets, guards, supports and attachments.", serviceSource("equipment-repair")),
@@ -114,11 +178,11 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
     "No. Installation depends on access, anchoring, site readiness and project location; we confirm the final scope with you.", serviceSource("architectural-welding")),
   entry("fabrication-sketches", ["Do you make custom brackets and frames from sketches?", "Can you work from a dimensioned sketch for a custom bracket?", "Do you do custom fabrication?"],
     "We work from drawings, sketches, measurements or samples to build custom brackets and frames.", serviceSource("custom-fabrication")),
-  entry("gas-meter-manifolds", ["Can you fabricate gas meter manifolds?"],
+  entry("gas-meter-manifolds", ["Can you fabricate gas meter manifolds?", ...reviewedParaphrases["gas-meter-manifolds"]],
     "We fabricate gas meter manifolds; we review the exact scope before accepting the work.", "BRAND-BRIEF.md (Approved secondary capabilities); lib/service-pages.ts (custom-fabrication)"),
   entry("fabrication-one-off", ["Do you consider one-off or short-run fabrication?"],
     "One-off and specialized projects are considered when scope, material, dimensions and intended use are clear.", serviceSource("custom-fabrication")),
-  entry("fabrication-measurements", ["What measurements help with a custom fabrication quote?", "What dimensions do you need for custom fabrication?"],
+  entry("fabrication-measurements", ["What measurements help with a custom fabrication quote?", "What dimensions do you need for custom fabrication?", ...reviewedParaphrases["fabrication-measurements"]],
     "Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs.", serviceSource("custom-fabrication")),
   entry("mailboxes", ["Do you build custom steel mailbox supports?", "Do you make custom mailboxes?"],
     "We fabricate custom steel mailbox supports, clusters and brackets.", serviceSource("custom-metal-products")),
@@ -136,13 +200,13 @@ export const assistantAnswers: readonly AssistantAnswer[] = Object.freeze([
     "We work on steel and iron gates, weld aluminum and repair aluminum boats, and fabricate stainless countertops.", "lib/service-pages.ts (gate-repair); app/page.tsx (FAQs); BRAND-BRIEF.md (Approved secondary capabilities)"),
   entry("quote-equipment-model", ["Should I include the equipment make and model?"],
     "Yes. Send the equipment make and model and the failed component if known.", serviceSource("equipment-repair")),
-  entry("quote-full-closeup", ["Do you need close-up and full-item photos?", "What photos do you need?", "What photos should I send?", "What photos?"],
+  entry("quote-full-closeup", ["Do you need close-up and full-item photos?", "What photos do you need?", "What photos should I send?", "What photos?", ...reviewedParaphrases["quote-full-closeup"]],
     "Yes. Send the full item and close-ups of the failure.", serviceSource("mobile-welding")),
   entry("quote-prior-repairs", ["Should I mention earlier repairs and rust?"],
     "Yes. Mention prior repairs, visible bending, corrosion and how the failure occurred.", "lib/service-pages.ts (trailer-welding-repair; equipment-repair)"),
   entry("quote-drawings", ["How do I send drawings and dimensions?"],
     "Send drawings and dimensions through the website contact form or shop email.", "lib/service-pages.ts (custom-fabrication); components/mainstreet-contact.tsx; lib/assistant/turn.ts (photo and drawing channels)"),
-  entry("chat-photos", ["Can I upload a picture directly in this chat?", "Can I send photos in chat?", "Can I upload photos here?"],
+  entry("chat-photos", ["Can I upload a picture directly in this chat?", "Can I send photos in chat?", "Can I upload photos here?", ...reviewedParaphrases["chat-photos"]],
     "No. Chat doesn't accept photo uploads; use the website contact form or shop email.", "lib/assistant/turn.ts (photo and drawing channels); components/mainstreet-contact.tsx (Photos)"),
   entry("quote-start", ["How do I get a quote?", "What should I send for a quote?"],
     "Send the location, a short description, and clear photos of the full item and the problem area. Add dimensions or a drawing if you have them.", "app/page.tsx (FAQs); components/mainstreet-contact.tsx"),
@@ -186,9 +250,9 @@ export function findAssistantAnswer(message: string): AssistantAnswer | undefine
   for (const answer of assistantAnswers) {
     const pattern = answer.patterns.find((pattern) => normalizeAssistantAnswer(pattern) === question)
     if (!pattern) continue
-    // One entry can answer both "Do you ...?" and "What ...?". Its matched
-    // question determines the opening; the bank stays unchanged between turns.
-    const yesNo = answer.id !== "mobile-shop-fit" && yesNoQuestion.test(pattern)
+    // Existing questions keep their grammar-based opening. Reviewed alternatives
+    // omit Yes/No because their wording can change the question's polarity.
+    const yesNo = answer.id !== "mobile-shop-fit" && !reviewedParaphrases[answer.id]?.includes(pattern) && yesNoQuestion.test(pattern)
     const opening = /^(?:Yes|No)\.\s*/
     return {
       ...answer,

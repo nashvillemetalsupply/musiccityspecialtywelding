@@ -22,27 +22,50 @@ const ladder = "[INTERNAL TEST] Do you weld aluminum boat ladders?"
 const gate = "[INTERNAL TEST] My steel gate hinge broke off the post in Lebanon. Can you fix it?"
 const gateReply = "We repair metal gate hinges and posts. Did the hinge break, or did it tear metal out of the post?"
 
-test("all 36 audit paraphrases retain complete repository answers through the model path", async () => {
+test("all 36 audit paraphrases answer live-runner input from the bank without a model call", async () => {
   const groups = JSON.parse(readFileSync(new URL("./fixtures/assistant-audit-paraphrases.json", import.meta.url), "utf8"))
   let calls = 0, turns = 0
-  const failures = []
+  globalThis.__turnRegressionModel = async () => { calls++; assert.fail("audit paraphrases must answer from the bank") }
   for (const group of groups) {
     const approved = findAssistantAnswer(group.canonicalQuestion)
     assert.ok(approved, group.canonicalQuestion)
-    for (const content of group.questions) {
-      assert.equal(findAssistantAnswer(content), undefined, `audit paraphrase must reach model: ${content}`)
-      for (const handoff_reason of [null, "unknown"]) {
-        const reply = approved.answer
-        globalThis.__turnRegressionModel = async () => { calls++; return { reply, handoff_reason, fields: fields({ need: content, is_job: "yes" }) } }
-        const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
-        if (result.branch !== "model-answer" || result.handoff_reason || !result.reply.includes(reply) || (result.reply.match(/\?/g) ?? []).length !== 1) failures.push({ content, handoff_reason, branch: result.branch, trace: result.decision_trace })
-      }
+    const expected = approved.answer.replace(/^(?:Yes|No)\.\s*/, "")
+    for (const question of group.questions) {
+      const content = `[INTERNAL TEST] ${question}`
+      const answer = findAssistantAnswer(content)
+      assert.equal(answer.answer, expected, question)
+      assert.doesNotMatch(answer.answer, /^(?:Yes|No)\./, question)
+      const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+      assert.equal(result.branch, "sourced-answer", question)
+      assert.equal(result.handoff_reason, undefined, question)
+      assert.ok(result.reply.includes(expected), question)
+      assert.doesNotMatch(result.reply, /^(?:Yes|No)\./, question)
+      assert.doesNotMatch(result.reply.replace(/^I'm an automated assistant for Music City Specialty Welding\.\s*/, ""), /^(?:Yes|No)\./, question)
+      assert.equal((result.reply.match(/\?/g) ?? []).length, 1, question)
+      assert.equal(calls, 0, question)
       turns++
     }
   }
   assert.equal(turns, 36)
-  assert.equal(calls, 72)
-  assert.deepEqual(failures, [])
+  assert.equal(calls, 0)
+})
+
+test("an unbanked paraphrase retains the complete repository answer through the model path", async () => {
+  const content = "My garden gate is attached to its posts and a weld has failed. Can the metal repair be reviewed for work in place?"
+  const groups = JSON.parse(readFileSync(new URL("./fixtures/assistant-audit-paraphrases.json", import.meta.url), "utf8"))
+  assert.equal(groups.some((group) => group.questions.includes(content)), false)
+  assert.equal(findAssistantAnswer(content), undefined)
+  const approved = findAssistantAnswer("Can you repair a gate where it hangs?").answer
+  let calls = 0
+  for (const handoff_reason of [null, "unknown"]) {
+    globalThis.__turnRegressionModel = async () => { calls++; return { reply: approved, handoff_reason, fields: fields({ need: content, is_job: "yes" }) } }
+    const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
+    assert.equal(result.branch, "model-answer", handoff_reason)
+    assert.equal(result.handoff_reason, undefined, handoff_reason)
+    assert.ok(result.reply.includes(approved), handoff_reason)
+    assert.equal((result.reply.match(/\?/g) ?? []).length, 1, handoff_reason)
+  }
+  assert.equal(calls, 2)
 })
 
 test("source text cannot override unknown work, prices, dates, safety or extra model claims", async () => {
@@ -69,14 +92,19 @@ test("source text cannot override unknown work, prices, dates, safety or extra m
   assert.match(upload.reply, /mailto:sales@musiccityspecialtywelding.com/)
 })
 
-test("Q106-P1 service-worker intent keeps the model photo answer even with human metadata", async () => {
-  const content = "I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?"
+test("unbanked service-worker intent keeps the model photo answer even with human metadata", async () => {
+  const content = "I need someone to weld a bracket beside our shed. What photos and access details should I send for the mobile crew?"
+  const groups = JSON.parse(readFileSync(new URL("./fixtures/assistant-audit-paraphrases.json", import.meta.url), "utf8"))
+  assert.equal(groups.some((group) => group.questions.includes(content)), false)
+  assert.equal(findAssistantAnswer(content), undefined)
   const reply = "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
-  globalThis.__turnRegressionModel = async () => ({ reply, handoff_reason: "human", fields: fields({ need: "weld a part", is_job: "yes" }) })
+  let calls = 0
+  globalThis.__turnRegressionModel = async () => { calls++; return { reply, handoff_reason: "human", fields: fields({ need: "weld a bracket", is_job: "yes" }) } }
   const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
   assert.equal(result.handoff_reason, undefined)
   assert.match(result.reply, /Send photos of the full item and close-ups of the failure/)
   assert.equal(result.branch, "model-answer")
+  assert.equal(calls, 1)
 })
 
 test("site descriptions are not unlisted cities, while named travel still needs confirmation", async () => {

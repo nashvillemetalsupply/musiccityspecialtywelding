@@ -21,14 +21,16 @@ const fields = (overrides = {}) => ({ name: null, callback_phone: null, need: ""
 test("conditional frame assessment survives cautious model routing without approving use", async () => {
   const assessment = "A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter. We review those conditions before recommending a repair."
   for (const content of [
-    "We found a crack in the metal frame of our equipment trailer. Can your shop assess it for a welded repair?",
-    "The trailer chassis has started cracking near an old weld. What would you need to see before deciding if you can fix it?",
+    "We found a crack in the metal frame of my trailer. Can your shop assess it for a welded repair?",
+    "My trailer frame has started cracking near an old weld. What would you need to see before deciding if you can fix it?",
   ]) {
-    globalThis.__expertModel = async () => ({ reply: assessment, handoff_reason: "unknown", fields: fields({ need: content, is_job: "yes" }) })
+    let calls = 0
+    globalThis.__expertModel = async () => { calls++; return { reply: assessment, handoff_reason: "unknown", fields: fields({ need: content, is_job: "yes" }) } }
     const result = await handleAssistantTurn([{ role: "user", content }], { isTest: true })
     assert.match(result.reply, /A crack may be repairable.*deformation, corrosion, prior work, material, and cause of failure/, JSON.stringify(result.decision_trace))
     assert.equal(result.handoff_reason, undefined)
     assert.equal(result.branch, "model-answer")
+    assert.equal(calls, 1)
   }
   for (const content of ["Can I tow my cracked trailer?", "How do I weld the cracked frame myself?", "Can you guarantee it will hold?"]) {
     globalThis.__expertModel = async () => ({ reply: assessment, handoff_reason: null, fields: fields({ need: content, is_job: "yes" }) })

@@ -16,6 +16,8 @@ const { assistantKnowledge } = await import("../lib/assistant/knowledge.ts")
 const { handleAssistantTurn } = await import("../lib/assistant/turn.ts")
 hooks.deregister()
 
+const auditParaphrases = JSON.parse(readFileSync(new URL("./fixtures/assistant-audit-paraphrases.json", import.meta.url), "utf8"))
+const reviewedQuestions = new Set(auditParaphrases.flatMap((group) => group.questions))
 const fields = (extra = {}) => ({ name: null, callback_phone: null, need: "", material_size: null, location: null, timing: null, callback_window: null, is_job: "unsure", ...extra })
 const required = [
   "Can you repair a trailer where it sits?", "Can you weld a cracked trailer frame?",
@@ -35,7 +37,7 @@ test("curated answers cite existing versioned source files, remain concise, and 
     assert.doesNotMatch(entry.answer, /\b(the site|listed)\b/i, entry.id)
     assert.doesNotMatch(entry.answer.replaceAll("24/7", ""), /\b\w+\/\w+\b/, entry.id)
     for (const pattern of entry.patterns) {
-      if (/^(?:do|does|can|could|should|is|are|will|would)\b/i.test(pattern) && entry.id !== "mobile-shop-fit") assert.match(findAssistantAnswer(pattern).answer, /^(?:Yes|No)\./, pattern)
+      if (/^(?:do|does|can|could|should|is|are|will|would)\b/i.test(pattern) && entry.id !== "mobile-shop-fit" && !reviewedQuestions.has(pattern)) assert.match(findAssistantAnswer(pattern).answer, /^(?:Yes|No)\./, pattern)
     }
     assert.doesNotMatch(entry.answer, /\bcannot\b/i, entry.id)
     for (const file of entry.source.matchAll(/(?:lib|app|components)\/[\w/.[\]-]+\.tsx?\b|BRAND-BRIEF\.md/g)) assert.ok(existsSync(new URL(`../${file[0]}`, import.meta.url)), entry.source)
@@ -84,6 +86,26 @@ test("all twelve Fable cases answer before calling a provider, including the tra
     assert.ok(result.reply.startsWith(`I'm an automated assistant for Music City Specialty Welding. ${answer.answer} `), question)
     assert.match(result.reply, /\?$/, `${question}: sourced answers continue intake`)
   }
+})
+
+test("all 36 audit paraphrases preserve their canonical entry and approved answer without Yes or No", () => {
+  let checked = 0
+  for (const group of auditParaphrases) {
+    const approved = findAssistantAnswer(group.canonicalQuestion)
+    assert.ok(approved, group.canonicalQuestion)
+    const expected = approved.answer.replace(/^(?:Yes|No)\.\s*/, "")
+    for (const question of group.questions) {
+      for (const content of [question, `[INTERNAL TEST] ${question}`]) {
+        const answer = findAssistantAnswer(content)
+        assert.ok(answer, question)
+        assert.equal(answer.id, approved.id, question)
+        assert.equal(answer.answer, expected, question)
+        assert.doesNotMatch(answer.answer, /^(?:Yes|No)\./, question)
+      }
+      checked++
+    }
+  }
+  assert.equal(checked, 36)
 })
 
 test("full FAQ answers keep the gate electrical and on-site fit caveats", async () => {

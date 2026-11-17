@@ -48,7 +48,7 @@ test("live audit refuses a missing base URL before any network request", async (
   assert.doesNotMatch(result.stderr, /Unexpected network request/)
 })
 
-test("live case set has the exact 82 offline handoffs and three novel paraphrases per named row", () => {
+test("live case set has the exact 82 offline handoffs and three banked paraphrases per named row", () => {
   const cases = loadLiveAuditCases(path.join(root, LIVE_AUDIT_SOURCE), path.join(root, LIVE_AUDIT_PARAPHRASES))
   const offline = JSON.parse(readFileSync(path.join(root, LIVE_AUDIT_SOURCE), "utf8"))
   assert.deepEqual(cases.filter((entry) => entry.set === "offline-handoff").map((entry) => entry.id),
@@ -64,7 +64,15 @@ test("live case set has the exact 82 offline handoffs and three novel paraphrase
   }
   // Exercise the real matcher, including its greeting, grammar, synonym,
   // suffix and internal-test normalization, rather than comparing raw text.
-  for (const entry of paraphrases) assert.equal(findAssistantAnswer(`[INTERNAL TEST] ${entry.question}`), undefined, entry.question)
+  for (const entry of paraphrases) {
+    const approved = findAssistantAnswer(entry.canonicalQuestion)
+    const answer = findAssistantAnswer(`[INTERNAL TEST] ${entry.question}`)
+    assert.ok(approved, entry.canonicalQuestion)
+    assert.ok(answer, entry.question)
+    assert.equal(answer.id, approved.id, entry.question)
+    assert.equal(answer.answer, approved.answer.replace(/^(?:Yes|No)\.\s*/, ""), entry.question)
+    assert.doesNotMatch(answer.answer, /^(?:Yes|No)\./, entry.question)
+  }
   assert.equal(LIVE_AUDIT_OUTPUT, "docs/assistant-audit-live-r3.json")
 })
 
