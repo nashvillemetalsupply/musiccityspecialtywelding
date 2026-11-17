@@ -1,0 +1,784 @@
+{
+  "mode": "LIVE HTTP production readback of r5 dead ends (vercel curl, CLI auth)",
+  "recordedAt": "2026-11-17T18:57:33.825Z",
+  "baseUrl": "https://music-city-speciality-welding-pwfqjzn07.vercel.app",
+  "counts": {
+    "ANSWERED": 30,
+    "HANDOFF": 0,
+    "WRONG": 0,
+    "DEAD END": 0
+  },
+  "total": 30,
+  "results": [
+    {
+      "id": "Q004-P1",
+      "category": "trailer-welding-repair",
+      "question": "My utility trailer is parked behind the barn and I can't move it right now. Is that something your welding truck could work on there?",
+      "canonicalQuestion": "Can you repair a trailer where it sits?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "trailer-welding-repair",
+        "evidence": "Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Some trailer repairs can be completed on-site when access and hot-work conditions are suitable.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "19fe7c9b-00df-4b5e-a338-23777932bfdb",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] My utility trailer is parked behind the barn and I can't move it right now. Is that something your welding truck could work on there?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q004-P2",
+      "category": "trailer-welding-repair",
+      "question": "The ramp hinge broke on our trailer at the jobsite. Would we have to haul the whole thing to Lebanon for welding?",
+      "canonicalQuestion": "Can you repair a trailer where it sits?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "trailer-welding-repair",
+        "evidence": "Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Some trailer repairs can be completed on-site when access and hot-work conditions are suitable.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "5ad2be8f-bce7-44f7-a76a-b3462db182ac",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] The ramp hinge broke on our trailer at the jobsite. Would we have to haul the whole thing to Lebanon for welding?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q004-P3",
+      "category": "trailer-welding-repair",
+      "question": "I've got a trailer needing metal repair in my driveway. How do you decide whether to send the mobile rig or have me bring it in?",
+      "canonicalQuestion": "Can you repair a trailer where it sits?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "trailer-welding-repair",
+        "evidence": "Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Some trailer repairs can be completed on-site when access and hot-work conditions are suitable.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "b561ea24-e794-4eee-af40-65b05e3f5666",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I've got a trailer needing metal repair in my driveway. How do you decide whether to send the mobile rig or have me bring it in?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Some trailer repairs can be completed on-site when access and hot-work conditions are suitable. Damage that needs better positioning, disassembly, or controlled fitting may be better handled in the shop. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q005-P3",
+      "category": "trailer-welding-repair",
+      "question": "The trailer chassis has started cracking near an old weld. What would you need to see before deciding if you can fix it?",
+      "canonicalQuestion": "Can you weld a cracked trailer frame?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "trailer-welding-repair",
+        "evidence": "A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter. We review those conditions before recommending a repair."
+      },
+      "expected": "answer",
+      "referenceAnswer": "A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "a403cec0-e7fc-4c14-acc6-c648b08e6b42",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] The trailer chassis has started cracking near an old weld. What would you need to see before deciding if you can fix it?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. A crack may be repairable, but the surrounding deformation, corrosion, prior work, material, and cause of failure matter. We review those conditions before recommending a repair. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q008-P1",
+      "category": "gate-repair",
+      "question": "Our driveway gate needs welding but it's still attached to the posts. Could your crew work on it here?",
+      "canonicalQuestion": "Can you repair a gate where it hangs?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "gate-repair",
+        "evidence": "Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Some gate repairs can be completed on-site when access and hot-work conditions are suitable.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "e7089263-e38a-48f8-a494-c7e8850520ee",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] Our driveway gate needs welding but it's still attached to the posts. Could your crew work on it here?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q008-P2",
+      "category": "gate-repair",
+      "question": "I've got a heavy iron gate with a broken weld. Does it have to come off first or can you work with it in place?",
+      "canonicalQuestion": "Can you repair a gate where it hangs?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "gate-repair",
+        "evidence": "Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Some gate repairs can be completed on-site when access and hot-work conditions are suitable.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "3aedb7b5-6576-4cea-83c6-8eb389344190",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I've got a heavy iron gate with a broken weld. Does it have to come off first or can you work with it in place?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q008-P3",
+      "category": "gate-repair",
+      "question": "The metal on our entrance gate needs repair and we don't have a way to take it down. Is a site visit an option?",
+      "canonicalQuestion": "Can you repair a gate where it hangs?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "gate-repair",
+        "evidence": "Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Some gate repairs can be completed on-site when access and hot-work conditions are suitable.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "69e6b630-6955-419f-b99a-ad4e19019dfd",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] The metal on our entrance gate needs repair and we don't have a way to take it down. Is a site visit an option?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q010-P1",
+      "category": "equipment-repair",
+      "question": "One of our machine guards broke at the warehouse. Could a welder come to our facility instead of us shipping the machine?",
+      "canonicalQuestion": "Can you repair equipment at our facility?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "equipment-repair",
+        "evidence": "Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Many equipment repairs can be evaluated and completed on-site.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "fae9ca13-9edd-434f-9bfd-744eb179b332",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] One of our machine guards broke at the warehouse. Could a welder come to our facility instead of us shipping the machine?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q010-P2",
+      "category": "equipment-repair",
+      "question": "We have a steel support on some equipment that needs repair. The machine stays on our floor; is that work you can look at here?",
+      "canonicalQuestion": "Can you repair equipment at our facility?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "equipment-repair",
+        "evidence": "Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Many equipment repairs can be evaluated and completed on-site.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "870ef84b-7db6-4680-b150-53db879c52b7",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] We have a steel support on some equipment that needs repair. The machine stays on our floor; is that work you can look at here?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q010-P3",
+      "category": "equipment-repair",
+      "question": "Can your mobile crew assess a broken machinery bracket at our plant, or does all equipment work go through your shop?",
+      "canonicalQuestion": "Can you repair equipment at our facility?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "equipment-repair",
+        "evidence": "Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Many equipment repairs can be evaluated and completed on-site.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "fa6a3b66-24cf-4f01-8463-e14edd7af372",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] Can your mobile crew assess a broken machinery bracket at our plant, or does all equipment work go through your shop?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Many equipment repairs can be evaluated and completed on-site. The final decision depends on access, safety, material condition, and the repair method. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q038-P2",
+      "category": "custom-fabrication",
+      "question": "I have a drawing for a gas-meter manifold assembly. Is that something you could review for fabrication?",
+      "canonicalQuestion": "Can you fabricate gas meter manifolds?",
+      "source": {
+        "file": "lib/service-pages.ts; BRAND-BRIEF.md",
+        "section": "custom-fabrication",
+        "evidence": "Custom brackets, frames, supports, and assemblies Gas manifolds and specialized industrial metalwork Streetscape poles and custom signage components One-off or short-run fabrication built to drawings Send drawings or a dimensioned sketch whenever possible. Identify material, quantity, finish, tolerances, and installation needs. Include photos of the mating components or final location. Not always. A clear sketch, dimensions, photos, and an explanation of the application may be enough to begin reviewing the project. Some parts can be recreated from a sample or complete measurements. Safety-critical or protected designs may require additional documentation or engineering. Yes. One-off and specialized projects are considered when the scope, material, dimensions, and intended use are clear."
+      },
+      "expected": "answer",
+      "referenceAnswer": "We fabricate gas meter manifolds; we review the exact scope before accepting the work.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "723e0e7e-0b94-41b7-8bed-1a3bb8452365",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I have a drawing for a gas-meter manifold assembly. Is that something you could review for fabrication?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. We fabricate gas meter manifolds; we review the exact scope before accepting the work. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q109-P1",
+      "category": "quote-evidence",
+      "question": "I took a tight picture of the broken weld. Should I back up and get the whole piece in another shot too?",
+      "canonicalQuestion": "Do you need close-up and full-item photos?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the full item and close-ups of the failure.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "6ffdf43e-943d-4321-9181-debe15523bdf",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I took a tight picture of the broken weld. Should I back up and get the whole piece in another shot too?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the full item and close-ups of the failure. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q109-P2",
+      "category": "quote-evidence",
+      "question": "Before I send these pictures, do you want the entire item as well as the damaged spot?",
+      "canonicalQuestion": "Do you need close-up and full-item photos?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the full item and close-ups of the failure.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "3d544b65-7d28-4f8e-b5c4-f9cd0b6a9577",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] Before I send these pictures, do you want the entire item as well as the damaged spot?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the full item and close-ups of the failure. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q109-P3",
+      "category": "quote-evidence",
+      "question": "I've got one wide shot and a few pictures right up against the crack. Which ones would help your shop review it?",
+      "canonicalQuestion": "Do you need close-up and full-item photos?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the full item and close-ups of the failure.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "976d9bb2-3a8c-4d40-8855-ac490d3a3dbf",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I've got one wide shot and a few pictures right up against the crack. Which ones would help your shop review it?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the full item and close-ups of the failure. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q112-P3",
+      "category": "quote-evidence",
+      "question": "Can I drop an image into this message window, or is there another place I should send it?",
+      "canonicalQuestion": "Can I upload a picture directly in this chat?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Chat doesn't accept photo uploads; use the website contact form or shop email.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "52a17f9b-42fc-4005-a659-3d09ab99e6a5",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] Can I drop an image into this message window, or is there another place I should send it?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Chat doesn't accept photo uploads; use the website contact form or shop email. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q029-P1",
+      "category": "gate-repair",
+      "question": "The top hinge on our driveway gate has broken. What details should I have ready when I contact you?",
+      "canonicalQuestion": "What do you need to know about a broken gate hinge?",
+      "source": {
+        "file": "lib/service-pages.ts; BRAND-BRIEF.md",
+        "section": "gate-repair",
+        "evidence": "Cracked or sagging gate frames and corners Broken hinges, hinge pins, latches, and strike plates Bent or rusted gate posts and mounting brackets Swing, slide, driveway, and farm gate steel Send one photo of the whole gate plus close-ups of the hinge, latch, and damaged area. Include the gate type, approximate size, location, and whether it can be unhung. Mention prior repairs, how long it has sagged, and any sign the post has moved. No. We repair the metal: the frame, hinges, latches, posts, and brackets. Motor, operator, and electrical work are outside what we do, so call the installer for those. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop. Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the gate type, approximate size, location and whether it can be unhung.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "a43cbd0b-f55a-4bab-8fc9-c6a608b27731",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] The top hinge on our driveway gate has broken. What details should I have ready when I contact you?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the gate type, approximate size, location and whether it can be unhung. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q029-P2",
+      "category": "gate-repair",
+      "question": "I'm trying to get a gate hinge repair reviewed. Besides saying the hinge is broken, what information helps?",
+      "canonicalQuestion": "What do you need to know about a broken gate hinge?",
+      "source": {
+        "file": "lib/service-pages.ts; BRAND-BRIEF.md",
+        "section": "gate-repair",
+        "evidence": "Cracked or sagging gate frames and corners Broken hinges, hinge pins, latches, and strike plates Bent or rusted gate posts and mounting brackets Swing, slide, driveway, and farm gate steel Send one photo of the whole gate plus close-ups of the hinge, latch, and damaged area. Include the gate type, approximate size, location, and whether it can be unhung. Mention prior repairs, how long it has sagged, and any sign the post has moved. No. We repair the metal: the frame, hinges, latches, posts, and brackets. Motor, operator, and electrical work are outside what we do, so call the installer for those. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop. Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the gate type, approximate size, location and whether it can be unhung.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "04b9cd6e-96d4-42a4-8c95-819c71760cd8",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I'm trying to get a gate hinge repair reviewed. Besides saying the hinge is broken, what information helps?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the gate type, approximate size, location and whether it can be unhung. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q029-P3",
+      "category": "gate-repair",
+      "question": "Our steel entrance gate is hanging crooked after a hinge failed. What should I tell the shop about the gate and where it is?",
+      "canonicalQuestion": "What do you need to know about a broken gate hinge?",
+      "source": {
+        "file": "lib/service-pages.ts; BRAND-BRIEF.md",
+        "section": "gate-repair",
+        "evidence": "Cracked or sagging gate frames and corners Broken hinges, hinge pins, latches, and strike plates Bent or rusted gate posts and mounting brackets Swing, slide, driveway, and farm gate steel Send one photo of the whole gate plus close-ups of the hinge, latch, and damaged area. Include the gate type, approximate size, location, and whether it can be unhung. Mention prior repairs, how long it has sagged, and any sign the post has moved. No. We repair the metal: the frame, hinges, latches, posts, and brackets. Motor, operator, and electrical work are outside what we do, so call the installer for those. Some gate repairs can be completed on-site when access and hot-work conditions are suitable. A gate that needs better positioning or controlled fitting may be better handled in the shop. Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the gate type, approximate size, location and whether it can be unhung.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "c69eca9a-ce2e-4432-823c-a847bfc960a7",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] Our steel entrance gate is hanging crooked after a hinge failed. What should I tell the shop about the gate and where it is?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the gate type, approximate size, location and whether it can be unhung. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q006-P1",
+      "category": "trailer-welding-repair",
+      "question": "I'm walking around my trailer with my phone before asking for a repair quote. What parts should I photograph?",
+      "canonicalQuestion": "What photos help with a trailer quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "trailer-welding-repair",
+        "evidence": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "960b9c76-bff3-471b-9679-73e5b582b352",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I'm walking around my trailer with my phone before asking for a repair quote. What parts should I photograph?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q006-P2",
+      "category": "trailer-welding-repair",
+      "question": "The trailer needs welding and I want to send useful pictures the first time. What views do you need?",
+      "canonicalQuestion": "What photos help with a trailer quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "trailer-welding-repair",
+        "evidence": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "79eb91b6-d7a5-45c0-a736-f81fb4f6ac47",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] The trailer needs welding and I want to send useful pictures the first time. What views do you need?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q006-P3",
+      "category": "trailer-welding-repair",
+      "question": "I've photographed the broken bit on our utility trailer. Are there other angles or trailer details your estimator will want?",
+      "canonicalQuestion": "What photos help with a trailer quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "trailer-welding-repair",
+        "evidence": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "04a54f44-8474-4d0d-935f-d1a5a027194e",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I've photographed the broken bit on our utility trailer. Are there other angles or trailer details your estimator will want?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the entire trailer, the damaged area from both sides, nearby crossmembers or mounts, the identification plate if available, and anything visibly bent or displaced. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q009-P1",
+      "category": "gate-repair",
+      "question": "I need a welding quote for our entrance gate. Where should I stand and what should I include in the pictures?",
+      "canonicalQuestion": "What photos help with a gate quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "gate-repair",
+        "evidence": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "ce74e6d0-7f8a-4f1c-ab15-bcce29484550",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I need a welding quote for our entrance gate. Where should I stand and what should I include in the pictures?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q009-P2",
+      "category": "gate-repair",
+      "question": "Before I email about the damaged gate, what pictures would give you enough context to review it?",
+      "canonicalQuestion": "What photos help with a gate quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "gate-repair",
+        "evidence": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "07a0df13-8761-461a-94c2-90f1a8c4c6d6",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] Before I email about the damaged gate, what pictures would give you enough context to review it?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q009-P3",
+      "category": "gate-repair",
+      "question": "I've got a close picture of our gate's broken weld. Should I also show the posts, hinges and the whole opening?",
+      "canonicalQuestion": "What photos help with a gate quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "section": "gate-repair",
+        "evidence": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "257e4d65-7a5e-4334-8c2a-a317343c2366",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I've got a close picture of our gate's broken weld. Should I also show the posts, hinges and the whole opening?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send the whole gate, the hinge and latch sides, the damaged area up close, and the post base if it looks bent or loose. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q106-P1",
+      "category": "quote-evidence",
+      "question": "I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?",
+      "canonicalQuestion": "What photos should I send for a mobile welding quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "8df92fe6-4fbb-4878-93db-ffb55b236387",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I need someone to weld a part at my property. What pictures and site details help you figure out the mobile work?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q106-P2",
+      "category": "quote-evidence",
+      "question": "I'm getting information together for a welding truck visit. What should I photograph around the job before I send a request?",
+      "canonicalQuestion": "What photos should I send for a mobile welding quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "a0633be5-2f0a-4227-bc2a-3a1da5918771",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I'm getting information together for a welding truck visit. What should I photograph around the job before I send a request?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q106-P3",
+      "category": "quote-evidence",
+      "question": "For a repair that can't leave our site, what do you want to see in the photos and know about getting your rig in?",
+      "canonicalQuestion": "What photos should I send for a mobile welding quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "20b6e731-660c-48ac-8b85-5edd58ac1876",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] For a repair that can't leave our site, what do you want to see in the photos and know about getting your rig in?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send full-item and close-up photos, location, access restrictions and desired timing through the website contact form or shop email. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q107-P1",
+      "category": "quote-evidence",
+      "question": "I want a custom steel bracket made from my sketch. Which dimensions and other details should I put on it for a quote?",
+      "canonicalQuestion": "What measurements help with a custom fabrication quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "8b4c3046-821c-4ae1-9d32-defa42d73c82",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I want a custom steel bracket made from my sketch. Which dimensions and other details should I put on it for a quote?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q107-P2",
+      "category": "quote-evidence",
+      "question": "I'm drawing up a little frame for you to build. What sizes, material information and finish details do you need from me?",
+      "canonicalQuestion": "What measurements help with a custom fabrication quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "ecde8567-3683-4a36-b647-4aad2fd3d923",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] I'm drawing up a little frame for you to build. What sizes, material information and finish details do you need from me?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    },
+    {
+      "id": "Q107-P3",
+      "category": "quote-evidence",
+      "question": "Before I ask you to price a made-to-order metal part, how much detail should I include about measurements, quantity and how it'll mount?",
+      "canonicalQuestion": "What measurements help with a custom fabrication quote?",
+      "source": {
+        "file": "lib/service-pages.ts",
+        "evidence": "Send photos of the full item and close-ups of the failure. Include the job-site address, access restrictions, and desired timing."
+      },
+      "expected": "answer",
+      "referenceAnswer": "Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs.",
+      "set": "sourced-paraphrase",
+      "input": {
+        "session_id": "f4f53639-a5de-44eb-8fcd-776c812c501b",
+        "turn_index": 0,
+        "message": "[INTERNAL TEST] Before I ask you to price a made-to-order metal part, how much detail should I include about measurements, quantity and how it'll mount?",
+        "is_test": true
+      },
+      "status": 200,
+      "reply": "I'm an automated assistant for Music City Specialty Welding. Send a dimensioned sketch, material, quantity, finish, tolerances and installation needs. What needs welding or repair?",
+      "handoff_reason": null,
+      "grade": "ANSWERED",
+      "reason": "Nonempty reply without a handoff; factual and safety review pending",
+      "review": "PENDING"
+    }
+  ]
+}
