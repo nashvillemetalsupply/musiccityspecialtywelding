@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const rows = (await sql`
     UPDATE calls SET status = ${status}::text, duration_sec = ${duration}::int, updated_at = now()
     WHERE twilio_sid = ${sid}::text AND direction = 'in'
-    RETURNING lead_id, person_id, from_phone,
+    RETURNING lead_id, person_id, from_phone, started_at AS called_at,
       (
         COALESCE((SELECT is_test FROM leads WHERE id = calls.lead_id), false)
         OR COALESCE((SELECT is_test FROM people WHERE id = calls.person_id), false)
@@ -39,6 +39,7 @@ export async function POST(req: Request) {
     lead_id: number | null
     person_id: number | null
     from_phone: string
+    called_at: Date | string
     is_test: boolean
   }[]
   const call = rows[0]
@@ -166,8 +167,7 @@ export async function POST(req: Request) {
       leadId: call.lead_id,
       personId: call.person_id,
       idempotencyKey: `missed-call:${sid}:auto-reply`,
-      // Fable 11-17: this one reply to the caller own call is exempt from quiet hours (5-minute window).
-      ownerInitiated: true,
+      quietExemptCallAt: new Date(call.called_at),
     }).catch(() => undefined)
   }
   return twiml("")

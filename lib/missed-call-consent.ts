@@ -9,3 +9,8 @@ export function missedCallTextConsentAllowed(
 ): boolean {
   return isMissedCallTextOnCall(flagValue, idempotencyKey) && consentState !== "revoked"
 }
+
+export function missedCallQuietExempt(callAt: Date, now: Date): boolean {
+  const elapsed = now.getTime() - callAt.getTime()
+  return elapsed >= -60_000 && elapsed <= 5 * 60 * 1000
+}

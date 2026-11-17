@@ -4,7 +4,7 @@ import { recordEvent } from "@/lib/events"
 import { notify, notifyAll } from "@/lib/notify"
 import { isDefinitiveTwilioError, sendSms, twilioCallbackUrl, twilioSmsConfigured } from "@/lib/twilio"
 import { customerSmsAllowed, getMessagingConsentState } from "@/lib/messaging-consent"
-import { isMissedCallTextOnCall, missedCallTextConsentAllowed } from "@/lib/missed-call-consent"
+import { isMissedCallTextOnCall, missedCallQuietExempt, missedCallTextConsentAllowed } from "@/lib/missed-call-consent"
 import { FALLBACK_SHOP_PHONE_E164 } from "@/lib/shop-phone-shared"
 import { isReservedCustomerPhone, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { getDeferredSmsSendAt, isCentralQuietHours } from "@/lib/sms-quiet-hours.ts"
@@ -215,6 +215,7 @@ export async function sendSmsPersisted(input: {
   rescheduleId?: number | null
   idempotencyKey?: string | null
   ownerInitiated?: boolean
+  quietExemptCallAt?: Date | null
 }) {
   const to = normalizeUsPhone(input.to)
   const from = process.env.TWILIO_PHONE_NUMBER?.trim() ?? ""
@@ -224,7 +225,10 @@ export async function sendSmsPersisted(input: {
   // Durable intent first. Provider delivery happens only after these rows exist.
   const idempotencyKey = input.idempotencyKey?.trim().slice(0, 180) ?? ""
   const now = new Date()
-  const quietHoursExempt = Boolean(input.ownerInitiated && isCentralQuietHours(now))
+  const quietHoursExempt = Boolean(
+    (input.ownerInitiated && isCentralQuietHours(now))
+    || (input.quietExemptCallAt && isCentralQuietHours(now) && missedCallQuietExempt(input.quietExemptCallAt, now))
+  )
   const sendAfter = quietHoursExempt ? null : getDeferredSmsSendAt(now)
   // Claim the durable key before validation can classify an attempt as unsent.
   // A replay may already be queued, accepted, or in a provider handoff.

@@ -1,10 +1,34 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { missedCallTextConsentAllowed } from "../lib/missed-call-consent.ts"
+import { missedCallQuietExempt, missedCallTextConsentAllowed } from "../lib/missed-call-consent.ts"
+import { getDeferredSmsSendAt } from "../lib/sms-quiet-hours.ts"
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const missedCallKey = `missed-call:CA${"a".repeat(32)}:auto-reply`
+
+test("missed-call quiet-hours exemption expires five minutes after the call", () => {
+  const calledAt = new Date("2026-11-18T04:00:00Z") // 22:00 Central
+  const insideWindow = new Date("2026-11-18T04:04:00Z")
+  const exempt = missedCallQuietExempt(calledAt, insideWindow)
+  assert.equal(exempt, true)
+  assert.equal(exempt ? null : getDeferredSmsSendAt(insideWindow), null)
+  assert.equal(getDeferredSmsSendAt(insideWindow)?.toISOString(), "2026-11-18T14:00:00.000Z")
+
+  const pastWindow = new Date("2026-11-18T04:05:00.001Z")
+  const lateExempt = missedCallQuietExempt(calledAt, pastWindow)
+  assert.equal(lateExempt, false)
+  assert.equal((lateExempt ? null : getDeferredSmsSendAt(pastWindow))?.toISOString(), "2026-11-18T14:00:00.000Z")
+
+  assert.equal(missedCallQuietExempt(calledAt, new Date("2026-11-18T03:59:00Z")), true)
+  assert.equal(missedCallQuietExempt(calledAt, new Date("2026-11-18T03:58:59.999Z")), false)
+  assert.equal(missedCallQuietExempt(calledAt, calledAt), true)
+  assert.equal(missedCallQuietExempt(calledAt, new Date("2026-11-18T04:05:00Z")), true)
+
+  const daytime = new Date("2026-11-18T18:00:00Z") // 12:00 Central
+  assert.equal(missedCallQuietExempt(calledAt, daytime), false)
+  assert.equal(getDeferredSmsSendAt(daytime), null)
+})
 
 for (const { label, flag, key = missedCallKey, state, allowed } of [
   { label: "flag off blocks unknown consent", flag: undefined, state: "unknown", allowed: false },
