@@ -34,7 +34,7 @@ Hand off explicitly: goal, relevant files, and acceptance criteria.
 
 ## Escalate to Codex for review and high-stakes work
 
-Send to Codex `gpt-5.6-sol` at `xhigh` when:
+Send to Codex `gpt-6.2-sol` at `xhigh` when:
 
 - Work needs review, critique, or verification
 - There is a dispute, rebuttal, or argument to evaluate
@@ -50,7 +50,7 @@ After a Codex review, the orchestrator decides: accept, send a targeted follow-u
 
 Use the `factory` skill **only** when there are 3 or more genuinely independent tasks, or when I say "run the factory."
 
-- Fans Codex `gpt-5.6-sol` at `xhigh` across isolated worktrees through Herdr
+- Fans Codex `gpt-6.2-sol` at `xhigh` across isolated worktrees through Herdr
 - Reviews and merges serially
 - Hard cap: 4 implementers in flight
 - Most expensive configuration — do not use on small work
