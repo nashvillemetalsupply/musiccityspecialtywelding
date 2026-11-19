@@ -19,6 +19,24 @@ const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp", "ima
 const maxPhotoCount = 5
 const maxPhotoSize = 3 * 1024 * 1024
 const maxTotalPhotoSize = 4 * 1024 * 1024
+const quoteIntakeStorageKey = "mcsw:quote-intake"
+
+function readQuoteSession(key: string) {
+  try {
+    return window.sessionStorage.getItem(key) ?? ""
+  } catch {
+    return ""
+  }
+}
+
+function writeQuoteSession(key: string, value: string) {
+  try {
+    if (value) window.sessionStorage.setItem(key, value)
+    else window.sessionStorage.removeItem(key)
+  } catch {
+    // The mounted form still retains the intake and conversion state in refs.
+  }
+}
 
 type QuoteFields = {
   firstName: string
@@ -56,9 +74,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
   const [message, setMessage] = useState("")
   const [warning, setWarning] = useState("")
   const previewsRef = useRef<string[]>([])
-  // Keep one durable identity for every user submission attempt. A network
-  // retry must resume the same job and provider sends, not manufacture a
-  // duplicate lead. Rotate it only after the server confirms success.
+  // Network retries and page refreshes resume the pending intake.
   const intakeKeyRef = useRef("")
   const adsReportedIntakeKey = useRef("")
 
@@ -135,8 +151,9 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
     setWarning("")
 
     const payload = new FormData()
-    if (!intakeKeyRef.current) intakeKeyRef.current = crypto.randomUUID()
+    if (!intakeKeyRef.current) intakeKeyRef.current = readQuoteSession(quoteIntakeStorageKey) || crypto.randomUUID()
     const intakeKey = intakeKeyRef.current
+    writeQuoteSession(quoteIntakeStorageKey, intakeKey)
     payload.append("intakeKey", intakeKey)
     payload.append("firstName", formData.firstName)
     payload.append("lastName", "")
@@ -159,10 +176,17 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
       if (!contentType?.includes("application/json")) throw new Error("The server returned an invalid response.")
       const data = await response.json()
       const outcome = quoteSubmissionOutcome(data)
-      const canReportAds = response.ok ? outcome === "accepted" : response.status === 503 && data?.leadSaved === true
-      if (canReportAds && ADS_CONVERSION_SEND_TO && adsReportedIntakeKey.current !== intakeKey) {
-        queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
+      const leadSaved = data?.leadSaved === true
+      const canReportAds = leadSaved && (response.ok ? outcome === "accepted" : response.status === 503)
+      const adsStorageKey = `mcsw:quote-ads:${intakeKey}`
+      if (canReportAds && ADS_CONVERSION_SEND_TO && adsReportedIntakeKey.current !== intakeKey && !readQuoteSession(adsStorageKey)) {
         adsReportedIntakeKey.current = intakeKey
+        writeQuoteSession(adsStorageKey, "1")
+        queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
+      }
+      if (response.status === 409 && readQuoteSession(quoteIntakeStorageKey) === intakeKey) {
+        // Refresh can now start the changed request described by the 409.
+        writeQuoteSession(quoteIntakeStorageKey, "")
       }
       if (!response.ok) throw new Error(data?.error || "The request did not go through.")
       if (outcome === "rejected") throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
@@ -173,7 +197,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
         setWarning(data.warning)
       }
 
-      if (outcome === "accepted") {
+      if (outcome === "accepted" && leadSaved) {
         if (GA_MEASUREMENT_ID) {
           queueMeasurementEvent("generate_lead", {
             send_to: GA_MEASUREMENT_ID,
@@ -188,6 +212,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
       setPreviews([])
       setPhotoFiles([])
       setFormData(emptyForm)
+      if (readQuoteSession(quoteIntakeStorageKey) === intakeKey) writeQuoteSession(quoteIntakeStorageKey, "")
       intakeKeyRef.current = ""
       setStatus("success")
       setMessage("Got it. We’ll review the job and call you back. If it can't wait, call now.")

@@ -164,7 +164,7 @@ test("quote honeypot ignores ordinary autofill and silently suppresses a filled 
   const routeBranch = quoteRoute.match(/if \(isQuoteHoneypotFilled\(formData\)\) \{[\s\S]*?\n    \}/)?.[0]
   assert.match(routeBranch ?? "", /accepted: true, suppressed: true/)
   assert.doesNotMatch(routeBranch ?? "", /createLead|recordEvent|notifyAll/)
-  assert.match(contactComponent, /if \(outcome === "accepted"\) \{[\s\S]*?reportMetaLead\(\)/)
+  assert.match(contactComponent, /if \(outcome === "accepted" && leadSaved\) \{[\s\S]*?reportMetaLead\(\)/)
   assert.match(contactComponent, /if \(outcome === "rejected"\) throw/)
   assert.match(contactComponent, /name=\{QUOTE_HONEYPOT_FIELD\}[^\n]*autoComplete="off"/)
 })

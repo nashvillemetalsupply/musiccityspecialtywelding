@@ -27,7 +27,6 @@ test("live transcript callbacks are signed, idempotent, and stored durably", asy
   ])
   assert.match(route, /readTwilioForm\(req\)/)
   assert.match(route, /if \(!valid\).*403/)
-  assert.match(route, /if \(result\) after\(\(\) => summarizeCallDraft\(callSid\)/)
   assert.match(store, /ON CONFLICT \(transcription_sid, sequence_id, track\) DO UPDATE/)
   assert.match(store, /deriveCallSketch/)
   assert.doesNotMatch(store, /crew_transcript = \$\{finalTranscript\}/)
@@ -37,6 +36,20 @@ test("live transcript callbacks are signed, idempotent, and stored durably", asy
   assert.match(migration, /CREATE TABLE IF NOT EXISTS call_sketches/)
   assert.match(migration, /observed_through_sequence INT NOT NULL DEFAULT 0/)
   assert.match(migration, /UNIQUE \(transcription_sid, sequence_id, track\)/)
+})
+
+test("the live stop snapshot cannot trigger a call summary before the recording transcript", async () => {
+  const [route, store, recording, transcript] = await Promise.all([
+    read("app/api/twilio/live-transcript/route.ts"),
+    read("lib/call-sketch-store.ts"),
+    read("app/api/twilio/recording/route.ts"),
+    read("app/api/twilio/transcript/route.ts"),
+  ])
+  const stopped = store.slice(store.indexOf('if (input.event === "transcription-stopped")'))
+  assert.doesNotMatch(route, /summarizeCallDraft/)
+  assert.match(stopped, /UPDATE calls SET transcript = \$\{finalTranscript\}::text, updated_at = now\(\)\s+WHERE[^`]+AND transcript_status NOT IN \('ready', 'empty'\)/)
+  assert.match(recording, /after\(\(\) => submitCallRecording\(recordingSid\)/)
+  assert.match(transcript, /if \(transcript\) after\(\(\) => summarizeCallDraft\(call\.twilio_sid\)/)
 })
 
 test("the live transcript success acknowledgement is a bodyless 204 response", async () => {

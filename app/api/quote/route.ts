@@ -63,6 +63,19 @@ function sanitize(s: unknown, max = 2000) {
   return s.trim().slice(0, max);
 }
 
+function safePhotoName(file: File, photoIndex: number) {
+  return file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `photo-${photoIndex}`;
+}
+
+type QuotePhotoIntent = {
+  photo_index: number;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  status: string;
+  stored_pathname: string;
+};
+
 type DurableEmailState = "accepted" | "failed" | "unknown";
 type DurableEmailResult = {
   state: DurableEmailState;
@@ -228,7 +241,7 @@ export async function POST(req: Request) {
 
     // A public customer can type the marker as ordinary job text. Only an
     // authenticated verification request may enter the isolated test partition.
-    const isTest = isAuthorizedCron(req) && projectDetails.includes("[INTERNAL TEST]");
+    let isTest = isAuthorizedCron(req) && projectDetails.includes("[INTERNAL TEST]");
 
     const photoFiles: File[] = [];
     const photos = formData.getAll("photos");
@@ -348,6 +361,7 @@ export async function POST(req: Request) {
     let leadPublicId = "";
     let leadPersonId: number | null = null;
     let wasNewLead = false;
+    let savedPhotos: QuotePhotoIntent[] = [];
     if (dbConfigured()) {
       try {
         const lead = await createLead(
@@ -391,11 +405,9 @@ export async function POST(req: Request) {
               : {}),
           }
         );
-        leadId = lead.id;
-        leadPublicId = lead.publicId;
         const leadRows = (await getSql()`
           SELECT person_id, first_name, last_name, phone, email, service, message,
-            preferred_contact, photo_count
+            preferred_contact, photo_count, is_test
           FROM leads WHERE id = ${lead.id}::bigint LIMIT 1`) as {
           person_id: number | null;
           first_name: string;
@@ -406,9 +418,23 @@ export async function POST(req: Request) {
           message: string;
           preferred_contact: string;
           photo_count: number;
+          is_test: boolean;
         }[];
         if (lead.reused) {
           const saved = leadRows[0];
+          savedPhotos = (await getSql()`
+            SELECT photo_index, filename, content_type, size_bytes, status, stored_pathname
+            FROM lead_photo_intents
+            WHERE lead_id = ${lead.id}::bigint AND intake_key = ${intakeKey}::text
+            ORDER BY photo_index
+          `) as QuotePhotoIntent[];
+          // Any provider attempt means all intents were reserved. Before then,
+          // photo_count still holds the original count even if reservation paused midway.
+          const originalPhotoCount = savedPhotos.some((photo) => photo.status !== "pending")
+            ? savedPhotos.length
+            : Number(saved?.photo_count);
+          const unmatchedFiles = [...photoFiles];
+          const matchedFiles: File[] = [];
           const sameSubmission = Boolean(saved)
             && saved.first_name === firstName
             && saved.last_name === lastName
@@ -417,14 +443,27 @@ export async function POST(req: Request) {
             && saved.service === serviceNeeded
             && saved.message === projectDetails
             && saved.preferred_contact === preferredContact
-            && Number(saved.photo_count) === photoFiles.length;
+            && originalPhotoCount === photoFiles.length
+            && savedPhotos.every((photo) => {
+              const index = unmatchedFiles.findIndex((file) => photo.filename === safePhotoName(file, photo.photo_index)
+                && photo.content_type === file.type && Number(photo.size_bytes) === file.size);
+              if (index < 0) return false;
+              matchedFiles.push(...unmatchedFiles.splice(index, 1));
+              return true;
+            });
           if (!sameSubmission) {
             return Response.json(
               { ok: false, error: "The earlier version of this request was already saved. Refresh the page to start a changed request, or call the shop." },
               { status: 409 },
             );
           }
+          // Retain the original Blob paths even if the browser reselects the files in a different order.
+          photoFiles.splice(0, photoFiles.length, ...matchedFiles, ...unmatchedFiles);
         }
+        // A retry can arrive without the authorization that marked the saved lead as a test.
+        isTest = leadRows[0]?.is_test !== false;
+        leadId = lead.id;
+        leadPublicId = lead.publicId;
         leadPersonId = leadRows[0]?.person_id ?? null;
         wasNewLead = !lead.reused;
         if (lead.eventId) after(() => processEvent(lead.eventId!).catch((error) => console.error("Quote intake extraction failed:", error)));
@@ -476,15 +515,16 @@ export async function POST(req: Request) {
     let photosDurable = photoFiles.length === 0;
     if (leadId !== null && photoFiles.length > 0) {
       const photoPlans = photoFiles.map((file, index) => {
-        const safeName =
-          file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100) || `photo-${index + 1}`;
+        const photoIndex = index + 1;
+        const safeName = safePhotoName(file, photoIndex);
         return {
           file,
-          photoIndex: index + 1,
+          photoIndex,
           safeName,
-          targetPath: `leads/${leadPublicId}/${index + 1}-${safeName}`,
+          targetPath: `leads/${leadPublicId}/${photoIndex}-${safeName}`,
+          intent: savedPhotos.find((photo) => photo.photo_index === photoIndex),
         };
-      });
+      }).filter((photo) => photo.intent?.status !== "attached" || !photo.intent.stored_pathname);
       try {
         await reserveLeadPhotoIntents(leadId, intakeKey, photoPlans.map((photo) => ({
           photoIndex: photo.photoIndex,
@@ -493,46 +533,42 @@ export async function POST(req: Request) {
           contentType: photo.file.type,
           size: photo.file.size,
         })));
-        if (!process.env.BLOB_READ_WRITE_TOKEN) {
-          photosDurable = false;
-          await Promise.all(photoPlans.map((photo) =>
-            markLeadPhotoIntent(leadId!, intakeKey, photo.photoIndex, "failed", {
-              error: "Private photo storage is not configured.",
-            })
-          ));
-        } else {
-          const stored: Array<{ pathname: string; contentType: string; size: number; name: string; photoIndex: number }> = [];
-          for (const photo of photoPlans) {
-            try {
+        const stored: Array<{ pathname: string; contentType: string; size: number; name: string; photoIndex: number }> = [];
+        for (const photo of photoPlans) {
+          try {
+            let pathname = photo.intent?.status === "stored" ? photo.intent.stored_pathname : "";
+            if (!pathname) {
+              if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("Private photo storage is not configured.");
               const blob = await put(photo.targetPath, photo.file, {
                 access: "private",
                 contentType: photo.file.type,
                 addRandomSuffix: false,
                 allowOverwrite: true,
               });
-              await markLeadPhotoIntent(leadId, intakeKey, photo.photoIndex, "stored", { storedPathname: blob.pathname });
-              stored.push({
-                pathname: blob.pathname,
-                contentType: photo.file.type,
-                size: photo.file.size,
-                name: photo.safeName,
-                photoIndex: photo.photoIndex,
-              });
-            } catch (blobError) {
-              photosDurable = false;
-              const message = blobError instanceof Error ? blobError.message : "Private photo storage failed.";
-              await markLeadPhotoIntent(leadId, intakeKey, photo.photoIndex, "failed", { error: message }).catch(() => undefined);
-              console.error("Photo persistence error:", blobError);
+              pathname = blob.pathname;
+              await markLeadPhotoIntent(leadId, intakeKey, photo.photoIndex, "stored", { storedPathname: pathname });
             }
+            stored.push({
+              pathname,
+              contentType: photo.file.type,
+              size: photo.file.size,
+              name: photo.safeName,
+              photoIndex: photo.photoIndex,
+            });
+          } catch (blobError) {
+            const message = blobError instanceof Error ? blobError.message : "Private photo storage failed.";
+            await markLeadPhotoIntent(leadId, intakeKey, photo.photoIndex, "failed", { error: message }).catch(() => undefined);
+            console.error("Photo persistence error:", blobError);
           }
-          if (stored.length > 0) {
-            await attachLeadPhotos(leadId, stored, { externalId: `quote-photos:${intakeKey}` });
-            await Promise.all(stored.map((photo) =>
-              markLeadPhotoIntent(leadId!, intakeKey, photo.photoIndex, "attached", { storedPathname: photo.pathname })
-            ));
-          }
-          photosDurable = stored.length === photoPlans.length;
         }
+        if (stored.length > 0) {
+          const attachedIndices = stored.map((photo) => photo.photoIndex).join("-");
+          await attachLeadPhotos(leadId, stored, { externalId: `quote-photos:${intakeKey}:${attachedIndices}` });
+          await Promise.all(stored.map((photo) =>
+            markLeadPhotoIntent(leadId!, intakeKey, photo.photoIndex, "attached", { storedPathname: photo.pathname })
+          ));
+        }
+        photosDurable = stored.length === photoPlans.length;
       } catch (blobError) {
         // No private provider write starts unless all storage intents are durable.
         photosDurable = false;
@@ -737,12 +773,13 @@ export async function POST(req: Request) {
           ? {
             ok: true,
             accepted: true,
+            leadSaved: !isTest,
             // A conflict is only real for a prior STOP; a lookup failure
             // denies the grant but must not claim a STOP occurred.
             ...(consentConflict ? { consentConflict: true } : {}),
             warning: consentWarning,
           }
-          : { ok: true, accepted: true },
+          : { ok: true, accepted: true, leadSaved: !isTest },
         { status: 200 }
       );
     }

@@ -13,6 +13,114 @@ const SEND_TO = "AW-17817632790/CZF4CMyQhPEbEJaAjrBC"
 const PHONE_SEND_TO = "AW-17817632790/0aSACPS5ue4cEJaAjrBC"
 
 const require = createRequire(import.meta.url)
+
+function quotePhoto(name) {
+  return new File([Uint8Array.of(0xff, 0xd8, 0xff)], name, { type: "image/jpeg" })
+}
+
+function quoteRouteHarness({ message = "Repair a bracket", upload = () => {} } = {}) {
+  const intakeKey = "10000000-0000-4000-8000-000000000001"
+  const leads = new Map()
+  const photoIntents = new Map()
+  const photoReceipts = []
+  const alerts = []
+  const context = vm.createContext({
+    File, Response, Uint8Array,
+    process: { env: { BLOB_READ_WRITE_TOKEN: "stub" } },
+    console: { error() {}, warn() {} },
+  })
+  const fakes = {
+    "resend": {},
+    "@vercel/blob": { put: async (pathname, file) => {
+      await upload(pathname, file)
+      return { pathname }
+    } },
+    "next/server": { after() {} },
+    "@/lib/db": {
+      dbConfigured: () => true,
+      getSql: () => async (strings, leadId) => {
+        const sql = strings.join("?")
+        if (sql.includes("FROM leads")) return [...leads.values()].filter((row) => row.id === leadId)
+        if (sql.includes("FROM lead_photo_intents")) {
+          return [...(photoIntents.get(leadId)?.values() ?? [])]
+        }
+        throw new Error(`Unexpected SQL mock call: ${sql}`)
+      },
+    },
+    "@/lib/leads": {
+      createLead: async (input, options) => {
+        const existing = leads.get(options.intakeKey)
+        if (existing) return { id: existing.id, publicId: `L-${existing.id}`, reused: true }
+        const id = leads.size + 1
+        leads.set(options.intakeKey, {
+          id, person_id: id, first_name: input.firstName, last_name: input.lastName,
+          phone: input.phone, email: input.email, service: input.service, message: input.message,
+          preferred_contact: input.preferredContact, photo_count: input.photoCount, is_test: input.isTest,
+          photos: new Set(),
+        })
+        return { id, publicId: `L-${id}`, reused: false }
+      },
+      reserveLeadPhotoIntents: async (leadId, _intake, plans) => {
+        const intents = photoIntents.get(leadId) ?? new Map()
+        for (const plan of plans) {
+          intents.set(plan.photoIndex, {
+            photo_index: plan.photoIndex, target_path: plan.targetPath, filename: plan.filename,
+            content_type: plan.contentType, size_bytes: plan.size,
+            status: intents.get(plan.photoIndex)?.status ?? "pending",
+            stored_pathname: intents.get(plan.photoIndex)?.stored_pathname ?? "",
+          })
+        }
+        photoIntents.set(leadId, intents)
+      },
+      markLeadPhotoIntent: async (leadId, _intake, index, status, { storedPathname } = {}) => {
+        const intent = photoIntents.get(leadId).get(index)
+        intent.status = status
+        if (storedPathname) intent.stored_pathname = storedPathname
+      },
+      attachLeadPhotos: async (leadId, photos, { externalId }) => {
+        const lead = [...leads.values()].find((row) => row.id === leadId)
+        const previousCount = lead.photos.size
+        for (const photo of photos) lead.photos.add(photo.pathname)
+        if (lead.photos.size > previousCount) photoReceipts.push(externalId)
+        lead.photo_count = lead.photos.size
+      },
+      markLeadDelivery: async () => {},
+    },
+    "@/lib/notify": { notifyAll: async (alert) => { alerts.push(alert) } },
+    "@/lib/shop-contact": { getShopPhone: () => ({ display: "(615) 555-0100" }) },
+    "@/lib/ops-auth": { isAuthorizedCron: (req) => req.headers.has("authorization") },
+    "@/lib/email-templates": {}, "@/lib/events": {}, "@/lib/extract": {},
+    "@/lib/follow-up-cadence.ts": {}, "@/lib/messaging-consent": {}, "@/lib/messages": {},
+    "@/lib/people": {}, "@/lib/twilio": {},
+  }
+  function load(path) {
+    const compiled = ts.transpileModule(source(path), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText
+    const exports = {}
+    const run = vm.runInContext(`(function(exports, require) { ${compiled}\n })`, context)
+    run(exports, (name) => {
+      assert.ok(name in fakes, `Unexpected import in quote test: ${name}`)
+      return fakes[name]
+    })
+    return exports
+  }
+  fakes["@/lib/public-quote.ts"] = load("lib/public-quote.ts")
+  fakes["@/lib/shop-brain-invariants.ts"] = load("lib/shop-brain-invariants.ts")
+  const { POST } = load("app/api/quote/route.ts")
+  return {
+    leads, photoReceipts, alerts,
+    submit(photos = [], { authorized = false, key = intakeKey } = {}) {
+      const form = new FormData()
+      for (const [name, value] of Object.entries({
+        firstName: "Example", phone: "6155550100", service: "Not Sure / Other", message, intakeKey: key,
+      })) form.set(name, value)
+      for (const photo of photos) form.append("photos", photo)
+      return POST({ headers: new Headers(authorized ? { authorization: "stub" } : {}), formData: async () => form })
+    },
+  }
+}
+
 const productionHosts = ["musiccityspecialtywelding.com", "www.musiccityspecialtywelding.com"]
 const nonProductionHosts = [
   "localhost", "127.0.0.1", "mcsw-preview.vercel.app", "vercel.app",
@@ -20,7 +128,7 @@ const nonProductionHosts = [
   "musiccityspecialtywelding.com.evil.example", "wwwmusiccityspecialtywelding.com", "",
 ]
 
-function browserHarness(hostname, search = "") {
+function browserHarness(hostname, search = "", globals = {}) {
   const inserted = []
   const effects = []
   const triggers = []
@@ -43,6 +151,7 @@ function browserHarness(hostname, search = "") {
       observe() { triggers.push({ event: "observe" }) }
       disconnect() {}
     },
+    ...globals,
   })
   // Browser globals alias window properties (notably the Meta shim's fbq).
   Object.defineProperty(context, "fbq", { get: () => window.fbq })
@@ -53,9 +162,9 @@ function browserHarness(hostname, search = "") {
     }).outputText
     const run = vm.runInContext(`(function(exports, require) { ${compiled}\n })`, context)
     run(exports, (name) => {
+      if (name in mocks) return mocks[name]
       if (name === "react") return { useEffect: (effect) => effects.push(effect) }
       if (name === "@/lib/measurement") return measurement
-      if (name in mocks) return mocks[name]
       return require(name)
     })
     return exports
@@ -71,7 +180,7 @@ function browserHarness(hostname, search = "") {
   const google = load("components/deferred-google-tag.tsx")
   const publicElements = analytics.PublicAnalytics({ measurementId: "G-TEST123" }).props.children
   return {
-    window, inserted, triggers, measurement,
+    window, inserted, triggers, measurement, load,
     runBootstrap: (provider) => vm.runInContext(provider === "meta"
       ? analytics.metaPixelBootstrapSource(measurement.META_PIXEL_ID)
       : publicElements[0].props.children, context),
@@ -229,22 +338,115 @@ test("the inline tag script declares nothing at classic-script top level", () =>
   }
 })
 
-test("an accepted or saved quote fires the Ads conversion once per intake before a retry error", () => {
-  const contact = source("components/mainstreet-contact.tsx")
-  assert.match(contact, /const intakeKey = intakeKeyRef\.current\s+payload\.append\("intakeKey", intakeKey\)/)
-  assert.match(
-    contact,
-    /const data = await response\.json\(\)\s+const outcome = quoteSubmissionOutcome\(data\)\s+const canReportAds = response\.ok \? outcome === "accepted" : response\.status === 503 && data\?\.leadSaved === true/,
-  )
-  assert.match(
-    contact,
-    /if \(canReportAds && ADS_CONVERSION_SEND_TO && adsReportedIntakeKey\.current !== intakeKey\) \{\s+queueMeasurementEvent\("conversion", \{ send_to: ADS_CONVERSION_SEND_TO \}\)\s+adsReportedIntakeKey\.current = intakeKey\s+\}\s+if \(!response\.ok\) throw/,
-  )
-  assert.equal([...contact.matchAll(/queueMeasurementEvent\("conversion"/g)].length, 1)
-  assert.match(
-    source("app/api/quote/route.ts"),
-    /if \(!photosDurable\) \{\s+return Response\.json\(\s+\{\s+ok: false,\s+accepted: false,\s+partial: true,\s+leadSaved: !isTest,\s+error: [^\r\n]+,\s+\},\s+\{ status: 503,/,
-  )
+function quoteFormHarness(route) {
+  const session = new Map()
+  const responses = []
+  const intakeKeys = []
+  const adsEvents = []
+  let issuedKeys = 0
+
+  function mountForm(selectedPhotos) {
+    const browser = browserHarness(productionHosts[0], "", {
+      FormData,
+      crypto: { randomUUID: () => `10000000-0000-4000-8000-${String(++issuedKeys).padStart(12, "0")}` },
+      fetch: async (path, { body }) => {
+        assert.equal(path, "/api/quote")
+        const key = body.get("intakeKey")
+        intakeKeys.push(key)
+        const response = await route.submit(body.getAll("photos"), { key })
+        responses.push({ status: response.status, data: await response.clone().json() })
+        return response
+      },
+    })
+    browser.window.sessionStorage = {
+      getItem: (key) => session.get(key) ?? null,
+      setItem: (key, value) => session.set(key, value),
+      removeItem: (key) => session.delete(key),
+    }
+    browser.window.gtag = (_command, event, params) => {
+      if (event === "conversion") adsEvents.push(params.send_to)
+    }
+    const formStates = [{ firstName: "Example", phone: "6155550100", service: "Not Sure / Other" }, selectedPhotos]
+    const { QuoteForm } = browser.load("components/mainstreet-contact.tsx", {
+      react: {
+        useEffect() {},
+        useRef: (current) => ({ current }),
+        useState: (initial) => [formStates.length ? formStates.shift() : initial, () => {}],
+      },
+      "@/components/contact-lead": {},
+      "@/lib/attribution": { captureAttribution: () => ({}) },
+      "@/lib/shop-phone-shared": {},
+      "@/lib/public-quote.ts": browser.load("lib/public-quote.ts"),
+    })
+    const submit = QuoteForm({}).props.onSubmit
+    return () => submit({ preventDefault() {} })
+  }
+
+  return { mountForm, responses, intakeKeys, adsEvents }
+}
+
+test("a partial photo upload stays on the same lead and fires Ads once across a refresh", async () => {
+  let storageRecovered = false
+  const uploadedPhotos = []
+  const route = quoteRouteHarness({
+    upload: (_pathname, file) => {
+      if (uploadedPhotos.includes("bracket.jpg") && file.name === "bracket.jpg") {
+        throw new Error("Previously attached photo cannot be uploaded again")
+      }
+      uploadedPhotos.push(file.name)
+      if (!storageRecovered && file.name === "hinge.jpg") throw new Error("Photo storage unavailable")
+    },
+  })
+  const { mountForm, responses, intakeKeys, adsEvents } = quoteFormHarness(route)
+  const photos = [quotePhoto("bracket.jpg"), quotePhoto("hinge.jpg")]
+  const submit = mountForm(photos)
+  await submit()
+  assert.equal(responses[0].status, 503)
+  assert.deepEqual(adsEvents, [SEND_TO])
+  await submit()
+  assert.equal(responses[1].status, 503, "same files must retry despite the attached count dropping to one")
+
+  storageRecovered = true
+  await mountForm([...photos].reverse())()
+  assert.equal(responses[2].status, 200)
+  assert.equal(new Set(intakeKeys).size, 1)
+  assert.equal(route.leads.size, 1)
+  assert.equal(route.leads.get(`website:${intakeKeys[0]}`).photo_count, 2)
+  assert.deepEqual(adsEvents, [SEND_TO])
+  assert.deepEqual(uploadedPhotos, ["bracket.jpg", "hinge.jpg", "hinge.jpg", "hinge.jpg"])
+  assert.deepEqual(route.photoReceipts, [`quote-photos:${intakeKeys[0]}:1`, `quote-photos:${intakeKeys[0]}:2`])
+
+  const changed = await route.submit([photos[0], quotePhoto("different.jpg")], { key: intakeKeys[0] })
+  assert.equal(changed.status, 409, "a different photo with the same count must be rejected")
+})
+
+test("a saved test quote cannot report a conversion on an unauthorized photo retry", async () => {
+  let uploadFails = true
+  const route = quoteRouteHarness({
+    message: "[INTERNAL TEST] Repair a bracket",
+    upload: () => { if (uploadFails) throw new Error("Blob unavailable") },
+  })
+  const photos = [quotePhoto("bracket.jpg")]
+  const saved = await route.submit(photos, { authorized: true })
+  assert.equal(saved.status, 503)
+  assert.equal((await saved.json()).leadSaved, false)
+  assert.equal([...route.leads.values()][0].is_test, true)
+
+  const { mountForm, responses, adsEvents } = quoteFormHarness(route)
+  const retry = mountForm(photos)
+  await retry()
+  assert.equal(responses[0].status, 503)
+  assert.equal(responses[0].data.leadSaved, false)
+  assert.deepEqual(adsEvents, [])
+
+  uploadFails = false
+  await retry()
+  assert.equal(responses[1].status, 200)
+  assert.equal(responses[1].data.accepted, true)
+  assert.equal(responses[1].data.leadSaved, false)
+  assert.deepEqual(adsEvents, [])
+  assert.equal(route.leads.size, 1)
+  assert.equal(route.alerts.length, 0)
 })
 
 test("a conversion is never dropped because gtag has not defined itself yet", () => {

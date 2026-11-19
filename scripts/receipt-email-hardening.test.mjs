@@ -35,7 +35,7 @@ test("website quote retries reuse one lead, one provider intent, one alert, and 
   const leads = source("lib/leads.ts")
 
   assert.match(client, /const intakeKeyRef = useRef\(""\)/)
-  assert.match(client, /if \(!intakeKeyRef\.current\) intakeKeyRef\.current = crypto\.randomUUID\(\)/)
+  assert.match(client, /if \(!intakeKeyRef\.current\) intakeKeyRef\.current = readQuoteSession\(quoteIntakeStorageKey\) \|\| crypto\.randomUUID\(\)/)
   assert.ok(client.indexOf('intakeKeyRef.current = ""') > client.indexOf("if (!response.ok)"))
   assert.match(quote, /intakeKey: `website:\$\{intakeKey\}`/)
   assert.match(quote, /idempotencyKey: input\.intent/)
@@ -43,7 +43,7 @@ test("website quote retries reuse one lead, one provider intent, one alert, and 
   assert.match(quote, /intent: `quote-customer:\$\{intakeKey\}`/)
   assert.match(quote, /addRandomSuffix: false,[\s\S]{0,80}allowOverwrite: true/)
   assert.match(quote, /dedupeKey: `quote-intake:\$\{intakeKey\}:new-lead`/)
-  assert.match(quote, /if \(lead\.reused\)[\s\S]{0,900}status: 409/)
+  assert.match(quote, /if \(lead\.reused\)[\s\S]*?if \(!sameSubmission\) \{[\s\S]*?status: 409/)
   assert.match(leads, /WHERE intake_key = \$\{intakeKey\}::text/)
   assert.match(leads, /quote-consent:\$\{publicId\}/)
   assert.match(leads, /normalizePhone\(existingSnapshot\.phone\) !== webTextConsent\.phoneE164/)

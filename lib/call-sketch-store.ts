@@ -194,10 +194,12 @@ export async function recordLiveTranscriptionEvent(input: LiveTranscriptionEvent
       .join("\n")
       .slice(0, 100_000)
     if (finalTranscript) {
+      // Late live utterances can still arrive. Leave readiness and the
+      // summary to the whole-recording transcript callback.
       await sql`
-        UPDATE calls SET transcript = ${finalTranscript}::text,
-          transcript_status = 'ready', transcript_error = '', updated_at = now()
-        WHERE twilio_sid = ${input.callSid}::text`
+        UPDATE calls SET transcript = ${finalTranscript}::text, updated_at = now()
+        WHERE twilio_sid = ${input.callSid}::text
+          AND transcript_status NOT IN ('ready', 'empty')`
       const transcriptEventId = await recordEvent({
         kind: "call.transcript",
         actorType: "system",
@@ -212,8 +214,8 @@ export async function recordLiveTranscriptionEvent(input: LiveTranscriptionEvent
           transcriptionSid: input.transcriptionSid,
         },
       })
-      // The call may have been attached to a test job before the final words
-      // arrived. Re-project the now-complete sketch after its transcript
+      // The call may have been attached to a test job before the live words
+      // arrived. Re-project the latest sketch after its transcript
       // receipt exists; the projector is idempotent by source event and item.
       if (call.is_test && call.lead_id !== null) {
         await ingestCallSketchBuildFacts(Number(call.lead_id))

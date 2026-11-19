@@ -1,5 +1,4 @@
 import { recordLiveTranscriptionEvent } from "@/lib/call-sketch-store"
-import { summarizeCallDraft } from "@/lib/call-summary"
 import { processEvent } from "@/lib/extract"
 import { getSql } from "@/lib/db"
 import { processTranscriptEventIfUnclaimed } from "@/lib/transcript-extraction.ts"
@@ -57,7 +56,6 @@ export async function POST(req: Request) {
         processEvent,
       ).catch((error) => console.error("Live transcript extraction failed:", error)))
     }
-    if (result) after(() => summarizeCallDraft(callSid).catch((error) => console.error("Call summary failed:", error)))
     return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } })
   } catch (error) {
     console.error("Live transcription callback failed:", error)

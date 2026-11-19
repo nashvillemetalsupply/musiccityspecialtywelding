@@ -386,7 +386,7 @@ export async function reserveLeadPhotoIntents(
 ) {
   const sql = getSql()
   for (const photo of photos) {
-    await sql`
+    const rows = (await sql`
       INSERT INTO lead_photo_intents (
         lead_id, intake_key, photo_index, target_path, filename, content_type, size_bytes
       ) VALUES (
@@ -394,11 +394,13 @@ export async function reserveLeadPhotoIntents(
         ${photo.targetPath}::text, ${photo.filename}::text, ${photo.contentType}::text,
         ${photo.size}::bigint
       ) ON CONFLICT (lead_id, intake_key, photo_index) DO UPDATE SET
-        target_path = EXCLUDED.target_path,
-        filename = EXCLUDED.filename,
-        content_type = EXCLUDED.content_type,
-        size_bytes = EXCLUDED.size_bytes,
-        updated_at = now()`
+        updated_at = now()
+      WHERE lead_photo_intents.target_path = EXCLUDED.target_path
+        AND lead_photo_intents.filename = EXCLUDED.filename
+        AND lead_photo_intents.content_type = EXCLUDED.content_type
+        AND lead_photo_intents.size_bytes = EXCLUDED.size_bytes
+      RETURNING id`) as { id: number }[]
+    if (!rows[0]) throw new Error("Reserved quote photo does not match the original attachment")
   }
 }
 

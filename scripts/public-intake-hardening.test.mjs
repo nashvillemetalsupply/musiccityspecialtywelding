@@ -62,7 +62,8 @@ test("only accepted leads emit conversions and public text cannot mark itself in
   // window.gtag can no longer drop the event; the ordering invariant is the
   // point and is unchanged.
   assert.ok(
-    client.indexOf('if (outcome === "accepted")') <
+    client.indexOf('if (outcome === "accepted" && leadSaved)') >= 0 &&
+      client.indexOf('if (outcome === "accepted" && leadSaved)') <
       client.indexOf('queueMeasurementEvent("generate_lead"'),
   )
 })
@@ -100,7 +101,8 @@ test("quote photo storage is intent-first and leaves a resumable receipt", () =>
   assert.match(quote, /markLeadPhotoIntent\([\s\S]{0,220}"attached"/)
   assert.match(quote, /let photosDurable = photoFiles\.length === 0/)
   assert.doesNotMatch(quote, /photoFiles\.length > 0 && process\.env\.BLOB_READ_WRITE_TOKEN/)
-  assert.match(quote, /if \(!process\.env\.BLOB_READ_WRITE_TOKEN\)[\s\S]{0,900}photosDurable = false/)
+  assert.match(quote, /if \(!process\.env\.BLOB_READ_WRITE_TOKEN\) throw/)
+  assert.match(quote, /photosDurable = stored\.length === photoPlans\.length/)
   assert.match(quote, /catch \(blobError\)[\s\S]{0,420}photosDurable = false/)
   const partialFailure = quote.indexOf("if (!photosDurable)")
   const accepted = quote.indexOf("accepted: true", partialFailure)
