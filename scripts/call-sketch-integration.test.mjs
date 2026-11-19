@@ -27,6 +27,7 @@ test("live transcript callbacks are signed, idempotent, and stored durably", asy
   ])
   assert.match(route, /readTwilioForm\(req\)/)
   assert.match(route, /if \(!valid\).*403/)
+  assert.match(route, /if \(result\) after\(\(\) => summarizeCallDraft\(callSid\)/)
   assert.match(store, /ON CONFLICT \(transcription_sid, sequence_id, track\) DO UPDATE/)
   assert.match(store, /deriveCallSketch/)
   assert.doesNotMatch(store, /crew_transcript = \$\{finalTranscript\}/)

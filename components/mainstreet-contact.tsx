@@ -60,6 +60,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
   // retry must resume the same job and provider sends, not manufacture a
   // duplicate lead. Rotate it only after the server confirms success.
   const intakeKeyRef = useRef("")
+  const adsReportedIntakeKey = useRef("")
 
   useEffect(() => {
     previewsRef.current = previews
@@ -135,7 +136,8 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
 
     const payload = new FormData()
     if (!intakeKeyRef.current) intakeKeyRef.current = crypto.randomUUID()
-    payload.append("intakeKey", intakeKeyRef.current)
+    const intakeKey = intakeKeyRef.current
+    payload.append("intakeKey", intakeKey)
     payload.append("firstName", formData.firstName)
     payload.append("lastName", "")
     payload.append("phone", formData.phone)
@@ -156,8 +158,13 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
       const contentType = response.headers.get("content-type")
       if (!contentType?.includes("application/json")) throw new Error("The server returned an invalid response.")
       const data = await response.json()
-      if (!response.ok) throw new Error(data?.error || "The request did not go through.")
       const outcome = quoteSubmissionOutcome(data)
+      const canReportAds = response.ok ? outcome === "accepted" : response.status === 503 && data?.leadSaved === true
+      if (canReportAds && ADS_CONVERSION_SEND_TO && adsReportedIntakeKey.current !== intakeKey) {
+        queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
+        adsReportedIntakeKey.current = intakeKey
+      }
+      if (!response.ok) throw new Error(data?.error || "The request did not go through.")
       if (outcome === "rejected") throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
 
       // The server suppresses text updates (prior STOP or unverifiable
@@ -173,9 +180,6 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
             lead_source: "website_quote_form",
             service_requested: formData.service,
           })
-        }
-        if (ADS_CONVERSION_SEND_TO) {
-          queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
         }
         reportMetaLead()
       }

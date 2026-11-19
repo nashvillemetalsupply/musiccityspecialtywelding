@@ -723,6 +723,7 @@ export async function POST(req: Request) {
           ok: false,
           accepted: false,
           partial: true,
+          leadSaved: !isTest,
           error: `We saved your contact details, but your photos were not safely stored. Keep this page open and try again, or call ${shopPhone.display}.`,
         },
         { status: 503, headers: { "Retry-After": "15" } }

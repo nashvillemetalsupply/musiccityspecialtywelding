@@ -64,6 +64,7 @@ export const CSP_DIRECTIVES = Object.freeze({
     "https://www.facebook.com",
     "https://connect.facebook.net",
     "https://m6-211026f8a25b42c08fc190458268b30e.ecs.us-east-2.on.aws",
+    "https://*.ecs.eu-west-1.on.aws",
     "https://bded8a3c6ae-1-1053047382554.us-central1.run.app",
     "https://n2n5o3nlb661.cloud.run",
     "https://www.google-analytics.com",

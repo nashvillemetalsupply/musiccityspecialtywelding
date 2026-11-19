@@ -229,18 +229,21 @@ test("the inline tag script declares nothing at classic-script top level", () =>
   }
 })
 
-test("an accepted quote fires the Ads conversion", () => {
+test("an accepted or saved quote fires the Ads conversion once per intake before a retry error", () => {
   const contact = source("components/mainstreet-contact.tsx")
-  const outcome = contact.indexOf("const outcome = quoteSubmissionOutcome(data)")
-  assert.notEqual(outcome, -1, "The accepted-lead outcome check is gone.")
-  const accepted = contact.indexOf('if (outcome === "accepted")', outcome)
-  assert.ok(accepted > outcome, "The conversion must be gated on an accepted lead.")
-  const fire = contact.indexOf("if (ADS_CONVERSION_SEND_TO)", accepted)
-  assert.ok(fire > accepted, "The conversion must fire after the lead is accepted, not before.")
-  const call = contact.slice(fire, fire + 240)
-  assert.ok(
-    call.includes('queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })'),
-    "The conversion event must send to ADS_CONVERSION_SEND_TO.",
+  assert.match(contact, /const intakeKey = intakeKeyRef\.current\s+payload\.append\("intakeKey", intakeKey\)/)
+  assert.match(
+    contact,
+    /const data = await response\.json\(\)\s+const outcome = quoteSubmissionOutcome\(data\)\s+const canReportAds = response\.ok \? outcome === "accepted" : response\.status === 503 && data\?\.leadSaved === true/,
+  )
+  assert.match(
+    contact,
+    /if \(canReportAds && ADS_CONVERSION_SEND_TO && adsReportedIntakeKey\.current !== intakeKey\) \{\s+queueMeasurementEvent\("conversion", \{ send_to: ADS_CONVERSION_SEND_TO \}\)\s+adsReportedIntakeKey\.current = intakeKey\s+\}\s+if \(!response\.ok\) throw/,
+  )
+  assert.equal([...contact.matchAll(/queueMeasurementEvent\("conversion"/g)].length, 1)
+  assert.match(
+    source("app/api/quote/route.ts"),
+    /if \(!photosDurable\) \{\s+return Response\.json\(\s+\{\s+ok: false,\s+accepted: false,\s+partial: true,\s+leadSaved: !isTest,\s+error: [^\r\n]+,\s+\},\s+\{ status: 503,/,
   )
 })
 

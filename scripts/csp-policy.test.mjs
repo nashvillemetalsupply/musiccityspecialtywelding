@@ -124,7 +124,7 @@ test("policy never allows unsafe-eval or a bare wildcard", () => {
   }
 })
 
-test("Meta pixel sources from the O18 triage stay allowlisted", () => {
+test("Meta pixel sources stay allowlisted", () => {
   const directives = parsePolicy(CSP_REPORT_ONLY_POLICY)
   assert.ok(directives.get("form-action").includes("https://www.facebook.com"), "form-action has facebook.com")
   assert.ok(directives.get("frame-src").includes("https://www.facebook.com"), "frame-src has facebook.com")
@@ -133,6 +133,7 @@ test("Meta pixel sources from the O18 triage stay allowlisted", () => {
   assert.equal(directiveAllows(directives, "frame-src", "https://www.facebook.com/"), true)
   assert.equal(directiveAllows(directives, "img-src", "https://connect.facebook.net//log/error"), true)
   assert.equal(directiveAllows(directives, "img-src", "https://ad.doubleclick.net/ccm/s/collect"), true)
+  assert.equal(directiveAllows(directives, "connect-src", "https://gateway.ecs.eu-west-1.on.aws/events"), true)
 })
 
 test("policy contains no unsafe-eval anywhere in the raw string", () => {
