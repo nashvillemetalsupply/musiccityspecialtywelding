@@ -162,9 +162,12 @@ export async function processEvent(eventId: number) {
     await sql`UPDATE leads SET crew_notes = ${crewSafeBody}::text WHERE id = ${projectionLeadId}::bigint`
   }
   if (event.kind === "call.transcript" && typeof event.detail?.callSid === "string") {
+    // The recording can finish while live extraction is in flight.
+    const isLiveTranscript = event.detail.source === "twilio-live-transcription"
     await sql`
       UPDATE calls SET crew_transcript = ${crewSafeBody}::text
-      WHERE twilio_sid = ${event.detail.callSid}::text`
+      WHERE twilio_sid = ${event.detail.callSid}::text
+        AND (NOT ${isLiveTranscript}::boolean OR transcript_status NOT IN ('ready', 'empty'))`
   }
   for (const item of object.commitments) {
     if (item.matches_existing_commitment_id && item.marks_existing_as) {

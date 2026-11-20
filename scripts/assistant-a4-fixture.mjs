@@ -62,7 +62,7 @@ export function createDryFixture() {
       turns.get(`${s.id}:${v[2]}`).response = JSON.parse(v[0]); s.next_turn = v[4]; s.lease_token = null; return [{ id: s.id }]
     }
     if (q.includes("AS days_to_close")) return []
-    if (q.startsWith("SELECT id, is_test FROM leads WHERE intake_key") || q.startsWith("SELECT id, public_id, first_name")) return copy([...leads.values()].filter((l) => l.intake_key === v[0]))
+    if (q.startsWith("SELECT ") && q.includes(" FROM leads WHERE intake_key = ")) return copy([...leads.values()].filter((l) => l.intake_key === v[0]))
     if (q.startsWith("SELECT id, is_test FROM leads WHERE id") || q.startsWith("SELECT person_id, is_test FROM leads")) return copy(leads.has(v[0]) ? [leads.get(v[0])] : [])
     if (q.startsWith("WITH inserted_lead AS")) {
       const old = [...leads.values()].find((l) => l.intake_key === v[25]); if (old) return copy([old])

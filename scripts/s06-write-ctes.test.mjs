@@ -141,7 +141,7 @@ test("createLead's lead and optional consent writes share a materialized SQL sta
       const text = strings.join(" ? ")
       calls.push({ text, values })
       return text.includes("WITH inserted_lead")
-        ? [{ id: 12, public_id: "L-20260927-TEST" }]
+        ? [{ id: 12, public_id: "L-20260927-TEST", is_test: false }]
         : [{ person_id: null, is_test: false }]
     } }],
     ["@/lib/follow-up-cadence.ts", { getDefaultFollowUpAt: async () => null }],

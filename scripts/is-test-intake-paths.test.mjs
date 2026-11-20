@@ -60,7 +60,7 @@ test("public lead intake receipts classify INTERNAL TEST and ordinary leads thro
     if (text.includes("WITH inserted_lead")) {
       const id = ++nextLeadId
       leadFlags.set(id, Boolean(values[20]))
-      return [{ id, public_id: `L-${id}` }]
+      return [{ id, public_id: `L-${id}`, is_test: leadFlags.get(id) }]
     }
     if (text.includes("SELECT person_id, is_test FROM leads")) {
       return [{ person_id: null, is_test: leadFlags.get(values[0]) === true }]

@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { Resend, type CreateEmailOptions } from "resend";
-import { put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
 import { after } from "next/server";
 import { dbConfigured, getSql } from "@/lib/db";
 import { brandedEmail, escapeHtml } from "@/lib/email-templates";
@@ -12,6 +13,7 @@ import {
   attachLeadPhotos,
   createLead,
   isRateLimitedDurable,
+  LeadIntakePhoneConflict,
   markLeadPhotoIntent,
   markLeadDelivery,
   reserveLeadPhotoIntents,
@@ -69,6 +71,7 @@ function safePhotoName(file: File, photoIndex: number) {
 
 type QuotePhotoIntent = {
   photo_index: number;
+  target_path: string;
   filename: string;
   content_type: string;
   size_bytes: number;
@@ -76,12 +79,81 @@ type QuotePhotoIntent = {
   stored_pathname: string;
 };
 
+function quotePhotoPath(publicId: string, index: number, name: string, hash?: string) {
+  return `leads/${publicId}/${index}-${hash ? `${hash}-` : ""}${name}`;
+}
+
+function photoHash(bytes: ArrayBuffer) {
+  return createHash("sha256").update(new Uint8Array(bytes)).digest("hex");
+}
+
+async function matchQuotePhotos(
+  publicId: string,
+  intents: QuotePhotoIntent[],
+  files: File[],
+  hashes: Map<File, string>,
+) {
+  const unmatched = [...files];
+  const matches = new Map<number, File>();
+  const candidates = intents.map((intent) => {
+    const matchesMetadata = (file: File) =>
+      intent.filename === safePhotoName(file, intent.photo_index)
+      && intent.content_type === file.type && Number(intent.size_bytes) === file.size;
+    const legacy = intent.target_path === quotePhotoPath(publicId, intent.photo_index, intent.filename);
+    return { intent, matchesMetadata, legacy, storedHash: "" };
+  });
+  if (candidates.some(({ matchesMetadata }) => !files.some(matchesMetadata))) return null;
+
+  for (const candidate of candidates) {
+    if (!candidate.legacy) continue;
+    const { intent } = candidate;
+    // An old upload can exist at its deterministic path before its SQL receipt.
+    const pathname = intent.stored_pathname || intent.target_path;
+    const blob = await get(pathname, { access: "private" });
+    if (!blob && !intent.stored_pathname) continue;
+    if (!blob || blob.statusCode !== 200 || blob.blob.size !== Number(intent.size_bytes)) {
+      throw new Error("Saved photo could not be verified.");
+    }
+    candidate.storedHash = photoHash(await new Response(blob.stream).arrayBuffer());
+    if (intent.status !== "attached") {
+      intent.status = "stored";
+      intent.stored_pathname = pathname;
+    }
+  }
+  // Match known contents first so an old intent without bytes cannot claim them.
+  candidates.sort((a, b) => Number(a.legacy && !a.storedHash) - Number(b.legacy && !b.storedHash));
+  for (const { intent, matchesMetadata, legacy, storedHash } of candidates) {
+    const index = unmatched.findIndex((file) => {
+      if (!matchesMetadata(file)) return false;
+      const hash = hashes.get(file);
+      return legacy
+        ? !storedHash || hash === storedHash
+        : intent.target_path === quotePhotoPath(publicId, intent.photo_index, intent.filename, hash);
+    });
+    if (index < 0) return null;
+    matches.set(intent.photo_index, unmatched.splice(index, 1)[0]);
+  }
+  return [...intents.map((intent) => matches.get(intent.photo_index)!), ...unmatched];
+}
+
+function changedQuoteResponse() {
+  return Response.json(
+    { ok: false, error: "The earlier version of this request was already saved. Refresh the page to start a changed request, or call the shop." },
+    { status: 409 },
+  );
+}
+
 type DurableEmailState = "accepted" | "failed" | "unknown";
 type DurableEmailResult = {
   state: DurableEmailState;
   error: string;
   receiptEventId: number | null;
 };
+
+function emailReceiptUnavailable(error: unknown): DurableEmailResult {
+  console.error("Quote email receipt persistence failed:", error);
+  return { state: "unknown", error: "Email provider response was not confirmed.", receiptEventId: null };
+}
 
 async function resumeEventId(kind: string, externalId: string) {
   const rows = (await getSql()`
@@ -356,12 +428,17 @@ export async function POST(req: Request) {
       }
     }
 
+    const photoHashes = new Map(await Promise.all(photoFiles.map(async (file) =>
+      [file, photoHash(await file.arrayBuffer())] as const
+    )));
+
     // Persist the lead FIRST so it survives any email-provider failure.
     let leadId: number | null = null;
     let leadPublicId = "";
     let leadPersonId: number | null = null;
     let wasNewLead = false;
     let savedPhotos: QuotePhotoIntent[] = [];
+    let photosResumable = true;
     if (dbConfigured()) {
       try {
         const lead = await createLead(
@@ -388,6 +465,7 @@ export async function POST(req: Request) {
           },
           {
             intakeKey: `website:${intakeKey}`,
+            quoteIntake: true,
             ...(textConsent && !isTest && webTextGrant
               ? {
                 webTextConsent: {
@@ -405,69 +483,45 @@ export async function POST(req: Request) {
               : {}),
           }
         );
-        const leadRows = (await getSql()`
-          SELECT person_id, first_name, last_name, phone, email, service, message,
-            preferred_contact, photo_count, is_test
-          FROM leads WHERE id = ${lead.id}::bigint LIMIT 1`) as {
-          person_id: number | null;
-          first_name: string;
-          last_name: string;
-          phone: string;
-          email: string;
-          service: string;
-          message: string;
-          preferred_contact: string;
-          photo_count: number;
-          is_test: boolean;
-        }[];
-        if (lead.reused) {
-          const saved = leadRows[0];
-          savedPhotos = (await getSql()`
-            SELECT photo_index, filename, content_type, size_bytes, status, stored_pathname
-            FROM lead_photo_intents
-            WHERE lead_id = ${lead.id}::bigint AND intake_key = ${intakeKey}::text
-            ORDER BY photo_index
-          `) as QuotePhotoIntent[];
-          // Any provider attempt means all intents were reserved. Before then,
-          // photo_count still holds the original count even if reservation paused midway.
-          const originalPhotoCount = savedPhotos.some((photo) => photo.status !== "pending")
-            ? savedPhotos.length
-            : Number(saved?.photo_count);
-          const unmatchedFiles = [...photoFiles];
-          const matchedFiles: File[] = [];
-          const sameSubmission = Boolean(saved)
-            && saved.first_name === firstName
+        const saved = lead.existingSnapshot;
+        if (saved) {
+          const sameSubmission = saved.first_name === firstName
             && saved.last_name === lastName
-            && normalizeUsPhone(saved.phone) === normalizeUsPhone(phone)
             && saved.email.trim().toLowerCase() === email.trim().toLowerCase()
             && saved.service === serviceNeeded
             && saved.message === projectDetails
-            && saved.preferred_contact === preferredContact
-            && originalPhotoCount === photoFiles.length
-            && savedPhotos.every((photo) => {
-              const index = unmatchedFiles.findIndex((file) => photo.filename === safePhotoName(file, photo.photo_index)
-                && photo.content_type === file.type && Number(photo.size_bytes) === file.size);
-              if (index < 0) return false;
-              matchedFiles.push(...unmatchedFiles.splice(index, 1));
-              return true;
-            });
-          if (!sameSubmission) {
-            return Response.json(
-              { ok: false, error: "The earlier version of this request was already saved. Refresh the page to start a changed request, or call the shop." },
-              { status: 409 },
-            );
+            && saved.preferred_contact === preferredContact;
+          if (!sameSubmission) return changedQuoteResponse();
+          try {
+            savedPhotos = (await getSql()`
+              SELECT photo_index, target_path, filename, content_type, size_bytes, status, stored_pathname
+              FROM lead_photo_intents
+              WHERE lead_id = ${lead.id}::bigint AND intake_key = ${intakeKey}::text
+              ORDER BY photo_index
+            `) as QuotePhotoIntent[];
+            // Before any upload, photo_count still holds the original count even
+            // if reservation paused midway.
+            const originalPhotoCount = savedPhotos.some((photo) => photo.status !== "pending")
+              ? savedPhotos.length
+              : Number(saved.photo_count);
+            if (originalPhotoCount !== photoFiles.length) return changedQuoteResponse();
+            const ordered = await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes);
+            if (!ordered) return changedQuoteResponse();
+            photoFiles.splice(0, photoFiles.length, ...ordered);
+          } catch (photoError) {
+            photosResumable = false;
+            console.error("Saved photo intent lookup failed:", photoError);
           }
-          // Retain the original Blob paths even if the browser reselects the files in a different order.
-          photoFiles.splice(0, photoFiles.length, ...matchedFiles, ...unmatchedFiles);
         }
         // A retry can arrive without the authorization that marked the saved lead as a test.
-        isTest = leadRows[0]?.is_test !== false;
+        isTest = lead.isTest !== false;
         leadId = lead.id;
         leadPublicId = lead.publicId;
-        leadPersonId = leadRows[0]?.person_id ?? null;
+        leadPersonId = lead.personId;
         wasNewLead = !lead.reused;
         if (lead.eventId) after(() => processEvent(lead.eventId!).catch((error) => console.error("Quote intake extraction failed:", error)));
       } catch (dbError) {
+        if (dbError instanceof LeadIntakePhoneConflict) return changedQuoteResponse();
         if (textConsent && !isTest) {
           console.error("Lead and text-consent persistence error:", dbError);
           return Response.json(
@@ -513,16 +567,19 @@ export async function POST(req: Request) {
     // The browser owns the only recoverable bytes until every submitted photo
     // is durably stored and linked. A partial failure must never clear them.
     let photosDurable = photoFiles.length === 0;
-    if (leadId !== null && photoFiles.length > 0) {
+    if (!photosResumable) {
+      photosDurable = false;
+    } else if (leadId !== null && photoFiles.length > 0) {
       const photoPlans = photoFiles.map((file, index) => {
         const photoIndex = index + 1;
         const safeName = safePhotoName(file, photoIndex);
+        const intent = savedPhotos.find((photo) => photo.photo_index === photoIndex);
         return {
           file,
           photoIndex,
           safeName,
-          targetPath: `leads/${leadPublicId}/${photoIndex}-${safeName}`,
-          intent: savedPhotos.find((photo) => photo.photo_index === photoIndex),
+          targetPath: intent?.target_path ?? quotePhotoPath(leadPublicId, photoIndex, safeName, photoHashes.get(file)),
+          intent,
         };
       }).filter((photo) => photo.intent?.status !== "attached" || !photo.intent.stored_pathname);
       try {
@@ -587,6 +644,7 @@ export async function POST(req: Request) {
     if (!isTest && apiKey && to && from) {
       const resend = new Resend(apiKey);
       const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
+      const emailPhotos = photosResumable ? photoFiles : [];
 
       const text = [
         `New quote request received`,
@@ -600,7 +658,7 @@ export async function POST(req: Request) {
         `Project Details:`,
         projectDetails || "(none provided)",
         ``,
-        photoFiles.length > 0 ? `${photoFiles.length} photo(s) attached.` : "No photos attached.",
+        emailPhotos.length > 0 ? `${emailPhotos.length} photo(s) attached.` : "No photos attached.",
         ``,
         `Meta:`,
         leadId !== null ? `Job #${leadId}` : `Job number: (not persisted)`,
@@ -612,7 +670,7 @@ export async function POST(req: Request) {
       ].join("\n");
 
       const attachments = await Promise.all(
-        photoFiles.map(async (file) => {
+        emailPhotos.map(async (file) => {
           const arrayBuffer = await file.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
           return {
@@ -632,7 +690,7 @@ export async function POST(req: Request) {
           email ? `Email: ${escapeHtml(email)}` : `Email: (not provided)`,
           `Job: <strong>${escapeHtml(serviceNeeded)}</strong>`,
           projectDetails ? `<br />“${escapeHtml(projectDetails)}”` : "",
-          photoFiles.length > 0 ? `<br />${photoFiles.length} photo(s) attached.` : "",
+          emailPhotos.length > 0 ? `<br />${emailPhotos.length} photo(s) attached.` : "",
           leadId !== null ? `<br />Job #${leadId} is on the board.` : "",
         ]
           .filter(Boolean)
@@ -657,7 +715,7 @@ export async function POST(req: Request) {
           replyTo: email ? email : undefined,
           attachments: attachments.length > 0 ? attachments : undefined,
         },
-      });
+      }).catch(emailReceiptUnavailable);
       ownerEmailState = ownerResult.state;
       emailSent = ownerResult.state === "accepted";
       emailErrorMessage = ownerResult.error;
@@ -698,7 +756,7 @@ export async function POST(req: Request) {
               ctaUrl: getShopPhone().href,
             }),
           },
-        });
+        }).catch(emailReceiptUnavailable);
         if (customerResult.state !== "accepted") {
           console.error("Customer confirmation was not confirmed:", customerResult.error);
           if (leadId !== null) {

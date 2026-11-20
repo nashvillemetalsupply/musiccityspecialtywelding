@@ -5,7 +5,7 @@ import test from "node:test"
 test("only a new consented quote schedules one persisted acknowledgement without blocking intake", async () => {
   const source = readFileSync(new URL("../app/api/quote/route.ts", import.meta.url), "utf8")
   assert.match(source, /let wasNewLead = false/)
-  assert.match(source, /leadPersonId = leadRows\[0\]\?\.person_id \?\? null;\s+wasNewLead = !lead\.reused;/)
+  assert.match(source, /leadPersonId = lead\.personId;\s+wasNewLead = !lead\.reused;/)
   assert.equal((source.match(/sendSmsPersisted\(/g) ?? []).length, 1)
   const start = source.indexOf("    if (leadId !== null && wasNewLead")
   const end = source.indexOf("    if (leadId !== null && !isTest)", start)

@@ -150,6 +150,11 @@ function makePublicId(now: Date) {
   return `L-${stamp}-${rand}`
 }
 
+type SavedIntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "first_name" | "last_name"
+  | "phone" | "email" | "service" | "message" | "preferred_contact" | "photo_count" | "source" | "is_test">
+
+export class LeadIntakePhoneConflict extends Error {}
+
 export async function createLead(
   input: NewLeadInput,
   options: {
@@ -157,54 +162,34 @@ export async function createLead(
     actor?: string
     firstResponseNow?: boolean
     intakeKey?: string
+    quoteIntake?: boolean
     webTextConsent?: { phoneE164: string; provenance: Record<string, unknown> }
   } = {}
-): Promise<{ id: number; publicId: string; eventId: number | null; reused: boolean }> {
+) {
   const sql = getSql()
   const source = options.sourceOverride ?? deriveLeadSource(input)
   const intakeKey = options.intakeKey?.trim().slice(0, 180) ?? ""
   const webTextConsent = options.webTextConsent
     ? { phoneE164: normalizePhone(options.webTextConsent.phoneE164), provenance: options.webTextConsent.provenance }
     : null
+  const expectedPhone = webTextConsent?.phoneE164 ?? (options.quoteIntake ? normalizePhone(input.phone) : null)
+  const readExistingIntake = async () => {
+    const [saved] = (await sql`
+      SELECT id, public_id, person_id, first_name, last_name, phone, email, service,
+        message, preferred_contact, photo_count, source, is_test
+      FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as SavedIntakeLead[]
+    if (saved && expectedPhone !== null && normalizePhone(saved.phone) !== expectedPhone) {
+      throw new LeadIntakePhoneConflict("That saved intake does not match this text-permission request.")
+    }
+    return saved ?? null
+  }
+  let existingSnapshot = intakeKey ? await readExistingIntake() : null
   if (options.webTextConsent && (!webTextConsent?.phoneE164 || isReservedShopPhone(webTextConsent.phoneE164) || input.isTest)) {
     throw new Error("Web text consent requires a valid customer phone and a non-test lead.")
   }
-  let id: number | null = null
-  let publicId = ""
-  let reused = false
-  let existingSnapshot: {
-    id: number
-    public_id: string
-    first_name: string
-    last_name: string
-    phone: string
-    email: string
-    message: string
-    source: string
-    is_test: boolean
-  } | null = null
-
-  if (intakeKey) {
-    const existing = (await sql`
-      SELECT id, public_id, first_name, last_name, phone, email, message, source, is_test
-      FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as {
-      id: number
-      public_id: string
-      first_name: string
-      last_name: string
-      phone: string
-      email: string
-      message: string
-      source: string
-      is_test: boolean
-    }[]
-    if (existing[0]) {
-      id = Number(existing[0].id)
-      publicId = existing[0].public_id
-      reused = true
-      existingSnapshot = existing[0]
-    }
-  }
+  let id = existingSnapshot ? Number(existingSnapshot.id) : null
+  let publicId = existingSnapshot?.public_id ?? ""
+  let insertedIsTest = input.isTest
 
   const defaultFollowUpAt = id === null ? await getDefaultFollowUpAt(sql) : null
 
@@ -235,7 +220,7 @@ export async function createLead(
             ${intakeKey}::text,
             ${defaultFollowUpAt}::timestamptz
           )
-          RETURNING id, public_id
+          RETURNING id, public_id, is_test
         ), captured_consent AS MATERIALIZED (
           INSERT INTO messaging_consents (
             phone_e164, lead_id, source, effect, external_id, occurred_at, provenance
@@ -253,34 +238,21 @@ export async function createLead(
           ON CONFLICT (external_id) DO NOTHING
           RETURNING id
         )
-        SELECT inserted_lead.id, inserted_lead.public_id
+        SELECT inserted_lead.id, inserted_lead.public_id, inserted_lead.is_test
         FROM inserted_lead
-        LEFT JOIN captured_consent ON true`) as { id: number; public_id: string }[]
+        LEFT JOIN captured_consent ON true`) as Pick<LeadRow, "id" | "public_id" | "is_test">[]
       id = rows[0].id
       publicId = rows[0].public_id
+      insertedIsTest = rows[0].is_test
     } catch (error) {
       const isUniqueViolation =
         typeof error === "object" && error !== null && (error as { code?: string }).code === "23505"
       if (!isUniqueViolation) throw error
       if (intakeKey) {
-        const existing = (await sql`
-          SELECT id, public_id, first_name, last_name, phone, email, message, source, is_test
-          FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as {
-          id: number
-          public_id: string
-          first_name: string
-          last_name: string
-          phone: string
-          email: string
-          message: string
-          source: string
-          is_test: boolean
-        }[]
-        if (existing[0]) {
-          id = Number(existing[0].id)
-          publicId = existing[0].public_id
-          reused = true
-          existingSnapshot = existing[0]
+        existingSnapshot = await readExistingIntake()
+        if (existingSnapshot) {
+          id = Number(existingSnapshot.id)
+          publicId = existingSnapshot.public_id
         }
       }
       if (id === null && attempt === 2) throw error
@@ -292,8 +264,8 @@ export async function createLead(
   // append the newly supplied consent only when it still matches the original
   // customer phone. Never let a replayed intake key grant consent to a
   // different number or create a second person record from changed fields.
-  if (reused && existingSnapshot && webTextConsent) {
-    if (existingSnapshot.is_test || normalizePhone(existingSnapshot.phone) !== webTextConsent.phoneE164) {
+  if (existingSnapshot && webTextConsent) {
+    if (existingSnapshot.is_test) {
       throw new Error("That saved intake does not match this text-permission request.")
     }
     await sql`
@@ -321,21 +293,45 @@ export async function createLead(
         phone: input.phone,
         email: input.email,
         displayName: `${input.firstName} ${input.lastName}`.trim(),
-        isTest: input.isTest,
+        isTest: insertedIsTest,
       }
-  const person = await findOrCreatePerson({
-    ...identity,
-    leadId: id!,
-  })
-  if (person) await attachLeadToPerson(id!, person.id)
-  const priorCreated = reused ? (await sql`
-    SELECT id FROM events WHERE lead_id = ${id!}::bigint AND kind = 'form.quote' LIMIT 1`) as { id: number }[] : []
-  const eventId = priorCreated[0] ? null : await recordLeadEvent(id!, "created", options.actor ?? "system", {
-    source: existingSnapshot?.source ?? source,
-    isTest: existingSnapshot?.is_test ?? input.isTest,
-    message: existingSnapshot?.message ?? input.message,
-  })
-  return { id: id!, publicId, eventId, reused }
+  // Quote delivery can proceed from the committed lead if its person or
+  // creation event cannot be resolved. A retry can finish either step.
+  let personId = existingSnapshot?.person_id ?? null
+  try {
+    const person = await findOrCreatePerson({ ...identity, leadId: id! })
+    if (person) {
+      await attachLeadToPerson(id!, person.id)
+      personId ??= person.id
+    }
+  } catch (error) {
+    if (!options.quoteIntake) throw error
+    console.error("Quote lead person resolution failed:", error)
+  }
+  let eventId: number | null = null
+  try {
+    const priorCreated = existingSnapshot ? (await sql`
+      SELECT id FROM events WHERE lead_id = ${id!}::bigint AND kind = 'form.quote' LIMIT 1`) as { id: number }[] : []
+    if (!priorCreated[0]) {
+      eventId = await recordLeadEvent(id!, "created", options.actor ?? "system", {
+        source: existingSnapshot?.source ?? source,
+        isTest: identity.isTest,
+        message: existingSnapshot?.message ?? input.message,
+      })
+    }
+  } catch (error) {
+    if (!options.quoteIntake) throw error
+    console.error("Quote lead creation event failed:", error)
+  }
+  return {
+    id: id!,
+    publicId,
+    eventId,
+    reused: existingSnapshot !== null,
+    existingSnapshot,
+    personId,
+    isTest: identity.isTest,
+  }
 }
 
 export async function attachLeadPhotos(

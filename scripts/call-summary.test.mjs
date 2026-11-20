@@ -1,6 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
+import { registerHooks } from "node:module"
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
@@ -116,6 +117,73 @@ test("a call that asked for shop work becomes a job with no tap, attributed to t
   assert.match(INTAKE, /operatorId: number \| null/)
   assert.match(INTAKE, /actor: input\.operatorId == null \? "system" : String\(input\.operatorId\)/)
   assert.equal((INTAKE.match(/actorType: input\.operatorId == null \? "system" : "operator",/g) ?? []).length, 2)
+})
+
+test("a settlement write failure keeps the summary ready on replay and recovery", async (t) => {
+  const draft = { id: 1, call_sid: "CA1", status: "pending", caller_name: "Caller", need: "", is_test: true, transcript: "A steel gate repair.", transcript_status: "ready", duration_sec: 20 }
+  const modelSummary = { caller_name: null, need: "Repair a steel gate", details: [], where_when: null, is_job: "unsure", not_job_reason: null, next_question: null }
+  let summaryStatus = ""
+  let summary
+  let reads = 0
+  let settleWrites = 0
+  globalThis.__settlementRegression = {
+    model: async () => { reads += 1; return modelSummary },
+    sql: async (strings, ...values) => {
+      const query = strings.join("?").trim()
+      if (query.startsWith("UPDATE call_intake_drafts SET summary_status = 'pending'")) {
+        if (!["", "failed"].includes(summaryStatus)) return []
+        summaryStatus = "pending"
+        return [{ id: draft.id }]
+      }
+      if (query.includes("summary_status = 'ready',")) {
+        summaryStatus = "ready"
+        summary = JSON.parse(values[0])
+        return []
+      }
+      if (query.includes("SET summary = COALESCE(summary")) {
+        if (++settleWrites === 1) throw new Error("settlement write unavailable")
+        summary = { ...summary, ...JSON.parse(values[0]) }
+        return []
+      }
+      if (query.includes("Read did not finish") || query.includes("SET status = 'dismissed'")) return []
+      if (query.includes("SET summary_status = 'failed'")) { summaryStatus = "failed"; return [] }
+      if (query.startsWith("SELECT d.call_sid")) return summaryStatus === "failed" ? [draft] : []
+      if (query.includes("d.summary, c.transcript")) return summaryStatus === "ready" && !summary.auto ? [{ ...draft, summary }] : []
+      if (query.startsWith("SELECT d.id")) return [draft]
+      assert.fail(`Unexpected SQL: ${query}`)
+    },
+  }
+  t.after(() => { delete globalThis.__settlementRegression })
+  const modules = {
+    ai: "export const generateText = async () => { throw new Error('Unexpected gateway call'); }; export const Output = {};",
+    "@/lib/ai": "export const aiConfigured = () => false; export const claudeConfigured = () => true; export const AI_MAX_RETRIES = 0; export const AI_MODELS = {}; export const runAiCall = async () => { throw new Error('Unexpected gateway call'); }; export const jsonWithClaude = () => globalThis.__settlementRegression.model();",
+    "@/lib/db": "export const getSql = () => globalThis.__settlementRegression.sql;",
+    "@/lib/events": "export const recordEvent = async () => {};",
+    "@/lib/job-intake": "export const fileCallOntoOpenLead = async () => {}; export const saveInboundCallAsJob = async () => {};",
+    "@/lib/people": "export const findOpenLeadResolutionForPerson = async () => {};",
+    "@/lib/notify": "export const notifyAll = async () => {};",
+  }
+  const hooks = registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (Object.hasOwn(modules, specifier)) return { url: `data:text/javascript,${encodeURIComponent(modules[specifier])}`, shortCircuit: true }
+      if (specifier.startsWith("@/")) return { url: new URL(`../${specifier.slice(2)}${specifier.endsWith(".ts") ? "" : ".ts"}`, import.meta.url).href, shortCircuit: true }
+      return nextResolve(specifier, context)
+    },
+  })
+  t.after(() => hooks.deregister())
+  const { summarizeCallDraft, summarizePendingCalls } = await import("../lib/call-summary.ts?settlement-regression")
+  const log = t.mock.method(console, "error", () => {})
+
+  assert.deepEqual(await summarizeCallDraft(draft.call_sid), { summarized: true })
+  assert.equal(summaryStatus, "ready")
+  assert.deepEqual(summary, modelSummary)
+  assert.equal(log.mock.callCount(), 1)
+  assert.deepEqual(await summarizeCallDraft(draft.call_sid), { summarized: false, reason: "already-claimed" })
+  const recovery = await summarizePendingCalls()
+  assert.equal(recovery.attempted, 0)
+  assert.equal(recovery.settled, 1)
+  assert.equal(summary.auto, "left")
+  assert.equal(reads, 1)
 })
 
 test("a repeat caller with an open job is filed onto it, never duplicated", () => {

@@ -20,6 +20,7 @@ const maxPhotoCount = 5
 const maxPhotoSize = 3 * 1024 * 1024
 const maxTotalPhotoSize = 4 * 1024 * 1024
 const quoteIntakeStorageKey = "mcsw:quote-intake"
+const adsCallbackWaitMs = 15_000
 
 function readQuoteSession(key: string) {
   try {
@@ -33,8 +34,27 @@ function writeQuoteSession(key: string, value: string) {
   try {
     if (value) window.sessionStorage.setItem(key, value)
     else window.sessionStorage.removeItem(key)
+    return true
   } catch {
-    // The mounted form still retains the intake and conversion state in refs.
+    return false
+  }
+}
+
+function readQuoteIntake() {
+  const fallback = window.history.state?.[quoteIntakeStorageKey]
+  return typeof fallback === "string" ? fallback : readQuoteSession(quoteIntakeStorageKey)
+}
+
+function writeQuoteIntake(key: string) {
+  // The history entry survives a reload even when session storage rejects a write.
+  const fallback = writeQuoteSession(quoteIntakeStorageKey, key) ? undefined : key
+  try {
+    const state = window.history.state
+    if (state?.[quoteIntakeStorageKey] !== fallback) {
+      window.history.replaceState({ ...state, [quoteIntakeStorageKey]: fallback }, "")
+    }
+  } catch {
+    // The mounted form keeps the key in its ref.
   }
 }
 
@@ -76,7 +96,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
   const previewsRef = useRef<string[]>([])
   // Network retries and page refreshes resume the pending intake.
   const intakeKeyRef = useRef("")
-  const adsReportedIntakeKey = useRef("")
+  const adsIntakeStatus = useRef(new Map<string, "pending" | "reported">())
 
   useEffect(() => {
     previewsRef.current = previews
@@ -137,6 +157,11 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
     setPhotoFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))
   }
 
+  const clearIntake = (intakeKey: string) => {
+    if (readQuoteIntake() === intakeKey) writeQuoteIntake("")
+    if (intakeKeyRef.current === intakeKey) intakeKeyRef.current = ""
+  }
+
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!formData.firstName.trim() || !formData.phone.trim() || !formData.service) {
@@ -151,9 +176,9 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
     setWarning("")
 
     const payload = new FormData()
-    if (!intakeKeyRef.current) intakeKeyRef.current = readQuoteSession(quoteIntakeStorageKey) || crypto.randomUUID()
+    if (!intakeKeyRef.current) intakeKeyRef.current = readQuoteIntake() || crypto.randomUUID()
     const intakeKey = intakeKeyRef.current
-    writeQuoteSession(quoteIntakeStorageKey, intakeKey)
+    writeQuoteIntake(intakeKey)
     payload.append("intakeKey", intakeKey)
     payload.append("firstName", formData.firstName)
     payload.append("lastName", "")
@@ -179,15 +204,23 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
       const leadSaved = data?.leadSaved === true
       const canReportAds = leadSaved && (response.ok ? outcome === "accepted" : response.status === 503)
       const adsStorageKey = `mcsw:quote-ads:${intakeKey}`
-      if (canReportAds && ADS_CONVERSION_SEND_TO && adsReportedIntakeKey.current !== intakeKey && !readQuoteSession(adsStorageKey)) {
-        adsReportedIntakeKey.current = intakeKey
-        writeQuoteSession(adsStorageKey, "1")
-        queueMeasurementEvent("conversion", { send_to: ADS_CONVERSION_SEND_TO })
+      const adsStatus = adsIntakeStatus.current
+      if (canReportAds && ADS_CONVERSION_SEND_TO && !adsStatus.has(intakeKey) && !readQuoteSession(adsStorageKey)) {
+        adsStatus.set(intakeKey, "pending")
+        const timeout = window.setTimeout(() => {
+          if (adsStatus.get(intakeKey) === "pending") adsStatus.delete(intakeKey)
+        }, adsCallbackWaitMs)
+        queueMeasurementEvent("conversion", {
+          send_to: ADS_CONVERSION_SEND_TO,
+          transaction_id: intakeKey,
+          event_callback: () => {
+            window.clearTimeout(timeout)
+            adsStatus.set(intakeKey, "reported")
+            writeQuoteSession(adsStorageKey, "1")
+          },
+        })
       }
-      if (response.status === 409 && readQuoteSession(quoteIntakeStorageKey) === intakeKey) {
-        // Refresh can now start the changed request described by the 409.
-        writeQuoteSession(quoteIntakeStorageKey, "")
-      }
+      if (response.status === 409) clearIntake(intakeKey)
       if (!response.ok) throw new Error(data?.error || "The request did not go through.")
       if (outcome === "rejected") throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
 
@@ -212,8 +245,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
       setPreviews([])
       setPhotoFiles([])
       setFormData(emptyForm)
-      if (readQuoteSession(quoteIntakeStorageKey) === intakeKey) writeQuoteSession(quoteIntakeStorageKey, "")
-      intakeKeyRef.current = ""
+      clearIntake(intakeKey)
       setStatus("success")
       setMessage("Got it. We’ll review the job and call you back. If it can't wait, call now.")
     } catch (error) {

@@ -140,7 +140,9 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
               ELSE caller_name END,
             updated_at = now()
           WHERE id = ${draft.id}::bigint`
-        await settleCall(draft, summary, name, isTest)
+        await settleCall(draft, summary, name, isTest).catch((error) => {
+          console.error("Call settle failed:", callSid, error)
+        })
       },
     )
     return { summarized: true }

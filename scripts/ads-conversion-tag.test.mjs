@@ -14,33 +14,80 @@ const PHONE_SEND_TO = "AW-17817632790/0aSACPS5ue4cEJaAjrBC"
 
 const require = createRequire(import.meta.url)
 
-function quotePhoto(name) {
-  return new File([Uint8Array.of(0xff, 0xd8, 0xff)], name, { type: "image/jpeg" })
+function quotePhoto(name, content = 0) {
+  return new File([Uint8Array.of(0xff, 0xd8, 0xff, content)], name, { type: "image/jpeg" })
 }
 
-function quoteRouteHarness({ message = "Repair a bracket", upload = () => {} } = {}) {
+function quoteRouteHarness({
+  message = "Repair a bracket", upload = () => {}, failLeadRead = "", emailConfigured = false,
+} = {}) {
   const intakeKey = "10000000-0000-4000-8000-000000000001"
   const leads = new Map()
   const photoIntents = new Map()
+  const blobs = new Map()
   const photoReceipts = []
   const alerts = []
+  const emails = []
+  const events = []
+  const consents = []
   const context = vm.createContext({
-    File, Response, Uint8Array,
-    process: { env: { BLOB_READ_WRITE_TOKEN: "stub" } },
+    Buffer, File, Response, Uint8Array,
+    process: { env: {
+      BLOB_READ_WRITE_TOKEN: "stub",
+      ...(emailConfigured ? { RESEND_API_KEY: "stub", QUOTE_FROM_EMAIL: "from@example.test", QUOTE_TO_EMAIL: "owner@example.test" } : {}),
+    } },
     console: { error() {}, warn() {} },
   })
+  const findLead = (id) => [...leads.values()].find((row) => row.id === id)
   const fakes = {
-    "resend": {},
-    "@vercel/blob": { put: async (pathname, file) => {
-      await upload(pathname, file)
-      return { pathname }
-    } },
+    "node:crypto": require("node:crypto"),
+    "resend": { Resend: class { emails = { send: async (payload, options) => {
+      emails.push({ payload, options })
+      return { data: { id: `email-${emails.length}` } }
+    } } } },
+    "@vercel/blob": {
+      put: async (pathname, file) => {
+        await upload(pathname, file)
+        blobs.set(pathname, file)
+        return { pathname }
+      },
+      get: async (pathname) => {
+        const file = blobs.get(pathname)
+        return file ? { statusCode: 200, stream: file.stream(), blob: { size: file.size } } : null
+      },
+    },
     "next/server": { after() {} },
     "@/lib/db": {
       dbConfigured: () => true,
-      getSql: () => async (strings, leadId) => {
+      getSql: () => async (strings, ...values) => {
         const sql = strings.join("?")
-        if (sql.includes("FROM leads")) return [...leads.values()].filter((row) => row.id === leadId)
+        const [leadId] = values
+        if (sql.includes("WITH inserted_lead")) {
+          const [public_id, first_name, last_name, phone, email, service, message, preferred_contact, photo_count, source] = values
+          const id = leads.size + 1
+          const is_test = values[20]
+          leads.set(values[25], {
+            id, public_id, person_id: null, first_name, last_name, phone, email, service,
+            message, preferred_contact, photo_count, is_test, source, photos: new Set(),
+          })
+          if (values[29]) consents.push(values[27])
+          return [{ id, public_id, is_test }]
+        }
+        if (sql.includes("FROM leads WHERE intake_key")) return [leads.get(leadId)].filter(Boolean)
+        if (sql.includes("FROM leads WHERE id")) {
+          if ((failLeadRead === "route" && sql.includes("person_id, first_name")) ||
+              (failLeadRead === "creation-event" && sql.includes("person_id, is_test"))) {
+            throw new Error("Post-create lookup unavailable")
+          }
+          return [findLead(leadId)].filter(Boolean)
+        }
+        if (sql.includes("INSERT INTO messaging_consents")) {
+          consents.push(values[0])
+          return []
+        }
+        if (sql.includes("FROM events WHERE lead_id")) return events.filter((row) => row.leadId === leadId && row.kind === "form.quote")
+        if (failLeadRead === "email-receipt" && sql.includes("SELECT kind FROM events")) throw new Error("Email receipt lookup unavailable")
+        if (sql.includes("FROM events")) return []
         if (sql.includes("FROM lead_photo_intents")) {
           return [...(photoIntents.get(leadId)?.values() ?? [])]
         }
@@ -48,29 +95,19 @@ function quoteRouteHarness({ message = "Repair a bracket", upload = () => {} } =
       },
     },
     "@/lib/leads": {
-      createLead: async (input, options) => {
-        const existing = leads.get(options.intakeKey)
-        if (existing) return { id: existing.id, publicId: `L-${existing.id}`, reused: true }
-        const id = leads.size + 1
-        leads.set(options.intakeKey, {
-          id, person_id: id, first_name: input.firstName, last_name: input.lastName,
-          phone: input.phone, email: input.email, service: input.service, message: input.message,
-          preferred_contact: input.preferredContact, photo_count: input.photoCount, is_test: input.isTest,
-          photos: new Set(),
-        })
-        return { id, publicId: `L-${id}`, reused: false }
-      },
       reserveLeadPhotoIntents: async (leadId, _intake, plans) => {
         const intents = photoIntents.get(leadId) ?? new Map()
+        photoIntents.set(leadId, intents)
         for (const plan of plans) {
+          const prior = intents.get(plan.photoIndex)
+          if (prior && prior.target_path !== plan.targetPath) throw new Error("Reserved photo content differs")
           intents.set(plan.photoIndex, {
             photo_index: plan.photoIndex, target_path: plan.targetPath, filename: plan.filename,
             content_type: plan.contentType, size_bytes: plan.size,
-            status: intents.get(plan.photoIndex)?.status ?? "pending",
-            stored_pathname: intents.get(plan.photoIndex)?.stored_pathname ?? "",
+            status: prior?.status ?? "pending",
+            stored_pathname: prior?.stored_pathname ?? "",
           })
         }
-        photoIntents.set(leadId, intents)
       },
       markLeadPhotoIntent: async (leadId, _intake, index, status, { storedPathname } = {}) => {
         const intent = photoIntents.get(leadId).get(index)
@@ -78,7 +115,7 @@ function quoteRouteHarness({ message = "Repair a bracket", upload = () => {} } =
         if (storedPathname) intent.stored_pathname = storedPathname
       },
       attachLeadPhotos: async (leadId, photos, { externalId }) => {
-        const lead = [...leads.values()].find((row) => row.id === leadId)
+        const lead = findLead(leadId)
         const previousCount = lead.photos.size
         for (const photo of photos) lead.photos.add(photo.pathname)
         if (lead.photos.size > previousCount) photoReceipts.push(externalId)
@@ -89,9 +126,18 @@ function quoteRouteHarness({ message = "Repair a bracket", upload = () => {} } =
     "@/lib/notify": { notifyAll: async (alert) => { alerts.push(alert) } },
     "@/lib/shop-contact": { getShopPhone: () => ({ display: "(615) 555-0100" }) },
     "@/lib/ops-auth": { isAuthorizedCron: (req) => req.headers.has("authorization") },
-    "@/lib/email-templates": {}, "@/lib/events": {}, "@/lib/extract": {},
-    "@/lib/follow-up-cadence.ts": {}, "@/lib/messaging-consent": {}, "@/lib/messages": {},
-    "@/lib/people": {}, "@/lib/twilio": {},
+    "@/lib/email-templates": { brandedEmail: () => "", escapeHtml: (value) => value },
+    "@/lib/events": { recordEvent: async (event) => events.push(event) },
+    "@/lib/extract": {}, "@/lib/media-safety": {}, "@/lib/messages": {},
+    "@/lib/follow-up-cadence.ts": { getDefaultFollowUpAt: async () => null },
+    "@/lib/messaging-consent": { getMessagingConsentState: async () => "unknown" },
+    "@/lib/people": {
+      normalizePhone: (value) => fakes["@/lib/shop-brain-invariants.ts"].normalizeUsPhone(value),
+      isReservedShopPhone: () => false,
+      findOrCreatePerson: async ({ leadId }) => ({ id: leadId + 100 }),
+      attachLeadToPerson: async (id, personId) => { findLead(id).person_id ??= personId },
+    },
+    "@/lib/twilio": { twilioSmsConfigured: () => false },
   }
   function load(path) {
     const compiled = ts.transpileModule(source(path), {
@@ -107,14 +153,16 @@ function quoteRouteHarness({ message = "Repair a bracket", upload = () => {} } =
   }
   fakes["@/lib/public-quote.ts"] = load("lib/public-quote.ts")
   fakes["@/lib/shop-brain-invariants.ts"] = load("lib/shop-brain-invariants.ts")
+  fakes["@/lib/leads"] = { ...load("lib/leads.ts"), ...fakes["@/lib/leads"] }
   const { POST } = load("app/api/quote/route.ts")
   return {
-    leads, photoReceipts, alerts,
-    submit(photos = [], { authorized = false, key = intakeKey } = {}) {
+    leads, photoIntents, blobs, photoReceipts, alerts, emails, consents, events,
+    submit(photos = [], { authorized = false, key = intakeKey, phone = "6155550100", textConsent = false } = {}) {
       const form = new FormData()
       for (const [name, value] of Object.entries({
-        firstName: "Example", phone: "6155550100", service: "Not Sure / Other", message, intakeKey: key,
+        firstName: "Example", phone, service: "Not Sure / Other", message, intakeKey: key,
       })) form.set(name, value)
+      if (textConsent) form.set("textConsent", "yes")
       for (const photo of photos) form.append("photos", photo)
       return POST({ headers: new Headers(authorized ? { authorization: "stub" } : {}), formData: async () => form })
     },
@@ -338,14 +386,16 @@ test("the inline tag script declares nothing at classic-script top level", () =>
   }
 })
 
-function quoteFormHarness(route) {
+function quoteFormHarness(route, { rejectStorageWrites = false, acknowledgeAds = true } = {}) {
   const session = new Map()
+  const history = { state: { __NA: true }, replaceState(state) { this.state = state } }
   const responses = []
   const intakeKeys = []
   const adsEvents = []
+  const adsTimeouts = []
   let issuedKeys = 0
 
-  function mountForm(selectedPhotos) {
+  function mountForm(selectedPhotos, { storage = session, phone = "6155550100", textConsent = false } = {}) {
     const browser = browserHarness(productionHosts[0], "", {
       FormData,
       crypto: { randomUUID: () => `10000000-0000-4000-8000-${String(++issuedKeys).padStart(12, "0")}` },
@@ -353,20 +403,30 @@ function quoteFormHarness(route) {
         assert.equal(path, "/api/quote")
         const key = body.get("intakeKey")
         intakeKeys.push(key)
-        const response = await route.submit(body.getAll("photos"), { key })
+        const response = await route.submit(body.getAll("photos"), {
+          key, phone: body.get("phone"), textConsent: body.get("textConsent") === "yes",
+        })
         responses.push({ status: response.status, data: await response.clone().json() })
         return response
       },
     })
     browser.window.sessionStorage = {
-      getItem: (key) => session.get(key) ?? null,
-      setItem: (key, value) => session.set(key, value),
-      removeItem: (key) => session.delete(key),
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => {
+        if (rejectStorageWrites) throw new Error("Session storage write denied")
+        storage.set(key, value)
+      },
+      removeItem: (key) => storage.delete(key),
     }
+    browser.window.history = history
+    browser.window.setTimeout = (callback) => adsTimeouts.push(callback)
+    browser.window.clearTimeout = (id) => { delete adsTimeouts[id - 1] }
     browser.window.gtag = (_command, event, params) => {
-      if (event === "conversion") adsEvents.push(params.send_to)
+      if (event !== "conversion") return
+      adsEvents.push(params)
+      if (acknowledgeAds) params.event_callback?.()
     }
-    const formStates = [{ firstName: "Example", phone: "6155550100", service: "Not Sure / Other" }, selectedPhotos]
+    const formStates = [{ firstName: "Example", phone, service: "Not Sure / Other", textConsent }, selectedPhotos]
     const { QuoteForm } = browser.load("components/mainstreet-contact.tsx", {
       react: {
         useEffect() {},
@@ -382,7 +442,7 @@ function quoteFormHarness(route) {
     return () => submit({ preventDefault() {} })
   }
 
-  return { mountForm, responses, intakeKeys, adsEvents }
+  return { mountForm, responses, intakeKeys, adsEvents, adsTimeouts, session, history }
 }
 
 test("a partial photo upload stays on the same lead and fires Ads once across a refresh", async () => {
@@ -402,7 +462,7 @@ test("a partial photo upload stays on the same lead and fires Ads once across a 
   const submit = mountForm(photos)
   await submit()
   assert.equal(responses[0].status, 503)
-  assert.deepEqual(adsEvents, [SEND_TO])
+  assert.deepEqual(adsEvents.map((event) => event.send_to), [SEND_TO])
   await submit()
   assert.equal(responses[1].status, 503, "same files must retry despite the attached count dropping to one")
 
@@ -412,12 +472,88 @@ test("a partial photo upload stays on the same lead and fires Ads once across a 
   assert.equal(new Set(intakeKeys).size, 1)
   assert.equal(route.leads.size, 1)
   assert.equal(route.leads.get(`website:${intakeKeys[0]}`).photo_count, 2)
-  assert.deepEqual(adsEvents, [SEND_TO])
+  assert.deepEqual(adsEvents.map((event) => event.send_to), [SEND_TO])
   assert.deepEqual(uploadedPhotos, ["bracket.jpg", "hinge.jpg", "hinge.jpg", "hinge.jpg"])
   assert.deepEqual(route.photoReceipts, [`quote-photos:${intakeKeys[0]}:1`, `quote-photos:${intakeKeys[0]}:2`])
 
   const changed = await route.submit([photos[0], quotePhoto("different.jpg")], { key: intakeKeys[0] })
   assert.equal(changed.status, 409, "a different photo with the same count must be rejected")
+})
+
+test("a quote retry keeps the saved lead across reload when session storage writes fail", async () => {
+  let uploadFails = true
+  const route = quoteRouteHarness({ upload: () => { if (uploadFails) throw new Error("Blob unavailable") } })
+  const { mountForm, responses, intakeKeys, session, history } = quoteFormHarness(route, { rejectStorageWrites: true })
+  const photos = [quotePhoto("bracket.jpg")]
+  const submit = mountForm(photos)
+  await submit()
+  await submit()
+  assert.deepEqual(responses.map(({ status }) => status), [503, 503])
+  assert.equal(session.has("mcsw:quote-intake"), false)
+
+  uploadFails = false
+  await mountForm(photos)()
+  assert.equal(responses[2].status, 200)
+  assert.equal(new Set(intakeKeys).size, 1)
+  assert.equal(route.leads.size, 1)
+  assert.equal(history.state.__NA, true)
+  assert.equal(history.state["mcsw:quote-intake"], undefined)
+})
+
+test("a duplicated tab reports the saved quote with the same Ads transaction ID", async () => {
+  const route = quoteRouteHarness()
+  const { mountForm, adsEvents, intakeKeys, session } = quoteFormHarness(route)
+  const originalSubmission = mountForm([])()
+  const submitInDuplicate = mountForm([], { storage: new Map(session) })
+  await originalSubmission
+  await submitInDuplicate()
+  assert.equal(route.leads.size, 1)
+  assert.deepEqual(adsEvents.map((event) => event.transaction_id), [intakeKeys[0], intakeKeys[0]])
+})
+
+test("only the Ads callback marks a queued quote conversion reported", async () => {
+  let uploadFails = true
+  const route = quoteRouteHarness({ upload: () => { if (uploadFails) throw new Error("Blob unavailable") } })
+  const { mountForm, responses, adsEvents, adsTimeouts, intakeKeys, session } = quoteFormHarness(route, { acknowledgeAds: false })
+  const photos = [quotePhoto("bracket.jpg")]
+  const submit = mountForm(photos)
+  await submit()
+  assert.equal(responses[0].status, 503)
+  const reportedKey = `mcsw:quote-ads:${intakeKeys[0]}`
+  assert.equal(session.has(reportedKey), false)
+  await submit()
+  assert.equal(adsEvents.length, 1, "the event is already queued in this page")
+  adsTimeouts[0]()
+  assert.equal(session.has(reportedKey), false)
+
+  uploadFails = false
+  await mountForm(photos)()
+  assert.equal(responses[2].status, 200)
+  assert.equal(adsEvents.length, 2, "reload must queue the unconfirmed conversion again")
+  assert.equal(session.has(reportedKey), false)
+  adsEvents[1].event_callback()
+  assert.equal(session.get(reportedKey), "1")
+})
+
+test("changing the phone with text consent returns 409 and clears the pending quote key", async () => {
+  let uploadFails = true
+  const route = quoteRouteHarness({ upload: () => { if (uploadFails) throw new Error("Blob unavailable") } })
+  const { mountForm, responses, intakeKeys, session } = quoteFormHarness(route)
+  const photos = [quotePhoto("bracket.jpg")]
+  await mountForm(photos)()
+  assert.equal(responses[0].status, 503)
+
+  const submitCorrected = mountForm(photos, { phone: "6155550199", textConsent: true })
+  await submitCorrected()
+  assert.equal(intakeKeys[1], intakeKeys[0])
+  assert.equal(responses[1].status, 409)
+  assert.equal(session.has("mcsw:quote-intake"), false)
+
+  uploadFails = false
+  await submitCorrected()
+  assert.notEqual(intakeKeys[2], intakeKeys[0])
+  assert.equal(responses[2].status, 200)
+  assert.equal(route.leads.size, 2)
 })
 
 test("a saved test quote cannot report a conversion on an unauthorized photo retry", async () => {
@@ -447,6 +583,76 @@ test("a saved test quote cannot report a conversion on an unauthorized photo ret
   assert.deepEqual(adsEvents, [])
   assert.equal(route.leads.size, 1)
   assert.equal(route.alerts.length, 0)
+})
+
+test("a committed quote still alerts the owner and qualifies for Ads when the post-create lookup fails", async () => {
+  for (const failLeadRead of ["route", "creation-event", "email-receipt"]) {
+    const route = quoteRouteHarness({ failLeadRead, emailConfigured: true })
+    const response = await route.submit()
+    assert.equal(response.status, 200)
+    assert.deepEqual(await response.json(), { ok: true, accepted: true, leadSaved: true })
+    assert.equal(route.leads.size, 1)
+    const [saved] = route.leads.values()
+    assert.equal(route.alerts[0].url, `/ops/leads/${saved.id}`)
+    const ownerEmailIntent = route.events.find((event) => event.kind === "email.out")
+    assert.equal(ownerEmailIntent.leadId, saved.id)
+    assert.equal(ownerEmailIntent.personId, saved.person_id)
+    if (failLeadRead === "email-receipt") {
+      assert.equal(route.emails.length, 0)
+      assert.match(route.alerts[0].body, /OWNER EMAIL UNCONFIRMED/)
+    } else {
+      assert.equal(route.emails[0].payload.to, "owner@example.test")
+      assert.ok(route.emails[0].payload.text.includes(`Phone: ${saved.phone}`))
+    }
+  }
+})
+
+test("same-metadata photos resume by contents when the customer reverses their order", async () => {
+  for (const existingIntents of ["current", "legacy", "legacy-missing-receipt"]) {
+    const uploads = []
+    let recovered = false
+    const route = quoteRouteHarness({
+      upload: async (_pathname, file) => {
+        const content = new Uint8Array(await file.arrayBuffer()).at(-1)
+        uploads.push(content)
+        if (content === 2 && !recovered) throw new Error("Photo storage unavailable")
+      },
+    })
+    const files = [quotePhoto("gate+.jpg", 1), quotePhoto("gate?.jpg", 2)]
+    const first = await route.submit(files)
+    assert.equal(first.status, 503)
+    const [lead] = route.leads.values()
+    if (existingIntents !== "current") {
+      // Simulate an in-flight quote reserved before intent paths included a digest.
+      for (const intent of route.photoIntents.get(lead.id).values()) {
+        const legacyPath = `leads/${lead.public_id}/${intent.photo_index}-${intent.filename}`
+        if (intent.stored_pathname) {
+          route.blobs.set(legacyPath, route.blobs.get(intent.stored_pathname))
+          route.blobs.delete(intent.stored_pathname)
+          lead.photos.delete(intent.stored_pathname)
+          if (existingIntents === "legacy-missing-receipt") {
+            lead.photo_count = files.length
+            intent.status = "failed"
+            intent.stored_pathname = ""
+          } else {
+            lead.photos.add(legacyPath)
+            intent.stored_pathname = legacyPath
+          }
+        }
+        intent.target_path = legacyPath
+      }
+    }
+
+    recovered = true
+    const retry = await route.submit([...files].reverse())
+    assert.equal(retry.status, 200)
+    assert.equal(route.leads.size, 1)
+    assert.deepEqual(uploads, [1, 2, 2])
+    const attached = await Promise.all([...lead.photos].map(async (pathname) =>
+      new Uint8Array(await route.blobs.get(pathname).arrayBuffer()).at(-1)
+    ))
+    assert.deepEqual(attached, [1, 2])
+  }
 })
 
 test("a conversion is never dropped because gtag has not defined itself yet", () => {

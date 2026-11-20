@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
+import { registerHooks } from "node:module"
 import test from "node:test"
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8")
@@ -52,6 +53,77 @@ test("the live stop snapshot cannot trigger a call summary before the recording 
   assert.match(transcript, /if \(transcript\) after\(\(\) => summarizeCallDraft\(call\.twilio_sid\)/)
 })
 
+test("a late live stop leaves the recording transcript intact and emits no extraction event", async (t) => {
+  const events = []
+  const utterance = { sequence_id: 1, track: "inbound_track", transcript: "Partial live words" }
+  let transcriptStatus = "ready"
+  let transcript = "Complete recording transcript"
+  let finalizeOnInsert = false
+  globalThis.__lateLiveStop = {
+    sql: async (strings, ...values) => {
+      const query = strings.join("?").trim()
+      if (query.startsWith("SELECT direction")) return [{ direction: "in", lead_id: null, person_id: null, is_test: true }]
+      if (query.startsWith("WITH final_items") || query.startsWith("SELECT sequence_id")) return [utterance]
+      if (query.startsWith("INSERT INTO call_sketches") || query.startsWith("DELETE FROM call_live_transcript_items")) return []
+      if (query.startsWith("UPDATE calls SET transcript")) {
+        assert.match(query, /AND transcript_status NOT IN \('ready', 'empty'\)/)
+        if (["ready", "empty"].includes(transcriptStatus)) return []
+        transcript = values[0]
+        return [{ id: 1 }]
+      }
+      if (query.startsWith("INSERT INTO events")) {
+        assert.match(query, /\) SELECT[\s\S]+WHERE \(\?::text IS NULL OR EXISTS \(\s+SELECT 1 FROM calls WHERE twilio_sid = \?::text\s+AND transcript_status NOT IN \('ready', 'empty'\)\s+FOR SHARE/)
+        assert.deepEqual(values.slice(-2), ["CA1", "CA1"])
+        if (finalizeOnInsert) {
+          assert.equal(transcript, "Customer: Partial live words")
+          transcriptStatus = "ready"
+          transcript = "Complete recording transcript"
+        }
+        if (["ready", "empty"].includes(transcriptStatus)) return []
+        events.push(values[1])
+        return [{ id: events.length }]
+      }
+      assert.fail(`Unexpected SQL: ${query}`)
+    },
+  }
+  t.after(() => { delete globalThis.__lateLiveStop })
+  const modules = {
+    "@/lib/db": "export const getSql = () => globalThis.__lateLiveStop.sql;",
+    "@/lib/build-sheets": "export const ingestCallSketchBuildFacts = async () => {};",
+    "@/lib/voice-of-character.ts": "export const captureCallVoiceSamples = async () => {}; export const rebuildOwnerVoiceProfile = async () => {};",
+  }
+  const hooks = registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (Object.hasOwn(modules, specifier)) return { url: `data:text/javascript,${encodeURIComponent(modules[specifier])}`, shortCircuit: true }
+      if (specifier === "@/lib/events") return { url: new URL("../lib/events.ts?late-live-stop", import.meta.url).href, shortCircuit: true }
+      if (specifier.startsWith("@/")) return { url: new URL(`../${specifier.slice(2)}${specifier.endsWith(".ts") ? "" : ".ts"}`, import.meta.url).href, shortCircuit: true }
+      return nextResolve(specifier, context)
+    },
+  })
+  t.after(() => hooks.deregister())
+  const { recordLiveTranscriptionEvent } = await import("../lib/call-sketch-store.ts?late-live-stop")
+  const input = { event: "transcription-stopped", callSid: "CA1", transcriptionSid: "GT1" }
+
+  assert.equal((await recordLiveTranscriptionEvent(input)).transcriptEventId, null)
+  assert.equal(transcript, "Complete recording transcript")
+  assert.deepEqual(events, [])
+
+  transcriptStatus = "queued"
+  finalizeOnInsert = true
+  assert.equal((await recordLiveTranscriptionEvent(input)).transcriptEventId, null)
+  assert.equal(transcript, "Complete recording transcript")
+  assert.deepEqual(events, [])
+
+  transcriptStatus = "queued"
+  finalizeOnInsert = false
+  assert.equal((await recordLiveTranscriptionEvent(input)).transcriptEventId, 1)
+  assert.equal(transcript, "Customer: Partial live words")
+  assert.deepEqual(events, ["call.transcript"])
+  const extract = await read("lib/extract.ts")
+  assert.match(extract, /const isLiveTranscript = event\.detail\.source === "twilio-live-transcription"/)
+  assert.match(extract, /UPDATE calls SET crew_transcript[^`]*AND \(NOT \$\{isLiveTranscript\}::boolean OR transcript_status NOT IN \('ready', 'empty'\)\)/)
+})
+
 test("the live transcript success acknowledgement is a bodyless 204 response", async () => {
   const route = await read("app/api/twilio/live-transcript/route.ts")
   assert.match(route, /new Response\(null, \{ status: 204/)
@@ -61,7 +133,7 @@ test("the live transcript success acknowledgement is a bodyless 204 response", a
 test("the final transcript callback re-projects Build facts after the transcript receipt", async () => {
   const store = await read("lib/call-sketch-store.ts")
   const stopped = store.slice(store.indexOf('if (input.event === "transcription-stopped")'))
-  const receipt = stopped.indexOf("const transcriptEventId = await recordEvent({")
+  const receipt = stopped.indexOf("await recordEvent({")
   const ingestion = stopped.indexOf("await ingestCallSketchBuildFacts(Number(call.lead_id))")
   const cleanup = stopped.indexOf("DELETE FROM call_live_transcript_items")
 

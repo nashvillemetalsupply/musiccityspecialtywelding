@@ -106,7 +106,7 @@ test("the shop's own half of the call is what is captured, and only that", () =>
 test("a call teaches the voice once its transcript exists, and never breaks the call", () => {
   const stopped = SKETCH_SOURCE.slice(SKETCH_SOURCE.indexOf(`if (input.event === "transcription-stopped")`))
   const capture = stopped.indexOf("captureCallVoiceSamples")
-  const transcript = stopped.indexOf("const transcriptEventId = await recordEvent({")
+  const transcript = stopped.indexOf("await recordEvent({")
   assert.ok(transcript >= 0 && capture > transcript, "the receipt is written before the voice is learned from it")
   assert.match(stopped, /if \(!call\.is_test\) \{/)
   assert.match(stopped, /catch \(error\) \{\s*\n\s*console\.error\("Voice-of-character capture failed:", error\)/)
