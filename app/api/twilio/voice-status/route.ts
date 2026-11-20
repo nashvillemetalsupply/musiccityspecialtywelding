@@ -168,7 +168,7 @@ export async function POST(req: Request) {
       personId: call.person_id,
       idempotencyKey: `missed-call:${sid}:auto-reply`,
       quietExemptCallAt: new Date(call.called_at),
-    }).catch(() => undefined)
+    }).catch((error) => console.warn("Missed-call auto-reply not sent:", error))
   }
   return twiml("")
 }

@@ -265,7 +265,7 @@ export async function POST(req: Request) {
       leadId: projectedLeadId,
       personId,
       idempotencyKey: `text-in:${sid}:ack`,
-    }).catch(() => undefined)
+    }).catch((error) => console.warn("Text-in ack not sent:", error))
   }
   if (eventId && !consentKeyword && !systemSms) after(async () => {
     for (const attachmentId of attachmentIds) await storeQueuedAttachment(attachmentId)
