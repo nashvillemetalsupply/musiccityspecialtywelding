@@ -5,6 +5,7 @@ import vm from "node:vm"
 import ts from "typescript"
 import { sendIfClaimed } from "../lib/deferred-sms.ts"
 import { SmsNotSentError, isSmsNotSentError } from "../lib/sms-provider-truth.ts"
+import * as missedCallConsent from "../lib/missed-call-consent.ts"
 
 function load(relativePath, fakes) {
   const path = new URL(`../${relativePath}`, import.meta.url)
@@ -93,6 +94,7 @@ function smsHarness({ status = "persisted", isTest = false, consent = [true, tru
       if (result instanceof Error) throw result
       return result
     } }],
+    ["@/lib/missed-call-consent", missedCallConsent],
     ["@/lib/shop-phone-shared", { FALLBACK_SHOP_PHONE_E164: "+16155550100" }],
     ["@/lib/shop-brain-invariants.ts", { normalizeUsPhone: (phone) => phone, isReservedCustomerPhone: () => false }],
     ["@/lib/sms-quiet-hours.ts", { isCentralQuietHours: () => false, getDeferredSmsSendAt: () => sendAfter }],

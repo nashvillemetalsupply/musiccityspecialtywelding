@@ -8,6 +8,7 @@ import { processAssistantTurn } from "../lib/assistant/service.ts"
 import { stripAssistantMoney } from "../lib/assistant/money.ts"
 import { isReservedCustomerPhone, normalizeUsPhone, validateCustomerUploadMetadata, GLASS_UPLOAD_PENDING_EXPIRY_MS } from "../lib/shop-brain-invariants.ts"
 import { SmsNotSentError } from "../lib/sms-provider-truth.ts"
+import * as missedCallConsent from "../lib/missed-call-consent.ts"
 
 const nativeRequire = createRequire(import.meta.url)
 const compiled = new Map()
@@ -125,13 +126,15 @@ function fixture(options = {}) {
     },
   }
   let consentChecks = 0
-  const consent = { customerSmsAllowed: async () => { consentChecks++; return allowed && !(options.revokeAtSend && consentChecks > 1) } }
+  const consent = { customerSmsAllowed: async () => { consentChecks++; return allowed && !(options.revokeAtSend && consentChecks > 1) },
+    getMessagingConsentState: async () => (allowed ? "granted" : "unknown") }
   const notify = { notify: async () => {}, notifyAll: async () => {} }
   const common = new Map([
     ["@/lib/db", { getSql: () => sql }], ["../db.ts", { getSql: () => sql }],
     ["@/lib/events", { recordEvent: async (event) => { events.push(event); return 201 } }],
     ["@/lib/notify", notify], ["@/lib/twilio", twilio], ["../twilio.ts", twilio],
     ["@/lib/messaging-consent", consent], ["../messaging-consent.ts", consent],
+    ["@/lib/missed-call-consent", missedCallConsent],
     ["@/lib/shop-phone-shared", { FALLBACK_SHOP_PHONE_E164: "+16157033296" }],
     ["@/lib/shop-brain-invariants.ts", { normalizeUsPhone, isReservedCustomerPhone: () => false }],
     ["../shop-brain-invariants.ts", { normalizeUsPhone, isReservedCustomerPhone }],

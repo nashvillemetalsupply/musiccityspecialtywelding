@@ -69,6 +69,7 @@ function statusHarness({ flag, isTest = false, exists = true, duplicate = false,
     sqlCalls.push({ text, values })
     if (text.startsWith("UPDATE calls SET status")) return exists ? [{
       lead_id: draft ? null : 41, person_id: 9, from_phone: caller, is_test: isTest,
+      called_at: "2026-11-17T15:00:00.000Z",
     }] : []
     if (text.startsWith("SELECT id FROM operators")) return [{ id: 1 }]
     if (text.startsWith("SELECT id FROM events")) return missingEvent ? [] : [{ id: 201 }]
@@ -132,6 +133,7 @@ test("flag-off missed calls retain the existing receipt, notification and SMS be
       to: caller,
       body: "Sorry we missed you. Text what you need and send a photo if you can. — Music City Specialty Welding",
       leadId: 41, personId: 9, idempotencyKey: `missed-call:${sid}:auto-reply`,
+      quietExemptCallAt: new Date("2026-11-17T15:00:00.000Z"),
     })
     assert.deepEqual(h.order, ["receipt", "notify", "sms", "response"])
     assert.equal(h.background.length, 1)
