@@ -31,4 +31,4 @@ Production deployment is triggered by a push to `main`.
 
 ## Scheduled work
 
-Vercel Cron runs the configured daily routes as a backstop. GitHub Actions carry the recurring Gmail sync, health-monitor, and follow-up-reminder cadence. Actions also run the morning brief and weekly database backup.
+Vercel Cron runs Gmail sync every 15 minutes and keeps the configured daily jobs. The 15-minute schedule requires Vercel Pro or Enterprise. GitHub Actions back up Gmail sync and run the health monitor, follow-up reminders, morning brief, and weekly database backup.

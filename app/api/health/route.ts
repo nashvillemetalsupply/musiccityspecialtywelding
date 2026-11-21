@@ -524,13 +524,9 @@ export async function GET(req: Request) {
   // plus two hours of slack holds readiness false.
   const reminderDead = database.lastReminderAt === null ? centralHour >= 2 : Date.now() - new Date(database.lastReminderAt).getTime() > 26 * 60 * 60 * 1000
   const digestStale = database.lastDigestAt === null ? centralHour >= 8 : Date.now() - new Date(database.lastDigestAt).getTime() > 26 * 60 * 60 * 1000
-  // GitHub schedules Gmail every 15 minutes from 12:00-23:59 UTC and hourly
-  // overnight. Scheduled runs can be delayed under load, so the readiness
-  // window must follow the real cadence instead of declaring a healthy hourly
-  // run stale after 20 minutes.
+  // Allow one missed 15-minute Vercel run plus another 15 minutes of slack.
   const gmailStale = automationRunIsStale(database.lastGmailAt, gmailFreshnessWindowMs())
-  // GitHub throttles the schedule to a run every few hours, so a missed window
-  // is a warning; only a sync dead for 48 hours holds readiness false.
+  // A missed freshness window warns. A sync dead for 48 hours blocks readiness.
   const gmailDead = automationRunIsStale(database.lastGmailAt, WARNING_BLOCKS_AFTER_MS)
   // Diagnostics that no longer hold readiness: abandoned customer photo
   // attempts (pending/failed past 48h; stored photos keep blocking until

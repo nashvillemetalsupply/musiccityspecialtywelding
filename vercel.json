@@ -10,6 +10,10 @@
       "schedule": "5 12 * * *"
     },
     {
+      "path": "/api/ingest/gmail",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/ops/brief",
       "schedule": "30 12 * * *"
     },
