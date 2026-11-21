@@ -5,7 +5,6 @@ import { normalizeRecentDeliveryErrors } from "../lib/delivery-errors.mjs"
 import { buildHealthMonitorFailureAlert } from "../lib/health-monitor-alert.ts"
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
-const now = Date.parse("2026-09-27T18:00:00Z")
 
 test("recent delivery errors keep only bounded production failures from the last 24 hours", () => {
   const rows = [
@@ -16,7 +15,7 @@ test("recent delivery errors keep only bounded production failures from the last
     { occurred_at: "2026-09-27T18:01:00Z", title: "Future error", error: "not yet", is_test: false },
     { occurred_at: "2026-09-27T17:40:00Z", title: "Marked test", error: "[INTERNAL TEST] synthetic", is_test: false },
   ]
-  assert.deepEqual(normalizeRecentDeliveryErrors(rows, now), [{
+  assert.deepEqual(normalizeRecentDeliveryErrors(rows, Date.parse("2026-09-27T18:00:00Z")), [{
     at: "2026-09-27T17:00:00.000Z",
     title: "SMS failed",
     error: "Twilio rejected request",
@@ -24,11 +23,10 @@ test("recent delivery errors keep only bounded production failures from the last
 })
 
 test("health failure alerts persist owner-only SMS intent and mark internal tests", () => {
-  const now = new Date("2026-09-27T12:01:00Z")
-  const alert = buildHealthMonitorFailureAlert("1234-2", {}, now)
-  const sameBucket = buildHealthMonitorFailureAlert("9876-4", {}, new Date("2026-09-27T17:59:00Z"))
-  const nextBucket = buildHealthMonitorFailureAlert("5678-1", {}, new Date("2026-09-27T18:00:00Z"))
-  const internal = buildHealthMonitorFailureAlert("1234-2", { isTest: true }, now)
+  const alert = buildHealthMonitorFailureAlert("1234-2", { episodeId: "episode-1" })
+  const sameEpisode = buildHealthMonitorFailureAlert("9876-4", { episodeId: "episode-1" })
+  const nextEpisode = buildHealthMonitorFailureAlert("5678-1", { episodeId: "episode-2" })
+  const internal = buildHealthMonitorFailureAlert("1234-2", { episodeId: "episode-1", isTest: true })
   assert.deepEqual({
     priority: alert.priority,
     stock: alert.stock,
@@ -46,17 +44,17 @@ test("health failure alerts persist owner-only SMS intent and mark internal test
     capExempt: true,
     quietHoursExempt: true,
     isTest: false,
-    dedupeKey: "health-monitor:2026-09-27T12",
+    dedupeKey: "health-monitor:episode-1",
   })
   assert.equal(alert.actionDetail.runId, "1234-2")
-  assert.equal(sameBucket.dedupeKey, alert.dedupeKey)
-  assert.notEqual(nextBucket.dedupeKey, alert.dedupeKey)
+  assert.equal(sameEpisode.dedupeKey, alert.dedupeKey)
+  assert.notEqual(nextEpisode.dedupeKey, alert.dedupeKey)
   assert.equal(internal.isTest, true)
   assert.equal(internal.actionDetail.isTest, true)
   assert.match(internal.title, /^\[INTERNAL TEST\]/)
-  assert.equal(internal.dedupeKey, "health-monitor:test:2026-09-27T12")
+  assert.equal(internal.dedupeKey, "health-monitor:test:episode-1")
   assert.notEqual(internal.dedupeKey, alert.dedupeKey)
-  assert.equal(buildHealthMonitorFailureAlert("not safe/for shell"), null)
+  assert.equal(buildHealthMonitorFailureAlert("not safe/for shell", { episodeId: "episode-1" }), null)
 })
 
 test("health and Updates surface owner-visible recent errors, and the backup uses the shared monitor", () => {

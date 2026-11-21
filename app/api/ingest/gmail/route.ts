@@ -17,6 +17,7 @@ import { GMAIL_MESSAGE_CAP, canAdvanceGmailCheckpoint, pendingGmailMessageIds, s
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
+const GMAIL_RETRY_CAP = 5
 
 async function ingestPayment(messageId: string, occurredAt: string, subject: string, body: string, isTest: boolean) {
   const facts = extractQuickBooksPaymentFacts({ subject, body })
@@ -174,10 +175,11 @@ export async function GET(req: Request) {
     const state = (await sql`SELECT value FROM sync_state WHERE key = 'gmail'::text LIMIT 1`) as { value: { historyId?: string } }[]
     historyId = state[0]?.value?.historyId ?? null
   }
-  // A retry can stay pending for a day. Poll from the checkpoint's observed
-  // history when the batch has room, keeping older pending work first.
-  if (ids.length < GMAIL_MESSAGE_CAP) {
+  // Poll from the observed cursor even while a full batch of retries waits.
+  let listingError: string | null = null
+  try {
     let listing
+    let observedHistoryId = historyId
     if (historyId) {
       try { listing = await listGmailMessageIds(token, historyId) }
       catch (error) {
@@ -187,21 +189,31 @@ export async function GET(req: Request) {
     if (!listing) {
       // Capture the cursor first so mail arriving during the fallback remains
       // eligible for the next incremental listing.
-      historyId = await getMailboxHistoryId(token)
+      observedHistoryId = await getMailboxHistoryId(token)
       listing = await listGmailMessageIds(token, null)
     }
     ids = [...new Set([...ids, ...listing.ids.reverse()])]
-    historyId = listing.historyId ?? historyId
-    if (ids.length > 0) {
-      await sql`
-        INSERT INTO sync_state (key, value, updated_at)
-        VALUES ('gmail-ingest-checkpoint'::text, ${JSON.stringify({ pendingIds: ids, historyId })}::jsonb, now())
-        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
-    }
+    historyId = listing.historyId ?? observedHistoryId
+  } catch (error) {
+    if (ids.length < GMAIL_MESSAGE_CAP) throw error
+    // A full saved batch can still drain while listing is unavailable.
+    listingError = (error instanceof Error ? error.message : String(error)).slice(0, 1000)
   }
-  const batch = splitGmailMessageBatch(ids)
+  if (listingError === null && ids.length > 0) {
+    await sql`
+      INSERT INTO sync_state (key, value, updated_at)
+      VALUES ('gmail-ingest-checkpoint'::text, ${JSON.stringify({ pendingIds: ids, historyId })}::jsonb, now())
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
+  }
+  const failureRows = ids.length > 0 ? (await sql`
+    SELECT message_id FROM gmail_ingest_failures WHERE message_id = ANY(${ids}::text[])`) as { message_id: string }[] : []
+  const failedIds = new Set(failureRows.map(({ message_id }) => message_id))
+  const freshIds = ids.filter((id) => !failedIds.has(id))
+  const queuedRetries = ids.filter((id) => failedIds.has(id))
+  const batch = splitGmailMessageBatch([...freshIds, ...queuedRetries.slice(0, GMAIL_RETRY_CAP)])
+  const remaining = [...batch.remaining, ...queuedRetries.slice(GMAIL_RETRY_CAP)]
   const counters = { scanned: batch.batch.length, inserted: 0, payments: 0, skipped: 0, gone: 0, failures: 0, deadLettered: 0 }
-  let pendingIds = batch.remaining
+  let pendingIds = remaining
   const retryIds: string[] = []
   for (const [messageIndex, id] of batch.batch.entries()) {
     const firstFailureKey = `gmail-ingest-first-failure:${id}`
@@ -257,7 +269,10 @@ export async function GET(req: Request) {
       const customerEmail = sent ? to : from
       if (!customerEmail || !customerEmail.includes("@")) { counters.skipped++; continue }
       const mapped = (await sql`
-        SELECT et.lead_id, et.person_id FROM external_threads et
+        SELECT et.lead_id,
+          CASE WHEN et.person_id IS NULL AND l.intake_key = ${`gmail:${id}`}::text THEN NULL
+            ELSE COALESCE(et.person_id, l.person_id) END AS person_id
+        FROM external_threads et
         JOIN leads l ON l.id = et.lead_id
         WHERE et.provider = 'gmail'::text AND et.external_thread_id = ${message.threadId}::text
           AND l.is_test = ${isTest}::boolean
@@ -269,7 +284,17 @@ export async function GET(req: Request) {
       const mappedPerson = mapped[0]?.person_id ? await getPerson(mapped[0].person_id) : null
       const conversation = mapped[0] && mappedPerson
         ? { person: mappedPerson, leadId: Number(mapped[0].lead_id), createdLead: false }
-        : await resolveEmailConversation({ messageId: id, email: customerEmail, displayName: emailName(sent ? headers.to : headers.from), body, isTest, source: sent ? "email-out" : "email-in" })
+        : await resolveEmailConversation({
+          messageId: id,
+          threadId: message.threadId,
+          senderEmail: from,
+          receivedAt: occurredAt,
+          email: customerEmail,
+          displayName: emailName(sent ? headers.to : headers.from),
+          body,
+          isTest,
+          source: sent ? "email-out" : "email-in",
+        })
       await sql`
         INSERT INTO external_threads (provider, external_thread_id, lead_id, person_id)
         VALUES ('gmail'::text, ${message.threadId}::text, ${conversation.leadId}::bigint, ${conversation.person.id}::bigint)
@@ -367,7 +392,7 @@ export async function GET(req: Request) {
     }
     finally {
       if (needsRetry) retryIds.push(id)
-      pendingIds = pendingGmailMessageIds({ batch: batch.batch, remaining: batch.remaining, processedIndex: messageIndex, retryIds })
+      pendingIds = pendingGmailMessageIds({ batch: batch.batch, remaining, processedIndex: messageIndex, retryIds })
       // Retire the active retry state atomically with the checkpoint.
       await sql`
         WITH cleared_retry AS (
@@ -381,15 +406,19 @@ export async function GET(req: Request) {
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
     }
   }
-  const checkpointAdvanced = canAdvanceGmailCheckpoint({ failures: counters.failures, pendingIds })
+  const checkpointAdvanced = canAdvanceGmailCheckpoint({ failures: counters.failures, pendingIds }) && listingError === null
   if (checkpointAdvanced) {
     await sql`
       INSERT INTO sync_state (key, value, updated_at) VALUES ('gmail'::text, ${JSON.stringify({ historyId })}::jsonb, now())
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
     await sql`DELETE FROM sync_state WHERE key = 'gmail-ingest-checkpoint'::text`
   }
-  runOk = counters.failures === 0
   runDetail = { ...counters, pending: pendingIds.length, historyId, checkpointAdvanced }
+  if (listingError !== null) {
+    runDetail.error = listingError
+    return Response.json({ ok: false, ...runDetail }, { status: 502 })
+  }
+  runOk = counters.failures === 0
   return Response.json({ ok: runOk, ...counters, pending: pendingIds.length, historyId, checkpointAdvanced })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

@@ -15,17 +15,14 @@ export type HealthMonitorFailureAlert = {
   dedupeKey: string
 }
 
-export function buildHealthMonitorFailureAlert(runId: string, { isTest = false, reason }: { isTest?: boolean; reason?: HealthMonitorFailureReason } = {}, now: Date = new Date()) : HealthMonitorFailureAlert | null {
+export function buildHealthMonitorFailureAlert(runId: string, { episodeId, isTest = false, reason }: { episodeId: string; isTest?: boolean; reason?: HealthMonitorFailureReason }): HealthMonitorFailureAlert | null {
   const stableRunId = String(runId ?? "").trim()
   if (!/^[a-zA-Z0-9-]{1,80}$/.test(stableRunId)) return null
-  const timestamp = new Date(now)
-  if (!Number.isFinite(timestamp.getTime())) return null
 
   const marker = isTest ? "[INTERNAL TEST] " : ""
-  const bucket = `${timestamp.toISOString().slice(0, 10)}T${String(Math.floor(timestamp.getUTCHours() / 6) * 6).padStart(2, "0")}`
   const detail = reason === "gmail-stale"
     ? "Gmail has not synced successfully in over an hour."
-    : "Two consecutive production health checks failed."
+    : "Production health checks have been failing for at least 30 minutes."
   return {
     priority: "interrupt",
     stock: "red",
@@ -38,6 +35,6 @@ export function buildHealthMonitorFailureAlert(runId: string, { isTest = false, 
     quietHoursExempt: true,
     isTest,
     actionDetail: { source: "health-monitor", runId: stableRunId, isTest, reason },
-    dedupeKey: `health-monitor:${isTest ? "test:" : ""}${bucket}`,
+    dedupeKey: `health-monitor:${isTest ? "test:" : ""}${episodeId}`,
   }
 }

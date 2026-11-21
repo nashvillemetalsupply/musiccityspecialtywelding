@@ -26,6 +26,8 @@ const baseInput = {
   displayName: "Alex Customer", email: "alex@example.com", subject: "Gate repair", body: "Can you repair my gate?",
   headers: { "message-id": "<customer-message@example.com>" }, categorizedNoise: false, isTest: false,
 }
+const gmailInternalDate = "1793880000000"
+const gmailReceivedAt = new Date(Number(gmailInternalDate)).toISOString()
 
 function harness({ env: overrides = {}, ownOperator = false, provider = "accepted", intentFailure = false } = {}) {
   const env = { MCSW_EMAIL_IN_ACK: "1", RESEND_API_KEY: "synthetic-key", QUOTE_FROM_EMAIL: "Shop <shop@shop.example>", ...overrides }
@@ -182,17 +184,18 @@ test("message ID is a stable fallback key and malformed reply headers cannot inj
   assert.doesNotMatch(sent.payload.subject, /[\r\n]/)
 })
 
-function gmailHarness({ existingThread = false, sent = false, email = baseInput.email, crashBeforeAttach = false } = {}) {
+function gmailHarness({ existingThread = false, legacyThread = false, sent = false, email = baseInput.email, crashBeforeAttach = false, crashAfterAttach = false } = {}) {
   const h = harness()
   const leads = []
   const receipts = []
+  const attachments = []
   const alerts = new Map()
   const attachmentStarted = Promise.withResolvers()
   const crashedProcess = Promise.withResolvers()
   const leaseMs = 8 * 60 * 1000
   let now = Date.parse("2026-11-21T02:00:00Z")
   let leaseUpdatedAt = null
-  let mappedLeadId = existingThread ? 7 : null
+  let mappedLeadId = existingThread || legacyThread ? 7 : null
   let checkpoint = null
   const headers = { from: sent ? "shop@shop.example" : email, to: sent ? email : "shop@shop.example", subject: baseInput.subject, ...baseInput.headers }
   const person = { id: 3, display_name: baseInput.displayName, is_test: false, phones: [] }
@@ -210,6 +213,7 @@ function gmailHarness({ existingThread = false, sent = false, email = baseInput.
       return []
     }
     if (query.startsWith("SELECT value FROM sync_state")) return checkpoint ? [{ value: checkpoint }] : []
+    if (query.startsWith("SELECT message_id FROM gmail_ingest_failures")) return []
     if (query.includes("INSERT INTO sync_state") && query.includes("gmail-ingest-checkpoint")) {
       checkpoint = JSON.parse(values.at(-1))
       return []
@@ -218,12 +222,37 @@ function gmailHarness({ existingThread = false, sent = false, email = baseInput.
       checkpoint = null
       return []
     }
-    if (query.startsWith("SELECT et.lead_id")) return mappedLeadId ? [{ lead_id: mappedLeadId, person_id: person.id }] : []
+    if (query.startsWith("SELECT et.lead_id")) {
+      if (!mappedLeadId) return []
+      const lead = readLead(mappedLeadId)
+      const resume = values[0] === lead?.intake_key && query.includes("et.person_id IS NULL AND l.intake_key")
+      return [{ lead_id: mappedLeadId, person_id: legacyThread ? resume ? null : lead?.person_id ?? null : person.id }]
+    }
     if (query.startsWith("INSERT INTO external_threads")) {
       mappedLeadId ??= values[1]
       return []
     }
     if (query.includes("FROM leads WHERE intake_key")) return leads.filter((lead) => lead.intake_key === values[0])
+    if (query.startsWith("WITH legacy_matches AS")) {
+      const [messageId, attachmentMessageId, mappedThreadId, receiptThreadId,
+        receiptSender, receiptTime, leadSender, leadTime, intakeKey, isTest] = values
+      assert.match(query, /candidate\.intake_key = '' AND candidate\.person_id IS NULL/)
+      assert.match(query, /ORDER BY evidence\.priority, candidate\.id/)
+      const gmailReceipts = receipts.filter((event) => event.kind === "email.in" || event.kind === "email.out")
+      const byEvidence = [
+        [...gmailReceipts.filter((event) => event.externalId === messageId).map((event) => event.leadId),
+          ...attachments.filter((row) => row.messageId === attachmentMessageId).map((row) => row.leadId)],
+        [...(mappedThreadId === baseInput.threadId && mappedLeadId ? [mappedLeadId] : []),
+          ...gmailReceipts.filter((event) => event.detail?.threadId === receiptThreadId).map((event) => event.leadId)],
+        [...gmailReceipts.filter((event) => event.detail?.from === receiptSender && event.occurredAt === receiptTime).map((event) => event.leadId),
+          ...leads.filter((lead) => lead.source === "email-in" && lead.email === leadSender && lead.created_at === leadTime).map((lead) => lead.id)],
+      ]
+      const legacy = byEvidence.flatMap((matches) => matches.sort((a, b) => a - b)).map(readLead)
+        .find((lead) => lead?.intake_key === "" && lead.person_id === null && lead.is_test === isTest)
+      if (!legacy) return []
+      legacy.intake_key = intakeKey
+      return [{ id: legacy.id }]
+    }
     if (query.startsWith("WITH inserted_lead")) {
       const lead = {
         id: leads.length + 7, public_id: values[0], person_id: null,
@@ -237,6 +266,11 @@ function gmailHarness({ existingThread = false, sent = false, email = baseInput.
     if (query.startsWith("SELECT person_id, is_test FROM leads")) return [readLead(values[0])]
     if (query.startsWith("SELECT id FROM events") && query.includes("kind = 'form.quote'")) {
       return receipts.filter((event) => event.kind === "form.quote" && event.leadId === values[0])
+    }
+    if (query.startsWith("SELECT id FROM events") && query.includes("detail->>'threadId'")) {
+      const [leadId, currentMessageId, threadId] = values
+      return receipts.filter((event) => ["email.in", "email.out"].includes(event.kind)
+        && event.leadId === leadId && event.externalId !== currentMessageId && event.detail?.threadId === threadId)
     }
     if (query.startsWith("SELECT id FROM events")) {
       return receipts.filter((event) => event.kind === values[0] && event.externalId === values[1])
@@ -258,7 +292,7 @@ function gmailHarness({ existingThread = false, sent = false, email = baseInput.
       gmailConfigured: () => true, gmailAccessToken: async () => "synthetic-token",
       getMailboxHistoryId: async () => "1",
       listGmailMessageIds: async () => ({ ids: [baseInput.messageId], historyId: "1" }),
-      getGmailMessage: async () => ({ id: baseInput.messageId, threadId: baseInput.threadId, internalDate: "1793880000000", labelIds: sent ? ["SENT"] : [] }),
+      getGmailMessage: async () => ({ id: baseInput.messageId, threadId: baseInput.threadId, internalDate: gmailInternalDate, labelIds: sent ? ["SENT"] : [] }),
       gmailHeaders: () => headers, gmailHeaderValues: () => [], gmailPlaintext: () => baseInput.body,
       emailAddress: (value) => value, emailName: () => baseInput.displayName, gmailAttachmentDescriptors: () => [],
     }],
@@ -278,6 +312,11 @@ function gmailHarness({ existingThread = false, sent = false, email = baseInput.
           await crashedProcess.promise
         }
         readLead(leadId).person_id ??= personId
+        if (crashAfterAttach) {
+          crashAfterAttach = false
+          attachmentStarted.resolve()
+          await crashedProcess.promise
+        }
       },
       isReservedShopPhone: () => false,
     }],
@@ -291,7 +330,7 @@ function gmailHarness({ existingThread = false, sent = false, email = baseInput.
   fakes.set("@/lib/ingest", load("lib/ingest.ts", fakes, h.env))
   const route = load("app/api/ingest/gmail/route.ts", fakes, h.env)
   return {
-    ...h, leads, alerts, receipts, attachmentStarted: attachmentStarted.promise,
+    ...h, leads, alerts, receipts, attachments, attachmentStarted: attachmentStarted.promise,
     expireLease: () => { now += leaseMs + 1 },
     run: () => route.GET(new Request("https://fixture.example/api/ingest/gmail")),
   }
@@ -333,6 +372,58 @@ test("Gmail reuses an unattached lead after the crashed process's lease expires"
   assert.equal(h.alerts.size, 1)
   assert.equal(h.receipts.filter((event) => event.kind === "email.in").length, 1)
 })
+
+test("Gmail finishes a legacy thread lead's creation receipt after an interruption following attachment", async () => {
+  const h = gmailHarness({ legacyThread: true, crashAfterAttach: true })
+  const lead = {
+    id: 7, public_id: "legacy-lead", person_id: null, source: "email-in", is_test: false, intake_key: "",
+    first_name: baseInput.displayName, last_name: "", phone: "", email: baseInput.email,
+  }
+  h.leads.push(lead)
+  const firstRun = h.run()
+  await Promise.race([h.attachmentStarted, firstRun.then(() => {
+    throw new Error("The first run completed without crashing after person attachment")
+  })])
+  assert.equal(lead.person_id, 3)
+  assert.equal(lead.intake_key, `gmail:${baseInput.messageId}`)
+  assert.equal(h.receipts.length, 0)
+
+  h.expireLease()
+  const replay = await h.run()
+  assert.equal(replay.status, 200)
+  assert.deepEqual(h.receipts.map(({ kind }) => kind), ["form.quote", "email.in"])
+  assert.equal(h.leads.length, 1)
+  assert.equal(h.effects.sends.length, 0)
+})
+
+for (const evidence of ["message receipt", "attachment receipt", "thread receipt", "external thread", "sender and receipt time"]) {
+  test(`Gmail reuses an unkeyed, unattached lead by ${evidence}`, async () => {
+    const h = gmailHarness({ legacyThread: evidence === "external thread" })
+    const lead = {
+      id: 7, public_id: "legacy-lead", person_id: null, source: "email-in", is_test: false, intake_key: "",
+      first_name: baseInput.displayName, last_name: "", phone: "", email: baseInput.email,
+      created_at: evidence === "sender and receipt time" ? gmailReceivedAt : "2026-11-21T02:00:00.000Z",
+    }
+    h.leads.push(lead)
+    if (evidence === "message receipt" || evidence === "thread receipt") h.receipts.push({
+      id: 100, kind: "email.in", leadId: lead.id,
+      externalId: evidence === "message receipt" ? baseInput.messageId : "earlier-message",
+      occurredAt: lead.created_at,
+      detail: { threadId: evidence === "thread receipt" ? baseInput.threadId : "older-thread", from: baseInput.email },
+    })
+    if (evidence === "attachment receipt") h.attachments.push({ messageId: baseInput.messageId, leadId: lead.id })
+
+    const replay = await h.run()
+    assert.equal(replay.status, 200)
+    assert.equal(h.leads.length, 1)
+    assert.equal(lead.person_id, 3)
+    assert.equal(lead.intake_key, `gmail:${baseInput.messageId}`)
+    assert.equal(h.receipts.findLast((event) => event.kind === "email.in")?.leadId, lead.id)
+    if (evidence === "thread receipt") assert.equal(h.effects.sends.length, 0)
+    assert.equal((await h.run()).status, 200)
+    assert.equal(h.leads.length, 1)
+  })
+}
 
 for (const [name, options] of [
   ["reply in an existing thread", { existingThread: true }],

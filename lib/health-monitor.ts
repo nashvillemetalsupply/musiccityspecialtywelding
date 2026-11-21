@@ -7,6 +7,7 @@ import { isAuthorizedCron } from "@/lib/ops-auth"
 
 const responseHeaders = { "Cache-Control": "no-store" }
 const gmailPageAgeMs = 60 * 60_000
+const failedHealthPageAgeMs = 30 * 60_000
 
 type HealthSnapshot = {
   ok?: boolean
@@ -49,63 +50,87 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
   const job = isTest ? "health-monitor-test" : "health-monitor"
   const holder = randomUUID()
   const sql = getSql()
-  // Both schedulers share one lease. The cooldown collapses delayed duplicate
-  // calls so one failing probe cannot count as two consecutive evaluations.
+  // The fixed lease outlives the function's 60-second runtime and coalesces
+  // nearby triggers. Its expiration avoids a release write on every run.
   const [lease] = (await sql`
     INSERT INTO automation_leases (key, holder, lease_expires_at, updated_at)
-    VALUES (${job}::text, ${holder}::text, now() + interval '2 minutes', now())
+    VALUES (${job}::text, ${holder}::text, now() + interval '10 minutes', now())
     ON CONFLICT (key) DO UPDATE SET
       holder = EXCLUDED.holder, lease_expires_at = EXCLUDED.lease_expires_at, updated_at = now()
     WHERE automation_leases.lease_expires_at <= now()
-      AND (automation_leases.last_finished_at IS NULL
-        OR automation_leases.last_finished_at <= now() - interval '10 minutes')
     RETURNING key`) as { key: string }[]
   if (!lease) {
     return Response.json({ ok: true, skipped: true }, { status: 202, headers: responseHeaders })
   }
 
-  try {
-    const health = await evaluateHealth(readHealth)
-    const [state] = (await sql`
-      SELECT
-        (SELECT ran_at FROM automation_runs WHERE job = 'gmail-ingest'::text AND ok
-          ORDER BY ran_at DESC LIMIT 1) AS last_gmail_success_at,
-        (SELECT ok FROM automation_runs WHERE job = ${job}::text
-          ORDER BY ran_at DESC, id DESC LIMIT 1) AS previous_ok,
-        EXISTS (SELECT 1 FROM notifications
-          WHERE is_test = ${isTest}::boolean AND dedupe_key LIKE 'health-monitor:%'
-            AND created_at > now() - interval '6 hours') AS recent_page`) as {
-      last_gmail_success_at: string | null
-      previous_ok: boolean | null
-      recent_page: boolean
-    }[]
-    const now = new Date()
-    const lastGmailSuccessAt = state.last_gmail_success_at
-    // A missing success timestamp has no age. The health gate can still fail
-    // and page once a second independent evaluation also fails.
-    const reason = lastGmailSuccessAt && automationRunIsStale(lastGmailSuccessAt, gmailPageAgeMs, now.getTime())
-      ? "gmail-stale"
-      : !health.ok && state.previous_ok === false ? "consecutive-failures" : null
-    await sql`
-      INSERT INTO automation_runs (job, ok, detail)
-      VALUES (${job}::text, ${health.ok}::boolean,
-        ${JSON.stringify({ runId, isTest, reason, lastGmailSuccessAt, status: health.status })}::jsonb)`
+  const health = await evaluateHealth(readHealth)
+  // Older runs lack the carried state. Reconstruct their failure streak and
+  // adopt a recorded page only if there has been no recovery since it filed.
+  const [state] = (await sql`
+    WITH previous AS (
+      SELECT ok, detail FROM automation_runs WHERE job = ${job}::text
+      ORDER BY ran_at DESC, id DESC LIMIT 1
+    ), last_pass AS (
+      SELECT ran_at, id FROM automation_runs WHERE job = ${job}::text AND ok
+      ORDER BY ran_at DESC, id DESC LIMIT 1
+    )
+    SELECT
+      COALESCE((SELECT ran_at FROM automation_runs WHERE job = 'gmail-ingest'::text AND ok
+        ORDER BY ran_at DESC LIMIT 1), (previous.detail->>'lastGmailSuccessAt')::timestamptz) AS last_gmail_success_at,
+      CASE WHEN NOT previous.ok THEN COALESCE((previous.detail->>'firstFailedAt')::timestamptz,
+        (SELECT failed.ran_at FROM automation_runs AS failed
+          WHERE failed.job = ${job}::text AND NOT failed.ok AND NOT EXISTS (
+            SELECT 1 FROM last_pass WHERE (failed.ran_at, failed.id) <= (last_pass.ran_at, last_pass.id)
+          ) ORDER BY failed.ran_at, failed.id LIMIT 1)) END AS first_failed_at,
+      CASE
+        WHEN previous.detail ? 'outageKey' THEN previous.detail->>'outageKey'
+        WHEN previous.detail->>'reason' IS NOT NULL THEN (
+          SELECT notice.dedupe_key FROM notifications AS notice
+          WHERE notice.is_test = ${isTest}::boolean AND notice.dedupe_key LIKE 'health-monitor:%'
+            AND notice.created_at >= (SELECT min(ran_at) FROM automation_runs WHERE job = ${job}::text)
+            AND NOT EXISTS (
+              SELECT 1 FROM automation_runs AS recovered WHERE recovered.job = ${job}::text
+                AND recovered.ran_at >= notice.created_at AND recovered.detail->>'reason' IS NULL
+            )
+          ORDER BY notice.created_at DESC LIMIT 1
+        )
+      END AS outage_key
+    FROM (SELECT 1) AS anchor LEFT JOIN previous ON true`) as {
+    last_gmail_success_at: string | null
+    first_failed_at: string | null
+    outage_key: string | null
+  }[]
+  const now = new Date()
+  const lastGmailSuccessAt = state.last_gmail_success_at
+  const firstFailedAt = health.ok ? null : state.first_failed_at ?? now.toISOString()
+  const reason = lastGmailSuccessAt && automationRunIsStale(lastGmailSuccessAt, gmailPageAgeMs, now.getTime())
+    ? "gmail-stale"
+    : firstFailedAt && now.getTime() - new Date(firstFailedAt).getTime() >= failedHealthPageAgeMs
+      ? "consecutive-failures" : null
+  const candidateAlert = reason ? buildHealthMonitorFailureAlert(runId, { episodeId: holder, isTest, reason }) : null
+  const outageKey = candidateAlert ? state.outage_key ?? candidateAlert.dedupeKey : null
+  await sql`
+    INSERT INTO automation_runs (job, ok, detail)
+    VALUES (${job}::text, ${health.ok}::boolean,
+      ${JSON.stringify({ runId, isTest, reason, lastGmailSuccessAt, status: health.status, firstFailedAt, outageKey })}::jsonb)`
 
-    const alert = reason && !state.recent_page ? buildHealthMonitorFailureAlert(runId, { isTest, reason }, now) : null
-    // notifyAll persists the deduplicated owner SMS before the provider send.
-    const deliveries = alert ? await notifyAll(alert) : []
-    return Response.json({
-      ok: true,
-      evaluationOk: health.ok,
-      reason,
-      persisted: deliveries.filter((delivery) => delivery.id > 0).length,
-      sent: deliveries.filter((delivery) => delivery.sent).length,
-      isTest,
-    }, { status: 202, headers: responseHeaders })
-  } finally {
-    await sql`
-      UPDATE automation_leases SET holder = ''::text, lease_expires_at = now(),
-        last_finished_at = now(), updated_at = now()
-      WHERE key = ${job}::text AND holder = ${holder}::text`
+  const alert = candidateAlert && outageKey ? { ...candidateAlert, dedupeKey: outageKey } : null
+  let pageRecorded = false
+  if (alert && state.outage_key) {
+    // A crash before notification persistence leaves this episode eligible to
+    // page on the next evaluation. The notification key guards its SMS intent.
+    const [page] = (await sql`
+      SELECT EXISTS (SELECT 1 FROM notifications
+        WHERE is_test = ${isTest}::boolean AND dedupe_key = ${alert.dedupeKey}::text) AS recorded`) as { recorded: boolean }[]
+    pageRecorded = page.recorded
   }
+  const deliveries = alert && !pageRecorded ? await notifyAll(alert) : []
+  return Response.json({
+    ok: true,
+    evaluationOk: health.ok,
+    reason,
+    persisted: deliveries.filter((delivery) => delivery.id > 0).length,
+    sent: deliveries.filter((delivery) => delivery.sent).length,
+    isTest,
+  }, { status: 202, headers: responseHeaders })
 }

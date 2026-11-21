@@ -141,6 +141,9 @@ export async function resolvePhoneConversation(input: {
 
 export async function resolveEmailConversation(input: {
   messageId: string
+  threadId: string
+  senderEmail: string
+  receivedAt: string
   email: string
   displayName?: string
   body?: string
@@ -156,9 +159,45 @@ export async function resolveEmailConversation(input: {
   if (!person) throw new Error("Customer record could not be created.")
   const intakeKey = `gmail:${input.messageId}`
   const sql = getSql()
-  const [saved] = (await sql`
+  let [saved] = (await sql`
     SELECT id FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as { id: number }[]
-  // The message's own lead takes precedence even if its person link never committed.
+  // Give a legacy lead the durable key so createLead can resume its attachment
+  // and creation receipt, including if this run is interrupted again.
+  if (!saved) {
+    [saved] = (await sql`
+      WITH legacy_matches AS (
+        SELECT lead_id, 1 AS priority
+        FROM events
+        WHERE kind IN ('email.in', 'email.out') AND external_id = ${input.messageId}::text
+        UNION ALL
+        SELECT lead_id, 1 FROM ingest_attachments
+        WHERE provider = 'gmail' AND external_message_id = ${input.messageId}::text
+        UNION ALL
+        SELECT lead_id, 2 FROM external_threads
+        WHERE provider = 'gmail' AND external_thread_id = ${input.threadId}::text
+        UNION ALL
+        SELECT lead_id, 2 FROM events
+        WHERE kind IN ('email.in', 'email.out') AND detail->>'threadId' = ${input.threadId}::text
+        UNION ALL
+        SELECT lead_id, 3 FROM events
+        WHERE kind IN ('email.in', 'email.out') AND detail->>'from' = ${input.senderEmail}::text
+          AND occurred_at = ${input.receivedAt}::timestamptz
+        UNION ALL
+        SELECT id AS lead_id, 3 FROM leads
+        WHERE source = 'email-in' AND email = ${input.senderEmail}::text
+          AND created_at = ${input.receivedAt}::timestamptz
+      )
+      UPDATE leads SET intake_key = ${intakeKey}::text
+      WHERE intake_key = '' AND person_id IS NULL AND id = (
+        SELECT candidate.id FROM legacy_matches evidence
+        JOIN leads candidate ON candidate.id = evidence.lead_id
+        WHERE candidate.intake_key = '' AND candidate.person_id IS NULL
+          AND candidate.is_test = ${isTest}::boolean
+        ORDER BY evidence.priority, candidate.id
+        LIMIT 1
+      )
+      RETURNING id`) as { id: number }[]
+  }
   if (!saved) {
     const existingLead = await findRecentOpenLeadForPerson(person.id, person.is_test)
     if (existingLead) return { person, leadId: existingLead, createdLead: false }
@@ -180,7 +219,15 @@ export async function resolveEmailConversation(input: {
     ? await getPerson(created.personId)
     : person
   if (!leadPerson || leadPerson.is_test !== created.isTest) throw new Error("The Gmail lead's customer record could not be recovered.")
-  return { person: leadPerson, leadId: created.id, createdLead: true }
+  // A legacy thread can already have mail even when its mapping was never saved.
+  // Check the receipts on keyed replays too, since adoption can outlive a crash.
+  const [priorThreadReceipt] = saved ? (await sql`
+    SELECT id FROM events
+    WHERE lead_id = ${created.id}::bigint AND kind IN ('email.in', 'email.out')
+      AND external_id IS DISTINCT FROM ${input.messageId}::text
+      AND detail->>'threadId' = ${input.threadId}::text
+    LIMIT 1`) as { id: number }[] : []
+  return { person: leadPerson, leadId: created.id, createdLead: !priorThreadReceipt }
 }
 
 /** Recovers a call if the after-response enrichment was interrupted. */
