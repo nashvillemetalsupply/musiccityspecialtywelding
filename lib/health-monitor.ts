@@ -108,23 +108,26 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
     : firstFailedAt && now.getTime() - new Date(firstFailedAt).getTime() >= failedHealthPageAgeMs
       ? "consecutive-failures" : null
   const candidateAlert = reason ? buildHealthMonitorFailureAlert(runId, { episodeId: holder, isTest, reason }) : null
-  const outageKey = candidateAlert ? state.outage_key ?? candidateAlert.dedupeKey : null
+  const unhealthy = !health.ok || reason !== null
+  const outageKey = unhealthy ? (state.outage_key ?? candidateAlert?.dedupeKey ?? null) : null
   await sql`
     INSERT INTO automation_runs (job, ok, detail)
     VALUES (${job}::text, ${health.ok}::boolean,
       ${JSON.stringify({ runId, isTest, reason, lastGmailSuccessAt, status: health.status, firstFailedAt, outageKey })}::jsonb)`
 
-  const alert = candidateAlert && outageKey ? { ...candidateAlert, dedupeKey: outageKey } : null
-  let pageRecorded = false
-  if (alert && state.outage_key) {
-    // A crash before notification persistence leaves this episode eligible to
-    // page on the next evaluation. The notification key guards its SMS intent.
+  let deliveries: Awaited<ReturnType<typeof notifyAll>> = []
+  if (candidateAlert && outageKey) {
     const [page] = (await sql`
-      SELECT EXISTS (SELECT 1 FROM notifications
-        WHERE is_test = ${isTest}::boolean AND dedupe_key = ${alert.dedupeKey}::text) AS recorded`) as { recorded: boolean }[]
-    pageRecorded = page.recorded
+      SELECT (count(*) FILTER (WHERE delivery_status <> 'dead'))::int AS live,
+        count(DISTINCT dedupe_key)::int AS attempts
+      FROM notifications
+      WHERE is_test = ${isTest}::boolean AND starts_with(dedupe_key, ${outageKey}::text)`) as { live: number; attempts: number }[]
+    if (page.live === 0 && page.attempts < 4) {
+      const dedupeKey = page.attempts === 0 ? outageKey : `${outageKey}:${runId}`
+      const alert = { ...candidateAlert, dedupeKey }
+      deliveries = await notifyAll(alert)
+    }
   }
-  const deliveries = alert && !pageRecorded ? await notifyAll(alert) : []
   return Response.json({
     ok: true,
     evaluationOk: health.ok,

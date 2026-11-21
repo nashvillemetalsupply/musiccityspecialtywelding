@@ -17,6 +17,7 @@ function harness({
   pendingMessageIds = [messageId],
   legacyAttempts = 0,
   legacyLastAttempt = null,
+  authorized = true,
   list = async () => ({ ids: [], historyId }),
   profile = async () => historyId,
 } = {}) {
@@ -98,7 +99,10 @@ function harness({
   }
   const deps = {
     "next/server": { after() {} },
-    "@/lib/db": { getSql: () => sql },
+    "@/lib/db": { getSql: () => {
+      assert.ok(authorized, "An anonymous request must not open the database")
+      return sql
+    } },
     "@/lib/events": { recordEvent: async (event) => events.push(event) },
     "@/lib/extract": {},
     "@/lib/gmail": {
@@ -127,7 +131,7 @@ function harness({
     }) },
     "@/lib/email-in-ack": { acknowledgeNewEmailLead: async () => {} },
     "@/lib/notify": { notifyAll: async (alert) => { alerts.push(alert) } },
-    "@/lib/ops-auth": { isAuthorizedCron: () => true },
+    "@/lib/ops-auth": { isAuthorizedCron: () => authorized },
     "@/lib/gmail-routing.ts": {
       looksLikeIntuitPaymentEnvelope: () => false,
       isAuthenticatedIntuitPayment: () => false,
@@ -147,12 +151,14 @@ function harness({
     assert.ok(Object.hasOwn(deps, name), `Unexpected Gmail retry import: ${name}`)
     return deps[name]
   })
+  const get = () => route.exports.GET(new Request("https://fixture.invalid/api/ingest/gmail"))
   return {
     alerts,
     events,
     fetchedIds,
     listedSince,
     recordedRuns,
+    get,
     mailboxState: () => ({ checkpoint, committedHistory }),
     retryState: () => {
       const { attempts, firstFailure, deadLettered } = retries.get(messageId)
@@ -161,11 +167,15 @@ function harness({
     async run(instant, recovered = false) {
       now = Date.parse(instant)
       messageAvailable = recovered
-      const response = await route.exports.GET(new Request("https://fixture.invalid/api/ingest/gmail"))
-      return response.json()
+      return (await get()).json()
     },
   }
 }
+
+test("the Gmail cron endpoint rejects an anonymous GET before touching the database", async () => {
+  const h = harness({ authorized: false })
+  assert.equal((await h.get()).status, 401)
+})
 
 test("Gmail ingests a message at 02:50 after five failed attempts from 02:00 through 02:45", async () => {
   const h = harness()

@@ -179,13 +179,13 @@ export async function resolveEmailConversation(input: {
         SELECT lead_id, 2 FROM events
         WHERE kind IN ('email.in', 'email.out') AND detail->>'threadId' = ${input.threadId}::text
         UNION ALL
-        SELECT lead_id, 3 FROM events
-        WHERE kind IN ('email.in', 'email.out') AND detail->>'from' = ${input.senderEmail}::text
-          AND occurred_at = ${input.receivedAt}::timestamptz
-        UNION ALL
-        SELECT id AS lead_id, 3 FROM leads
-        WHERE source = 'email-in' AND email = ${input.senderEmail}::text
-          AND created_at = ${input.receivedAt}::timestamptz
+        SELECT id, 3 FROM leads
+        WHERE source = ${input.source}::text AND lower(email) = lower(${input.email}::text)
+          AND created_at >= ${input.receivedAt}::timestamptz - interval '5 minutes'
+          AND NOT EXISTS (
+            SELECT 1 FROM events
+            WHERE events.lead_id = leads.id AND events.kind IN ('email.in', 'email.out')
+          )
       )
       UPDATE leads SET intake_key = ${intakeKey}::text
       WHERE intake_key = '' AND person_id IS NULL AND id = (
@@ -193,7 +193,9 @@ export async function resolveEmailConversation(input: {
         JOIN leads candidate ON candidate.id = evidence.lead_id
         WHERE candidate.intake_key = '' AND candidate.person_id IS NULL
           AND candidate.is_test = ${isTest}::boolean
-        ORDER BY evidence.priority, candidate.id
+        ORDER BY evidence.priority,
+          (candidate.message = left(${input.body ?? null}::text, 2000)) DESC NULLS LAST,
+          candidate.id
         LIMIT 1
       )
       RETURNING id`) as { id: number }[]

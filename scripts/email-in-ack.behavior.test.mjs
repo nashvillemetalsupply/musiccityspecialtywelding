@@ -235,19 +235,23 @@ function gmailHarness({ existingThread = false, legacyThread = false, sent = fal
     if (query.includes("FROM leads WHERE intake_key")) return leads.filter((lead) => lead.intake_key === values[0])
     if (query.startsWith("WITH legacy_matches AS")) {
       const [messageId, attachmentMessageId, mappedThreadId, receiptThreadId,
-        receiptSender, receiptTime, leadSender, leadTime, intakeKey, isTest] = values
+        source, email, receivedAt, intakeKey, isTest, body] = values
+      assert.match(query, /SELECT id, 3 FROM leads WHERE source = \? ::text AND lower\(email\) = lower\( \? ::text\) AND created_at >= \? ::timestamptz - interval '5 minutes'/)
+      assert.match(query, /NOT EXISTS \( SELECT 1 FROM events WHERE events\.lead_id = leads\.id AND events\.kind IN \('email\.in', 'email\.out'\) \)/)
       assert.match(query, /candidate\.intake_key = '' AND candidate\.person_id IS NULL/)
-      assert.match(query, /ORDER BY evidence\.priority, candidate\.id/)
+      assert.match(query, /ORDER BY evidence\.priority, \(candidate\.message = left\( \? ::text, 2000\)\) DESC NULLS LAST, candidate\.id/)
       const gmailReceipts = receipts.filter((event) => event.kind === "email.in" || event.kind === "email.out")
+      const bodyMatches = (id) => body !== null && readLead(id)?.message === body.slice(0, 2000)
       const byEvidence = [
         [...gmailReceipts.filter((event) => event.externalId === messageId).map((event) => event.leadId),
           ...attachments.filter((row) => row.messageId === attachmentMessageId).map((row) => row.leadId)],
         [...(mappedThreadId === baseInput.threadId && mappedLeadId ? [mappedLeadId] : []),
           ...gmailReceipts.filter((event) => event.detail?.threadId === receiptThreadId).map((event) => event.leadId)],
-        [...gmailReceipts.filter((event) => event.detail?.from === receiptSender && event.occurredAt === receiptTime).map((event) => event.leadId),
-          ...leads.filter((lead) => lead.source === "email-in" && lead.email === leadSender && lead.created_at === leadTime).map((lead) => lead.id)],
+        leads.filter((lead) => lead.source === source && lead.email.toLowerCase() === email.toLowerCase()
+          && Date.parse(lead.created_at) >= Date.parse(receivedAt) - 5 * 60 * 1000
+          && !gmailReceipts.some((event) => event.leadId === lead.id)).map((lead) => lead.id),
       ]
-      const legacy = byEvidence.flatMap((matches) => matches.sort((a, b) => a - b)).map(readLead)
+      const legacy = byEvidence.flatMap((matches) => matches.sort((a, b) => Number(bodyMatches(b)) - Number(bodyMatches(a)) || a - b)).map(readLead)
         .find((lead) => lead?.intake_key === "" && lead.person_id === null && lead.is_test === isTest)
       if (!legacy) return []
       legacy.intake_key = intakeKey
@@ -396,13 +400,22 @@ test("Gmail finishes a legacy thread lead's creation receipt after an interrupti
   assert.equal(h.effects.sends.length, 0)
 })
 
-for (const evidence of ["message receipt", "attachment receipt", "thread receipt", "external thread", "sender and receipt time"]) {
-  test(`Gmail reuses an unkeyed, unattached lead by ${evidence}`, async () => {
+for (const [evidence, createdAt = "2026-11-21T02:00:00.000Z"] of [
+  ["message receipt"],
+  ["attachment receipt"],
+  ["thread receipt"],
+  ["external thread"],
+  ["sender and receipt time", gmailReceivedAt],
+  ["orphan inserted after receipt", new Date(Date.parse(gmailReceivedAt) + 60_000).toISOString()],
+]) {
+  const afterReceipt = evidence === "orphan inserted after receipt"
+  const name = afterReceipt ? "Gmail replays an orphan inserted after receipt to one lead" : `Gmail reuses an unkeyed, unattached lead by ${evidence}`
+  test(name, async () => {
     const h = gmailHarness({ legacyThread: evidence === "external thread" })
     const lead = {
       id: 7, public_id: "legacy-lead", person_id: null, source: "email-in", is_test: false, intake_key: "",
-      first_name: baseInput.displayName, last_name: "", phone: "", email: baseInput.email,
-      created_at: evidence === "sender and receipt time" ? gmailReceivedAt : "2026-11-21T02:00:00.000Z",
+      first_name: baseInput.displayName, last_name: "", phone: "", email: afterReceipt ? baseInput.email.toUpperCase() : baseInput.email,
+      created_at: createdAt, message: baseInput.body,
     }
     h.leads.push(lead)
     if (evidence === "message receipt" || evidence === "thread receipt") h.receipts.push({
