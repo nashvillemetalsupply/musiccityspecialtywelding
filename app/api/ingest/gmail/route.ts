@@ -162,7 +162,7 @@ export async function GET(req: Request) {
   }
   const checkpointRows = (await sql`SELECT value FROM sync_state WHERE key = 'gmail-ingest-checkpoint'::text LIMIT 1`) as { value: { pendingIds?: unknown; historyId?: unknown } }[]
   const savedCheckpoint = checkpointRows[0]?.value
-  let ids: string[]
+  let ids: string[] = []
   let historyId: string | null
   if (savedCheckpoint) {
     if (!Array.isArray(savedCheckpoint.pendingIds) || savedCheckpoint.pendingIds.some((id) => typeof id !== "string")) {
@@ -172,20 +172,40 @@ export async function GET(req: Request) {
     historyId = typeof savedCheckpoint.historyId === "string" ? savedCheckpoint.historyId : null
   } else {
     const state = (await sql`SELECT value FROM sync_state WHERE key = 'gmail'::text LIMIT 1`) as { value: { historyId?: string } }[]
+    historyId = state[0]?.value?.historyId ?? null
+  }
+  // A retry can stay pending for a day. Poll from the checkpoint's observed
+  // history when the batch has room, keeping older pending work first.
+  if (ids.length < GMAIL_MESSAGE_CAP) {
     let listing
-    try { listing = await listGmailMessageIds(token, state[0]?.value?.historyId ?? null) }
-    catch (error) {
-      if ((error as { status?: number }).status !== 404) throw error
+    if (historyId) {
+      try { listing = await listGmailMessageIds(token, historyId) }
+      catch (error) {
+        if ((error as { status?: number }).status !== 404) throw error
+      }
+    }
+    if (!listing) {
+      // Capture the cursor first so mail arriving during the fallback remains
+      // eligible for the next incremental listing.
+      historyId = await getMailboxHistoryId(token)
       listing = await listGmailMessageIds(token, null)
     }
-    ids = listing.ids.reverse()
-    historyId = listing.historyId || await getMailboxHistoryId(token)
+    ids = [...new Set([...ids, ...listing.ids.reverse()])]
+    historyId = listing.historyId ?? historyId
+    if (ids.length > 0) {
+      await sql`
+        INSERT INTO sync_state (key, value, updated_at)
+        VALUES ('gmail-ingest-checkpoint'::text, ${JSON.stringify({ pendingIds: ids, historyId })}::jsonb, now())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`
+    }
   }
   const batch = splitGmailMessageBatch(ids)
   const counters = { scanned: batch.batch.length, inserted: 0, payments: 0, skipped: 0, gone: 0, failures: 0, deadLettered: 0 }
   let pendingIds = batch.remaining
   const retryIds: string[] = []
   for (const [messageIndex, id] of batch.batch.entries()) {
+    const firstFailureKey = `gmail-ingest-first-failure:${id}`
+    let needsRetry = false
     let isTest = false
     try {
       let message
@@ -249,7 +269,7 @@ export async function GET(req: Request) {
       const mappedPerson = mapped[0]?.person_id ? await getPerson(mapped[0].person_id) : null
       const conversation = mapped[0] && mappedPerson
         ? { person: mappedPerson, leadId: Number(mapped[0].lead_id), createdLead: false }
-        : await resolveEmailConversation({ email: customerEmail, displayName: emailName(sent ? headers.to : headers.from), body, isTest, source: sent ? "email-out" : "email-in" })
+        : await resolveEmailConversation({ messageId: id, email: customerEmail, displayName: emailName(sent ? headers.to : headers.from), body, isTest, source: sent ? "email-out" : "email-in" })
       await sql`
         INSERT INTO external_threads (provider, external_thread_id, lead_id, person_id)
         VALUES ('gmail'::text, ${message.threadId}::text, ${conversation.leadId}::bigint, ${conversation.person.id}::bigint)
@@ -312,30 +332,50 @@ export async function GET(req: Request) {
       })
       after(() => processEvent(eventId).catch((error) => console.error("Email extraction failed:", error)))
     } catch (error) {
+      needsRetry = true
       const message = error instanceof Error ? error.message : String(error)
+      // Legacy rows only have the latest failure. Use it as a conservative
+      // starting point and retain the first known failure across later retries.
       const failures = (await sql`
+        WITH first_failure AS (
+          INSERT INTO sync_state (key, updated_at)
+          VALUES (
+            ${firstFailureKey}::text,
+            COALESCE((SELECT last_attempt_at FROM gmail_ingest_failures WHERE message_id = ${id}::text), now())
+          )
+          ON CONFLICT (key) DO UPDATE SET updated_at = sync_state.updated_at
+          RETURNING updated_at
+        )
         INSERT INTO gmail_ingest_failures (message_id, attempts, last_error, last_attempt_at)
         VALUES (${id}::text, 1, ${message.slice(0, 1000)}::text, now())
         ON CONFLICT (message_id) DO UPDATE SET
           attempts = gmail_ingest_failures.attempts + 1,
           last_error = EXCLUDED.last_error,
           last_attempt_at = now()
-        RETURNING attempts`) as { attempts: number }[]
+        RETURNING attempts, (SELECT updated_at <= now() - interval '24 hours' FROM first_failure) AS old_enough`) as { attempts: number; old_enough: boolean }[]
       const attempts = Number(failures[0]?.attempts ?? 1)
-      if (attempts >= 5) {
+      if (attempts >= 5 && failures[0]?.old_enough) {
         await sql`UPDATE gmail_ingest_failures SET dead_lettered_at = COALESCE(dead_lettered_at, now()) WHERE message_id = ${id}::text`
         const deadEventId = await recordEvent({ kind: "email.ingest-dead-letter", actorType: "system", externalId: `gmail-dead:${id}`, body: `${isTest ? "[INTERNAL TEST] " : ""}Gmail message could not be filed after ${attempts} attempts`, detail: { messageId: id, error: message, isTest } })
-        if (shouldNotifyGmailDeadLetter(isTest)) await notifyAll({ priority: "digest", stock: "red", title: "One Gmail update needs a human", body: "MCSW Jobs held it after five safe retries.", url: "/board/updates", sourceEventId: deadEventId, ownerOnly: true, dedupeKey: `gmail-dead:${id}` }).catch(() => undefined)
+        if (shouldNotifyGmailDeadLetter(isTest)) await notifyAll({ priority: "digest", stock: "red", title: "One Gmail update needs a human", body: `MCSW Jobs held it after ${attempts} failed attempts over at least 24 hours.`, url: "/board/updates", sourceEventId: deadEventId, ownerOnly: true, dedupeKey: `gmail-dead:${id}` }).catch(() => undefined)
         counters.deadLettered++
+        needsRetry = false
       } else {
         counters.failures++
-        retryIds.push(id)
       }
       console.error(`Gmail message ${id} failed:`, error)
     }
     finally {
+      if (needsRetry) retryIds.push(id)
       pendingIds = pendingGmailMessageIds({ batch: batch.batch, remaining: batch.remaining, processedIndex: messageIndex, retryIds })
+      // Retire the active retry state atomically with the checkpoint.
       await sql`
+        WITH cleared_retry AS (
+          DELETE FROM sync_state WHERE key = ${firstFailureKey}::text AND NOT ${needsRetry}::boolean
+        ), cleared_attempts AS (
+          DELETE FROM gmail_ingest_failures
+          WHERE message_id = ${id}::text AND NOT ${needsRetry}::boolean AND dead_lettered_at IS NULL
+        )
         INSERT INTO sync_state (key, value, updated_at)
         VALUES ('gmail-ingest-checkpoint'::text, ${JSON.stringify({ pendingIds, historyId })}::jsonb, now())
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`

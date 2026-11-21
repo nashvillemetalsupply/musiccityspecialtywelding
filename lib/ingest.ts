@@ -4,6 +4,7 @@ import {
   findOrCreatePerson,
   findOpenLeadResolutionForPerson,
   findRecentOpenLeadForPerson,
+  getPerson,
   normalizePhone,
   type PersonRow,
 } from "@/lib/people"
@@ -139,6 +140,7 @@ export async function resolvePhoneConversation(input: {
 }
 
 export async function resolveEmailConversation(input: {
+  messageId: string
   email: string
   displayName?: string
   body?: string
@@ -152,8 +154,15 @@ export async function resolveEmailConversation(input: {
     isTest,
   })
   if (!person) throw new Error("Customer record could not be created.")
-  const existingLead = await findRecentOpenLeadForPerson(person.id, person.is_test)
-  if (existingLead) return { person, leadId: existingLead, createdLead: false }
+  const intakeKey = `gmail:${input.messageId}`
+  const sql = getSql()
+  const [saved] = (await sql`
+    SELECT id FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as { id: number }[]
+  // The message's own lead takes precedence even if its person link never committed.
+  if (!saved) {
+    const existingLead = await findRecentOpenLeadForPerson(person.id, person.is_test)
+    if (existingLead) return { person, leadId: existingLead, createdLead: false }
+  }
   const created = await createLead({
     firstName: person.display_name || input.displayName || "Email customer",
     lastName: "",
@@ -166,9 +175,12 @@ export async function resolveEmailConversation(input: {
     gclid: "", utmSource: "", utmMedium: "", utmCampaign: "", utmTerm: "", utmContent: "",
     landingPage: "", referrer: "", ip: "", userAgent: "gmail-ingest",
     isTest,
-  }, { sourceOverride: input.source, actor: "system", firstResponseNow: input.source === "email-out" })
-  await attachLeadToPerson(created.id, person.id)
-  return { person, leadId: created.id, createdLead: true }
+  }, { sourceOverride: input.source, actor: "system", firstResponseNow: input.source === "email-out", intakeKey, personId: person.id })
+  const leadPerson = created.personId !== null && Number(created.personId) !== Number(person.id)
+    ? await getPerson(created.personId)
+    : person
+  if (!leadPerson || leadPerson.is_test !== created.isTest) throw new Error("The Gmail lead's customer record could not be recovered.")
+  return { person: leadPerson, leadId: created.id, createdLead: true }
 }
 
 /** Recovers a call if the after-response enrichment was interrupted. */

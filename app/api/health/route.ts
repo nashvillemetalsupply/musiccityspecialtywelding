@@ -15,8 +15,7 @@ import {
   type PermanentSmsRecipient,
 } from "@/lib/alert-failure-classifier.mjs"
 import { gmailConfigured } from "@/lib/gmail"
-import { buildHealthMonitorFailureAlert } from "@/lib/health-monitor-alert.ts"
-import { notifyAll } from "@/lib/notify"
+import { handleHealthMonitor } from "@/lib/health-monitor"
 import type { RecentDeliveryError } from "@/lib/delivery-errors.mjs"
 import {
   checkTwilioProviderReadiness,
@@ -38,6 +37,7 @@ import { evaluateInboundCallReceiptHealth, INBOUND_CALL_SILENCE_LIMIT_HOURS } fr
 import { createInProcessTtlCache } from "@/lib/in-process-cache.ts"
 
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 // The form takes roughly one lead a week, so four days of silence is the
 // normal state and a monitor that reddens on it is a monitor nobody reads --
@@ -744,20 +744,5 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!isAuthorizedCron(req)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401, headers: { "Cache-Control": "no-store" } })
-  }
-  const input = await req.json().catch(() => ({})) as { runId?: unknown; isTest?: unknown }
-  const alert = buildHealthMonitorFailureAlert(String(input.runId ?? ""), { isTest: input.isTest === true })
-  if (!alert) return Response.json({ error: "A valid runId is required." }, { status: 400, headers: { "Cache-Control": "no-store" } })
-
-  // notifyAll persists a deduplicated owner-only notification before its SMS
-  // side effect; isTest is carried into that durable intent and blocks sends.
-  const deliveries = await notifyAll(alert)
-  return Response.json({
-    ok: true,
-    persisted: deliveries.length,
-    sent: deliveries.filter((delivery) => delivery.sent).length,
-    isTest: alert.isTest,
-  }, { status: 202, headers: { "Cache-Control": "no-store" } })
+  return handleHealthMonitor(req, () => GET(req))
 }

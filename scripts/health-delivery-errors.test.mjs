@@ -34,6 +34,7 @@ test("health failure alerts persist owner-only SMS intent and mark internal test
     stock: alert.stock,
     ownerOnly: alert.ownerOnly,
     smsOnly: alert.smsOnly,
+    capExempt: alert.capExempt,
     quietHoursExempt: alert.quietHoursExempt,
     isTest: alert.isTest,
     dedupeKey: alert.dedupeKey,
@@ -42,6 +43,7 @@ test("health failure alerts persist owner-only SMS intent and mark internal test
     stock: "red",
     ownerOnly: true,
     smsOnly: true,
+    capExempt: true,
     quietHoursExempt: true,
     isTest: false,
     dedupeKey: "health-monitor:2026-09-27T12",
@@ -57,10 +59,11 @@ test("health failure alerts persist owner-only SMS intent and mark internal test
   assert.equal(buildHealthMonitorFailureAlert("not safe/for shell"), null)
 })
 
-test("health and Updates surface owner-visible recent errors, and workflow failure text uses the persisted alert endpoint", () => {
+test("health and Updates surface owner-visible recent errors, and the backup uses the shared monitor", () => {
   const query = source("lib/delivery-errors.ts")
   const health = source("app/api/health/route.ts")
   const healthPost = health.slice(health.indexOf("export async function POST"))
+  const monitor = source("lib/health-monitor.ts")
   const updates = source("app/board/updates/page.tsx")
   const workflow = source(".github/workflows/health-monitor.yml")
 
@@ -68,16 +71,24 @@ test("health and Updates surface owner-visible recent errors, and workflow failu
   assert.match(query, /COALESCE\(n\.delivery_last_attempt_at, n\.created_at\) >= now\(\) - interval '24 hours'/)
   assert.match(query, /WHERE recent\.is_test = false/)
   assert.match(health, /recentErrors: database\.recentDeliveryErrors/)
-  assert.match(healthPost, /if \(!isAuthorizedCron\(req\)\)/)
-  assert.ok(healthPost.indexOf("if (!isAuthorizedCron(req))") < healthPost.indexOf("await notifyAll(alert)"))
-  assert.match(healthPost, /const deliveries = await notifyAll\(alert\)/)
-  assert.match(healthPost, /isTest: input\.isTest === true/)
+  assert.match(healthPost, /handleHealthMonitor\(req, \(\) => GET\(req\)\)/)
+  assert.ok(monitor.indexOf("if (!isAuthorizedCron(req))") < monitor.indexOf("await notifyAll(alert)"))
+  assert.match(monitor, /isTest = input\?\.isTest === true/)
   assert.match(health, /recentDeliveryErrorsHealthy &&/)
   assert.match(updates, /operator\.role === "owner" \? listRecentDeliveryErrors\(\)/)
   assert.match(updates, /updates-delivery-title/)
-  assert.match(workflow, /- name: Text owner when the health monitor fails\s+if: failure\(\)/)
-  assert.match(workflow, /-X POST[\s\S]*api\/health/)
+  assert.match(workflow, /api\/health\/monitor/)
   assert.match(workflow, /Authorization: Bearer \$\{CRON_SECRET\}/)
   assert.match(workflow, /\.delivery\.recentErrors \| length == 0/)
   assert.match(workflow, /monthly-keepalive:[\s\S]*group: monthly-health-monitor-keepalive/)
+})
+
+test("Vercel evaluates health every 15 minutes and GitHub records healthy backup evaluations", () => {
+  const { crons } = JSON.parse(source("vercel.json"))
+  const workflow = source(".github/workflows/health-monitor.yml")
+  const backupJob = workflow.slice(workflow.indexOf("  backup-health-evaluation:"), workflow.indexOf("  monthly-keepalive:"))
+  assert.ok(crons.some(({ path, schedule }) => path === "/api/health/monitor" && schedule === "5,20,35,50 * * * *"))
+  assert.match(backupJob, /^  backup-health-evaluation:\s+runs-on: ubuntu-latest\s+timeout-minutes: 2\s+steps:/)
+  assert.match(backupJob, /curl -sS --max-time 65[\s\S]*api\/health\/monitor/)
+  assert.doesNotMatch(backupJob, /^    needs:/m)
 })

@@ -182,52 +182,119 @@ test("message ID is a stable fallback key and malformed reply headers cannot inj
   assert.doesNotMatch(sent.payload.subject, /[\r\n]/)
 })
 
-function gmailHarness({ existingThread = false, sent = false, email = baseInput.email } = {}) {
+function gmailHarness({ existingThread = false, sent = false, email = baseInput.email, crashBeforeAttach = false } = {}) {
   const h = harness()
-  const state = { mapped: existingThread, created: existingThread, inboundIds: new Map() }
+  const leads = []
+  const receipts = []
+  const alerts = new Map()
+  const attachmentStarted = Promise.withResolvers()
+  const crashedProcess = Promise.withResolvers()
+  const leaseMs = 8 * 60 * 1000
+  let now = Date.parse("2026-11-21T02:00:00Z")
+  let leaseUpdatedAt = null
+  let mappedLeadId = existingThread ? 7 : null
+  let checkpoint = null
   const headers = { from: sent ? "shop@shop.example" : email, to: sent ? email : "shop@shop.example", subject: baseInput.subject, ...baseInput.headers }
-  const person = { id: 3, display_name: baseInput.displayName, is_test: false }
+  const person = { id: 3, display_name: baseInput.displayName, is_test: false, phones: [] }
+  const readLead = (id) => leads.find((lead) => lead.id === id)
   const sql = async (strings, ...values) => {
     const query = strings.join(" ? ").replace(/\s+/g, " ").trim()
-    if (query.startsWith("INSERT INTO sync_state") && query.includes("gmail-ingest-lease")) return [{ key: "gmail-ingest-lease" }]
-    if (query.startsWith("SELECT value FROM sync_state")) return [{ value: { pendingIds: [baseInput.messageId], historyId: "1" } }]
-    if (query.startsWith("SELECT et.lead_id")) return state.mapped ? [{ lead_id: 7, person_id: 3 }] : []
-    if (query.startsWith("INSERT INTO external_threads")) { state.mapped = true; return [] }
+    if (query.startsWith("INSERT INTO sync_state") && query.includes("gmail-ingest-lease")) {
+      assert.match(query, /sync_state\.updated_at < now\(\) - interval '8 minutes'/)
+      if (leaseUpdatedAt !== null && leaseUpdatedAt >= now - leaseMs) return []
+      leaseUpdatedAt = now
+      return [{ key: "gmail-ingest-lease" }]
+    }
+    if (query.startsWith("UPDATE sync_state") && query.includes("gmail-ingest-lease")) {
+      leaseUpdatedAt = null
+      return []
+    }
+    if (query.startsWith("SELECT value FROM sync_state")) return checkpoint ? [{ value: checkpoint }] : []
+    if (query.includes("INSERT INTO sync_state") && query.includes("gmail-ingest-checkpoint")) {
+      checkpoint = JSON.parse(values.at(-1))
+      return []
+    }
+    if (query.startsWith("DELETE FROM sync_state") && query.includes("gmail-ingest-checkpoint")) {
+      checkpoint = null
+      return []
+    }
+    if (query.startsWith("SELECT et.lead_id")) return mappedLeadId ? [{ lead_id: mappedLeadId, person_id: person.id }] : []
+    if (query.startsWith("INSERT INTO external_threads")) {
+      mappedLeadId ??= values[1]
+      return []
+    }
+    if (query.includes("FROM leads WHERE intake_key")) return leads.filter((lead) => lead.intake_key === values[0])
+    if (query.startsWith("WITH inserted_lead")) {
+      const lead = {
+        id: leads.length + 7, public_id: values[0], person_id: null,
+        first_name: values[1], last_name: values[2], phone: values[3], email: values[4],
+        service: values[5], message: values[6], preferred_contact: values[7], photo_count: values[8],
+        source: values[9], is_test: values[20], intake_key: values[25],
+      }
+      leads.push(lead)
+      return [lead]
+    }
+    if (query.startsWith("SELECT person_id, is_test FROM leads")) return [readLead(values[0])]
+    if (query.startsWith("SELECT id FROM events") && query.includes("kind = 'form.quote'")) {
+      return receipts.filter((event) => event.kind === "form.quote" && event.leadId === values[0])
+    }
+    if (query.startsWith("SELECT id FROM events")) {
+      return receipts.filter((event) => event.kind === values[0] && event.externalId === values[1])
+    }
     if (query.startsWith("SELECT id FROM operators")) return [{ id: 2 }]
-    if (query.startsWith("SELECT id FROM events")) return [{ id: state.inboundIds.get(values[1]) }]
-    if (query.startsWith("INSERT INTO sync_state") || query.startsWith("UPDATE sync_state") || query.startsWith("DELETE FROM sync_state") || query.startsWith("INSERT INTO automation_runs")) return []
+    if (query.startsWith("INSERT INTO sync_state") || query.startsWith("INSERT INTO automation_runs")) return []
     throw new Error(`Unexpected Gmail SQL: ${query}`)
   }
   const fakes = new Map([
     ["next/server", { after() {} }], ["@/lib/db", { getSql: () => sql }],
     ["@/lib/events", { recordEvent: async (event) => {
-      if (state.inboundIds.has(event.externalId)) return null
-      const id = state.inboundIds.size + 100
-      state.inboundIds.set(event.externalId, id)
+      if (event.externalId && receipts.some((row) => row.kind === event.kind && row.externalId === event.externalId)) return null
+      const id = receipts.length + 100
+      receipts.push({ ...event, id })
       return id
     } }],
     ["@/lib/extract", { processEvent: async () => {} }],
     ["@/lib/gmail", {
       gmailConfigured: () => true, gmailAccessToken: async () => "synthetic-token",
+      getMailboxHistoryId: async () => "1",
+      listGmailMessageIds: async () => ({ ids: [baseInput.messageId], historyId: "1" }),
       getGmailMessage: async () => ({ id: baseInput.messageId, threadId: baseInput.threadId, internalDate: "1793880000000", labelIds: sent ? ["SENT"] : [] }),
       gmailHeaders: () => headers, gmailHeaderValues: () => [], gmailPlaintext: () => baseInput.body,
       emailAddress: (value) => value, emailName: () => baseInput.displayName, gmailAttachmentDescriptors: () => [],
     }],
-    ["@/lib/ingest", { resolveEmailConversation: async () => {
-      const createdLead = !state.created
-      state.created = true
-      return { person, leadId: 7, createdLead }
+    ["@/lib/email-in-ack", h.api], ["@/lib/notify", { notifyAll: async (alert) => {
+      assert.ok(receipts.some((event) => event.id === alert.sourceEventId), "the email receipt precedes its alert")
+      if (!alerts.has(alert.sourceEventId)) alerts.set(alert.sourceEventId, alert)
     } }],
-    ["@/lib/email-in-ack", h.api], ["@/lib/notify", { notifyAll: async () => {} }],
     ["@/lib/ops-auth", { isAuthorizedCron: () => true }],
     ["@/lib/gmail-routing.ts", { shouldSkipGmailMessage, isAuthenticatedIntuitPayment: () => false, looksLikeIntuitPaymentEnvelope: () => false, sentMessageMayStartWork: () => true }],
-    ["@/lib/people", { getPerson: async () => person, findPersonByEmail: async () => person }],
+    ["@/lib/people", {
+      getPerson: async () => person, findPersonByEmail: async () => person, findOrCreatePerson: async () => person,
+      findRecentOpenLeadForPerson: async () => leads.find((lead) => lead.person_id === person.id)?.id ?? null,
+      attachLeadToPerson: async (leadId, personId) => {
+        if (crashBeforeAttach) {
+          crashBeforeAttach = false
+          attachmentStarted.resolve()
+          await crashedProcess.promise
+        }
+        readLead(leadId).person_id ??= personId
+      },
+      isReservedShopPhone: () => false,
+    }],
     ["@/lib/attachment-retry", {}], ["@/lib/shop-brain-invariants.ts", { isGmailMessageGone: () => false }],
     ["@/lib/payment-ledger", {}],
     ["@/lib/gmail-ingest-checkpoint.ts", { GMAIL_MESSAGE_CAP: 50, pendingGmailMessageIds, settleGmailRun, splitGmailMessageBatch, canAdvanceGmailCheckpoint, shouldNotifyGmailDeadLetter }],
+    ["@/lib/media-safety", {}], ["@/lib/follow-up-cadence.ts", { getDefaultFollowUpAt: async () => null }],
+    ["@/lib/job-intake", {}], ["@/lib/call-artifacts", {}],
   ])
+  fakes.set("@/lib/leads", load("lib/leads.ts", fakes, h.env))
+  fakes.set("@/lib/ingest", load("lib/ingest.ts", fakes, h.env))
   const route = load("app/api/ingest/gmail/route.ts", fakes, h.env)
-  return { ...h, run: () => route.GET(new Request("https://fixture.example/api/ingest/gmail")) }
+  return {
+    ...h, leads, alerts, receipts, attachmentStarted: attachmentStarted.promise,
+    expireLease: () => { now += leaseMs + 1 },
+    run: () => route.GET(new Request("https://fixture.example/api/ingest/gmail")),
+  }
 }
 
 test("Gmail route acknowledges a new email lead once across re-ingestion", async () => {
@@ -235,6 +302,36 @@ test("Gmail route acknowledges a new email lead once across re-ingestion", async
   assert.equal((await h.run()).status, 200)
   assert.equal((await h.run()).status, 200)
   assert.equal(h.effects.sends.length, 1)
+})
+
+test("Gmail reuses an unattached lead after the crashed process's lease expires", async () => {
+  const h = gmailHarness({ crashBeforeAttach: true })
+  const firstRun = h.run()
+  await Promise.race([h.attachmentStarted, firstRun.then(() => {
+    throw new Error("The first run completed without crashing before person attachment")
+  })])
+  assert.equal(h.leads.length, 1)
+  const [lead] = h.leads
+  assert.equal(lead.person_id, null)
+  assert.equal(h.alerts.size, 0)
+  assert.equal((await h.run()).status, 202)
+
+  h.expireLease()
+  const replay = await h.run()
+  assert.equal(replay.status, 200)
+  assert.equal((await replay.json()).inserted, 1)
+  assert.equal(h.leads.length, 1)
+  assert.equal(lead.person_id, 3)
+  assert.equal(h.alerts.size, 1)
+  const [alert] = h.alerts.values()
+  assert.equal(alert.url, `/ops/leads/${lead.id}#spike`)
+  assert.equal(alert.smsFallback, true)
+  assert.equal(h.effects.sends.length, 1)
+
+  assert.equal((await h.run()).status, 200)
+  assert.equal(h.leads.length, 1)
+  assert.equal(h.alerts.size, 1)
+  assert.equal(h.receipts.filter((event) => event.kind === "email.in").length, 1)
 })
 
 for (const [name, options] of [

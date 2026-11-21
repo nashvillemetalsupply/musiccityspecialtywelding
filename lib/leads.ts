@@ -162,6 +162,7 @@ export async function createLead(
     actor?: string
     firstResponseNow?: boolean
     intakeKey?: string
+    personId?: number
     quoteIntake?: boolean
     webTextConsent?: { phoneE164: string; provenance: Record<string, unknown> }
   } = {}
@@ -180,6 +181,9 @@ export async function createLead(
       FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as SavedIntakeLead[]
     if (saved && expectedPhone !== null && normalizePhone(saved.phone) !== expectedPhone) {
       throw new LeadIntakePhoneConflict("That saved intake does not match this text-permission request.")
+    }
+    if (saved && options.personId !== undefined && saved.is_test !== input.isTest) {
+      throw new Error("That saved intake belongs to a different test partition.")
     }
     return saved ?? null
   }
@@ -299,10 +303,12 @@ export async function createLead(
   // creation event cannot be resolved. A retry can finish either step.
   let personId = existingSnapshot?.person_id ?? null
   try {
-    const person = await findOrCreatePerson({ ...identity, leadId: id! })
-    if (person) {
-      await attachLeadToPerson(id!, person.id)
-      personId ??= person.id
+    if (options.personId === undefined || personId === null) {
+      const matchedPersonId = options.personId ?? (await findOrCreatePerson({ ...identity, leadId: id! }))?.id
+      if (matchedPersonId !== undefined) {
+        await attachLeadToPerson(id!, matchedPersonId)
+        personId ??= matchedPersonId
+      }
     }
   } catch (error) {
     if (!options.quoteIntake) throw error
