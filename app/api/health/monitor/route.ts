@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 export function GET(req: Request) {
-  return handleHealthMonitor(req, () => readHealth(req))
+  return handleHealthMonitor(req, () => readHealth(req), { logRun: req.method === "GET" })
 }

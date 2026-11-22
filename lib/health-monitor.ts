@@ -35,19 +35,33 @@ async function evaluateHealth(readHealth: () => Promise<Response>) {
   }
 }
 
-export async function handleHealthMonitor(req: Request, readHealth: () => Promise<Response>) {
+export async function handleHealthMonitor(req: Request, readHealth: () => Promise<Response>, { logRun = false } = {}) {
   if (!isAuthorizedCron(req)) {
     return Response.json({ error: "Unauthorized." }, { status: 401, headers: responseHeaders })
   }
-  const input = req.method === "POST"
-    ? await req.json().catch(() => null) as { runId?: unknown; isTest?: unknown } | null
-    : { runId: randomUUID() }
-  const runId = String(input?.runId ?? "").trim()
-  if (!/^[a-zA-Z0-9-]{1,80}$/.test(runId)) {
-    return Response.json({ error: "A valid runId is required." }, { status: 400, headers: responseHeaders })
+
+  let job: string | undefined
+  let result: Awaited<ReturnType<typeof runHealthMonitor>> | undefined
+  try {
+    const input = req.method === "POST"
+      ? await req.json().catch(() => null) as { runId?: unknown; isTest?: unknown } | null
+      : { runId: randomUUID() }
+    const runId = String(input?.runId ?? "").trim()
+    if (!/^[a-zA-Z0-9-]{1,80}$/.test(runId)) {
+      return Response.json({ error: "A valid runId is required." }, { status: 400, headers: responseHeaders })
+    }
+    const isTest = input?.isTest === true || process.env.VERCEL_ENV !== "production"
+    job = isTest ? "health-monitor-test" : "health-monitor"
+    result = await runHealthMonitor(readHealth, runId, isTest, job)
+    return result.response
+  } finally {
+    if (logRun) {
+      console.info(JSON.stringify({ event: "health-monitor-run", job, ...(result?.outcome ?? { error: true }) }))
+    }
   }
-  const isTest = input?.isTest === true || process.env.VERCEL_ENV !== "production"
-  const job = isTest ? "health-monitor-test" : "health-monitor"
+}
+
+async function runHealthMonitor(readHealth: () => Promise<Response>, runId: string, isTest: boolean, job: string) {
   const holder = randomUUID()
   const sql = getSql()
   // The fixed lease outlives the function's 60-second runtime and coalesces
@@ -60,8 +74,10 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
     WHERE automation_leases.lease_expires_at <= now()
     RETURNING key`) as { key: string }[]
   if (!lease) {
-    console.info(JSON.stringify({ event: "health-monitor-run", job, skipped: true }))
-    return Response.json({ ok: true, skipped: true }, { status: 202, headers: responseHeaders })
+    return {
+      response: Response.json({ ok: true, skipped: true }, { status: 202, headers: responseHeaders }),
+      outcome: { skipped: true },
+    }
   }
 
   const health = await evaluateHealth(readHealth)
@@ -130,21 +146,15 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
       deliveries = await notifyAll(alert)
     }
   }
-  console.info(JSON.stringify({
-    event: "health-monitor-run",
-    job,
-    evaluationOk: health.ok,
-    status: health.status,
-    reason,
-    isTest,
-    paged: deliveries.length > 0,
-  }))
-  return Response.json({
-    ok: true,
-    evaluationOk: health.ok,
-    reason,
-    persisted: deliveries.filter((delivery) => delivery.id > 0).length,
-    sent: deliveries.filter((delivery) => delivery.sent).length,
-    isTest,
-  }, { status: 202, headers: responseHeaders })
+  return {
+    response: Response.json({
+      ok: true,
+      evaluationOk: health.ok,
+      reason,
+      persisted: deliveries.filter((delivery) => delivery.id > 0).length,
+      sent: deliveries.filter((delivery) => delivery.sent).length,
+      isTest,
+    }, { status: 202, headers: responseHeaders }),
+    outcome: { evaluationOk: health.ok, status: health.status, reason, isTest, paged: deliveries.some((delivery) => delivery.sent) },
+  }
 }

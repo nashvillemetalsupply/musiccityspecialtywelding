@@ -19,6 +19,7 @@ function compile(path) {
 
 const serviceModule = compile("lib/health-monitor.ts")
 const routeModule = compile("app/api/health/monitor/route.ts")
+const healthRouteModule = compile("app/api/health/route.ts")
 
 function load(script, context, imports) {
   const loaded = { exports: {} }
@@ -34,7 +35,7 @@ function harness({ deliveryStatus = "delivered" } = {}) {
   let uuid = 0
   let probeCount = 0
   let leaseWrites = 0
-  let failBeforeNotification = false
+  let notificationError
   const leases = new Map()
   const runs = []
   const alerts = []
@@ -119,9 +120,10 @@ function harness({ deliveryStatus = "delivered" } = {}) {
     "@/lib/automation-health.ts": { automationRunIsStale },
     "@/lib/health-monitor-alert.ts": { buildHealthMonitorFailureAlert },
     "@/lib/notify": { notifyAll: async (alert) => {
-      if (failBeforeNotification) {
-        failBeforeNotification = false
-        throw new Error("Notification database unavailable")
+      if (notificationError) {
+        const error = notificationError
+        notificationError = undefined
+        throw error
       }
       assert.equal(runs.at(-1).detail.reason, alert.actionDetail.reason, "evaluation persisted before the alert")
       assert.equal(alert.ownerOnly, true)
@@ -141,7 +143,24 @@ function harness({ deliveryStatus = "delivered" } = {}) {
   const loadRoutes = () => {
     const service = loadService()
     const route = load(routeModule, context, { "@/lib/health-monitor": service, "../route": { GET: readHealth } })
-    return { service, route }
+    const healthRoute = load(healthRouteModule, context, {
+      "@/lib/health-monitor": service,
+      // Exercise POST with the public GET probe. The monitor itself still checks authorization.
+      "@/lib/ops-auth": { isAuthorizedCron: () => false },
+      "@/lib/db": { dbConfigured: () => false },
+      "@/lib/in-process-cache.ts": { createInProcessTtlCache: (load) => load },
+      "@/lib/measurement": {},
+      "@/lib/ai": {},
+      "@/lib/delivery-errors.ts": {},
+      "@/lib/alert-failure-classifier.mjs": {},
+      "@/lib/gmail": {},
+      "@/lib/twilio": {},
+      "@/lib/call-transcription": {},
+      "@/lib/voice-transcription": {},
+      "@/lib/automation-health.ts": {},
+      "@/lib/call-health.ts": {},
+    })
+    return { route, healthRoute }
   }
   let routes = loadRoutes()
   return {
@@ -153,16 +172,16 @@ function harness({ deliveryStatus = "delivered" } = {}) {
     gmailRun: (age, ok) => runs.push({ job: "gmail-ingest", ok, at: now - age * minute }),
     legacyRun: (age, ok, reason, detail) => runs.push({ job: "health-monitor", ok, at: now - age * minute, detail: { reason, ...detail } }),
     legacyPage: (age, dedupeKey = "health-monitor:2026-11-21T12") => alerts.push({ at: now - age * minute, isTest: false, dedupeKey, deliveryStatus: "delivered" }),
-    failBeforeNotification: () => { failBeforeNotification = true },
+    failBeforeNotification: (error) => { notificationError = error },
     coldStart: () => { routes = loadRoutes() },
     probeCount: () => probeCount,
     leaseWrites: () => leaseWrites,
     get: (authorization = secret) => routes.route.GET(new Request("https://example.test/api/health/monitor", { headers: { authorization } })),
-    post: (runId) => routes.service.handleHealthMonitor(new Request("https://example.test/api/health", {
+    post: (runId) => routes.healthRoute.POST(new Request("https://example.test/api/health", {
       method: "POST",
       headers: { authorization: secret, "content-type": "application/json" },
       body: JSON.stringify({ runId }),
-    }), readHealth),
+    })),
   }
 }
 
@@ -171,6 +190,7 @@ test("the cron endpoint rejects unauthenticated probes without running an evalua
   assert.equal((await h.get("")).status, 401)
   assert.equal(h.probeCount(), 0)
   assert.deepEqual(h.runs, [])
+  assert.deepEqual(h.runLogs, [])
 })
 
 test("first-failure-quiet", async () => {
@@ -387,8 +407,11 @@ test("a failure streak uses legacy checks after the last passing check", async (
 test("an episode can file its first page after notification persistence fails", async () => {
   const h = harness()
   h.gmailRun(61, true)
-  h.failBeforeNotification()
-  await assert.rejects(h.get(), /Notification database unavailable/)
+  const failure = new Error("Notification database unavailable for synthetic-lead@example.test")
+  failure.name = "SyntheticSecretToken"
+  h.failBeforeNotification(failure)
+  await assert.rejects(h.get(), (error) => error === failure)
+  assert.deepEqual(h.runLogs, [{ event: "health-monitor-run", job: "health-monitor", error: true }])
   const firstKey = h.runs.at(-1).detail.outageKey
   h.elapsed(15)
   h.coldStart()
@@ -418,7 +441,7 @@ test("dead pages are refiled on the next alert and stop after four distinct atte
   assert.equal(new Set(h.alerts.map((alert) => alert.dedupeKey)).size, 4)
 })
 
-test("same-runid-four-posts", async () => {
+test("POST /api/health retries the same runId without emitting a cron event", async () => {
   const h = harness({ deliveryStatus: "dead" })
   h.gmailRun(61, true)
   const runId = "same-runid"
@@ -433,6 +456,7 @@ test("same-runid-four-posts", async () => {
   assert.equal((await (await h.post(runId)).json()).persisted, 0)
   const outageKey = h.runs.at(-1).detail.outageKey
   assert.deepEqual(h.alerts.map(({ dedupeKey }) => dedupeKey), [outageKey, `${outageKey}:r1`, `${outageKey}:r2`, `${outageKey}:r3`])
+  assert.deepEqual(h.runLogs, [])
 })
 
 test("get-and-post-mix", async () => {
@@ -453,6 +477,7 @@ test("an in-flight page keeps the same outage from refiling", async () => {
   const first = await (await h.get()).json()
   assert.equal(first.persisted, 1)
   assert.equal(first.sent, 0)
+  assert.equal(h.runLogs[0]?.paged, false)
 
   h.elapsed(15)
   assert.equal((await (await h.get()).json()).persisted, 0)
