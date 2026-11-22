@@ -60,19 +60,28 @@ function harness({ deliveryStatus = "delivered" } = {}) {
       return [{ key: job }]
     }
     if (query.startsWith("WITH previous AS")) {
-      const [job, , , isTest] = values
+      const [job, passJob, failureJob, isTest, firstJob, recoveryJob] = values
+      assert.deepEqual([passJob, failureJob, firstJob, recoveryJob], [job, job, job, job])
       assert.match(query, /job = 'gmail-ingest'::text AND ok ORDER BY ran_at DESC LIMIT 1/)
+      assert.match(query, /WHEN NOT previous\.ok OR previous\.detail->>'reason' IS NOT NULL THEN COALESCE\( previous\.detail->>'outageKey'/)
+      assert.match(query, /notice\.is_test = \? ::boolean AND notice\.dedupe_key LIKE 'health-monitor:%'/)
+      assert.match(query, /notice\.created_at >= \(SELECT min\(ran_at\) FROM automation_runs WHERE job = \? ::text\)/)
+      assert.match(query, /notice\.created_at > COALESCE\(\( SELECT max\(recovered\.ran_at\)/)
+      assert.match(query, /recovered\.job = \? ::text AND recovered\.ok = true AND recovered\.detail->>'reason' IS NULL/)
+      assert.match(query, /ORDER BY notice\.created_at, notice\.id LIMIT 1/)
       const success = runs.findLast((run) => run.job === "gmail-ingest" && run.ok)
-      const history = runs.filter((run) => run.job === job)
+      // Stable sort keeps insertion order for rows with the same timestamp.
+      const history = runs.filter((run) => run.job === job).sort((a, b) => a.at - b.at)
       const previous = history.at(-1)
       const failures = history.slice(history.findLastIndex((run) => run.ok) + 1)
-      const legacyPage = previous?.detail?.reason && !Object.hasOwn(previous.detail, "outageKey")
-        && alerts.findLast((alert) => alert.isTest === isTest && alert.at >= history[0].at
-          && !history.some((run) => run.at >= alert.at && !run.detail.reason))
+      const isHealthy = (run) => run.ok && (run.detail?.reason ?? null) === null
+      const newestHealthyAt = history.findLast(isHealthy)?.at ?? -Infinity
+      const pageRoot = alerts.filter((alert) => alert.isTest === isTest && alert.dedupeKey.startsWith("health-monitor:")
+        && alert.at >= history[0]?.at && alert.at > newestHealthyAt).sort((a, b) => a.at - b.at)[0]
       return [{
         last_gmail_success_at: success ? new Date(success.at).toISOString() : previous?.detail?.lastGmailSuccessAt ?? null,
-        first_failed_at: previous?.detail?.firstFailedAt ?? (failures.length ? new Date(failures[0].at).toISOString() : null),
-        outage_key: previous?.detail?.outageKey ?? legacyPage?.dedupeKey ?? null,
+        first_failed_at: previous && !previous.ok ? previous.detail?.firstFailedAt ?? new Date(failures[0].at).toISOString() : null,
+        outage_key: previous && !isHealthy(previous) ? previous.detail?.outageKey ?? pageRoot?.dedupeKey ?? null : null,
       }]
     }
     if (query.startsWith("INSERT INTO automation_runs")) {
@@ -118,27 +127,34 @@ function harness({ deliveryStatus = "delivered" } = {}) {
     } },
     "@/lib/ops-auth": { isAuthorizedCron: (req) => req.headers.get("authorization") === secret },
   })
-  const loadRoute = () => load(routeModule, context, {
-    "@/lib/health-monitor": loadService(),
-    "../route": { GET: async () => {
-      probeCount++
-      return Response.json(snapshot, { status: snapshot.ok ? 200 : 503 })
-    } },
-  })
-  let route = loadRoute()
+  const readHealth = async () => {
+    probeCount++
+    return Response.json(snapshot, { status: snapshot.ok ? 200 : 503 })
+  }
+  const loadRoutes = () => {
+    const service = loadService()
+    const route = load(routeModule, context, { "@/lib/health-monitor": service, "../route": { GET: readHealth } })
+    return { service, route }
+  }
+  let routes = loadRoutes()
   return {
     alerts,
     runs,
     snapshot,
     elapsed: (minutes) => { now += minutes * minute },
     gmailRun: (age, ok) => runs.push({ job: "gmail-ingest", ok, at: now - age * minute }),
-    legacyRun: (age, ok, reason) => runs.push({ job: "health-monitor", ok, at: now - age * minute, detail: { reason } }),
-    legacyPage: (age) => alerts.push({ at: now - age * minute, isTest: false, dedupeKey: "health-monitor:2026-11-21T12", deliveryStatus: "delivered" }),
+    legacyRun: (age, ok, reason, detail) => runs.push({ job: "health-monitor", ok, at: now - age * minute, detail: { reason, ...detail } }),
+    legacyPage: (age, dedupeKey = "health-monitor:2026-11-21T12") => alerts.push({ at: now - age * minute, isTest: false, dedupeKey, deliveryStatus: "delivered" }),
     failBeforeNotification: () => { failBeforeNotification = true },
-    coldStart: () => { route = loadRoute() },
+    coldStart: () => { routes = loadRoutes() },
     probeCount: () => probeCount,
     leaseWrites: () => leaseWrites,
-    get: (authorization = secret) => route.GET(new Request("https://example.test/api/health/monitor", { headers: { authorization } })),
+    get: (authorization = secret) => routes.route.GET(new Request("https://example.test/api/health/monitor", { headers: { authorization } })),
+    post: (runId) => routes.service.handleHealthMonitor(new Request("https://example.test/api/health", {
+      method: "POST",
+      headers: { authorization: secret, "content-type": "application/json" },
+      body: JSON.stringify({ runId }),
+    }), readHealth),
   }
 }
 
@@ -149,12 +165,13 @@ test("the cron endpoint rejects unauthenticated probes without running an evalua
   assert.deepEqual(h.runs, [])
 })
 
-test("one failed health evaluation never pages and a recovery resets the streak", async () => {
+test("first-failure-quiet", async () => {
   const h = harness()
   h.gmailRun(30, true)
   h.snapshot.ok = false
   assert.equal((await (await h.get()).json()).evaluationOk, false)
   assert.equal(h.alerts.length, 0)
+  assert.equal(h.runs.at(-1).detail.outageKey, null)
   h.elapsed(15)
   h.snapshot.ok = true
   await h.get()
@@ -249,7 +266,7 @@ test("history pruning cannot end an ongoing Gmail outage", async () => {
   assert.equal(evaluation.sent, 0)
 })
 
-test("a Gmail page covers a health failure that continues after Gmail recovers", async () => {
+test("restore-gmail-other-probe-fails", async () => {
   const h = harness()
   h.gmailRun(61, true)
   h.snapshot.ok = false
@@ -273,7 +290,7 @@ test("a Gmail page covers a health failure that continues after Gmail recovers",
   assert.equal(h.alerts.length, 1)
 })
 
-test("one healthy evaluation resets the episode and a new outage an hour later pages", async () => {
+test("healthy-then-new-outage", async () => {
   const h = harness()
   h.gmailRun(61, true)
   assert.equal((await (await h.get()).json()).sent, 1)
@@ -283,13 +300,33 @@ test("one healthy evaluation resets the episode and a new outage an hour later p
   assert.equal(recovery.evaluationOk, true)
   assert.equal(recovery.reason, null)
   assert.equal(h.runs.at(-1).detail.outageKey, null)
-  h.elapsed(60)
+  h.elapsed(45)
+  h.snapshot.ok = false
+  assert.equal((await (await h.get()).json()).reason, null)
+  h.elapsed(15)
   assert.equal((await (await h.get()).json()).sent, 1)
   assert.equal(h.alerts.length, 2)
   assert.notEqual(h.alerts[0].dedupeKey, h.alerts[1].dedupeKey)
 })
 
-test("an ongoing outage adopts a page recorded before episode keys were introduced", async () => {
+test("null-key-row-does-not-end-outage", async () => {
+  const h = harness()
+  const outageKey = "health-monitor:outage"
+  h.gmailRun(0, true)
+  h.legacyRun(45, false, null)
+  h.legacyPage(15, outageKey)
+  h.legacyPage(15, `${outageKey}:r1`)
+  h.legacyRun(15, false, null, { outageKey: null })
+  h.snapshot.ok = false
+
+  const result = await (await h.get()).json()
+  assert.equal(result.reason, "consecutive-failures")
+  assert.equal(result.persisted, 0)
+  assert.equal(h.alerts.length, 2)
+  assert.equal(h.runs.at(-1).detail.outageKey, outageKey)
+})
+
+test("ok-true-but-gmail-stale-is-not-recovery", async () => {
   const h = harness()
   h.gmailRun(120, true)
   h.legacyRun(45, true, "gmail-stale")
@@ -298,6 +335,25 @@ test("an ongoing outage adopts a page recorded before episode keys were introduc
   assert.equal((await (await h.get()).json()).sent, 0)
   assert.equal(h.runs.at(-1).detail.outageKey, h.alerts[0].dedupeKey)
   assert.equal(h.alerts.length, 1)
+})
+
+test("old-main-notice-ignored", async () => {
+  const h = harness()
+  const oldKey = "health-monitor:2026-09-27T12"
+  h.legacyPage((start - Date.parse("2026-09-27T12:00:00Z")) / minute, oldKey)
+  h.gmailRun(0, true)
+  h.snapshot.ok = false
+  assert.equal((await (await h.get()).json()).reason, null)
+  h.elapsed(15)
+  assert.equal((await (await h.get()).json()).reason, null)
+  h.elapsed(15)
+
+  const result = await (await h.get()).json()
+  assert.equal(result.reason, "consecutive-failures")
+  assert.equal(result.persisted, 1)
+  assert.equal(h.alerts.length, 2)
+  assert.notEqual(h.alerts[1].dedupeKey, oldKey)
+  assert.equal(h.runs.at(-1).detail.outageKey, h.alerts[1].dedupeKey)
 })
 
 test("a failure streak uses legacy checks after the last passing check", async () => {
@@ -338,13 +394,41 @@ test("dead pages are refiled on the next alert and stop after four distinct atte
   for (let attempt = 2; attempt <= 4; attempt++) {
     h.elapsed(15)
     assert.equal((await (await h.get()).json()).persisted, 1, `attempt ${attempt}`)
-    const { runId } = h.runs.at(-1).detail
-    assert.equal(h.alerts.at(-1).dedupeKey, `${outageKey}:${runId}`)
+    assert.equal(h.alerts.at(-1).dedupeKey, `${outageKey}:r${attempt - 1}`)
   }
 
   h.elapsed(15)
   assert.equal((await (await h.get()).json()).persisted, 0)
   assert.equal(new Set(h.alerts.map((alert) => alert.dedupeKey)).size, 4)
+})
+
+test("same-runid-four-posts", async () => {
+  const h = harness({ deliveryStatus: "dead" })
+  h.gmailRun(61, true)
+  const runId = "same-runid"
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const result = await (await h.post(runId)).json()
+    assert.equal(result.reason, "gmail-stale")
+    assert.equal(result.persisted, 1)
+    assert.equal(h.runs.at(-1).detail.runId, runId)
+    assert.equal(h.alerts.at(-1).actionDetail.runId, runId)
+    h.elapsed(15)
+  }
+  assert.equal((await (await h.post(runId)).json()).persisted, 0)
+  const outageKey = h.runs.at(-1).detail.outageKey
+  assert.deepEqual(h.alerts.map(({ dedupeKey }) => dedupeKey), [outageKey, `${outageKey}:r1`, `${outageKey}:r2`, `${outageKey}:r3`])
+})
+
+test("get-and-post-mix", async () => {
+  const h = harness({ deliveryStatus: "dead" })
+  h.gmailRun(61, true)
+  for (const evaluate of [h.get, () => h.post("mixed"), h.get, () => h.post("mixed")]) {
+    assert.equal((await (await evaluate()).json()).persisted, 1)
+    h.elapsed(15)
+  }
+  assert.equal((await (await h.get()).json()).persisted, 0)
+  const outageKey = h.runs.at(-1).detail.outageKey
+  assert.deepEqual(h.alerts.map(({ dedupeKey }) => dedupeKey), [outageKey, `${outageKey}:r1`, `${outageKey}:r2`, `${outageKey}:r3`])
 })
 
 test("an in-flight page keeps the same outage from refiling", async () => {

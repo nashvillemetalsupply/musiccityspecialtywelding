@@ -161,6 +161,7 @@ export async function resolveEmailConversation(input: {
   const sql = getSql()
   let [saved] = (await sql`
     SELECT id FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as { id: number }[]
+  const leadMessage = input.body?.slice(0, 2000) || "Customer emailed the shop."
   // Give a legacy lead the durable key so createLead can resume its attachment
   // and creation receipt, including if this run is interrupted again.
   if (!saved) {
@@ -194,7 +195,7 @@ export async function resolveEmailConversation(input: {
         WHERE candidate.intake_key = '' AND candidate.person_id IS NULL
           AND candidate.is_test = ${isTest}::boolean
         ORDER BY evidence.priority,
-          (candidate.message = left(${input.body ?? null}::text, 2000)) DESC NULLS LAST,
+          (candidate.message = ${leadMessage}::text) DESC,
           candidate.id
         LIMIT 1
       )
@@ -210,7 +211,7 @@ export async function resolveEmailConversation(input: {
     phone: person.phones?.[0] ?? "",
     email: input.email,
     service: "Email request",
-    message: input.body?.slice(0, 2000) || "Customer emailed the shop.",
+    message: leadMessage,
     preferredContact: "Email",
     photoCount: 0,
     gclid: "", utmSource: "", utmMedium: "", utmCampaign: "", utmTerm: "", utmContent: "",

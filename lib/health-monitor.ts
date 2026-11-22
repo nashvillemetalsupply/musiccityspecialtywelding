@@ -83,16 +83,17 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
             SELECT 1 FROM last_pass WHERE (failed.ran_at, failed.id) <= (last_pass.ran_at, last_pass.id)
           ) ORDER BY failed.ran_at, failed.id LIMIT 1)) END AS first_failed_at,
       CASE
-        WHEN previous.detail ? 'outageKey' THEN previous.detail->>'outageKey'
-        WHEN previous.detail->>'reason' IS NOT NULL THEN (
-          SELECT notice.dedupe_key FROM notifications AS notice
-          WHERE notice.is_test = ${isTest}::boolean AND notice.dedupe_key LIKE 'health-monitor:%'
-            AND notice.created_at >= (SELECT min(ran_at) FROM automation_runs WHERE job = ${job}::text)
-            AND NOT EXISTS (
-              SELECT 1 FROM automation_runs AS recovered WHERE recovered.job = ${job}::text
-                AND recovered.ran_at >= notice.created_at AND recovered.detail->>'reason' IS NULL
-            )
-          ORDER BY notice.created_at DESC LIMIT 1
+        WHEN NOT previous.ok OR previous.detail->>'reason' IS NOT NULL THEN COALESCE(
+          previous.detail->>'outageKey', (
+            SELECT notice.dedupe_key FROM notifications AS notice
+            WHERE notice.is_test = ${isTest}::boolean AND notice.dedupe_key LIKE 'health-monitor:%'
+              AND notice.created_at >= (SELECT min(ran_at) FROM automation_runs WHERE job = ${job}::text)
+              AND notice.created_at > COALESCE((
+                SELECT max(recovered.ran_at) FROM automation_runs AS recovered
+                WHERE recovered.job = ${job}::text AND recovered.ok = true AND recovered.detail->>'reason' IS NULL
+              ), '-infinity'::timestamptz)
+            ORDER BY notice.created_at, notice.id LIMIT 1
+          )
         )
       END AS outage_key
     FROM (SELECT 1) AS anchor LEFT JOIN previous ON true`) as {
@@ -123,7 +124,7 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
       FROM notifications
       WHERE is_test = ${isTest}::boolean AND starts_with(dedupe_key, ${outageKey}::text)`) as { live: number; attempts: number }[]
     if (page.live === 0 && page.attempts < 4) {
-      const dedupeKey = page.attempts === 0 ? outageKey : `${outageKey}:${runId}`
+      const dedupeKey = page.attempts === 0 ? outageKey : `${outageKey}:r${page.attempts}`
       const alert = { ...candidateAlert, dedupeKey }
       deliveries = await notifyAll(alert)
     }
