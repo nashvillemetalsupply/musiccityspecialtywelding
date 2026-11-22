@@ -38,6 +38,7 @@ function harness({ deliveryStatus = "delivered" } = {}) {
   const leases = new Map()
   const runs = []
   const alerts = []
+  const runLogs = []
   const snapshot = {
     ok: true,
     leadsAccepted: true,
@@ -105,7 +106,13 @@ function harness({ deliveryStatus = "delivered" } = {}) {
   class FixedDate extends Date {
     constructor(...args) { super(...(args.length ? args : [now])) }
   }
-  const context = vm.createContext({ Request, Response, Date: FixedDate, process: { env: { VERCEL_ENV: "production" } } })
+  const context = vm.createContext({
+    Request, Response, Date: FixedDate, process: { env: { VERCEL_ENV: "production" } },
+    console: { info: (...args) => {
+      assert.equal(args.length, 1)
+      runLogs.push(JSON.parse(args[0]))
+    } },
+  })
   const loadService = () => load(serviceModule, context, {
     "node:crypto": { randomUUID: () => `monitor-${++uuid}` },
     "@/lib/db": { getSql: () => sql },
@@ -140,6 +147,7 @@ function harness({ deliveryStatus = "delivered" } = {}) {
   return {
     alerts,
     runs,
+    runLogs,
     snapshot,
     elapsed: (minutes) => { now += minutes * minute },
     gmailRun: (age, ok) => runs.push({ job: "gmail-ingest", ok, at: now - age * minute }),
@@ -201,6 +209,7 @@ test("Gmail pages once at 61 minutes since the last success, even with a newer f
   assert.equal(result.reason, "gmail-stale")
   assert.equal(result.sent, 1)
   assert.equal(h.alerts.length, 1)
+  assert.equal(h.runLogs[0]?.paged, true)
 })
 
 test("simultaneous cron and backup calls coalesce and one evaluation writes its lease once", async () => {
@@ -210,6 +219,13 @@ test("simultaneous cron and backup calls coalesce and one evaluation writes its 
   const calls = await Promise.all([h.get(), h.get()])
   const results = await Promise.all(calls.map((response) => response.json()))
   assert.equal(results.filter(({ skipped }) => skipped).length, 1)
+  assert.deepEqual(h.runLogs.filter(({ skipped }) => skipped), [
+    { event: "health-monitor-run", job: "health-monitor", skipped: true },
+  ])
+  assert.deepEqual(h.runLogs.filter(({ skipped }) => !skipped), [{
+    event: "health-monitor-run", job: "health-monitor", evaluationOk: false,
+    status: 503, reason: null, isTest: false, paged: false,
+  }])
   assert.equal(h.probeCount(), 1)
   assert.equal(h.alerts.length, 0)
   assert.equal(h.leaseWrites(), 1)

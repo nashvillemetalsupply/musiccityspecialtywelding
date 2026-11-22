@@ -60,6 +60,7 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
     WHERE automation_leases.lease_expires_at <= now()
     RETURNING key`) as { key: string }[]
   if (!lease) {
+    console.info(JSON.stringify({ event: "health-monitor-run", job, skipped: true }))
     return Response.json({ ok: true, skipped: true }, { status: 202, headers: responseHeaders })
   }
 
@@ -129,6 +130,15 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
       deliveries = await notifyAll(alert)
     }
   }
+  console.info(JSON.stringify({
+    event: "health-monitor-run",
+    job,
+    evaluationOk: health.ok,
+    status: health.status,
+    reason,
+    isTest,
+    paged: deliveries.length > 0,
+  }))
   return Response.json({
     ok: true,
     evaluationOk: health.ok,
