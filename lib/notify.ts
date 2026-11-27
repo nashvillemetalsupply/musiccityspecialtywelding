@@ -365,12 +365,22 @@ export async function notify(input: {
     FROM classification LEFT JOIN inserted ON true`) as { id: number | null; is_test: boolean; source_kind: string | null }[])[0]
   let intent = await insert()
   if (!intent.id && dedupeKey && !intent.is_test) {
-    // Keep the old test receipt and free the production key for a live row.
+    // Free the production key only if the old test receipt has no evidence of a provider send.
     const moved = (await sql`
       UPDATE notifications SET dedupe_key = 'preview:legacy:' || id::text || ':' || left(dedupe_key, 200)
       WHERE operator_id = ${input.operatorId}::bigint AND dedupe_key = ${dedupeKey}::text AND is_test = true
+        AND delivery_attempts = 0 AND sent_at IS NULL AND delivery_status NOT IN ('accepted', 'delivered')
+        AND provider_status IS NULL AND provider_message_sid IS NULL
+        AND provider_email_status IS NULL AND provider_email_id IS NULL
       RETURNING id`) as { id: number }[]
-    if (moved[0]) intent = await insert()
+    if (moved[0]) {
+      intent = await insert()
+    } else {
+      const [existing] = (await sql`
+        SELECT id FROM notifications
+        WHERE operator_id = ${input.operatorId}::bigint AND dedupe_key = ${dedupeKey}::text AND is_test = true`) as { id: number }[]
+      if (existing) return { id: Number(existing.id), sent: false, reason: "duplicate" as const }
+    }
   }
   const isTest = intent.is_test
   if (isTest && !previewEnvironment) return { id: 0, sent: false, reason: "internal-test" as const }

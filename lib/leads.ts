@@ -150,11 +150,15 @@ function makePublicId(now: Date) {
   return `L-${stamp}-${rand}`
 }
 
-type SavedIntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "created_at" | "first_name" | "last_name"
+type IntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "created_at" | "first_name" | "last_name"
   | "phone" | "email" | "service" | "message" | "preferred_contact" | "source" | "is_test"
   | "gclid" | "utm_source" | "referrer"> & {
   quote_form_photo_count: number | null
   quote_photos?: { fingerprints: string[]; environment: string | null } | null
+}
+
+type SavedIntakeLead = IntakeLead & Pick<LeadRow, "photo_count"> & {
+  photos_array_length: number
 }
 
 export class LeadIntakePhoneConflict extends Error {}
@@ -183,6 +187,7 @@ export async function createLead(
     const [saved] = (await sql`
       SELECT id, public_id, person_id, first_name, last_name, phone, email, service,
         message, preferred_contact, quote_form_photo_count, source, is_test, created_at, gclid, utm_source, referrer,
+        photo_count, jsonb_array_length(photos) AS photos_array_length,
         (SELECT jsonb_build_object('fingerprints', photo_fingerprints, 'environment', environment)
           FROM quote_intakes WHERE quote_intakes.intake_key = leads.intake_key AND lead_id = leads.id) AS quote_photos
       FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as SavedIntakeLead[]
@@ -201,7 +206,7 @@ export async function createLead(
   let id = existingSnapshot ? Number(existingSnapshot.id) : null
   let publicId = existingSnapshot?.public_id ?? ""
   let insertedIsTest = input.isTest
-  let insertedSnapshot: SavedIntakeLead | null = null
+  let insertedSnapshot: IntakeLead | null = null
 
   const defaultFollowUpAt = id === null ? await getDefaultFollowUpAt(sql) : null
 
@@ -260,7 +265,7 @@ export async function createLead(
         )
         SELECT inserted_lead.*
         FROM inserted_lead
-        LEFT JOIN captured_consent ON true`) as SavedIntakeLead[]
+        LEFT JOIN captured_consent ON true`) as IntakeLead[]
       id = rows[0].id
       publicId = rows[0].public_id
       insertedIsTest = rows[0].is_test

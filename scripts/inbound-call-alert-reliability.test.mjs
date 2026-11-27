@@ -177,9 +177,14 @@ function createNotifyHarness({
       const key = values[1]
       const existing = notificationRows.get(key)
       if (!existing?.isTest || !text.includes("AND is_test = true")) return []
+      if (text.includes("delivery_attempts = 0") && existing.deliveryAttempts > 0) return []
       notificationRows.delete(key)
       notificationRows.set(`preview:legacy:${existing.id}:${key}`.slice(0, 240), existing)
       return [{ id: existing.id }]
+    }
+    if (text.includes("SELECT id FROM notifications WHERE operator_id =") && text.includes("AND is_test = true")) {
+      const existing = notificationRows.get(values[1])
+      return existing?.isTest ? [{ id: existing.id }] : []
     }
     if (text.includes("SELECT EXISTS(SELECT 1 FROM claim) AS reserved")) return [{ reserved: budgetReserved }]
     if (text.includes("UPDATE notifications SET coalesced = true")) return coalescedClaimed ? [{ id: 901 }] : []
@@ -438,6 +443,23 @@ test("preview call-read keys stay isolated and production reclaims a legacy test
   })
   assert.equal(notificationRows.get(key).isTest, false)
   assert.equal(notificationRows.get(`preview:legacy:102:${key}`), legacy)
+})
+
+test("production keeps the canonical key for a legacy test alert with an accepted send", async () => {
+  const key = "call-missed:CA-legacy-accepted"
+  const legacy = { id: 103, isTest: true, deliveryAttempts: 1, deliveryStatus: "accepted" }
+  const notificationRows = new Map([[key, legacy]])
+  const harness = createNotifyHarness({ sourceIsTest: false, notificationRows, pushSent: 1 })
+
+  await withEnv({}, async () => {
+    const results = await harness.notifyAll({ ...missedCallAlert, dedupeKey: key })
+
+    assert.deepEqual(results, [{ id: legacy.id, sent: false, reason: "duplicate" }])
+    assert.deepEqual([...notificationRows], [[key, legacy]])
+    assert.equal(harness.pushCalls.length, 0)
+    assert.equal(harness.smsCalls.length, 0)
+    assert.equal(harness.emailCalls.length, 0)
+  })
 })
 
 test("MCSW_TEST_SMS_FAIL runs only fake inline attempts on a preview", async () => {

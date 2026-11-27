@@ -228,6 +228,69 @@ test("production recovers a live call that an old preview marked handled", async
   }
 })
 
+test("raw call reconciliation recovers the younger call after an immutable journal link fails", async () => {
+  const older = { twilio_sid: "CA-older", from_phone: "+16155550100", detail: null, is_test: false }
+  const younger = { twilio_sid: "CA-younger", from_phone: "+16155550101", detail: null, is_test: false }
+  const eventId = 902
+  const writes = []
+  const sql = async (strings, ...values) => {
+    const text = strings.join(" ? ").replace(/\s+/g, " ")
+    if (text.includes("FROM calls WHERE direction = 'in'")) {
+      assert.match(text, /started_at < now\(\) - interval '2 minutes' ORDER BY started_at ASC/)
+      return [older, younger]
+    }
+    if (text.includes("UPDATE calls SET lead_id") || text.includes("SELECT direction, status")) return []
+    if (text.includes("WITH call_events AS")) {
+      const callSid = values[3]
+      writes.push(["link", callSid])
+      if (callSid === older.twilio_sid) {
+        throw Object.assign(new Error("events.lead_id cannot be relinked"), { code: "P0001" })
+      }
+      return []
+    }
+    if (text.includes("INSERT INTO events")) {
+      assert.equal(values[1], "call.in")
+      writes.push(["receipt", values[6]])
+      return [{ id: eventId }]
+    }
+    if (text.includes("UPDATE calls SET detail")) {
+      writes.push(["handled", values[0], values[1]])
+      return [{ twilio_sid: values[0] }]
+    }
+    throw new Error(`Unexpected query ${text}`)
+  }
+  const env = { VERCEL_ENV: "production" }
+  const person = { id: 7, display_name: "Fixture customer", is_test: false }
+  const fakes = new Map([
+    ["@/lib/db", { getSql: () => sql }], ["@/lib/build-sheets", {}],
+    ["@/lib/events", loadEventWriter(sql)], ["@/lib/leads", {}],
+    ["@/lib/people", {
+      normalizePhone: (phone) => phone,
+      findOrCreatePerson: async () => person,
+      findOpenLeadResolutionForPerson: async () => ({ leadId: 41 }),
+    }],
+    ["@/lib/notify", { notifyAll: async ({ dedupeKey, sourceEventId }) => {
+      writes.push(["alert", dedupeKey, sourceEventId])
+      return []
+    } }],
+  ])
+  fakes.set("@/lib/call-artifacts", loadModule("lib/call-artifacts.ts", fakes, env))
+  fakes.set("@/lib/job-intake", loadModule("lib/job-intake.ts", fakes, env))
+  const { reconcileRawInboundCalls } = loadModule("lib/ingest.ts", fakes, env)
+
+  const result = await reconcileRawInboundCalls()
+
+  assert.equal(result.scanned, 2)
+  assert.equal(result.recovered, 1)
+  assert.deepEqual(writes, [
+    ["link", older.twilio_sid],
+    ["link", younger.twilio_sid],
+    ["receipt", younger.twilio_sid],
+    ["alert", `inbound-call:${younger.twilio_sid}:interrupt`, eventId],
+    ["handled", younger.twilio_sid, eventId],
+  ])
+})
+
 test("inbound Twilio messages acquire a test lead flag when conversation matching links them", async () => {
   for (const parentIsTest of [true, false]) {
     const messages = []

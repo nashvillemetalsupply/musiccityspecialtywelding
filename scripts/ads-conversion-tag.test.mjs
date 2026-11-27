@@ -109,7 +109,11 @@ function quoteRouteHarness({
         }
         if (sql.includes("FROM leads WHERE intake_key")) {
           const saved = leads.get(leadId)
-          return saved ? [{ ...saved, quote_photos: quoteIntakes.get(leadId) ?? null }] : []
+          return saved ? [{
+            ...saved,
+            ...(sql.includes("jsonb_array_length(photos) AS photos_array_length") ? { photos_array_length: saved.photos.size } : {}),
+            quote_photos: quoteIntakes.get(leadId) ?? null,
+          }] : []
         }
         if (sql.includes("FROM leads WHERE id")) {
           if ((failLeadRead === "route" && sql.includes("person_id, first_name")) ||
@@ -1093,6 +1097,39 @@ test("retrying a pre-upgrade quote after reservation failed attaches the origina
   assert.equal(route.emails[1].payload.to, "owner@example.test")
   assert.equal(attachment.filename, "gate.jpg")
   assert.equal(attachment.content.at(-1), 42)
+})
+
+test("a pre-upgrade quote with no reservations requires its original photo on retry", async () => {
+  let reservationUnavailable = true
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    email: "customer@example.test",
+    storeQuoteFingerprints: false,
+    checkPhotoReservation() {
+      if (reservationUnavailable) throw new Error("Photo reservation stopped")
+    },
+  })
+  const original = quotePhoto("gate.jpg", 42)
+
+  assert.equal((await route.submit([original])).status, 503)
+  const [lead] = route.leads.values()
+  lead.quote_form_photo_count = null
+  assert.equal(lead.photo_count, 1)
+  assert.equal(lead.photos.size, 0)
+  assert.equal(route.quoteIntakes.size, 0)
+  assert.equal(route.photoIntents.size, 0)
+
+  reservationUnavailable = false
+  const emptyRetry = await route.submit()
+  assert.equal(emptyRetry.status, 409)
+  assert.equal((await emptyRetry.json()).retryOriginalPhotos, true)
+  assert.equal(route.providerCalls.filter(({ key }) => key.startsWith("quote-owner:")).length, 0)
+
+  assert.equal((await route.submit([original])).status, 200)
+  assert.deepEqual([...route.leads.values()], [lead])
+  assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["customer@example.test", "owner@example.test"])
+  assert.equal(route.emails[1].payload.attachments.length, 1)
+  assert.equal(route.emails[1].payload.attachments[0].content.at(-1), 42)
 })
 
 test("quote photo fingerprints are saved before reservation and reject replacement contents on retry", async () => {

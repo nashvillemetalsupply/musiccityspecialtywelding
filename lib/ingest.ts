@@ -277,47 +277,51 @@ export async function reconcileRawInboundCalls(limit = 20) {
   }>
   let recovered = 0
   for (const row of rows) {
-    const isTest = Boolean(row.is_test || row.detail?.isTest || row.detail?.callerName?.includes("[INTERNAL TEST]"))
-    const prepared = await prepareInboundCallIntake({
-      callSid: row.twilio_sid,
-      phone: row.from_phone,
-      callerName: row.detail?.callerName,
-      isTest,
-    })
-    const person = prepared.person
-    const leadId = prepared.kind === "existing" ? prepared.leadId : null
-    const normalized = normalizePhone(row.from_phone)
-    const name = person?.display_name || row.detail?.callerName || (normalized ? `Caller ${normalized.slice(-4)}` : "Private caller")
-    const eventId = await persistInboundCallReceipt({
-      callSid: row.twilio_sid,
-      actorId: person?.id ?? "",
-      leadId,
-      personId: person?.id ?? null,
-      body: `${name} called the shop`,
-      crewBody: `${name} called the shop`,
-      detail: { recovered: true, intake: prepared.kind, isTest },
-    })
-    const notificationRequired = !isTest && !person?.is_test
-      && !(prepared.kind === "draft" && prepared.draft.is_test)
-    if (isProduction && notificationRequired) await notifyAll({
-      priority: "interrupt",
-      stock: "white",
-      title: `${name} called`,
-      body: prepared.kind === "draft" ? "The call is safe. Tap Save call as job when you are ready." : "Their active job is ready.",
-      crewBody: prepared.kind === "draft" ? "The call is safe. Tap Save call as job when you are ready." : "Their active job is ready.",
-      url: prepared.kind === "draft" ? `/ops/intake/${prepared.draft.public_id}` : `/ops/leads/${prepared.leadId}`,
-      sourceEventId: eventId,
-      capExempt: true,
-      quietHoursExempt: true,
-      smsFallback: true,
-      dedupeKey: inboundCallNotificationDedupeKey(row.twilio_sid),
-    })
-    const handled = await markInboundCallReconciliationHandled({
-      callSid: row.twilio_sid,
-      eventId,
-    })
-    if (!handled) continue
-    recovered += 1
+    try {
+      const isTest = Boolean(row.is_test || row.detail?.isTest || row.detail?.callerName?.includes("[INTERNAL TEST]"))
+      const prepared = await prepareInboundCallIntake({
+        callSid: row.twilio_sid,
+        phone: row.from_phone,
+        callerName: row.detail?.callerName,
+        isTest,
+      })
+      const person = prepared.person
+      const leadId = prepared.kind === "existing" ? prepared.leadId : null
+      const normalized = normalizePhone(row.from_phone)
+      const name = person?.display_name || row.detail?.callerName || (normalized ? `Caller ${normalized.slice(-4)}` : "Private caller")
+      const eventId = await persistInboundCallReceipt({
+        callSid: row.twilio_sid,
+        actorId: person?.id ?? "",
+        leadId,
+        personId: person?.id ?? null,
+        body: `${name} called the shop`,
+        crewBody: `${name} called the shop`,
+        detail: { recovered: true, intake: prepared.kind, isTest },
+      })
+      const notificationRequired = !isTest && !person?.is_test
+        && !(prepared.kind === "draft" && prepared.draft.is_test)
+      if (isProduction && notificationRequired) await notifyAll({
+        priority: "interrupt",
+        stock: "white",
+        title: `${name} called`,
+        body: prepared.kind === "draft" ? "The call is safe. Tap Save call as job when you are ready." : "Their active job is ready.",
+        crewBody: prepared.kind === "draft" ? "The call is safe. Tap Save call as job when you are ready." : "Their active job is ready.",
+        url: prepared.kind === "draft" ? `/ops/intake/${prepared.draft.public_id}` : `/ops/leads/${prepared.leadId}`,
+        sourceEventId: eventId,
+        capExempt: true,
+        quietHoursExempt: true,
+        smsFallback: true,
+        dedupeKey: inboundCallNotificationDedupeKey(row.twilio_sid),
+      })
+      const handled = await markInboundCallReconciliationHandled({
+        callSid: row.twilio_sid,
+        eventId,
+      })
+      if (!handled) continue
+      recovered += 1
+    } catch (error) {
+      console.error(`Raw inbound call reconciliation failed for ${row.twilio_sid}:`, error)
+    }
   }
   return { scanned: rows.length, recovered }
 }

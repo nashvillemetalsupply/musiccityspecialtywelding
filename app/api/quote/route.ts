@@ -395,19 +395,27 @@ export async function POST(req: Request) {
               WHERE lead_id = ${lead.id}::bigint AND intake_key = ${intakeKey}::text
               ORDER BY photo_index
             `) as QuotePhotoIntent[];
-            if (savedPhotos.some((photo, index) => photo.photo_index !== index + 1)) {
-              throw new Error("Saved quote photo reservations are incomplete.");
-            }
-            const ordered = fingerprintsMatch ? await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes) : null;
-            if (ordered) {
-              photoFiles.splice(0, photoFiles.length, ...ordered);
-            } else if (originalPhotoCount !== null) {
-              return changedQuoteResponse(true);
-            } else {
-              // An old retry can resume the lead without replacing reserved bytes.
-              savedOnlyPhotoCount = savedPhotos.length;
-              photosResumable = savedPhotos.every((photo) => photo.status === "attached" && photo.stored_pathname)
-                && (savedFingerprints?.length ?? savedOnlyPhotoCount) === savedOnlyPhotoCount;
+            if (savedPhotos.length > 0 || !fingerprintsMatch) {
+              if (savedPhotos.some((photo, index) => photo.photo_index !== index + 1)) {
+                throw new Error("Saved quote photo reservations are incomplete.");
+              }
+              const ordered = fingerprintsMatch ? await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes) : null;
+              if (ordered) {
+                photoFiles.splice(0, photoFiles.length, ...ordered);
+              } else if (originalPhotoCount !== null) {
+                return changedQuoteResponse(true);
+              } else {
+                // An old retry can resume the lead without replacing reserved bytes.
+                savedOnlyPhotoCount = savedPhotos.length;
+                photosResumable = savedPhotos.every((photo) => photo.status === "attached" && photo.stored_pathname)
+                  && (savedFingerprints?.length ?? savedOnlyPhotoCount) === savedOnlyPhotoCount;
+              }
+            } else if (originalPhotoCount === null && !savedFingerprints) {
+              // After an attachment, photo_count is rewritten to the array length.
+              const legacyFormCount = saved.photo_count > saved.photos_array_length ? saved.photo_count : null;
+              if (legacyFormCount !== null && legacyFormCount !== photoFiles.length) {
+                return changedQuoteResponse(true);
+              }
             }
           } catch (photoError) {
             photosResumable = false;
