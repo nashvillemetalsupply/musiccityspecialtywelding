@@ -72,18 +72,30 @@ async function releaseRecoveryLease(holder: string) {
 
 async function recoverQuoteEmails() {
   const result = { reviews: 0, recovered: 0 }
-  // Preview writes are marked as tests by notifyAll and would consume the live dedupe key.
-  if (process.env.VERCEL_ENV !== "production") return result
+  const environment = process.env.VERCEL_ENV
+  if (environment !== "production") return result
   const sql = getSql()
   const pending = (await sql`
     SELECT intent.id, intent.lead_id, intent.person_id, intent.external_id,
       intent.detail->>'audience' AS audience, intent.detail->>'frozenPayload' AS frozen_payload,
-      intent.recorded_at AS created_at, clock.review_at <= now() - interval '23 hours' AS needs_review
+      intent.recorded_at AS created_at, intake.environment IS NULL AS origin_unknown,
+      eligibility.needs_review, failure.id AS failure_event_id, failure.body AS failure_error,
+      keys.review_key, keys.failure_key
     FROM events intent JOIN leads l ON l.id = intent.lead_id
-    LEFT JOIN sync_state review ON review.key = 'quote-email-review:' || intent.id::text
+    LEFT JOIN quote_intakes intake ON intake.lead_id = l.id AND intake.intake_key = l.intake_key
+    CROSS JOIN LATERAL (
+      SELECT 'quote-email-review:' || intent.id::text AS review_key,
+        split_part(intent.external_id, ':', 1) || '-delivery:' ||
+          split_part(intent.external_id, ':', 2) || ':failed' AS failure_key
+    ) keys
+    LEFT JOIN LATERAL (
+      SELECT updated_at AS last_attempt_at FROM sync_state WHERE key = keys.review_key
+    ) recovery ON true
     CROSS JOIN LATERAL (
       SELECT count(*) FILTER (WHERE rejection.detail->>'requestNotSent' IS DISTINCT FROM 'true') AS attempt_count,
-        min(attempt.occurred_at) FILTER (WHERE rejection.id IS NULL) AS unresolved_at
+        min(attempt.occurred_at) FILTER (WHERE rejection.id IS NULL) AS unresolved_at,
+        max(rejection.id) FILTER (WHERE attempt.detail->>'recovery' = 'true'
+          AND rejection.detail->>'requestNotSent' IS DISTINCT FROM 'true') AS recovery_failure_id
       FROM events attempt
       LEFT JOIN events rejection ON rejection.kind = 'email.failed'
         AND rejection.external_id = 'request-failed:' || attempt.id::text
@@ -107,48 +119,47 @@ async function recoverQuoteEmails() {
         ), intent.recorded_at)
       END AS review_at
     ) clock
+    LEFT JOIN events failure ON failure.id = attempts.recovery_failure_id
+    CROSS JOIN LATERAL (
+      SELECT attempts.attempt_count = 0 AND intent.detail->>'frozenPayload' IS NOT NULL
+        AND intent.recorded_at < now() - interval '15 minutes'
+        AND clock.review_at > now() - interval '23 hours' AS can_recover,
+        clock.review_at <= now() - interval '23 hours' OR intake.environment IS NULL AS needs_review
+    ) eligibility
     WHERE intent.kind = 'email.out' AND intent.is_test = false AND l.is_test = false
       AND (intent.external_id LIKE 'quote-owner:%' OR intent.external_id LIKE 'quote-customer:%')
+      AND (intake.environment = ${environment}::text OR intake.environment IS NULL)
+      AND (recovery.last_attempt_at IS NULL OR recovery.last_attempt_at <= now() - interval '15 minutes')
       AND NOT EXISTS (
         SELECT 1 FROM events receipt
         WHERE receipt.lead_id = l.id AND receipt.kind IN ('email.accepted', 'email.delivered')
           AND receipt.detail->>'sourceEventId' = intent.id::text
       )
+      -- Older attribution stores a relative landing path, so a null intake
+      -- environment is insufficient evidence for an automatic send.
+      AND (eligibility.can_recover OR clock.review_at <= now() - interval '23 hours' OR failure.id IS NOT NULL)
       AND (
-        (clock.review_at <= now() - interval '23 hours'
-          AND (review.updated_at IS NULL OR review.updated_at <= now() - interval '15 minutes')
-          AND EXISTS (
-            SELECT 1 FROM operators o WHERE o.active AND o.role = 'owner' AND NOT EXISTS (
-              SELECT 1 FROM notifications n WHERE n.operator_id = o.id
-                AND n.dedupe_key = 'quote-email-review:' || intent.id::text
-            )
+        (eligibility.can_recover AND NOT eligibility.needs_review AND failure.id IS NULL)
+        OR EXISTS (
+          SELECT 1 FROM operators o WHERE o.active AND o.role = 'owner' AND NOT EXISTS (
+            SELECT 1 FROM notifications n WHERE n.operator_id = o.id AND n.is_test = false
+              AND n.dedupe_key = CASE WHEN failure.id IS NOT NULL THEN keys.failure_key ELSE keys.review_key END
           )
         )
-        OR (attempts.attempt_count = 0 AND intent.detail->>'frozenPayload' IS NOT NULL
-          AND intent.recorded_at < now() - interval '15 minutes'
-          AND clock.review_at > now() - interval '23 hours')
       )
-    ORDER BY clock.review_at, intent.id LIMIT 20`) as {
+    ORDER BY recovery.last_attempt_at NULLS FIRST, clock.review_at, intent.id LIMIT 20`) as {
       id: number; lead_id: number; person_id: number | null; external_id: string;
       audience: "shop" | "customer"; frozen_payload: string | null; created_at: string; needs_review: boolean;
+      origin_unknown: boolean; failure_event_id: number | null; failure_error: string | null;
+      review_key: string; failure_key: string;
     }[]
   for (const intent of pending) {
     try {
-      if (!intent.needs_review) {
-        const send = await recoverUnattemptedQuoteEmail({
-          leadId: Number(intent.lead_id), personId: intent.person_id, intent: intent.external_id, audience: intent.audience,
-        }, intent)
-        if (send.state === "pending") throw new Error(send.error)
-        if (intent.audience === "shop" && (send.state === "accepted" || send.state === "failed")) {
-          await markLeadDelivery(Number(intent.lead_id), send.state, send.error)
-        }
-        result.recovered++
-        continue
-      }
-      const dedupeKey = `quote-email-review:${intent.id}`
+      // Claim before preparation as well as review to back off failed attachment
+      // reads, even when they prevent a provider attempt receipt.
       const [claim] = (await sql`
         INSERT INTO sync_state (key, value, updated_at)
-        SELECT ${dedupeKey}::text, jsonb_build_object('last_review_attempt_at', now()), now()
+        SELECT ${intent.review_key}::text, jsonb_build_object('last_recovery_attempt_at', now()), now()
         WHERE NOT EXISTS (
           SELECT 1 FROM events receipt
           WHERE receipt.lead_id = ${intent.lead_id}::bigint AND receipt.kind IN ('email.accepted', 'email.delivered')
@@ -158,15 +169,35 @@ async function recoverQuoteEmails() {
         WHERE sync_state.updated_at <= now() - interval '15 minutes'
         RETURNING key`) as { key: string }[]
       if (!claim) continue
+
+      if (intent.failure_event_id) {
+        await fileQuoteRecoveryFailure(intent, Number(intent.failure_event_id), intent.failure_error ?? "")
+        continue
+      }
+      if (!intent.needs_review) {
+        const send = await recoverUnattemptedQuoteEmail({
+          leadId: Number(intent.lead_id), personId: intent.person_id, intent: intent.external_id, audience: intent.audience,
+        }, intent)
+        if (send.state === "pending") throw new Error(send.error)
+        result.recovered++
+        if (send.state === "failed") {
+          await fileQuoteRecoveryFailure(intent, send.receiptEventId, send.error)
+        } else if (intent.audience === "shop" && send.state === "accepted") {
+          await markLeadDelivery(Number(intent.lead_id), "accepted")
+        }
+        continue
+      }
       const filed = await notifyAll({
         priority: "digest",
         stock: "red",
         title: intent.audience === "shop" ? "Quote saved, owner email unconfirmed" : "Quote saved, customer email unconfirmed",
-        body: "Check the email provider and open the saved quote to follow up.",
+        body: intent.origin_unknown
+          ? "The intake environment could not be confirmed. Verify the submission and follow up from the saved quote."
+          : "Check the email provider and open the saved quote to follow up.",
         url: `/ops/leads/${intent.lead_id}#spike`,
         sourceEventId: Number(intent.id),
         ownerOnly: true,
-        dedupeKey,
+        dedupeKey: intent.review_key,
       })
       if (filed.length > 0) result.reviews++
     } catch (error) {
@@ -174,6 +205,24 @@ async function recoverQuoteEmails() {
     }
   }
   return result
+}
+
+async function fileQuoteRecoveryFailure(intent: {
+  lead_id: number; audience: "shop" | "customer"; failure_key: string;
+}, receiptEventId: number | null, error: string) {
+  const ownerEmail = intent.audience === "shop"
+  if (ownerEmail) await markLeadDelivery(Number(intent.lead_id), "failed", error)
+  await notifyAll({
+    priority: "digest",
+    stock: "red",
+    title: ownerEmail ? "Quote saved, owner email did not send" : "Customer confirmation did not send",
+    body: error,
+    crewBody: ownerEmail ? "The owner email needs a delivery check." : "The customer confirmation needs an owner delivery check.",
+    url: `/ops/leads/${intent.lead_id}#spike`,
+    sourceEventId: receiptEventId,
+    ownerOnly: true,
+    dedupeKey: intent.failure_key,
+  })
 }
 
 /**

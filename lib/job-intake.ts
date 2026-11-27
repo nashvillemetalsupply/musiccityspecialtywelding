@@ -6,6 +6,7 @@ import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { createLead } from "@/lib/leads"
+import { notificationDedupePrefix } from "./notification-dedupe.ts"
 import {
   findOrCreatePerson,
   findOpenLeadResolutionForPerson,
@@ -188,7 +189,8 @@ export async function markInboundCallReconciliationHandled(input: {
       ${input.notificationRequired}::boolean = false OR EXISTS (
         SELECT 1 FROM notifications
         WHERE source_event_id = ${input.eventId}::bigint
-          AND dedupe_key = ${inboundCallNotificationDedupeKey(input.callSid)}::text
+          AND dedupe_key = ${notificationDedupePrefix() + inboundCallNotificationDedupeKey(input.callSid)}::text
+          AND is_test = ${process.env.VERCEL_ENV !== "production"}::boolean
       )
     )
     RETURNING twilio_sid`) as { twilio_sid: string }[]

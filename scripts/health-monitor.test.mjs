@@ -5,6 +5,7 @@ import vm from "node:vm"
 import ts from "typescript"
 import { automationRunIsStale } from "../lib/automation-health.ts"
 import { buildHealthMonitorFailureAlert } from "../lib/health-monitor-alert.ts"
+import { notificationDedupePrefix } from "../lib/notification-dedupe.ts"
 
 const minute = 60_000
 const start = Date.parse("2026-11-21T17:05:00Z")
@@ -62,11 +63,11 @@ function harness({ deliveryStatus = "delivered" } = {}) {
       return [{ key: job }]
     }
     if (query.startsWith("WITH previous AS")) {
-      const [job, passJob, failureJob, isTest, firstJob, recoveryJob] = values
+      const [job, passJob, failureJob, offset, isTest, dedupePrefix, firstJob, recoveryJob] = values
       assert.deepEqual([passJob, failureJob, firstJob, recoveryJob], [job, job, job, job])
       assert.match(query, /job = 'gmail-ingest'::text AND ok ORDER BY ran_at DESC LIMIT 1/)
       assert.match(query, /WHEN NOT previous\.ok OR previous\.detail->>'reason' IS NOT NULL THEN COALESCE\( previous\.detail->>'outageKey'/)
-      assert.match(query, /notice\.is_test = \? ::boolean AND notice\.dedupe_key LIKE 'health-monitor:%'/)
+      assert.match(query, /notice\.is_test = \? ::boolean AND starts_with\(notice\.dedupe_key, \? ::text\)/)
       assert.match(query, /notice\.created_at >= \(SELECT min\(ran_at\) FROM automation_runs WHERE job = \? ::text\)/)
       assert.match(query, /notice\.created_at > COALESCE\(\( SELECT max\(recovered\.ran_at\)/)
       assert.match(query, /recovered\.job = \? ::text AND recovered\.ok = true AND recovered\.detail->>'reason' IS NULL/)
@@ -78,12 +79,12 @@ function harness({ deliveryStatus = "delivered" } = {}) {
       const failures = history.slice(history.findLastIndex((run) => run.ok) + 1)
       const isHealthy = (run) => run.ok && (run.detail?.reason ?? null) === null
       const newestHealthyAt = history.findLast(isHealthy)?.at ?? -Infinity
-      const pageRoot = alerts.filter((alert) => alert.isTest === isTest && alert.dedupeKey.startsWith("health-monitor:")
+      const pageRoot = alerts.filter((alert) => alert.isTest === isTest && alert.dedupeKey.startsWith(dedupePrefix)
         && alert.at >= history[0]?.at && alert.at > newestHealthyAt).sort((a, b) => a.at - b.at)[0]
       return [{
         last_gmail_success_at: success ? new Date(success.at).toISOString() : previous?.detail?.lastGmailSuccessAt ?? null,
         first_failed_at: previous && !previous.ok ? previous.detail?.firstFailedAt ?? new Date(failures[0].at).toISOString() : null,
-        outage_key: previous && !isHealthy(previous) ? previous.detail?.outageKey ?? pageRoot?.dedupeKey ?? null : null,
+        outage_key: previous && !isHealthy(previous) ? previous.detail?.outageKey ?? pageRoot?.dedupeKey.slice(offset - 1) ?? null : null,
       }]
     }
     if (query.startsWith("INSERT INTO automation_runs")) {
@@ -119,6 +120,7 @@ function harness({ deliveryStatus = "delivered" } = {}) {
     "@/lib/db": { getSql: () => sql },
     "@/lib/automation-health.ts": { automationRunIsStale },
     "@/lib/health-monitor-alert.ts": { buildHealthMonitorFailureAlert },
+    "@/lib/notification-dedupe": { notificationDedupePrefix: () => notificationDedupePrefix(context.process.env.VERCEL_ENV) },
     "@/lib/notify": { notifyAll: async (alert) => {
       if (notificationError) {
         const error = notificationError

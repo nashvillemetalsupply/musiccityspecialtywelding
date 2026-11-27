@@ -1,6 +1,7 @@
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { notify, notifyAll } from "@/lib/notify"
+import { notificationDedupePrefix } from "@/lib/notification-dedupe"
 import { readTwilioForm, twilioSmsWebhookConfigured, twiml } from "@/lib/twilio"
 
 export async function POST(req: Request) {
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
         SELECT id FROM events
         WHERE kind = 'sms.delivery-unknown'
           AND detail->>'messageId' = ${String(message.id)}::text
-      )`
+      ) AND starts_with(dedupe_key, ${notificationDedupePrefix()}::text)`
     const effectiveStatus = message?.status ?? status
     if (message && ["failed", "undelivered"].includes(effectiveStatus)) {
       const tests = message.lead_id ? (await sql`

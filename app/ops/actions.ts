@@ -15,6 +15,7 @@ import { canAccessInternalTests, requireLeadMutationAccess, type Operator } from
 import { getShopPhone } from "@/lib/shop-contact"
 import { processEvent } from "@/lib/extract"
 import { notifyAll } from "@/lib/notify"
+import { notificationDedupePrefix } from "@/lib/notification-dedupe"
 import { recordEvent } from "@/lib/events"
 import { createOrReuseQuoteGlassLink } from "@/lib/glass"
 import { deliverGlassClipboard, glassUrl as customerGlassUrl } from "@/lib/glass-delivery"
@@ -1441,6 +1442,7 @@ export async function undoLeadComplete(formData: FormData) {
         stock = 'manila', coalesced = true
       FROM immutable_receipt r
       WHERE n.source_event_id = ${rows[0].id}::bigint
+        AND starts_with(n.dedupe_key, ${notificationDedupePrefix()}::text)
       RETURNING n.id
     ), undo_wire AS (
       INSERT INTO notifications (
@@ -1451,8 +1453,8 @@ export async function undoLeadComplete(formData: FormData) {
         ${`${rows[0].first_name || "Job"} is active again`}::text,
         ${`${operator.name || "Crew"} undid the finish.`}::text,
         ${`/ops/leads/${leadId}`}::text, r.id, false,
-        ('completion-undo:' || r.id::text),
-        mcsw_is_test_row(NULL::bigint, NULL::bigint, r.id, NULL::text, NULL::jsonb,
+        (${notificationDedupePrefix() + "completion-undo:"}::text || r.id::text),
+        ${process.env.VERCEL_ENV !== "production"}::boolean OR mcsw_is_test_row(NULL::bigint, NULL::bigint, r.id, NULL::text, NULL::jsonb,
           concat_ws(' ', ${`${rows[0].first_name || "Job"} is active again`}::text,
             ${`${operator.name || "Crew"} undid the finish.`}::text))
       FROM immutable_receipt r CROSS JOIN operators o

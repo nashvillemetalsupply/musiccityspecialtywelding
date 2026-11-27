@@ -65,7 +65,7 @@ test("email acceptance, uncertainty, and signed callbacks remain distinct", () =
   assert.match(operatorEmail, /recordDeliveryProblem\("email\.unknown", message\)/)
   assert.match(leads, /WHEN 'failed' THEN 'rejected'/)
   assert.match(leads, /WHEN 'bounced' THEN 'failed'/)
-  assert.match(leads, /receipt.detail->>'providerType' IN \('email\.bounced', 'email\.complained'\)/)
+  assert.match(leads, /receipt.detail->>'providerType' IN \('email\.bounced', 'email\.complained', 'email\.failed', 'email\.suppressed'\)/)
   assert.match(leads, /email_delivered_at = CASE[\s\S]{0,180}COALESCE\(email_delivered_at, now\(\)\)/)
 
   assert.match(webhook, /webhooks\.verify/)

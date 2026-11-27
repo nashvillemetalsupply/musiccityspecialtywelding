@@ -1,5 +1,6 @@
 import { permanentTwilioRecipientError } from "@/lib/alert-failure-classifier.mjs"
 import { getSql } from "@/lib/db"
+import { notificationDedupePrefix } from "@/lib/notification-dedupe"
 import { readTwilioForm, twilioSmsWebhookConfigured, twiml } from "@/lib/twilio"
 
 const KNOWN_STATUSES = new Set([
@@ -78,6 +79,7 @@ export async function POST(req: Request) {
         OR provider_email_status = ANY(ARRAY['rejected','email.bounced','email.failed','email.suppressed']::text[])
       )
       AND provider_email_status IS DISTINCT FROM 'sending'
-      AND (provider_message_sid IS NULL OR provider_message_sid = ${sid}::text)`
+      AND (provider_message_sid IS NULL OR provider_message_sid = ${sid}::text)
+      AND starts_with(dedupe_key, ${notificationDedupePrefix()}::text)`
   return twiml("")
 }

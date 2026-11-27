@@ -390,8 +390,14 @@ export async function POST(req: Request) {
               WHERE lead_id = ${lead.id}::bigint AND intake_key = ${intakeKey}::text
               ORDER BY photo_index
             `) as QuotePhotoIntent[];
-            // Older intakes can only be verified against their reserved form photos.
-            if (!saved.quote_photos && savedPhotos.length !== photoFiles.length) return changedQuoteResponse(true);
+            if (!saved.quote_photos) {
+              // Before any legacy upload, the lead still holds the original count
+              // even if photo reservation never started or stopped midway.
+              const originalPhotoCount = savedPhotos.some((photo) => photo.status !== "pending")
+                ? savedPhotos.length
+                : Number(saved.photo_count);
+              if (originalPhotoCount !== photoFiles.length) return changedQuoteResponse(true);
+            }
             const ordered = await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes);
             if (!ordered) return changedQuoteResponse(true);
             photoFiles.splice(0, photoFiles.length, ...ordered);

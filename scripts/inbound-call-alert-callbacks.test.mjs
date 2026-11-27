@@ -8,11 +8,20 @@ import vm from "node:vm"
 import { Resend } from "resend"
 import ts from "typescript"
 import * as alertFailureClassifier from "../lib/alert-failure-classifier.mjs"
+import { notificationDedupePrefix } from "../lib/notification-dedupe.ts"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 const resendRoutePath = resolve(root, "app/api/resend/webhook/route.ts")
 const twilioRoutePath = resolve(root, "app/api/twilio/notification-status/route.ts")
 const leadsPath = resolve(root, "lib/leads.ts")
+
+function resendEnvironment(signingKey, environment = "production") {
+  return {
+    RESEND_API_KEY: "synthetic-resend-key",
+    RESEND_WEBHOOK_SECRET: `whsec_${signingKey.toString("base64")}`,
+    VERCEL_ENV: environment,
+  }
+}
 
 function normalizedSql(strings) {
   return strings.join(" ? ").replace(/\s+/g, " ").trim()
@@ -81,7 +90,7 @@ function resendRequest(payload, signature = "valid") {
   })
 }
 
-function createResendHarness({ providerEmailId = "email-alert-901", deliveryStatus = "accepted", deliveryAttempts = 1, smsFallback = true } = {}) {
+function createResendHarness({ providerEmailId = "email-alert-901", deliveryStatus = "accepted", deliveryAttempts = 1, smsFallback = true, environment = "production" } = {}) {
   const notification = providerEmailId
     ? {
         id: 901,
@@ -180,6 +189,7 @@ function createResendHarness({ providerEmailId = "email-alert-901", deliveryStat
     env: {
       RESEND_API_KEY: "synthetic-resend-key",
       RESEND_WEBHOOK_SECRET: "synthetic-webhook-secret",
+      VERCEL_ENV: environment,
     },
     fakes: new Map([
       ["resend", { Resend: FakeResend }],
@@ -283,6 +293,16 @@ test("an early Resend callback retries when neither alert nor customer acceptanc
   assert.ok(harness.sqlCalls.some(({ text }) => text.includes("FROM events accepted_event")))
 })
 
+test("preview does not change a matched live operator alert on a Resend failure callback", async () => {
+  const harness = createResendHarness({ environment: "preview" })
+  const response = await harness.POST(resendRequest(resendPayload("email.bounced", "email-alert-901")))
+
+  assert.equal(response.status, 200)
+  assert.equal(harness.notification.delivery_status, "accepted")
+  assert.equal(harness.customerCalls(), 0)
+  assert.ok(harness.sqlCalls.every(({ text }) => !text.includes("UPDATE notifications")))
+})
+
 test("a signed Resend delivery settles the quote owner email after its acceptance write was lost", async () => {
   const providerEmailId = "email-quote-owner-41"
   const sourceEventId = 201
@@ -298,7 +318,7 @@ test("a signed Resend delivery settles the quote owner email after its acceptanc
   const receipts = new Map()
   let deliveryProjected = false
   const route = loadRoute(resendRoutePath, {
-    env: { RESEND_API_KEY: "synthetic-resend-key", RESEND_WEBHOOK_SECRET: `whsec_${signingKey.toString("base64")}` },
+    env: resendEnvironment(signingKey),
     fakes: new Map([
       ["resend", { Resend }],
       ["@/lib/db", { getSql: () => async (strings, ...values) => {
@@ -342,23 +362,28 @@ test("a signed Resend delivery settles the quote owner email after its acceptanc
   assert.equal(deliveryProjected, true)
 })
 
-test("signed quote callbacks recover a lost Resend response by frozen intent tag", async (t) => {
-  for (const [type, attemptHistory, expectedReceipts, expectedAttempt] of [
-    ["email.bounced", [{ id: 202, rejected: true }, { id: 204 }], ["email.accepted", "email.failed"], 204],
-    ["email.delivered", [{ id: 202, rejected: true }, { id: 204 }], ["email.delivered"], 204],
-    ["email.delivered", [{ id: 202, rejected: true }], ["email.delivered"], 202],
-    ["email.delivered", [{ id: 202 }, { id: 204 }], ["email.delivered"], undefined],
+test("signed quote callbacks resume production alerts after a preview receipt", async (t) => {
+  for (const [type, attemptHistory, expectedReceipts, expectedAttempt, alreadyAccepted] of [
+    ["email.bounced", [{ id: 202, rejected: true }, { id: 204 }], ["email.accepted", "email.failed"], 204, true],
+    ["email.bounced", [{ id: 202, rejected: true }, { id: 204 }], ["email.accepted", "email.failed"], 204, false],
+    ["email.delivered", [{ id: 202, rejected: true }, { id: 204 }], ["email.delivered"], 204, false],
+    ["email.delivered", [{ id: 202, rejected: true }], ["email.delivered"], 202, false],
+    ["email.delivered", [{ id: 202 }, { id: 204 }], ["email.delivered"], undefined, false],
   ]) {
-    await t.test(`${type} with attempt ${expectedAttempt ?? "unidentifiable"}`, async () => {
+    await t.test(`${type} from ${alreadyAccepted ? "provider ID" : "frozen intent tag"} with attempt ${expectedAttempt ?? "unidentifiable"}`, async () => {
       const signingKey = Buffer.from("synthetic lost response signing key")
       const intakeKey = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
       const tags = { quote_intent: `quote-owner-${intakeKey}`, audience: "shop" }
       const intent = { id: 201, lead_id: 41, person_id: 17, is_test: false, audience: "shop" }
+      const providerEmailId = "email-without-synchronous-id"
       const receipts = new Map()
       const alerts = new Map()
       let tagLookups = 0
-      const route = loadRoute(resendRoutePath, {
-        env: { RESEND_API_KEY: "synthetic-resend-key", RESEND_WEBHOOK_SECRET: `whsec_${signingKey.toString("base64")}` },
+      if (alreadyAccepted) receipts.set(`email.accepted:${providerEmailId}`, {
+        id: 301, kind: "email.accepted", detail: { sourceEventId: intent.id, attemptEventId: expectedAttempt, providerEmailId },
+      })
+      const loadWebhook = (environment) => loadRoute(resendRoutePath, {
+        env: resendEnvironment(signingKey, environment),
         fakes: new Map([
           ["resend", { Resend }],
           ["@/lib/db", { getSql: () => async (strings, ...values) => {
@@ -379,35 +404,52 @@ test("signed quote callbacks recover a lost Resend response by frozen intent tag
               const attempt = pending.length === 1 ? pending[0] : attemptHistory.length === 1 ? attemptHistory[0] : null
               return [{ ...intent, kind: "email.attempt", detail: { sourceEventId: intent.id, attemptEventId: attempt?.id ?? null } }]
             }
-            if (query.startsWith("SELECT id FROM events")) return receipts.has(values.join(":")) ? [{ id: 302 }] : []
+            if (query.startsWith("SELECT id FROM events")) {
+              const receipt = receipts.get(values.join(":"))
+              return receipt ? [{ id: receipt.id }] : []
+            }
             if (query.startsWith("SELECT is_test FROM leads")) return [{ is_test: false }]
             throw new Error(`Unexpected webhook SQL: ${query}`)
           } }],
           ["@/lib/events", { recordEvent: async (event) => {
             const key = `${event.kind}:${event.externalId}`
             if (receipts.has(key)) return null
-            receipts.set(key, event)
-            return 302
+            const id = 301 + receipts.size
+            receipts.set(key, { ...event, id })
+            return id
           } }],
           ["@/lib/leads", { markLeadDelivery: async () => {} }],
-          ["@/lib/notify", { notifyAll: async (alert) => { alerts.set(alert.dedupeKey, alert) } }],
+          ["@/lib/notify", { notifyAll: async (alert) => {
+            if (!alerts.has(alert.dedupeKey)) alerts.set(alert.dedupeKey, alert)
+          } }],
         ]),
       })
-      const providerEmailId = "email-without-synchronous-id"
-      const send = (callbackTags) => route.POST(signedResendRequest(resendPayload(type, providerEmailId, callbackTags), signingKey))
-      assert.equal((await send({ ...tags, audience: "customer" })).status, 503)
-      assert.equal(receipts.size, 0)
-      assert.equal((await send(tags)).status, 200)
-      assert.equal((await send({ quote_intent: "irrelevant" })).status, 200)
-      assert.equal(tagLookups, 1, "provider ID takes priority over the signed tag")
+      const preview = loadWebhook("preview")
+      const production = loadWebhook("production")
+      const send = (route, callbackTags) => route.POST(signedResendRequest(resendPayload(type, providerEmailId, callbackTags), signingKey))
+      if (!alreadyAccepted) {
+        assert.equal((await send(preview, { ...tags, audience: "customer" })).status, 503)
+        assert.equal(receipts.size, 0)
+      }
+      assert.equal((await send(preview, tags)).status, 200)
+      assert.equal(receipts.size, expectedReceipts.length)
+      assert.equal(alerts.size, 0, "preview must leave the production alert key available")
+      assert.equal((await send(production, tags)).status, 200)
+      assert.equal((await send(production, { quote_intent: "irrelevant" })).status, 200)
+      assert.equal(tagLookups, alreadyAccepted ? 0 : 1, "provider ID takes priority over the signed tag")
       assert.equal(alerts.size, type === "email.bounced" ? 1 : 0)
+      if (type === "email.bounced") {
+        const failure = receipts.get(`email.failed:resend:${type}:${providerEmailId}`)
+        assert.equal(failure.detail.isTest, false)
+        assert.equal(alerts.get(`resend-failure:${providerEmailId}`)?.sourceEventId, failure.id)
+      }
       assert.deepEqual([...receipts.values()].map(({ kind, detail }) => [kind, detail.sourceEventId, detail.attemptEventId]),
         expectedReceipts.map((kind) => [kind, intent.id, expectedAttempt]))
     })
   }
 })
 
-test("the owner email dashboard clears request rejection on acceptance or delivery and preserves a signed bounce or complaint", async () => {
+test("the owner email dashboard clears request rejection and preserves signed terminal failures", async (t) => {
   const signingKey = Buffer.from("synthetic owner email projection signing key")
   const leadId = 41
   const providerEmailId = "email-owner-after-rejection"
@@ -422,23 +464,18 @@ test("the owner email dashboard clears request rejection on acceptance or delive
     if (query.includes("FROM events accepted_event")) return receipts
       .filter(({ kind, detail }) => kind === "email.accepted" && detail.providerEmailId === values[0])
       .map(({ kind, detail }) => ({ kind, detail, lead_id: leadId, person_id: 17, audience: "shop", is_test: false }))
+    if (query.startsWith("SELECT id FROM events")) {
+      const index = receipts.findIndex(({ kind, externalId }) => kind === values[0] && externalId === values[1])
+      return index === -1 ? [] : [{ id: 301 + index }]
+    }
     if (query.startsWith("SELECT is_test FROM leads")) return [{ is_test: false }]
     if (query.includes("UPDATE leads SET")) {
-      if (query.includes("email_delivery_status = 'failed',")) {
-        lead.status = "failed"
-        lead.error = values[0]
-        return []
-      }
-      if (query.includes("ARRAY['failed','sent','delivered']")) {
-        if (lead.status !== "failed") lead.status = "accepted"
-        return []
-      }
       const [status, error] = values
       assert.equal(values.at(-1), leadId)
       assert.match(query, /WHEN 'failed' THEN 'rejected'/)
       assert.match(query, /WHEN 'bounced' THEN 'failed'/)
-      assert.match(query, /detail->>'providerType' IN \('email.bounced', 'email.complained'\)/)
-      const signedFailure = receipts.some(({ detail }) => ["email.bounced", "email.complained"].includes(detail.providerType) && detail.audience === "shop")
+      const failureTypes = query.match(/detail->>'providerType' IN \(([^)]+)\)/)[1].match(/'[^']+'/g).map((literal) => literal.slice(1, -1))
+      const signedFailure = receipts.some(({ detail }) => failureTypes.includes(detail.providerType) && detail.audience === "shop")
       if (status !== "bounced" && signedFailure) return []
       const accepted = receipts.some(({ kind, detail }) => ["email.accepted", "email.delivered"].includes(kind) && detail.audience === "shop")
       assert.match(query, /receipt.kind IN \('email.accepted', 'email.delivered'\)/)
@@ -459,10 +496,13 @@ test("the owner email dashboard clears request rejection on acceptance or delive
     ]),
   })
   const route = loadRoute(resendRoutePath, {
-    env: { RESEND_API_KEY: "synthetic-resend-key", RESEND_WEBHOOK_SECRET: `whsec_${signingKey.toString("base64")}` },
+    env: resendEnvironment(signingKey),
     fakes: new Map([
       ["resend", { Resend }], ["@/lib/db", db], ["@/lib/leads", leads],
-      ["@/lib/events", { recordEvent: async (event) => receipts.push(event) }],
+      ["@/lib/events", { recordEvent: async (event) => {
+        if (receipts.some(({ kind, externalId }) => kind === event.kind && externalId === event.externalId)) return null
+        return 300 + receipts.push(event)
+      } }],
       ["@/lib/notify", { notifyAll: async () => {} }],
     ]),
   })
@@ -484,17 +524,29 @@ test("the owner email dashboard clears request rejection on acceptance or delive
   Object.assign(lead, { status: "failed", error: "Provider rejected the first request." })
   await send("email.delivered")
   assert.deepEqual(lead, { status: "delivered", error: "" })
-  await send("email.bounced")
-  assert.deepEqual(lead, { status: "failed", error: "Mailbox rejected the alert." })
-  await leads.markLeadDelivery(leadId, "accepted")
-  await send("email.delivered")
-  assert.deepEqual(lead, { status: "failed", error: "Mailbox rejected the alert." })
-
-  receipts.splice(-2)
-  Object.assign(lead, { status: "delivered", error: "" })
-  await send("email.complained")
-  assert.equal(lead.status, "failed")
-  assert.equal(receipts.at(-1).detail.providerType, "email.complained")
+  for (const [type, error] of [
+    ["email.bounced", "Mailbox rejected the alert."],
+    ["email.complained", "The recipient marked the email as spam."],
+    ["email.failed", "Provider rejected the alert."],
+    ["email.suppressed", "Address is suppressed."],
+  ]) {
+    await t.test(type, async () => {
+      receipts.splice(2)
+      Object.assign(lead, { status: "accepted", error: "" })
+      await send(type)
+      assert.deepEqual(lead, { status: "failed", error })
+      assert.equal(receipts.at(-1).detail.providerType, type)
+      await leads.markLeadDelivery(leadId, "accepted")
+      assert.deepEqual(lead, { status: "failed", error })
+      await send("email.delivery_delayed")
+      assert.deepEqual(lead, { status: "failed", error })
+      await send("email.delivered")
+      assert.deepEqual(lead, { status: "failed", error })
+      await send(type)
+      assert.deepEqual(lead, { status: "failed", error })
+      assert.equal(receipts.filter(({ detail }) => detail.providerType === type).length, 1)
+    })
+  }
 })
 
 test("an invalid Resend signature performs no database work", async () => {
@@ -508,6 +560,7 @@ test("an invalid Resend signature performs no database work", async () => {
 
 function createTwilioHarness({
   valid = true,
+  environment = "production",
   providerEmailId = "email-alert-901",
   providerEmailStatus = "email.accepted",
   extraParams = {},
@@ -535,16 +588,18 @@ function createTwilioHarness({
       (notification.provider_email_id && protectsEmailReceipt && !failedEmailReleasesAggregate)
       || (notification.provider_email_status === "sending" && protectsSendingEmail),
     )
-    if (receiptMatches && !emailOwnsAggregate) {
+    const keyMatches = !text.includes("starts_with(dedupe_key") || "call-read:CA1".startsWith(values.at(-1))
+    if (receiptMatches && !emailOwnsAggregate && keyMatches) {
       notification.provider_status = "undelivered"
       notification.delivery_status = "dead"
     }
     return []
   }
   const route = loadRoute(twilioRoutePath, {
-    env: {},
+    env: { VERCEL_ENV: environment },
     fakes: new Map([
       ["@/lib/db", { getSql: () => sql }],
+      ["@/lib/notification-dedupe", { notificationDedupePrefix: () => notificationDedupePrefix(environment) }],
       // The real classifier, not a fake: the callback's permanent-error text is under test.
       ["@/lib/alert-failure-classifier.mjs", alertFailureClassifier],
       ["@/lib/twilio", {
@@ -559,6 +614,13 @@ function createTwilioHarness({
   })
   return { POST: route.POST, notification, sqlCalls }
 }
+
+test("preview Twilio callbacks leave a production-keyed alert untouched", async () => {
+  const harness = createTwilioHarness({ environment: "preview", providerEmailId: null })
+  const response = await harness.POST(new Request("https://example.test/api/twilio/notification-status?notification=901", { method: "POST" }))
+  assert.equal(response.status, 200)
+  assert.equal(harness.notification.delivery_status, "accepted")
+})
 
 test("a late Twilio failure cannot overwrite an alert that has an email receipt", async () => {
   const harness = createTwilioHarness()

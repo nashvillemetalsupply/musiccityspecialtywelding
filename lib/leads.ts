@@ -151,7 +151,7 @@ function makePublicId(now: Date) {
 }
 
 type SavedIntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "created_at" | "first_name" | "last_name"
-  | "phone" | "email" | "service" | "message" | "preferred_contact" | "source" | "is_test"
+  | "phone" | "email" | "service" | "message" | "preferred_contact" | "photo_count" | "source" | "is_test"
   | "gclid" | "utm_source" | "referrer"> & {
   quote_photos?: { count: number; fingerprints: string[] } | null
 }
@@ -181,7 +181,7 @@ export async function createLead(
   const readExistingIntake = async () => {
     const [saved] = (await sql`
       SELECT id, public_id, person_id, first_name, last_name, phone, email, service,
-        message, preferred_contact, source, is_test, created_at, gclid, utm_source, referrer,
+        message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer,
         (SELECT jsonb_build_object('count', original_photo_count, 'fingerprints', photo_fingerprints)
           FROM quote_intakes WHERE quote_intakes.intake_key = leads.intake_key AND lead_id = leads.id) AS quote_photos
       FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as SavedIntakeLead[]
@@ -232,7 +232,7 @@ export async function createLead(
             ${defaultFollowUpAt}::timestamptz
           )
           RETURNING id, public_id, person_id, first_name, last_name, phone, email, service,
-            message, preferred_contact, source, is_test, created_at, gclid, utm_source, referrer, intake_key
+            message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer, intake_key
         ), captured_consent AS MATERIALIZED (
           INSERT INTO messaging_consents (
             phone_e164, lead_id, source, effect, external_id, occurred_at, provenance
@@ -250,8 +250,9 @@ export async function createLead(
           ON CONFLICT (external_id) DO NOTHING
           RETURNING id
         ), captured_quote_intake AS (
-          INSERT INTO quote_intakes (intake_key, lead_id, original_photo_count, photo_fingerprints)
-          SELECT intake_key, id, ${input.photoCount}::int, ${JSON.stringify(options.quotePhotoFingerprints ?? null)}::jsonb
+          INSERT INTO quote_intakes (intake_key, lead_id, original_photo_count, photo_fingerprints, environment)
+          SELECT intake_key, id, ${input.photoCount}::int, ${JSON.stringify(options.quotePhotoFingerprints ?? null)}::jsonb,
+            ${process.env.VERCEL_ENV === "production" ? "production" : "preview"}::text
           FROM inserted_lead
           WHERE ${options.quotePhotoFingerprints !== undefined}::boolean
         )
@@ -536,8 +537,8 @@ export async function markLeadDelivery(
   error?: string
 ) {
   const sql = getSql()
-  // Old leads used "failed" for request rejection too. Only the signed
-  // bounce or complaint receipt makes that status survive later callbacks.
+  // Old leads used "failed" for request rejection too. A signed provider
+  // failure receipt makes that status survive later callbacks.
   await sql`
     WITH incoming AS (SELECT ${status}::text AS status, ${error ?? "unknown"}::text AS error)
     UPDATE leads SET
@@ -563,7 +564,7 @@ export async function markLeadDelivery(
           SELECT 1 FROM events receipt
           WHERE receipt.lead_id = leads.id AND receipt.kind = 'email.failed'
             AND receipt.detail->>'audience' = 'shop'
-            AND receipt.detail->>'providerType' IN ('email.bounced', 'email.complained')
+            AND receipt.detail->>'providerType' IN ('email.bounced', 'email.complained', 'email.failed', 'email.suppressed')
         )
         AND CASE incoming.status
           WHEN 'failed' THEN email_delivery_status NOT IN ('accepted','sent','delayed','delivered','resolved')

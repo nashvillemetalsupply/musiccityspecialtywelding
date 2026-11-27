@@ -5,6 +5,7 @@ import vm from "node:vm"
 import ts from "typescript"
 import { sendEmailWithProviderTruth, isDefinitiveEmailProviderError } from "../lib/email-provider-truth.ts"
 import { stripAssistantMoney } from "../lib/assistant/money.ts"
+import { notificationDedupePrefix } from "../lib/notification-dedupe.ts"
 
 const sessionId = "126e8815-0502-4f7d-94a5-0df870ac6b46"
 const baseInput = {
@@ -65,6 +66,7 @@ function harness({ env: overrides = {}, sourceTest = false, missingSource = fals
     ["@/lib/events", { recordEvent }], ["./assistant/money.ts", { stripAssistantMoney }],
     ["@/lib/operators", {}], ["@/lib/push", {}], ["@/lib/twilio", {}],
     ["@/lib/email-provider-truth.ts", { sendEmailWithProviderTruth, isDefinitiveEmailProviderError }],
+    ["@/lib/notification-dedupe", { notificationDedupePrefix }],
     ["@/lib/shop-brain-invariants.ts", {}], ["@/lib/pagination", {}],
     ["@/lib/visibility", {}], ["@/lib/alert-failure-classifier.mjs", {}],
   ])
@@ -263,16 +265,24 @@ test("signed assistant inbox bounces and delays alert the shop phone even withou
       ])
       const source = readFileSync(new URL("../app/api/resend/webhook/route.ts", import.meta.url), "utf8")
       const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
-      const loaded = { exports: {} }
-      const context = vm.createContext({ process: { env: { RESEND_WEBHOOK_SECRET: "synthetic" } }, Response })
-      vm.runInContext(`(function(exports,require,module){${output}\n})`, context)(loaded.exports, (name) => fakes.get(name), loaded)
+      const loadWebhook = (environment) => {
+        const loaded = { exports: {} }
+        const context = vm.createContext({ process: { env: { RESEND_WEBHOOK_SECRET: "synthetic", VERCEL_ENV: environment } }, Response })
+        vm.runInContext(`(function(exports,require,module){${output}\n})`, context)(loaded.exports, (name) => fakes.get(name), loaded)
+        return loaded.exports.POST
+      }
+      const preview = loadWebhook("preview")
+      const production = loadWebhook("production")
       const request = (signature = "valid") => new Request("https://example.test/api/resend/webhook", { method: "POST",
         headers: { "svix-signature": signature }, body: JSON.stringify({ type, data: { email_id: "email-fixture", bounce: { message: "rejected" } } }) })
-      assert.equal((await loaded.exports.POST(request("invalid"))).status, 403)
+      assert.equal((await preview(request("invalid"))).status, 403)
       assert.equal(queries.length, 0)
+      assert.equal((await preview(request())).status, 200)
+      assert.equal(events.size, 1)
+      assert.equal(alerts.size, 0, "preview must leave the shop phone alert available for production")
       const expectedStatus = !ownerConfigured && type !== "email.delivered" ? 503 : 200
-      assert.equal((await loaded.exports.POST(request())).status, expectedStatus)
-      assert.equal((await loaded.exports.POST(request())).status, expectedStatus)
+      assert.equal((await production(request())).status, expectedStatus)
+      assert.equal((await production(request())).status, expectedStatus)
       const shouldAlert = ownerConfigured && !isTest && type !== "email.delivered"
       assert.equal(alerts.size, shouldAlert ? 1 : 0)
       if (shouldAlert) {

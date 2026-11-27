@@ -8,6 +8,7 @@ import { formatSmsBody, normalizeUsPhone } from "@/lib/shop-brain-invariants.ts"
 import { clampPageToTotal, normalizePage } from "@/lib/pagination"
 import { redactCrewText } from "@/lib/visibility"
 import { permanentTwilioRecipientError, twilioErrorCodeFrom } from "@/lib/alert-failure-classifier.mjs"
+import { notificationDedupePrefix } from "@/lib/notification-dedupe"
 
 export type NotificationPriority = "interrupt" | "digest"
 export type NotificationStock = "white" | "green" | "manila" | "red" | "people"
@@ -345,14 +346,13 @@ export async function notify(input: {
   const markedBody = isTest && !storedBody.includes("[INTERNAL TEST]")
     ? `[INTERNAL TEST] ${storedBody}`.slice(0, 500)
     : storedBody.slice(0, 500)
-  const dedupeKey = input.dedupeKey
-    ? input.dedupeKey.slice(0, 240)
-    : input.sourceEventId
+  const baseDedupeKey = input.dedupeKey || (input.sourceEventId
       ? input.priority === "interrupt"
         ? `source:${input.sourceEventId}:interrupt`
         : `source:${input.sourceEventId}:${input.priority}:${input.stock ?? "white"}:${input.title.slice(0, 120)}`
-      : ""
-  const rows = (await sql`
+      : "")
+  const dedupeKey = baseDedupeKey ? `${notificationDedupePrefix()}${baseDedupeKey}`.slice(0, 240) : ""
+  const insert = async () => (await sql`
     INSERT INTO notifications (
       operator_id, priority, stock, title, body, url, source_event_id, owner_only, dedupe_key,
       action_kind, action_detail, budget_exempt, delivery_status, quiet_hours_exempt, sms_fallback,
@@ -380,6 +380,15 @@ export async function notify(input: {
         concat_ws(' ', ${storedTitle}::text, ${markedBody}::text))
     ) ON CONFLICT (operator_id, dedupe_key) WHERE dedupe_key <> '' DO NOTHING
     RETURNING id`) as { id: number }[]
+  let rows = await insert()
+  if (!rows[0] && dedupeKey && !previewEnvironment) {
+    // Keep the old test receipt and free the production key for a live row.
+    const moved = (await sql`
+      UPDATE notifications SET dedupe_key = 'preview:legacy:' || id::text || ':' || left(dedupe_key, 200)
+      WHERE operator_id = ${input.operatorId}::bigint AND dedupe_key = ${dedupeKey}::text AND is_test = true
+      RETURNING id`) as { id: number }[]
+    if (moved[0]) rows = await insert()
+  }
   if (!rows[0]) {
     if (input.priority === "interrupt" && input.sourceEventId) {
       await sql`
@@ -387,7 +396,8 @@ export async function notify(input: {
           stock = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN 'red' ELSE stock END,
           title = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN ${storedTitle}::text ELSE title END,
           body = CASE WHEN ${input.stock ?? "white"}::text = 'red' THEN ${markedBody}::text ELSE body END
-        WHERE operator_id = ${input.operatorId}::bigint AND dedupe_key = ${dedupeKey}::text`
+        WHERE operator_id = ${input.operatorId}::bigint AND dedupe_key = ${dedupeKey}::text
+          AND is_test = ${isTest}::boolean`
     }
     return { id: 0, sent: false, reason: "duplicate" as const }
   }
@@ -806,8 +816,10 @@ export async function emailAssistantTranscript(input: {
 }
 
 export async function retryPendingInterrupts(limit = 10) {
+  const preview = process.env.VERCEL_ENV !== "production"
+  const allowPreviewSmsProbe = preview && process.env.MCSW_TEST_SMS_FAIL === "1"
+  if (preview && !allowPreviewSmsProbe) return { attempted: 0, sent: 0, dead: 0 }
   const sql = getSql()
-  const allowPreviewSmsProbe = process.env.VERCEL_ENV !== "production" && process.env.MCSW_TEST_SMS_FAIL === "1"
   // A stable Resend idempotency key lets us safely replay an email handoff
   // whose acceptance receipt was lost before its provider id was persisted.
   await sql`
@@ -815,6 +827,7 @@ export async function retryPendingInterrupts(limit = 10) {
       delivery_status = 'retry', delivery_next_attempt_at = now(),
       delivery_error = 'Email acceptance receipt was interrupted; replaying the same idempotent request.'
     WHERE priority = 'interrupt' AND sent_at IS NULL AND delivery_status = 'sending'
+      AND (NOT ${preview}::boolean OR (sms_only AND is_test AND (dedupe_key = '' OR starts_with(dedupe_key, 'preview:'))))
       AND provider_email_status = 'sending' AND provider_email_id IS NULL
       AND delivery_last_attempt_at < now() - interval '10 minutes'`
   await sql`
@@ -823,12 +836,14 @@ export async function retryPendingInterrupts(limit = 10) {
       delivery_error = 'A delivery attempt stopped before acknowledgement; the provider may have accepted it, so automatic repeat is quarantined.',
       stock = 'red', title = left('Check alert delivery - ' || title, 120)
     WHERE priority = 'interrupt' AND sent_at IS NULL AND delivery_status = 'sending'
+      AND (NOT ${preview}::boolean OR (sms_only AND is_test AND (dedupe_key = '' OR starts_with(dedupe_key, 'preview:'))))
       AND delivery_last_attempt_at < now() - interval '10 minutes'`
   const candidates = (await sql`
     SELECT id, operator_id, title, body, url, budget_exempt, quiet_hours_exempt, sms_fallback, sms_only,
       provider_email_id, provider_email_status
     FROM notifications
     WHERE priority = 'interrupt' AND sent_at IS NULL AND delivery_attempts < 5
+      AND (NOT ${preview}::boolean OR (sms_only AND is_test AND (dedupe_key = '' OR starts_with(dedupe_key, 'preview:'))))
       AND (
         (delivery_status = 'retry' AND (delivery_next_attempt_at IS NULL OR delivery_next_attempt_at <= now()))
         OR (delivery_status = 'pending' AND created_at < now() - interval '10 minutes')

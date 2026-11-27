@@ -19,8 +19,9 @@ function quotePhoto(name, content = 0) {
 }
 
 function quoteRouteHarness({
-  message = "Repair a bracket", upload = () => {}, failLeadRead = "", emailConfigured = false,
+  message = "Repair a bracket", upload = () => {}, failLeadRead = "", emailConfigured = false, vercelEnvironment = "production",
   email = "", checkEmail = () => {}, checkPhotos = () => {}, checkAlert = () => {}, checkPhotoReservation = () => {},
+  storeQuoteFingerprints = true,
 } = {}) {
   const intakeKey = "10000000-0000-4000-8000-000000000001"
   const leads = new Map()
@@ -38,6 +39,7 @@ function quoteRouteHarness({
   const reviewAttempts = new Map()
   let now = Date.parse("2026-11-27T12:00:00.000Z")
   const env = {
+    VERCEL_ENV: vercelEnvironment,
     BLOB_READ_WRITE_TOKEN: "stub",
     ...(emailConfigured ? { RESEND_API_KEY: "stub", QUOTE_FROM_EMAIL: "from@example.test", QUOTE_TO_EMAIL: "owner@example.test" } : {}),
   }
@@ -96,8 +98,8 @@ function quoteRouteHarness({
           }
           leads.set(values[25], saved)
           if (values[29]) consents.push(values[27])
-          if (sql.includes("INSERT INTO quote_intakes") && values[32]) {
-            quoteIntakes.set(values[25], { count: values[30], fingerprints: JSON.parse(values[31]) })
+          if (storeQuoteFingerprints && sql.includes("INSERT INTO quote_intakes") && values[33]) {
+            quoteIntakes.set(values[25], { count: values[30], fingerprints: JSON.parse(values[31]), environment: values[32] })
           }
           return [saved]
         }
@@ -120,26 +122,46 @@ function quoteRouteHarness({
           assert.match(sql, /rejection\.detail->>'attemptEventId' = attempt\.id::text/)
           assert.match(sql, /intent\.recorded_at AS created_at/)
           assert.match(sql, /intent\.recorded_at < now\(\) - interval '15 minutes'/)
+          assert.match(sql, /intake\.environment = \?::text OR intake\.environment IS NULL/)
+          assert.match(sql, /recovery\.last_attempt_at <= now\(\) - interval '15 minutes'/)
+          assert.match(sql, /ORDER BY recovery\.last_attempt_at NULLS FIRST, clock\.review_at, intent\.id LIMIT 20/)
           return events.flatMap(({ id, kind, externalId, occurred_at, detail, leadId, personId }) => {
             if (kind !== "email.out" || !/^quote-(?:owner|customer):/.test(externalId)) return []
+            const lead = findLead(leadId)
+            const environment = quoteIntakes.get("website:" + externalId.split(":")[1])?.environment ?? null
+            if (lead.is_test || (environment !== null && environment !== values[0])) return []
             const receipts = events.filter(({ detail }) => detail.sourceEventId === id)
             if (receipts.some(({ kind }) => ["email.accepted", "email.delivered"].includes(kind))) return []
             const attempts = receipts.filter(({ kind }) => kind === "email.attempt")
-            const unresolved = attempts.filter((attempt) => !receipts.some(({ kind, detail }) =>
+            const rejection = (attempt) => receipts.find(({ kind, detail }) =>
               kind === "email.failed" && detail.attemptEventId === attempt.id && (detail.requestNotSent
-              || (detail.providerStatus >= 400 && detail.providerStatus < 500 && ![408, 409, 429].includes(detail.providerStatus)))))
+              || (detail.providerStatus >= 400 && detail.providerStatus < 500 && ![408, 409, 429].includes(detail.providerStatus))))
+            const counted = attempts.filter((attempt) => !rejection(attempt)?.detail.requestNotSent)
+            const unresolved = attempts.filter((attempt) => !rejection(attempt))
+            const failure = attempts
+              .filter((attempt) => attempt.detail.recovery)
+              .map(rejection)
+              .findLast((receipt) => receipt && !receipt.detail.requestNotSent)
             const row = { id, lead_id: leadId, person_id: personId, audience: detail.audience,
-              external_id: externalId, frozen_payload: detail.frozenPayload, created_at: occurred_at }
+              external_id: externalId, frozen_payload: detail.frozenPayload, created_at: occurred_at,
+              origin_unknown: environment === null, failure_event_id: failure?.id, failure_error: failure?.body }
             const createdAge = now - Date.parse(occurred_at)
-            const age = attempts.length ? Math.max(...unresolved.map(({ occurred_at }) => now - Date.parse(occurred_at))) : createdAge
-            const dedupeKey = `quote-email-review:${id}`
-            if (age >= 23 * 60 * 60 * 1000 && !alerts.some((alert) => alert.dedupeKey === dedupeKey)
-              && now - (reviewAttempts.get(dedupeKey) ?? -Infinity) >= 15 * 60 * 1000) return [{ ...row, needs_review: true }]
-            if (attempts.length === 0 && createdAge > 15 * 60 * 1000 && createdAge < 23 * 60 * 60 * 1000) return [{ ...row, needs_review: false }]
-            return []
-          })
+            const age = counted.length ? Math.max(...unresolved.map(({ occurred_at }) => now - Date.parse(occurred_at))) : createdAge
+            const reviewKey = `quote-email-review:${id}`
+            const lastAttempt = reviewAttempts.get(reviewKey)
+            const backoffComplete = now - (lastAttempt ?? -Infinity) >= 15 * 60 * 1000
+            const sendDue = counted.length === 0 && detail.frozenPayload
+              && createdAge > 15 * 60 * 1000 && createdAge < 23 * 60 * 60 * 1000
+            const reviewDue = age >= 23 * 60 * 60 * 1000 || (sendDue && row.origin_unknown)
+            const failureKey = `quote-${detail.audience === "shop" ? "owner" : "customer"}-delivery:${externalId.split(":")[1]}:failed`
+            if (!failure && !reviewDue && !sendDue) return []
+            if (!backoffComplete) return []
+            if ((failure || reviewDue) && alerts.some((alert) => alert.dedupeKey === (failure ? failureKey : reviewKey))) return []
+            return [{ ...row, needs_review: reviewDue, review_key: reviewKey, failure_key: failureKey, age, lastAttempt }]
+          }).sort((a, b) => ((a.lastAttempt ?? -Infinity) - (b.lastAttempt ?? -Infinity) || 0)
+            || b.age - a.age || a.id - b.id).slice(0, 20)
         }
-        if (sql.includes("INSERT INTO sync_state") && sql.includes("last_review_attempt_at")) {
+        if (sql.includes("INSERT INTO sync_state") && sql.includes("last_recovery_attempt_at")) {
           assert.match(sql, /WHERE sync_state\.updated_at <= now\(\) - interval '15 minutes'/)
           if (now - (reviewAttempts.get(leadId) ?? -Infinity) < 15 * 60 * 1000) return []
           reviewAttempts.set(leadId, now)
@@ -788,7 +810,7 @@ test("a photo-free quote retry ignores the photo count updated by a later MMS", 
   assert.equal((await route.submit()).status, 503)
   const [lead] = route.leads.values()
   assert.equal(lead.photo_count, 0)
-  assert.deepEqual([...route.quoteIntakes.values()], [{ count: 0, fingerprints: [] }])
+  assert.deepEqual([...route.quoteIntakes.values()], [{ count: 0, fingerprints: [], environment: "production" }])
   assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["owner@example.test"])
 
   lead.photos.add("messages/incoming-mms.jpg")
@@ -798,6 +820,36 @@ test("a photo-free quote retry ignores the photo count updated by a later MMS", 
   assert.equal(route.leads.size, 1)
   assert.equal(lead.photo_count, 1)
   assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["owner@example.test", "customer@example.test"])
+})
+
+test("retrying a pre-upgrade quote after reservation failed attaches the original photo without duplicating the receipt", async () => {
+  let reservationUnavailable = true
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    email: "customer@example.test",
+    storeQuoteFingerprints: false,
+    checkPhotoReservation() {
+      if (reservationUnavailable) throw new Error("Photo reservation stopped")
+    },
+  })
+  const original = quotePhoto("gate.jpg", 42)
+
+  assert.equal((await route.submit([original])).status, 503)
+  const [lead] = route.leads.values()
+  assert.equal(lead.photo_count, 1)
+  assert.equal(route.quoteIntakes.size, 0)
+  assert.equal(route.photoIntents.size, 0)
+  assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["customer@example.test"])
+
+  reservationUnavailable = false
+  assert.equal((await route.submit([original])).status, 200)
+  assert.deepEqual([...route.leads.values()], [lead])
+  assert.equal(lead.photos.size, 1)
+  assert.deepEqual(route.providerCalls.map(({ key }) => key.split(":")[0]), ["quote-customer", "quote-owner"])
+  const [attachment] = route.emails[1].payload.attachments
+  assert.equal(route.emails[1].payload.to, "owner@example.test")
+  assert.equal(attachment.filename, "gate.jpg")
+  assert.equal(attachment.content.at(-1), 42)
 })
 
 test("quote photo fingerprints are saved before reservation and reject replacement contents on retry", async () => {
@@ -1175,6 +1227,152 @@ test("one failing quote review backs off for 15 minutes while a newer review fil
   route.advance(1 / 60)
   assert.equal((await route.sweep()).ok, true)
   assert.deepEqual(reviewAttempts, [brokenReview, newest, brokenReview])
+})
+
+test("production recovery leaves preview-origin frozen owner and customer emails unsent", async () => {
+  let interrupted = true
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    email: "customer@example.test",
+    vercelEnvironment: "preview",
+    checkEmail(operation) {
+      if (interrupted && operation === "attempt") throw new Error("Process stopped after freeze")
+    },
+  })
+  assert.equal((await route.submit()).status, 503)
+  assert.equal([...route.leads.values()][0].is_test, false)
+  assert.equal([...route.quoteIntakes.values()][0].environment, "preview")
+  assert.deepEqual(route.events.filter(({ kind }) => kind.startsWith("email.")).map(({ kind }) => kind), ["email.out", "email.out"])
+  interrupted = false
+  route.advance(16 / 60)
+  assert.equal((await route.sweep()).detail.quoteEmailRecoveries, 0)
+  route.env.VERCEL_ENV = "production"
+  assert.equal((await route.sweep()).detail.quoteEmailRecoveries, 0)
+  route.advance(40)
+  assert.equal((await route.sweep()).detail.quoteEmailReviews, 0)
+  assert.equal(route.providerCalls.length, 0)
+})
+
+test("production recovery reviews a legacy frozen intent with no proven production origin once", async () => {
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    checkEmail(operation) {
+      if (operation === "attempt") throw new Error("Process stopped after freeze")
+    },
+  })
+  assert.equal((await route.submit()).status, 503)
+  route.quoteIntakes.values().next().value.environment = null
+  route.advance(16 / 60)
+  assert.equal((await route.sweep()).detail.quoteEmailReviews, 1)
+  route.advance(1)
+  assert.equal((await route.sweep()).detail.quoteEmailReviews, 0)
+  assert.equal(route.providerCalls.length, 0)
+  const review = route.alerts.find(({ dedupeKey }) => dedupeKey.startsWith("quote-email-review:"))
+  assert.equal(review.ownerOnly, true)
+  assert.equal(review.url, "/ops/leads/1#spike")
+  assert.match(review.body, /environment could not be confirmed/)
+})
+
+test("recovery files a lead-specific owner failure and customer warning for definitive rejections", async () => {
+  let interrupted = true
+  let filingUnavailable = true
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    email: "customer@example.test",
+    checkEmail(operation) {
+      if (interrupted && operation === "attempt") throw new Error("Process stopped after freeze")
+      if (operation === "send") return { data: null, error: { statusCode: 422, message: "Rejected recipient" } }
+    },
+    checkAlert({ dedupeKey }) {
+      if (filingUnavailable && dedupeKey.startsWith("quote-customer-delivery:") && dedupeKey.endsWith(":failed")) {
+        throw new Error("Notification write unavailable")
+      }
+    },
+  })
+  assert.equal((await route.submit()).status, 503)
+  interrupted = false
+  route.advance(16 / 60)
+  assert.equal((await route.sweep()).detail.quoteEmailRecoveries, 2)
+  const failureAlerts = () => route.alerts.filter(({ dedupeKey }) => dedupeKey.endsWith(":failed"))
+  assert.deepEqual(failureAlerts().map(({ title }) => title), ["Quote saved, owner email did not send"])
+  filingUnavailable = false
+  route.advance(16 / 60)
+  assert.equal((await route.sweep()).detail.quoteEmailRecoveries, 0)
+  route.advance(40)
+  assert.equal((await route.sweep()).detail.quoteEmailRecoveries, 0)
+  assert.equal(route.providerCalls.length, 2)
+  assert.deepEqual(failureAlerts().map(({ title }) => title), [
+    "Quote saved, owner email did not send",
+    "Customer confirmation did not send",
+  ])
+  for (const alert of failureAlerts()) {
+    assert.equal(alert.ownerOnly, true)
+    assert.equal(alert.url, "/ops/leads/1#spike")
+    assert.equal(alert.body, "Rejected recipient")
+    assert.equal(route.events.find(({ id }) => id === alert.sourceEventId).kind, "email.failed")
+  }
+  assert.match(failureAlerts()[1].dedupeKey, /^quote-customer-delivery:.*:failed$/)
+})
+
+test("a healthy 21st review gets a turn after 20 older reviews fail", async () => {
+  const attempts = []
+  let healthyReview
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    checkEmail(operation) {
+      if (operation === "attempt") throw new Error("Process stopped after freeze")
+    },
+    checkAlert({ dedupeKey }) {
+      if (!dedupeKey.startsWith("quote-email-review:")) return
+      attempts.push(dedupeKey)
+      if (dedupeKey !== healthyReview) throw new Error("Notification write unavailable")
+    },
+  })
+  for (let index = 1; index <= 21; index++) {
+    const key = "10000000-0000-4000-8000-" + String(index).padStart(12, "0")
+    assert.equal((await route.submit([], { key })).status, 503)
+    route.advance(1 / 60)
+  }
+  healthyReview = "quote-email-review:" + route.events.findLast(({ kind }) => kind === "email.out").id
+  route.advance(24)
+  assert.equal((await route.sweep()).detail.quoteEmailReviews, 0)
+  assert.equal(attempts.length, 20)
+  route.advance(1)
+  assert.equal((await route.sweep()).detail.quoteEmailReviews, 1)
+  assert.equal(attempts[20], healthyReview)
+  assert.equal(route.providerCalls.length, 0)
+})
+
+test("a healthy 21st send gets a turn while 20 attachment reads back off", async () => {
+  let interrupted = true
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    checkEmail(operation) {
+      if (interrupted && operation === "attempt") throw new Error("Process stopped after freeze")
+    },
+  })
+  for (let index = 1; index <= 21; index++) {
+    const key = "10000000-0000-4000-8000-" + String(index).padStart(12, "0")
+    assert.equal((await route.submit([quotePhoto("bracket.jpg", index)], { key })).status, 503)
+    route.advance(1 / 60)
+  }
+  const healthy = route.events.findLast(({ kind }) => kind === "email.out")
+  const [healthyPhoto] = JSON.parse(healthy.detail.frozenPayload).photos
+  for (const pathname of route.blobs.keys()) {
+    if (pathname !== healthyPhoto.pathname) route.blobs.delete(pathname)
+  }
+  interrupted = false
+  const prepareFailures = () => route.errors.filter(([message, error]) =>
+    message === "Quote email could not be prepared:" && error.message === "Saved quote photo unavailable.")
+  route.advance(16 / 60)
+  assert.equal((await route.sweep()).detail.quoteEmailRecoveries, 0)
+  assert.equal(prepareFailures().length, 20)
+  route.advance(1 / 60)
+  assert.equal((await route.sweep()).detail.quoteEmailRecoveries, 1)
+  assert.equal(prepareFailures().length, 20)
+  assert.equal(route.providerCalls.length, 1)
+  assert.equal(route.providerCalls[0].attempt.leadId, healthy.leadId)
+  assert.equal(route.emails[0].payload.attachments[0].filename, "bracket.jpg")
 })
 
 test("a pending owner email waits for photo verification and includes the recovered attachments", async () => {

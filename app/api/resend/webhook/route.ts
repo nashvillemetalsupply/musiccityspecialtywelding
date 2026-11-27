@@ -79,8 +79,8 @@ export async function POST(req: Request) {
   if (!["email.delivered", "email.delivery_delayed", "email.bounced", "email.complained", "email.failed", "email.suppressed"].includes(webhook.type)) return Response.json({ ok: true })
 
   const sql = getSql()
-  const bouncedOrComplained = webhook.type === "email.bounced" || webhook.type === "email.complained"
-  const failed = bouncedOrComplained || webhook.type === "email.failed" || webhook.type === "email.suppressed"
+  const isProduction = process.env.VERCEL_ENV === "production"
+  const failed = ["email.bounced", "email.complained", "email.failed", "email.suppressed"].includes(webhook.type)
   const delayed = webhook.type === "email.delivery_delayed"
   const reason = webhook.type === "email.bounced"
     ? webhook.data.bounce.message
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
       delivery_status: string
     }[]
   if (notification[0]) {
-    if (webhook.type === "email.complained") return Response.json({ ok: true })
+    if (!isProduction || webhook.type === "email.complained") return Response.json({ ok: true })
     const retrySms = failed && notification[0].sms_fallback && !notification[0].sms_only
       && !notification[0].provider_message_sid
       && notification[0].provider_email_status !== webhook.type
@@ -243,6 +243,12 @@ export async function POST(req: Request) {
     eventId = Number(existing[0]?.id) || null
   }
   if (!eventId) return Response.json({ error: "Delivery receipt could not be resumed." }, { status: 500 })
+  if (associated.lead_id && associated.audience === "shop") {
+    const status = failed ? "bounced" : delayed ? "delayed" : "delivered"
+    await markLeadDelivery(associated.lead_id, status, reason)
+  }
+  // Production can replay the shared receipt and file the alert itself.
+  if (!isProduction) return Response.json({ ok: true })
   if (associated.audience === "assistant-shop" && (failed || delayed) && associated.is_test === false) {
     // A human request may have no callback or lead yet. Its saved transcript
     // must still reach the owner's existing phone alert path on inbox failure.
@@ -253,10 +259,6 @@ export async function POST(req: Request) {
       capExempt: true, quietHoursExempt: true })
     if (alert.reason === "not-for-role") return Response.json({ ok: false, retry: true,
       error: "Assistant shop phone recipient is not configured." }, { status: 503, headers: { "Retry-After": "60" } })
-  }
-  if (associated.lead_id && associated.audience === "shop") {
-    const status = bouncedOrComplained ? "bounced" : delayed ? "delayed" : failed ? "accepted" : "delivered"
-    await markLeadDelivery(associated.lead_id, status, reason)
   }
   if (associated.lead_id && failed && associated.is_test === false) {
     const lead = (await sql`SELECT is_test FROM leads WHERE id = ${associated.lead_id}::bigint LIMIT 1`) as { is_test: boolean }[]

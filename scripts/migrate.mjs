@@ -1635,6 +1635,7 @@ export async function runMigrations({
     { name: "roof-leads-badges-2026-10-24", query: roofLeadsStatement },
     { name: "assistant-chat-a1-2026-11-10", query: assistantChatStatement },
     { name: "quote-intake-photos", query: quoteIntakePhotosStatement },
+    { name: "quote-intake-environment", query: "ALTER TABLE quote_intakes ADD COLUMN IF NOT EXISTS environment TEXT" },
   ]
 
   await runWithMigrationLock({

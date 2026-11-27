@@ -6,6 +6,7 @@ import { LEAD_STATUSES, recordLeadEvent, type LeadStatus } from "@/lib/leads"
 import { canAccessInternalTests, type Operator } from "@/lib/operators"
 import { processEvent } from "@/lib/extract"
 import { notifyAll } from "@/lib/notify"
+import { notificationDedupePrefix } from "@/lib/notification-dedupe"
 import { validateCloseoutReview } from "@/lib/closeout-domain.ts"
 import { buildSheetsEnabled } from "@/lib/build-sheets-access"
 import { attachCloseoutPhotoToLead, getCloseoutPhotoUpload, isCloseoutUploadId } from "@/lib/closeout-photo-uploads"
@@ -448,8 +449,8 @@ export async function completeLeadRecord(operator: Operator, leadId: number, for
           ELSE ${`${before[0].first_name}'s job marked finished.`}::text
         END,
         ${`/ops/leads/${leadId}#spike`}::text, r.id, false,
-        ('completion:' || r.id::text),
-        mcsw_is_test_row(NULL::bigint, NULL::bigint, r.id, NULL::text, NULL::jsonb,
+        (${notificationDedupePrefix() + "completion:"}::text || r.id::text),
+        ${process.env.VERCEL_ENV !== "production"}::boolean OR mcsw_is_test_row(NULL::bigint, NULL::bigint, r.id, NULL::text, NULL::jsonb,
           concat_ws(' ', ${`${operator.name || "The crew"} closed ${before[0].first_name}'s job`}::text,
             ${note || `${before[0].service} marked finished.`}::text))
       FROM immutable_receipt r CROSS JOIN operators o

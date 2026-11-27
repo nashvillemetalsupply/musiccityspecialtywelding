@@ -139,6 +139,7 @@ function createNotifyHarness({
   retryContext = null,
   budgetReserved = true,
   coalescedClaimed = true,
+  notificationRows = new Map(),
 }) {
   const sqlCalls = []
   const pushCalls = []
@@ -156,7 +157,20 @@ function createNotifyHarness({
     if (text.includes("SELECT id, operator_id, title") && text.includes("FROM notifications")) return retryCandidate ? [retryCandidate] : []
     if (text.includes("AS recipient_role") && text.includes("FROM notifications n")) return retryContext ? [retryContext] : []
     if (text.includes("AS is_test") && text.includes("FROM events e")) return [{ is_test: sourceIsTest, source_kind: sourceKind }]
-    if (text.includes("INSERT INTO notifications")) return [{ id: 901 }]
+    if (text.includes("INSERT INTO notifications")) {
+      const key = values[8]
+      if (key && notificationRows.has(key)) return []
+      if (key) notificationRows.set(key, { id: 901, isTest: JSON.parse(values[10]).isTest === true })
+      return [{ id: 901 }]
+    }
+    if (text.includes("SET dedupe_key = 'preview:legacy:'")) {
+      const key = values[1]
+      const existing = notificationRows.get(key)
+      if (!existing?.isTest || !text.includes("AND is_test = true")) return []
+      notificationRows.delete(key)
+      notificationRows.set(`preview:legacy:${existing.id}:${key}`.slice(0, 240), existing)
+      return [{ id: existing.id }]
+    }
     if (text.includes("SELECT EXISTS(SELECT 1 FROM claim) AS reserved")) return [{ reserved: budgetReserved }]
     if (text.includes("UPDATE notifications SET coalesced = true")) return coalescedClaimed ? [{ id: 901 }] : []
     if (text.includes("provider_email_status = 'sending'") && text.includes("RETURNING id")) return [{ id: 901 }]
@@ -367,6 +381,28 @@ test("preview notify persists isTest and stops before any real alert provider", 
     assert.equal(harness.smsCalls.length, 0)
     assert.equal(harness.emailCalls.length, 0)
   })
+})
+
+test("preview call-read keys stay isolated and production reclaims a legacy test-occupied key", async () => {
+  const key = "call-read:CA-legacy"
+  const legacy = { id: 102, isTest: true }
+  const notificationRows = new Map([[key, legacy]])
+  const harness = createNotifyHarness({ sourceIsTest: false, notificationRows })
+  const alert = { ...missedCallAlert, priority: "digest", ownerOnly: true, dedupeKey: key }
+
+  await withEnv({ VERCEL_ENV: "preview" }, async () => {
+    assert.equal((await harness.notifyAll(alert))[0].reason, "internal-test")
+    assert.equal((await harness.notifyAll(alert))[0].reason, "duplicate")
+  })
+  assert.equal(notificationRows.get(key), legacy)
+  assert.equal(notificationRows.get(`preview:${key}`).isTest, true)
+
+  await withEnv({}, async () => {
+    assert.equal((await harness.notifyAll(alert))[0].reason, "filed")
+    assert.equal((await harness.notifyAll(alert))[0].reason, "duplicate")
+  })
+  assert.equal(notificationRows.get(key).isTest, false)
+  assert.equal(notificationRows.get(`preview:legacy:102:${key}`), legacy)
 })
 
 test("MCSW_TEST_SMS_FAIL runs only fake inline attempts on a preview", async () => {

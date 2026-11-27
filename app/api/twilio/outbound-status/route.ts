@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
+import { notificationDedupePrefix } from "@/lib/notification-dedupe"
 import { readTwilioForm, twilioVoiceConfigured, twiml } from "@/lib/twilio"
 import { z } from "zod"
 
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
         SELECT id FROM events
         WHERE kind = 'call.out.unknown'
           AND detail->>'callId' = ${String(intent)}::text
-      )`
+      ) AND starts_with(dedupe_key, ${notificationDedupePrefix()}::text)`
     return twiml("")
   }
   const rows = (await sql`

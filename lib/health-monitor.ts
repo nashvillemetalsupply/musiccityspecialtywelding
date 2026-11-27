@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db"
 import { automationRunIsStale } from "@/lib/automation-health.ts"
 import { buildHealthMonitorFailureAlert } from "@/lib/health-monitor-alert.ts"
 import { notifyAll } from "@/lib/notify"
+import { notificationDedupePrefix } from "@/lib/notification-dedupe"
 import { isAuthorizedCron } from "@/lib/ops-auth"
 
 const responseHeaders = { "Cache-Control": "no-store" }
@@ -64,6 +65,7 @@ export async function handleHealthMonitor(req: Request, readHealth: () => Promis
 async function runHealthMonitor(readHealth: () => Promise<Response>, runId: string, isTest: boolean, job: string) {
   const holder = randomUUID()
   const sql = getSql()
+  const dedupePrefix = notificationDedupePrefix()
   // The fixed lease outlives the function's 60-second runtime and coalesces
   // nearby triggers. Its expiration avoids a release write on every run.
   const [lease] = (await sql`
@@ -102,8 +104,9 @@ async function runHealthMonitor(readHealth: () => Promise<Response>, runId: stri
       CASE
         WHEN NOT previous.ok OR previous.detail->>'reason' IS NOT NULL THEN COALESCE(
           previous.detail->>'outageKey', (
-            SELECT notice.dedupe_key FROM notifications AS notice
-            WHERE notice.is_test = ${isTest}::boolean AND notice.dedupe_key LIKE 'health-monitor:%'
+            SELECT substr(notice.dedupe_key, ${dedupePrefix.length + 1}::int) FROM notifications AS notice
+            WHERE notice.is_test = ${isTest}::boolean
+              AND starts_with(notice.dedupe_key, ${`${dedupePrefix}health-monitor:`}::text)
               AND notice.created_at >= (SELECT min(ran_at) FROM automation_runs WHERE job = ${job}::text)
               AND notice.created_at > COALESCE((
                 SELECT max(recovered.ran_at) FROM automation_runs AS recovered
@@ -139,7 +142,7 @@ async function runHealthMonitor(readHealth: () => Promise<Response>, runId: stri
       SELECT (count(*) FILTER (WHERE delivery_status <> 'dead'))::int AS live,
         count(DISTINCT dedupe_key)::int AS attempts
       FROM notifications
-      WHERE is_test = ${isTest}::boolean AND starts_with(dedupe_key, ${outageKey}::text)`) as { live: number; attempts: number }[]
+      WHERE is_test = ${isTest}::boolean AND starts_with(dedupe_key, ${dedupePrefix + outageKey}::text)`) as { live: number; attempts: number }[]
     if (page.live === 0 && page.attempts < 4) {
       const dedupeKey = page.attempts === 0 ? outageKey : `${outageKey}:r${page.attempts}`
       const alert = { ...candidateAlert, dedupeKey }

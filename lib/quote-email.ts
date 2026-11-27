@@ -193,7 +193,10 @@ async function sendFrozenQuoteEmail(
       leadId: input.leadId,
       personId: input.personId,
       body: "Quote email send attempted.",
-      detail: { sourceEventId, audience: input.audience, attemptNumber, idempotencyKey, payloadHash, attemptedAt },
+      detail: {
+        sourceEventId, audience: input.audience, attemptNumber, idempotencyKey, payloadHash, attemptedAt,
+        ...(onlyIfNeverAttempted ? { recovery: true } : {}),
+      },
     });
     if (!attemptId) throw new Error("Quote email attempt could not be saved.");
     attemptEventId = attemptId;
