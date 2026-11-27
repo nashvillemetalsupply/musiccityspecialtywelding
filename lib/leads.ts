@@ -151,8 +151,10 @@ function makePublicId(now: Date) {
 }
 
 type SavedIntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "created_at" | "first_name" | "last_name"
-  | "phone" | "email" | "service" | "message" | "preferred_contact" | "photo_count" | "source" | "is_test"
-  | "gclid" | "utm_source" | "referrer">
+  | "phone" | "email" | "service" | "message" | "preferred_contact" | "source" | "is_test"
+  | "gclid" | "utm_source" | "referrer"> & {
+  quote_photos?: { count: number; fingerprints: string[] } | null
+}
 
 export class LeadIntakePhoneConflict extends Error {}
 
@@ -165,6 +167,7 @@ export async function createLead(
     intakeKey?: string
     personId?: number
     quoteIntake?: boolean
+    quotePhotoFingerprints?: string[]
     webTextConsent?: { phoneE164: string; provenance: Record<string, unknown> }
   } = {}
 ) {
@@ -178,7 +181,9 @@ export async function createLead(
   const readExistingIntake = async () => {
     const [saved] = (await sql`
       SELECT id, public_id, person_id, first_name, last_name, phone, email, service,
-        message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer
+        message, preferred_contact, source, is_test, created_at, gclid, utm_source, referrer,
+        (SELECT jsonb_build_object('count', original_photo_count, 'fingerprints', photo_fingerprints)
+          FROM quote_intakes WHERE quote_intakes.intake_key = leads.intake_key AND lead_id = leads.id) AS quote_photos
       FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as SavedIntakeLead[]
     if (saved && expectedPhone !== null && normalizePhone(saved.phone) !== expectedPhone) {
       throw new LeadIntakePhoneConflict("That saved intake does not match this text-permission request.")
@@ -227,7 +232,7 @@ export async function createLead(
             ${defaultFollowUpAt}::timestamptz
           )
           RETURNING id, public_id, person_id, first_name, last_name, phone, email, service,
-            message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer
+            message, preferred_contact, source, is_test, created_at, gclid, utm_source, referrer, intake_key
         ), captured_consent AS MATERIALIZED (
           INSERT INTO messaging_consents (
             phone_e164, lead_id, source, effect, external_id, occurred_at, provenance
@@ -244,6 +249,11 @@ export async function createLead(
           WHERE ${Boolean(webTextConsent)}::boolean
           ON CONFLICT (external_id) DO NOTHING
           RETURNING id
+        ), captured_quote_intake AS (
+          INSERT INTO quote_intakes (intake_key, lead_id, original_photo_count, photo_fingerprints)
+          SELECT intake_key, id, ${input.photoCount}::int, ${JSON.stringify(options.quotePhotoFingerprints ?? null)}::jsonb
+          FROM inserted_lead
+          WHERE ${options.quotePhotoFingerprints !== undefined}::boolean
         )
         SELECT inserted_lead.*
         FROM inserted_lead
@@ -522,29 +532,52 @@ export async function recordLeadEvent(
 
 export async function markLeadDelivery(
   leadId: number,
-  status: "accepted" | "failed",
+  status: "accepted" | "failed" | "bounced" | "delayed" | "delivered",
   error?: string
 ) {
   const sql = getSql()
-  if (status === "accepted") {
-    await sql`
-      UPDATE leads SET
-        email_delivery_status = CASE
-          WHEN email_delivery_status = ANY(ARRAY['failed','sent','delivered']::text[]) THEN email_delivery_status
-          ELSE 'accepted'
-        END,
-        email_delivery_error = CASE
-          WHEN email_delivery_status = 'failed' THEN email_delivery_error
-          ELSE ''
-        END,
-        updated_at = now()
-      WHERE id = ${leadId}::bigint`
-  } else {
-    await sql`
-      UPDATE leads SET email_delivery_status = 'failed',
-        email_delivery_error = ${error ?? "unknown"}::text, updated_at = now()
-      WHERE id = ${leadId}::bigint`
-  }
+  // Old leads used "failed" for request rejection too. Only the signed
+  // bounce or complaint receipt makes that status survive later callbacks.
+  await sql`
+    WITH incoming AS (SELECT ${status}::text AS status, ${error ?? "unknown"}::text AS error)
+    UPDATE leads SET
+      email_delivery_status = CASE incoming.status
+        WHEN 'failed' THEN 'rejected'
+        WHEN 'bounced' THEN 'failed'
+        ELSE incoming.status
+      END,
+      email_delivery_error = CASE
+        WHEN incoming.status IN ('failed','bounced') THEN incoming.error
+        ELSE ''
+      END,
+      email_delivered_at = CASE
+        WHEN incoming.status = 'delivered' THEN COALESCE(email_delivered_at, now())
+        ELSE email_delivered_at
+      END,
+      updated_at = now()
+    FROM incoming
+    WHERE leads.id = ${leadId}::bigint AND (
+      incoming.status = 'bounced'
+      OR (
+        NOT EXISTS (
+          SELECT 1 FROM events receipt
+          WHERE receipt.lead_id = leads.id AND receipt.kind = 'email.failed'
+            AND receipt.detail->>'audience' = 'shop'
+            AND receipt.detail->>'providerType' IN ('email.bounced', 'email.complained')
+        )
+        AND CASE incoming.status
+          WHEN 'failed' THEN email_delivery_status NOT IN ('accepted','sent','delayed','delivered','resolved')
+            AND NOT EXISTS (
+              SELECT 1 FROM events receipt
+              WHERE receipt.lead_id = leads.id AND receipt.kind IN ('email.accepted', 'email.delivered')
+                AND receipt.detail->>'audience' = 'shop'
+            )
+          WHEN 'accepted' THEN email_delivery_status NOT IN ('sent','delayed','delivered')
+          WHEN 'delayed' THEN email_delivery_status NOT IN ('sent','delivered')
+          ELSE true
+        END
+      )
+    )`
 }
 
 // Durable cross-instance rate limiting backed by Postgres. Returns true when

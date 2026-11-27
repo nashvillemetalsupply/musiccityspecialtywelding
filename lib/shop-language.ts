@@ -125,6 +125,7 @@ const DELIVERY_LABELS: Record<string, string> = {
   delivered: "Delivered",
   read: "Read",
   delayed: "Delayed",
+  rejected: "Send rejected",
   failed: "Failed",
   unknown: "Check before retrying",
   undelivered: "Not delivered",

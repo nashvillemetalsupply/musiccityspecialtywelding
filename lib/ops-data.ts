@@ -324,7 +324,7 @@ export async function listBoardJobs(
       UNION ALL
       SELECT l.id, 'Email did not deliver'::text, l.updated_at, 4,
         'bounced'::text
-      FROM leads l WHERE l.email_delivery_status = 'failed'
+      FROM leads l WHERE l.email_delivery_status IN ('failed','rejected')
     ), needs AS (
       SELECT lead_id,
         bool_or(kind IN ('waiting','noreply')) AS stop_signal,
@@ -885,7 +885,7 @@ export async function getOpsStats(role: OperatorRole = "crew"): Promise<OpsStats
       COALESCE(sum(revenue_cents), 0)::bigint AS total_revenue_cents,
       COALESCE(sum(estimate_value_cents)
         FILTER (WHERE status IN ('qualified', 'quoted')), 0)::bigint AS open_estimate_cents,
-      count(*) FILTER (WHERE email_delivery_status = 'failed')::int AS failed_deliveries,
+      count(*) FILTER (WHERE email_delivery_status IN ('failed','rejected'))::int AS failed_deliveries,
       (SELECT percentile_cont(0.5) WITHIN GROUP (
           ORDER BY EXTRACT(EPOCH FROM (first_response_at - created_at)) / 60.0)
         FROM leads
@@ -1390,7 +1390,7 @@ export async function countFailedDeliveries(): Promise<number> {
   const sql = getSql()
   const rows = (await sql`
     SELECT count(*)::int AS count FROM leads
-    WHERE email_delivery_status = 'failed' AND routed_to_lead_id IS NULL AND is_test = false`) as { count: number }[]
+    WHERE email_delivery_status IN ('failed','rejected') AND routed_to_lead_id IS NULL AND is_test = false`) as { count: number }[]
   return rows[0]?.count ?? 0
 }
 

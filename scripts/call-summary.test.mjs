@@ -120,12 +120,19 @@ test("a call that asked for shop work becomes a job with no tap, attributed to t
 })
 
 async function settlementFixture(t, { isJob = "unsure", failSettlementWrite = true } = {}) {
+  const environment = process.env.VERCEL_ENV
+  process.env.VERCEL_ENV = "production"
+  t.after(() => {
+    if (environment === undefined) delete process.env.VERCEL_ENV
+    else process.env.VERCEL_ENV = environment
+  })
   const draft = { id: 1, call_sid: "CA1", status: "pending", caller_name: "Caller", need: "", is_test: false, transcript: "A steel gate repair.", transcript_status: "ready", duration_sec: 20 }
   const modelSummary = { caller_name: null, need: "Repair a steel gate", details: [], where_when: null, is_job: isJob, not_job_reason: null, next_question: null }
-  const state = { summaryStatus: "", summary: undefined, reads: 0, saves: 0, notifyFails: true }
+  const state = { summaryStatus: "", summary: undefined, reads: 0, saves: 0, notifyFails: true, activeOwner: true }
   const disposition = { status: "pending", lead_id: null, intake_outcome: "pending" }
   let settleWrites = 0
   const notifications = []
+  const notificationRows = new Map()
   globalThis.__settlementRegression = {
     model: async () => { state.reads += 1; return modelSummary },
     save: async () => {
@@ -134,8 +141,13 @@ async function settlementFixture(t, { isJob = "unsure", failSettlementWrite = tr
       return { leadId: disposition.lead_id }
     },
     notify: async (notification) => {
+      if (!state.activeOwner) return []
       if (state.notifyFails) throw new Error("notification write unavailable")
+      if (notificationRows.has(notification.dedupeKey)) return [{ id: 0, sent: false, reason: "duplicate" }]
       notifications.push(notification)
+      const isTest = process.env.VERCEL_ENV !== "production"
+      notificationRows.set(notification.dedupeKey, { isTest, ownerOnly: notification.ownerOnly })
+      return [{ id: 1, sent: false, reason: isTest ? "internal-test" : "quiet-hours" }]
     },
     sql: async (strings, ...values) => {
       const query = strings.join("?").trim()
@@ -150,12 +162,17 @@ async function settlementFixture(t, { isJob = "unsure", failSettlementWrite = tr
         return []
       }
       if (query.includes("SET summary = summary -")) {
+        if (query.includes("FROM notifications")) {
+          const notification = notificationRows.get(values[1])
+          if (!notification || (query.includes("n.is_test = false") && notification.isTest)
+            || (query.includes("n.owner_only") && !notification.ownerOnly)
+            || (query.includes("o.active") && !state.activeOwner)) return []
+        }
         delete state.summary.notify_on_settle
-        return []
+        return [{ id: draft.id }]
       }
       if (query.includes("summary = COALESCE(")) {
         if (++settleWrites === 1 && failSettlementWrite) throw new Error("settlement write unavailable")
-        if (values[0] === false) delete state.summary.notify_on_settle
         state.summary = { ...state.summary, ...JSON.parse(values.find((value) => typeof value === "string")) }
         return []
       }
@@ -163,7 +180,9 @@ async function settlementFixture(t, { isJob = "unsure", failSettlementWrite = tr
       if (query.includes("SET summary_status = 'failed'")) { state.summaryStatus = "failed"; return [] }
       if (query.startsWith("SELECT d.call_sid")) return state.summaryStatus === "failed" ? [draft] : []
       if (query.includes("d.summary, c.transcript")) {
-        return state.summaryStatus === "ready" && (!state.summary.auto || (query.includes("d.summary_at < now()") && state.summary.notify_on_settle))
+        const pending = state.summary?.notify_on_settle === true
+        const recoverAlert = pending && query.includes("d.summary_at < now()") && (!query.includes("?::boolean") || values[0] === true)
+        return state.summaryStatus === "ready" && ((!pending && !state.summary.auto) || recoverAlert)
           ? [{ ...draft, ...disposition, summary: state.summary }]
           : []
       }
@@ -192,7 +211,7 @@ async function settlementFixture(t, { isJob = "unsure", failSettlementWrite = tr
   t.after(() => hooks.deregister())
   const { summarizeCallDraft, summarizePendingCalls } = await import("../lib/call-summary.ts?settlement-regression")
   const log = t.mock.method(console, "error", () => {})
-  return { draft, disposition, state, modelSummary, notifications, summarizeCallDraft, summarizePendingCalls, log }
+  return { draft, disposition, state, modelSummary, notifications, notificationRows, summarizeCallDraft, summarizePendingCalls, log }
 }
 
 test("recovery alerts the owner for a fresh unresolved call after a settlement write failure", async (t) => {
@@ -241,6 +260,48 @@ test("recovery alerts describe the pending call after the owner undoes an automa
   assert.equal(state.summary.notify_on_settle, undefined)
 })
 
+test("preview recovery and a production sweep without active owners leave a live call alert pending", async (t) => {
+  const { draft, state, notifications, notificationRows, summarizeCallDraft, summarizePendingCalls, log } = await settlementFixture(t)
+  await summarizeCallDraft(draft.call_sid)
+  assert.equal(state.summary.notify_on_settle, true)
+  state.notifyFails = false
+
+  process.env.VERCEL_ENV = "preview"
+  assert.equal((await summarizePendingCalls()).settled, 0)
+  assert.equal(state.summary.notify_on_settle, true)
+  assert.equal(notificationRows.size, 0)
+
+  process.env.VERCEL_ENV = "production"
+  state.activeOwner = false
+  await summarizePendingCalls()
+  assert.equal(state.summary.notify_on_settle, true)
+  assert.equal(notificationRows.size, 0)
+  assert.ok(log.mock.calls.some(({ arguments: args }) => args.some((arg) => /no active owners/i.test(String(arg)))))
+
+  state.activeOwner = true
+  await summarizePendingCalls()
+  assert.deepEqual(notificationRows.get(`call-read:${draft.call_sid}`), { isTest: false, ownerOnly: true })
+  assert.equal(state.summary.notify_on_settle, undefined)
+  await summarizePendingCalls()
+  assert.equal(notifications.length, 1)
+})
+
+test("a duplicate call alert clears the pending marker only when the existing notification is a production owner row", async (t) => {
+  const { draft, state, notifications, notificationRows, summarizeCallDraft, summarizePendingCalls } = await settlementFixture(t)
+  await summarizeCallDraft(draft.call_sid)
+  state.notifyFails = false
+  const dedupeKey = `call-read:${draft.call_sid}`
+  notificationRows.set(dedupeKey, { isTest: true, ownerOnly: true })
+
+  await summarizePendingCalls()
+  assert.equal(state.summary.notify_on_settle, true)
+
+  notificationRows.set(dedupeKey, { isTest: false, ownerOnly: true })
+  await summarizePendingCalls()
+  assert.equal(state.summary.notify_on_settle, undefined)
+  assert.equal(notifications.length, 0)
+})
+
 test("a repeat caller with an open job is filed onto it, never duplicated", () => {
   const INTAKE = read("../lib/job-intake.ts")
   const settle = SUMMARY.slice(SUMMARY.indexOf("async function settleCall"), SUMMARY.indexOf("export async function summarizePendingCalls"))
@@ -261,9 +322,10 @@ test("calls read before auto-save existed are settled quietly by the sweep, once
 test("one push per read tells the owner what the call was and what happened", () => {
   const settle = SUMMARY.slice(SUMMARY.indexOf("async function settleCall"), SUMMARY.indexOf("export async function summarizePendingCalls"))
   // tests never alert; wrong numbers wait quietly; a call already handled says nothing
-  assert.match(settle, /const notify = !quiet && !isTest && summary\.is_job !== "no" && outcome !== "already"[\s\S]*?if \(!notify\) return/)
+  assert.match(settle, /const notify = !quiet && !isTest && summary\.is_job !== "no" && outcome !== "already"[\s\S]*?if \(!notify \|\| process\.env\.VERCEL_ENV !== "production"\) return/)
   assert.match(settle, /priority: "interrupt",/)
-  assert.match(settle, /ownerOnly: true,\s+smsFallback: false,\s+dedupeKey: `call-read:\$\{draft\.call_sid\}`,/)
+  assert.match(settle, /const dedupeKey = `call-read:\$\{draft\.call_sid\}`/)
+  assert.match(settle, /ownerOnly: true,\s+smsFallback: false,\s+dedupeKey,/)
   assert.match(settle, /url: leadId != null \? `\/ops\/leads\/\$\{leadId\}` : "\/board",/)
 })
 

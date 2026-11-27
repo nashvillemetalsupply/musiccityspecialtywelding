@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { getSql } from "@/lib/db"
-import { recoverMissingQuoteEvents, type LeadRow } from "@/lib/leads"
+import { markLeadDelivery, recoverMissingQuoteEvents, type LeadRow } from "@/lib/leads"
+import { recoverUnattemptedQuoteEmail } from "@/lib/quote-email"
 import { notifyAll, retryPendingInterrupts } from "@/lib/notify"
 import { EXTRACTABLE_EVENT_KINDS, processEvent } from "@/lib/extract"
 import { retryPendingAttachments } from "@/lib/attachment-retry"
@@ -69,46 +70,110 @@ async function releaseRecoveryLease(holder: string) {
   if (!rows[0]) throw new Error("Recovery lease ownership was lost before release.")
 }
 
-async function reviewUnconfirmedQuoteEmails() {
+async function recoverQuoteEmails() {
+  const result = { reviews: 0, recovered: 0 }
   // Preview writes are marked as tests by notifyAll and would consume the live dedupe key.
-  if (process.env.VERCEL_ENV !== "production") return 0
+  if (process.env.VERCEL_ENV !== "production") return result
   const sql = getSql()
-  const expired = (await sql`
-    SELECT intent.id, intent.lead_id, intent.detail->>'audience' AS audience
+  const pending = (await sql`
+    SELECT intent.id, intent.lead_id, intent.person_id, intent.external_id,
+      intent.detail->>'audience' AS audience, intent.detail->>'frozenPayload' AS frozen_payload,
+      intent.recorded_at AS created_at, clock.review_at <= now() - interval '23 hours' AS needs_review
     FROM events intent JOIN leads l ON l.id = intent.lead_id
+    LEFT JOIN sync_state review ON review.key = 'quote-email-review:' || intent.id::text
+    CROSS JOIN LATERAL (
+      SELECT count(*) FILTER (WHERE rejection.detail->>'requestNotSent' IS DISTINCT FROM 'true') AS attempt_count,
+        min(attempt.occurred_at) FILTER (WHERE rejection.id IS NULL) AS unresolved_at
+      FROM events attempt
+      LEFT JOIN events rejection ON rejection.kind = 'email.failed'
+        AND rejection.external_id = 'request-failed:' || attempt.id::text
+        AND rejection.lead_id = intent.lead_id
+        AND rejection.detail->>'sourceEventId' = intent.id::text
+        AND rejection.detail->>'attemptEventId' = attempt.id::text
+        AND (rejection.detail->>'requestNotSent' = 'true'
+          OR (rejection.detail->>'providerStatus' ~ '^4[0-9]{2}$'
+            AND rejection.detail->>'providerStatus' NOT IN ('408', '409', '429')))
+      WHERE attempt.lead_id = intent.lead_id AND attempt.kind = 'email.attempt'
+        AND attempt.detail->>'sourceEventId' = intent.id::text
+    ) attempts
+    CROSS JOIN LATERAL (
+      SELECT CASE
+        WHEN attempts.attempt_count > 0 THEN attempts.unresolved_at
+        WHEN intent.detail->>'frozenPayload' IS NOT NULL THEN intent.recorded_at
+        ELSE COALESCE((
+          SELECT min(receipt.occurred_at) FROM events receipt
+          WHERE receipt.lead_id = intent.lead_id AND receipt.kind = 'email.unknown'
+            AND receipt.detail->>'sourceEventId' = intent.id::text
+        ), intent.recorded_at)
+      END AS review_at
+    ) clock
     WHERE intent.kind = 'email.out' AND intent.is_test = false AND l.is_test = false
       AND (intent.external_id LIKE 'quote-owner:%' OR intent.external_id LIKE 'quote-customer:%')
-      AND COALESCE((
-        SELECT min(attempt.occurred_at) FROM events attempt
-        WHERE attempt.lead_id = l.id AND attempt.kind IN ('email.attempt', 'email.unknown')
-          AND attempt.detail->>'sourceEventId' = intent.id::text
-      ), CASE WHEN intent.detail->>'frozenPayload' IS NULL THEN intent.occurred_at END)
-        <= now() - interval '23 hours'
       AND NOT EXISTS (
         SELECT 1 FROM events receipt
         WHERE receipt.lead_id = l.id AND receipt.kind IN ('email.accepted', 'email.delivered')
           AND receipt.detail->>'sourceEventId' = intent.id::text
       )
-      AND EXISTS (
-        SELECT 1 FROM operators o WHERE o.active AND o.role = 'owner' AND NOT EXISTS (
-          SELECT 1 FROM notifications n WHERE n.operator_id = o.id
-            AND n.dedupe_key = 'quote-email-review:' || intent.id::text
+      AND (
+        (clock.review_at <= now() - interval '23 hours'
+          AND (review.updated_at IS NULL OR review.updated_at <= now() - interval '15 minutes')
+          AND EXISTS (
+            SELECT 1 FROM operators o WHERE o.active AND o.role = 'owner' AND NOT EXISTS (
+              SELECT 1 FROM notifications n WHERE n.operator_id = o.id
+                AND n.dedupe_key = 'quote-email-review:' || intent.id::text
+            )
+          )
         )
+        OR (attempts.attempt_count = 0 AND intent.detail->>'frozenPayload' IS NOT NULL
+          AND intent.recorded_at < now() - interval '15 minutes'
+          AND clock.review_at > now() - interval '23 hours')
       )
-    ORDER BY intent.id LIMIT 20`) as { id: number; lead_id: number; audience: "shop" | "customer" }[]
-  for (const intent of expired) {
-    await notifyAll({
-      priority: "digest",
-      stock: "red",
-      title: intent.audience === "shop" ? "Quote saved, owner email unconfirmed" : "Quote saved, customer email unconfirmed",
-      body: "Check the email provider and open the saved quote to follow up.",
-      url: `/ops/leads/${intent.lead_id}#spike`,
-      sourceEventId: Number(intent.id),
-      ownerOnly: true,
-      dedupeKey: `quote-email-review:${intent.id}`,
-    })
+    ORDER BY clock.review_at, intent.id LIMIT 20`) as {
+      id: number; lead_id: number; person_id: number | null; external_id: string;
+      audience: "shop" | "customer"; frozen_payload: string | null; created_at: string; needs_review: boolean;
+    }[]
+  for (const intent of pending) {
+    try {
+      if (!intent.needs_review) {
+        const send = await recoverUnattemptedQuoteEmail({
+          leadId: Number(intent.lead_id), personId: intent.person_id, intent: intent.external_id, audience: intent.audience,
+        }, intent)
+        if (send.state === "pending") throw new Error(send.error)
+        if (intent.audience === "shop" && (send.state === "accepted" || send.state === "failed")) {
+          await markLeadDelivery(Number(intent.lead_id), send.state, send.error)
+        }
+        result.recovered++
+        continue
+      }
+      const dedupeKey = `quote-email-review:${intent.id}`
+      const [claim] = (await sql`
+        INSERT INTO sync_state (key, value, updated_at)
+        SELECT ${dedupeKey}::text, jsonb_build_object('last_review_attempt_at', now()), now()
+        WHERE NOT EXISTS (
+          SELECT 1 FROM events receipt
+          WHERE receipt.lead_id = ${intent.lead_id}::bigint AND receipt.kind IN ('email.accepted', 'email.delivered')
+            AND receipt.detail->>'sourceEventId' = ${String(intent.id)}::text
+        )
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at
+        WHERE sync_state.updated_at <= now() - interval '15 minutes'
+        RETURNING key`) as { key: string }[]
+      if (!claim) continue
+      const filed = await notifyAll({
+        priority: "digest",
+        stock: "red",
+        title: intent.audience === "shop" ? "Quote saved, owner email unconfirmed" : "Quote saved, customer email unconfirmed",
+        body: "Check the email provider and open the saved quote to follow up.",
+        url: `/ops/leads/${intent.lead_id}#spike`,
+        sourceEventId: Number(intent.id),
+        ownerOnly: true,
+        dedupeKey,
+      })
+      if (filed.length > 0) result.reviews++
+    } catch (error) {
+      console.error(`Quote email recovery failed for intent ${intent.id}:`, error)
+    }
   }
-  return expired.length
+  return result
 }
 
 /**
@@ -191,7 +256,9 @@ export async function runRecoverySweep({
       console.error("Quote event discovery failed:", error)
     }
     try {
-      detail.quoteEmailReviews = await reviewUnconfirmedQuoteEmails()
+      const { reviews, recovered } = await recoverQuoteEmails()
+      detail.quoteEmailReviews = reviews
+      detail.quoteEmailRecoveries = recovered
     } catch (error) {
       detail.quoteEmailReviewError = error instanceof Error ? error.message : String(error)
       console.error("Quote email review failed:", error)

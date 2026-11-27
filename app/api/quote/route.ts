@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { Resend, type CreateEmailOptions } from "resend";
+import { Resend } from "resend";
 import { get, put } from "@vercel/blob";
 import { after } from "next/server";
 import { dbConfigured, getSql } from "@/lib/db";
 import { brandedEmail, escapeHtml } from "@/lib/email-templates";
 import { recordEvent } from "@/lib/events";
+import { emailReceiptUnavailable, sendDurableQuoteEmail, type DurableEmailState, type FrozenQuoteEmail } from "@/lib/quote-email";
 import { notifyAll } from "@/lib/notify";
 import { getShopPhone } from "@/lib/shop-contact";
 import { isAuthorizedCron } from "@/lib/ops-auth";
@@ -143,194 +144,6 @@ function changedQuoteResponse(retryOriginalPhotos = false) {
       : "The earlier version of this request was already saved. Refresh the page to start a changed request, or call the shop." },
     { status: 409 },
   );
-}
-
-type DurableEmailState = "accepted" | "failed" | "unknown" | "pending";
-type DurableEmailResult = {
-  state: DurableEmailState;
-  error: string;
-  receiptEventId: number | null;
-};
-
-type FrozenQuoteEmail = {
-  message: CreateEmailOptions;
-  photos?: { pathname: string; filename: string; size: number }[];
-};
-
-const QUOTE_EMAIL_RETRY_MS = 23 * 60 * 60 * 1000;
-
-function emailReceiptUnavailable(error: unknown): DurableEmailResult {
-  console.error("Quote email receipt persistence failed:", error);
-  return { state: "unknown", error: "Email provider response was not confirmed.", receiptEventId: null };
-}
-
-async function resumeEventId(kind: string, externalId: string) {
-  const rows = (await getSql()`
-    SELECT id FROM events
-    WHERE kind = ${kind}::text AND external_id = ${externalId}::text
-    LIMIT 1`) as { id: number }[];
-  return Number(rows[0]?.id) || null;
-}
-
-async function readQuoteEmailIntent(intent: string) {
-  const [row] = (await getSql()`
-    SELECT id, detail->>'frozenPayload' AS frozen_payload FROM events
-    WHERE kind = ${"email.out"}::text AND external_id = ${intent}::text
-    LIMIT 1`) as { id: number; frozen_payload: string | null }[];
-  return row;
-}
-
-async function readQuoteEmailReceipts(leadId: number, sourceEventId: number) {
-  return (await getSql()`
-    SELECT kind, id, occurred_at, detail->>'payloadHash' AS payload_hash FROM events
-    WHERE kind = ANY(ARRAY['email.attempt','email.accepted','email.delivered','email.failed','email.unknown']::text[])
-      AND detail->>'sourceEventId' = ${String(sourceEventId)}::text
-      AND lead_id = ${leadId}::bigint`) as {
-    kind: string; id: number; occurred_at: string; payload_hash: string | null;
-  }[];
-}
-
-async function sendDurableQuoteEmail(input: {
-  resend: Resend;
-  leadId: number;
-  personId: number | null;
-  intent: string;
-  audience: "shop" | "customer";
-  photosDurable?: boolean;
-  buildPayload: () => FrozenQuoteEmail | Promise<FrozenQuoteEmail>;
-}): Promise<DurableEmailResult> {
-  let sourceEventId: number | null = null;
-  let attemptEventId: number;
-  let payload: CreateEmailOptions;
-  const accepted = (receipts: Awaited<ReturnType<typeof readQuoteEmailReceipts>>) =>
-    receipts.some(({ kind }) => kind === "email.accepted" || kind === "email.delivered");
-  const expired = (receipts: Awaited<ReturnType<typeof readQuoteEmailReceipts>>) =>
-    receipts.some(({ kind, occurred_at }) => (kind === "email.attempt" || kind === "email.unknown")
-      && !(Date.now() - new Date(occurred_at).getTime() < QUOTE_EMAIL_RETRY_MS));
-  const unconfirmed = (): DurableEmailResult => {
-    console.error("Quote email left for reconciliation:", { leadId: input.leadId, audience: input.audience });
-    return { state: "unknown", error: "Email provider response was not confirmed.", receiptEventId: sourceEventId };
-  };
-  try {
-    let intent = await readQuoteEmailIntent(input.intent);
-    if (!intent) {
-      const frozen = await input.buildPayload();
-      const frozenPayload = JSON.stringify(frozen);
-      const id = await recordEvent({
-        kind: "email.out",
-        actorType: "system",
-        leadId: input.leadId,
-        personId: input.personId,
-        externalId: input.intent,
-        body: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
-        crewBody: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
-        detail: {
-          audience: input.audience,
-          subject: frozen.message.subject,
-          deliveryStatus: "pending",
-          frozenPayload,
-        },
-      });
-      intent = id ? { id, frozen_payload: frozenPayload } : await readQuoteEmailIntent(input.intent);
-    }
-    if (!intent) throw new Error("Quote email intent unavailable.");
-    sourceEventId = Number(intent.id);
-    const receipts = await readQuoteEmailReceipts(input.leadId, sourceEventId);
-    if (accepted(receipts)) return { state: "accepted", error: "", receiptEventId: sourceEventId };
-    // A legacy intent could have sent without either outcome receipt. Its exact payload is unavailable.
-    if (!intent.frozen_payload || expired(receipts)) return unconfirmed();
-    if (input.photosDurable === false) throw new Error("Quote photo verification needs a retry.");
-
-    const frozen = JSON.parse(intent.frozen_payload) as FrozenQuoteEmail;
-    const hash = createHash("sha256").update(intent.frozen_payload);
-    const attachments = await Promise.all((frozen.photos ?? []).map(async ({ pathname, filename, size }) => {
-      const blob = await get(pathname, { access: "private" });
-      if (!blob || blob.statusCode !== 200 || blob.blob.size !== size) throw new Error("Saved quote photo unavailable.");
-      return { filename, content: Buffer.from(await new Response(blob.stream).arrayBuffer()) };
-    }));
-    for (const { content } of attachments) hash.update(content);
-    const payloadHash = hash.digest("hex");
-    const changed = (history: typeof receipts) => history.some(({ payload_hash }) => payload_hash && payload_hash !== payloadHash);
-    if (changed(receipts)) throw new Error("Saved quote email payload changed.");
-    payload = { ...frozen.message, attachments: attachments.length ? attachments : undefined };
-
-    if (expired(receipts)) return unconfirmed();
-    const attemptedAt = new Date().toISOString();
-    const attemptId = await recordEvent({
-      kind: "email.attempt",
-      occurredAt: attemptedAt,
-      actorType: "system",
-      leadId: input.leadId,
-      personId: input.personId,
-      body: "Quote email send attempted.",
-      detail: { sourceEventId, audience: input.audience, idempotencyKey: input.intent, payloadHash, attemptedAt },
-    });
-    if (!attemptId) throw new Error("Quote email attempt could not be saved.");
-    attemptEventId = attemptId;
-
-    // Blob reads and a concurrent submission may have advanced the receipt history.
-    const current = await readQuoteEmailReceipts(input.leadId, sourceEventId);
-    if (accepted(current)) return { state: "accepted", error: "", receiptEventId: sourceEventId };
-    if (expired(current)) return unconfirmed();
-    if (changed(current)) throw new Error("Saved quote email payload changed.");
-  } catch (error) {
-    console.error("Quote email could not be prepared:", error);
-    return { state: "pending", error: "Quote email needs a storage retry.", receiptEventId: sourceEventId };
-  }
-
-  let providerEmailId: string | undefined;
-  const receipt = {
-    actorType: "system" as const,
-    leadId: input.leadId,
-    personId: input.personId,
-  };
-  const detail = { sourceEventId, audience: input.audience, attemptEventId };
-  try {
-    const { data, error } = await input.resend.emails.send(payload, {
-      idempotencyKey: input.intent,
-    });
-    providerEmailId = data?.id;
-    if (error) {
-      const message = error.message || "Email provider did not accept the message.";
-      const status = error.statusCode ?? 0;
-      if (providerEmailId || status < 400 || status >= 500 || [408, 409, 429].includes(status)) {
-        throw new Error(message);
-      }
-      const failureEventId = await recordEvent({
-        ...receipt,
-        kind: "email.failed",
-        externalId: `request-failed:${attemptEventId}`,
-        body: message,
-        crewBody: "Email provider rejected the message.",
-        detail: { ...detail, providerStatus: status },
-      });
-      if (!failureEventId) throw new Error("Quote email rejection could not be saved.");
-      return { state: "failed", error: message, receiptEventId: failureEventId };
-    }
-    if (!providerEmailId) throw new Error("Email provider responded without an acceptance receipt.");
-    const acceptanceEventId = await recordEvent({
-      ...receipt,
-      kind: "email.accepted",
-      externalId: providerEmailId,
-      body: "Email accepted by the delivery provider.",
-      crewBody: "Email accepted by the delivery provider.",
-      detail: { ...detail, providerEmailId },
-    }) || await resumeEventId("email.accepted", providerEmailId);
-    if (!acceptanceEventId) throw new Error("Quote email acceptance could not be saved.");
-    return { state: "accepted", error: "", receiptEventId: acceptanceEventId };
-  } catch (error) {
-    // A transport exception or receipt write failure may hide a completed send.
-    const message = error instanceof Error ? error.message : "Email provider response was lost.";
-    const unknownEventId = await recordEvent({
-      ...receipt,
-      kind: "email.unknown",
-      externalId: `request-unknown:${attemptEventId}`,
-      body: message,
-      crewBody: "Email provider response was not confirmed.",
-      detail: { ...detail, providerEmailId },
-    });
-    return { state: "unknown", error: message, receiptEventId: unknownEventId || sourceEventId };
-  }
 }
 
 export async function POST(req: Request) {
@@ -502,6 +315,7 @@ export async function POST(req: Request) {
     const photoHashes = new Map(await Promise.all(photoFiles.map(async (file) =>
       [file, photoHash(await file.arrayBuffer())] as const
     )));
+    const photoFingerprints = [...photoHashes.values()].sort();
 
     // Persist the lead FIRST so it survives any email-provider failure.
     let leadId: number | null = null;
@@ -538,6 +352,7 @@ export async function POST(req: Request) {
           {
             intakeKey: `website:${intakeKey}`,
             quoteIntake: true,
+            quotePhotoFingerprints: photoFingerprints,
             ...(textConsent && !isTest && webTextGrant
               ? {
                 webTextConsent: {
@@ -564,6 +379,10 @@ export async function POST(req: Request) {
             && saved.message === projectDetails
             && saved.preferred_contact === preferredContact;
           if (!sameSubmission) return changedQuoteResponse();
+          if (saved.quote_photos && (saved.quote_photos.count !== photoFiles.length
+            || !saved.quote_photos.fingerprints.every((hash, index) => hash === photoFingerprints[index]))) {
+            return changedQuoteResponse(true);
+          }
           try {
             savedPhotos = (await getSql()`
               SELECT photo_index, target_path, filename, content_type, size_bytes, status, stored_pathname
@@ -571,12 +390,8 @@ export async function POST(req: Request) {
               WHERE lead_id = ${lead.id}::bigint AND intake_key = ${intakeKey}::text
               ORDER BY photo_index
             `) as QuotePhotoIntent[];
-            // Before any upload, photo_count still holds the original count even
-            // if reservation paused midway.
-            const originalPhotoCount = savedPhotos.some((photo) => photo.status !== "pending")
-              ? savedPhotos.length
-              : Number(saved.photo_count);
-            if (originalPhotoCount !== photoFiles.length) return changedQuoteResponse(true);
+            // Older intakes can only be verified against their reserved form photos.
+            if (!saved.quote_photos && savedPhotos.length !== photoFiles.length) return changedQuoteResponse(true);
             const ordered = await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes);
             if (!ordered) return changedQuoteResponse(true);
             photoFiles.splice(0, photoFiles.length, ...ordered);

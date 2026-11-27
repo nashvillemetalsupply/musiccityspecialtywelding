@@ -1602,6 +1602,18 @@ const assistantChatStatement = `
   );
 `
 
+const quoteIntakePhotosStatement = `
+  CREATE TABLE IF NOT EXISTS quote_intakes (
+    intake_key TEXT PRIMARY KEY,
+    lead_id BIGINT NOT NULL REFERENCES leads(id),
+    original_photo_count INT NOT NULL CHECK (original_photo_count >= 0),
+    photo_fingerprints JSONB NOT NULL CHECK (
+      jsonb_typeof(photo_fingerprints) = 'array'
+      AND jsonb_array_length(photo_fingerprints) = original_photo_count
+    )
+  )
+`
+
 export async function runMigrations({
   connectionString = resolveDatabaseUrl(),
   poolFactory = (options) => new Pool(options),
@@ -1622,6 +1634,7 @@ export async function runMigrations({
     { name: "roof-jobs-o1-2026-10-23", query: roofJobsStatement },
     { name: "roof-leads-badges-2026-10-24", query: roofLeadsStatement },
     { name: "assistant-chat-a1-2026-11-10", query: assistantChatStatement },
+    { name: "quote-intake-photos", query: quoteIntakePhotosStatement },
   ]
 
   await runWithMigrationLock({

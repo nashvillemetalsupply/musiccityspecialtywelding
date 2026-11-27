@@ -129,7 +129,7 @@ export async function summarizeCallDraft(callSid: string): Promise<{ summarized:
       }), isTest)),
       async (summary) => {
         const name = summary.caller_name?.trim() ?? ""
-        const storedSummary: StoredCallSummary = isTest || summary.is_job === "no"
+        const storedSummary: StoredCallSummary = isTest || summary.is_job === "no" || !OPEN_DRAFT.includes(draft.status)
           ? summary
           : { ...summary, notify_on_settle: true }
         await sql`
@@ -209,17 +209,17 @@ async function settleCall(draft: DraftForSummary, summary: CallSummary, name: st
   const notify = !quiet && !isTest && summary.is_job !== "no" && outcome !== "already"
   await sql`
     UPDATE call_intake_drafts SET
-      summary = COALESCE(CASE WHEN ${notify}::boolean THEN summary ELSE summary - 'notify_on_settle' END, '{}'::jsonb)
-        || ${outcomeJson}::jsonb, updated_at = now()
+      summary = COALESCE(summary, '{}'::jsonb) || ${outcomeJson}::jsonb, updated_at = now()
     WHERE id = ${draft.id}::bigint`
 
   // Tests never alert anyone. A wrong number is not worth a buzz either; it
   // waits in calls to save. Everything else is one push: what the call was,
   // what happened. Quiet hours file it for the morning.
-  if (!notify) return
+  if (!notify || process.env.VERCEL_ENV !== "production") return
   const who = name || draft.caller_name || "Caller"
   const line = { ...summary, auto: outcome }
-  await notifyAll({
+  const dedupeKey = `call-read:${draft.call_sid}`
+  const notifications = await notifyAll({
     priority: "interrupt",
     stock: leadId != null ? "green" : "manila",
     title: `${who}: ${summary.need || "called, nothing asked for"}`.slice(0, 120),
@@ -227,11 +227,22 @@ async function settleCall(draft: DraftForSummary, summary: CallSummary, name: st
     url: leadId != null ? `/ops/leads/${leadId}` : "/board",
     ownerOnly: true,
     smsFallback: false,
-    dedupeKey: `call-read:${draft.call_sid}`,
+    dedupeKey,
   })
-  await sql`
+  if (notifications.length === 0) {
+    console.error("Call alert remains pending: no active owners.", draft.call_sid)
+    return
+  }
+  const [cleared] = (await sql`
     UPDATE call_intake_drafts SET summary = summary - 'notify_on_settle'
-    WHERE id = ${draft.id}::bigint AND summary->>'notify_on_settle' = 'true'`
+    WHERE id = ${draft.id}::bigint AND summary->>'notify_on_settle' = 'true'
+      AND EXISTS (
+        SELECT 1 FROM notifications n JOIN operators o ON o.id = n.operator_id
+        WHERE n.dedupe_key = ${dedupeKey}::text AND n.is_test = false AND n.owner_only
+          AND o.active AND o.role = 'owner'
+      )
+    RETURNING id`) as { id: number }[]
+  if (!cleared) console.error("Call alert remains pending: no durable production owner notification.", draft.call_sid)
 }
 
 // The recovery sweep's share: drafts still waiting to be saved whose call has
@@ -259,7 +270,7 @@ export async function summarizePendingCalls(limit = 30) {
     ORDER BY d.created_at DESC
     LIMIT ${Math.min(Math.max(limit, 1), 40)}::bigint`) as { call_sid: string }[]
   // Backfill old reads quietly. Leave time for the inline settlement before
-  // recovering a new read's pending alert.
+  // recovering a new read's pending alert in production.
   const unsettled = (await sql`
     SELECT d.id, d.public_id, d.call_sid, d.person_id, d.status, d.caller_name, d.phone, d.need, d.is_test,
       d.summary, c.transcript, c.transcript_status, COALESCE(c.duration_sec, 0)::int AS duration_sec
@@ -269,7 +280,8 @@ export async function summarizePendingCalls(limit = 30) {
       AND (
         (d.status IN ('pending','failed','unknown') AND (d.summary->>'auto') IS NULL
           AND d.summary->>'notify_on_settle' IS DISTINCT FROM 'true')
-        OR (d.status IN ('pending','failed','unknown','saved') AND d.summary->>'notify_on_settle' = 'true'
+        OR (${process.env.VERCEL_ENV === "production"}::boolean
+          AND d.status IN ('pending','failed','unknown','saved') AND d.summary->>'notify_on_settle' = 'true'
           AND d.summary_at < now() - interval '10 minutes')
       )
     ORDER BY d.created_at DESC

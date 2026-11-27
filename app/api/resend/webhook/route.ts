@@ -1,9 +1,59 @@
 import { Resend } from "resend"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
+import { markLeadDelivery } from "@/lib/leads"
 import { notifyAll, notifyOwnerCellSms } from "@/lib/notify"
 
 export const runtime = "nodejs"
+
+type EmailCallbackMatch = {
+  kind: string
+  lead_id: number | null
+  person_id: number | null
+  detail: { sourceEventId?: number; attemptEventId?: number | null }
+  audience: string
+  is_test: boolean
+}
+
+async function findTaggedQuote(tags: Record<string, string> | undefined): Promise<EmailCallbackMatch | undefined> {
+  if (typeof tags?.quote_intent !== "string") return
+  const match = tags.quote_intent.match(/^quote-(owner|customer)-([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i)
+  if (!match) return
+  const recipient = match[1].toLowerCase()
+  const intakeKey = match[2]
+  const audience = recipient === "owner" ? "shop" : "customer"
+  if (tags?.audience !== audience) return
+
+  const sql = getSql()
+  const [quote] = (await sql`
+    SELECT attempt.kind, intent.lead_id, intent.person_id,
+      jsonb_build_object('sourceEventId', intent.id, 'attemptEventId',
+        CASE WHEN attempt.unresolved_count = 1 OR attempt.candidate_count = 1 THEN attempt.id END) AS detail,
+      intent.detail->>'audience' AS audience,
+      (intent.is_test OR attempt.is_test
+        OR lower(COALESCE(intent.detail->>'isTest', 'false')) = 'true'
+        OR COALESCE(l.is_test, false) OR COALESCE(p.is_test, false)) AS is_test
+    FROM events intent
+    JOIN LATERAL (
+      SELECT attempt.id, attempt.kind, attempt.is_test, count(*) OVER () AS candidate_count,
+        count(*) FILTER (WHERE rejection.id IS NULL) OVER () AS unresolved_count,
+        rejection.id IS NULL AS unresolved
+      FROM events attempt
+      LEFT JOIN events rejection ON rejection.kind = 'email.failed' AND rejection.lead_id = intent.lead_id
+        AND rejection.external_id = 'request-failed:' || attempt.id::text
+        AND rejection.detail->>'attemptEventId' = attempt.id::text
+      WHERE attempt.kind = 'email.attempt' AND attempt.lead_id = intent.lead_id
+        AND attempt.detail->>'sourceEventId' = intent.id::text
+      ORDER BY unresolved DESC, attempt.id DESC
+      LIMIT 1
+    ) attempt ON true
+    LEFT JOIN leads l ON l.id = intent.lead_id
+    LEFT JOIN people p ON p.id = intent.person_id
+    WHERE intent.kind = 'email.out' AND intent.external_id = ${`quote-${recipient}:${intakeKey}`}::text
+      AND intent.detail->>'audience' = ${audience}::text AND intent.detail->>'frozenPayload' IS NOT NULL
+    LIMIT 1`) as EmailCallbackMatch[]
+  return quote
+}
 
 export async function POST(req: Request) {
   const secret = process.env.RESEND_WEBHOOK_SECRET?.trim()
@@ -26,10 +76,11 @@ export async function POST(req: Request) {
   }
 
   if (!("email_id" in webhook.data)) return Response.json({ ok: true })
-  if (!["email.delivered", "email.delivery_delayed", "email.bounced", "email.failed", "email.suppressed"].includes(webhook.type)) return Response.json({ ok: true })
+  if (!["email.delivered", "email.delivery_delayed", "email.bounced", "email.complained", "email.failed", "email.suppressed"].includes(webhook.type)) return Response.json({ ok: true })
 
   const sql = getSql()
-  const failed = ["email.bounced", "email.failed", "email.suppressed"].includes(webhook.type)
+  const bouncedOrComplained = webhook.type === "email.bounced" || webhook.type === "email.complained"
+  const failed = bouncedOrComplained || webhook.type === "email.failed" || webhook.type === "email.suppressed"
   const delayed = webhook.type === "email.delivery_delayed"
   const reason = webhook.type === "email.bounced"
     ? webhook.data.bounce.message
@@ -37,7 +88,9 @@ export async function POST(req: Request) {
       ? webhook.data.failed.reason
       : webhook.type === "email.suppressed"
         ? webhook.data.suppressed.message
-        : delayed ? "Email delivery is delayed." : "Email delivered."
+        : webhook.type === "email.complained"
+          ? "The recipient marked the email as spam."
+          : delayed ? "Email delivery is delayed." : "Email delivered."
   const notification = (await sql`
     SELECT id, sms_fallback, sms_only, provider_message_sid, provider_email_status, delivery_status
     FROM notifications
@@ -51,6 +104,7 @@ export async function POST(req: Request) {
       delivery_status: string
     }[]
   if (notification[0]) {
+    if (webhook.type === "email.complained") return Response.json({ ok: true })
     const retrySms = failed && notification[0].sms_fallback && !notification[0].sms_only
       && !notification[0].provider_message_sid
       && notification[0].provider_email_status !== webhook.type
@@ -117,7 +171,7 @@ export async function POST(req: Request) {
         AND provider_email_id = ${webhook.data.email_id}::text`
     return Response.json({ ok: true })
   }
-  const accepted = (await sql`
+  const [providerMatch] = (await sql`
     SELECT accepted_event.kind, accepted_event.lead_id, accepted_event.person_id, accepted_event.detail,
       COALESCE(source_event.detail->>'audience', '') AS audience,
       (accepted_event.is_test OR COALESCE(source_event.is_test, false)
@@ -134,16 +188,17 @@ export async function POST(req: Request) {
     LEFT JOIN assistant_sessions s ON s.id::text = source_event.detail->>'sessionId'
     WHERE (accepted_event.kind = 'email.accepted' AND accepted_event.external_id = ${webhook.data.email_id}::text)
       OR (accepted_event.kind = 'email.unknown' AND accepted_event.detail->>'providerEmailId' = ${webhook.data.email_id}::text)
-    ORDER BY (accepted_event.kind = 'email.accepted') DESC, accepted_event.id DESC LIMIT 1`) as {
-    kind: "email.accepted" | "email.unknown"
-    lead_id: number | null
-    person_id: number | null
-    detail: { sourceEventId?: number }
-    audience: string
-    is_test: boolean
-  }[]
-  const sourceEventId = Number(accepted[0]?.detail?.sourceEventId)
-  if (!accepted[0] || !Number.isInteger(sourceEventId) || sourceEventId <= 0) {
+      OR (accepted_event.kind IN ('email.delivered','email.failed','email.delayed')
+        AND accepted_event.detail->>'providerEmailId' = ${webhook.data.email_id}::text)
+    ORDER BY (accepted_event.kind = 'email.accepted') DESC,
+      (accepted_event.kind = 'email.delivered') DESC, accepted_event.id DESC
+    LIMIT 1`) as EmailCallbackMatch[]
+  const associated = providerMatch ?? await findTaggedQuote("tags" in webhook.data ? webhook.data.tags : undefined)
+  if (webhook.type === "email.complained" && associated && !["shop", "customer"].includes(associated.audience)) {
+    return Response.json({ ok: true })
+  }
+  const sourceEventId = Number(associated?.detail?.sourceEventId)
+  if (!associated || !Number.isInteger(sourceEventId) || sourceEventId <= 0) {
     // Provider callbacks can beat the request that persists email.accepted.
     // A success response would discard the only signed delivery receipt.
     return Response.json(
@@ -152,14 +207,20 @@ export async function POST(req: Request) {
     )
   }
 
-  const receiptDetail = { sourceEventId, providerEmailId: webhook.data.email_id, audience: accepted[0].audience, isTest: accepted[0].is_test === true }
-  if (accepted[0].kind === "email.unknown" && (failed || delayed)) {
+  const receiptDetail = {
+    sourceEventId,
+    attemptEventId: associated.detail.attemptEventId ?? undefined,
+    providerEmailId: webhook.data.email_id,
+    audience: associated.audience,
+    isTest: associated.is_test === true,
+  }
+  if (["email.unknown", "email.attempt"].includes(associated.kind) && (failed || delayed)) {
     // A delivery problem still confirms the provider took the send request.
     await recordEvent({
       kind: "email.accepted",
       actorType: "system",
-      leadId: accepted[0].lead_id,
-      personId: accepted[0].person_id,
+      leadId: associated.lead_id,
+      personId: associated.person_id,
       externalId: webhook.data.email_id,
       body: "Email accepted by the delivery provider.",
       crewBody: "Email accepted by the delivery provider.",
@@ -170,8 +231,8 @@ export async function POST(req: Request) {
   let eventId = await recordEvent({
     kind: eventKind,
     actorType: "system",
-    leadId: accepted[0].lead_id,
-    personId: accepted[0].person_id,
+    leadId: associated.lead_id,
+    personId: associated.person_id,
     externalId: `resend:${webhook.type}:${webhook.data.email_id}`,
     body: reason,
     crewBody: failed ? "Customer email did not deliver." : delayed ? "Customer email is delayed." : "Customer email delivered.",
@@ -182,48 +243,24 @@ export async function POST(req: Request) {
     eventId = Number(existing[0]?.id) || null
   }
   if (!eventId) return Response.json({ error: "Delivery receipt could not be resumed." }, { status: 500 })
-  if (accepted[0].audience === "assistant-shop" && (failed || delayed) && accepted[0].is_test === false) {
+  if (associated.audience === "assistant-shop" && (failed || delayed) && associated.is_test === false) {
     // A human request may have no callback or lead yet. Its saved transcript
     // must still reach the owner's existing phone alert path on inbox failure.
     const alert = await notifyOwnerCellSms({ title: failed ? "Assistant transcript email did not deliver" : "Assistant transcript email is delayed",
       body: "Open the saved assistant conversation and contact the customer.",
-      url: accepted[0].lead_id ? `/ops/leads/${accepted[0].lead_id}` : `/board/updates?receipt=${sourceEventId}#receipt`,
+      url: associated.lead_id ? `/ops/leads/${associated.lead_id}` : `/board/updates?receipt=${sourceEventId}#receipt`,
       sourceEventId: eventId, dedupeKey: `assistant-email-status:${webhook.type}:${webhook.data.email_id}`,
       capExempt: true, quietHoursExempt: true })
     if (alert.reason === "not-for-role") return Response.json({ ok: false, retry: true,
       error: "Assistant shop phone recipient is not configured." }, { status: 503, headers: { "Retry-After": "60" } })
   }
-  if (accepted[0].lead_id && accepted[0].audience === "shop") {
-    // This legacy lead column is explicitly labelled "Owner email" in the
-    // work order. Customer replies and confirmations keep their own immutable
-    // receipts, but must not overwrite the owner-alert summary. Failure wins;
-    // delayed never regresses delivered/failed, and delivered never erases a
-    // known failure.
-    await sql`
-      UPDATE leads SET
-        email_delivery_status = CASE
-          WHEN email_delivery_status = 'failed' OR ${failed}::boolean THEN 'failed'
-          WHEN email_delivery_status = ANY(ARRAY['sent','delivered']::text[]) THEN email_delivery_status
-          WHEN ${!failed && !delayed}::boolean THEN 'delivered'
-          WHEN ${delayed}::boolean THEN 'delayed'
-          ELSE email_delivery_status
-        END,
-        email_delivery_error = CASE
-          WHEN email_delivery_status = 'failed' THEN email_delivery_error
-          WHEN ${failed}::boolean THEN ${reason}::text
-          WHEN ${!failed && !delayed}::boolean THEN ''
-          ELSE email_delivery_error
-        END,
-        email_delivered_at = CASE
-          WHEN ${!failed && !delayed}::boolean THEN COALESCE(email_delivered_at, now())
-          ELSE email_delivered_at
-        END,
-        updated_at = now()
-      WHERE id = ${accepted[0].lead_id}::bigint`
+  if (associated.lead_id && associated.audience === "shop") {
+    const status = bouncedOrComplained ? "bounced" : delayed ? "delayed" : failed ? "accepted" : "delivered"
+    await markLeadDelivery(associated.lead_id, status, reason)
   }
-  if (accepted[0].lead_id && failed && accepted[0].is_test === false) {
-    const lead = (await sql`SELECT is_test FROM leads WHERE id = ${accepted[0].lead_id}::bigint LIMIT 1`) as { is_test: boolean }[]
-    if (!lead[0]?.is_test) await notifyAll({ priority: "digest", stock: "red", title: "Email did not deliver", body: reason, crewBody: "Customer email did not deliver.", url: `/ops/leads/${accepted[0].lead_id}#spike`, sourceEventId: eventId, dedupeKey: `resend-failure:${webhook.data.email_id}` })
+  if (associated.lead_id && failed && associated.is_test === false) {
+    const lead = (await sql`SELECT is_test FROM leads WHERE id = ${associated.lead_id}::bigint LIMIT 1`) as { is_test: boolean }[]
+    if (!lead[0]?.is_test) await notifyAll({ priority: "digest", stock: "red", title: "Email did not deliver", body: reason, crewBody: "Customer email did not deliver.", url: `/ops/leads/${associated.lead_id}#spike`, sourceEventId: eventId, dedupeKey: `resend-failure:${webhook.data.email_id}` })
   }
   return Response.json({ ok: true })
 }

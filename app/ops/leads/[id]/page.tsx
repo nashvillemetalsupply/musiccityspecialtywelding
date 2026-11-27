@@ -665,10 +665,10 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
             {lead.utm_campaign && <div><dt>Campaign</dt><dd>{lead.utm_campaign}</dd></div>}
             <div>
               <dt>Owner email</dt>
-              <dd className={lead.email_delivery_status === "failed" ? "is-bad" : ""}>
+              <dd className={["failed", "rejected"].includes(lead.email_delivery_status) ? "is-bad" : ""}>
                 {shopDeliveryLabel(lead.email_delivery_status)}
                 {lead.email_delivery_error ? `: ${lead.email_delivery_error}` : ""}
-                {lead.email_delivery_status === "failed" && (
+                {["failed", "rejected"].includes(lead.email_delivery_status) && (
                   <form action={acknowledgeDeliveryFailure} className="job-inline-ack">
                     <input type="hidden" name="leadId" value={lead.id} />
               <SafeSubmitButton className="btn btn--sm btn--edge" pendingLabel="Saving...">Mark handled</SafeSubmitButton>

@@ -269,7 +269,7 @@ export async function acknowledgeDeliveryFailure(formData: FormData) {
   const sql = getSql()
   const rows = (await sql`
     UPDATE leads SET email_delivery_status = 'resolved', updated_at = now()
-    WHERE id = ${leadId}::bigint AND email_delivery_status = 'failed'
+    WHERE id = ${leadId}::bigint AND email_delivery_status IN ('failed','rejected')
     RETURNING id`) as { id: number }[]
   if (rows.length) {
     await recordLeadEvent(leadId, "delivery_acknowledged", actorId(operator), null)

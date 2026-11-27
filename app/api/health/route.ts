@@ -216,7 +216,7 @@ async function checkDatabase(): Promise<DatabaseHealth> {
         ) recent_inbound_calls) AS recent_inbound_call_count,
         (SELECT count(*)::int FROM (
           SELECT id FROM leads
-          WHERE email_delivery_status = 'failed' AND is_test = false
+          WHERE email_delivery_status IN ('failed','rejected') AND is_test = false
             AND updated_at >= now() - interval '1 year'
           ORDER BY updated_at DESC LIMIT 10000
         ) recent_failed_deliveries) AS failed_deliveries,

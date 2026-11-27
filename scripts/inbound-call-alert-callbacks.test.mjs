@@ -12,6 +12,7 @@ import * as alertFailureClassifier from "../lib/alert-failure-classifier.mjs"
 const root = fileURLToPath(new URL("..", import.meta.url))
 const resendRoutePath = resolve(root, "app/api/resend/webhook/route.ts")
 const twilioRoutePath = resolve(root, "app/api/twilio/notification-status/route.ts")
+const leadsPath = resolve(root, "lib/leads.ts")
 
 function normalizedSql(strings) {
   return strings.join(" ? ").replace(/\s+/g, " ").trim()
@@ -48,12 +49,24 @@ function loadRoute(path, { fakes, env }) {
   return loadedModule.exports
 }
 
-function resendPayload(type, emailId) {
-  const data = { email_id: emailId }
+function resendPayload(type, emailId, tags) {
+  const data = { email_id: emailId, tags }
   if (type === "email.bounced") data.bounce = { message: "Mailbox rejected the alert." }
   if (type === "email.failed") data.failed = { reason: "Provider rejected the alert." }
   if (type === "email.suppressed") data.suppressed = { message: "Address is suppressed." }
   return { type, data }
+}
+
+function signedResendRequest(payload, signingKey) {
+  const body = JSON.stringify(payload)
+  const id = "signed-quote-delivery"
+  const timestamp = String(Math.floor(Date.now() / 1000))
+  const signature = createHmac("sha256", signingKey).update(`${id}.${timestamp}.${body}`).digest("base64")
+  return new Request("https://example.test/api/resend/webhook", {
+    method: "POST",
+    headers: { "svix-id": id, "svix-timestamp": timestamp, "svix-signature": `v1,${signature}` },
+    body,
+  })
 }
 
 function resendRequest(payload, signature = "valid") {
@@ -172,6 +185,7 @@ function createResendHarness({ providerEmailId = "email-alert-901", deliveryStat
       ["resend", { Resend: FakeResend }],
       ["@/lib/db", { getSql: () => sql }],
       ["@/lib/events", { recordEvent: async () => { customerCalls += 1; throw new Error("notification receipt reached customer journal") } }],
+      ["@/lib/leads", { markLeadDelivery: async () => assert.fail("an operator notification does not project a quote lead") }],
       ["@/lib/notify", { notifyAll: async () => { customerCalls += 1; throw new Error("notification receipt fanned out another alert") } }],
     ]),
   })
@@ -297,11 +311,6 @@ test("a signed Resend delivery settles the quote owner email after its acceptanc
         if (query.startsWith("SELECT id FROM events")) {
           return receipts.has(values.join(":")) ? [{ id: 302 }] : []
         }
-        if (query.startsWith("UPDATE leads SET")) {
-          assert.equal(values.at(-1), unknown.lead_id)
-          deliveryProjected = true
-          return []
-        }
         throw new Error(`Unexpected webhook SQL: ${query}`)
       } }],
       ["@/lib/events", { recordEvent: async (event) => {
@@ -310,20 +319,15 @@ test("a signed Resend delivery settles the quote owner email after its acceptanc
         receipts.set(key, event)
         return 302
       } }],
+      ["@/lib/leads", { markLeadDelivery: async (leadId, status) => {
+        assert.equal(leadId, unknown.lead_id)
+        assert.equal(status, "delivered")
+        deliveryProjected = true
+      } }],
       ["@/lib/notify", { notifyAll: () => assert.fail("a delivery callback does not fan out alerts") }],
     ]),
   })
-  const request = (emailId) => {
-    const body = JSON.stringify(resendPayload("email.delivered", emailId))
-    const id = "signed-quote-delivery"
-    const timestamp = String(Math.floor(Date.now() / 1000))
-    const signature = createHmac("sha256", signingKey).update(`${id}.${timestamp}.${body}`).digest("base64")
-    return new Request("https://example.test/api/resend/webhook", {
-      method: "POST",
-      headers: { "svix-id": id, "svix-timestamp": timestamp, "svix-signature": `v1,${signature}` },
-      body,
-    })
-  }
+  const request = (emailId) => signedResendRequest(resendPayload("email.delivered", emailId), signingKey)
 
   assert.equal((await route.POST(request("email-other-quote"))).status, 503)
   assert.equal(receipts.size, 0)
@@ -336,6 +340,161 @@ test("a signed Resend delivery settles the quote owner email after its acceptanc
   assert.equal(receipt.detail.providerEmailId, providerEmailId)
   assert.equal(receipt.detail.audience, "shop")
   assert.equal(deliveryProjected, true)
+})
+
+test("signed quote callbacks recover a lost Resend response by frozen intent tag", async (t) => {
+  for (const [type, attemptHistory, expectedReceipts, expectedAttempt] of [
+    ["email.bounced", [{ id: 202, rejected: true }, { id: 204 }], ["email.accepted", "email.failed"], 204],
+    ["email.delivered", [{ id: 202, rejected: true }, { id: 204 }], ["email.delivered"], 204],
+    ["email.delivered", [{ id: 202, rejected: true }], ["email.delivered"], 202],
+    ["email.delivered", [{ id: 202 }, { id: 204 }], ["email.delivered"], undefined],
+  ]) {
+    await t.test(`${type} with attempt ${expectedAttempt ?? "unidentifiable"}`, async () => {
+      const signingKey = Buffer.from("synthetic lost response signing key")
+      const intakeKey = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
+      const tags = { quote_intent: `quote-owner-${intakeKey}`, audience: "shop" }
+      const intent = { id: 201, lead_id: 41, person_id: 17, is_test: false, audience: "shop" }
+      const receipts = new Map()
+      const alerts = new Map()
+      let tagLookups = 0
+      const route = loadRoute(resendRoutePath, {
+        env: { RESEND_API_KEY: "synthetic-resend-key", RESEND_WEBHOOK_SECRET: `whsec_${signingKey.toString("base64")}` },
+        fakes: new Map([
+          ["resend", { Resend }],
+          ["@/lib/db", { getSql: () => async (strings, ...values) => {
+            const query = normalizedSql(strings)
+            if (query.includes("FROM notifications")) return []
+            if (query.includes("FROM events accepted_event")) {
+              return [...receipts.values()].filter((event) => event.detail.providerEmailId === values[0]).slice(0, 1).map((event) => ({
+                ...intent, kind: event.kind, detail: event.detail,
+              }))
+            }
+            if (query.includes("FROM events intent")) {
+              tagLookups++
+              if (!values.includes(`quote-owner:${intakeKey}`) || !values.includes(tags.audience)) return []
+              assert.match(query, /rejection.detail->>'attemptEventId' = attempt.id::text/)
+              assert.match(query, /ORDER BY unresolved DESC, attempt.id DESC/)
+              assert.match(query, /attempt\.unresolved_count = 1 OR attempt\.candidate_count = 1/)
+              const pending = attemptHistory.filter(({ rejected }) => !rejected)
+              const attempt = pending.length === 1 ? pending[0] : attemptHistory.length === 1 ? attemptHistory[0] : null
+              return [{ ...intent, kind: "email.attempt", detail: { sourceEventId: intent.id, attemptEventId: attempt?.id ?? null } }]
+            }
+            if (query.startsWith("SELECT id FROM events")) return receipts.has(values.join(":")) ? [{ id: 302 }] : []
+            if (query.startsWith("SELECT is_test FROM leads")) return [{ is_test: false }]
+            throw new Error(`Unexpected webhook SQL: ${query}`)
+          } }],
+          ["@/lib/events", { recordEvent: async (event) => {
+            const key = `${event.kind}:${event.externalId}`
+            if (receipts.has(key)) return null
+            receipts.set(key, event)
+            return 302
+          } }],
+          ["@/lib/leads", { markLeadDelivery: async () => {} }],
+          ["@/lib/notify", { notifyAll: async (alert) => { alerts.set(alert.dedupeKey, alert) } }],
+        ]),
+      })
+      const providerEmailId = "email-without-synchronous-id"
+      const send = (callbackTags) => route.POST(signedResendRequest(resendPayload(type, providerEmailId, callbackTags), signingKey))
+      assert.equal((await send({ ...tags, audience: "customer" })).status, 503)
+      assert.equal(receipts.size, 0)
+      assert.equal((await send(tags)).status, 200)
+      assert.equal((await send({ quote_intent: "irrelevant" })).status, 200)
+      assert.equal(tagLookups, 1, "provider ID takes priority over the signed tag")
+      assert.equal(alerts.size, type === "email.bounced" ? 1 : 0)
+      assert.deepEqual([...receipts.values()].map(({ kind, detail }) => [kind, detail.sourceEventId, detail.attemptEventId]),
+        expectedReceipts.map((kind) => [kind, intent.id, expectedAttempt]))
+    })
+  }
+})
+
+test("the owner email dashboard clears request rejection on acceptance or delivery and preserves a signed bounce or complaint", async () => {
+  const signingKey = Buffer.from("synthetic owner email projection signing key")
+  const leadId = 41
+  const providerEmailId = "email-owner-after-rejection"
+  const receipts = [{
+    kind: "email.failed",
+    detail: { sourceEventId: 201, attemptEventId: 202, audience: "shop", providerStatus: 422 },
+  }]
+  const lead = { status: "pending", error: "" }
+  const sql = async (strings, ...values) => {
+    const query = normalizedSql(strings)
+    if (query.includes("FROM notifications")) return []
+    if (query.includes("FROM events accepted_event")) return receipts
+      .filter(({ kind, detail }) => kind === "email.accepted" && detail.providerEmailId === values[0])
+      .map(({ kind, detail }) => ({ kind, detail, lead_id: leadId, person_id: 17, audience: "shop", is_test: false }))
+    if (query.startsWith("SELECT is_test FROM leads")) return [{ is_test: false }]
+    if (query.includes("UPDATE leads SET")) {
+      if (query.includes("email_delivery_status = 'failed',")) {
+        lead.status = "failed"
+        lead.error = values[0]
+        return []
+      }
+      if (query.includes("ARRAY['failed','sent','delivered']")) {
+        if (lead.status !== "failed") lead.status = "accepted"
+        return []
+      }
+      const [status, error] = values
+      assert.equal(values.at(-1), leadId)
+      assert.match(query, /WHEN 'failed' THEN 'rejected'/)
+      assert.match(query, /WHEN 'bounced' THEN 'failed'/)
+      assert.match(query, /detail->>'providerType' IN \('email.bounced', 'email.complained'\)/)
+      const signedFailure = receipts.some(({ detail }) => ["email.bounced", "email.complained"].includes(detail.providerType) && detail.audience === "shop")
+      if (status !== "bounced" && signedFailure) return []
+      const accepted = receipts.some(({ kind, detail }) => ["email.accepted", "email.delivered"].includes(kind) && detail.audience === "shop")
+      assert.match(query, /receipt.kind IN \('email.accepted', 'email.delivered'\)/)
+      if (status === "failed" && (accepted || ["sent", "accepted", "delivered", "delayed"].includes(lead.status))) return []
+      if (status === "accepted" && ["sent", "delivered", "delayed"].includes(lead.status)) return []
+      lead.status = { failed: "rejected", bounced: "failed" }[status] || status
+      lead.error = ["failed", "bounced"].includes(status) ? error : ""
+      return []
+    }
+    throw new Error(`Unexpected email projection SQL: ${query}`)
+  }
+  const db = { getSql: () => sql }
+  const leads = loadRoute(leadsPath, {
+    env: {},
+    fakes: new Map([
+      ["@/lib/db", db], ["@/lib/media-safety", {}], ["@/lib/events", {}],
+      ["@/lib/people", {}], ["@/lib/follow-up-cadence.ts", {}],
+    ]),
+  })
+  const route = loadRoute(resendRoutePath, {
+    env: { RESEND_API_KEY: "synthetic-resend-key", RESEND_WEBHOOK_SECRET: `whsec_${signingKey.toString("base64")}` },
+    fakes: new Map([
+      ["resend", { Resend }], ["@/lib/db", db], ["@/lib/leads", leads],
+      ["@/lib/events", { recordEvent: async (event) => receipts.push(event) }],
+      ["@/lib/notify", { notifyAll: async () => {} }],
+    ]),
+  })
+  const send = async (type) => {
+    assert.equal((await route.POST(signedResendRequest(resendPayload(type, providerEmailId), signingKey))).status, 200)
+  }
+
+  await leads.markLeadDelivery(leadId, "failed", "Provider rejected the first request.")
+  const rejectionStatus = lead.status
+  receipts.push({ kind: "email.accepted", detail: { sourceEventId: 201, attemptEventId: 203, providerEmailId, audience: "shop" } })
+  await leads.markLeadDelivery(leadId, "accepted")
+  assert.deepEqual(lead, { status: "accepted", error: "" })
+  assert.equal(rejectionStatus, "rejected")
+  await leads.markLeadDelivery(leadId, "failed", "The first rejection write was delayed.")
+  assert.deepEqual(lead, { status: "accepted", error: "" })
+
+  // This was how the previous version projected the request rejection and can
+  // still exist when the signed delivery arrives before the route updates it.
+  Object.assign(lead, { status: "failed", error: "Provider rejected the first request." })
+  await send("email.delivered")
+  assert.deepEqual(lead, { status: "delivered", error: "" })
+  await send("email.bounced")
+  assert.deepEqual(lead, { status: "failed", error: "Mailbox rejected the alert." })
+  await leads.markLeadDelivery(leadId, "accepted")
+  await send("email.delivered")
+  assert.deepEqual(lead, { status: "failed", error: "Mailbox rejected the alert." })
+
+  receipts.splice(-2)
+  Object.assign(lead, { status: "delivered", error: "" })
+  await send("email.complained")
+  assert.equal(lead.status, "failed")
+  assert.equal(receipts.at(-1).detail.providerType, "email.complained")
 })
 
 test("an invalid Resend signature performs no database work", async () => {

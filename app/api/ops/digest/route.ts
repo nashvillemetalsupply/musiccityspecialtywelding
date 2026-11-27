@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       ORDER BY created_at ASC LIMIT 50`) as LeadRow[]
     const failed = (await sql`
       SELECT * FROM leads
-      WHERE email_delivery_status = 'failed' AND is_test = false
+      WHERE email_delivery_status IN ('failed','rejected') AND is_test = false
       ORDER BY created_at DESC LIMIT 20`) as LeadRow[]
     const openQuotes = (await sql`
       SELECT * FROM leads

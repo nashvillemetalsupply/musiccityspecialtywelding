@@ -32,6 +32,7 @@ test("inline job receipts defer interpretation and Undo is a guarded durable tra
 test("website quote retries reuse one lead, one provider intent, one alert, and deterministic photos", () => {
   const client = source("components/mainstreet-contact.tsx")
   const quote = source("app/api/quote/route.ts")
+  const quoteEmail = source("lib/quote-email.ts")
   const leads = source("lib/leads.ts")
 
   assert.match(client, /const intakeKeyRef = useRef\(""\)/)
@@ -39,7 +40,7 @@ test("website quote retries reuse one lead, one provider intent, one alert, and 
   assert.match(client, /if \(response\.status === 409 && data\?\.retryOriginalPhotos !== true\) clearIntake\(intakeKey\)/)
   assert.match(client, /if \(!response\.ok\)[\s\S]*?clearIntake\(intakeKey\)\s+setStatus\("success"\)/)
   assert.match(quote, /intakeKey: `website:\$\{intakeKey\}`/)
-  assert.match(quote, /idempotencyKey: input\.intent/)
+  assert.match(quoteEmail, /idempotencyKey = unresolved\?\.idempotency_key \|\| `\$\{audienceKey\}:\$\{input\.leadId\}:attempt:\$\{attemptNumber\}`/)
   assert.match(quote, /intent: `quote-owner:\$\{intakeKey\}`/)
   assert.match(quote, /intent: `quote-customer:\$\{intakeKey\}`/)
   assert.match(quote, /addRandomSuffix: false,[\s\S]{0,80}allowOverwrite: true/)
@@ -52,7 +53,7 @@ test("website quote retries reuse one lead, one provider intent, one alert, and 
 })
 
 test("email acceptance, uncertainty, and signed callbacks remain distinct", () => {
-  const quote = source("app/api/quote/route.ts")
+  const quote = source("lib/quote-email.ts")
   const operatorEmail = source("app/ops/actions.ts")
   const webhook = source("app/api/resend/webhook/route.ts")
   const leads = source("lib/leads.ts")
@@ -62,15 +63,15 @@ test("email acceptance, uncertainty, and signed callbacks remain distinct", () =
   assert.match(quote, /kind: "email\.accepted"/)
   assert.match(quote, /kind: "email\.unknown"/)
   assert.match(operatorEmail, /recordDeliveryProblem\("email\.unknown", message\)/)
-  assert.match(leads, /WHEN email_delivery_status = ANY\(ARRAY\['failed','sent','delivered'\]::text\[\]\) THEN email_delivery_status/)
+  assert.match(leads, /WHEN 'failed' THEN 'rejected'/)
+  assert.match(leads, /WHEN 'bounced' THEN 'failed'/)
+  assert.match(leads, /receipt.detail->>'providerType' IN \('email\.bounced', 'email\.complained'\)/)
+  assert.match(leads, /email_delivered_at = CASE[\s\S]{0,180}COALESCE\(email_delivered_at, now\(\)\)/)
 
   assert.match(webhook, /webhooks\.verify/)
   assert.match(webhook, /status: 503, headers: \{ "Retry-After": "15" \}/)
-  assert.match(webhook, /accepted\[0\]\.audience === "shop"/)
-  assert.match(webhook, /WHEN email_delivery_status = 'failed' OR \$\{failed\}::boolean THEN 'failed'/)
-  assert.match(webhook, /WHEN email_delivery_status = ANY\(ARRAY\['sent','delivered'\]::text\[\]\) THEN email_delivery_status/)
-  assert.match(webhook, /WHEN \$\{!failed && !delayed\}::boolean THEN 'delivered'/)
-  assert.match(webhook, /email_delivered_at = CASE[\s\S]{0,180}COALESCE\(email_delivered_at, now\(\)\)/)
+  assert.match(webhook, /providerMatch \?\? await findTaggedQuote/)
+  assert.match(webhook, /associated\.audience === "shop"[\s\S]{0,170}markLeadDelivery/)
   assert.match(webhook, /if \(!eventId\)[\s\S]{0,240}SELECT id FROM events/)
   assert.match(webhook, /dedupeKey: `resend-failure:\$\{webhook\.data\.email_id\}`/)
 })

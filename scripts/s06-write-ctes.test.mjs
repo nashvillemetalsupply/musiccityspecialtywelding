@@ -216,9 +216,9 @@ async function quoteRecoveryFixture({ brokenLeadIds = [], discoveryFails = false
     }
     if (sql.includes("FROM events intent JOIN leads")) {
       assert.match(sql, /min\(attempt\.occurred_at\)/)
-      assert.match(sql, /kind IN \('email\.attempt', 'email\.unknown'\)/)
+      assert.match(sql, /rejection\.detail->>'attemptEventId' = attempt\.id::text/)
       assert.match(sql, /kind IN \('email\.accepted', 'email\.delivered'\)/)
-      assert.match(sql, /intent\.detail->>'frozenPayload' IS NULL THEN intent\.occurred_at/)
+      assert.match(sql, /intent\.detail->>'frozenPayload' IS NOT NULL THEN intent\.recorded_at/)
       assert.match(sql, /<= now\(\) - interval '23 hours'/)
       assert.match(sql, /n\.dedupe_key = 'quote-email-review:' \|\| intent\.id::text/)
       return emailIntents.filter((intent) => {
@@ -226,8 +226,9 @@ async function quoteRecoveryFixture({ brokenLeadIds = [], discoveryFails = false
         const firstAge = attempts.length > 0 ? Math.max(...attempts.map(({ age }) => age)) : intent.frozenPayload ? 0 : intent.age
         return firstAge >= 23 && !intent.receipts.some(({ kind }) => kind === "email.accepted" || kind === "email.delivered")
           && !notifications.has(`quote-email-review:${intent.id}`)
-      })
+      }).map((intent) => ({ ...intent, needs_review: true }))
     }
+    if (sql.includes("INSERT INTO sync_state") && sql.includes("last_review_attempt_at")) return [{ key: values[0] }]
     if (sql.includes("SELECT id FROM events") && sql.includes("processed_at IS NULL")) {
       return events.filter((event) => !extracted.includes(event.id) && values.flat().includes(event.id))
     }
@@ -255,6 +256,7 @@ async function quoteRecoveryFixture({ brokenLeadIds = [], discoveryFails = false
   const noop = async () => 0
   const { runRecoverySweep } = loadModule("lib/recovery-sweep.ts", new Map([
     ["@/lib/db", { getSql }], ["@/lib/leads", leads],
+    ["@/lib/quote-email", { recoverUnattemptedQuoteEmail: async () => assert.fail("expired intents require review") }],
     ["@/lib/notify", { notifyAll: async (notification) => {
       assert.ok(emailIntents.length, "test quote must stay quiet")
       assert.equal(notifications.has(notification.dedupeKey), false, "a saved review should leave the candidate window")
