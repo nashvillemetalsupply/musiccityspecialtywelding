@@ -69,6 +69,48 @@ async function releaseRecoveryLease(holder: string) {
   if (!rows[0]) throw new Error("Recovery lease ownership was lost before release.")
 }
 
+async function reviewUnconfirmedQuoteEmails() {
+  // Preview writes are marked as tests by notifyAll and would consume the live dedupe key.
+  if (process.env.VERCEL_ENV !== "production") return 0
+  const sql = getSql()
+  const expired = (await sql`
+    SELECT intent.id, intent.lead_id, intent.detail->>'audience' AS audience
+    FROM events intent JOIN leads l ON l.id = intent.lead_id
+    WHERE intent.kind = 'email.out' AND intent.is_test = false AND l.is_test = false
+      AND (intent.external_id LIKE 'quote-owner:%' OR intent.external_id LIKE 'quote-customer:%')
+      AND COALESCE((
+        SELECT min(attempt.occurred_at) FROM events attempt
+        WHERE attempt.lead_id = l.id AND attempt.kind IN ('email.attempt', 'email.unknown')
+          AND attempt.detail->>'sourceEventId' = intent.id::text
+      ), CASE WHEN intent.detail->>'frozenPayload' IS NULL THEN intent.occurred_at END)
+        <= now() - interval '23 hours'
+      AND NOT EXISTS (
+        SELECT 1 FROM events receipt
+        WHERE receipt.lead_id = l.id AND receipt.kind IN ('email.accepted', 'email.delivered')
+          AND receipt.detail->>'sourceEventId' = intent.id::text
+      )
+      AND EXISTS (
+        SELECT 1 FROM operators o WHERE o.active AND o.role = 'owner' AND NOT EXISTS (
+          SELECT 1 FROM notifications n WHERE n.operator_id = o.id
+            AND n.dedupe_key = 'quote-email-review:' || intent.id::text
+        )
+      )
+    ORDER BY intent.id LIMIT 20`) as { id: number; lead_id: number; audience: "shop" | "customer" }[]
+  for (const intent of expired) {
+    await notifyAll({
+      priority: "digest",
+      stock: "red",
+      title: intent.audience === "shop" ? "Quote saved, owner email unconfirmed" : "Quote saved, customer email unconfirmed",
+      body: "Check the email provider and open the saved quote to follow up.",
+      url: `/ops/leads/${intent.lead_id}#spike`,
+      sourceEventId: Number(intent.id),
+      ownerOnly: true,
+      dedupeKey: `quote-email-review:${intent.id}`,
+    })
+  }
+  return expired.length
+}
+
 /**
  * Runs the complete Shop Brain recovery pass behind one database lease.
  * Automatic callers are coalesced for ten minutes. A manual force bypasses
@@ -139,8 +181,21 @@ export async function runRecoverySweep({
       detail.delivery = "none"
     }
 
-    const { eventIds: recoveredQuoteEvents, failures: quoteEventRepairFailures } = await recoverMissingQuoteEvents()
-    if (quoteEventRepairFailures.length > 0) detail.quoteEventRepairFailures = quoteEventRepairFailures
+    let recoveredQuoteEvents: number[] = []
+    try {
+      const { eventIds, failures } = await recoverMissingQuoteEvents()
+      recoveredQuoteEvents = eventIds
+      if (failures.length > 0) detail.quoteEventRepairFailures = failures
+    } catch (error) {
+      detail.quoteEventDiscoveryError = error instanceof Error ? error.message : String(error)
+      console.error("Quote event discovery failed:", error)
+    }
+    try {
+      detail.quoteEmailReviews = await reviewUnconfirmedQuoteEmails()
+    } catch (error) {
+      detail.quoteEmailReviewError = error instanceof Error ? error.message : String(error)
+      console.error("Quote email review failed:", error)
+    }
     const unprocessed = (await sql`
       SELECT id FROM events
       WHERE processed_at IS NULL

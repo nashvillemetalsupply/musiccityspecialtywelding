@@ -1,9 +1,11 @@
 import assert from "node:assert/strict"
+import { createHmac } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import vm from "node:vm"
+import { Resend } from "resend"
 import ts from "typescript"
 import * as alertFailureClassifier from "../lib/alert-failure-classifier.mjs"
 
@@ -265,6 +267,75 @@ test("an early Resend callback retries when neither alert nor customer acceptanc
   assert.equal(body.retry, true)
   assert.equal(harness.customerCalls(), 0)
   assert.ok(harness.sqlCalls.some(({ text }) => text.includes("FROM events accepted_event")))
+})
+
+test("a signed Resend delivery settles the quote owner email after its acceptance write was lost", async () => {
+  const providerEmailId = "email-quote-owner-41"
+  const sourceEventId = 201
+  const signingKey = Buffer.from("synthetic quote callback signing key")
+  const unknown = {
+    kind: "email.unknown",
+    lead_id: 41,
+    person_id: 17,
+    audience: "shop",
+    is_test: false,
+    detail: { sourceEventId, providerEmailId },
+  }
+  const receipts = new Map()
+  let deliveryProjected = false
+  const route = loadRoute(resendRoutePath, {
+    env: { RESEND_API_KEY: "synthetic-resend-key", RESEND_WEBHOOK_SECRET: `whsec_${signingKey.toString("base64")}` },
+    fakes: new Map([
+      ["resend", { Resend }],
+      ["@/lib/db", { getSql: () => async (strings, ...values) => {
+        const query = normalizedSql(strings)
+        if (query.includes("FROM notifications")) return []
+        if (query.includes("FROM events accepted_event")) {
+          return query.includes("accepted_event.kind = 'email.unknown' AND accepted_event.detail->>'providerEmailId'")
+            && values[1] === unknown.detail.providerEmailId ? [unknown] : []
+        }
+        if (query.startsWith("SELECT id FROM events")) {
+          return receipts.has(values.join(":")) ? [{ id: 302 }] : []
+        }
+        if (query.startsWith("UPDATE leads SET")) {
+          assert.equal(values.at(-1), unknown.lead_id)
+          deliveryProjected = true
+          return []
+        }
+        throw new Error(`Unexpected webhook SQL: ${query}`)
+      } }],
+      ["@/lib/events", { recordEvent: async (event) => {
+        const key = `${event.kind}:${event.externalId}`
+        if (receipts.has(key)) return null
+        receipts.set(key, event)
+        return 302
+      } }],
+      ["@/lib/notify", { notifyAll: () => assert.fail("a delivery callback does not fan out alerts") }],
+    ]),
+  })
+  const request = (emailId) => {
+    const body = JSON.stringify(resendPayload("email.delivered", emailId))
+    const id = "signed-quote-delivery"
+    const timestamp = String(Math.floor(Date.now() / 1000))
+    const signature = createHmac("sha256", signingKey).update(`${id}.${timestamp}.${body}`).digest("base64")
+    return new Request("https://example.test/api/resend/webhook", {
+      method: "POST",
+      headers: { "svix-id": id, "svix-timestamp": timestamp, "svix-signature": `v1,${signature}` },
+      body,
+    })
+  }
+
+  assert.equal((await route.POST(request("email-other-quote"))).status, 503)
+  assert.equal(receipts.size, 0)
+  assert.equal((await route.POST(request(providerEmailId))).status, 200)
+  assert.equal((await route.POST(request(providerEmailId))).status, 200)
+  assert.equal(receipts.size, 1)
+  const receipt = receipts.get(`email.delivered:resend:email.delivered:${providerEmailId}`)
+  assert.equal(receipt.leadId, unknown.lead_id)
+  assert.equal(receipt.detail.sourceEventId, sourceEventId)
+  assert.equal(receipt.detail.providerEmailId, providerEmailId)
+  assert.equal(receipt.detail.audience, "shop")
+  assert.equal(deliveryProjected, true)
 })
 
 test("an invalid Resend signature performs no database work", async () => {

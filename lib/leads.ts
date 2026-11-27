@@ -150,8 +150,9 @@ function makePublicId(now: Date) {
   return `L-${stamp}-${rand}`
 }
 
-type SavedIntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "first_name" | "last_name"
-  | "phone" | "email" | "service" | "message" | "preferred_contact" | "photo_count" | "source" | "is_test">
+type SavedIntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "created_at" | "first_name" | "last_name"
+  | "phone" | "email" | "service" | "message" | "preferred_contact" | "photo_count" | "source" | "is_test"
+  | "gclid" | "utm_source" | "referrer">
 
 export class LeadIntakePhoneConflict extends Error {}
 
@@ -177,7 +178,7 @@ export async function createLead(
   const readExistingIntake = async () => {
     const [saved] = (await sql`
       SELECT id, public_id, person_id, first_name, last_name, phone, email, service,
-        message, preferred_contact, photo_count, source, is_test
+        message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer
       FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as SavedIntakeLead[]
     if (saved && expectedPhone !== null && normalizePhone(saved.phone) !== expectedPhone) {
       throw new LeadIntakePhoneConflict("That saved intake does not match this text-permission request.")
@@ -194,6 +195,7 @@ export async function createLead(
   let id = existingSnapshot ? Number(existingSnapshot.id) : null
   let publicId = existingSnapshot?.public_id ?? ""
   let insertedIsTest = input.isTest
+  let insertedSnapshot: SavedIntakeLead | null = null
 
   const defaultFollowUpAt = id === null ? await getDefaultFollowUpAt(sql) : null
 
@@ -224,7 +226,8 @@ export async function createLead(
             ${intakeKey}::text,
             ${defaultFollowUpAt}::timestamptz
           )
-          RETURNING id, public_id, is_test
+          RETURNING id, public_id, person_id, first_name, last_name, phone, email, service,
+            message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer
         ), captured_consent AS MATERIALIZED (
           INSERT INTO messaging_consents (
             phone_e164, lead_id, source, effect, external_id, occurred_at, provenance
@@ -242,12 +245,13 @@ export async function createLead(
           ON CONFLICT (external_id) DO NOTHING
           RETURNING id
         )
-        SELECT inserted_lead.id, inserted_lead.public_id, inserted_lead.is_test
+        SELECT inserted_lead.*
         FROM inserted_lead
-        LEFT JOIN captured_consent ON true`) as Pick<LeadRow, "id" | "public_id" | "is_test">[]
+        LEFT JOIN captured_consent ON true`) as SavedIntakeLead[]
       id = rows[0].id
       publicId = rows[0].public_id
       insertedIsTest = rows[0].is_test
+      insertedSnapshot = rows[0]
     } catch (error) {
       const isUniqueViolation =
         typeof error === "object" && error !== null && (error as { code?: string }).code === "23505"
@@ -335,6 +339,7 @@ export async function createLead(
     eventId,
     reused: existingSnapshot !== null,
     existingSnapshot,
+    intakeSnapshot: (existingSnapshot ?? insertedSnapshot)!,
     personId,
     isTest: identity.isTest,
   }
@@ -344,13 +349,22 @@ export async function recoverMissingQuoteEvents() {
   const sql = getSql()
   const missing = (await sql`
     SELECT l.id, l.source, l.message, l.created_at FROM leads l
+    LEFT JOIN sync_state repair ON repair.key = 'quote-event-repair:' || l.id::text
     WHERE l.intake_key LIKE 'website:%' AND l.created_at < now() - interval '10 minutes'
+      AND (repair.updated_at IS NULL OR repair.updated_at <= now() - interval '15 minutes')
       AND NOT EXISTS (SELECT 1 FROM events e WHERE e.lead_id = l.id AND e.kind = 'form.quote')
-    ORDER BY l.created_at LIMIT 20`) as Pick<LeadRow, "id" | "source" | "message" | "created_at">[]
+    ORDER BY COALESCE(repair.updated_at, l.created_at), l.id LIMIT 20`) as Pick<LeadRow, "id" | "source" | "message" | "created_at">[]
   const eventIds: number[] = []
   const failures: { leadId: number; error: string }[] = []
   for (const lead of missing) {
     try {
+      const claimed = (await sql`
+        INSERT INTO sync_state (key, updated_at)
+        VALUES (${`quote-event-repair:${lead.id}`}::text, now())
+        ON CONFLICT (key) DO UPDATE SET updated_at = EXCLUDED.updated_at
+        WHERE sync_state.updated_at <= now() - interval '15 minutes'
+        RETURNING key`) as { key: string }[]
+      if (!claimed[0]) continue
       const eventId = await recordLeadEvent(lead.id, "created", "system", {
         source: lead.source, message: lead.message,
       }, { externalId: `quote-created:${lead.id}`, occurredAt: lead.created_at })

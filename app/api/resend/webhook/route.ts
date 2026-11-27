@@ -118,7 +118,7 @@ export async function POST(req: Request) {
     return Response.json({ ok: true })
   }
   const accepted = (await sql`
-    SELECT accepted_event.lead_id, accepted_event.person_id, accepted_event.detail,
+    SELECT accepted_event.kind, accepted_event.lead_id, accepted_event.person_id, accepted_event.detail,
       COALESCE(source_event.detail->>'audience', '') AS audience,
       (accepted_event.is_test OR COALESCE(source_event.is_test, false)
         OR lower(COALESCE(source_event.detail->>'isTest', 'false')) = 'true'
@@ -132,9 +132,10 @@ export async function POST(req: Request) {
     LEFT JOIN leads l ON l.id = accepted_event.lead_id
     LEFT JOIN people p ON p.id = accepted_event.person_id
     LEFT JOIN assistant_sessions s ON s.id::text = source_event.detail->>'sessionId'
-    WHERE accepted_event.kind = 'email.accepted'
-      AND accepted_event.external_id = ${webhook.data.email_id}::text
-    ORDER BY accepted_event.id DESC LIMIT 1`) as {
+    WHERE (accepted_event.kind = 'email.accepted' AND accepted_event.external_id = ${webhook.data.email_id}::text)
+      OR (accepted_event.kind = 'email.unknown' AND accepted_event.detail->>'providerEmailId' = ${webhook.data.email_id}::text)
+    ORDER BY (accepted_event.kind = 'email.accepted') DESC, accepted_event.id DESC LIMIT 1`) as {
+    kind: "email.accepted" | "email.unknown"
     lead_id: number | null
     person_id: number | null
     detail: { sourceEventId?: number }
@@ -151,6 +152,20 @@ export async function POST(req: Request) {
     )
   }
 
+  const receiptDetail = { sourceEventId, providerEmailId: webhook.data.email_id, audience: accepted[0].audience, isTest: accepted[0].is_test === true }
+  if (accepted[0].kind === "email.unknown" && (failed || delayed)) {
+    // A delivery problem still confirms the provider took the send request.
+    await recordEvent({
+      kind: "email.accepted",
+      actorType: "system",
+      leadId: accepted[0].lead_id,
+      personId: accepted[0].person_id,
+      externalId: webhook.data.email_id,
+      body: "Email accepted by the delivery provider.",
+      crewBody: "Email accepted by the delivery provider.",
+      detail: receiptDetail,
+    })
+  }
   const eventKind = failed ? "email.failed" : delayed ? "email.delayed" : "email.delivered"
   let eventId = await recordEvent({
     kind: eventKind,
@@ -160,7 +175,7 @@ export async function POST(req: Request) {
     externalId: `resend:${webhook.type}:${webhook.data.email_id}`,
     body: reason,
     crewBody: failed ? "Customer email did not deliver." : delayed ? "Customer email is delayed." : "Customer email delivered.",
-    detail: { sourceEventId, providerEmailId: webhook.data.email_id, providerType: webhook.type, isTest: accepted[0].is_test === true },
+    detail: { ...receiptDetail, providerType: webhook.type },
   })
   if (!eventId) {
     const existing = (await sql`SELECT id FROM events WHERE kind = ${eventKind}::text AND external_id = ${`resend:${webhook.type}:${webhook.data.email_id}`}::text LIMIT 1`) as { id: number }[]
@@ -206,7 +221,7 @@ export async function POST(req: Request) {
         updated_at = now()
       WHERE id = ${accepted[0].lead_id}::bigint`
   }
-  if (accepted[0].lead_id && failed) {
+  if (accepted[0].lead_id && failed && accepted[0].is_test === false) {
     const lead = (await sql`SELECT is_test FROM leads WHERE id = ${accepted[0].lead_id}::bigint LIMIT 1`) as { is_test: boolean }[]
     if (!lead[0]?.is_test) await notifyAll({ priority: "digest", stock: "red", title: "Email did not deliver", body: reason, crewBody: "Customer email did not deliver.", url: `/ops/leads/${accepted[0].lead_id}#spike`, sourceEventId: eventId, dedupeKey: `resend-failure:${webhook.data.email_id}` })
   }

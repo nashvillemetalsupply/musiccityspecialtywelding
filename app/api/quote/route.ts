@@ -152,6 +152,13 @@ type DurableEmailResult = {
   receiptEventId: number | null;
 };
 
+type FrozenQuoteEmail = {
+  message: CreateEmailOptions;
+  photos?: { pathname: string; filename: string; size: number }[];
+};
+
+const QUOTE_EMAIL_RETRY_MS = 23 * 60 * 60 * 1000;
+
 function emailReceiptUnavailable(error: unknown): DurableEmailResult {
   console.error("Quote email receipt persistence failed:", error);
   return { state: "unknown", error: "Email provider response was not confirmed.", receiptEventId: null };
@@ -165,20 +172,51 @@ async function resumeEventId(kind: string, externalId: string) {
   return Number(rows[0]?.id) || null;
 }
 
+async function readQuoteEmailIntent(intent: string) {
+  const [row] = (await getSql()`
+    SELECT id, detail->>'frozenPayload' AS frozen_payload FROM events
+    WHERE kind = ${"email.out"}::text AND external_id = ${intent}::text
+    LIMIT 1`) as { id: number; frozen_payload: string | null }[];
+  return row;
+}
+
+async function readQuoteEmailReceipts(leadId: number, sourceEventId: number) {
+  return (await getSql()`
+    SELECT kind, id, occurred_at, detail->>'payloadHash' AS payload_hash FROM events
+    WHERE kind = ANY(ARRAY['email.attempt','email.accepted','email.delivered','email.failed','email.unknown']::text[])
+      AND detail->>'sourceEventId' = ${String(sourceEventId)}::text
+      AND lead_id = ${leadId}::bigint`) as {
+    kind: string; id: number; occurred_at: string; payload_hash: string | null;
+  }[];
+}
+
 async function sendDurableQuoteEmail(input: {
   resend: Resend;
-  leadId: number | null;
+  leadId: number;
   personId: number | null;
   intent: string;
   audience: "shop" | "customer";
-  attachmentsVerified?: boolean;
-  payload: CreateEmailOptions;
+  photosDurable?: boolean;
+  buildPayload: () => FrozenQuoteEmail | Promise<FrozenQuoteEmail>;
 }): Promise<DurableEmailResult> {
   let sourceEventId: number | null = null;
-  let priorFailureEventId: number | null = null;
+  let attemptEventId: number;
+  let payload: CreateEmailOptions;
+  const accepted = (receipts: Awaited<ReturnType<typeof readQuoteEmailReceipts>>) =>
+    receipts.some(({ kind }) => kind === "email.accepted" || kind === "email.delivered");
+  const expired = (receipts: Awaited<ReturnType<typeof readQuoteEmailReceipts>>) =>
+    receipts.some(({ kind, occurred_at }) => (kind === "email.attempt" || kind === "email.unknown")
+      && !(Date.now() - new Date(occurred_at).getTime() < QUOTE_EMAIL_RETRY_MS));
+  const unconfirmed = (): DurableEmailResult => {
+    console.error("Quote email left for reconciliation:", { leadId: input.leadId, audience: input.audience });
+    return { state: "unknown", error: "Email provider response was not confirmed.", receiptEventId: sourceEventId };
+  };
   try {
-    if (input.leadId !== null) {
-      sourceEventId = await recordEvent({
+    let intent = await readQuoteEmailIntent(input.intent);
+    if (!intent) {
+      const frozen = await input.buildPayload();
+      const frozenPayload = JSON.stringify(frozen);
+      const id = await recordEvent({
         kind: "email.out",
         actorType: "system",
         leadId: input.leadId,
@@ -188,101 +226,110 @@ async function sendDurableQuoteEmail(input: {
         crewBody: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
         detail: {
           audience: input.audience,
-          subject: input.payload.subject,
+          subject: frozen.message.subject,
           deliveryStatus: "pending",
+          frozenPayload,
         },
       });
-      if (!sourceEventId) sourceEventId = await resumeEventId("email.out", input.intent);
-      if (!sourceEventId) throw new Error("Quote email intent unavailable.");
-      // Resend webhook failures describe delivery after acceptance.
-      const [lastReceipt] = (await getSql()`
-        SELECT kind, id FROM events
-        WHERE kind = ANY(ARRAY['email.accepted','email.delivered','email.failed','email.unknown']::text[])
-          AND detail->>'sourceEventId' = ${String(sourceEventId)}::text
-          AND (kind <> 'email.failed' OR detail->>'providerType' IS NULL)
-        ORDER BY id DESC LIMIT 1`) as { kind: string; id: number }[];
-      if (lastReceipt?.kind === "email.accepted" || lastReceipt?.kind === "email.delivered") {
-        return { state: "accepted", error: "", receiptEventId: sourceEventId };
-      }
-      if (lastReceipt?.kind === "email.unknown") {
-        const receiptEventId = Number(lastReceipt.id);
-        console.error("Quote email left for reconciliation:", { leadId: input.leadId, audience: input.audience, receiptEventId });
-        return { state: "unknown", error: "Email provider response was not confirmed.", receiptEventId };
-      }
-      if (lastReceipt?.kind === "email.failed") priorFailureEventId = Number(lastReceipt.id);
+      intent = id ? { id, frozen_payload: frozenPayload } : await readQuoteEmailIntent(input.intent);
     }
+    if (!intent) throw new Error("Quote email intent unavailable.");
+    sourceEventId = Number(intent.id);
+    const receipts = await readQuoteEmailReceipts(input.leadId, sourceEventId);
+    if (accepted(receipts)) return { state: "accepted", error: "", receiptEventId: sourceEventId };
+    // A legacy intent could have sent without either outcome receipt. Its exact payload is unavailable.
+    if (!intent.frozen_payload || expired(receipts)) return unconfirmed();
+    if (input.photosDurable === false) throw new Error("Quote photo verification needs a retry.");
+
+    const frozen = JSON.parse(intent.frozen_payload) as FrozenQuoteEmail;
+    const hash = createHash("sha256").update(intent.frozen_payload);
+    const attachments = await Promise.all((frozen.photos ?? []).map(async ({ pathname, filename, size }) => {
+      const blob = await get(pathname, { access: "private" });
+      if (!blob || blob.statusCode !== 200 || blob.blob.size !== size) throw new Error("Saved quote photo unavailable.");
+      return { filename, content: Buffer.from(await new Response(blob.stream).arrayBuffer()) };
+    }));
+    for (const { content } of attachments) hash.update(content);
+    const payloadHash = hash.digest("hex");
+    const changed = (history: typeof receipts) => history.some(({ payload_hash }) => payload_hash && payload_hash !== payloadHash);
+    if (changed(receipts)) throw new Error("Saved quote email payload changed.");
+    payload = { ...frozen.message, attachments: attachments.length ? attachments : undefined };
+
+    if (expired(receipts)) return unconfirmed();
+    const attemptedAt = new Date().toISOString();
+    const attemptId = await recordEvent({
+      kind: "email.attempt",
+      occurredAt: attemptedAt,
+      actorType: "system",
+      leadId: input.leadId,
+      personId: input.personId,
+      body: "Quote email send attempted.",
+      detail: { sourceEventId, audience: input.audience, idempotencyKey: input.intent, payloadHash, attemptedAt },
+    });
+    if (!attemptId) throw new Error("Quote email attempt could not be saved.");
+    attemptEventId = attemptId;
+
+    // Blob reads and a concurrent submission may have advanced the receipt history.
+    const current = await readQuoteEmailReceipts(input.leadId, sourceEventId);
+    if (accepted(current)) return { state: "accepted", error: "", receiptEventId: sourceEventId };
+    if (expired(current)) return unconfirmed();
+    if (changed(current)) throw new Error("Saved quote email payload changed.");
   } catch (error) {
     console.error("Quote email could not be prepared:", error);
     return { state: "pending", error: "Quote email needs a storage retry.", receiptEventId: sourceEventId };
   }
 
-  if (input.attachmentsVerified === false) {
-    return { state: "pending", error: "Quote photo verification needs a retry.", receiptEventId: sourceEventId };
-  }
-
+  let providerEmailId: string | undefined;
+  const receipt = {
+    actorType: "system" as const,
+    leadId: input.leadId,
+    personId: input.personId,
+  };
+  const detail = { sourceEventId, audience: input.audience, attemptEventId };
   try {
-    const { data, error } = await input.resend.emails.send(input.payload, {
+    const { data, error } = await input.resend.emails.send(payload, {
       idempotencyKey: input.intent,
     });
-    if (error?.statusCode === null || error?.name === "concurrent_idempotent_requests") throw new Error(error.message);
+    providerEmailId = data?.id;
     if (error) {
       const message = error.message || "Email provider did not accept the message.";
-      if (sourceEventId && input.leadId !== null) {
-        let failureEventId = await recordEvent({
-          kind: "email.failed",
-          actorType: "system",
-          leadId: input.leadId,
-          personId: input.personId,
-          externalId: `request-failed:${input.intent}`,
-          body: message,
-          crewBody: "Email provider rejected the message.",
-          detail: { sourceEventId, audience: input.audience },
-        });
-        if (!failureEventId) failureEventId = await resumeEventId("email.failed", `request-failed:${input.intent}`);
-        return { state: "failed", error: message, receiptEventId: failureEventId || sourceEventId };
+      const status = error.statusCode ?? 0;
+      if (providerEmailId || status < 400 || status >= 500 || [408, 409, 429].includes(status)) {
+        throw new Error(message);
       }
-      return { state: "failed", error: message, receiptEventId: sourceEventId };
-    }
-    if (!data?.id) throw new Error("Email provider responded without an acceptance receipt.");
-    let acceptanceEventId: number | null = null;
-    if (sourceEventId && input.leadId !== null) {
-      acceptanceEventId = await recordEvent({
-        kind: "email.accepted",
-        actorType: "system",
-        leadId: input.leadId,
-        personId: input.personId,
-        externalId: data.id,
-        body: "Email accepted by the delivery provider.",
-        crewBody: "Email accepted by the delivery provider.",
-        detail: {
-          sourceEventId,
-          providerEmailId: data.id,
-          audience: input.audience,
-        },
+      const failureEventId = await recordEvent({
+        ...receipt,
+        kind: "email.failed",
+        externalId: `request-failed:${attemptEventId}`,
+        body: message,
+        crewBody: "Email provider rejected the message.",
+        detail: { ...detail, providerStatus: status },
       });
-      if (!acceptanceEventId) acceptanceEventId = await resumeEventId("email.accepted", data.id);
+      if (!failureEventId) throw new Error("Quote email rejection could not be saved.");
+      return { state: "failed", error: message, receiptEventId: failureEventId };
     }
-    return { state: "accepted", error: "", receiptEventId: acceptanceEventId || sourceEventId };
+    if (!providerEmailId) throw new Error("Email provider responded without an acceptance receipt.");
+    const acceptanceEventId = await recordEvent({
+      ...receipt,
+      kind: "email.accepted",
+      externalId: providerEmailId,
+      body: "Email accepted by the delivery provider.",
+      crewBody: "Email accepted by the delivery provider.",
+      detail: { ...detail, providerEmailId },
+    }) || await resumeEventId("email.accepted", providerEmailId);
+    if (!acceptanceEventId) throw new Error("Quote email acceptance could not be saved.");
+    return { state: "accepted", error: "", receiptEventId: acceptanceEventId };
   } catch (error) {
     // A transport exception or receipt write failure may hide a completed send.
     const message = error instanceof Error ? error.message : "Email provider response was lost.";
-    if (sourceEventId && input.leadId !== null) {
-      // An ambiguous retry must be recorded after the failure it retried.
-      const unknownExternalId = `request-unknown:${input.intent}${priorFailureEventId ? `:${priorFailureEventId}` : ""}`;
-      let unknownEventId = await recordEvent({
-        kind: "email.unknown",
-        actorType: "system",
-        leadId: input.leadId,
-        personId: input.personId,
-        externalId: unknownExternalId,
-        body: message,
-        crewBody: "Email provider response was not confirmed.",
-        detail: { sourceEventId, audience: input.audience },
-      });
-      if (!unknownEventId) unknownEventId = await resumeEventId("email.unknown", unknownExternalId);
-      return { state: "unknown", error: message, receiptEventId: unknownEventId || sourceEventId };
-    }
-    return { state: "unknown", error: message, receiptEventId: sourceEventId };
+    const unknownEventId = await recordEvent({
+      ...receipt,
+      kind: "email.unknown",
+      externalId: `request-unknown:${attemptEventId}`,
+      body: message,
+      crewBody: "Email provider response was not confirmed.",
+      detail: { ...detail, providerEmailId },
+    });
+    return { state: "unknown", error: message, receiptEventId: unknownEventId || sourceEventId };
   }
 }
 
@@ -458,6 +505,7 @@ export async function POST(req: Request) {
 
     // Persist the lead FIRST so it survives any email-provider failure.
     let leadId: number | null = null;
+    let leadSnapshot: Awaited<ReturnType<typeof createLead>>["intakeSnapshot"] | null = null;
     let leadPublicId = "";
     let leadPersonId: number | null = null;
     let wasNewLead = false;
@@ -540,6 +588,7 @@ export async function POST(req: Request) {
         // A retry can arrive without the authorization that marked the saved lead as a test.
         isTest = lead.isTest !== false;
         leadId = lead.id;
+        leadSnapshot = lead.intakeSnapshot;
         leadPublicId = lead.publicId;
         leadPersonId = lead.personId;
         wasNewLead = !lead.reused;
@@ -657,7 +706,6 @@ export async function POST(req: Request) {
       }
     }
 
-    const now = new Date().toISOString();
     const to = process.env.QUOTE_TO_EMAIL;
     const from = process.env.QUOTE_FROM_EMAIL;
     const subjectPrefix = process.env.QUOTE_EMAIL_SUBJECT_PREFIX || "New Quote Request";
@@ -666,80 +714,84 @@ export async function POST(req: Request) {
     let ownerEmailState: DurableEmailState = "failed";
     let customerEmailPending = false;
     let emailErrorMessage = "";
-    if (!isTest && apiKey && to && from) {
+    if (!isTest && apiKey && to && from && leadSnapshot) {
       const resend = new Resend(apiKey);
-      const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
-      const emailPhotos = photosResumable ? photoFiles : [];
-
-      const text = [
-        `New quote request received`,
-        ``,
-        `Name: ${firstName} ${lastName}`.trim(),
-        `Phone: ${phone}`,
-        email ? `Email: ${email}` : `Email: (not provided)`,
-        `Service Needed: ${serviceNeeded}`,
-        preferredContact ? `Preferred Contact: ${preferredContact}` : `Preferred Contact: (not provided)`,
-        ``,
-        `Project Details:`,
-        projectDetails || "(none provided)",
-        ``,
-        emailPhotos.length > 0 ? `${emailPhotos.length} photo(s) attached.` : "No photos attached.",
-        ``,
-        `Meta:`,
-        leadId !== null ? `Job #${leadId}` : `Job number: (not persisted)`,
-        `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"}`,
-        `Time: ${now}`,
-        leadPublicId
-          ? `Manage: https://musiccityspecialtywelding.com/ops`
-          : ``,
-      ].join("\n");
-
-      const attachments = await Promise.all(
-        emailPhotos.map(async (file) => {
-          const arrayBuffer = await file.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          return {
-            filename: file.name.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 120) || "photo",
-            content: buffer,
-          };
-        })
-      );
-
-      const dialablePhone = normalizeUsPhone(phone)
-      const ownerHtml = brandedEmail({
-        preheader: `${firstName} · ${serviceNeeded} · ${phone}`,
-        headline: "New job in the door",
-        bodyHtml: [
-          `<strong>${escapeHtml(firstName)} ${escapeHtml(lastName)}</strong>`.trim(),
-          `Phone: ${dialablePhone ? `<a href="tel:${dialablePhone}">${escapeHtml(phone)}</a>` : escapeHtml(phone)}`,
-          email ? `Email: ${escapeHtml(email)}` : `Email: (not provided)`,
-          `Job: <strong>${escapeHtml(serviceNeeded)}</strong>`,
-          projectDetails ? `<br />“${escapeHtml(projectDetails)}”` : "",
-          emailPhotos.length > 0 ? `<br />${emailPhotos.length} photo(s) attached.` : "",
-          leadId !== null ? `<br />Job #${leadId} is on the board.` : "",
-        ]
-          .filter(Boolean)
-          .join("<br />"),
-        ctaLabel: "Open the board",
-        ctaUrl: "https://musiccityspecialtywelding.com/ops",
-        footnote: `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"} · ${now}`,
-      });
-
+      const { first_name: firstName, last_name: lastName, email, phone, service: serviceNeeded,
+        message: projectDetails, preferred_contact: preferredContact, gclid, utm_source: utmSource, referrer } = leadSnapshot;
+      const savedCreatedAt = leadSnapshot.created_at;
       const ownerResult = await sendDurableQuoteEmail({
         resend,
         leadId,
         personId: leadPersonId,
         intent: `quote-owner:${intakeKey}`,
         audience: "shop",
-        attachmentsVerified: photosResumable,
-        payload: {
-          from,
-          to,
-          subject,
-          text,
-          html: ownerHtml,
-          replyTo: email ? email : undefined,
-          attachments: attachments.length > 0 ? attachments : undefined,
+        photosDurable,
+        buildPayload: async () => {
+          if (!photosDurable) throw new Error("Quote photo verification needs a retry.");
+          const photos = photoFiles.length ? (await getSql()`
+            SELECT stored_pathname AS pathname, filename, size_bytes::int AS size
+            FROM lead_photo_intents
+            WHERE lead_id = ${leadId}::bigint AND intake_key = ${intakeKey}::text AND status = 'attached'
+            ORDER BY photo_index`) as NonNullable<FrozenQuoteEmail["photos"]> : [];
+          if (photos.length !== photoFiles.length) throw new Error("Saved quote photos are incomplete.");
+          const photoCount = photos.length;
+          const createdAt = new Date(savedCreatedAt).toISOString();
+          const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
+
+          const text = [
+            `New quote request received`,
+            ``,
+            `Name: ${firstName} ${lastName}`.trim(),
+            `Phone: ${phone}`,
+            email ? `Email: ${email}` : `Email: (not provided)`,
+            `Service Needed: ${serviceNeeded}`,
+            preferredContact ? `Preferred Contact: ${preferredContact}` : `Preferred Contact: (not provided)`,
+            ``,
+            `Project Details:`,
+            projectDetails || "(none provided)",
+            ``,
+            photoCount > 0 ? `${photoCount} photo(s) attached.` : "No photos attached.",
+            ``,
+            `Meta:`,
+            leadId !== null ? `Job #${leadId}` : `Job number: (not persisted)`,
+            `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"}`,
+            `Time: ${createdAt}`,
+            leadPublicId
+              ? `Manage: https://musiccityspecialtywelding.com/ops`
+              : ``,
+          ].join("\n");
+
+          const dialablePhone = normalizeUsPhone(phone)
+          const ownerHtml = brandedEmail({
+            preheader: `${firstName} · ${serviceNeeded} · ${phone}`,
+            headline: "New job in the door",
+            bodyHtml: [
+              `<strong>${escapeHtml(firstName)} ${escapeHtml(lastName)}</strong>`.trim(),
+              `Phone: ${dialablePhone ? `<a href="tel:${dialablePhone}">${escapeHtml(phone)}</a>` : escapeHtml(phone)}`,
+              email ? `Email: ${escapeHtml(email)}` : `Email: (not provided)`,
+              `Job: <strong>${escapeHtml(serviceNeeded)}</strong>`,
+              projectDetails ? `<br />“${escapeHtml(projectDetails)}”` : "",
+              photoCount > 0 ? `<br />${photoCount} photo(s) attached.` : "",
+              leadId !== null ? `<br />Job #${leadId} is on the board.` : "",
+            ]
+              .filter(Boolean)
+              .join("<br />"),
+            ctaLabel: "Open the board",
+            ctaUrl: "https://musiccityspecialtywelding.com/ops",
+            footnote: `Source: ${gclid ? "google-ads" : utmSource || referrer || "direct"} · ${createdAt}`,
+          });
+
+          return {
+            photos,
+            message: {
+              from,
+              to,
+              subject,
+              text,
+              html: ownerHtml,
+              replyTo: email ? email : undefined,
+            },
+          };
         },
       }).catch(emailReceiptUnavailable);
       ownerEmailState = ownerResult.state;
@@ -756,7 +808,7 @@ export async function POST(req: Request) {
           personId: leadPersonId,
           intent: `quote-customer:${intakeKey}`,
           audience: "customer",
-          payload: {
+          buildPayload: () => ({ message: {
             from,
             to: email,
             subject: "We got your job — Music City Specialty Welding",
@@ -781,7 +833,7 @@ export async function POST(req: Request) {
               ctaLabel: "Call the shop",
               ctaUrl: getShopPhone().href,
             }),
-          },
+          } }),
         }).catch(emailReceiptUnavailable);
         customerEmailPending = customerResult.state === "pending";
         if (customerResult.state !== "accepted") {

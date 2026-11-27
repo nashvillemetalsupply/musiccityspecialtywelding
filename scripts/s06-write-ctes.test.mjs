@@ -10,7 +10,7 @@ import ts from "typescript"
 const root = fileURLToPath(new URL("..", import.meta.url))
 const nativeRequire = createRequire(import.meta.url)
 
-function loadModule(relativePath, moduleFakes) {
+function loadModule(relativePath, moduleFakes, env = {}) {
   const path = resolve(root, relativePath)
   const output = ts.transpileModule(readFileSync(path, "utf8"), {
     fileName: path,
@@ -19,7 +19,7 @@ function loadModule(relativePath, moduleFakes) {
   const context = vm.createContext({
     console: { error() {}, warn() {}, log() {} },
     Error,
-    process: { env: {} },
+    process: { env },
     require: (specifier) => {
       if (specifier === "node:crypto") return nativeRequire("node:crypto")
       if (moduleFakes.has(specifier)) return moduleFakes.get(specifier)
@@ -173,13 +173,18 @@ test("createLead's lead and optional consent writes share a materialized SQL sta
   assert.match(leadWrite.text, /INSERT INTO leads[\s\S]*?::boolean[\s\S]*?::jsonb/)
 })
 
-async function quoteRecoveryFixture({ brokenLeadId } = {}) {
+async function quoteRecoveryFixture({ brokenLeadIds = [], discoveryFails = false, emailIntents = [] } = {}) {
   const createdAt = "2026-09-27T12:00:00.000Z"
   const message = "[INTERNAL TEST] Repair the gate"
   const events = []
   const extracted = []
   const downstream = []
   const runs = []
+  const repairs = []
+  const repairAttempts = new Map()
+  const notifications = new Map()
+  const fifteenMinutes = 15 * 60 * 1000
+  let now = Date.parse(createdAt) + 24 * 60 * 60 * 1000
   let saved = false
   let writeFails = true
   const getSql = () => async (strings, ...values) => {
@@ -191,11 +196,37 @@ async function quoteRecoveryFixture({ brokenLeadId } = {}) {
     if (sql.includes("SELECT person_id, is_test FROM leads")) return [{ person_id: 7, is_test: true }]
     if (sql.includes("INSERT INTO automation_leases") || sql.includes("UPDATE automation_leases")) return [{ key: values[0] }]
     if (sql.includes("intake_key LIKE 'website:%'")) {
+      if (discoveryFails) throw new Error("missing quote candidate query failed")
       assert.match(sql, /NOT EXISTS[\s\S]*?kind = 'form\.quote'/)
-      const missing = []
-      if (brokenLeadId !== undefined) missing.push({ id: brokenLeadId, source: "direct", message, created_at: "2026-09-27T11:00:00.000Z" })
-      if (saved && !events.length) missing.push({ id: 12, source: "direct", message, created_at: createdAt })
-      return missing
+      assert.match(sql, /repair\.updated_at <= now\(\) - interval '15 minutes'/)
+      assert.match(sql, /ORDER BY COALESCE\(repair\.updated_at, l\.created_at\), l\.id LIMIT 20/)
+      const missing = brokenLeadIds.map((id) => ({ id, source: "direct", message, created_at: "2026-09-27T11:00:00.000Z" }))
+      if (saved && !events.some((event) => event.leadId === 12)) missing.push({ id: 12, source: "direct", message, created_at: createdAt })
+      return missing.filter((lead) => !repairAttempts.has(lead.id) || repairAttempts.get(lead.id) <= now - fifteenMinutes)
+        .sort((a, b) => (repairAttempts.get(a.id) ?? Date.parse(a.created_at)) - (repairAttempts.get(b.id) ?? Date.parse(b.created_at)) || a.id - b.id)
+        .slice(0, 20)
+    }
+    if (sql.includes("INSERT INTO sync_state (key, updated_at)")) {
+      assert.match(sql, /WHERE sync_state\.updated_at <= now\(\) - interval '15 minutes'/)
+      const id = Number(values[0].split(":")[1])
+      assert.ok(!repairAttempts.has(id) || repairAttempts.get(id) <= now - fifteenMinutes)
+      repairAttempts.set(id, now)
+      repairs.push(id)
+      return [{ key: values[0] }]
+    }
+    if (sql.includes("FROM events intent JOIN leads")) {
+      assert.match(sql, /min\(attempt\.occurred_at\)/)
+      assert.match(sql, /kind IN \('email\.attempt', 'email\.unknown'\)/)
+      assert.match(sql, /kind IN \('email\.accepted', 'email\.delivered'\)/)
+      assert.match(sql, /intent\.detail->>'frozenPayload' IS NULL THEN intent\.occurred_at/)
+      assert.match(sql, /<= now\(\) - interval '23 hours'/)
+      assert.match(sql, /n\.dedupe_key = 'quote-email-review:' \|\| intent\.id::text/)
+      return emailIntents.filter((intent) => {
+        const attempts = intent.receipts.filter(({ kind }) => kind === "email.attempt" || kind === "email.unknown")
+        const firstAge = attempts.length > 0 ? Math.max(...attempts.map(({ age }) => age)) : intent.frozenPayload ? 0 : intent.age
+        return firstAge >= 23 && !intent.receipts.some(({ kind }) => kind === "email.accepted" || kind === "email.delivered")
+          && !notifications.has(`quote-email-review:${intent.id}`)
+      })
     }
     if (sql.includes("SELECT id FROM events") && sql.includes("processed_at IS NULL")) {
       return events.filter((event) => !extracted.includes(event.id) && values.flat().includes(event.id))
@@ -209,7 +240,7 @@ async function quoteRecoveryFixture({ brokenLeadId } = {}) {
     ["@/lib/follow-up-cadence.ts", { getDefaultFollowUpAt: async () => null }],
     ["@/lib/media-safety", {}],
     ["@/lib/events", { recordEvent: async (event) => {
-      if (event.leadId === brokenLeadId) throw new Error("oldest quote event write failed")
+      if (brokenLeadIds.includes(event.leadId)) throw new Error("oldest quote event write failed")
       if (writeFails) throw new Error("event write temporarily unavailable")
       events.push({ id: 19, ...event })
       return 19
@@ -224,7 +255,12 @@ async function quoteRecoveryFixture({ brokenLeadId } = {}) {
   const noop = async () => 0
   const { runRecoverySweep } = loadModule("lib/recovery-sweep.ts", new Map([
     ["@/lib/db", { getSql }], ["@/lib/leads", leads],
-    ["@/lib/notify", { notifyAll: () => assert.fail("test quote must stay quiet"), retryPendingInterrupts: async () => downstream.push("interrupts") }],
+    ["@/lib/notify", { notifyAll: async (notification) => {
+      assert.ok(emailIntents.length, "test quote must stay quiet")
+      assert.equal(notifications.has(notification.dedupeKey), false, "a saved review should leave the candidate window")
+      notifications.set(notification.dedupeKey, notification)
+      return [{ id: 1 }]
+    }, retryPendingInterrupts: async () => downstream.push("interrupts") }],
     ["@/lib/extract", { EXTRACTABLE_EVENT_KINDS: ["form.quote"], processEvent: async (id) => {
       extracted.push(id)
       return { processed: true }
@@ -239,9 +275,9 @@ async function quoteRecoveryFixture({ brokenLeadId } = {}) {
     ["@/lib/glass-uploads", { reconcileGlassUploads: noop }],
     ["@/lib/job-intake", { reconcileStaleCallIntakes: noop }],
     ["@/lib/call-summary", { summarizePendingCalls: noop }],
-  ]))
+  ]), { VERCEL_ENV: "production" })
   writeFails = false
-  return { createdAt, message, lead, events, extracted, downstream, runs, runRecoverySweep }
+  return { createdAt, message, lead, events, extracted, downstream, runs, repairs, notifications, runRecoverySweep, advanceMinutes: (minutes) => { now += minutes * 60 * 1000 } }
 }
 
 test("recovery extracts a saved quote after its creation event write fails", async () => {
@@ -261,11 +297,60 @@ test("recovery extracts a saved quote after its creation event write fails", asy
 })
 
 test("a failed quote event repair is recorded and leaves the rest of recovery running", async () => {
-  const { downstream, extracted, runs, runRecoverySweep } = await quoteRecoveryFixture({ brokenLeadId: 11 })
+  const { downstream, extracted, runs, runRecoverySweep } = await quoteRecoveryFixture({ brokenLeadIds: [11] })
   const result = await runRecoverySweep({ trigger: "owner-manual" })
 
   assert.deepEqual(extracted, [19], "the quote after the failing one reaches extraction")
   assert.deepEqual(downstream, ["attachments", "call transcripts", "SMS", "interrupts"])
   assert.equal(result.ok, true)
   assert.deepEqual(runs[0].quoteEventRepairFailures, [{ leadId: 11, error: "oldest quote event write failed" }])
+})
+
+test("missing quote candidate query failure is reported and downstream recovery continues", async () => {
+  const { downstream, runs, runRecoverySweep } = await quoteRecoveryFixture({ discoveryFails: true })
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.equal(runs[0].quoteEventDiscoveryError, "missing quote candidate query failed")
+  assert.deepEqual(downstream, ["attachments", "call transcripts", "SMS", "interrupts"])
+})
+
+test("20 failed quote repairs leave the next recovery window open to a newer quote", async () => {
+  const brokenLeadIds = Array.from({ length: 20 }, (_, index) => 100 + index)
+  const { extracted, repairs, advanceMinutes, runRecoverySweep } = await quoteRecoveryFixture({ brokenLeadIds })
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.deepEqual(repairs, brokenLeadIds)
+  assert.deepEqual(extracted, [])
+  advanceMinutes(14)
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.deepEqual(repairs, [...brokenLeadIds, 12])
+  assert.deepEqual(extracted, [19])
+  advanceMinutes(1)
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.deepEqual(repairs, [...brokenLeadIds, 12, ...brokenLeadIds])
+})
+
+test("sweep files one owner review after 23 hours using the first attempt and respecting acceptance", async () => {
+  const emailIntents = [
+    { id: 41, lead_id: 7, audience: "shop", frozenPayload: true, receipts: [{ kind: "email.attempt", age: 23 }, { kind: "email.unknown", age: 0.5 }] },
+    { id: 42, lead_id: 7, audience: "customer", frozenPayload: true, receipts: [{ kind: "email.attempt", age: 22.9 }] },
+    { id: 43, lead_id: 8, audience: "shop", frozenPayload: true, receipts: [{ kind: "email.attempt", age: 26 }, { kind: "email.accepted" }, { kind: "email.failed" }] },
+  ]
+  const { notifications, runRecoverySweep } = await quoteRecoveryFixture({ emailIntents })
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.equal(notifications.size, 1)
+  const review = notifications.get("quote-email-review:41")
+  assert.equal(review.title, "Quote saved, owner email unconfirmed")
+  assert.equal(review.ownerOnly, true)
+  assert.equal(review.url, "/ops/leads/7#spike")
+})
+
+test("sweep also reviews an expired legacy quote intent with both outcome writes missing", async () => {
+  const emailIntents = [
+    { id: 51, lead_id: 9, audience: "shop", age: 25, receipts: [] },
+    { id: 52, lead_id: 10, audience: "shop", age: 25, receipts: [{ kind: "email.unknown", age: 22 }] },
+  ]
+  const { notifications, runRecoverySweep } = await quoteRecoveryFixture({ emailIntents })
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.equal(notifications.size, 1)
+  assert.equal(notifications.get("quote-email-review:51").sourceEventId, 51)
 })
