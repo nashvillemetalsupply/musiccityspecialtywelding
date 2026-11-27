@@ -6,7 +6,6 @@ import { ingestCallSketchBuildFacts } from "@/lib/build-sheets"
 import { getSql } from "@/lib/db"
 import { recordEvent } from "@/lib/events"
 import { createLead } from "@/lib/leads"
-import { notificationDedupePrefix } from "./notification-dedupe.ts"
 import {
   findOrCreatePerson,
   findOpenLeadResolutionForPerson,
@@ -173,7 +172,6 @@ export async function persistInboundCallReceipt(input: InboundCallReceiptInput):
 export async function markInboundCallReconciliationHandled(input: {
   callSid: string
   eventId: number
-  notificationRequired: boolean
 }): Promise<boolean> {
   const sql = getSql()
   const rows = (await sql`
@@ -185,13 +183,12 @@ export async function markInboundCallReconciliationHandled(input: {
       WHERE id = ${input.eventId}::bigint
         AND kind = 'call.in'
         AND external_id = ${input.callSid}::text
-    ) AND (
-      ${input.notificationRequired}::boolean = false OR EXISTS (
-        SELECT 1 FROM notifications
-        WHERE source_event_id = ${input.eventId}::bigint
-          AND dedupe_key = ${notificationDedupePrefix() + inboundCallNotificationDedupeKey(input.callSid)}::text
-          AND is_test = ${process.env.VERCEL_ENV !== "production"}::boolean
-      )
+        AND (is_test OR (${process.env.VERCEL_ENV === "production"}::boolean AND EXISTS (
+          SELECT 1 FROM notifications
+          WHERE source_event_id = ${input.eventId}::bigint
+            AND dedupe_key = ${inboundCallNotificationDedupeKey(input.callSid)}::text
+            AND is_test = false
+        )))
     )
     RETURNING twilio_sid`) as { twilio_sid: string }[]
   return Boolean(rows[0])

@@ -68,17 +68,22 @@ async function canPersistLeadIntake() {
     const privileges = (await sql`
       SELECT
         has_table_privilege(current_user, 'leads', 'INSERT')
+        AND has_table_privilege(current_user, 'quote_intakes', 'INSERT')
         AND has_table_privilege(current_user, 'events', 'INSERT') AS ready`) as Array<{ ready: boolean }>
     if (!privileges[0]?.ready) return false
-    // Plan the same two-table durable intake shape used by a real quote. EXPLAIN
+    // Plan the durable intake writes used by a real quote. EXPLAIN
     // checks INSERT permissions, required columns, foreign keys, and the event
     // dependency without creating a synthetic customer row.
     await sql`
       EXPLAIN (FORMAT JSON)
       WITH lead_write AS (
-        INSERT INTO leads (public_id, first_name, phone, service, is_test, intake_key)
-        VALUES ('health-plan-only', '[INTERNAL TEST] health plan', '', 'Health plan', true, 'health-plan-only')
+        INSERT INTO leads (public_id, first_name, phone, service, is_test, intake_key, quote_form_photo_count)
+        VALUES ('health-plan-only', '[INTERNAL TEST] health plan', '', 'Health plan', true, 'health-plan-only', 0)
         RETURNING id, person_id
+      ), intake_write AS (
+        INSERT INTO quote_intakes (intake_key, lead_id, original_photo_count, photo_fingerprints, environment)
+        SELECT 'health-plan-only', id, 0, '[]'::jsonb, 'production' FROM lead_write
+        RETURNING lead_id
       )
       INSERT INTO events (kind, actor_type, actor_id, lead_id, person_id, external_id, body, crew_body, detail, is_test)
       SELECT 'form.quote'::text, 'system'::text, 'health-plan'::text,
@@ -87,7 +92,7 @@ async function canPersistLeadIntake() {
         '{"isTest":true}'::jsonb,
         mcsw_is_test_row(lead_write.id, lead_write.person_id, NULL::bigint, NULL::text,
           '{"isTest":true}'::jsonb, '[INTERNAL TEST] health plan'::text)
-      FROM lead_write`
+      FROM lead_write JOIN intake_write ON intake_write.lead_id = lead_write.id`
     return true
   } catch {
     return false
@@ -456,10 +461,11 @@ export async function GET(req: Request) {
       },
     )
   }
-  const [quoteEmailCredentialValid, database, twilioProvider] = await Promise.all([
+  const [quoteEmailCredentialValid, database, twilioProvider, intakeReady] = await Promise.all([
     quoteEmailConfigured ? hasWorkingResendCredential(resendApiKey) : Promise.resolve(false),
     getCachedDatabase(),
     checkTwilioProviderReadiness(),
+    canPersistLeadIntake(),
   ])
   const adsConversionConfigured = Boolean(ADS_CONVERSION_SEND_TO)
   const adsPhoneConversionConfigured = Boolean(ADS_PHONE_CONVERSION_SEND_TO)
@@ -583,9 +589,7 @@ export async function GET(req: Request) {
   )
   const shopBrainGateSatisfied = !shopBrainRequired || shopBrainReady
 
-  // Quote intake fails closed before provider calls unless the durable lead and
-  // email intent are persisted, so database readiness is the acceptance gate.
-  const leadsAccepted = database.connected
+  const leadsAccepted = database.connected && intakeReady
 
   const launchGatePassed =
     quoteEmailConfigured &&
@@ -594,7 +598,7 @@ export async function GET(req: Request) {
     adsPhoneConversionConfigured &&
     analyticsMeasurementConfigured &&
     database.configured &&
-    database.connected &&
+    leadsAccepted &&
     (database.failedDeliveries ?? 0) === 0 &&
     recentDeliveryErrorsHealthy &&
     shopBrainGateSatisfied

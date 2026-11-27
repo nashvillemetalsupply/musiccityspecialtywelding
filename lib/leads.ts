@@ -151,9 +151,10 @@ function makePublicId(now: Date) {
 }
 
 type SavedIntakeLead = Pick<LeadRow, "id" | "public_id" | "person_id" | "created_at" | "first_name" | "last_name"
-  | "phone" | "email" | "service" | "message" | "preferred_contact" | "photo_count" | "source" | "is_test"
+  | "phone" | "email" | "service" | "message" | "preferred_contact" | "source" | "is_test"
   | "gclid" | "utm_source" | "referrer"> & {
-  quote_photos?: { count: number; fingerprints: string[] } | null
+  quote_form_photo_count: number | null
+  quote_photos?: { fingerprints: string[]; environment: string | null } | null
 }
 
 export class LeadIntakePhoneConflict extends Error {}
@@ -181,8 +182,8 @@ export async function createLead(
   const readExistingIntake = async () => {
     const [saved] = (await sql`
       SELECT id, public_id, person_id, first_name, last_name, phone, email, service,
-        message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer,
-        (SELECT jsonb_build_object('count', original_photo_count, 'fingerprints', photo_fingerprints)
+        message, preferred_contact, quote_form_photo_count, source, is_test, created_at, gclid, utm_source, referrer,
+        (SELECT jsonb_build_object('fingerprints', photo_fingerprints, 'environment', environment)
           FROM quote_intakes WHERE quote_intakes.intake_key = leads.intake_key AND lead_id = leads.id) AS quote_photos
       FROM leads WHERE intake_key = ${intakeKey}::text LIMIT 1`) as SavedIntakeLead[]
     if (saved && expectedPhone !== null && normalizePhone(saved.phone) !== expectedPhone) {
@@ -216,7 +217,7 @@ export async function createLead(
             preferred_contact, photo_count, source, gclid, utm_source, utm_medium,
             utm_campaign, utm_term, utm_content, landing_page, referrer, ip,
             user_agent, is_test, phone_is_placeholder, first_response_at, first_response_channel, status, intake_key,
-            next_follow_up_at
+            next_follow_up_at, quote_form_photo_count
           ) VALUES (
             ${publicId}::text, ${input.firstName}::text, ${input.lastName}::text, ${input.phone}::text,
             ${input.email}::text, ${input.service}::text, ${input.message}::text,
@@ -229,10 +230,11 @@ export async function createLead(
             ${options.firstResponseNow ? "phone" : ""}::text,
             ${options.firstResponseNow ? "contacted" : "new"}::text,
             ${intakeKey}::text,
-            ${defaultFollowUpAt}::timestamptz
+            ${defaultFollowUpAt}::timestamptz,
+            ${options.quoteIntake ? input.photoCount : null}::int
           )
           RETURNING id, public_id, person_id, first_name, last_name, phone, email, service,
-            message, preferred_contact, photo_count, source, is_test, created_at, gclid, utm_source, referrer, intake_key
+            message, preferred_contact, quote_form_photo_count, source, is_test, created_at, gclid, utm_source, referrer, intake_key
         ), captured_consent AS MATERIALIZED (
           INSERT INTO messaging_consents (
             phone_e164, lead_id, source, effect, external_id, occurred_at, provenance
@@ -534,13 +536,17 @@ export async function recordLeadEvent(
 export async function markLeadDelivery(
   leadId: number,
   status: "accepted" | "failed" | "bounced" | "delayed" | "delivered",
-  error?: string
+  error?: string,
+  { preserveResolved = false }: { preserveResolved?: boolean } = {},
 ) {
   const sql = getSql()
   // Old leads used "failed" for request rejection too. A signed provider
   // failure receipt makes that status survive later callbacks.
   await sql`
-    WITH incoming AS (SELECT ${status}::text AS status, ${error ?? "unknown"}::text AS error)
+    WITH incoming AS (
+      SELECT ${status}::text AS status, ${error ?? "unknown"}::text AS error,
+        ${preserveResolved}::boolean AS preserve_resolved
+    )
     UPDATE leads SET
       email_delivery_status = CASE incoming.status
         WHEN 'failed' THEN 'rejected'
@@ -557,7 +563,9 @@ export async function markLeadDelivery(
       END,
       updated_at = now()
     FROM incoming
-    WHERE leads.id = ${leadId}::bigint AND (
+    WHERE leads.id = ${leadId}::bigint
+      AND (NOT incoming.preserve_resolved OR email_delivery_status IS DISTINCT FROM 'resolved')
+      AND (
       incoming.status = 'bounced'
       OR (
         NOT EXISTS (

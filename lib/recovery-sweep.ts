@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { getSql } from "@/lib/db"
 import { markLeadDelivery, recoverMissingQuoteEvents, type LeadRow } from "@/lib/leads"
 import { recoverUnattemptedQuoteEmail } from "@/lib/quote-email"
-import { notifyAll, retryPendingInterrupts } from "@/lib/notify"
+import { notify, notifyAll, retryPendingInterrupts } from "@/lib/notify"
 import { EXTRACTABLE_EVENT_KINDS, processEvent } from "@/lib/extract"
 import { retryPendingAttachments } from "@/lib/attachment-retry"
 import { retryCallTranscriptions } from "@/lib/call-transcription"
@@ -76,82 +76,120 @@ async function recoverQuoteEmails() {
   if (environment !== "production") return result
   const sql = getSql()
   const pending = (await sql`
-    SELECT intent.id, intent.lead_id, intent.person_id, intent.external_id,
-      intent.detail->>'audience' AS audience, intent.detail->>'frozenPayload' AS frozen_payload,
-      intent.recorded_at AS created_at, intake.environment IS NULL AS origin_unknown,
-      eligibility.needs_review, failure.id AS failure_event_id, failure.body AS failure_error,
-      keys.review_key, keys.failure_key
-    FROM events intent JOIN leads l ON l.id = intent.lead_id
-    LEFT JOIN quote_intakes intake ON intake.lead_id = l.id AND intake.intake_key = l.intake_key
-    CROSS JOIN LATERAL (
-      SELECT 'quote-email-review:' || intent.id::text AS review_key,
-        split_part(intent.external_id, ':', 1) || '-delivery:' ||
-          split_part(intent.external_id, ':', 2) || ':failed' AS failure_key
-    ) keys
-    LEFT JOIN LATERAL (
-      SELECT updated_at AS last_attempt_at FROM sync_state WHERE key = keys.review_key
-    ) recovery ON true
-    CROSS JOIN LATERAL (
-      SELECT count(*) FILTER (WHERE rejection.detail->>'requestNotSent' IS DISTINCT FROM 'true') AS attempt_count,
-        min(attempt.occurred_at) FILTER (WHERE rejection.id IS NULL) AS unresolved_at,
-        max(rejection.id) FILTER (WHERE attempt.detail->>'recovery' = 'true'
-          AND rejection.detail->>'requestNotSent' IS DISTINCT FROM 'true') AS recovery_failure_id
-      FROM events attempt
-      LEFT JOIN events rejection ON rejection.kind = 'email.failed'
-        AND rejection.external_id = 'request-failed:' || attempt.id::text
-        AND rejection.lead_id = intent.lead_id
-        AND rejection.detail->>'sourceEventId' = intent.id::text
-        AND rejection.detail->>'attemptEventId' = attempt.id::text
-        AND (rejection.detail->>'requestNotSent' = 'true'
-          OR (rejection.detail->>'providerStatus' ~ '^4[0-9]{2}$'
-            AND rejection.detail->>'providerStatus' NOT IN ('408', '409', '429')))
-      WHERE attempt.lead_id = intent.lead_id AND attempt.kind = 'email.attempt'
-        AND attempt.detail->>'sourceEventId' = intent.id::text
-    ) attempts
-    CROSS JOIN LATERAL (
-      SELECT CASE
-        WHEN attempts.attempt_count > 0 THEN attempts.unresolved_at
-        WHEN intent.detail->>'frozenPayload' IS NOT NULL THEN intent.recorded_at
-        ELSE COALESCE((
-          SELECT min(receipt.occurred_at) FROM events receipt
-          WHERE receipt.lead_id = intent.lead_id AND receipt.kind = 'email.unknown'
-            AND receipt.detail->>'sourceEventId' = intent.id::text
-        ), intent.recorded_at)
-      END AS review_at
-    ) clock
-    LEFT JOIN events failure ON failure.id = attempts.recovery_failure_id
-    CROSS JOIN LATERAL (
-      SELECT attempts.attempt_count = 0 AND intent.detail->>'frozenPayload' IS NOT NULL
-        AND intent.recorded_at < now() - interval '15 minutes'
-        AND clock.review_at > now() - interval '23 hours' AS can_recover,
-        clock.review_at <= now() - interval '23 hours' OR intake.environment IS NULL AS needs_review
-    ) eligibility
-    WHERE intent.kind = 'email.out' AND intent.is_test = false AND l.is_test = false
-      AND (intent.external_id LIKE 'quote-owner:%' OR intent.external_id LIKE 'quote-customer:%')
-      AND (intake.environment = ${environment}::text OR intake.environment IS NULL)
-      AND (recovery.last_attempt_at IS NULL OR recovery.last_attempt_at <= now() - interval '15 minutes')
-      AND NOT EXISTS (
-        SELECT 1 FROM events receipt
-        WHERE receipt.lead_id = l.id AND receipt.kind IN ('email.accepted', 'email.delivered')
-          AND receipt.detail->>'sourceEventId' = intent.id::text
-      )
-      -- Older attribution stores a relative landing path, so a null intake
-      -- environment is insufficient evidence for an automatic send.
-      AND (eligibility.can_recover OR clock.review_at <= now() - interval '23 hours' OR failure.id IS NOT NULL)
-      AND (
-        (eligibility.can_recover AND NOT eligibility.needs_review AND failure.id IS NULL)
-        OR EXISTS (
-          SELECT 1 FROM operators o WHERE o.active AND o.role = 'owner' AND NOT EXISTS (
+    WITH eligible AS (
+      SELECT intent.id, intent.lead_id, intent.person_id, intent.external_id,
+        intent.detail->>'audience' AS audience, intent.detail->>'frozenPayload' AS frozen_payload,
+        intent.detail->>'environment' AS environment, intent.recorded_at AS created_at,
+        origin.is_unknown AS origin_unknown, eligibility.needs_review, failure.id AS failure_event_id,
+        failure.body AS failure_error, keys.review_key, keys.failure_key, recovery.last_attempt_at,
+        eligibility.repair_delivery, recipients.owner_ids, clock.review_at,
+        row_number() OVER (PARTITION BY recovery.last_attempt_at IS NULL
+          ORDER BY recovery.last_attempt_at, clock.review_at, intent.id) AS queue_position
+      FROM events intent JOIN leads l ON l.id = intent.lead_id
+      LEFT JOIN quote_intakes intake ON intake.lead_id = l.id AND intake.intake_key = l.intake_key
+      CROSS JOIN LATERAL (
+        SELECT 'quote-email-review:' || intent.id::text AS review_key,
+          'quote-intake:' || split_part(intent.external_id, ':', 2) || ':new-lead' AS intake_alert_key,
+          split_part(intent.external_id, ':', 1) || '-delivery:' ||
+            split_part(intent.external_id, ':', 2) || ':failed' AS failure_key
+      ) keys
+      LEFT JOIN LATERAL (
+        SELECT updated_at AS last_attempt_at FROM sync_state WHERE key = keys.review_key
+      ) recovery ON true
+      CROSS JOIN LATERAL (
+        SELECT COALESCE(intent.detail->>'environment', intake.environment) IS NULL AS is_unknown
+      ) origin
+      CROSS JOIN LATERAL (
+        SELECT count(*) FILTER (WHERE rejection.detail->>'requestNotSent' IS DISTINCT FROM 'true') AS attempt_count,
+          min(attempt.occurred_at) FILTER (WHERE rejection.id IS NULL) AS unresolved_at,
+          max(rejection.id) FILTER (
+            WHERE rejection.detail->>'requestNotSent' IS DISTINCT FROM 'true') AS rejection_id
+        FROM events attempt
+        LEFT JOIN events rejection ON rejection.kind = 'email.failed'
+          AND rejection.external_id = 'request-failed:' || attempt.id::text
+          AND rejection.lead_id = intent.lead_id
+          AND rejection.detail->>'sourceEventId' = intent.id::text
+          AND rejection.detail->>'attemptEventId' = attempt.id::text
+          AND (rejection.detail->>'requestNotSent' = 'true'
+            OR (rejection.detail->>'providerStatus' ~ '^4[0-9]{2}$'
+              AND rejection.detail->>'providerStatus' NOT IN ('408', '409', '429')))
+        WHERE attempt.lead_id = intent.lead_id AND attempt.kind = 'email.attempt'
+          AND attempt.detail->>'sourceEventId' = intent.id::text
+      ) attempts
+      CROSS JOIN LATERAL (
+        SELECT CASE
+          WHEN attempts.attempt_count > 0 THEN attempts.unresolved_at
+          WHEN intent.detail->>'frozenPayload' IS NOT NULL THEN intent.recorded_at
+          ELSE COALESCE((
+            SELECT min(receipt.occurred_at) FROM events receipt
+            WHERE receipt.lead_id = intent.lead_id AND receipt.kind = 'email.unknown'
+              AND receipt.detail->>'sourceEventId' = intent.id::text
+          ), intent.recorded_at)
+        END AS review_at
+      ) clock
+      LEFT JOIN events failure ON failure.id = attempts.rejection_id AND attempts.unresolved_at IS NULL
+      CROSS JOIN LATERAL (
+        SELECT attempts.attempt_count = 0 AND intent.detail->>'frozenPayload' IS NOT NULL
+          AND intent.recorded_at < now() - interval '15 minutes'
+          AND clock.review_at > now() - interval '23 hours' AS can_recover,
+          clock.review_at <= now() - interval '23 hours' OR origin.is_unknown AS needs_review,
+          failure.id IS NOT NULL AND intent.detail->>'audience' = 'shop'
+            AND l.email_delivery_status NOT IN ('accepted','sent','delayed','delivered','resolved')
+            AND (l.email_delivery_status <> 'rejected' OR l.email_delivery_error IS DISTINCT FROM failure.body)
+            AND NOT EXISTS (
+              SELECT 1 FROM events receipt
+              WHERE receipt.lead_id = l.id AND receipt.detail->>'audience' = 'shop'
+                AND (receipt.kind IN ('email.accepted', 'email.delivered')
+                  OR (receipt.kind = 'email.failed' AND receipt.detail->>'providerType'
+                    IN ('email.bounced', 'email.complained', 'email.failed', 'email.suppressed')))
+            ) AS repair_delivery
+      ) eligibility
+      CROSS JOIN LATERAL (
+        SELECT ARRAY(
+          SELECT o.id FROM operators o WHERE o.active AND o.role = 'owner' AND NOT EXISTS (
             SELECT 1 FROM notifications n WHERE n.operator_id = o.id AND n.is_test = false
-              AND n.dedupe_key = CASE WHEN failure.id IS NOT NULL THEN keys.failure_key ELSE keys.review_key END
+              AND (
+                n.dedupe_key = CASE WHEN failure.id IS NOT NULL THEN keys.failure_key ELSE keys.review_key END
+                -- Older sweeps and direct requests wrote the same receipts. A
+                -- direct failure warning covers this outcome for its recipient.
+                OR (failure.id IS NOT NULL AND intent.detail->>'audience' = 'shop'
+                  AND n.dedupe_key = keys.intake_alert_key
+                  AND n.created_at >= failure.recorded_at AND n.body LIKE '%OWNER EMAIL FAILED%')
+              )
           )
+          ORDER BY o.id
+        ) AS owner_ids
+      ) recipients
+      WHERE intent.kind = 'email.out' AND intent.is_test = false AND l.is_test = false
+        AND (intent.external_id LIKE 'quote-owner:%' OR intent.external_id LIKE 'quote-customer:%')
+        AND (intake.environment = ${environment}::text OR intake.environment IS NULL)
+        AND (intent.detail->>'environment' = ${environment}::text OR intent.detail->>'environment' IS NULL)
+        AND (recovery.last_attempt_at IS NULL OR recovery.last_attempt_at <= now() - interval '15 minutes')
+        AND NOT EXISTS (
+          SELECT 1 FROM events receipt
+          WHERE receipt.lead_id = l.id AND receipt.kind IN ('email.accepted', 'email.delivered')
+            AND receipt.detail->>'sourceEventId' = intent.id::text
         )
-      )
-    ORDER BY recovery.last_attempt_at NULLS FIRST, clock.review_at, intent.id LIMIT 20`) as {
+        -- A legacy intent needs production intake evidence before it can send.
+        AND (eligibility.can_recover OR clock.review_at <= now() - interval '23 hours' OR failure.id IS NOT NULL)
+        AND (
+          (eligibility.can_recover AND NOT eligibility.needs_review AND failure.id IS NULL)
+          OR eligibility.repair_delivery
+          OR cardinality(recipients.owner_ids) > 0
+        )
+    )
+    SELECT * FROM eligible
+    -- Keep five slots for overdue attempts. Either queue can use empty slots.
+    ORDER BY CASE
+      WHEN last_attempt_at IS NULL AND queue_position <= 15 THEN 0
+      WHEN last_attempt_at IS NOT NULL AND queue_position <= 5 THEN 1
+      ELSE 2
+    END, last_attempt_at NULLS FIRST, review_at, id LIMIT 20`) as {
       id: number; lead_id: number; person_id: number | null; external_id: string;
       audience: "shop" | "customer"; frozen_payload: string | null; created_at: string; needs_review: boolean;
+      environment: string | null;
       origin_unknown: boolean; failure_event_id: number | null; failure_error: string | null;
-      review_key: string; failure_key: string;
+      review_key: string; failure_key: string; repair_delivery: boolean; owner_ids: number[];
     }[]
   for (const intent of pending) {
     try {
@@ -171,7 +209,10 @@ async function recoverQuoteEmails() {
       if (!claim) continue
 
       if (intent.failure_event_id) {
-        await fileQuoteRecoveryFailure(intent, Number(intent.failure_event_id), intent.failure_error ?? "")
+        await fileQuoteRecoveryFailure(intent, Number(intent.failure_event_id), intent.failure_error ?? "", {
+          repairDelivery: intent.repair_delivery,
+          recipientIds: intent.owner_ids,
+        })
         continue
       }
       if (!intent.needs_review) {
@@ -209,12 +250,13 @@ async function recoverQuoteEmails() {
 
 async function fileQuoteRecoveryFailure(intent: {
   lead_id: number; audience: "shop" | "customer"; failure_key: string;
-}, receiptEventId: number | null, error: string) {
+}, receiptEventId: number | null, error: string, {
+  repairDelivery = true, recipientIds,
+}: { repairDelivery?: boolean; recipientIds?: readonly number[] } = {}) {
   const ownerEmail = intent.audience === "shop"
-  if (ownerEmail) await markLeadDelivery(Number(intent.lead_id), "failed", error)
-  await notifyAll({
-    priority: "digest",
-    stock: "red",
+  const alert = {
+    priority: "digest" as const,
+    stock: "red" as const,
     title: ownerEmail ? "Quote saved, owner email did not send" : "Customer confirmation did not send",
     body: error,
     crewBody: ownerEmail ? "The owner email needs a delivery check." : "The customer confirmation needs an owner delivery check.",
@@ -222,7 +264,88 @@ async function fileQuoteRecoveryFailure(intent: {
     sourceEventId: receiptEventId,
     ownerOnly: true,
     dedupeKey: intent.failure_key,
-  })
+  }
+  const writes: Promise<unknown>[] = recipientIds
+    ? recipientIds.map((id) => notify({ ...alert, operatorId: Number(id) }))
+    : [notifyAll(alert)]
+  if (ownerEmail && repairDelivery) writes.push(markLeadDelivery(Number(intent.lead_id), "failed", error))
+  const failure = (await Promise.allSettled(writes)).find((write) => write.status === "rejected")
+  if (failure) throw failure.reason
+}
+
+async function repairTerminalLeadEmailFailures() {
+  if (process.env.VERCEL_ENV !== "production") return 0
+  const sql = getSql()
+  const pending = (await sql`
+    WITH signed_failures AS (
+      SELECT receipt.id, receipt.lead_id, receipt.body, receipt.recorded_at,
+        receipt.detail->>'audience' AS audience,
+        'resend-failure:' || (receipt.detail->>'providerEmailId') AS alert_key,
+        row_number() OVER (PARTITION BY receipt.lead_id, receipt.detail->>'audience'
+          ORDER BY receipt.id DESC) AS latest_for_audience,
+        row_number() OVER (PARTITION BY receipt.detail->>'providerEmailId'
+          ORDER BY receipt.id DESC) AS latest_for_provider
+      FROM events receipt JOIN leads l ON l.id = receipt.lead_id
+      WHERE receipt.kind = 'email.failed' AND receipt.is_test = false AND l.is_test = false
+        AND receipt.detail->>'providerType' IN ('email.bounced', 'email.complained', 'email.failed', 'email.suppressed')
+        AND receipt.detail->>'providerEmailId' <> ''
+        AND receipt.external_id = 'resend:' || (receipt.detail->>'providerType') || ':' || (receipt.detail->>'providerEmailId')
+        AND NOT mcsw_is_test_row(receipt.lead_id, receipt.person_id, receipt.id, NULL::text, receipt.detail, receipt.body)
+    )
+    SELECT failure.id, failure.lead_id, failure.body, failure.alert_key,
+      keys.repair_key, eligibility.repair_delivery, eligibility.file_alert
+    FROM signed_failures failure JOIN leads l ON l.id = failure.lead_id
+    CROSS JOIN LATERAL (
+      SELECT 'resend-failure-repair:' || failure.id::text AS repair_key
+    ) keys
+    LEFT JOIN sync_state repair ON repair.key = keys.repair_key
+    CROSS JOIN LATERAL (
+      SELECT failure.audience = 'shop' AND failure.latest_for_audience = 1
+          AND l.email_delivery_status IS DISTINCT FROM 'resolved'
+          AND (l.email_delivery_status IS DISTINCT FROM 'failed'
+            OR l.email_delivery_error IS DISTINCT FROM failure.body) AS repair_delivery,
+        failure.latest_for_provider = 1 AND EXISTS (
+          SELECT 1 FROM operators o WHERE o.active AND NOT EXISTS (
+            SELECT 1 FROM notifications n WHERE n.operator_id = o.id AND n.is_test = false
+              AND n.dedupe_key = failure.alert_key
+          )
+        ) AS file_alert
+    ) eligibility
+    WHERE (eligibility.repair_delivery OR eligibility.file_alert)
+      AND (repair.updated_at IS NULL OR repair.updated_at <= now() - interval '15 minutes')
+    ORDER BY COALESCE(repair.updated_at, failure.recorded_at), failure.id LIMIT 20`) as {
+      id: number; lead_id: number; body: string; alert_key: string; repair_key: string;
+      repair_delivery: boolean; file_alert: boolean;
+    }[]
+  let repaired = 0
+  for (const failure of pending) {
+    try {
+      const [claim] = (await sql`
+        INSERT INTO sync_state (key, value, updated_at)
+        VALUES (${failure.repair_key}::text, jsonb_build_object('last_recovery_attempt_at', now()), now())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at
+        WHERE sync_state.updated_at <= now() - interval '15 minutes'
+        RETURNING key`) as { key: string }[]
+      if (!claim) continue
+      if (failure.repair_delivery) {
+        await markLeadDelivery(Number(failure.lead_id), "bounced", failure.body, { preserveResolved: true })
+      }
+      if (failure.file_alert) await notifyAll({
+        priority: "digest",
+        stock: "red",
+        title: "Email did not deliver",
+        body: failure.body,
+        crewBody: "Customer email did not deliver.",
+        url: `/ops/leads/${failure.lead_id}#spike`,
+        sourceEventId: Number(failure.id),
+        dedupeKey: failure.alert_key,
+      })
+      repaired++
+    } catch (error) {
+      console.error(`Lead email failure repair failed for receipt ${failure.id}:`, error)
+    }
+  }
+  return repaired
 }
 
 /**
@@ -311,6 +434,12 @@ export async function runRecoverySweep({
     } catch (error) {
       detail.quoteEmailReviewError = error instanceof Error ? error.message : String(error)
       console.error("Quote email review failed:", error)
+    }
+    try {
+      detail.terminalLeadEmailRepairs = await repairTerminalLeadEmailFailures()
+    } catch (error) {
+      detail.terminalLeadEmailRepairError = error instanceof Error ? error.message : String(error)
+      console.error("Lead email failure repair discovery failed:", error)
     }
     const unprocessed = (await sql`
       SELECT id FROM events

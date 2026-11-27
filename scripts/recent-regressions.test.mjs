@@ -84,7 +84,7 @@ test("inbound call reconciliation confirms the immutable receipt before marking 
   ], "The immutable call receipt must be resolved idempotently")
   assert.doesNotMatch(persist, /reconciliationHandled/)
   assert.match(markHandled, /SELECT 1 FROM events[\s\S]*id = \$\{input\.eventId\}::bigint/)
-  assert.match(markHandled, /SELECT 1 FROM notifications[\s\S]*source_event_id = \$\{input\.eventId\}::bigint[\s\S]*dedupe_key = \$\{notificationDedupePrefix\(\) \+ inboundCallNotificationDedupeKey\(input\.callSid\)\}::text/)
+  assert.match(markHandled, /SELECT 1 FROM notifications[\s\S]*source_event_id = \$\{input\.eventId\}::bigint[\s\S]*dedupe_key = \$\{inboundCallNotificationDedupeKey\(input\.callSid\)\}::text\s+AND is_test = false/)
   assertInOrder(voice, [
     "await persistInboundCallReceipt",
     "await notifyAll",

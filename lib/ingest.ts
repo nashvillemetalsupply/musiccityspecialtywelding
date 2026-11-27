@@ -236,26 +236,48 @@ export async function resolveEmailConversation(input: {
 /** Recovers a call if the after-response enrichment was interrupted. */
 export async function reconcileRawInboundCalls(limit = 20) {
   const sql = getSql()
+  const isProduction = process.env.VERCEL_ENV === "production"
+  // Older previews could mark a live call handled after filing test alerts.
+  // A preview-only notification is evidence to reopen that call in production.
   const rows = (await sql`
-    SELECT twilio_sid, from_phone, detail
+    SELECT twilio_sid, from_phone, detail, is_test
     FROM calls
     WHERE direction = 'in'
+      AND (${isProduction}::boolean OR calls.is_test)
       AND (
         lower(COALESCE(detail->>'reconciliationHandled', 'false')) <> 'true'
         OR NOT EXISTS (
           SELECT 1 FROM events
           WHERE kind = 'call.in' AND external_id = calls.twilio_sid
         )
+        OR (calls.is_test = false AND EXISTS (
+          SELECT 1 FROM events receipt
+          WHERE receipt.kind = 'call.in' AND receipt.external_id = calls.twilio_sid AND receipt.is_test = false
+            AND EXISTS (
+              SELECT 1 FROM notifications n
+              WHERE n.source_event_id = receipt.id AND n.is_test = true
+                AND n.dedupe_key IN (
+                  'preview:inbound-call:' || calls.twilio_sid || ':interrupt',
+                  'inbound-call:' || calls.twilio_sid || ':interrupt',
+                  'preview:legacy:' || n.id::text || ':inbound-call:' || calls.twilio_sid || ':interrupt'
+                )
+            ) AND NOT EXISTS (
+              SELECT 1 FROM notifications n
+              WHERE n.source_event_id = receipt.id AND n.is_test = false
+                AND n.dedupe_key = 'inbound-call:' || calls.twilio_sid || ':interrupt'
+            )
+        ))
       )
       AND started_at < now() - interval '2 minutes'
     ORDER BY started_at ASC LIMIT ${Math.min(Math.max(limit, 1), 50)}::bigint`) as Array<{
       twilio_sid: string
       from_phone: string
       detail: { callerName?: string; isTest?: boolean } | null
+      is_test: boolean
   }>
   let recovered = 0
   for (const row of rows) {
-    const isTest = Boolean(row.detail?.isTest || row.detail?.callerName?.includes("[INTERNAL TEST]"))
+    const isTest = Boolean(row.is_test || row.detail?.isTest || row.detail?.callerName?.includes("[INTERNAL TEST]"))
     const prepared = await prepareInboundCallIntake({
       callSid: row.twilio_sid,
       phone: row.from_phone,
@@ -275,9 +297,9 @@ export async function reconcileRawInboundCalls(limit = 20) {
       crewBody: `${name} called the shop`,
       detail: { recovered: true, intake: prepared.kind, isTest },
     })
-    const notificationRequired = !person?.is_test
+    const notificationRequired = !isTest && !person?.is_test
       && !(prepared.kind === "draft" && prepared.draft.is_test)
-    if (notificationRequired) await notifyAll({
+    if (isProduction && notificationRequired) await notifyAll({
       priority: "interrupt",
       stock: "white",
       title: `${name} called`,
@@ -293,7 +315,6 @@ export async function reconcileRawInboundCalls(limit = 20) {
     const handled = await markInboundCallReconciliationHandled({
       callSid: row.twilio_sid,
       eventId,
-      notificationRequired,
     })
     if (!handled) continue
     recovered += 1

@@ -109,10 +109,12 @@ test("public lead intake receipts classify INTERNAL TEST and ordinary leads thro
 })
 
 test("inbound Twilio call receipts inherit the linked lead test partition", async () => {
-  for (const parentIsTest of [true, false]) {
+  for (const [parentIsTest, environment] of [[true, "production"], [false, "production"], [false, "preview"]]) {
     const callRows = []
     const eventRows = []
     const callbacks = []
+    const alerts = []
+    const handled = []
     const sql = async (strings, ...values) => {
       const text = strings.join(" ? ").replace(/\s+/g, " ")
       if (text.includes("INSERT INTO calls")) {
@@ -136,7 +138,7 @@ test("inbound Twilio call receipts inherit the linked lead test partition", asyn
       ["@/lib/db", { getSql: () => sql }],
       ["@/lib/job-intake", {
         inboundCallNotificationDedupeKey: (sid) => `call:${sid}`,
-        markInboundCallReconciliationHandled: async () => true,
+        markInboundCallReconciliationHandled: async (input) => { handled.push(input); return true },
         persistInboundCallReceipt: async (input) => events.recordEvent({
           kind: "call.in", actorType: "customer", actorId: input.actorId,
           leadId: input.leadId, personId: input.personId, body: input.body,
@@ -147,7 +149,7 @@ test("inbound Twilio call receipts inherit the linked lead test partition", asyn
           person: { id: 7, is_test: parentIsTest, display_name: "Fixture customer" },
         }),
       }],
-      ["@/lib/notify", { notifyAll: async () => [] }],
+      ["@/lib/notify", { notifyAll: async (alert) => { alerts.push(alert); return [] } }],
       ["@/lib/people", { normalizePhone: (value) => value }],
       ["@/lib/roof-leads", { recordRoofCall: async () => {} }],
       ["@/lib/twilio", {
@@ -159,13 +161,70 @@ test("inbound Twilio call receipts inherit the linked lead test partition", asyn
         twiml: (body, status = 200) => ({ body, status }),
       }],
     ])
-    const { POST } = loadModule("app/api/twilio/voice/route.ts", fakes, { OWNER_CELL_PHONE: "+16155550141" })
+    const { POST } = loadModule("app/api/twilio/voice/route.ts", fakes, {
+      OWNER_CELL_PHONE: "+16155550141", VERCEL_ENV: environment,
+    })
     const response = await POST({})
     await Promise.all(callbacks.map((callback) => callback()))
 
     assert.equal(response.status, 200)
     assert.deepEqual(callRows.map((row) => row.is_test), [parentIsTest])
     assert.deepEqual(eventRows.map((row) => row.is_test), [parentIsTest])
+    assert.equal(alerts.length, environment === "production" && !parentIsTest ? 1 : 0)
+    assert.equal(handled.length, environment === "production" ? 1 : 0)
+  }
+})
+
+test("production recovers a live call that an old preview marked handled", async () => {
+  const call = { twilio_sid: "CA-preview-replay", from_phone: "+16155550100", detail: { reconciliationHandled: true }, is_test: false }
+  const eventId = 901
+  const alertKey = `inbound-call:${call.twilio_sid}:interrupt`
+  const alerts = []
+  const sql = async (strings, ...values) => {
+    const text = strings.join(" ? ").replace(/\s+/g, " ")
+    if (text.includes("FROM calls WHERE direction = 'in'")) {
+      assert.match(text, /\( \? ::boolean OR calls.is_test\)/)
+      assert.match(text, /n.is_test = true AND n.dedupe_key IN \( 'preview:inbound-call:'[\s\S]*?'inbound-call:'[\s\S]*?'preview:legacy:'/)
+      assert.match(text, /n.is_test = false AND n.dedupe_key = 'inbound-call:'/)
+      return values[0] && !alerts.some((alert) => alert.dedupe_key === alertKey && !alert.is_test) ? [call] : []
+    }
+    if (text.includes("UPDATE calls SET")) {
+      assert.match(text, /is_test OR \( \? ::boolean AND EXISTS/)
+      assert.match(text, /AND is_test = false/)
+      return values.includes(true) && alerts.some((alert) => alert.dedupe_key === alertKey && !alert.is_test) ? [call] : []
+    }
+    throw new Error(`Unexpected query ${text}`)
+  }
+  const person = { id: 7, display_name: "Fixture customer", is_test: false }
+  const fakes = new Map([
+    ["@/lib/db", { getSql: () => sql }], ["@/lib/call-artifacts", {}],
+    ["@/lib/build-sheets", {}], ["@/lib/events", { recordEvent: async () => eventId }],
+    ["@/lib/leads", {}], ["@/lib/people", { normalizePhone: (phone) => phone }],
+    ["@/lib/notify", { notifyAll: async ({ dedupeKey }) => {
+      const legacy = alerts.find((alert) => alert.dedupe_key === dedupeKey && alert.is_test)
+      if (legacy) legacy.dedupe_key = `preview:legacy:1:${dedupeKey}`
+      alerts.push({ dedupe_key: dedupeKey, is_test: false })
+    } }],
+  ])
+  function reconciler(environment) {
+    const env = { VERCEL_ENV: environment }
+    const intake = loadModule("lib/job-intake.ts", fakes, env)
+    fakes.set("@/lib/job-intake", {
+      ...intake, prepareInboundCallIntake: async () => ({ kind: "existing", leadId: 41, person }),
+    })
+    return loadModule("lib/ingest.ts", fakes, env).reconcileRawInboundCalls
+  }
+  const preview = reconciler("preview")
+  const production = reconciler("production")
+  for (const prefix of ["", "preview:", "preview:legacy:1:"]) {
+    alerts.splice(0, alerts.length, { dedupe_key: `${prefix}${alertKey}`, is_test: true })
+    assert.equal(await preview().then((result) => result.scanned), 0)
+    assert.equal(await production().then((result) => result.recovered), 1)
+    assert.equal(await production().then((result) => result.scanned), 0)
+    assert.deepEqual(alerts, [
+      { dedupe_key: `${prefix || "preview:legacy:1:"}${alertKey}`, is_test: true },
+      { dedupe_key: alertKey, is_test: false },
+    ])
   }
 })
 

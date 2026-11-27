@@ -127,6 +127,7 @@ async function withFakeProviderFetch(run) {
 function createNotifyHarness({
   sourceIsTest,
   sourceKind = "call.missed",
+  sourceBodies = new Map(),
   pushSent = 0,
   emailMode = "accepted",
   smsConfigured = false,
@@ -147,6 +148,9 @@ function createNotifyHarness({
   const emailCalls = []
   const timeline = []
   const cache = new Map()
+  let nextNotificationId = 901
+
+  const hasTestMarker = (value) => value?.toLowerCase().includes("[internal test]") === true
 
   const sql = async (strings, ...values) => {
     const text = strings.join("?").replace(/\s+/g, " ").trim()
@@ -156,12 +160,18 @@ function createNotifyHarness({
     if (text.includes("SELECT * FROM operators WHERE id =")) return [operator]
     if (text.includes("SELECT id, operator_id, title") && text.includes("FROM notifications")) return retryCandidate ? [retryCandidate] : []
     if (text.includes("AS recipient_role") && text.includes("FROM notifications n")) return retryContext ? [retryContext] : []
-    if (text.includes("AS is_test") && text.includes("FROM events e")) return [{ is_test: sourceIsTest, source_kind: sourceKind }]
     if (text.includes("INSERT INTO notifications")) {
-      const key = values[8]
-      if (key && notificationRows.has(key)) return []
-      if (key) notificationRows.set(key, { id: 901, isTest: JSON.parse(values[10]).isTest === true })
-      return [{ id: 901 }]
+      assert.match(text, /mcsw_is_test_row\(/)
+      const [detail, title, body, crewBody, sourceId, ...notification] = values
+      const key = notification[8]
+      const preview = notification.at(-1)
+      const isTest = (sourceId != null && Boolean(sourceIsTest))
+        || String(JSON.parse(detail).isTest).toLowerCase() === "true"
+        || [detail, title, body, crewBody, sourceBodies.get(sourceId)].some(hasTestMarker)
+      const canInsert = (!isTest || preview) && (!key || !notificationRows.has(key))
+      const id = canInsert ? nextNotificationId++ : null
+      if (id && key) notificationRows.set(key, { id, isTest })
+      return [{ id, is_test: isTest, source_kind: sourceId == null ? null : sourceKind }]
     }
     if (text.includes("SET dedupe_key = 'preview:legacy:'")) {
       const key = values[1]
@@ -346,7 +356,31 @@ test("an internal-test inbound call never crosses a production alert provider", 
     assert.equal(harness.pushCalls.length, 0)
     assert.equal(harness.smsCalls.length, 0)
     assert.equal(harness.emailCalls.length, 0)
-    assert.equal(harness.sqlCalls.filter(({ text }) => text.includes("INSERT INTO notifications")).length, 0)
+    assert.equal(results[0]?.id, 0)
+  })
+})
+
+test("a lowercase [internal test] missed-call replay shares a production key without sending", async () => {
+  const key = "call-missed:CA-replayed"
+  const notificationRows = new Map()
+  const sourceBodies = new Map([[missedCallAlert.sourceEventId, "Missed shop call [internal test]"]])
+  const harness = createNotifyHarness({ sourceIsTest: false, sourceBodies, notificationRows })
+  const replay = { ...missedCallAlert, dedupeKey: key }
+
+  await withEnv({ RESEND_API_KEY: "test-resend-key", QUOTE_FROM_EMAIL: "alerts@example.test" }, async () => {
+    const first = await harness.notifyAll(replay)
+    const second = await harness.notifyAll(replay)
+    const sendsFromTestReplay = harness.emailCalls.length
+    const live = await harness.notifyAll({ ...replay, sourceEventId: replay.sourceEventId + 1 })
+
+    assert.equal(harness.emailCalls.length, 1)
+    assert.equal(sendsFromTestReplay, 0)
+    assert.equal(first[0].reason, "internal-test")
+    assert.equal(second[0].reason, "internal-test")
+    assert.equal(live[0].sent, true)
+    assert.deepEqual([...notificationRows.keys()], [key])
+    assert.equal(notificationRows.get(key).isTest, false)
+    assert.ok(!harness.sqlCalls.some(({ text }) => text.includes("SET dedupe_key = 'preview:legacy:'")))
   })
 })
 
@@ -356,7 +390,7 @@ test("production notify honors an explicit test flag without a source event", as
     const results = await harness.notifyAll({ ...missedCallAlert, sourceEventId: null, isTest: true })
 
     assert.equal(results[0]?.reason, "internal-test")
-    assert.equal(harness.sqlCalls.filter(({ text }) => text.includes("INSERT INTO notifications")).length, 0)
+    assert.equal(results[0]?.id, 0)
     assert.equal(harness.pushCalls.length, 0)
     assert.equal(harness.smsCalls.length, 0)
     assert.equal(harness.emailCalls.length, 0)
@@ -368,15 +402,16 @@ test("preview notify persists isTest and stops before any real alert provider", 
     const harness = createNotifyHarness({ sourceIsTest: false, smsConfigured: true, pushSent: 1 })
     const results = await harness.notifyAll({ ...missedCallAlert, sourceEventId: null, smsOnly: true })
     const insert = harness.sqlCalls.find(({ text }) => text.includes("INSERT INTO notifications"))
-    const detail = JSON.parse(insert.values[10])
+    const insertedValues = insert.values.slice(5)
+    const detail = JSON.parse(insertedValues[10])
 
     assert.equal(results[0]?.reason, "internal-test")
     assert.match(insert.text, /sms_only, is_test/)
     assert.match(insert.text, /mcsw_is_test_row/)
     assert.equal(detail.isTest, true)
-    assert.match(insert.values[3], /^\[INTERNAL TEST\]/)
-    assert.match(insert.values[4], /^\[INTERNAL TEST\]/)
-    assert.equal(insert.values[12], "filed")
+    assert.match(insertedValues[3], /^\[INTERNAL TEST\]/)
+    assert.match(insertedValues[4], /^\[INTERNAL TEST\]/)
+    assert.equal(insertedValues[12], "filed")
     assert.equal(harness.pushCalls.length, 0)
     assert.equal(harness.smsCalls.length, 0)
     assert.equal(harness.emailCalls.length, 0)
@@ -417,9 +452,10 @@ test("MCSW_TEST_SMS_FAIL runs only fake inline attempts on a preview", async () 
       quietHoursExempt: true,
     })
     const insert = harness.sqlCalls.find(({ text }) => text.includes("INSERT INTO notifications"))
+    const insertedValues = insert.values.slice(5)
 
-    assert.equal(JSON.parse(insert.values[10]).isTest, true)
-    assert.equal(insert.values[12], "pending")
+    assert.equal(JSON.parse(insertedValues[10]).isTest, true)
+    assert.equal(insertedValues[12], "pending")
     assert.equal(harness.smsCalls.length, 2)
     assert.deepEqual(delays, [2_000])
     assert.equal(harness.pushCalls.length, 0)

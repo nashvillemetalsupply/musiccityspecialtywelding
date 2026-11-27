@@ -297,53 +297,21 @@ export async function notify(input: {
   }
   const sql = getSql()
   const previewEnvironment = process.env.VERCEL_ENV !== "production"
-  let sourceIsTest = false
-  // Test traffic may be recorded and exercised end-to-end, but it may never
-  // cross the operator-alert boundary. Enforce that here—the only alert gate—
-  // so a future ingestion path cannot accidentally buzz a real person.
-  let sourceKind = ""
-  if (input.sourceEventId) {
-    const source = (await sql`
-      SELECT (
-        COALESCE(l.is_test, false)
-        OR COALESCE(p.is_test, false)
-        OR lower(COALESCE(e.detail->>'isTest', 'false')) = 'true'
-        OR EXISTS (
-          SELECT 1 FROM calls c
-          WHERE e.kind = ANY(ARRAY['call.in','call.missed','call.answered']::text[])
-            AND c.twilio_sid = split_part(COALESCE(e.external_id, ''), ':', 1)
-            AND (
-              lower(COALESCE(c.detail->>'isTest', 'false')) = 'true'
-              OR COALESCE(c.detail->>'callerName', '') LIKE '%[INTERNAL TEST]%'
-            )
-        )
-      ) AS is_test, e.kind AS source_kind
-      FROM events e
-      LEFT JOIN leads l ON l.id = e.lead_id
-      LEFT JOIN people p ON p.id = e.person_id
-      WHERE e.id = ${input.sourceEventId}::bigint
-      LIMIT 1`) as { is_test: boolean; source_kind: string }[]
-    sourceIsTest = Boolean(source[0]?.is_test)
-    sourceKind = source[0]?.source_kind ?? ""
-  }
-  const explicitlyMarkedTest = input.isTest === true
-    || input.actionDetail?.isTest === true
-    || [input.title, input.body, input.crewBody].some((value) => value?.includes("[INTERNAL TEST]"))
-  if (!previewEnvironment && (sourceIsTest || explicitlyMarkedTest)) {
-    return { id: 0, sent: false, reason: "internal-test" as const }
-  }
-  const isTest = previewEnvironment || sourceIsTest || explicitlyMarkedTest
   const previewSmsFailureProbe = previewEnvironment
     && process.env.MCSW_TEST_SMS_FAIL === "1"
     && input.priority === "interrupt"
     && input.smsOnly === true
+  const actionDetail = JSON.stringify({
+    ...input.actionDetail,
+    ...(previewEnvironment || input.isTest ? { isTest: true } : {}),
+  })
   const storedBody = recipient.role === "crew"
     ? redactCrewText(input.crewBody ?? (input.sourceEventId ? "Open the work order for the crew-safe copy." : input.body ?? ""))
     : input.body ?? ""
-  const storedTitle = isTest && !input.title.includes("[INTERNAL TEST]")
+  const storedTitle = previewEnvironment && !input.title.includes("[INTERNAL TEST]")
     ? `[INTERNAL TEST] ${input.title}`.slice(0, 120)
     : input.title.slice(0, 120)
-  const markedBody = isTest && !storedBody.includes("[INTERNAL TEST]")
+  const markedBody = previewEnvironment && !storedBody.includes("[INTERNAL TEST]")
     ? `[INTERNAL TEST] ${storedBody}`.slice(0, 500)
     : storedBody.slice(0, 500)
   const baseDedupeKey = input.dedupeKey || (input.sourceEventId
@@ -352,44 +320,61 @@ export async function notify(input: {
         : `source:${input.sourceEventId}:${input.priority}:${input.stock ?? "white"}:${input.title.slice(0, 120)}`
       : "")
   const dedupeKey = baseDedupeKey ? `${notificationDedupePrefix()}${baseDedupeKey}`.slice(0, 240) : ""
-  const insert = async () => (await sql`
-    INSERT INTO notifications (
-      operator_id, priority, stock, title, body, url, source_event_id, owner_only, dedupe_key,
-      action_kind, action_detail, budget_exempt, delivery_status, quiet_hours_exempt, sms_fallback,
-      sms_only, is_test
-    ) VALUES (
-      ${input.operatorId}::bigint,
-      ${input.priority}::text,
-      ${input.stock ?? "white"}::text,
-      ${storedTitle}::text,
-      ${markedBody}::text,
-      ${(input.url ?? "").slice(0, 500)}::text,
-      ${input.sourceEventId ?? null}::bigint,
-      ${input.ownerOnly ?? false}::boolean,
-      ${dedupeKey}::text,
-      ${input.actionKind ?? ""}::text,
-      ${JSON.stringify({ ...(input.actionDetail ?? {}), ...(isTest ? { isTest: true } : {}) })}::jsonb,
-      ${input.capExempt ?? false}::boolean,
-      ${previewSmsFailureProbe ? "pending" : isTest || input.priority === "digest" ? "filed" : "pending"}::text,
-      ${input.quietHoursExempt ?? false}::boolean,
-      ${input.smsFallback ?? false}::boolean,
-      ${input.smsOnly ?? false}::boolean,
-      mcsw_is_test_row(NULL::bigint, NULL::bigint, ${input.sourceEventId ?? null}::bigint,
-        NULL::text,
-        ${JSON.stringify({ ...(input.actionDetail ?? {}), ...(isTest ? { isTest: true } : {}) })}::jsonb,
-        concat_ws(' ', ${storedTitle}::text, ${markedBody}::text))
-    ) ON CONFLICT (operator_id, dedupe_key) WHERE dedupe_key <> '' DO NOTHING
-    RETURNING id`) as { id: number }[]
-  let rows = await insert()
-  if (!rows[0] && dedupeKey && !previewEnvironment) {
+  // Return the database classification even when the insert is suppressed or the key is occupied.
+  const insert = async () => ((await sql`
+    WITH classification AS MATERIALIZED (
+      SELECT e.kind AS source_kind, (
+        COALESCE(e.is_test, false) OR COALESCE(c.is_test, false)
+        OR lower(COALESCE(c.detail->>'isTest', 'false')) = 'true'
+        OR mcsw_is_test_row(c.lead_id, c.person_id, e.id, c.twilio_sid, ${actionDetail}::jsonb,
+          concat_ws(' ', ${input.title}::text, ${input.body ?? null}::text, ${input.crewBody ?? null}::text, c.detail::text))
+      ) AS is_test
+      FROM (VALUES (1)) seed(n)
+      LEFT JOIN events e ON e.id = ${input.sourceEventId ?? null}::bigint
+      LEFT JOIN calls c ON e.kind = ANY(ARRAY['call.in','call.missed','call.answered']::text[])
+        AND c.twilio_sid = split_part(COALESCE(e.external_id, ''), ':', 1)
+    ), inserted AS (
+      INSERT INTO notifications (
+        operator_id, priority, stock, title, body, url, source_event_id, owner_only, dedupe_key,
+        action_kind, action_detail, budget_exempt, delivery_status, quiet_hours_exempt, sms_fallback,
+        sms_only, is_test
+      ) SELECT
+        ${input.operatorId}::bigint,
+        ${input.priority}::text,
+        ${input.stock ?? "white"}::text,
+        ${storedTitle}::text,
+        ${markedBody}::text,
+        ${(input.url ?? "").slice(0, 500)}::text,
+        ${input.sourceEventId ?? null}::bigint,
+        ${input.ownerOnly ?? false}::boolean,
+        ${dedupeKey}::text,
+        ${input.actionKind ?? ""}::text,
+        ${actionDetail}::jsonb,
+        ${input.capExempt ?? false}::boolean,
+        ${previewSmsFailureProbe || input.priority === "interrupt" && !previewEnvironment ? "pending" : "filed"}::text,
+        ${input.quietHoursExempt ?? false}::boolean,
+        ${input.smsFallback ?? false}::boolean,
+        ${input.smsOnly ?? false}::boolean,
+        classification.is_test
+      FROM classification
+      WHERE NOT classification.is_test OR ${previewEnvironment}::boolean
+      ON CONFLICT (operator_id, dedupe_key) WHERE dedupe_key <> '' DO NOTHING
+      RETURNING id, is_test
+    )
+    SELECT inserted.id, COALESCE(inserted.is_test, classification.is_test) AS is_test, classification.source_kind
+    FROM classification LEFT JOIN inserted ON true`) as { id: number | null; is_test: boolean; source_kind: string | null }[])[0]
+  let intent = await insert()
+  if (!intent.id && dedupeKey && !intent.is_test) {
     // Keep the old test receipt and free the production key for a live row.
     const moved = (await sql`
       UPDATE notifications SET dedupe_key = 'preview:legacy:' || id::text || ':' || left(dedupe_key, 200)
       WHERE operator_id = ${input.operatorId}::bigint AND dedupe_key = ${dedupeKey}::text AND is_test = true
       RETURNING id`) as { id: number }[]
-    if (moved[0]) rows = await insert()
+    if (moved[0]) intent = await insert()
   }
-  if (!rows[0]) {
+  const isTest = intent.is_test
+  if (isTest && !previewEnvironment) return { id: 0, sent: false, reason: "internal-test" as const }
+  if (!intent.id) {
     if (input.priority === "interrupt" && input.sourceEventId) {
       await sql`
         UPDATE notifications SET
@@ -401,7 +386,8 @@ export async function notify(input: {
     }
     return { id: 0, sent: false, reason: "duplicate" as const }
   }
-  const id = Number(rows[0].id)
+  const id = Number(intent.id)
+  const sourceKind = intent.source_kind ?? ""
   if (isTest && !previewSmsFailureProbe) return { id, sent: false, reason: "internal-test" as const }
   if (input.priority === "digest") return { id, sent: false, reason: "filed" as const }
 
@@ -872,26 +858,17 @@ export async function retryPendingInterrupts(limit = 10) {
         e.kind AS source_kind,
         (
           (
-          COALESCE(l.is_test, false)
-          OR COALESCE(p.is_test, false)
-          OR lower(COALESCE(e.detail->>'isTest', 'false')) = 'true'
-          OR lower(COALESCE(n.action_detail->>'isTest', 'false')) = 'true'
-          OR EXISTS (
-            SELECT 1 FROM calls c
-            WHERE e.kind = ANY(ARRAY['call.in','call.missed','call.answered']::text[])
-              AND c.twilio_sid = split_part(COALESCE(e.external_id, ''), ':', 1)
-              AND (
-                lower(COALESCE(c.detail->>'isTest', 'false')) = 'true'
-                OR COALESCE(c.detail->>'callerName', '') LIKE '%[INTERNAL TEST]%'
-              )
-          )
+            n.is_test OR COALESCE(e.is_test, false) OR COALESCE(c.is_test, false)
+            OR lower(COALESCE(c.detail->>'isTest', 'false')) = 'true'
+            OR mcsw_is_test_row(c.lead_id, c.person_id, e.id, c.twilio_sid, n.action_detail,
+              concat_ws(' ', n.title, n.body, c.detail::text))
           ) AND NOT (n.sms_only = true AND ${allowPreviewSmsProbe}::boolean)
         ) AS is_test
       FROM notifications n
       JOIN operators o ON o.id = n.operator_id AND o.active = true
       LEFT JOIN events e ON e.id = n.source_event_id
-      LEFT JOIN leads l ON l.id = e.lead_id
-      LEFT JOIN people p ON p.id = e.person_id
+      LEFT JOIN calls c ON e.kind = ANY(ARRAY['call.in','call.missed','call.answered']::text[])
+        AND c.twilio_sid = split_part(COALESCE(e.external_id, ''), ':', 1)
       WHERE n.id = ${row.id}::bigint
       LIMIT 1`) as Array<{
         operator_id: number

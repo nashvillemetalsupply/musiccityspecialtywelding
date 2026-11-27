@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import { runMigrations } from "./migrate.mjs"
 import { runWithMigrationLock } from "./migration-runner.mjs"
 
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -176,4 +177,18 @@ test("the migration entry point routes the existing SQL list and procedural tail
   assert.match(migrationSource, /runTail: \(client\) => runLegacyProceduralTail\(createTaggedSql\(client\)\)/)
   assert.match(migrationSource, /if \(process\.argv\[1\].*pathToFileURL\(process\.argv\[1\]\)/)
   assert.doesNotMatch(migrationSource, /\bawait sql\.query\(statement\)/)
+})
+
+test("the quote form photo count migration is recorded once across two runs", async () => {
+  const database = new MemoryMigrationDatabase()
+  const options = {
+    connectionString: "postgres://fixture.invalid/test",
+    poolFactory: () => database.createPool(),
+  }
+  await runMigrations(options)
+  await runMigrations(options)
+
+  const alters = database.queries.filter(({ text }) => text.includes("ALTER TABLE leads ADD COLUMN IF NOT EXISTS quote_form_photo_count"))
+  assert.equal(alters.length, 1)
+  assert.equal(database.applied.get("quote-form-photo-count"), 1)
 })

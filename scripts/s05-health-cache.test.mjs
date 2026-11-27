@@ -1,9 +1,51 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
+import vm from "node:vm"
+import ts from "typescript"
 import { createInProcessTtlCache } from "../lib/in-process-cache.ts"
 
 const HEALTH = readFileSync(new URL("../app/api/health/route.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n")
+
+test("quote intake health stays red until both rollout columns exist", async () => {
+  const rolloutColumns = ["quote_form_photo_count", "environment"]
+  const columns = new Set(rolloutColumns)
+  const sql = async (strings) => {
+    const text = strings.join(" ? ")
+    if (text.includes("has_table_privilege")) return [{ ready: true }]
+    assert.match(text, /^\s*EXPLAIN \(FORMAT JSON\)/)
+    assert.match(text, /INSERT INTO leads \([^)]*quote_form_photo_count\)/)
+    assert.match(text, /INSERT INTO quote_intakes \([^)]*environment\)/)
+    for (const column of rolloutColumns) {
+      if (!columns.has(column)) throw Object.assign(new Error("column does not exist"), { code: "42703" })
+    }
+    return []
+  }
+  const output = ts.transpileModule(HEALTH, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText
+  const exports = {}
+  vm.runInNewContext(output, {
+    exports, Response, process: { env: {
+      RESEND_API_KEY: "fixture", QUOTE_FROM_EMAIL: "from@example.test", QUOTE_TO_EMAIL: "to@example.test",
+    } },
+    require: (specifier) => ({
+      "@/lib/db": { dbConfigured: () => true, getSql: () => sql },
+      "@/lib/ops-auth": { isAuthorizedCron: () => false },
+      "@/lib/in-process-cache.ts": { createInProcessTtlCache },
+    })[specifier] ?? {},
+  })
+  for (const column of rolloutColumns) {
+    columns.delete(column)
+    const result = await exports.GET(new Request("https://example.test/api/health"))
+    assert.equal(result.status, 503)
+    assert.equal((await result.json()).leadsAccepted, false)
+    columns.add(column)
+  }
+  const result = await exports.GET(new Request("https://example.test/api/health"))
+  assert.equal(result.status, 200)
+  assert.equal((await result.json()).leadsAccepted, true)
+})
 
 test("health snapshot is shared for five minutes and collapses concurrent fake SQL reads", async () => {
   let now = 1_000

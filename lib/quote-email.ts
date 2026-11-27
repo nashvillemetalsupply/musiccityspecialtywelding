@@ -16,7 +16,7 @@ export type FrozenQuoteEmail = {
   photos?: { pathname: string; filename: string; size: number }[];
 };
 
-type QuoteEmailIntent = { id: number; frozen_payload: string | null; created_at: string };
+type QuoteEmailIntent = { id: number; frozen_payload: string | null; environment: string | null; created_at: string };
 type QuoteEmailInput = {
   resend: Resend;
   leadId: number;
@@ -42,10 +42,22 @@ async function resumeEventId(kind: string, externalId: string) {
 
 async function readQuoteEmailIntent(intent: string) {
   const [row] = (await getSql()`
-    SELECT id, detail->>'frozenPayload' AS frozen_payload, recorded_at AS created_at FROM events
+    SELECT id, detail->>'frozenPayload' AS frozen_payload, detail->>'environment' AS environment, recorded_at AS created_at
+    FROM events
     WHERE kind = ${"email.out"}::text AND external_id = ${intent}::text
     LIMIT 1`) as QuoteEmailIntent[];
   return row;
+}
+
+export async function readFrozenQuotePhotoCount(ownerIntent: string) {
+  const intent = await readQuoteEmailIntent(ownerIntent);
+  if (!intent?.frozen_payload) return null;
+  try {
+    const payload = JSON.parse(intent.frozen_payload) as { photos?: unknown } | null;
+    return Array.isArray(payload?.photos) ? payload.photos.length : null;
+  } catch {
+    return null;
+  }
 }
 
 async function readQuoteEmailReceipts(leadId: number, sourceEventId: number) {
@@ -96,6 +108,8 @@ export async function sendDurableQuoteEmail(input: QuoteEmailInput & {
   photosDurable?: boolean;
   buildPayload: () => FrozenQuoteEmail | Promise<FrozenQuoteEmail>;
 }): Promise<DurableEmailResult> {
+  const environment = process.env.VERCEL_ENV;
+  if (environment !== "production") return deliverySuppressed();
   let intent: QuoteEmailIntent | undefined;
   try {
     intent = await readQuoteEmailIntent(input.intent);
@@ -120,10 +134,11 @@ export async function sendDurableQuoteEmail(input: QuoteEmailInput & {
           audience: input.audience,
           subject: frozen.message.subject,
           deliveryStatus: "pending",
+          environment,
           frozenPayload,
         },
       });
-      intent = id ? { id, frozen_payload: frozenPayload, created_at: createdAt } : await readQuoteEmailIntent(input.intent);
+      intent = id ? { id, frozen_payload: frozenPayload, environment, created_at: createdAt } : await readQuoteEmailIntent(input.intent);
     }
     if (!intent) throw new Error("Quote email intent unavailable.");
   } catch (error) {
@@ -139,10 +154,18 @@ export async function recoverUnattemptedQuoteEmail(input: Omit<QuoteEmailInput, 
   return sendFrozenQuoteEmail({ ...input, resend: new Resend(apiKey) }, intent, true, true);
 }
 
+function deliverySuppressed(receiptEventId: number | null = null): DurableEmailResult {
+  return { state: "unknown", error: "Quote email skipped for this deployment environment.", receiptEventId };
+}
+
 async function sendFrozenQuoteEmail(
   input: QuoteEmailInput, intent: QuoteEmailIntent, photosDurable: boolean, onlyIfNeverAttempted = false,
 ): Promise<DurableEmailResult> {
   const sourceEventId = Number(intent.id);
+  const environment = process.env.VERCEL_ENV;
+  if (environment !== "production" || (intent.environment ?? "production") !== environment) {
+    return deliverySuppressed(sourceEventId);
+  }
   let attemptEventId: number;
   let idempotencyKey: string;
   let payload: CreateEmailOptions;

@@ -1636,6 +1636,7 @@ export async function runMigrations({
     { name: "assistant-chat-a1-2026-11-10", query: assistantChatStatement },
     { name: "quote-intake-photos", query: quoteIntakePhotosStatement },
     { name: "quote-intake-environment", query: "ALTER TABLE quote_intakes ADD COLUMN IF NOT EXISTS environment TEXT" },
+    { name: "quote-form-photo-count", query: `ALTER TABLE leads ADD COLUMN IF NOT EXISTS quote_form_photo_count INT CHECK (quote_form_photo_count >= 0)` },
   ]
 
   await runWithMigrationLock({

@@ -247,7 +247,7 @@ export async function POST(req: Request) {
     const status = failed ? "bounced" : delayed ? "delayed" : "delivered"
     await markLeadDelivery(associated.lead_id, status, reason)
   }
-  // Production can replay the shared receipt and file the alert itself.
+  // The production recovery sweep can file a missed lead alert from this receipt.
   if (!isProduction) return Response.json({ ok: true })
   if (associated.audience === "assistant-shop" && (failed || delayed) && associated.is_test === false) {
     // A human request may have no callback or lead yet. Its saved transcript

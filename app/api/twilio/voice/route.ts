@@ -91,6 +91,8 @@ export async function POST(req: Request) {
         detail: { isTest: person?.is_test ?? isTestCall, intake: prepared.kind },
       })
       const notificationRequired = !isTestCall && !person?.is_test && !(prepared.kind === "draft" && prepared.draft.is_test)
+      // A preview can save the live receipt while production owns its alert.
+      if (notificationRequired && process.env.VERCEL_ENV !== "production") return
       if (notificationRequired) await notifyAll({
         priority: "interrupt",
         stock: "white",
@@ -107,7 +109,6 @@ export async function POST(req: Request) {
       const handled = await markInboundCallReconciliationHandled({
         callSid: sid,
         eventId,
-        notificationRequired,
       })
       if (!handled) throw new Error("The inbound call alert intent could not be confirmed.")
     } catch (error) {

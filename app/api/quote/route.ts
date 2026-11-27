@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { dbConfigured, getSql } from "@/lib/db";
 import { brandedEmail, escapeHtml } from "@/lib/email-templates";
 import { recordEvent } from "@/lib/events";
-import { emailReceiptUnavailable, sendDurableQuoteEmail, type DurableEmailState, type FrozenQuoteEmail } from "@/lib/quote-email";
+import { emailReceiptUnavailable, readFrozenQuotePhotoCount, sendDurableQuoteEmail, type DurableEmailState, type FrozenQuoteEmail } from "@/lib/quote-email";
 import { notifyAll } from "@/lib/notify";
 import { getShopPhone } from "@/lib/shop-contact";
 import { isAuthorizedCron } from "@/lib/ops-auth";
@@ -324,6 +324,7 @@ export async function POST(req: Request) {
     let leadPersonId: number | null = null;
     let wasNewLead = false;
     let savedPhotos: QuotePhotoIntent[] = [];
+    let savedOnlyPhotoCount: number | null = null;
     let photosResumable = true;
     if (dbConfigured()) {
       try {
@@ -379,28 +380,35 @@ export async function POST(req: Request) {
             && saved.message === projectDetails
             && saved.preferred_contact === preferredContact;
           if (!sameSubmission) return changedQuoteResponse();
-          if (saved.quote_photos && (saved.quote_photos.count !== photoFiles.length
-            || !saved.quote_photos.fingerprints.every((hash, index) => hash === photoFingerprints[index]))) {
-            return changedQuoteResponse(true);
-          }
           try {
+            // The attachment total can change later when a customer texts photos.
+            const originalPhotoCount = saved.quote_form_photo_count ?? await readFrozenQuotePhotoCount(`quote-owner:${intakeKey}`);
+            const savedFingerprints = saved.quote_photos?.fingerprints;
+            const fingerprintsMatch = !savedFingerprints || (savedFingerprints.length === photoFingerprints.length
+              && savedFingerprints.every((hash, index) => hash === photoFingerprints[index]));
+            if (originalPhotoCount !== null && (originalPhotoCount !== photoFiles.length || !fingerprintsMatch)) {
+              return changedQuoteResponse(true);
+            }
             savedPhotos = (await getSql()`
               SELECT photo_index, target_path, filename, content_type, size_bytes, status, stored_pathname
               FROM lead_photo_intents
               WHERE lead_id = ${lead.id}::bigint AND intake_key = ${intakeKey}::text
               ORDER BY photo_index
             `) as QuotePhotoIntent[];
-            if (!saved.quote_photos) {
-              // Before any legacy upload, the lead still holds the original count
-              // even if photo reservation never started or stopped midway.
-              const originalPhotoCount = savedPhotos.some((photo) => photo.status !== "pending")
-                ? savedPhotos.length
-                : Number(saved.photo_count);
-              if (originalPhotoCount !== photoFiles.length) return changedQuoteResponse(true);
+            if (savedPhotos.some((photo, index) => photo.photo_index !== index + 1)) {
+              throw new Error("Saved quote photo reservations are incomplete.");
             }
-            const ordered = await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes);
-            if (!ordered) return changedQuoteResponse(true);
-            photoFiles.splice(0, photoFiles.length, ...ordered);
+            const ordered = fingerprintsMatch ? await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes) : null;
+            if (ordered) {
+              photoFiles.splice(0, photoFiles.length, ...ordered);
+            } else if (originalPhotoCount !== null) {
+              return changedQuoteResponse(true);
+            } else {
+              // An old retry can resume the lead without replacing reserved bytes.
+              savedOnlyPhotoCount = savedPhotos.length;
+              photosResumable = savedPhotos.every((photo) => photo.status === "attached" && photo.stored_pathname)
+                && (savedFingerprints?.length ?? savedOnlyPhotoCount) === savedOnlyPhotoCount;
+            }
           } catch (photoError) {
             photosResumable = false;
             console.error("Saved photo intent lookup failed:", photoError);
@@ -437,7 +445,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (leadId !== null && wasNewLead && textConsent && !isTest && consentPhone && webTextGrant && !consentConflict && twilioSmsConfigured() && !isReservedShopPhone(consentPhone)) {
+    const outboundEnabled = process.env.VERCEL_ENV === "production"
+      && (leadSnapshot?.quote_photos?.environment ?? "production") === "production";
+    if (leadId !== null && wasNewLead && outboundEnabled && textConsent && !isTest && consentPhone && webTextGrant && !consentConflict && twilioSmsConfigured() && !isReservedShopPhone(consentPhone)) {
       after(async () => {
         try {
           await sendSmsPersisted({
@@ -463,6 +473,8 @@ export async function POST(req: Request) {
     let photosDurable = photoFiles.length === 0;
     if (!photosResumable) {
       photosDurable = false;
+    } else if (savedOnlyPhotoCount !== null) {
+      photosDurable = true;
     } else if (leadId !== null && photoFiles.length > 0) {
       const photoPlans = photoFiles.map((file, index) => {
         const photoIndex = index + 1;
@@ -535,7 +547,9 @@ export async function POST(req: Request) {
     let ownerEmailState: DurableEmailState = "failed";
     let customerEmailPending = false;
     let emailErrorMessage = "";
-    if (!isTest && apiKey && to && from && leadSnapshot) {
+    // Older production recovery workers cannot distinguish deployment origins.
+    // Preview intake therefore leaves no frozen email intent for them to recover.
+    if (outboundEnabled && !isTest && apiKey && to && from && leadSnapshot) {
       const resend = new Resend(apiKey);
       const { first_name: firstName, last_name: lastName, email, phone, service: serviceNeeded,
         message: projectDetails, preferred_contact: preferredContact, gclid, utm_source: utmSource, referrer } = leadSnapshot;
@@ -549,12 +563,13 @@ export async function POST(req: Request) {
         photosDurable,
         buildPayload: async () => {
           if (!photosDurable) throw new Error("Quote photo verification needs a retry.");
-          const photos = photoFiles.length ? (await getSql()`
+          const expectedPhotoCount = savedOnlyPhotoCount ?? photoFiles.length;
+          const photos = expectedPhotoCount ? (await getSql()`
             SELECT stored_pathname AS pathname, filename, size_bytes::int AS size
             FROM lead_photo_intents
             WHERE lead_id = ${leadId}::bigint AND intake_key = ${intakeKey}::text AND status = 'attached'
             ORDER BY photo_index`) as NonNullable<FrozenQuoteEmail["photos"]> : [];
-          if (photos.length !== photoFiles.length) throw new Error("Saved quote photos are incomplete.");
+          if (photos.length !== expectedPhotoCount) throw new Error("Saved quote photos are incomplete.");
           const photoCount = photos.length;
           const createdAt = new Date(savedCreatedAt).toISOString();
           const subject = `${subjectPrefix}: ${firstName}${lastName ? " " + lastName : ""} - ${serviceNeeded}`;
@@ -678,11 +693,11 @@ export async function POST(req: Request) {
       }
     } else if (isTest) {
       emailErrorMessage = "INTERNAL TEST delivery suppressed."
-    } else {
+    } else if (outboundEnabled) {
       emailErrorMessage = "Email service not configured.";
     }
 
-    if (leadId !== null) {
+    if (outboundEnabled && leadId !== null) {
       if (!isTest) {
         try {
           if (ownerEmailState === "accepted") {

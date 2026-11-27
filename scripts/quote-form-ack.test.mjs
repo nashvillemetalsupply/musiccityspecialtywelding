@@ -19,7 +19,7 @@ test("only a new consented quote schedules one persisted acknowledgement without
 
   const run = new Function("state", "after", "sendSmsPersisted", "console", `
     const { leadId, wasNewLead, textConsent, isTest, consentPhone, webTextGrant,
-      consentConflict, leadPersonId, configured, reserved } = state
+      consentConflict, leadPersonId, configured, reserved, outboundEnabled } = state
     const twilioSmsConfigured = () => configured
     const isReservedShopPhone = (phone) => { if (phone !== consentPhone) throw new Error("wrong phone"); return reserved }
     ${block}
@@ -27,12 +27,12 @@ test("only a new consented quote schedules one persisted acknowledgement without
   const eligible = {
     leadId: 42, wasNewLead: true, textConsent: true, isTest: false,
     consentPhone: "+16155550123", webTextGrant: true, consentConflict: false,
-    leadPersonId: 7, configured: true, reserved: false,
+    leadPersonId: 7, configured: true, reserved: false, outboundEnabled: true,
   }
   for (const denied of [
     { leadId: null }, { wasNewLead: false }, { textConsent: false }, { isTest: true },
     { consentPhone: "" }, { webTextGrant: false }, { consentConflict: true },
-    { configured: false }, { reserved: true },
+    { configured: false }, { reserved: true }, { outboundEnabled: false },
   ]) {
     run({ ...eligible, ...denied }, () => assert.fail(`scheduled despite ${JSON.stringify(denied)}`),
       () => assert.fail("sent during intake"), console)

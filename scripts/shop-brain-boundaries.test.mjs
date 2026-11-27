@@ -144,7 +144,7 @@ test("the sole notification gate suppresses every INTERNAL TEST source", () => {
   const notify = source("lib/notify.ts")
   const gmail = source("app/api/ingest/gmail/route.ts")
   const voice = source("app/api/twilio/voice/route.ts")
-  assert.match(notify, /LEFT JOIN leads l ON l\.id = e\.lead_id/)
+  assert.match(notify, /mcsw_is_test_row\(c\.lead_id, c\.person_id, e\.id, c\.twilio_sid/)
   assert.match(notify, /detail->>'isTest'/)
   assert.match(notify, /reason: "internal-test"/)
   assert.ok(gmail.indexOf("const isTest = `${subject}\\n${body}`") < gmail.indexOf("if (isAuthenticatedIntuitPayment"), "Gmail must partition test payment mail before money routing")
@@ -423,11 +423,11 @@ test("every real inbound SMS persists an owner-cell copy without test or routing
   assert.match(notify, /input\.smsOnly/)
   assert.match(notify, /row\.sms_only/)
   const insert = notify.slice(notify.indexOf("INSERT INTO notifications"), notify.indexOf("ON CONFLICT"))
-  const columnList = insert.slice(insert.indexOf("("), insert.indexOf(") VALUES"))
-  const valueList = insert.slice(insert.indexOf("VALUES ("))
+  const columnList = insert.slice(insert.indexOf("("), insert.indexOf(") SELECT"))
+  const valueList = insert.slice(insert.indexOf(") SELECT") + ") SELECT".length, insert.indexOf("FROM classification"))
   assert.match(columnList, /sms_fallback,\s*sms_only/)
   const columnCount = (columnList.match(/,/g) ?? []).length + 1
-  const valueCount = sqlValueCount(valueList)
+  const valueCount = sqlValueCount(`(${valueList})`)
   assert.equal(columnCount, valueCount,
     "INSERT INTO notifications must list a column for every supplied value")
   assert.match(migration, /sms_only BOOLEAN NOT NULL DEFAULT false/)
@@ -930,7 +930,7 @@ test("GLASS corrections and Gmail test threads resume without crossing partition
   assert.match(gmail, /deliveryStatus: sent \? "delivered" : null, isTest/)
   assert.match(glassView, /if \(!eventId\)[\s\S]{0,300}glass\.view/)
   assert.match(glassView, /daily_view_count\) >= 3/)
-  assert.match(notify, /COALESCE\(l\.is_test, false\)[\s\S]{0,140}COALESCE\(p\.is_test, false\)[\s\S]{0,140}detail->>'isTest'/)
+  assert.match(notify, /n\.is_test OR COALESCE\(e\.is_test, false\)[\s\S]{0,180}mcsw_is_test_row/)
 })
 
 test("account successors keep their exact tracked reply channel", () => {
