@@ -1,6 +1,5 @@
 import { getSql } from "@/lib/db"
 import { after } from "next/server"
-import { recordEvent } from "@/lib/events"
 import { processEvent } from "@/lib/extract"
 import { processTranscriptEventIfUnclaimed } from "@/lib/transcript-extraction.ts"
 import { summarizeCallDraft } from "@/lib/call-summary"
@@ -27,8 +26,7 @@ export async function POST(req: Request) {
   if (!recordingSid) return Response.json({ ok: false, error: "Missing recording." }, { status: 400 })
   const sql = getSql()
   const existing = (await sql`
-    SELECT direction, lower(COALESCE(detail->>'isTest', 'false')) = 'true' AS is_test
-    FROM calls WHERE recording_sid = ${recordingSid}::text LIMIT 1`) as { direction: string; is_test: boolean }[]
+    SELECT direction FROM calls WHERE recording_sid = ${recordingSid}::text LIMIT 1`) as { direction: string }[]
   const direction = existing[0]?.direction ?? "in"
   const channels = payload?.results?.channels ?? []
   const channelText = channels.map((channel, index) => {
@@ -51,27 +49,37 @@ export async function POST(req: Request) {
   const transcript = segments.length
     ? segments.map((item) => `${item.label}: ${item.body}`).join("\n")
     : channels[0]?.alternatives?.[0]?.transcript?.trim() ?? ""
+  const externalId = `${recordingSid}:transcript`
+  // Live stop must see the event as soon as it sees a ready recording.
   const rows = (await sql`
-    UPDATE calls SET
-      transcript = ${transcript}::text,
-      transcript_status = ${transcript ? "ready" : "empty"}::text
-    WHERE recording_sid = ${recordingSid}::text
-    RETURNING lead_id, person_id, twilio_sid`) as {
-    lead_id: number | null
-    person_id: number | null
+    WITH updated_call AS (
+      UPDATE calls SET
+        transcript = COALESCE(NULLIF(${transcript}::text, ''), calls.transcript),
+        transcript_status = CASE WHEN transcript_status = 'ready' THEN 'ready' ELSE ${transcript ? "ready" : "empty"}::text END
+      WHERE recording_sid = ${recordingSid}::text
+      RETURNING lead_id, person_id, twilio_sid,
+        is_test OR mcsw_is_test_row(lead_id, person_id, NULL::bigint, twilio_sid, detail, ${transcript}::text) AS is_test
+    ), receipt AS (
+      INSERT INTO events (kind, lead_id, person_id, external_id, body, detail, is_test)
+      SELECT 'call.transcript', lead_id, person_id,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM events WHERE kind = 'call.transcript' AND external_id = ${externalId}::text AND body = ''
+        ) THEN ${`${externalId}:speech`}::text ELSE ${externalId}::text END,
+        ${transcript}::text,
+        jsonb_build_object('callSid', twilio_sid, 'isTest', is_test) ||
+          ${JSON.stringify({ deepgramRequestId: payload?.metadata?.request_id ?? null, segments })}::jsonb,
+        is_test
+      FROM updated_call WHERE ${transcript}::text <> '' LIMIT 1
+      ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
+      RETURNING id
+    )
+    SELECT twilio_sid, (SELECT id FROM receipt) AS event_id FROM updated_call LIMIT 1`) as {
+    event_id: number | null
     twilio_sid: string
   }[]
   const call = rows[0]
   if (call) {
-    const eventId = await recordEvent({
-      kind: "call.transcript",
-      actorType: "system",
-      leadId: call.lead_id,
-      personId: call.person_id,
-      externalId: `${recordingSid}:transcript`,
-      body: transcript,
-      detail: { callSid: call.twilio_sid, isTest: existing[0]?.is_test ?? false, deepgramRequestId: payload?.metadata?.request_id ?? null, segments },
-    })
+    const eventId = Number(call.event_id)
     if (eventId) after(() => processTranscriptEventIfUnclaimed(
       eventId,
       async (sourceEventId) => {

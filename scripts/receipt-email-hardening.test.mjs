@@ -36,7 +36,7 @@ test("website quote retries reuse one lead, one provider intent, one alert, and 
 
   assert.match(client, /const intakeKeyRef = useRef\(""\)/)
   assert.match(client, /if \(!intakeKeyRef\.current\) intakeKeyRef\.current = readQuoteIntake\(\) \|\| crypto\.randomUUID\(\)/)
-  assert.match(client, /if \(response\.status === 409\) clearIntake\(intakeKey\)/)
+  assert.match(client, /if \(response\.status === 409 && data\?\.retryOriginalPhotos !== true\) clearIntake\(intakeKey\)/)
   assert.match(client, /if \(!response\.ok\)[\s\S]*?clearIntake\(intakeKey\)\s+setStatus\("success"\)/)
   assert.match(quote, /intakeKey: `website:\$\{intakeKey\}`/)
   assert.match(quote, /idempotencyKey: input\.intent/)
@@ -45,7 +45,7 @@ test("website quote retries reuse one lead, one provider intent, one alert, and 
   assert.match(quote, /addRandomSuffix: false,[\s\S]{0,80}allowOverwrite: true/)
   assert.match(quote, /dedupeKey: `quote-intake:\$\{intakeKey\}:new-lead`/)
   assert.match(quote, /if \(!sameSubmission\) return changedQuoteResponse\(\)/)
-  assert.match(quote, /function changedQuoteResponse\(\)[\s\S]*?status: 409/)
+  assert.match(quote, /function changedQuoteResponse\(retryOriginalPhotos = false\)[\s\S]*?status: 409/)
   assert.match(leads, /WHERE intake_key = \$\{intakeKey\}::text/)
   assert.match(leads, /quote-consent:\$\{publicId\}/)
   assert.match(leads, /normalizePhone\(saved\.phone\) !== expectedPhone\) \{\s+throw new LeadIntakePhoneConflict/)

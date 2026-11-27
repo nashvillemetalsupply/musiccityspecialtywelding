@@ -865,7 +865,8 @@ test("answered calls and transcripts survive status-before-enrichment ordering",
   assert.match(recording, /detail: \{ callSid, isTest: rows\[0\]\.is_test \}/)
   assert.doesNotMatch(recording, /recording_sid IS DISTINCT FROM/)
   assert.match(recording, /WHEN recording_sid = \$\{recordingSid\}::text THEN transcript_status/)
-  assert.match(transcript, /isTest: existing\[0\]\?\.is_test \?\? false/)
+  assert.match(transcript, /is_test OR mcsw_is_test_row\(lead_id, person_id, NULL::bigint, twilio_sid, detail, \$\{transcript\}::text\) AS is_test/)
+  assert.match(transcript, /jsonb_build_object\('callSid', twilio_sid, 'isTest', is_test\)/)
   assert.match(extract, /event\.detail\?\.isTest/)
 })
 

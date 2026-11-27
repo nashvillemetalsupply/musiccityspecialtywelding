@@ -20,6 +20,7 @@ function quotePhoto(name, content = 0) {
 
 function quoteRouteHarness({
   message = "Repair a bracket", upload = () => {}, failLeadRead = "", emailConfigured = false,
+  email = "", checkEmail = () => {}, checkPhotos = () => {},
 } = {}) {
   const intakeKey = "10000000-0000-4000-8000-000000000001"
   const leads = new Map()
@@ -86,9 +87,18 @@ function quoteRouteHarness({
           return []
         }
         if (sql.includes("FROM events WHERE lead_id")) return events.filter((row) => row.leadId === leadId && row.kind === "form.quote")
-        if (failLeadRead === "email-receipt" && sql.includes("SELECT kind FROM events")) throw new Error("Email receipt lookup unavailable")
-        if (sql.includes("FROM events")) return []
+        if (sql.includes("SELECT kind FROM events")) {
+          const intent = events.find((event) => event.id === Number(leadId))
+          checkEmail("receipt", intent?.detail.audience)
+          return events.filter((event) =>
+            ["email.accepted", "email.delivered"].includes(event.kind) && event.detail.sourceEventId === intent?.id
+          )
+        }
+        if (sql.includes("FROM events")) {
+          return events.filter((event) => event.kind === values[0] && event.externalId === values[1])
+        }
         if (sql.includes("FROM lead_photo_intents")) {
+          checkPhotos()
           return [...(photoIntents.get(leadId)?.values() ?? [])]
         }
         throw new Error(`Unexpected SQL mock call: ${sql}`)
@@ -127,7 +137,13 @@ function quoteRouteHarness({
     "@/lib/shop-contact": { getShopPhone: () => ({ display: "(615) 555-0100" }) },
     "@/lib/ops-auth": { isAuthorizedCron: (req) => req.headers.has("authorization") },
     "@/lib/email-templates": { brandedEmail: () => "", escapeHtml: (value) => value },
-    "@/lib/events": { recordEvent: async (event) => events.push(event) },
+    "@/lib/events": { recordEvent: async (event) => {
+      if (event.kind === "email.out") checkEmail("intent", event.detail.audience)
+      if (event.externalId && events.some((prior) => prior.kind === event.kind && prior.externalId === event.externalId)) return null
+      const id = events.length + 1
+      events.push({ ...event, id })
+      return id
+    } },
     "@/lib/extract": {}, "@/lib/media-safety": {}, "@/lib/messages": {},
     "@/lib/follow-up-cadence.ts": { getDefaultFollowUpAt: async () => null },
     "@/lib/messaging-consent": { getMessagingConsentState: async () => "unknown" },
@@ -160,7 +176,7 @@ function quoteRouteHarness({
     submit(photos = [], { authorized = false, key = intakeKey, phone = "6155550100", textConsent = false } = {}) {
       const form = new FormData()
       for (const [name, value] of Object.entries({
-        firstName: "Example", phone, service: "Not Sure / Other", message, intakeKey: key,
+        firstName: "Example", phone, service: "Not Sure / Other", message, intakeKey: key, email,
       })) form.set(name, value)
       if (textConsent) form.set("textConsent", "yes")
       for (const photo of photos) form.append("photos", photo)
@@ -556,6 +572,28 @@ test("changing the phone with text consent returns 409 and clears the pending qu
   assert.equal(route.leads.size, 2)
 })
 
+test("reselecting the original retry photo keeps one quote and one Ads conversion", async () => {
+  let uploadFails = true
+  const route = quoteRouteHarness({ upload: () => { if (uploadFails) throw new Error("Blob unavailable") } })
+  const { mountForm, responses, intakeKeys, adsEvents } = quoteFormHarness(route)
+  const original = quotePhoto("bracket.jpg")
+  const selected = [original]
+  const submit = mountForm(selected)
+  await submit()
+
+  selected[0] = quotePhoto("wrong.jpg")
+  await submit()
+
+  uploadFails = false
+  selected[0] = original
+  await submit()
+
+  assert.deepEqual(responses.map(({ status }) => status), [503, 409, 200])
+  assert.equal(route.leads.size, 1)
+  assert.equal(new Set(intakeKeys).size, 1)
+  assert.deepEqual(adsEvents.map((event) => event.transaction_id), [intakeKeys[0]])
+})
+
 test("a saved test quote cannot report a conversion on an unauthorized photo retry", async () => {
   let uploadFails = true
   const route = quoteRouteHarness({
@@ -586,7 +624,7 @@ test("a saved test quote cannot report a conversion on an unauthorized photo ret
 })
 
 test("a committed quote still alerts the owner and qualifies for Ads when the post-create lookup fails", async () => {
-  for (const failLeadRead of ["route", "creation-event", "email-receipt"]) {
+  for (const failLeadRead of ["route", "creation-event"]) {
     const route = quoteRouteHarness({ failLeadRead, emailConfigured: true })
     const response = await route.submit()
     assert.equal(response.status, 200)
@@ -597,14 +635,72 @@ test("a committed quote still alerts the owner and qualifies for Ads when the po
     const ownerEmailIntent = route.events.find((event) => event.kind === "email.out")
     assert.equal(ownerEmailIntent.leadId, saved.id)
     assert.equal(ownerEmailIntent.personId, saved.person_id)
-    if (failLeadRead === "email-receipt") {
-      assert.equal(route.emails.length, 0)
-      assert.match(route.alerts[0].body, /OWNER EMAIL UNCONFIRMED/)
-    } else {
-      assert.equal(route.emails[0].payload.to, "owner@example.test")
-      assert.ok(route.emails[0].payload.text.includes(`Phone: ${saved.phone}`))
+    assert.equal(route.emails[0].payload.to, "owner@example.test")
+    assert.ok(route.emails[0].payload.text.includes(`Phone: ${saved.phone}`))
+  }
+})
+
+test("an email intent or receipt outage preserves the saved quote for retry", async () => {
+  for (const target of ["shop", "customer"]) {
+    for (const stage of ["intent", "receipt"]) {
+      let unavailable = true
+      const route = quoteRouteHarness({
+        emailConfigured: true,
+        email: "customer@example.test",
+        checkEmail: (operation, audience) => {
+          if (unavailable && operation === stage && audience === target) throw new Error("Email storage unavailable")
+        },
+      })
+      const { mountForm, responses, intakeKeys, adsEvents, session } = quoteFormHarness(route)
+      const submit = mountForm([])
+
+      await submit()
+      assert.equal(responses[0].status, 503, `${target} ${stage}`)
+      assert.equal(responses[0].data.leadSaved, true)
+      assert.equal(session.get("mcsw:quote-intake"), intakeKeys[0])
+      assert.deepEqual(route.emails.map(({ payload }) => payload.to), [
+        target === "shop" ? "customer@example.test" : "owner@example.test",
+      ])
+
+      unavailable = false
+      await submit()
+      assert.equal(responses[1].status, 200)
+      assert.equal(intakeKeys[1], intakeKeys[0])
+      assert.equal(route.leads.size, 1)
+      assert.equal(adsEvents.length, 1)
+      assert.deepEqual(route.emails.map(({ payload }) => payload.to).sort(), ["customer@example.test", "owner@example.test"])
     }
   }
+})
+
+test("a pending owner email waits for photo verification and includes the recovered attachments", async () => {
+  let emailUnavailable = true
+  let photosUnavailable = false
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    checkEmail: (operation) => {
+      if (emailUnavailable && operation === "receipt") throw new Error("Email receipt lookup unavailable")
+    },
+    checkPhotos: () => {
+      if (photosUnavailable) throw new Error("Photo intent lookup unavailable")
+    },
+  })
+  const photos = [quotePhoto("bracket.jpg", 42)]
+  assert.equal((await (await route.submit(photos)).json()).leadSaved, true)
+  assert.ok(route.events.some((event) => event.kind === "email.out"))
+  assert.equal(route.emails.length, 0)
+
+  emailUnavailable = false
+  photosUnavailable = true
+  assert.equal((await route.submit(photos)).status, 503)
+  assert.equal(route.emails.length, 0)
+
+  photosUnavailable = false
+  assert.equal((await route.submit(photos)).status, 200)
+  assert.equal(route.emails.length, 1)
+  const [attachment] = route.emails[0].payload.attachments
+  assert.equal(attachment.filename, "bracket.jpg")
+  assert.equal(attachment.content.at(-1), 42)
 })
 
 test("same-metadata photos resume by contents when the customer reverses their order", async () => {

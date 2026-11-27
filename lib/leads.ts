@@ -323,7 +323,7 @@ export async function createLead(
         source: existingSnapshot?.source ?? source,
         isTest: identity.isTest,
         message: existingSnapshot?.message ?? input.message,
-      })
+      }, options.quoteIntake ? { externalId: `quote-created:${id}` } : undefined)
     }
   } catch (error) {
     if (!options.quoteIntake) throw error
@@ -338,6 +338,23 @@ export async function createLead(
     personId,
     isTest: identity.isTest,
   }
+}
+
+export async function recoverMissingQuoteEvents(): Promise<number[]> {
+  const sql = getSql()
+  const missing = (await sql`
+    SELECT l.id, l.source, l.message, l.created_at FROM leads l
+    WHERE l.intake_key LIKE 'website:%' AND l.created_at < now() - interval '10 minutes'
+      AND NOT EXISTS (SELECT 1 FROM events e WHERE e.lead_id = l.id AND e.kind = 'form.quote')
+    ORDER BY l.created_at LIMIT 20`) as Pick<LeadRow, "id" | "source" | "message" | "created_at">[]
+  const recovered = []
+  for (const lead of missing) {
+    const eventId = await recordLeadEvent(lead.id, "created", "system", {
+      source: lead.source, message: lead.message,
+    }, { externalId: `quote-created:${lead.id}`, occurredAt: lead.created_at })
+    if (eventId !== null) recovered.push(eventId)
+  }
+  return recovered
 }
 
 export async function attachLeadPhotos(
@@ -431,7 +448,8 @@ export async function recordLeadEvent(
   leadId: number,
   type: string,
   actor: string,
-  detail: Record<string, unknown> | null = null
+  detail: Record<string, unknown> | null = null,
+  options: { externalId?: string; occurredAt?: string } = {},
 ): Promise<number | null> {
   const sql = getSql()
   const people = (await sql`
@@ -474,7 +492,8 @@ export async function recordLeadEvent(
     actorId: actor === "system" ? "" : actor,
     leadId,
     personId: people[0]?.person_id ?? null,
-    externalId: "",
+    externalId: options.externalId ?? "",
+    occurredAt: options.occurredAt,
     body,
     detail: { ...(detail ?? {}), legacyType: type, ...(isTest ? { isTest: true } : {}) },
   })

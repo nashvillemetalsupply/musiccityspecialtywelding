@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { getSql } from "@/lib/db"
-import type { LeadRow } from "@/lib/leads"
+import { recoverMissingQuoteEvents, type LeadRow } from "@/lib/leads"
 import { notifyAll, retryPendingInterrupts } from "@/lib/notify"
 import { EXTRACTABLE_EVENT_KINDS, processEvent } from "@/lib/extract"
 import { retryPendingAttachments } from "@/lib/attachment-retry"
@@ -139,9 +139,11 @@ export async function runRecoverySweep({
       detail.delivery = "none"
     }
 
+    const recoveredQuoteEvents = await recoverMissingQuoteEvents()
     const unprocessed = (await sql`
       SELECT id FROM events
-      WHERE processed_at IS NULL AND recorded_at < now() - interval '10 minutes'
+      WHERE processed_at IS NULL
+        AND (recorded_at < now() - interval '10 minutes' OR id = ANY(${recoveredQuoteEvents}::bigint[]))
         AND body <> '' AND kind = ANY(${[...EXTRACTABLE_EVENT_KINDS]}::text[])
         AND extraction_status <> 'dead'
         AND (extraction_next_attempt_at IS NULL OR extraction_next_attempt_at <= now())

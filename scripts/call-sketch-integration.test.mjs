@@ -48,7 +48,7 @@ test("the live stop snapshot cannot trigger a call summary before the recording 
   ])
   const stopped = store.slice(store.indexOf('if (input.event === "transcription-stopped")'))
   assert.doesNotMatch(route, /summarizeCallDraft/)
-  assert.match(stopped, /UPDATE calls SET transcript = \$\{finalTranscript\}::text, updated_at = now\(\)\s+WHERE[^`]+AND transcript_status NOT IN \('ready', 'empty'\)/)
+  assert.match(stopped, /UPDATE calls SET transcript = \$\{finalTranscript\}::text, updated_at = now\(\)\s+WHERE[^`]+AND transcript_status (?:<> 'ready'|NOT IN \('ready', 'empty'\))/)
   assert.match(recording, /after\(\(\) => submitCallRecording\(recordingSid\)/)
   assert.match(transcript, /if \(transcript\) after\(\(\) => summarizeCallDraft\(call\.twilio_sid\)/)
 })
@@ -66,20 +66,20 @@ test("a late live stop leaves the recording transcript intact and emits no extra
       if (query.startsWith("WITH final_items") || query.startsWith("SELECT sequence_id")) return [utterance]
       if (query.startsWith("INSERT INTO call_sketches") || query.startsWith("DELETE FROM call_live_transcript_items")) return []
       if (query.startsWith("UPDATE calls SET transcript")) {
-        assert.match(query, /AND transcript_status NOT IN \('ready', 'empty'\)/)
-        if (["ready", "empty"].includes(transcriptStatus)) return []
+        assert.match(query, /AND transcript_status (?:<> 'ready'|NOT IN \('ready', 'empty'\))/)
+        if (transcriptStatus === "ready" || (transcriptStatus === "empty" && query.includes("'empty'"))) return []
         transcript = values[0]
         return [{ id: 1 }]
       }
       if (query.startsWith("INSERT INTO events")) {
-        assert.match(query, /\) SELECT[\s\S]+WHERE \(\?::text IS NULL OR EXISTS \(\s+SELECT 1 FROM calls WHERE twilio_sid = \?::text\s+AND transcript_status NOT IN \('ready', 'empty'\)\s+FOR SHARE/)
+        assert.match(query, /\) SELECT[\s\S]+WHERE \(\?::text IS NULL OR EXISTS \(\s+SELECT 1 FROM calls WHERE twilio_sid = \?::text\s+AND transcript_status (?:<> 'ready'|NOT IN \('ready', 'empty'\))\s+FOR SHARE/)
         assert.deepEqual(values.slice(-2), ["CA1", "CA1"])
         if (finalizeOnInsert) {
           assert.equal(transcript, "Customer: Partial live words")
           transcriptStatus = "ready"
           transcript = "Complete recording transcript"
         }
-        if (["ready", "empty"].includes(transcriptStatus)) return []
+        if (transcriptStatus === "ready" || (transcriptStatus === "empty" && query.includes("'empty'"))) return []
         events.push(values[1])
         return [{ id: events.length }]
       }
@@ -121,7 +121,75 @@ test("a late live stop leaves the recording transcript intact and emits no extra
   assert.deepEqual(events, ["call.transcript"])
   const extract = await read("lib/extract.ts")
   assert.match(extract, /const isLiveTranscript = event\.detail\.source === "twilio-live-transcription"/)
-  assert.match(extract, /UPDATE calls SET crew_transcript[^`]*AND \(NOT \$\{isLiveTranscript\}::boolean OR transcript_status NOT IN \('ready', 'empty'\)\)/)
+  assert.match(extract, /UPDATE calls SET crew_transcript[^`]*AND \(NOT \$\{isLiveTranscript\}::boolean OR transcript_status (?:<> 'ready'|NOT IN \('ready', 'empty'\))\)/)
+
+  await t.test("a live stop with speech fills an empty recording and emits an extraction event", async () => {
+    transcriptStatus = "empty"
+    transcript = ""
+    assert.equal((await recordLiveTranscriptionEvent({ ...input, transcriptionSid: "GT2" })).transcriptEventId, 2)
+    assert.equal(transcript, "Customer: Partial live words")
+    assert.doesNotMatch(extract, /UPDATE calls SET crew_transcript[^`]*'empty'/)
+  })
+})
+
+test("a live stop that sees the recording ready can project Build facts from its event", async (t) => {
+  const call = { direction: "in", is_test: true, lead_id: 7, person_id: 5, twilio_sid: "CA1" }
+  const utterance = { sequence_id: 1, track: "inbound_track", transcript: "Make the gate 42 inches tall." }
+  const projected = []
+  let stopLive
+  let transcriptEventId = null
+  globalThis.__recordingPublication = {
+    sql: async (strings) => {
+      const query = strings.join("?").trim()
+      if (query.startsWith("SELECT direction")) return [call]
+      if (query.startsWith("WITH final_items") || query.startsWith("SELECT sequence_id")) return [utterance]
+      if (query.startsWith("INSERT INTO call_sketches") || query.startsWith("DELETE FROM call_live_transcript_items")) return []
+      if (query.startsWith("UPDATE calls SET transcript =")) return []
+      assert.match(query, /UPDATE calls SET/)
+      if (query.includes("INSERT INTO events")) {
+        assert.match(query, /INSERT INTO events[\s\S]*FROM updated_call/)
+        assert.match(query, /FROM updated_call WHERE \?::text <> ''/)
+        transcriptEventId = 41
+      }
+      // Interleave live stop as soon as the now-ready recording is visible.
+      await stopLive({ event: "transcription-stopped", callSid: "CA1", transcriptionSid: "GT1" })
+      return [{ ...call, event_id: transcriptEventId }]
+    },
+    recordEvent: async () => (transcriptEventId = 41),
+    ingestBuildFacts: async (leadId) => {
+      if (transcriptEventId) projected.push({ leadId, sourceEventId: transcriptEventId })
+    },
+  }
+  const modules = {
+    "@/lib/db": "export const getSql = () => globalThis.__recordingPublication.sql;",
+    "@/lib/events": "export const recordEvent = (input) => globalThis.__recordingPublication.recordEvent(input);",
+    "@/lib/extract": "export const processEvent = async () => {};",
+    "@/lib/build-sheets": "export const ingestCallSketchBuildFacts = (leadId) => globalThis.__recordingPublication.ingestBuildFacts(leadId);",
+    "@/lib/voice-of-character.ts": "export const captureCallVoiceSamples = async () => {}; export const rebuildOwnerVoiceProfile = async () => {};",
+    "@/lib/call-summary": "export const summarizeCallDraft = async () => {};",
+    "@/lib/ops-auth": "export const safeSecretMatch = () => true;",
+    "@/lib/call-transcription": "export const deepgramCallbackSecretConfigured = () => true;",
+    "next/server": "export const after = () => {};",
+  }
+  const hooks = registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (Object.hasOwn(modules, specifier)) return { url: `data:text/javascript,${encodeURIComponent(modules[specifier])}`, shortCircuit: true }
+      if (specifier.startsWith("@/")) return { url: new URL(`../${specifier.slice(2)}${specifier.endsWith(".ts") ? "" : ".ts"}`, import.meta.url).href, shortCircuit: true }
+      return nextResolve(specifier, context)
+    },
+  })
+  t.after(() => {
+    hooks.deregister()
+    delete globalThis.__recordingPublication
+  })
+  const { POST } = await import("../app/api/twilio/transcript/route.ts?recording-publication")
+  stopLive = (await import("../lib/call-sketch-store.ts?recording-publication")).recordLiveTranscriptionEvent
+  const response = await POST(new Request("https://example.test/api/twilio/transcript?recording=RE1", {
+    method: "POST",
+    body: JSON.stringify({ results: { channels: [{ alternatives: [{ transcript: utterance.transcript }] }] } }),
+  }))
+  assert.equal(response.status, 200)
+  assert.deepEqual(projected, [{ leadId: 7, sourceEventId: 41 }])
 })
 
 test("the live transcript success acknowledgement is a bodyless 204 response", async () => {

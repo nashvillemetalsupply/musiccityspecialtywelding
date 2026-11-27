@@ -167,7 +167,7 @@ export async function processEvent(eventId: number) {
     await sql`
       UPDATE calls SET crew_transcript = ${crewSafeBody}::text
       WHERE twilio_sid = ${event.detail.callSid}::text
-        AND (NOT ${isLiveTranscript}::boolean OR transcript_status NOT IN ('ready', 'empty'))`
+        AND (NOT ${isLiveTranscript}::boolean OR transcript_status <> 'ready')`
   }
   for (const item of object.commitments) {
     if (item.matches_existing_commitment_id && item.marks_existing_as) {

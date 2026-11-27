@@ -136,14 +136,16 @@ async function matchQuotePhotos(
   return [...intents.map((intent) => matches.get(intent.photo_index)!), ...unmatched];
 }
 
-function changedQuoteResponse() {
+function changedQuoteResponse(retryOriginalPhotos = false) {
   return Response.json(
-    { ok: false, error: "The earlier version of this request was already saved. Refresh the page to start a changed request, or call the shop." },
+    { ok: false, retryOriginalPhotos, error: retryOriginalPhotos
+      ? "Your request was already saved. Reselect the original photos and try again, or call the shop."
+      : "The earlier version of this request was already saved. Refresh the page to start a changed request, or call the shop." },
     { status: 409 },
   );
 }
 
-type DurableEmailState = "accepted" | "failed" | "unknown";
+type DurableEmailState = "accepted" | "failed" | "unknown" | "pending";
 type DurableEmailResult = {
   state: DurableEmailState;
   error: string;
@@ -169,26 +171,28 @@ async function sendDurableQuoteEmail(input: {
   personId: number | null;
   intent: string;
   audience: "shop" | "customer";
+  attachmentsVerified?: boolean;
   payload: CreateEmailOptions;
 }): Promise<DurableEmailResult> {
   let sourceEventId: number | null = null;
-  if (input.leadId !== null) {
-    sourceEventId = await recordEvent({
-      kind: "email.out",
-      actorType: "system",
-      leadId: input.leadId,
-      personId: input.personId,
-      externalId: input.intent,
-      body: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
-      crewBody: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
-      detail: {
-        audience: input.audience,
-        subject: input.payload.subject,
-        deliveryStatus: "pending",
-      },
-    });
-    if (!sourceEventId) sourceEventId = await resumeEventId("email.out", input.intent);
-    if (sourceEventId) {
+  try {
+    if (input.leadId !== null) {
+      sourceEventId = await recordEvent({
+        kind: "email.out",
+        actorType: "system",
+        leadId: input.leadId,
+        personId: input.personId,
+        externalId: input.intent,
+        body: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
+        crewBody: `Quote ${input.audience === "shop" ? "shop alert" : "customer receipt"} queued.`,
+        detail: {
+          audience: input.audience,
+          subject: input.payload.subject,
+          deliveryStatus: "pending",
+        },
+      });
+      if (!sourceEventId) sourceEventId = await resumeEventId("email.out", input.intent);
+      if (!sourceEventId) throw new Error("Quote email intent unavailable.");
       const receipts = (await getSql()`
         SELECT kind FROM events
         WHERE kind = ANY(ARRAY['email.accepted','email.delivered']::text[])
@@ -196,6 +200,13 @@ async function sendDurableQuoteEmail(input: {
         ORDER BY id DESC LIMIT 1`) as { kind: string }[];
       if (receipts[0]) return { state: "accepted", error: "", receiptEventId: sourceEventId };
     }
+  } catch (error) {
+    console.error("Quote email could not be prepared:", error);
+    return { state: "pending", error: "Quote email needs a storage retry.", receiptEventId: sourceEventId };
+  }
+
+  if (input.attachmentsVerified === false) {
+    return { state: "pending", error: "Quote photo verification needs a retry.", receiptEventId: sourceEventId };
   }
 
   try {
@@ -504,9 +515,9 @@ export async function POST(req: Request) {
             const originalPhotoCount = savedPhotos.some((photo) => photo.status !== "pending")
               ? savedPhotos.length
               : Number(saved.photo_count);
-            if (originalPhotoCount !== photoFiles.length) return changedQuoteResponse();
+            if (originalPhotoCount !== photoFiles.length) return changedQuoteResponse(true);
             const ordered = await matchQuotePhotos(lead.publicId, savedPhotos, photoFiles, photoHashes);
-            if (!ordered) return changedQuoteResponse();
+            if (!ordered) return changedQuoteResponse(true);
             photoFiles.splice(0, photoFiles.length, ...ordered);
           } catch (photoError) {
             photosResumable = false;
@@ -640,6 +651,7 @@ export async function POST(req: Request) {
 
     let emailSent = false;
     let ownerEmailState: DurableEmailState = "failed";
+    let customerEmailPending = false;
     let emailErrorMessage = "";
     if (!isTest && apiKey && to && from) {
       const resend = new Resend(apiKey);
@@ -706,6 +718,7 @@ export async function POST(req: Request) {
         personId: leadPersonId,
         intent: `quote-owner:${intakeKey}`,
         audience: "shop",
+        attachmentsVerified: photosResumable,
         payload: {
           from,
           to,
@@ -757,6 +770,7 @@ export async function POST(req: Request) {
             }),
           },
         }).catch(emailReceiptUnavailable);
+        customerEmailPending = customerResult.state === "pending";
         if (customerResult.state !== "accepted") {
           console.error("Customer confirmation was not confirmed:", customerResult.error);
           if (leadId !== null) {
@@ -800,7 +814,7 @@ export async function POST(req: Request) {
           priority: "interrupt",
           stock: ownerEmailState === "accepted" ? "white" : "red",
           title: `New lead: ${firstName}`,
-          body: `${serviceNeeded} · ${phone}${ownerEmailState === "failed" ? " · OWNER EMAIL FAILED — dashboard only" : ownerEmailState === "unknown" ? " · OWNER EMAIL UNCONFIRMED — dashboard saved" : ""}`,
+          body: `${serviceNeeded} · ${phone}${ownerEmailState === "failed" ? " · OWNER EMAIL FAILED — dashboard only" : ownerEmailState !== "accepted" ? " · OWNER EMAIL UNCONFIRMED — dashboard saved" : ""}`,
           crewBody: `${serviceNeeded} · ${phone}`,
           url: `/ops/leads/${leadId}`,
           capExempt: true,
@@ -811,14 +825,16 @@ export async function POST(req: Request) {
       }
     }
 
-    if (!photosDurable) {
+    if (!photosDurable || ownerEmailState === "pending" || customerEmailPending) {
       return Response.json(
         {
           ok: false,
           accepted: false,
           partial: true,
           leadSaved: !isTest,
-          error: `We saved your contact details, but your photos were not safely stored. Keep this page open and try again, or call ${shopPhone.display}.`,
+          error: photosDurable
+            ? `We saved your request and email delivery is pending. Keep this page open and try again, or call ${shopPhone.display}.`
+            : `We saved your contact details, but your photos were not safely stored. Keep this page open and try again, or call ${shopPhone.display}.`,
         },
         { status: 503, headers: { "Retry-After": "15" } }
       );

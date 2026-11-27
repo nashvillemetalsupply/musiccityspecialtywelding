@@ -173,7 +173,7 @@ export async function recordLiveTranscriptionEvent(input: LiveTranscriptionEvent
   if (input.event === "transcription-stopped") {
     const calls = (await sql`
       SELECT direction, lead_id, person_id,
-        lower(COALESCE(detail->>'isTest', 'false')) = 'true' AS is_test
+        is_test OR lower(COALESCE(detail->>'isTest', 'false')) = 'true' AS is_test
       FROM calls WHERE twilio_sid = ${input.callSid}::text LIMIT 1`) as Array<{
         direction: string
         lead_id: number | null
@@ -199,7 +199,7 @@ export async function recordLiveTranscriptionEvent(input: LiveTranscriptionEvent
       const updated = (await sql`
         UPDATE calls SET transcript = ${finalTranscript}::text, updated_at = now()
         WHERE twilio_sid = ${input.callSid}::text
-          AND transcript_status NOT IN ('ready', 'empty')
+          AND transcript_status <> 'ready'
         RETURNING id`) as { id: number }[]
       const transcriptEventId = updated[0] ? await recordEvent({
         kind: "call.transcript",

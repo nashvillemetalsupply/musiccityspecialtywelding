@@ -119,15 +119,21 @@ test("a call that asked for shop work becomes a job with no tap, attributed to t
   assert.equal((INTAKE.match(/actorType: input\.operatorId == null \? "system" : "operator",/g) ?? []).length, 2)
 })
 
-test("a settlement write failure keeps the summary ready on replay and recovery", async (t) => {
-  const draft = { id: 1, call_sid: "CA1", status: "pending", caller_name: "Caller", need: "", is_test: true, transcript: "A steel gate repair.", transcript_status: "ready", duration_sec: 20 }
+test("recovery alerts the owner for a fresh unresolved call after a settlement write failure", async (t) => {
+  const draft = { id: 1, call_sid: "CA1", status: "pending", caller_name: "Caller", need: "", is_test: false, transcript: "A steel gate repair.", transcript_status: "ready", duration_sec: 20 }
   const modelSummary = { caller_name: null, need: "Repair a steel gate", details: [], where_when: null, is_job: "unsure", not_job_reason: null, next_question: null }
   let summaryStatus = ""
   let summary
   let reads = 0
   let settleWrites = 0
+  let notifyFails = true
+  const notifications = []
   globalThis.__settlementRegression = {
     model: async () => { reads += 1; return modelSummary },
+    notify: async (notification) => {
+      if (notifyFails) throw new Error("notification write unavailable")
+      notifications.push(notification)
+    },
     sql: async (strings, ...values) => {
       const query = strings.join("?").trim()
       if (query.startsWith("UPDATE call_intake_drafts SET summary_status = 'pending'")) {
@@ -140,15 +146,24 @@ test("a settlement write failure keeps the summary ready on replay and recovery"
         summary = JSON.parse(values[0])
         return []
       }
-      if (query.includes("SET summary = COALESCE(summary")) {
+      if (query.includes("SET summary = summary -")) {
+        delete summary.notify_on_settle
+        return []
+      }
+      if (query.includes("summary = COALESCE(")) {
         if (++settleWrites === 1) throw new Error("settlement write unavailable")
-        summary = { ...summary, ...JSON.parse(values[0]) }
+        if (values[0] === false) delete summary.notify_on_settle
+        summary = { ...summary, ...JSON.parse(values.find((value) => typeof value === "string")) }
         return []
       }
       if (query.includes("Read did not finish") || query.includes("SET status = 'dismissed'")) return []
       if (query.includes("SET summary_status = 'failed'")) { summaryStatus = "failed"; return [] }
       if (query.startsWith("SELECT d.call_sid")) return summaryStatus === "failed" ? [draft] : []
-      if (query.includes("d.summary, c.transcript")) return summaryStatus === "ready" && !summary.auto ? [{ ...draft, summary }] : []
+      if (query.includes("d.summary, c.transcript")) {
+        return summaryStatus === "ready" && (!summary.auto || (query.includes("d.summary_at < now()") && summary.notify_on_settle))
+          ? [{ ...draft, summary, lead_id: null, intake_outcome: null }]
+          : []
+      }
       if (query.startsWith("SELECT d.id")) return [draft]
       assert.fail(`Unexpected SQL: ${query}`)
     },
@@ -161,7 +176,7 @@ test("a settlement write failure keeps the summary ready on replay and recovery"
     "@/lib/events": "export const recordEvent = async () => {};",
     "@/lib/job-intake": "export const fileCallOntoOpenLead = async () => {}; export const saveInboundCallAsJob = async () => {};",
     "@/lib/people": "export const findOpenLeadResolutionForPerson = async () => {};",
-    "@/lib/notify": "export const notifyAll = async () => {};",
+    "@/lib/notify": "export const notifyAll = (notification) => globalThis.__settlementRegression.notify(notification);",
   }
   const hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
@@ -176,14 +191,25 @@ test("a settlement write failure keeps the summary ready on replay and recovery"
 
   assert.deepEqual(await summarizeCallDraft(draft.call_sid), { summarized: true })
   assert.equal(summaryStatus, "ready")
-  assert.deepEqual(summary, modelSummary)
+  assert.equal(summary.need, modelSummary.need)
   assert.equal(log.mock.callCount(), 1)
+  assert.equal(notifications.length, 0)
   assert.deepEqual(await summarizeCallDraft(draft.call_sid), { summarized: false, reason: "already-claimed" })
   const recovery = await summarizePendingCalls()
   assert.equal(recovery.attempted, 0)
   assert.equal(recovery.settled, 1)
   assert.equal(summary.auto, "left")
+  assert.equal(notifications.length, 0)
+  notifyFails = false
+  await summarizePendingCalls()
+  assert.deepEqual(summary, { ...modelSummary, auto: "left" })
   assert.equal(reads, 1)
+  assert.equal(notifications.length, 1)
+  assert.equal(notifications[0].dedupeKey, `call-read:${draft.call_sid}`)
+  assert.equal(notifications[0].ownerOnly, true)
+  assert.equal(notifications[0].url, "/board")
+  await summarizePendingCalls()
+  assert.equal(notifications.length, 1)
 })
 
 test("a repeat caller with an open job is filed onto it, never duplicated", () => {
@@ -198,15 +224,15 @@ test("a repeat caller with an open job is filed onto it, never duplicated", () =
 
 test("calls read before auto-save existed are settled quietly by the sweep, once", () => {
   const sweep = SUMMARY.slice(SUMMARY.indexOf("export async function summarizePendingCalls"))
-  assert.match(sweep, /AND d\.summary_status = 'ready' AND d\.summary IS NOT NULL\s+AND \(d\.summary->>'auto'\) IS NULL/)
-  assert.match(sweep, /await settleCall\(row, row\.summary, row\.summary\.caller_name\?\.trim\(\) \?\? "", row\.is_test, true\)/)
-  assert.match(SUMMARY, /if \(quiet \|\| isTest \|\| summary\.is_job === "no" \|\| outcome === "already"\) return/)
+  assert.match(sweep, /d\.summary_status = 'ready' AND d\.summary IS NOT NULL[\s\S]*?\(d\.summary->>'auto'\) IS NULL/)
+  assert.match(sweep, /await settleCall\(row, row\.summary, row\.summary\.caller_name\?\.trim\(\) \?\? "", isTest, row\.summary\.notify_on_settle !== true, prior\)/)
+  assert.match(SUMMARY, /const notify = !quiet && !isTest && summary\.is_job !== "no" && outcome !== "already"/)
 })
 
 test("one push per read tells the owner what the call was and what happened", () => {
   const settle = SUMMARY.slice(SUMMARY.indexOf("async function settleCall"), SUMMARY.indexOf("export async function summarizePendingCalls"))
   // tests never alert; wrong numbers wait quietly; a call already handled says nothing
-  assert.match(settle, /if \(quiet \|\| isTest \|\| summary\.is_job === "no" \|\| outcome === "already"\) return/)
+  assert.match(settle, /const notify = !quiet && !isTest && summary\.is_job !== "no" && outcome !== "already"[\s\S]*?if \(!notify\) return/)
   assert.match(settle, /priority: "interrupt",/)
   assert.match(settle, /ownerOnly: true,\s+smsFallback: false,\s+dedupeKey: `call-read:\$\{draft\.call_sid\}`,/)
   assert.match(settle, /url: leadId != null \? `\/ops\/leads\/\$\{leadId\}` : "\/board",/)

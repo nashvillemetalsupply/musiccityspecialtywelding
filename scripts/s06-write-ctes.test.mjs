@@ -171,3 +171,79 @@ test("createLead's lead and optional consent writes share a materialized SQL sta
   assert.match(leadWrite.text, /captured_consent AS MATERIALIZED \([\s\S]*?INSERT INTO messaging_consents/)
   assert.match(leadWrite.text, /INSERT INTO leads[\s\S]*?::boolean[\s\S]*?::jsonb/)
 })
+
+test("recovery extracts a saved quote after its creation event write fails", async () => {
+  const createdAt = "2026-09-27T12:00:00.000Z"
+  const message = "[INTERNAL TEST] Repair the gate"
+  const events = []
+  const extracted = []
+  let saved = false
+  let writeFails = true
+  const getSql = () => async (strings, ...values) => {
+    const sql = strings.join(" ? ")
+    if (sql.includes("WITH inserted_lead")) {
+      saved = true
+      return [{ id: 12, public_id: "L-20260927-TEST", is_test: true }]
+    }
+    if (sql.includes("SELECT person_id, is_test FROM leads")) return [{ person_id: 7, is_test: true }]
+    if (sql.includes("INSERT INTO automation_leases") || sql.includes("UPDATE automation_leases")) return [{ key: values[0] }]
+    if (sql.includes("intake_key LIKE 'website:%'")) {
+      assert.match(sql, /NOT EXISTS[\s\S]*?kind = 'form\.quote'/)
+      return saved && !events.length ? [{ id: 12, source: "direct", message, created_at: createdAt }] : []
+    }
+    if (sql.includes("SELECT id FROM events") && sql.includes("processed_at IS NULL")) {
+      return events.filter((event) => !extracted.includes(event.id) && values.flat().includes(event.id))
+    }
+    if (sql.includes("UPDATE events SET extraction_status = 'processing'")) return [{ id: values[0] }]
+    return []
+  }
+  const leads = loadModule("lib/leads.ts", new Map([
+    ["@/lib/db", { getSql }],
+    ["@/lib/follow-up-cadence.ts", { getDefaultFollowUpAt: async () => null }],
+    ["@/lib/media-safety", {}],
+    ["@/lib/events", { recordEvent: async (event) => {
+      if (writeFails) throw new Error("event write temporarily unavailable")
+      events.push({ id: 19, ...event })
+      return 19
+    } }],
+    ["@/lib/people", { findOrCreatePerson: async () => null, isReservedShopPhone: () => false, normalizePhone: (phone) => phone }],
+  ]))
+  const lead = await leads.createLead({
+    firstName: "Fixture", lastName: "Customer", phone: "+16155550100", email: "",
+    service: "gate", message, preferredContact: "phone", photoCount: 0, gclid: "", utmSource: "",
+    utmMedium: "", utmCampaign: "", utmTerm: "", utmContent: "", landingPage: "", referrer: "", ip: "", userAgent: "", isTest: true,
+  }, { intakeKey: "website:fixture", quoteIntake: true })
+  assert.equal(lead.id, 12)
+  assert.equal(lead.eventId, null)
+
+  const noop = async () => 0
+  const { runRecoverySweep } = loadModule("lib/recovery-sweep.ts", new Map([
+    ["@/lib/db", { getSql }], ["@/lib/leads", leads],
+    ["@/lib/notify", { notifyAll: () => assert.fail("test quote must stay quiet"), retryPendingInterrupts: noop }],
+    ["@/lib/extract", { EXTRACTABLE_EVENT_KINDS: ["form.quote"], processEvent: async (id) => {
+      extracted.push(id)
+      return { processed: true }
+    } }],
+    ["@/lib/attachment-retry", { retryPendingAttachments: noop }],
+    ["@/lib/call-transcription", { retryCallTranscriptions: noop }],
+    ["@/lib/voice-transcription", { retryVoiceTranscriptions: noop }],
+    ["@/lib/messages", { reconcileStaleSmsIntents: noop }],
+    ["@/lib/ingest", { reconcileRawInboundCalls: noop }],
+    ["@/lib/calls", { reconcileStaleOutboundCalls: noop }],
+    ["@/lib/commitments", { reconcileStaleCommitmentReschedules: noop }],
+    ["@/lib/glass-uploads", { reconcileGlassUploads: noop }],
+    ["@/lib/job-intake", { reconcileStaleCallIntakes: noop }],
+    ["@/lib/call-summary", { summarizePendingCalls: noop }],
+  ]))
+  writeFails = false
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
+  assert.equal(events.length, 1)
+  assert.equal(events[0].kind, "form.quote")
+  assert.equal(events[0].body, message)
+  assert.equal(events[0].leadId, 12)
+  assert.equal(events[0].personId, 7)
+  assert.equal(events[0].occurredAt, createdAt)
+  assert.equal(events[0].detail.isTest, true)
+  assert.deepEqual(extracted, [19])
+})

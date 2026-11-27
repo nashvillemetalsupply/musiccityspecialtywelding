@@ -220,7 +220,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
           },
         })
       }
-      if (response.status === 409) clearIntake(intakeKey)
+      if (response.status === 409 && data?.retryOriginalPhotos !== true) clearIntake(intakeKey)
       if (!response.ok) throw new Error(data?.error || "The request did not go through.")
       if (outcome === "rejected") throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
 

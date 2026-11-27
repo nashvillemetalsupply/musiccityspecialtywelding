@@ -53,8 +53,8 @@ export async function recordEvent(input: RecordEventInput): Promise<number | nul
     : new Date().toISOString()
   const externalId = input.externalId?.trim() ?? ""
   const detail = input.detail ? JSON.stringify(input.detail) : null
-  // Lock the pending call through the live event insert, so finalization and
-  // the receipt cannot pass each other after the live snapshot was written.
+  // Lock the call through the live event insert so a recording with speech
+  // cannot become ready between the check and the insert.
   const liveTranscriptCallSid = input.liveTranscriptCallSid ?? null
   const rows = externalId
     ? ((await sql`
@@ -77,7 +77,7 @@ export async function recordEvent(input: RecordEventInput): Promise<number | nul
             concat_ws(' ', ${input.body ?? ""}::text, ${input.crewBody ?? null}::text, ${detail}::text))
         WHERE (${liveTranscriptCallSid}::text IS NULL OR EXISTS (
           SELECT 1 FROM calls WHERE twilio_sid = ${liveTranscriptCallSid}::text
-            AND transcript_status NOT IN ('ready', 'empty')
+            AND transcript_status <> 'ready'
           FOR SHARE
         ))
         ON CONFLICT (kind, external_id) WHERE external_id <> '' DO NOTHING
