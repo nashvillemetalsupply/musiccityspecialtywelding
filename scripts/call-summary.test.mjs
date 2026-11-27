@@ -119,52 +119,56 @@ test("a call that asked for shop work becomes a job with no tap, attributed to t
   assert.equal((INTAKE.match(/actorType: input\.operatorId == null \? "system" : "operator",/g) ?? []).length, 2)
 })
 
-test("recovery alerts the owner for a fresh unresolved call after a settlement write failure", async (t) => {
+async function settlementFixture(t, { isJob = "unsure", failSettlementWrite = true } = {}) {
   const draft = { id: 1, call_sid: "CA1", status: "pending", caller_name: "Caller", need: "", is_test: false, transcript: "A steel gate repair.", transcript_status: "ready", duration_sec: 20 }
-  const modelSummary = { caller_name: null, need: "Repair a steel gate", details: [], where_when: null, is_job: "unsure", not_job_reason: null, next_question: null }
-  let summaryStatus = ""
-  let summary
-  let reads = 0
+  const modelSummary = { caller_name: null, need: "Repair a steel gate", details: [], where_when: null, is_job: isJob, not_job_reason: null, next_question: null }
+  const state = { summaryStatus: "", summary: undefined, reads: 0, saves: 0, notifyFails: true }
+  const disposition = { status: "pending", lead_id: null, intake_outcome: "pending" }
   let settleWrites = 0
-  let notifyFails = true
   const notifications = []
   globalThis.__settlementRegression = {
-    model: async () => { reads += 1; return modelSummary },
+    model: async () => { state.reads += 1; return modelSummary },
+    save: async () => {
+      state.saves += 1
+      Object.assign(disposition, { status: "saved", lead_id: 17, intake_outcome: "saved" })
+      return { leadId: disposition.lead_id }
+    },
     notify: async (notification) => {
-      if (notifyFails) throw new Error("notification write unavailable")
+      if (state.notifyFails) throw new Error("notification write unavailable")
       notifications.push(notification)
     },
     sql: async (strings, ...values) => {
       const query = strings.join("?").trim()
       if (query.startsWith("UPDATE call_intake_drafts SET summary_status = 'pending'")) {
-        if (!["", "failed"].includes(summaryStatus)) return []
-        summaryStatus = "pending"
+        if (!["", "failed"].includes(state.summaryStatus)) return []
+        state.summaryStatus = "pending"
         return [{ id: draft.id }]
       }
       if (query.includes("summary_status = 'ready',")) {
-        summaryStatus = "ready"
-        summary = JSON.parse(values[0])
+        state.summaryStatus = "ready"
+        state.summary = JSON.parse(values[0])
         return []
       }
       if (query.includes("SET summary = summary -")) {
-        delete summary.notify_on_settle
+        delete state.summary.notify_on_settle
         return []
       }
       if (query.includes("summary = COALESCE(")) {
-        if (++settleWrites === 1) throw new Error("settlement write unavailable")
-        if (values[0] === false) delete summary.notify_on_settle
-        summary = { ...summary, ...JSON.parse(values.find((value) => typeof value === "string")) }
+        if (++settleWrites === 1 && failSettlementWrite) throw new Error("settlement write unavailable")
+        if (values[0] === false) delete state.summary.notify_on_settle
+        state.summary = { ...state.summary, ...JSON.parse(values.find((value) => typeof value === "string")) }
         return []
       }
       if (query.includes("Read did not finish") || query.includes("SET status = 'dismissed'")) return []
-      if (query.includes("SET summary_status = 'failed'")) { summaryStatus = "failed"; return [] }
-      if (query.startsWith("SELECT d.call_sid")) return summaryStatus === "failed" ? [draft] : []
+      if (query.includes("SET summary_status = 'failed'")) { state.summaryStatus = "failed"; return [] }
+      if (query.startsWith("SELECT d.call_sid")) return state.summaryStatus === "failed" ? [draft] : []
       if (query.includes("d.summary, c.transcript")) {
-        return summaryStatus === "ready" && (!summary.auto || (query.includes("d.summary_at < now()") && summary.notify_on_settle))
-          ? [{ ...draft, summary, lead_id: null, intake_outcome: null }]
+        return state.summaryStatus === "ready" && (!state.summary.auto || (query.includes("d.summary_at < now()") && state.summary.notify_on_settle))
+          ? [{ ...draft, ...disposition, summary: state.summary }]
           : []
       }
-      if (query.startsWith("SELECT d.id")) return [draft]
+      if (query.startsWith("SELECT d.status")) return [{ ...disposition }]
+      if (query.startsWith("SELECT d.id")) return [{ ...draft, ...disposition }]
       assert.fail(`Unexpected SQL: ${query}`)
     },
   }
@@ -174,7 +178,7 @@ test("recovery alerts the owner for a fresh unresolved call after a settlement w
     "@/lib/ai": "export const aiConfigured = () => false; export const claudeConfigured = () => true; export const AI_MAX_RETRIES = 0; export const AI_MODELS = {}; export const runAiCall = async () => { throw new Error('Unexpected gateway call'); }; export const jsonWithClaude = () => globalThis.__settlementRegression.model();",
     "@/lib/db": "export const getSql = () => globalThis.__settlementRegression.sql;",
     "@/lib/events": "export const recordEvent = async () => {};",
-    "@/lib/job-intake": "export const fileCallOntoOpenLead = async () => {}; export const saveInboundCallAsJob = async () => {};",
+    "@/lib/job-intake": "export const fileCallOntoOpenLead = async () => {}; export const saveInboundCallAsJob = () => globalThis.__settlementRegression.save();",
     "@/lib/people": "export const findOpenLeadResolutionForPerson = async () => {};",
     "@/lib/notify": "export const notifyAll = (notification) => globalThis.__settlementRegression.notify(notification);",
   }
@@ -188,28 +192,53 @@ test("recovery alerts the owner for a fresh unresolved call after a settlement w
   t.after(() => hooks.deregister())
   const { summarizeCallDraft, summarizePendingCalls } = await import("../lib/call-summary.ts?settlement-regression")
   const log = t.mock.method(console, "error", () => {})
+  return { draft, disposition, state, modelSummary, notifications, summarizeCallDraft, summarizePendingCalls, log }
+}
+
+test("recovery alerts the owner for a fresh unresolved call after a settlement write failure", async (t) => {
+  const { draft, state, modelSummary, notifications, summarizeCallDraft, summarizePendingCalls, log } = await settlementFixture(t)
 
   assert.deepEqual(await summarizeCallDraft(draft.call_sid), { summarized: true })
-  assert.equal(summaryStatus, "ready")
-  assert.equal(summary.need, modelSummary.need)
+  assert.equal(state.summaryStatus, "ready")
+  assert.equal(state.summary.need, modelSummary.need)
   assert.equal(log.mock.callCount(), 1)
   assert.equal(notifications.length, 0)
   assert.deepEqual(await summarizeCallDraft(draft.call_sid), { summarized: false, reason: "already-claimed" })
   const recovery = await summarizePendingCalls()
   assert.equal(recovery.attempted, 0)
   assert.equal(recovery.settled, 1)
-  assert.equal(summary.auto, "left")
+  assert.equal(state.summary.auto, "left")
   assert.equal(notifications.length, 0)
-  notifyFails = false
+  state.notifyFails = false
   await summarizePendingCalls()
-  assert.deepEqual(summary, { ...modelSummary, auto: "left" })
-  assert.equal(reads, 1)
+  assert.deepEqual(state.summary, { ...modelSummary, auto: "left" })
+  assert.equal(state.reads, 1)
   assert.equal(notifications.length, 1)
   assert.equal(notifications[0].dedupeKey, `call-read:${draft.call_sid}`)
   assert.equal(notifications[0].ownerOnly, true)
   assert.equal(notifications[0].url, "/board")
   await summarizePendingCalls()
   assert.equal(notifications.length, 1)
+})
+
+test("recovery alerts describe the pending call after the owner undoes an automatic save", async (t) => {
+  const { draft, disposition, state, notifications, summarizeCallDraft, summarizePendingCalls } = await settlementFixture(t, { isJob: "yes", failSettlementWrite: false })
+
+  assert.deepEqual(await summarizeCallDraft(draft.call_sid), { summarized: true })
+  assert.equal(disposition.lead_id, 17)
+  assert.equal(state.summary.auto, "saved")
+  assert.equal(state.summary.notify_on_settle, true)
+  assert.deepEqual(notifications, [])
+
+  Object.assign(disposition, { status: "pending", lead_id: null, intake_outcome: "pending" })
+  state.notifyFails = false
+  await summarizePendingCalls()
+
+  assert.equal(notifications.length, 1)
+  assert.equal(notifications[0].body, "Left in calls to save.")
+  assert.equal(notifications[0].url, "/board")
+  assert.equal(state.saves, 1)
+  assert.equal(state.summary.notify_on_settle, undefined)
 })
 
 test("a repeat caller with an open job is filed onto it, never duplicated", () => {

@@ -29,6 +29,8 @@ function quoteRouteHarness({
   const photoReceipts = []
   const alerts = []
   const emails = []
+  const providerReceipts = new Map()
+  const errors = []
   const events = []
   const consents = []
   const context = vm.createContext({
@@ -37,14 +39,18 @@ function quoteRouteHarness({
       BLOB_READ_WRITE_TOKEN: "stub",
       ...(emailConfigured ? { RESEND_API_KEY: "stub", QUOTE_FROM_EMAIL: "from@example.test", QUOTE_TO_EMAIL: "owner@example.test" } : {}),
     } },
-    console: { error() {}, warn() {} },
+    console: { error: (...args) => errors.push(args), warn() {} },
   })
   const findLead = (id) => [...leads.values()].find((row) => row.id === id)
   const fakes = {
     "node:crypto": require("node:crypto"),
     "resend": { Resend: class { emails = { send: async (payload, options) => {
+      if (providerReceipts.has(options.idempotencyKey)) return providerReceipts.get(options.idempotencyKey)
+      const response = checkEmail("send", options.idempotencyKey.startsWith("quote-owner:") ? "shop" : "customer")
       emails.push({ payload, options })
-      return { data: { id: `email-${emails.length}` } }
+      const receipt = { data: { id: `email-${emails.length}` } }
+      providerReceipts.set(options.idempotencyKey, receipt)
+      return response ?? receipt
     } } } },
     "@vercel/blob": {
       put: async (pathname, file) => {
@@ -87,12 +93,14 @@ function quoteRouteHarness({
           return []
         }
         if (sql.includes("FROM events WHERE lead_id")) return events.filter((row) => row.leadId === leadId && row.kind === "form.quote")
-        if (sql.includes("SELECT kind FROM events")) {
+        if (sql.includes("SELECT kind") && sql.includes("detail->>'sourceEventId'")) {
           const intent = events.find((event) => event.id === Number(leadId))
           checkEmail("receipt", intent?.detail.audience)
+          const kinds = [...sql.matchAll(/'(email\.\w+)'/g)].map((match) => match[1])
           return events.filter((event) =>
-            ["email.accepted", "email.delivered"].includes(event.kind) && event.detail.sourceEventId === intent?.id
-          )
+            kinds.includes(event.kind) && event.detail.sourceEventId === intent?.id
+              && !(sql.includes("providerType") && event.kind === "email.failed" && event.detail.providerType)
+          ).slice(-1)
         }
         if (sql.includes("FROM events")) {
           return events.filter((event) => event.kind === values[0] && event.externalId === values[1])
@@ -139,6 +147,7 @@ function quoteRouteHarness({
     "@/lib/email-templates": { brandedEmail: () => "", escapeHtml: (value) => value },
     "@/lib/events": { recordEvent: async (event) => {
       if (event.kind === "email.out") checkEmail("intent", event.detail.audience)
+      if (event.kind === "email.accepted") checkEmail("acceptance", event.detail.audience)
       if (event.externalId && events.some((prior) => prior.kind === event.kind && prior.externalId === event.externalId)) return null
       const id = events.length + 1
       events.push({ ...event, id })
@@ -172,7 +181,8 @@ function quoteRouteHarness({
   fakes["@/lib/leads"] = { ...load("lib/leads.ts"), ...fakes["@/lib/leads"] }
   const { POST } = load("app/api/quote/route.ts")
   return {
-    leads, photoIntents, blobs, photoReceipts, alerts, emails, consents, events,
+    leads, photoIntents, blobs, photoReceipts, alerts, emails, consents, events, errors,
+    expireProviderReceipts: () => providerReceipts.clear(),
     submit(photos = [], { authorized = false, key = intakeKey, phone = "6155550100", textConsent = false } = {}) {
       const form = new FormData()
       for (const [name, value] of Object.entries({
@@ -443,19 +453,32 @@ function quoteFormHarness(route, { rejectStorageWrites = false, acknowledgeAds =
       if (acknowledgeAds) params.event_callback?.()
     }
     const formStates = [{ firstName: "Example", phone, service: "Not Sure / Other", textConsent }, selectedPhotos]
+    const formRefs = []
+    let stateIndex = 0
+    let refIndex = 0
     const { QuoteForm } = browser.load("components/mainstreet-contact.tsx", {
       react: {
         useEffect() {},
-        useRef: (current) => ({ current }),
-        useState: (initial) => [formStates.length ? formStates.shift() : initial, () => {}],
+        useRef: (current) => formRefs[refIndex++] ??= { current },
+        useState: (initial) => {
+          const index = stateIndex++
+          if (!(index in formStates)) formStates[index] = initial
+          return [formStates[index], (value) => {
+            formStates[index] = typeof value === "function" ? value(formStates[index]) : value
+          }]
+        },
       },
       "@/components/contact-lead": {},
       "@/lib/attribution": { captureAttribution: () => ({}) },
       "@/lib/shop-phone-shared": {},
       "@/lib/public-quote.ts": browser.load("lib/public-quote.ts"),
     })
-    const submit = QuoteForm({}).props.onSubmit
-    return () => submit({ preventDefault() {} })
+    const render = () => {
+      stateIndex = refIndex = 0
+      return QuoteForm({})
+    }
+    const submit = () => render().props.onSubmit({ preventDefault() {} })
+    return Object.assign(submit, { render })
   }
 
   return { mountForm, responses, intakeKeys, adsEvents, adsTimeouts, session, history }
@@ -594,6 +617,37 @@ test("reselecting the original retry photo keeps one quote and one Ads conversio
   assert.deepEqual(adsEvents.map((event) => event.transaction_id), [intakeKeys[0]])
 })
 
+test("starting a new request after a photo conflict sends replacement photos with a new quote key", async () => {
+  for (const rejectStorageWrites of [false, true]) {
+    let uploadFails = true
+    const route = quoteRouteHarness({ upload: () => { if (uploadFails) throw new Error("Blob unavailable") } })
+    const { mountForm, responses, intakeKeys, session, history } = quoteFormHarness(route, { rejectStorageWrites })
+    await mountForm([quotePhoto("bracket.jpg")])()
+
+    uploadFails = false
+    const submitReplacement = mountForm([quotePhoto("replacement.jpg")])
+    await submitReplacement()
+    assert.deepEqual(responses.map(({ status }) => status), [503, 409])
+    assert.equal(intakeKeys[1], intakeKeys[0])
+    assert.equal(responses[1].data.retryOriginalPhotos, true)
+
+    const restart = submitReplacement.render().props.children.find((element) =>
+      element?.type === "button" && element.props.children === "Start a new request",
+    )
+    assert.ok(restart, "the form offers a way to use the replacement photos")
+    assert.equal(restart.props.type, "button")
+    restart.props.onClick()
+    assert.equal(session.has("mcsw:quote-intake"), false)
+    assert.equal(history.state["mcsw:quote-intake"], undefined)
+
+    await submitReplacement()
+    assert.deepEqual(responses.map(({ status }) => status), [503, 409, 200])
+    assert.notEqual(intakeKeys[2], intakeKeys[0])
+    assert.equal(route.leads.size, 2)
+    assert.equal(route.leads.get(`website:${intakeKeys[2]}`).photo_count, 1)
+  }
+})
+
 test("a saved test quote cannot report a conversion on an unauthorized photo retry", async () => {
   let uploadFails = true
   const route = quoteRouteHarness({
@@ -663,6 +717,7 @@ test("an email intent or receipt outage preserves the saved quote for retry", as
       ])
 
       unavailable = false
+      route.expireProviderReceipts()
       await submit()
       assert.equal(responses[1].status, 200)
       assert.equal(intakeKeys[1], intakeKeys[0])
@@ -671,6 +726,78 @@ test("an email intent or receipt outage preserves the saved quote for retry", as
       assert.deepEqual(route.emails.map(({ payload }) => payload.to).sort(), ["customer@example.test", "owner@example.test"])
     }
   }
+})
+
+for (const [ownerFailure, providerResponse] of [
+  ["acceptance receipt write fails", undefined],
+  ["SDK loses the response", { data: null, error: { name: "application_error", statusCode: null, message: "Unable to fetch data" } }],
+  ["provider reports a concurrent send", { data: null, error: { name: "concurrent_idempotent_requests", statusCode: 409, message: "The request is already in progress" } }],
+  ["provider omits the acceptance ID", { data: {}, error: null }],
+]) {
+  test(`an email-only retry after provider deduplication expires leaves an ambiguous owner email for reconciliation (${ownerFailure})`, async () => {
+    let firstAttempt = true
+    const route = quoteRouteHarness({
+      emailConfigured: true,
+      email: "customer@example.test",
+      checkEmail(operation, audience) {
+        if (!firstAttempt) return
+        if ((operation === "acceptance" && audience === "shop" && !providerResponse) ||
+            (operation === "intent" && audience === "customer")) throw new Error("Email storage unavailable")
+        if (operation === "send" && audience === "shop") return providerResponse
+      },
+    })
+
+    const first = await route.submit()
+    assert.equal(first.status, 503)
+    assert.equal((await first.json()).leadSaved, true)
+    assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["owner@example.test"])
+    const firstUnknownAudience = route.events.find((event) => event.kind === "email.unknown")?.detail.audience
+
+    firstAttempt = false
+    route.expireProviderReceipts()
+    const retry = await route.submit()
+    assert.equal(retry.status, 200)
+    assert.deepEqual(await retry.json(), { ok: true, accepted: true, leadSaved: true })
+    assert.equal(route.leads.size, 1)
+    assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["owner@example.test", "customer@example.test"])
+    assert.equal(firstUnknownAudience, "shop")
+    assert.ok(route.errors.some(([message]) => /reconciliation/i.test(message)))
+  })
+}
+
+test("a new ambiguous send supersedes a definite failure after a legacy ambiguous send", async () => {
+  let attempt = 1
+  const route = quoteRouteHarness({
+    emailConfigured: true,
+    email: "customer@example.test",
+    checkEmail(operation, audience) {
+      if ((attempt === 1 && operation === "send" && audience === "shop") ||
+          (attempt === 2 && operation === "acceptance" && audience === "shop") ||
+          (attempt < 3 && operation === "intent" && audience === "customer")) {
+        throw new Error("Email storage or transport unavailable")
+      }
+    },
+  })
+
+  assert.equal((await route.submit()).status, 503)
+  assert.equal(route.emails.length, 0)
+  const unknown = route.events.find((event) => event.kind === "email.unknown")
+  // The previous route could retry this unknown outcome and record a rejection.
+  route.events.push({
+    ...unknown,
+    id: route.events.length + 1,
+    kind: "email.failed",
+    externalId: unknown.externalId.replace("request-unknown:", "request-failed:"),
+  })
+
+  attempt = 2
+  assert.equal((await route.submit()).status, 503)
+  assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["owner@example.test"])
+
+  attempt = 3
+  route.expireProviderReceipts()
+  assert.equal((await route.submit()).status, 200)
+  assert.deepEqual(route.emails.map(({ payload }) => payload.to), ["owner@example.test", "customer@example.test"])
 })
 
 test("a pending owner email waits for photo verification and includes the recovered attachments", async () => {

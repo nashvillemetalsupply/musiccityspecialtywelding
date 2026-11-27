@@ -93,6 +93,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
   const [warning, setWarning] = useState("")
+  const [retryOriginalPhotos, setRetryOriginalPhotos] = useState(false)
   const previewsRef = useRef<string[]>([])
   // Network retries and page refreshes resume the pending intake.
   const intakeKeyRef = useRef("")
@@ -162,6 +163,12 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
     if (intakeKeyRef.current === intakeKey) intakeKeyRef.current = ""
   }
 
+  const startNewRequest = () => {
+    clearIntake(intakeKeyRef.current)
+    setRetryOriginalPhotos(false)
+    setStatus("idle")
+  }
+
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!formData.firstName.trim() || !formData.phone.trim() || !formData.service) {
@@ -221,6 +228,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
         })
       }
       if (response.status === 409 && data?.retryOriginalPhotos !== true) clearIntake(intakeKey)
+      if (response.status === 409) setRetryOriginalPhotos(data?.retryOriginalPhotos === true)
       if (!response.ok) throw new Error(data?.error || "The request did not go through.")
       if (outcome === "rejected") throw new Error("The request was not accepted. Call the shop and we’ll get it moving.")
 
@@ -245,6 +253,7 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
       setPreviews([])
       setPhotoFiles([])
       setFormData(emptyForm)
+      setRetryOriginalPhotos(false)
       clearIntake(intakeKey)
       setStatus("success")
       setMessage("Got it. We’ll review the job and call you back. If it can't wait, call now.")
@@ -334,6 +343,9 @@ export function QuoteForm({ phoneHref = FALLBACK_SHOP_PHONE_HREF, phoneDisplay =
 
         {status === "success" && warning && (
           <p className="ms-form-status is-warning" role="status">{warning}</p>
+        )}
+        {retryOriginalPhotos && (
+          <button className="ms-button ms-button-secondary ms-field-wide" type="button" disabled={isSubmitting} onClick={startNewRequest}>Start a new request</button>
         )}
 
         <button className="ms-submit ms-button ms-button-primary" type="submit" disabled={isSubmitting}>

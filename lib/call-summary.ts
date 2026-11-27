@@ -262,8 +262,7 @@ export async function summarizePendingCalls(limit = 30) {
   // recovering a new read's pending alert.
   const unsettled = (await sql`
     SELECT d.id, d.public_id, d.call_sid, d.person_id, d.status, d.caller_name, d.phone, d.need, d.is_test,
-      d.summary, c.transcript, c.transcript_status, COALESCE(c.duration_sec, 0)::int AS duration_sec,
-      d.lead_id, c.detail->>'intakeOutcome' AS intake_outcome
+      d.summary, c.transcript, c.transcript_status, COALESCE(c.duration_sec, 0)::int AS duration_sec
     FROM call_intake_drafts d
     JOIN calls c ON c.twilio_sid = d.call_sid
     WHERE d.summary_status = 'ready' AND d.summary IS NOT NULL
@@ -274,7 +273,7 @@ export async function summarizePendingCalls(limit = 30) {
           AND d.summary_at < now() - interval '10 minutes')
       )
     ORDER BY d.created_at DESC
-    LIMIT 40`) as (DraftForSummary & { summary: StoredCallSummary; lead_id: number | null; intake_outcome: string | null })[]
+    LIMIT 40`) as (DraftForSummary & { summary: StoredCallSummary })[]
   // A call the read called "not a job", untouched for a week, stops asking.
   // Same row state a tap would leave (dismissed, restorable), same call
   // detail, same journal entry -- with no operator named, because none acted.
@@ -301,11 +300,27 @@ export async function summarizePendingCalls(limit = 30) {
   }
   let settled = 0
   for (const row of unsettled) {
-    const isTest = row.is_test || /\[INTERNAL TEST\]/i.test(row.transcript)
-    const linkedOutcome = row.intake_outcome === "filed" ? "filed" : "saved"
-    const outcome = row.summary.auto ?? (row.status === "saved" && row.lead_id !== null ? linkedOutcome : null)
-    const prior = outcome ? { outcome, leadId: row.lead_id } : undefined
-    await settleCall(row, row.summary, row.summary.caller_name?.trim() ?? "", isTest, row.summary.notify_on_settle !== true, prior).catch((error) => console.error("Call backfill settle failed:", row.call_sid, error))
+    try {
+      const isTest = row.is_test || /\[INTERNAL TEST\]/i.test(row.transcript)
+      const outcome = row.summary.auto
+      let prior: SettledCall | undefined = outcome ? { outcome, leadId: null } : undefined
+      if (row.status === "saved" || outcome === "saved" || outcome === "filed") {
+        // An owner can undo the save while its alert is waiting for recovery.
+        const [current] = (await sql`
+          SELECT d.status, d.lead_id, c.detail->>'intakeOutcome' AS intake_outcome
+          FROM call_intake_drafts d JOIN calls c ON c.twilio_sid = d.call_sid
+          WHERE d.id = ${row.id}::bigint`) as { status: string; lead_id: number | null; intake_outcome: string | null }[]
+        if (current?.status === "saved" && current.lead_id !== null) {
+          const filed = (current.intake_outcome ?? outcome) === "filed"
+          prior = { outcome: filed ? "filed" : "saved", leadId: current.lead_id }
+        } else {
+          prior = { outcome: current && OPEN_DRAFT.includes(current.status) ? "left" : "already", leadId: null }
+        }
+      }
+      await settleCall(row, row.summary, row.summary.caller_name?.trim() ?? "", isTest, row.summary.notify_on_settle !== true, prior)
+    } catch (error) {
+      console.error("Call backfill settle failed:", row.call_sid, error)
+    }
     settled += 1
   }
   let summarized = 0

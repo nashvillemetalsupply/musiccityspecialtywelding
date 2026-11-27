@@ -18,6 +18,7 @@ function loadModule(relativePath, moduleFakes) {
   }).outputText
   const context = vm.createContext({
     console: { error() {}, warn() {}, log() {} },
+    Error,
     process: { env: {} },
     require: (specifier) => {
       if (specifier === "node:crypto") return nativeRequire("node:crypto")
@@ -172,11 +173,13 @@ test("createLead's lead and optional consent writes share a materialized SQL sta
   assert.match(leadWrite.text, /INSERT INTO leads[\s\S]*?::boolean[\s\S]*?::jsonb/)
 })
 
-test("recovery extracts a saved quote after its creation event write fails", async () => {
+async function quoteRecoveryFixture({ brokenLeadId } = {}) {
   const createdAt = "2026-09-27T12:00:00.000Z"
   const message = "[INTERNAL TEST] Repair the gate"
   const events = []
   const extracted = []
+  const downstream = []
+  const runs = []
   let saved = false
   let writeFails = true
   const getSql = () => async (strings, ...values) => {
@@ -189,12 +192,16 @@ test("recovery extracts a saved quote after its creation event write fails", asy
     if (sql.includes("INSERT INTO automation_leases") || sql.includes("UPDATE automation_leases")) return [{ key: values[0] }]
     if (sql.includes("intake_key LIKE 'website:%'")) {
       assert.match(sql, /NOT EXISTS[\s\S]*?kind = 'form\.quote'/)
-      return saved && !events.length ? [{ id: 12, source: "direct", message, created_at: createdAt }] : []
+      const missing = []
+      if (brokenLeadId !== undefined) missing.push({ id: brokenLeadId, source: "direct", message, created_at: "2026-09-27T11:00:00.000Z" })
+      if (saved && !events.length) missing.push({ id: 12, source: "direct", message, created_at: createdAt })
+      return missing
     }
     if (sql.includes("SELECT id FROM events") && sql.includes("processed_at IS NULL")) {
       return events.filter((event) => !extracted.includes(event.id) && values.flat().includes(event.id))
     }
     if (sql.includes("UPDATE events SET extraction_status = 'processing'")) return [{ id: values[0] }]
+    if (sql.includes("INSERT INTO automation_runs")) runs.push(JSON.parse(values[1]))
     return []
   }
   const leads = loadModule("lib/leads.ts", new Map([
@@ -202,6 +209,7 @@ test("recovery extracts a saved quote after its creation event write fails", asy
     ["@/lib/follow-up-cadence.ts", { getDefaultFollowUpAt: async () => null }],
     ["@/lib/media-safety", {}],
     ["@/lib/events", { recordEvent: async (event) => {
+      if (event.leadId === brokenLeadId) throw new Error("oldest quote event write failed")
       if (writeFails) throw new Error("event write temporarily unavailable")
       events.push({ id: 19, ...event })
       return 19
@@ -213,21 +221,18 @@ test("recovery extracts a saved quote after its creation event write fails", asy
     service: "gate", message, preferredContact: "phone", photoCount: 0, gclid: "", utmSource: "",
     utmMedium: "", utmCampaign: "", utmTerm: "", utmContent: "", landingPage: "", referrer: "", ip: "", userAgent: "", isTest: true,
   }, { intakeKey: "website:fixture", quoteIntake: true })
-  assert.equal(lead.id, 12)
-  assert.equal(lead.eventId, null)
-
   const noop = async () => 0
   const { runRecoverySweep } = loadModule("lib/recovery-sweep.ts", new Map([
     ["@/lib/db", { getSql }], ["@/lib/leads", leads],
-    ["@/lib/notify", { notifyAll: () => assert.fail("test quote must stay quiet"), retryPendingInterrupts: noop }],
+    ["@/lib/notify", { notifyAll: () => assert.fail("test quote must stay quiet"), retryPendingInterrupts: async () => downstream.push("interrupts") }],
     ["@/lib/extract", { EXTRACTABLE_EVENT_KINDS: ["form.quote"], processEvent: async (id) => {
       extracted.push(id)
       return { processed: true }
     } }],
-    ["@/lib/attachment-retry", { retryPendingAttachments: noop }],
-    ["@/lib/call-transcription", { retryCallTranscriptions: noop }],
+    ["@/lib/attachment-retry", { retryPendingAttachments: async () => downstream.push("attachments") }],
+    ["@/lib/call-transcription", { retryCallTranscriptions: async () => downstream.push("call transcripts") }],
     ["@/lib/voice-transcription", { retryVoiceTranscriptions: noop }],
-    ["@/lib/messages", { reconcileStaleSmsIntents: noop }],
+    ["@/lib/messages", { reconcileStaleSmsIntents: async () => downstream.push("SMS") }],
     ["@/lib/ingest", { reconcileRawInboundCalls: noop }],
     ["@/lib/calls", { reconcileStaleOutboundCalls: noop }],
     ["@/lib/commitments", { reconcileStaleCommitmentReschedules: noop }],
@@ -236,6 +241,13 @@ test("recovery extracts a saved quote after its creation event write fails", asy
     ["@/lib/call-summary", { summarizePendingCalls: noop }],
   ]))
   writeFails = false
+  return { createdAt, message, lead, events, extracted, downstream, runs, runRecoverySweep }
+}
+
+test("recovery extracts a saved quote after its creation event write fails", async () => {
+  const { createdAt, message, lead, events, extracted, runRecoverySweep } = await quoteRecoveryFixture()
+  assert.equal(lead.id, 12)
+  assert.equal(lead.eventId, null)
   assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
   assert.equal((await runRecoverySweep({ trigger: "owner-manual" })).ok, true)
   assert.equal(events.length, 1)
@@ -246,4 +258,14 @@ test("recovery extracts a saved quote after its creation event write fails", asy
   assert.equal(events[0].occurredAt, createdAt)
   assert.equal(events[0].detail.isTest, true)
   assert.deepEqual(extracted, [19])
+})
+
+test("a failed quote event repair is recorded and leaves the rest of recovery running", async () => {
+  const { downstream, extracted, runs, runRecoverySweep } = await quoteRecoveryFixture({ brokenLeadId: 11 })
+  const result = await runRecoverySweep({ trigger: "owner-manual" })
+
+  assert.deepEqual(extracted, [19], "the quote after the failing one reaches extraction")
+  assert.deepEqual(downstream, ["attachments", "call transcripts", "SMS", "interrupts"])
+  assert.equal(result.ok, true)
+  assert.deepEqual(runs[0].quoteEventRepairFailures, [{ leadId: 11, error: "oldest quote event write failed" }])
 })

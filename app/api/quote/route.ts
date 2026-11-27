@@ -175,6 +175,7 @@ async function sendDurableQuoteEmail(input: {
   payload: CreateEmailOptions;
 }): Promise<DurableEmailResult> {
   let sourceEventId: number | null = null;
+  let priorFailureEventId: number | null = null;
   try {
     if (input.leadId !== null) {
       sourceEventId = await recordEvent({
@@ -193,12 +194,22 @@ async function sendDurableQuoteEmail(input: {
       });
       if (!sourceEventId) sourceEventId = await resumeEventId("email.out", input.intent);
       if (!sourceEventId) throw new Error("Quote email intent unavailable.");
-      const receipts = (await getSql()`
-        SELECT kind FROM events
-        WHERE kind = ANY(ARRAY['email.accepted','email.delivered']::text[])
+      // Resend webhook failures describe delivery after acceptance.
+      const [lastReceipt] = (await getSql()`
+        SELECT kind, id FROM events
+        WHERE kind = ANY(ARRAY['email.accepted','email.delivered','email.failed','email.unknown']::text[])
           AND detail->>'sourceEventId' = ${String(sourceEventId)}::text
-        ORDER BY id DESC LIMIT 1`) as { kind: string }[];
-      if (receipts[0]) return { state: "accepted", error: "", receiptEventId: sourceEventId };
+          AND (kind <> 'email.failed' OR detail->>'providerType' IS NULL)
+        ORDER BY id DESC LIMIT 1`) as { kind: string; id: number }[];
+      if (lastReceipt?.kind === "email.accepted" || lastReceipt?.kind === "email.delivered") {
+        return { state: "accepted", error: "", receiptEventId: sourceEventId };
+      }
+      if (lastReceipt?.kind === "email.unknown") {
+        const receiptEventId = Number(lastReceipt.id);
+        console.error("Quote email left for reconciliation:", { leadId: input.leadId, audience: input.audience, receiptEventId });
+        return { state: "unknown", error: "Email provider response was not confirmed.", receiptEventId };
+      }
+      if (lastReceipt?.kind === "email.failed") priorFailureEventId = Number(lastReceipt.id);
     }
   } catch (error) {
     console.error("Quote email could not be prepared:", error);
@@ -213,8 +224,9 @@ async function sendDurableQuoteEmail(input: {
     const { data, error } = await input.resend.emails.send(input.payload, {
       idempotencyKey: input.intent,
     });
-    if (error || !data?.id) {
-      const message = error?.message || "Email provider did not accept the message.";
+    if (error?.statusCode === null || error?.name === "concurrent_idempotent_requests") throw new Error(error.message);
+    if (error) {
+      const message = error.message || "Email provider did not accept the message.";
       if (sourceEventId && input.leadId !== null) {
         let failureEventId = await recordEvent({
           kind: "email.failed",
@@ -231,6 +243,7 @@ async function sendDurableQuoteEmail(input: {
       }
       return { state: "failed", error: message, receiptEventId: sourceEventId };
     }
+    if (!data?.id) throw new Error("Email provider responded without an acceptance receipt.");
     let acceptanceEventId: number | null = null;
     if (sourceEventId && input.leadId !== null) {
       acceptanceEventId = await recordEvent({
@@ -251,22 +264,22 @@ async function sendDurableQuoteEmail(input: {
     }
     return { state: "accepted", error: "", receiptEventId: acceptanceEventId || sourceEventId };
   } catch (error) {
-    // A transport exception is ambiguous: Resend may have accepted the email
-    // before the response was lost. The same idempotency key makes a retry
-    // safe, so keep the durable intent resumable instead of recording a lie.
+    // A transport exception or receipt write failure may hide a completed send.
     const message = error instanceof Error ? error.message : "Email provider response was lost.";
     if (sourceEventId && input.leadId !== null) {
+      // An ambiguous retry must be recorded after the failure it retried.
+      const unknownExternalId = `request-unknown:${input.intent}${priorFailureEventId ? `:${priorFailureEventId}` : ""}`;
       let unknownEventId = await recordEvent({
         kind: "email.unknown",
         actorType: "system",
         leadId: input.leadId,
         personId: input.personId,
-        externalId: `request-unknown:${input.intent}`,
+        externalId: unknownExternalId,
         body: message,
         crewBody: "Email provider response was not confirmed.",
         detail: { sourceEventId, audience: input.audience },
       });
-      if (!unknownEventId) unknownEventId = await resumeEventId("email.unknown", `request-unknown:${input.intent}`);
+      if (!unknownEventId) unknownEventId = await resumeEventId("email.unknown", unknownExternalId);
       return { state: "unknown", error: message, receiptEventId: unknownEventId || sourceEventId };
     }
     return { state: "unknown", error: message, receiptEventId: sourceEventId };

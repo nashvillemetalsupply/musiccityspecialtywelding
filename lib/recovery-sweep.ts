@@ -139,7 +139,8 @@ export async function runRecoverySweep({
       detail.delivery = "none"
     }
 
-    const recoveredQuoteEvents = await recoverMissingQuoteEvents()
+    const { eventIds: recoveredQuoteEvents, failures: quoteEventRepairFailures } = await recoverMissingQuoteEvents()
+    if (quoteEventRepairFailures.length > 0) detail.quoteEventRepairFailures = quoteEventRepairFailures
     const unprocessed = (await sql`
       SELECT id FROM events
       WHERE processed_at IS NULL
